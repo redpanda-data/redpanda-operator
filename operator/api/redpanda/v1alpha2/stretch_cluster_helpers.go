@@ -892,10 +892,19 @@ func (sc *StretchCluster) BootstrapUserSecretName() string {
 // Supports both new-style (Limits/Requests) and legacy (CPU.Cores + Memory.Container.Max) modes.
 // Safe to call on nil receiver.
 func (s *StretchClusterSpec) GetResourceRequirements() corev1.ResourceRequirements {
-	if s == nil || s.Resources == nil {
+	if s == nil {
 		return corev1.ResourceRequirements{}
 	}
-	r := s.Resources
+	return resourceRequirements(s.Resources)
+}
+
+// resourceRequirements is the implementation shared by
+// [StretchClusterSpec.GetResourceRequirements] and
+// [BrokerPoolSpec.GetResourceRequirements].
+func resourceRequirements(r *StretchResources) corev1.ResourceRequirements {
+	if r == nil {
+		return corev1.ResourceRequirements{}
+	}
 
 	// New-style: explicit Limits/Requests.
 	if len(r.Limits) > 0 || len(r.Requests) > 0 {
@@ -952,50 +961,110 @@ const (
 // IsTieredStorageEnabled returns whether tiered storage is enabled.
 // Safe to call on nil receiver.
 func (s *StretchClusterSpec) IsTieredStorageEnabled() bool {
-	if s == nil || s.Storage == nil || s.Storage.Tiered == nil || s.Storage.Tiered.Config == nil {
+	if s == nil {
 		return false
 	}
-	tc := s.Storage.Tiered.Config
-	return tc.CloudStorageEnabled != nil && *tc.CloudStorageEnabled
+	return isTieredStorageEnabled(s.Storage)
 }
 
 // TieredMountType returns the tiered storage mount type. Defaults to "none" if not set.
 // Valid values: "none", "hostPath", "emptyDir", "persistentVolume".
 func (s *StretchClusterSpec) TieredMountType() string {
-	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.MountType != nil {
-		return *s.Storage.Tiered.MountType
+	if s == nil {
+		return tieredMountType(nil)
 	}
-	return "none"
+	return tieredMountType(s.Storage)
 }
 
 // TieredCacheDirectory returns the cloud storage cache directory path.
 func (s *StretchClusterSpec) TieredCacheDirectory() string {
-	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.Config != nil {
-		if s.Storage.Tiered.Config.CloudStorageCacheDirectory != nil {
-			return *s.Storage.Tiered.Config.CloudStorageCacheDirectory
-		}
+	if s == nil {
+		return tieredCacheDirectory(nil)
 	}
-	return DefaultTieredStorageCacheDir
+	return tieredCacheDirectory(s.Storage)
 }
 
 // TieredStorageVolumeName returns the volume name for tiered storage,
 // using NameOverwrite from the PersistentVolume if set.
 func (s *StretchClusterSpec) TieredStorageVolumeName() string {
-	if s != nil && s.Storage != nil && s.Storage.Tiered != nil &&
-		s.Storage.Tiered.PersistentVolume != nil &&
-		s.Storage.Tiered.PersistentVolume.NameOverwrite != nil &&
-		*s.Storage.Tiered.PersistentVolume.NameOverwrite != "" {
-		return *s.Storage.Tiered.PersistentVolume.NameOverwrite
+	if s == nil {
+		return tieredStorageVolumeName(nil)
 	}
-	return tieredStorageDirVolumeName
+	return tieredStorageVolumeName(s.Storage)
 }
 
 // TieredStorageHostPath returns the host path for tiered storage.
 func (s *StretchClusterSpec) TieredStorageHostPath() string {
-	if s != nil && s.Storage != nil && s.Storage.Tiered != nil && s.Storage.Tiered.HostPath != nil {
-		return *s.Storage.Tiered.HostPath
+	if s == nil {
+		return tieredStorageHostPath(nil)
+	}
+	return tieredStorageHostPath(s.Storage)
+}
+
+// --- Storage helpers shared by StretchClusterSpec and BrokerPoolSpec ---
+
+func isTieredStorageEnabled(storage *StretchStorage) bool {
+	if storage == nil || storage.Tiered == nil || storage.Tiered.Config == nil {
+		return false
+	}
+	tc := storage.Tiered.Config
+	return tc.CloudStorageEnabled != nil && *tc.CloudStorageEnabled
+}
+
+func tieredMountType(storage *StretchStorage) string {
+	if storage != nil && storage.Tiered != nil && storage.Tiered.MountType != nil {
+		return *storage.Tiered.MountType
+	}
+	return "none"
+}
+
+func tieredCacheDirectory(storage *StretchStorage) string {
+	if storage != nil && storage.Tiered != nil && storage.Tiered.Config != nil &&
+		storage.Tiered.Config.CloudStorageCacheDirectory != nil {
+		return *storage.Tiered.Config.CloudStorageCacheDirectory
+	}
+	return DefaultTieredStorageCacheDir
+}
+
+func tieredStorageVolumeName(storage *StretchStorage) string {
+	if storage != nil && storage.Tiered != nil &&
+		storage.Tiered.PersistentVolume != nil &&
+		storage.Tiered.PersistentVolume.NameOverwrite != nil &&
+		*storage.Tiered.PersistentVolume.NameOverwrite != "" {
+		return *storage.Tiered.PersistentVolume.NameOverwrite
+	}
+	return tieredStorageDirVolumeName
+}
+
+func tieredStorageHostPath(storage *StretchStorage) string {
+	if storage != nil && storage.Tiered != nil && storage.Tiered.HostPath != nil {
+		return *storage.Tiered.HostPath
 	}
 	return ""
+}
+
+func storageMinFreeBytes(storage *StretchStorage) int64 {
+	if storage == nil || storage.PersistentVolume == nil ||
+		!storage.PersistentVolume.IsEnabled() || storage.PersistentVolume.Size == nil {
+		return 5 * GiB
+	}
+	fivePercent := storage.PersistentVolume.Size.Value() * 5 / 100
+	if fivePercent < 5*GiB {
+		return fivePercent
+	}
+	return 5 * GiB
+}
+
+func tieredStorageCacheSize(storage *StretchStorage) *resource.Quantity {
+	if storage == nil || storage.Tiered == nil ||
+		storage.Tiered.Config == nil || storage.Tiered.Config.CloudStorageCacheSize == nil {
+		return nil
+	}
+	q, err := resource.ParseQuantity(*storage.Tiered.Config.CloudStorageCacheSize)
+	if err != nil {
+		return nil
+	}
+	return &q
 }
 
 // --- Config access methods ---
@@ -1100,30 +1169,20 @@ func (s *StretchClusterSpec) IsMetricsReporterEnabled() bool {
 // Returns 5GiB if PV is disabled or has no size set.
 // Safe to call on nil receiver.
 func (s *StretchClusterSpec) GetStorageMinFreeBytes() int64 {
-	if s == nil || s.Storage == nil || s.Storage.PersistentVolume == nil ||
-		!s.Storage.PersistentVolume.IsEnabled() || s.Storage.PersistentVolume.Size == nil {
-		return 5 * GiB
+	if s == nil {
+		return storageMinFreeBytes(nil)
 	}
-	fivePercent := s.Storage.PersistentVolume.Size.Value() * 5 / 100
-	if fivePercent < 5*GiB {
-		return fivePercent
-	}
-	return 5 * GiB
+	return storageMinFreeBytes(s.Storage)
 }
 
 // GetTieredStorageCacheSize returns the parsed cloud storage cache size quantity,
 // or nil if not set or unparseable.
 // Safe to call on nil receiver.
 func (s *StretchClusterSpec) GetTieredStorageCacheSize() *resource.Quantity {
-	if s == nil || s.Storage == nil || s.Storage.Tiered == nil ||
-		s.Storage.Tiered.Config == nil || s.Storage.Tiered.Config.CloudStorageCacheSize == nil {
-		return nil
+	if s == nil {
+		return tieredStorageCacheSize(nil)
 	}
-	q, err := resource.ParseQuantity(*s.Storage.Tiered.Config.CloudStorageCacheSize)
-	if err != nil {
-		return nil
-	}
-	return &q
+	return tieredStorageCacheSize(s.Storage)
 }
 
 // --- NodePool helpers ---
@@ -1405,6 +1464,364 @@ func (n *BrokerPoolSpec) MergeDefaults() {
 	n.mergeDefaultRBAC()
 }
 
+// MergeFromCluster fills pool fields by inheriting from the cluster spec for
+// the three fields that exist on both: Storage, Resources, ImagePullSecrets.
+// The rule is "pool wins, cluster fills":
+//   - Storage / Resources: deep field-by-field merge; a non-nil pool subfield
+//     wins, otherwise the cluster's subfield is copied in. Map fields
+//     (e.g. Resources.Limits, PersistentVolume.Annotations) merge per key —
+//     pool's keys override, cluster's other keys are preserved.
+//   - ImagePullSecrets: if the pool has any entries, those win as-is; if the
+//     pool's slice is empty (or nil), the cluster's slice is inherited.
+//
+// Called by lifecycle.StretchClusterWithPools.defaultedPoolCopy before
+// MergeDefaults, so per-pool defaulting sees the inherited values. Safe on
+// a nil cluster argument (no-op for the inheritance step).
+func (n *BrokerPoolSpec) MergeFromCluster(cluster *StretchClusterSpec) {
+	if n == nil || cluster == nil {
+		return
+	}
+	n.Storage = mergeStorageFrom(n.Storage, cluster.Storage)
+	n.Resources = mergeResourcesFrom(n.Resources, cluster.Resources)
+	if len(n.ImagePullSecrets) == 0 && len(cluster.ImagePullSecrets) > 0 {
+		// Deep-copy so subsequent mutations on the pool don't affect the cluster.
+		out := make([]corev1.LocalObjectReference, len(cluster.ImagePullSecrets))
+		copy(out, cluster.ImagePullSecrets)
+		n.ImagePullSecrets = out
+	}
+}
+
+// --- BrokerPoolSpec helpers that read Storage / Resources ---
+//
+// These mirror the StretchClusterSpec helpers. After lifecycle's
+// defaultedPoolCopy runs MergeFromCluster, the pool's Storage / Resources
+// reflect "pool wins, cluster fills" — so the renderer can read these
+// off the pool directly without needing to consult the cluster.
+
+// GetResourceRequirements returns the Kubernetes resource requirements
+// derived from this pool's Resources spec. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetResourceRequirements() corev1.ResourceRequirements {
+	if n == nil {
+		return corev1.ResourceRequirements{}
+	}
+	return resourceRequirements(n.Resources)
+}
+
+// GetRedpandaStartFlags computes the --memory, --reserve-memory, and --smp
+// flags from this pool's Resources spec. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetRedpandaStartFlags() map[string]string {
+	if n == nil {
+		return nil
+	}
+	return redpandaStartFlags(n.Resources)
+}
+
+// GetOverProvisionValue returns whether Redpanda should run in
+// overprovisioned mode on this pool. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetOverProvisionValue() bool {
+	if n == nil {
+		return false
+	}
+	return overProvisionValue(n.Resources)
+}
+
+// GetEnableMemoryLocking returns whether memory locking should be enabled
+// on this pool. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetEnableMemoryLocking() bool {
+	if n == nil {
+		return false
+	}
+	return enableMemoryLocking(n.Resources)
+}
+
+// IsTieredStorageEnabled returns whether tiered storage is enabled on this
+// pool. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) IsTieredStorageEnabled() bool {
+	if n == nil {
+		return false
+	}
+	return isTieredStorageEnabled(n.Storage)
+}
+
+// TieredMountType returns the tiered storage mount type for this pool.
+// Defaults to "none". Safe to call on nil receiver.
+func (n *BrokerPoolSpec) TieredMountType() string {
+	if n == nil {
+		return tieredMountType(nil)
+	}
+	return tieredMountType(n.Storage)
+}
+
+// TieredCacheDirectory returns the cloud storage cache directory path for
+// this pool. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) TieredCacheDirectory() string {
+	if n == nil {
+		return tieredCacheDirectory(nil)
+	}
+	return tieredCacheDirectory(n.Storage)
+}
+
+// TieredStorageVolumeName returns the volume name for tiered storage on
+// this pool. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) TieredStorageVolumeName() string {
+	if n == nil {
+		return tieredStorageVolumeName(nil)
+	}
+	return tieredStorageVolumeName(n.Storage)
+}
+
+// TieredStorageHostPath returns the host path for tiered storage on this
+// pool. Safe to call on nil receiver.
+func (n *BrokerPoolSpec) TieredStorageHostPath() string {
+	if n == nil {
+		return tieredStorageHostPath(nil)
+	}
+	return tieredStorageHostPath(n.Storage)
+}
+
+// GetStorageMinFreeBytes computes storage_min_free_bytes for this pool.
+// Safe to call on nil receiver.
+func (n *BrokerPoolSpec) GetStorageMinFreeBytes() int64 {
+	if n == nil {
+		return storageMinFreeBytes(nil)
+	}
+	return storageMinFreeBytes(n.Storage)
+}
+
+// GetTieredStorageCacheSize returns the parsed cloud storage cache size
+// quantity for this pool, or nil if not set / unparseable. Safe to call
+// on nil receiver.
+func (n *BrokerPoolSpec) GetTieredStorageCacheSize() *resource.Quantity {
+	if n == nil {
+		return tieredStorageCacheSize(nil)
+	}
+	return tieredStorageCacheSize(n.Storage)
+}
+
+// mergeStorageFrom returns the pool's Storage with cluster's subfields filling
+// any nil sub-pointers. If the pool's Storage is nil it returns a deep copy of
+// the cluster's. Either input may be nil.
+func mergeStorageFrom(pool, cluster *StretchStorage) *StretchStorage {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	if pool.HostPath == nil && cluster.HostPath != nil {
+		pool.HostPath = ptr.To(*cluster.HostPath)
+	}
+	pool.PersistentVolume = mergePersistentVolumeFrom(pool.PersistentVolume, cluster.PersistentVolume)
+	pool.Tiered = mergeTieredFrom(pool.Tiered, cluster.Tiered)
+	return pool
+}
+
+func mergePersistentVolumeFrom(pool, cluster *PersistentVolume) *PersistentVolume {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	if pool.Enabled == nil && cluster.Enabled != nil {
+		pool.Enabled = ptr.To(*cluster.Enabled)
+	}
+	if pool.Size == nil && cluster.Size != nil {
+		q := cluster.Size.DeepCopy()
+		pool.Size = &q
+	}
+	if pool.StorageClass == nil && cluster.StorageClass != nil {
+		pool.StorageClass = ptr.To(*cluster.StorageClass)
+	}
+	if pool.NameOverwrite == nil && cluster.NameOverwrite != nil {
+		pool.NameOverwrite = ptr.To(*cluster.NameOverwrite)
+	}
+	pool.Annotations = mergeStringMapFrom(pool.Annotations, cluster.Annotations)
+	pool.Labels = mergeStringMapFrom(pool.Labels, cluster.Labels)
+	return pool
+}
+
+func mergeTieredFrom(pool, cluster *StretchTiered) *StretchTiered {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	if pool.MountType == nil && cluster.MountType != nil {
+		pool.MountType = ptr.To(*cluster.MountType)
+	}
+	if pool.HostPath == nil && cluster.HostPath != nil {
+		pool.HostPath = ptr.To(*cluster.HostPath)
+	}
+	pool.PersistentVolume = mergePersistentVolumeFrom(pool.PersistentVolume, cluster.PersistentVolume)
+	pool.Config = mergeTieredConfigFrom(pool.Config, cluster.Config)
+	if pool.CredentialsSecretRef == nil && cluster.CredentialsSecretRef != nil {
+		pool.CredentialsSecretRef = cluster.CredentialsSecretRef.DeepCopy()
+	}
+	return pool
+}
+
+func mergeTieredConfigFrom(pool, cluster *StretchTieredConfig) *StretchTieredConfig {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	// StretchTieredConfig is a flat struct of scalar pointers; copy field-by-field
+	// where pool is nil. Generated DeepCopy on the cluster side is unnecessary here
+	// because the scalars are dereferenced into fresh pointers.
+	copyBool := func(dst **bool, src *bool) {
+		if *dst == nil && src != nil {
+			*dst = ptr.To(*src)
+		}
+	}
+	copyStr := func(dst **string, src *string) {
+		if *dst == nil && src != nil {
+			*dst = ptr.To(*src)
+		}
+	}
+	copyInt := func(dst **int, src *int) {
+		if *dst == nil && src != nil {
+			*dst = ptr.To(*src)
+		}
+	}
+	copyBool(&pool.CloudStorageEnabled, cluster.CloudStorageEnabled)
+	copyStr(&pool.CloudStorageAPIEndpoint, cluster.CloudStorageAPIEndpoint)
+	copyInt(&pool.CloudStorageAPIEndpointPort, cluster.CloudStorageAPIEndpointPort)
+	copyStr(&pool.CloudStorageBucket, cluster.CloudStorageBucket)
+	copyStr(&pool.CloudStorageAzureContainer, cluster.CloudStorageAzureContainer)
+	copyStr(&pool.CloudStorageAzureManagedIdentityID, cluster.CloudStorageAzureManagedIdentityID)
+	copyStr(&pool.CloudStorageAzureStorageAccount, cluster.CloudStorageAzureStorageAccount)
+	copyStr(&pool.CloudStorageAzureSharedKey, cluster.CloudStorageAzureSharedKey)
+	copyStr(&pool.CloudStorageAzureADLSEndpoint, cluster.CloudStorageAzureADLSEndpoint)
+	copyInt(&pool.CloudStorageAzureADLSPort, cluster.CloudStorageAzureADLSPort)
+	copyInt(&pool.CloudStorageCacheCheckInterval, cluster.CloudStorageCacheCheckInterval)
+	copyStr(&pool.CloudStorageCacheDirectory, cluster.CloudStorageCacheDirectory)
+	copyStr(&pool.CloudStorageCacheSize, cluster.CloudStorageCacheSize)
+	copyStr(&pool.CloudStorageCredentialsSource, cluster.CloudStorageCredentialsSource)
+	copyBool(&pool.CloudStorageDisableTLS, cluster.CloudStorageDisableTLS)
+	copyBool(&pool.CloudStorageEnableRemoteRead, cluster.CloudStorageEnableRemoteRead)
+	copyBool(&pool.CloudStorageEnableRemoteWrite, cluster.CloudStorageEnableRemoteWrite)
+	copyInt(&pool.CloudStorageInitialBackoffMs, cluster.CloudStorageInitialBackoffMs)
+	copyInt(&pool.CloudStorageManifestUploadTimeoutMs, cluster.CloudStorageManifestUploadTimeoutMs)
+	copyInt(&pool.CloudStorageMaxConnectionIdleTimeMs, cluster.CloudStorageMaxConnectionIdleTimeMs)
+	copyInt(&pool.CloudStorageMaxConnections, cluster.CloudStorageMaxConnections)
+	copyStr(&pool.CloudStorageRegion, cluster.CloudStorageRegion)
+	copyInt(&pool.CloudStorageSegmentMaxUploadIntervalSec, cluster.CloudStorageSegmentMaxUploadIntervalSec)
+	copyInt(&pool.CloudStorageSegmentUploadTimeoutMs, cluster.CloudStorageSegmentUploadTimeoutMs)
+	copyStr(&pool.CloudStorageTrustFile, cluster.CloudStorageTrustFile)
+	copyInt(&pool.CloudStorageUploadCtrlDCoeff, cluster.CloudStorageUploadCtrlDCoeff)
+	copyInt(&pool.CloudStorageUploadCtrlMaxShares, cluster.CloudStorageUploadCtrlMaxShares)
+	copyInt(&pool.CloudStorageUploadCtrlMinShares, cluster.CloudStorageUploadCtrlMinShares)
+	copyInt(&pool.CloudStorageUploadCtrlPCoeff, cluster.CloudStorageUploadCtrlPCoeff)
+	copyInt(&pool.CloudStorageUploadCtrlUpdateIntervalMs, cluster.CloudStorageUploadCtrlUpdateIntervalMs)
+	return pool
+}
+
+// mergeResourcesFrom merges cluster resource settings into the pool's. Pool's
+// non-nil subfields win; cluster fills the rest. Limits / Requests are
+// ResourceList (map) — merged per key, pool's keys win.
+func mergeResourcesFrom(pool, cluster *StretchResources) *StretchResources {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	pool.Limits = mergeResourceListFrom(pool.Limits, cluster.Limits)
+	pool.Requests = mergeResourceListFrom(pool.Requests, cluster.Requests)
+	pool.CPU = mergeCPUFrom(pool.CPU, cluster.CPU)
+	pool.Memory = mergeMemoryFrom(pool.Memory, cluster.Memory)
+	return pool
+}
+
+func mergeResourceListFrom(pool, cluster corev1.ResourceList) corev1.ResourceList {
+	if len(cluster) == 0 {
+		return pool
+	}
+	if pool == nil {
+		pool = corev1.ResourceList{}
+	}
+	for k, v := range cluster {
+		if _, ok := pool[k]; !ok {
+			pool[k] = v.DeepCopy()
+		}
+	}
+	return pool
+}
+
+func mergeCPUFrom(pool, cluster *CPU) *CPU {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	if pool.Cores == nil && cluster.Cores != nil {
+		q := cluster.Cores.DeepCopy()
+		pool.Cores = &q
+	}
+	if pool.Overprovisioned == nil && cluster.Overprovisioned != nil {
+		pool.Overprovisioned = ptr.To(*cluster.Overprovisioned)
+	}
+	return pool
+}
+
+func mergeMemoryFrom(pool, cluster *Memory) *Memory {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	pool.Container = mergeContainerResourcesFrom(pool.Container, cluster.Container)
+	if pool.EnableMemoryLocking == nil && cluster.EnableMemoryLocking != nil {
+		pool.EnableMemoryLocking = ptr.To(*cluster.EnableMemoryLocking)
+	}
+	if pool.Redpanda == nil && cluster.Redpanda != nil {
+		pool.Redpanda = cluster.Redpanda.DeepCopy()
+	}
+	return pool
+}
+
+func mergeContainerResourcesFrom(pool, cluster *ContainerResources) *ContainerResources {
+	if cluster == nil {
+		return pool
+	}
+	if pool == nil {
+		return cluster.DeepCopy()
+	}
+	if pool.Max == nil && cluster.Max != nil {
+		q := cluster.Max.DeepCopy()
+		pool.Max = &q
+	}
+	if pool.Min == nil && cluster.Min != nil {
+		q := cluster.Min.DeepCopy()
+		pool.Min = &q
+	}
+	return pool
+}
+
+// mergeStringMapFrom returns a map where pool's keys win and cluster fills
+// the rest. Always returns a fresh map when at least one input has entries,
+// to avoid aliasing the cluster's storage.
+func mergeStringMapFrom(pool, cluster map[string]string) map[string]string {
+	if len(cluster) == 0 {
+		return pool
+	}
+	if pool == nil {
+		pool = map[string]string{}
+	}
+	for k, v := range cluster {
+		if _, ok := pool[k]; !ok {
+			pool[k] = v
+		}
+	}
+	return pool
+}
+
 func (n *BrokerPoolSpec) mergeDefaultServiceAccount() {
 	if n.ServiceAccount == nil {
 		n.ServiceAccount = &ServiceAccount{
@@ -1589,10 +2006,19 @@ func (s *StretchClusterSpec) mergeDefaultLogging() {
 // GetRedpandaStartFlags computes the --memory, --reserve-memory, and --smp flags
 // from the Resources configuration, mirroring the Helm chart logic.
 func (s *StretchClusterSpec) GetRedpandaStartFlags() map[string]string {
-	if s == nil || s.Resources == nil {
+	if s == nil {
 		return nil
 	}
-	r := s.Resources
+	return redpandaStartFlags(s.Resources)
+}
+
+// redpandaStartFlags is the implementation shared by
+// [StretchClusterSpec.GetRedpandaStartFlags] and
+// [BrokerPoolSpec.GetRedpandaStartFlags].
+func redpandaStartFlags(r *StretchResources) map[string]string {
+	if r == nil {
+		return nil
+	}
 	flags := map[string]string{}
 
 	if len(r.Limits) > 0 && len(r.Requests) > 0 {
@@ -1663,10 +2089,16 @@ func (s *StretchClusterSpec) GetRedpandaStartFlags() map[string]string {
 
 // GetOverProvisionValue returns whether Redpanda should run in overprovisioned mode.
 func (s *StretchClusterSpec) GetOverProvisionValue() bool {
-	if s == nil || s.Resources == nil {
+	if s == nil {
 		return false
 	}
-	r := s.Resources
+	return overProvisionValue(s.Resources)
+}
+
+func overProvisionValue(r *StretchResources) bool {
+	if r == nil {
+		return false
+	}
 
 	if len(r.Limits) > 0 && len(r.Requests) > 0 {
 		cpuReq, ok := r.Requests[corev1.ResourceCPU]
@@ -1684,10 +2116,17 @@ func (s *StretchClusterSpec) GetOverProvisionValue() bool {
 
 // GetEnableMemoryLocking returns whether memory locking should be enabled.
 func (s *StretchClusterSpec) GetEnableMemoryLocking() bool {
-	if s == nil || s.Resources == nil || s.Resources.Memory == nil {
+	if s == nil {
 		return false
 	}
-	return ptr.Deref(s.Resources.Memory.EnableMemoryLocking, false)
+	return enableMemoryLocking(s.Resources)
+}
+
+func enableMemoryLocking(r *StretchResources) bool {
+	if r == nil || r.Memory == nil {
+		return false
+	}
+	return ptr.Deref(r.Memory.EnableMemoryLocking, false)
 }
 
 //func (s *StretchClusterSpec) mergeDefaultServiceAccount() {

@@ -12,7 +12,8 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // BrokerPoolSpecApplyConfiguration represents a declarative configuration of the BrokerPoolSpec type for use
@@ -108,6 +109,14 @@ func (b *BrokerPoolSpecApplyConfiguration) WithInitContainerImage(value *InitCon
 	return b
 }
 
+// WithPersistentVolumeClaimRetentionPolicy sets the PersistentVolumeClaimRetentionPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PersistentVolumeClaimRetentionPolicy field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithPersistentVolumeClaimRetentionPolicy(value v1.StatefulSetPersistentVolumeClaimRetentionPolicy) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.PersistentVolumeClaimRetentionPolicy = &value
+	return b
+}
+
 // WithClusterDomain sets the ClusterDomain field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ClusterDomain field is set to the value of the last call.
@@ -183,7 +192,7 @@ func (b *BrokerPoolSpecApplyConfiguration) WithResources(value *StretchResources
 // WithImagePullSecrets adds the given value to the ImagePullSecrets field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ImagePullSecrets field.
-func (b *BrokerPoolSpecApplyConfiguration) WithImagePullSecrets(values ...v1.LocalObjectReference) *BrokerPoolSpecApplyConfiguration {
+func (b *BrokerPoolSpecApplyConfiguration) WithImagePullSecrets(values ...corev1.LocalObjectReference) *BrokerPoolSpecApplyConfiguration {
 	for i := range values {
 		b.EmbeddedBrokerPoolSpecApplyConfiguration.ImagePullSecrets = append(b.EmbeddedBrokerPoolSpecApplyConfiguration.ImagePullSecrets, values[i])
 	}

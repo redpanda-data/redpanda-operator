@@ -12,33 +12,35 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // EmbeddedBrokerPoolSpecApplyConfiguration represents a declarative configuration of the EmbeddedBrokerPoolSpec type for use
 // with apply.
 type EmbeddedBrokerPoolSpecApplyConfiguration struct {
-	AdditionalSelectorLabels   map[string]string                     `json:"additionalSelectorLabels,omitempty"`
-	Replicas                   *int32                                `json:"replicas,omitempty"`
-	AdditionalRedpandaCmdFlags []string                              `json:"additionalRedpandaCmdFlags,omitempty"`
-	PodTemplate                *PodTemplateApplyConfiguration        `json:"podTemplate,omitempty"`
-	Services                   *NodePoolServicesApplyConfiguration   `json:"services,omitempty"`
-	InitContainers             *PoolInitContainersApplyConfiguration `json:"initContainers,omitempty"`
-	Image                      *RedpandaImageApplyConfiguration      `json:"image,omitempty"`
-	SidecarImage               *RedpandaImageApplyConfiguration      `json:"sidecarImage,omitempty"`
-	InitContainerImage         *InitContainerImageApplyConfiguration `json:"initContainerImage,omitempty"`
-	ClusterDomain              *string                               `json:"clusterDomain,omitempty"`
-	TLS                        *TLSApplyConfiguration                `json:"tls,omitempty"`
-	External                   *ExternalApplyConfiguration           `json:"external,omitempty"`
-	Listeners                  *StretchListenersApplyConfiguration   `json:"listeners,omitempty"`
-	RBAC                       *RBACApplyConfiguration               `json:"rbac,omitempty"`
-	ServiceAccount             *ServiceAccountApplyConfiguration     `json:"serviceAccount,omitempty"`
-	Monitoring                 *MonitoringApplyConfiguration         `json:"monitoring,omitempty"`
-	Storage                    *StretchStorageApplyConfiguration     `json:"storage,omitempty"`
-	Resources                  *StretchResourcesApplyConfiguration   `json:"resources,omitempty"`
-	ImagePullSecrets           []v1.LocalObjectReference             `json:"imagePullSecrets,omitempty"`
-	RackAwareness              *RackAwarenessApplyConfiguration      `json:"rackAwareness,omitempty"`
-	Logging                    *StretchLoggingApplyConfiguration     `json:"logging,omitempty"`
+	AdditionalSelectorLabels             map[string]string                                   `json:"additionalSelectorLabels,omitempty"`
+	Replicas                             *int32                                              `json:"replicas,omitempty"`
+	AdditionalRedpandaCmdFlags           []string                                            `json:"additionalRedpandaCmdFlags,omitempty"`
+	PodTemplate                          *PodTemplateApplyConfiguration                      `json:"podTemplate,omitempty"`
+	Services                             *NodePoolServicesApplyConfiguration                 `json:"services,omitempty"`
+	InitContainers                       *PoolInitContainersApplyConfiguration               `json:"initContainers,omitempty"`
+	Image                                *RedpandaImageApplyConfiguration                    `json:"image,omitempty"`
+	SidecarImage                         *RedpandaImageApplyConfiguration                    `json:"sidecarImage,omitempty"`
+	InitContainerImage                   *InitContainerImageApplyConfiguration               `json:"initContainerImage,omitempty"`
+	PersistentVolumeClaimRetentionPolicy *v1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+	ClusterDomain                        *string                                             `json:"clusterDomain,omitempty"`
+	TLS                                  *TLSApplyConfiguration                              `json:"tls,omitempty"`
+	External                             *ExternalApplyConfiguration                         `json:"external,omitempty"`
+	Listeners                            *StretchListenersApplyConfiguration                 `json:"listeners,omitempty"`
+	RBAC                                 *RBACApplyConfiguration                             `json:"rbac,omitempty"`
+	ServiceAccount                       *ServiceAccountApplyConfiguration                   `json:"serviceAccount,omitempty"`
+	Monitoring                           *MonitoringApplyConfiguration                       `json:"monitoring,omitempty"`
+	Storage                              *StretchStorageApplyConfiguration                   `json:"storage,omitempty"`
+	Resources                            *StretchResourcesApplyConfiguration                 `json:"resources,omitempty"`
+	ImagePullSecrets                     []corev1.LocalObjectReference                       `json:"imagePullSecrets,omitempty"`
+	RackAwareness                        *RackAwarenessApplyConfiguration                    `json:"rackAwareness,omitempty"`
+	Logging                              *StretchLoggingApplyConfiguration                   `json:"logging,omitempty"`
 }
 
 // EmbeddedBrokerPoolSpecApplyConfiguration constructs a declarative configuration of the EmbeddedBrokerPoolSpec type for use with
@@ -127,6 +129,14 @@ func (b *EmbeddedBrokerPoolSpecApplyConfiguration) WithInitContainerImage(value 
 	return b
 }
 
+// WithPersistentVolumeClaimRetentionPolicy sets the PersistentVolumeClaimRetentionPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PersistentVolumeClaimRetentionPolicy field is set to the value of the last call.
+func (b *EmbeddedBrokerPoolSpecApplyConfiguration) WithPersistentVolumeClaimRetentionPolicy(value v1.StatefulSetPersistentVolumeClaimRetentionPolicy) *EmbeddedBrokerPoolSpecApplyConfiguration {
+	b.PersistentVolumeClaimRetentionPolicy = &value
+	return b
+}
+
 // WithClusterDomain sets the ClusterDomain field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the ClusterDomain field is set to the value of the last call.
@@ -202,7 +212,7 @@ func (b *EmbeddedBrokerPoolSpecApplyConfiguration) WithResources(value *StretchR
 // WithImagePullSecrets adds the given value to the ImagePullSecrets field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ImagePullSecrets field.
-func (b *EmbeddedBrokerPoolSpecApplyConfiguration) WithImagePullSecrets(values ...v1.LocalObjectReference) *EmbeddedBrokerPoolSpecApplyConfiguration {
+func (b *EmbeddedBrokerPoolSpecApplyConfiguration) WithImagePullSecrets(values ...corev1.LocalObjectReference) *EmbeddedBrokerPoolSpecApplyConfiguration {
 	for i := range values {
 		b.ImagePullSecrets = append(b.ImagePullSecrets, values[i])
 	}

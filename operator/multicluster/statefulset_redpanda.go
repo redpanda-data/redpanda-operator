@@ -71,8 +71,9 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 
 	ports := redpandaContainerPorts(l, pool)
 
-	// Get resource requirements from the spec.
-	resources := state.Spec().GetResourceRequirements()
+	// Resource requirements from the pool (cluster-level values are inherited
+	// via MergeFromCluster in lifecycle.defaultedPoolCopy).
+	resources := pool.Spec.GetResourceRequirements()
 
 	env := statefulSetRedpandaEnv()
 	env = append(env, metricsEnvironmentVariables(state, pool)...)

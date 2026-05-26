@@ -136,11 +136,19 @@ func NewRenderState(
 	cluster.Spec.MergeDefaults()
 	// Apply per-pool defaults (TLS, Listeners, External, RBAC, ServiceAccount)
 	// to nil fields on each pool — mirrors the API migration where these
-	// fields moved off StretchClusterSpec onto EmbeddedBrokerPoolSpec.
+	// fields moved off StretchClusterSpec onto EmbeddedBrokerPoolSpec. For
+	// Storage / Resources / ImagePullSecrets, MergeFromCluster runs first so
+	// the pool inherits cluster-level values for any subfield it didn't set
+	// itself; MergeDefaults then fills any still-nil pool defaults. This is
+	// idempotent — both MergeFromCluster and MergeDefaults only fill nil
+	// fields — so it's safe even when callers (e.g. lifecycle.defaultedPoolCopy)
+	// have already applied the same pipeline before passing pools in.
 	for _, p := range copiedInClusterPools {
+		p.Spec.MergeFromCluster(&cluster.Spec)
 		p.Spec.MergeDefaults()
 	}
 	for _, p := range copiedPools {
+		p.Spec.MergeFromCluster(&cluster.Spec)
 		p.Spec.MergeDefaults()
 	}
 

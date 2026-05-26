@@ -55,15 +55,40 @@ type BrokerPoolSpec struct {
 }
 
 type EmbeddedBrokerPoolSpec struct {
-	AdditionalSelectorLabels   map[string]string `json:"additionalSelectorLabels,omitempty"`
-	Replicas                   *int32            `json:"replicas,omitempty"`
-	AdditionalRedpandaCmdFlags []string          `json:"additionalRedpandaCmdFlags,omitempty"`
-	PodTemplate                *PodTemplate      `json:"podTemplate,omitempty"`
-	// Services configures overrides for Services created by the operator.
-	Services           *NodePoolServices   `json:"services,omitempty"`
-	InitContainers     *PoolInitContainers `json:"initContainers,omitempty"`
-	Image              *RedpandaImage      `json:"image,omitempty"`
-	SidecarImage       *RedpandaImage      `json:"sidecarImage,omitempty"`
+	// AdditionalSelectorLabels are extra labels added to the StatefulSet's
+	// pod selector and pod template. Lets operators bucket pods by custom
+	// dimensions (e.g. team, environment) without affecting the operator-
+	// managed labels.
+	AdditionalSelectorLabels map[string]string `json:"additionalSelectorLabels,omitempty"`
+	// Replicas is the desired number of broker pods in this pool. Defaults
+	// to 1 if unset.
+	Replicas *int32 `json:"replicas,omitempty"`
+	// AdditionalRedpandaCmdFlags are extra flags appended to the
+	// `rpk redpanda start` command line for every broker in this pool.
+	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags,omitempty"`
+	// PodTemplate is a strategic-merge patch applied on top of the
+	// operator-rendered Pod template. Common uses: nodeSelector,
+	// tolerations, custom volumes, sidecar containers, security context
+	// overrides.
+	PodTemplate *PodTemplate `json:"podTemplate,omitempty"`
+	// Services configures overrides for the per-pod Services created by
+	// the operator (e.g. selector/annotation tweaks, remote-Service
+	// suppression).
+	Services *NodePoolServices `json:"services,omitempty"`
+	// InitContainers controls the init containers the operator renders
+	// (fs-validator, set-data-dir-ownership, configurator). Lets users
+	// toggle them on/off and tune flags.
+	InitContainers *PoolInitContainers `json:"initContainers,omitempty"`
+	// Image is the Redpanda container image (repository + tag) for this
+	// pool. Defaults to the operator's built-in chart-pinned image when
+	// unset.
+	Image *RedpandaImage `json:"image,omitempty"`
+	// SidecarImage is the operator sidecar container image for this pool.
+	// Defaults to the operator's own image at build time.
+	SidecarImage *RedpandaImage `json:"sidecarImage,omitempty"`
+	// InitContainerImage is the image used for init containers that don't
+	// need the full Redpanda binary (e.g. busybox for fs-validator,
+	// chown). Defaults to busybox:latest.
 	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
 	// PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for
 	// PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces
@@ -74,29 +99,60 @@ type EmbeddedBrokerPoolSpec struct {
 	// scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's
 	// StatefulSet is deleted.
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
-	// Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. The default is the `cluster.local` domain.
+	// ClusterDomain customizes the Kubernetes cluster DNS domain used to
+	// generate internal pod hostnames (`<pod>.<svc>.<ns>.svc.<domain>`).
+	// Defaults to `cluster.local`. Per-pool to support clusters that span
+	// k8s environments with different DNS roots.
 	ClusterDomain *string `json:"clusterDomain,omitempty"`
-	// Defines TLS settings for listeners.
+	// TLS configures the listener cert set (server certs, optional client
+	// certs, CA toggles, custom issuers). Per-pool so different pools can
+	// run different listener TLS configurations while sharing the
+	// cluster-wide root CA managed by the operator.
 	TLS *TLS `json:"tls,omitempty"`
-	// Defines external access settings.
+	// External configures external access (NodePort / LoadBalancer types,
+	// advertised addresses, ExternalDNS hookup). Per-pool so pools in
+	// different regions/clouds can expose themselves differently.
 	External *External `json:"external,omitempty"`
-	// Defines settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API.
+	// Listeners configures the Admin / Kafka / HTTP-Proxy / Schema-Registry
+	// / RPC listeners (ports, TLS cert references, external listener
+	// blocks). Per-pool to permit heterogeneous listener layouts.
 	Listeners *StretchListeners `json:"listeners,omitempty"`
-	// Defines Role Based Access Control (RBAC) settings.
+	// RBAC toggles operator-managed Roles / ClusterRoles for this pool
+	// (sidecar perms, rpk-debug-bundle perms, metrics-reader). Per-pool
+	// because the bound ServiceAccount is per-pool.
 	RBAC *RBAC `json:"rbac,omitempty"`
-	// Defines Service account settings.
+	// ServiceAccount controls creation and naming of the per-pool
+	// ServiceAccount used by broker / sidecar pods. Per-pool so users can
+	// pre-create SAs with their own IAM bindings (workload identity, etc.).
 	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
-	// Defines settings for monitoring Redpanda.
+	// Monitoring toggles the per-pool ServiceMonitor. Per-pool so different
+	// pools can opt in/out of Prometheus scraping independently.
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
-	// Defines storage settings for the Redpanda data directory and the Tiered Storage cache.
+	// Storage configures the Redpanda data directory and tiered-storage
+	// cache (hostPath / PVC / emptyDir). When also set on
+	// StretchClusterSpec, the pool's value wins on a deep field-by-field
+	// merge — pool's non-nil subfields override, cluster fills any
+	// subfields the pool didn't set. See BrokerPoolSpec.MergeFromCluster.
 	Storage *StretchStorage `json:"storage,omitempty"`
-	// Defines container resource settings.
+	// Resources configures container resource requests/limits (and the
+	// legacy CPU/Memory shorthand). When also set on StretchClusterSpec,
+	// the pool's value wins on a deep field-by-field merge, with
+	// per-key merging on the Limits/Requests maps. See
+	// BrokerPoolSpec.MergeFromCluster.
 	Resources *StretchResources `json:"resources,omitempty"`
-	// Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
+	// ImagePullSecrets are private-registry credentials for pulling the
+	// Redpanda / sidecar / init-container images. When non-empty, this
+	// list fully overrides any list set on StretchClusterSpec; when
+	// empty/nil, the cluster's list is inherited. See
+	// BrokerPoolSpec.MergeFromCluster.
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
-	// Defines rack awareness settings.
+	// RackAwareness configures the Kubernetes node-label that's mapped to
+	// the broker's `rack` config so Redpanda places replicas across racks/
+	// zones. Per-pool because rack labels can differ between K8s clusters.
 	RackAwareness *RackAwareness `json:"rackAwareness,omitempty"`
-	// Defines the log level settings.
+	// Logging overrides the log level and usage-stats settings for brokers
+	// in this pool. Per-pool so a noisy debug pool doesn't force the
+	// whole cluster into verbose logging.
 	Logging *StretchLogging `json:"logging,omitempty"`
 }
 

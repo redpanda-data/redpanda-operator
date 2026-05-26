@@ -30,8 +30,8 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool
 
 	result := map[string]any{
 		"additional_start_flags": flags,
-		"overprovisioned":        state.Spec().GetOverProvisionValue(),
-		"enable_memory_locking":  state.Spec().GetEnableMemoryLocking(),
+		"overprovisioned":        pool.Spec.GetOverProvisionValue(),
+		"enable_memory_locking":  pool.Spec.GetEnableMemoryLocking(),
 		"kafka_api": map[string]any{
 			"brokers": state.BrokerList(pool.Spec.KafkaPort()),
 			"tls":     rpkListenerTLS(pool, l.Kafka),
@@ -139,8 +139,9 @@ func redpandaAdditionalStartFlags(state *RenderState, pool *redpandav1alpha2.Red
 		flags = append(flags, fmt.Sprintf("--default-log-level=%s", *log.LogLevel))
 	}
 
-	// Add resource-derived flags in deterministic order.
-	redpandaFlags := state.Spec().GetRedpandaStartFlags()
+	// Add resource-derived flags in deterministic order. Pool wins over
+	// cluster (merged in lifecycle.defaultedPoolCopy via MergeFromCluster).
+	redpandaFlags := pool.Spec.GetRedpandaStartFlags()
 	for _, key := range []string{"--memory", "--reserve-memory", "--smp"} {
 		if v, ok := redpandaFlags[key]; ok {
 			flags = append(flags, fmt.Sprintf("%s=%s", key, v))

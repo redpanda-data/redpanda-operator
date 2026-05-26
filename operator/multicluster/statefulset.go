@@ -67,7 +67,7 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) 
 			},
 		},
 		Spec: corev1.PodSpec{
-			ImagePullSecrets:              state.Spec().ImagePullSecrets,
+			ImagePullSecrets:              pool.Spec.ImagePullSecrets,
 			AutomountServiceAccountToken:  ptr.To(false),
 			ServiceAccountName:            pool.Spec.GetServiceAccountName(state.poolFullname(pool)),
 			TerminationGracePeriodSeconds: ptr.To(defaultTerminationGracePeriod),
@@ -171,12 +171,12 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) 
 	}
 
 	// VolumeClaimTemplates for persistent storage.
-	if storage := state.Spec().Storage; storage != nil && storage.PersistentVolume.IsEnabled() {
-		if t := volumeClaimTemplateDatadir(state); t != nil {
+	if storage := pool.Spec.Storage; storage != nil && storage.PersistentVolume.IsEnabled() {
+		if t := volumeClaimTemplateDatadir(state, pool); t != nil {
 			set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *t)
 		}
 	}
-	if t := volumeClaimTemplateTieredStorageDir(state); t != nil {
+	if t := volumeClaimTemplateTieredStorageDir(state, pool); t != nil {
 		set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *t)
 	}
 

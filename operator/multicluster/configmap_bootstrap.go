@@ -55,16 +55,18 @@ func bootstrapContents(state *RenderState, pool *redpandav1alpha2.RedpandaBroker
 	bootstrap["enable_rack_awareness"] = pool.Spec.RackAwareness.IsEnabled()
 	bootstrap["audit_enabled"] = state.Spec().IsAuditLoggingEnabled()
 
-	// storage_min_free_bytes: min(5GiB, 5% of PV size).
-	bootstrap["storage_min_free_bytes"] = state.Spec().GetStorageMinFreeBytes()
+	// storage_min_free_bytes: min(5GiB, 5% of PV size). Read from the pool —
+	// after MergeFromCluster the pool's Storage reflects cluster defaults plus
+	// any per-pool overrides.
+	bootstrap["storage_min_free_bytes"] = pool.Spec.GetStorageMinFreeBytes()
 
 	// If total cluster replicas >= 3, set default_topic_replications to 3 for HA.
 	if state.totalReplicas() >= 3 {
 		bootstrap["default_topic_replications"] = 3
 	}
 
-	// Merge in tiered storage config from CRD (overrides defaults above).
-	tieredAttrs, tieredFixups, tieredEnvVars := tieredStorageToConfiguration(state.Spec().Storage)
+	// Merge in tiered storage config from the pool (with cluster inheritance applied).
+	tieredAttrs, tieredFixups, tieredEnvVars := tieredStorageToConfiguration(pool.Spec.Storage)
 	for k, v := range tieredAttrs {
 		bootstrap[k] = v
 	}

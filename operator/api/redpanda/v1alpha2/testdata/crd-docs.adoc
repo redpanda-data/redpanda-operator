@@ -467,22 +467,64 @@ override the defaults.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
-| *`replicas`* __integer__ |  |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ |  |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ |  |  | 
-| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ |  |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ |  |  | 
-| *`clusterDomain`* __string__ | Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. The default is the `cluster.local` domain. + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
-| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | Defines external access settings. + |  | 
-| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | Defines Role Based Access Control (RBAC) settings. + |  | 
-| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | Defines Service account settings. + |  | 
-| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Defines settings for monitoring Redpanda. + |  | 
-| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
-| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | AdditionalSelectorLabels are extra labels added to the StatefulSet's +
+pod selector and pod template. Lets operators bucket pods by custom +
+dimensions (e.g. team, environment) without affecting the operator- +
+managed labels. + |  | 
+| *`replicas`* __integer__ | Replicas is the desired number of broker pods in this pool. Defaults +
+to 1 if unset. + |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ | AdditionalRedpandaCmdFlags are extra flags appended to the +
+`rpk redpanda start` command line for every broker in this pool. + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a strategic-merge patch applied on top of the +
+operator-rendered Pod template. Common uses: nodeSelector, +
+tolerations, custom volumes, sidecar containers, security context +
+overrides. + |  | 
+| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ | InitContainers controls the init containers the operator renders +
+(fs-validator, set-data-dir-ownership, configurator). Lets users +
+toggle them on/off and tune flags. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Image is the Redpanda container image (repository + tag) for this +
+pool. Defaults to the operator's built-in chart-pinned image when +
+unset. + |  | 
+| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | SidecarImage is the operator sidecar container image for this pool. +
+Defaults to the operator's own image at build time. + |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | InitContainerImage is the image used for init containers that don't +
+need the full Redpanda binary (e.g. busybox for fs-validator, +
+chown). Defaults to busybox:latest. + |  | 
+| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for +
+PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces +
+any value inherited from the parent Redpanda CRD's +
+`statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level +
+value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used. +
+Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via +
+scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's +
+StatefulSet is deleted. + |  | 
+| *`clusterDomain`* __string__ | ClusterDomain customizes the Kubernetes cluster DNS domain used to +
+generate internal pod hostnames (`<pod>.<svc>.<ns>.svc.<domain>`). +
+Defaults to `cluster.local`. Per-pool to support clusters that span +
+k8s environments with different DNS roots. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | TLS configures the listener cert set (server certs, optional client +
+certs, CA toggles, custom issuers). Per-pool so different pools can +
+run different listener TLS configurations while sharing the +
+cluster-wide root CA managed by the operator. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | External configures external access (NodePort / LoadBalancer types, +
+advertised addresses, ExternalDNS hookup). Per-pool so pools in +
+different regions/clouds can expose themselves differently. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | RBAC toggles operator-managed Roles / ClusterRoles for this pool +
+(sidecar perms, rpk-debug-bundle perms, metrics-reader). Per-pool +
+because the bound ServiceAccount is per-pool. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | ServiceAccount controls creation and naming of the per-pool +
+ServiceAccount used by broker / sidecar pods. Per-pool so users can +
+pre-create SAs with their own IAM bindings (workload identity, etc.). + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Monitoring toggles the per-pool ServiceMonitor. Per-pool so different +
+pools can opt in/out of Prometheus scraping independently. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | ImagePullSecrets are private-registry credentials for pulling the +
+Redpanda / sidecar / init-container images. When non-empty, this +
+list fully overrides any list set on StretchClusterSpec; when +
+empty/nil, the cluster's list is inherited. See +
+BrokerPoolSpec.MergeFromCluster. + |  | 
+| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | RackAwareness configures the Kubernetes node-label that's mapped to +
+the broker's `rack` config so Redpanda places replicas across racks/ +
+zones. Per-pool because rack labels can differ between K8s clusters. + |  | 
 | *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
 |===
 
@@ -1222,22 +1264,64 @@ on remote Kubernetes clusters.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ |  |  | 
-| *`replicas`* __integer__ |  |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ |  |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ |  |  | 
-| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ |  |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ |  |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ |  |  | 
-| *`clusterDomain`* __string__ | Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. The default is the `cluster.local` domain. + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | Defines TLS settings for listeners. + |  | 
-| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | Defines external access settings. + |  | 
-| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | Defines Role Based Access Control (RBAC) settings. + |  | 
-| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | Defines Service account settings. + |  | 
-| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Defines settings for monitoring Redpanda. + |  | 
-| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
-| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | Defines rack awareness settings. + |  | 
+| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | AdditionalSelectorLabels are extra labels added to the StatefulSet's +
+pod selector and pod template. Lets operators bucket pods by custom +
+dimensions (e.g. team, environment) without affecting the operator- +
+managed labels. + |  | 
+| *`replicas`* __integer__ | Replicas is the desired number of broker pods in this pool. Defaults +
+to 1 if unset. + |  | 
+| *`additionalRedpandaCmdFlags`* __string array__ | AdditionalRedpandaCmdFlags are extra flags appended to the +
+`rpk redpanda start` command line for every broker in this pool. + |  | 
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a strategic-merge patch applied on top of the +
+operator-rendered Pod template. Common uses: nodeSelector, +
+tolerations, custom volumes, sidecar containers, security context +
+overrides. + |  | 
+| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ | InitContainers controls the init containers the operator renders +
+(fs-validator, set-data-dir-ownership, configurator). Lets users +
+toggle them on/off and tune flags. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Image is the Redpanda container image (repository + tag) for this +
+pool. Defaults to the operator's built-in chart-pinned image when +
+unset. + |  | 
+| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | SidecarImage is the operator sidecar container image for this pool. +
+Defaults to the operator's own image at build time. + |  | 
+| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | InitContainerImage is the image used for init containers that don't +
+need the full Redpanda binary (e.g. busybox for fs-validator, +
+chown). Defaults to busybox:latest. + |  | 
+| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for +
+PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces +
+any value inherited from the parent Redpanda CRD's +
+`statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level +
+value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used. +
+Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via +
+scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's +
+StatefulSet is deleted. + |  | 
+| *`clusterDomain`* __string__ | ClusterDomain customizes the Kubernetes cluster DNS domain used to +
+generate internal pod hostnames (`<pod>.<svc>.<ns>.svc.<domain>`). +
+Defaults to `cluster.local`. Per-pool to support clusters that span +
+k8s environments with different DNS roots. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | TLS configures the listener cert set (server certs, optional client +
+certs, CA toggles, custom issuers). Per-pool so different pools can +
+run different listener TLS configurations while sharing the +
+cluster-wide root CA managed by the operator. + |  | 
+| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | External configures external access (NodePort / LoadBalancer types, +
+advertised addresses, ExternalDNS hookup). Per-pool so pools in +
+different regions/clouds can expose themselves differently. + |  | 
+| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | RBAC toggles operator-managed Roles / ClusterRoles for this pool +
+(sidecar perms, rpk-debug-bundle perms, metrics-reader). Per-pool +
+because the bound ServiceAccount is per-pool. + |  | 
+| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | ServiceAccount controls creation and naming of the per-pool +
+ServiceAccount used by broker / sidecar pods. Per-pool so users can +
+pre-create SAs with their own IAM bindings (workload identity, etc.). + |  | 
+| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Monitoring toggles the per-pool ServiceMonitor. Per-pool so different +
+pools can opt in/out of Prometheus scraping independently. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | ImagePullSecrets are private-registry credentials for pulling the +
+Redpanda / sidecar / init-container images. When non-empty, this +
+list fully overrides any list set on StretchClusterSpec; when +
+empty/nil, the cluster's list is inherited. See +
+BrokerPoolSpec.MergeFromCluster. + |  | 
+| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | RackAwareness configures the Kubernetes node-label that's mapped to +
+the broker's `rack` config so Redpanda places replicas across racks/ +
+zones. Per-pool because rack labels can differ between K8s clusters. + |  | 
 |===
 
 
