@@ -1514,11 +1514,11 @@ func (n *BrokerPoolSpec) mergeDefaultRPCListener() {
 // Helm chart's values.yaml. It is intended to be called on a deep-copied spec
 // so that the original CRD object is not mutated.
 func (s *StretchClusterSpec) MergeDefaults() {
-	//s.mergeDefaultTLS()
-	//s.mergeDefaultExternal()
-	//s.mergeDefaultListeners()
-	//s.mergeDefaultServiceAccount()
-	//s.mergeDefaultRBAC()
+	// s.mergeDefaultTLS()
+	// s.mergeDefaultExternal()
+	// s.mergeDefaultListeners()
+	// s.mergeDefaultServiceAccount()
+	// s.mergeDefaultRBAC()
 	s.mergeDefaultStorage()
 	s.mergeDefaultTuning()
 	s.mergeDefaultResources()

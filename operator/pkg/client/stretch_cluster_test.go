@@ -117,8 +117,20 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 }
 
 // applyBrokerPools creates one BrokerPool per cluster referencing the given StretchCluster.
-func (s *StretchClusterFactorySuite) applyBrokerPools(t *testing.T, ctx context.Context, scName, ns, poolPrefix string) {
+// applyBrokerPools creates one RedpandaBrokerPool per cluster, all referencing
+// the named StretchCluster. The optional embed argument provides a spec
+// template for the EmbeddedBrokerPoolSpec — useful for tests that need to set
+// per-pool fields like External (e.g. disable NodePort to avoid collisions)
+// or TLS. Replicas defaults to 1 when not set on the template.
+func (s *StretchClusterFactorySuite) applyBrokerPools(t *testing.T, ctx context.Context, scName, ns, poolPrefix string, embed ...redpandav1alpha2.EmbeddedBrokerPoolSpec) {
 	t.Helper()
+	var spec redpandav1alpha2.EmbeddedBrokerPoolSpec
+	if len(embed) > 0 {
+		spec = embed[0]
+	}
+	if spec.Replicas == nil {
+		spec.Replicas = ptr.To(int32(1))
+	}
 	for i, env := range s.mc.Envs {
 		pool := &redpandav1alpha2.RedpandaBrokerPool{
 			ObjectMeta: metav1.ObjectMeta{
@@ -126,9 +138,7 @@ func (s *StretchClusterFactorySuite) applyBrokerPools(t *testing.T, ctx context.
 				Namespace: ns,
 			},
 			Spec: redpandav1alpha2.BrokerPoolSpec{
-				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
-					Replicas: ptr.To(int32(1)),
-				},
+				EmbeddedBrokerPoolSpec: *spec.DeepCopy(),
 				ClusterRef: redpandav1alpha2.ClusterRef{
 					Name:  scName,
 					Group: ptr.To("cluster.redpanda.com"),
@@ -287,12 +297,6 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 			Networking: &redpandav1alpha2.Networking{
 				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
 			},
-			External: &redpandav1alpha2.External{
-				Enabled: ptr.To(false),
-			},
-			RBAC: &redpandav1alpha2.RBAC{
-				Enabled: ptr.To(true),
-			},
 			Auth: &redpandav1alpha2.Auth{
 				SASL: &redpandav1alpha2.SASL{
 					Enabled:   ptr.To(true),
@@ -311,7 +315,13 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	}
 	s.mc.ApplyAll(t, ctx, sc)
 
-	s.applyBrokerPools(t, ctx, nn.Name, ns, "cfg-pool")
+	// External / RBAC moved off StretchClusterSpec onto each BrokerPool.
+	// Disable External to avoid NodePort collisions in parallel tests.
+	poolOverrides := redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
+		RBAC:     &redpandav1alpha2.RBAC{Enabled: ptr.To(true)},
+	}
+	s.applyBrokerPools(t, ctx, nn.Name, ns, "cfg-pool", poolOverrides)
 	s.waitForFinalizer(t, ctx, nn)
 	s.waitForBrokerReady(t, ctx, nn)
 
@@ -357,12 +367,6 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 		Spec: redpandav1alpha2.StretchClusterSpec{
 			Networking: &redpandav1alpha2.Networking{
 				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
-			},
-			External: &redpandav1alpha2.External{
-				Enabled: ptr.To(false),
-			},
-			RBAC: &redpandav1alpha2.RBAC{
-				Enabled: ptr.To(true),
 			},
 			Auth: &redpandav1alpha2.Auth{
 				SASL: &redpandav1alpha2.SASL{
@@ -425,14 +429,15 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 			Networking: &redpandav1alpha2.Networking{
 				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
 			},
-			External: &redpandav1alpha2.External{
-				Enabled: ptr.To(false),
-			},
 		},
 	}
 	s.mc.ApplyAll(t, ctx, sc)
 
-	s.applyBrokerPools(t, ctx, nn.Name, ns, "cleanup-pool")
+	// External moved off StretchClusterSpec onto each BrokerPool. Disable
+	// it to avoid NodePort collisions in parallel tests.
+	s.applyBrokerPools(t, ctx, nn.Name, ns, "cleanup-pool", redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
+	})
 	s.waitForFinalizer(t, ctx, nn)
 
 	// Wait for all 3 brokers to become ready.

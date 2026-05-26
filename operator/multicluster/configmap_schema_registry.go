@@ -15,7 +15,7 @@ import (
 
 // schemaRegistryConfig generates the schema_registry section of the redpanda.yaml
 // template for the given pool.
-func schemaRegistryConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
+func schemaRegistryConfig(pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	cfg := map[string]any{}
 
 	var sr *redpandav1alpha2.StretchAPIListener
@@ -23,7 +23,7 @@ func schemaRegistryConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBro
 		sr = l.SchemaRegistry
 	}
 
-	configureAPIListener(cfg, state, pool, sr, "schema_registry_api", "schema_registry_api_tls",
+	configureAPIListener(cfg, pool, sr, "schema_registry_api", "schema_registry_api_tls",
 		pool.Spec.SchemaRegistryPort(), redpandav1alpha2.DefaultExternalSchemaRegistryPort, "")
 
 	return cfg

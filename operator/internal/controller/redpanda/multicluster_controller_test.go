@@ -296,30 +296,45 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 		require.NoError(t, cl.Create(ctx, issuer), "creating Issuer in cluster %d", i)
 	}
 
-	// Step 3: Create a StretchCluster with IssuerRef pointing to the user's Issuer.
-	// ApplyInternalDNSNames must be true so that cert-manager generates certs
-	// with DNS SANs (cert-manager requires at least one subject identifier).
-	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.StretchCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: scName,
-		},
-		Spec: redpandav1alpha2.StretchClusterSpec{
-			TLS: &redpandav1alpha2.TLS{
-				Enabled: ptr.To(true),
-				Certs: map[string]*redpandav1alpha2.Certificate{
-					"default": {
-						CAEnabled:             ptr.To(true),
-						ApplyInternalDNSNames: ptr.To(true),
-						IssuerRef: &redpandav1alpha2.IssuerRef{
-							Name:  ptr.To(issuerName),
-							Kind:  ptr.To("Issuer"),
-							Group: ptr.To("cert-manager.io"),
-						},
-					},
+	// Step 3: Create a StretchCluster and a RedpandaBrokerPool referencing it
+	// with IssuerRef pointing to the user's Issuer. TLS / Listeners /
+	// External now live on the pool (per-K8s-cluster fields moved off the
+	// StretchCluster). ApplyInternalDNSNames must be true so cert-manager
+	// generates certs with DNS SANs (cert-manager requires at least one
+	// subject identifier).
+	const poolName = "pool"
+	poolTLS := &redpandav1alpha2.TLS{
+		Enabled: ptr.To(true),
+		Certs: map[string]*redpandav1alpha2.Certificate{
+			"default": {
+				CAEnabled:             ptr.To(true),
+				ApplyInternalDNSNames: ptr.To(true),
+				IssuerRef: &redpandav1alpha2.IssuerRef{
+					Name:  ptr.To(issuerName),
+					Kind:  ptr.To("Issuer"),
+					Group: ptr.To("cert-manager.io"),
 				},
 			},
 		},
-	})
+	}
+	s.mc.ApplyAllInNamespace(t, ctx, ns.Name,
+		&redpandav1alpha2.StretchCluster{
+			ObjectMeta: metav1.ObjectMeta{Name: scName},
+		},
+		&redpandav1alpha2.RedpandaBrokerPool{
+			ObjectMeta: metav1.ObjectMeta{Name: poolName},
+			Spec: redpandav1alpha2.BrokerPoolSpec{
+				ClusterRef: redpandav1alpha2.ClusterRef{
+					Name: scName,
+					Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+				},
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Replicas: ptr.To(int32(1)),
+					TLS:      poolTLS,
+				},
+			},
+		},
+	)
 
 	// Step 4: Wait for the reconciler to pick it up (finalizer added).
 	for i, env := range s.mc.Envs {
@@ -350,25 +365,9 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 
 	// Step 6: Wait for cert-manager to create the leaf cert secret in each cluster.
 	// The reconciler creates Certificate resources; cert-manager then issues them.
-	// We look for the server cert secret name that the renderer produces.
-	defaultedSpec := redpandav1alpha2.StretchClusterSpec{
-		TLS: &redpandav1alpha2.TLS{
-			Enabled: ptr.To(true),
-			Certs: map[string]*redpandav1alpha2.Certificate{
-				"default": {
-					CAEnabled:             ptr.To(true),
-					ApplyInternalDNSNames: ptr.To(true),
-					IssuerRef: &redpandav1alpha2.IssuerRef{
-						Name:  ptr.To(issuerName),
-						Kind:  ptr.To("Issuer"),
-						Group: ptr.To("cert-manager.io"),
-					},
-				},
-			},
-		},
-	}
-	defaultedSpec.MergeDefaults()
-	leafCertSecretName := defaultedSpec.TLS.CertServerSecretName(scName, "default")
+	// The server cert secret is now per-pool: <sc>-<pool>-<cert>-cert.
+	poolFullname := scName + "-" + poolName
+	leafCertSecretName := poolTLS.CertServerSecretName(poolFullname, "default")
 
 	leafCACerts := make([][]byte, len(s.mc.Envs))
 	for i, env := range s.mc.Envs {
@@ -445,24 +444,34 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 	}
 	require.NoError(t, s.mc.Envs[0].Client().Create(ctx, caSecret))
 
-	// Step 3: Create a StretchCluster with default TLS (no IssuerRef).
-	// The operator should use the pre-existing CA secret rather than
-	// generating a new one.
-	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.StretchCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: scName,
+	// Step 3: Create a StretchCluster and a RedpandaBrokerPool with default
+	// TLS (no IssuerRef). TLS lives on the pool now. The operator should
+	// use the pre-existing CA secret rather than generating a new one.
+	const poolName = "pool"
+	poolTLS := &redpandav1alpha2.TLS{
+		Enabled: ptr.To(true),
+		Certs: map[string]*redpandav1alpha2.Certificate{
+			"default": {CAEnabled: ptr.To(true)},
 		},
-		Spec: redpandav1alpha2.StretchClusterSpec{
-			TLS: &redpandav1alpha2.TLS{
-				Enabled: ptr.To(true),
-				Certs: map[string]*redpandav1alpha2.Certificate{
-					"default": {
-						CAEnabled: ptr.To(true),
-					},
+	}
+	s.mc.ApplyAllInNamespace(t, ctx, ns.Name,
+		&redpandav1alpha2.StretchCluster{
+			ObjectMeta: metav1.ObjectMeta{Name: scName},
+		},
+		&redpandav1alpha2.RedpandaBrokerPool{
+			ObjectMeta: metav1.ObjectMeta{Name: poolName},
+			Spec: redpandav1alpha2.BrokerPoolSpec{
+				ClusterRef: redpandav1alpha2.ClusterRef{
+					Name: scName,
+					Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+				},
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Replicas: ptr.To(int32(1)),
+					TLS:      poolTLS,
 				},
 			},
 		},
-	})
+	)
 
 	// Step 4: Wait for the reconciler to pick it up.
 	for i, env := range s.mc.Envs {
@@ -523,17 +532,10 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 		}, 2*time.Minute, 2*time.Second, "Issuer %q never appeared in cluster %d", issuerName, i)
 	}
 
-	// Step 8: Wait for cert-manager to issue leaf certs and verify they use the user's CA.
-	defaultedSpec := redpandav1alpha2.StretchClusterSpec{
-		TLS: &redpandav1alpha2.TLS{
-			Enabled: ptr.To(true),
-			Certs: map[string]*redpandav1alpha2.Certificate{
-				"default": {CAEnabled: ptr.To(true)},
-			},
-		},
-	}
-	defaultedSpec.MergeDefaults()
-	leafCertSecretName := defaultedSpec.TLS.CertServerSecretName(scName, "default")
+	// Step 8: Wait for cert-manager to issue leaf certs and verify they use
+	// the user's CA. The server cert secret is per-pool: <sc>-<pool>-<cert>-cert.
+	poolFullname := scName + "-" + poolName
+	leafCertSecretName := poolTLS.CertServerSecretName(poolFullname, "default")
 
 	for i, env := range s.mc.Envs {
 		cl := env.Client()

@@ -286,16 +286,6 @@ func (r *RenderState) BrokerList(port int32) []string {
 	return brokers
 }
 
-func (r *RenderState) allPodNames() []string {
-	var names []string
-	for _, pool := range r.inClusterPools {
-		for i := int32(0); i < pool.GetReplicas(); i++ {
-			names = append(names, fmt.Sprintf("%s-%d", r.poolFullname(pool), i))
-		}
-	}
-	return names
-}
-
 // podOrdinalOffset returns the flattened index of the first pod of pool
 // within the local-pool pod list. Lets per-pool helpers index into
 // per-broker config (e.g. External.Addresses) using the same offset they

@@ -154,9 +154,9 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) 
 			Selector: &metav1.LabelSelector{
 				MatchLabels: statefulSetPodLabelsSelector(state, pool),
 			},
-			ServiceName:                          state.fullname(),
-			Replicas:                             ptr.To(pool.GetReplicas()),
-			PodManagementPolicy:                  appsv1.ParallelPodManagement,
+			ServiceName:         state.fullname(),
+			Replicas:            ptr.To(pool.GetReplicas()),
+			PodManagementPolicy: appsv1.ParallelPodManagement,
 			// PersistentVolumeClaimRetentionPolicy is not yet exposed on
 			// BrokerPoolSpec; default behavior (retain) applies.
 			PersistentVolumeClaimRetentionPolicy: nil,
