@@ -32,15 +32,15 @@ Feature: Stretch Cluster Layered CRDs
     metadata:
       name: cluster
       namespace: default
+    spec: {}
+    """
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "layered":
+    """
     spec:
       external:
         enabled: false
       rbac:
         enabled: true
-    """
-    And I apply a RedpandaBrokerPool Kubernetes manifest to "layered":
-    """
-    spec:
       clusterRef:
         group: cluster.redpanda.com
         kind: StretchCluster

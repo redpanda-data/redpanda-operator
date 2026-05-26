@@ -1228,6 +1228,11 @@ spec:
       enabled: true
       size: 100Gi
       storageClass: slow
+      annotations:
+        team: platform
+        env: prod
+      labels:
+        tier: cluster
   resources:
     limits:
       cpu: "1"
@@ -1252,6 +1257,11 @@ spec:
   storage:
     persistentVolume:
       storageClass: fast
+      annotations:
+        env: staging
+        owner: pool-a
+      labels:
+        tier: pool
   resources:
     limits:
       cpu: "2"

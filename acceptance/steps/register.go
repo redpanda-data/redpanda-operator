@@ -119,6 +119,8 @@ func init() {
 	framework.RegisterStep(`^I expect all (\d+) RedpandaBrokerPools in "([^"]*)" to be eventually bound and deployed$`, expectBrokerPoolsBoundAndDeployed)
 	framework.RegisterStep(`^I execute "([^"]*)" command in the statefulset container in each cluster$`, executeCommandInStatefulsetContainers)
 	framework.RegisterStep(`^I expect them to return the same Redpanda broker list$`, expectSameBrokerList)
+	framework.RegisterStep(`^I apply a RedpandaBrokerPool Kubernetes manifest to "([^"]*)" with extra spec for region "([^"]*)":$`, applyBrokerPoolsWithRegionOverride)
+	framework.RegisterStep(`^in "([^"]*)" the StatefulSet for region "([^"]*)" of StretchCluster "([^"]*)" should have data-dir PVC annotations:$`, checkDataDirPVCAnnotations)
 
 	// Regional outage scenario steps
 	framework.RegisterStep(`^I take the "([^"]*)" region of "([^"]*)" offline$`, takeRegionOffline)
