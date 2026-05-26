@@ -851,177 +851,12 @@ func TestTrustStore(t *testing.T) {
 }
 
 func TestStretchClusterSpec(t *testing.T) {
-	t.Run("TLSEnabled", func(t *testing.T) {
-		t.Run("nil spec", func(t *testing.T) {
-			assert.False(t, (*redpandav1alpha2.StretchClusterSpec)(nil).IsAdminTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.StretchClusterSpec)(nil).IsKafkaTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.StretchClusterSpec)(nil).IsHTTPTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.StretchClusterSpec)(nil).IsSchemaRegistryTLSEnabled())
-			assert.False(t, (*redpandav1alpha2.StretchClusterSpec)(nil).IsRPCTLSEnabled())
-		})
-
-		t.Run("global TLS enabled no listener overrides", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}
-			assert.True(t, spec.IsAdminTLSEnabled())
-			assert.True(t, spec.IsKafkaTLSEnabled())
-		})
-
-		t.Run("listener explicitly disables", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{
-				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
-				Listeners: &redpandav1alpha2.StretchListeners{
-					Admin: &redpandav1alpha2.StretchAPIListener{
-						StretchListener: redpandav1alpha2.StretchListener{
-							TLS: &redpandav1alpha2.StretchListenerTLS{Enabled: ptr.To(false)},
-						},
-					},
-				},
-			}
-			assert.False(t, spec.IsAdminTLSEnabled())
-			assert.True(t, spec.IsKafkaTLSEnabled(), "kafka inherits global")
-		})
-	})
-
-	t.Run("Ports", func(t *testing.T) {
-		t.Run("defaults", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{}
-			assert.Equal(t, redpandav1alpha2.DefaultAdminPort, spec.AdminPort())
-			assert.Equal(t, redpandav1alpha2.DefaultKafkaPort, spec.KafkaPort())
-			assert.Equal(t, redpandav1alpha2.DefaultHTTPPort, spec.HTTPPort())
-			assert.Equal(t, redpandav1alpha2.DefaultRPCPort, spec.RPCPort())
-			assert.Equal(t, redpandav1alpha2.DefaultSchemaRegistryPort, spec.SchemaRegistryPort())
-		})
-
-		t.Run("custom ports", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{
-				Listeners: &redpandav1alpha2.StretchListeners{
-					Admin: &redpandav1alpha2.StretchAPIListener{
-						StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(1234))},
-					},
-					Kafka: &redpandav1alpha2.StretchAPIListener{
-						StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(5678))},
-					},
-					RPC: &redpandav1alpha2.StretchRPC{Port: ptr.To(9999)},
-				},
-			}
-			assert.Equal(t, int32(1234), spec.AdminPort())
-			assert.Equal(t, int32(5678), spec.KafkaPort())
-			assert.Equal(t, int32(9999), spec.RPCPort())
-		})
-	})
-
-	t.Run("ClusterDomain", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			input    *redpandav1alpha2.StretchClusterSpec
-			expected string
-		}{
-			{"nil receiver", nil, redpandav1alpha2.DefaultClusterDomain},
-			{"zero value", &redpandav1alpha2.StretchClusterSpec{}, redpandav1alpha2.DefaultClusterDomain},
-			{"custom domain", &redpandav1alpha2.StretchClusterSpec{ClusterDomain: ptr.To("custom.local")}, "custom.local"},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, tt.input.GetClusterDomain())
-			})
-		}
-	})
-
-	t.Run("GetServiceName", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			input    *redpandav1alpha2.StretchClusterSpec
-			expected string
-		}{
-			{"default", &redpandav1alpha2.StretchClusterSpec{}, "my-release"},
-			{"custom", &redpandav1alpha2.StretchClusterSpec{Service: &redpandav1alpha2.Service{Name: ptr.To("custom-svc")}}, "custom-svc"},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, tt.input.GetServiceName("my-release"))
-			})
-		}
-	})
-
-	t.Run("InternalDomain", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			input    *redpandav1alpha2.StretchClusterSpec
-			expected string
-		}{
-			{"default domain", &redpandav1alpha2.StretchClusterSpec{}, "release.ns.svc.cluster.local."},
-			{"custom domain without trailing dot", &redpandav1alpha2.StretchClusterSpec{ClusterDomain: ptr.To("custom.local")}, "release.ns.svc.custom.local"},
-			{"custom domain with trailing dot", &redpandav1alpha2.StretchClusterSpec{ClusterDomain: ptr.To("custom.local.")}, "release.ns.svc.custom.local."},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, tt.input.InternalDomain("release", "ns"))
-			})
-		}
-	})
-
-	t.Run("InUseCerts", func(t *testing.T) {
-		t.Run("no TLS", func(t *testing.T) {
-			assert.Nil(t, (&redpandav1alpha2.StretchClusterSpec{}).InUseServerCerts())
-			assert.Nil(t, (&redpandav1alpha2.StretchClusterSpec{}).InUseClientCerts())
-		})
-
-		t.Run("with listeners", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{
-				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
-				Listeners: &redpandav1alpha2.StretchListeners{
-					Admin: &redpandav1alpha2.StretchAPIListener{
-						StretchListener: redpandav1alpha2.StretchListener{
-							TLS: &redpandav1alpha2.StretchListenerTLS{
-								Cert:              ptr.To("admin-cert"),
-								RequireClientAuth: ptr.To(true),
-							},
-						},
-					},
-					Kafka: &redpandav1alpha2.StretchAPIListener{
-						StretchListener: redpandav1alpha2.StretchListener{
-							TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("kafka-cert")},
-						},
-					},
-				},
-			}
-			assert.Equal(t, []string{"admin-cert", "kafka-cert"}, spec.InUseServerCerts())
-			assert.Equal(t, []string{"admin-cert"}, spec.InUseClientCerts())
-		})
-	})
-
-	t.Run("AdminInternalHTTPProtocol", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			input    *redpandav1alpha2.StretchClusterSpec
-			expected string
-		}{
-			{"no TLS", &redpandav1alpha2.StretchClusterSpec{}, "http"},
-			{"with TLS", &redpandav1alpha2.StretchClusterSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}, "https"},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, tt.input.AdminInternalHTTPProtocol())
-			})
-		}
-	})
-
-	t.Run("AdminAPIURLs", func(t *testing.T) {
-		spec := &redpandav1alpha2.StretchClusterSpec{}
-		assert.Equal(t, "${SERVICE_NAME}.release.ns.svc.cluster.local.:9644", spec.AdminAPIURLs("release", "ns"))
-	})
-
-	t.Run("AdminInternalURL", func(t *testing.T) {
-		t.Run("without TLS", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{}
-			assert.Equal(t, "http://${SERVICE_NAME}.release.ns.svc.cluster.local:9644", spec.AdminInternalURL("release", "ns"))
-		})
-
-		t.Run("with TLS", func(t *testing.T) {
-			spec := &redpandav1alpha2.StretchClusterSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}
-			assert.Equal(t, "https://${SERVICE_NAME}.release.ns.svc.cluster.local:9644", spec.AdminInternalURL("release", "ns"))
-		})
-	})
+	// NB: TLS, Listeners, External, ClusterDomain, RBAC, ServiceAccount,
+	// Monitoring, RackAwareness moved from StretchClusterSpec to
+	// EmbeddedBrokerPoolSpec. The helpers that depended on those fields
+	// (IsAdminTLSEnabled, AdminPort, GetClusterDomain, InternalDomain,
+	// InUseServerCerts, AdminInternalURL, etc.) now live on *BrokerPoolSpec
+	// and are exercised by TestBrokerPoolSpecHelpers below.
 
 	t.Run("Config", func(t *testing.T) {
 		t.Run("GetNodeConfig", func(t *testing.T) {
@@ -1111,7 +946,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("all conditions met", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.3.1")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(true)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(true)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 			}
 			assert.True(t, spec.IsAuditLoggingEnabled())
@@ -1120,7 +955,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("version too old", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.2.0")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(true)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(true)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 			}
 			assert.False(t, spec.IsAuditLoggingEnabled())
@@ -1129,7 +964,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("audit logging disabled", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.3.1")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(false)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(false)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 			}
 			assert.False(t, spec.IsAuditLoggingEnabled())
@@ -1138,7 +973,7 @@ func TestStretchClusterSpec(t *testing.T) {
 		t.Run("SASL disabled", func(t *testing.T) {
 			spec := &redpandav1alpha2.StretchClusterSpec{
 				Image:        &redpandav1alpha2.RedpandaImage{Tag: ptr.To("23.3.1")},
-				AuditLogging: &redpandav1alpha2.AuditLogging{Enabled: ptr.To(true)},
+				AuditLogging: &redpandav1alpha2.StretchAuditLogging{Enabled: ptr.To(true)},
 				Auth:         &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(false)}},
 			}
 			assert.False(t, spec.IsAuditLoggingEnabled())
@@ -1548,6 +1383,198 @@ func TestBrokerPool(t *testing.T) {
 				InitContainerImage: &redpandav1alpha2.InitContainerImage{Repository: ptr.To("custom/init"), Tag: ptr.To("v3.0")},
 			}}}
 			assert.Equal(t, "custom/init:v3.0", pool.InitImage())
+		})
+	})
+}
+
+// brokerPoolSpec is a small builder so test cases below don't have to spell
+// out the BrokerPoolSpec{EmbeddedBrokerPoolSpec{...}} nesting every time.
+func brokerPoolSpec(embed redpandav1alpha2.EmbeddedBrokerPoolSpec) *redpandav1alpha2.BrokerPoolSpec {
+	return &redpandav1alpha2.BrokerPoolSpec{EmbeddedBrokerPoolSpec: embed}
+}
+
+// TestBrokerPoolSpecHelpers covers the helpers that moved from
+// StretchClusterSpec to BrokerPoolSpec when per-K8s-cluster fields (TLS,
+// Listeners, External, ClusterDomain, etc.) were relocated to the pool.
+func TestBrokerPoolSpecHelpers(t *testing.T) {
+	t.Run("TLSEnabled", func(t *testing.T) {
+		t.Run("nil spec", func(t *testing.T) {
+			assert.False(t, (*redpandav1alpha2.BrokerPoolSpec)(nil).IsAdminTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.BrokerPoolSpec)(nil).IsKafkaTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.BrokerPoolSpec)(nil).IsHTTPTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.BrokerPoolSpec)(nil).IsSchemaRegistryTLSEnabled())
+			assert.False(t, (*redpandav1alpha2.BrokerPoolSpec)(nil).IsRPCTLSEnabled())
+		})
+
+		t.Run("global TLS enabled no listener overrides", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
+			})
+			assert.True(t, spec.IsAdminTLSEnabled())
+			assert.True(t, spec.IsKafkaTLSEnabled())
+		})
+
+		t.Run("listener explicitly disables", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
+				Listeners: &redpandav1alpha2.StretchListeners{
+					Admin: &redpandav1alpha2.StretchAPIListener{
+						StretchListener: redpandav1alpha2.StretchListener{
+							TLS: &redpandav1alpha2.StretchListenerTLS{Enabled: ptr.To(false)},
+						},
+					},
+				},
+			})
+			assert.False(t, spec.IsAdminTLSEnabled())
+			assert.True(t, spec.IsKafkaTLSEnabled(), "kafka inherits global")
+		})
+	})
+
+	t.Run("Ports", func(t *testing.T) {
+		t.Run("defaults", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{})
+			assert.Equal(t, redpandav1alpha2.DefaultAdminPort, spec.AdminPort())
+			assert.Equal(t, redpandav1alpha2.DefaultKafkaPort, spec.KafkaPort())
+			assert.Equal(t, redpandav1alpha2.DefaultHTTPPort, spec.HTTPPort())
+			assert.Equal(t, redpandav1alpha2.DefaultRPCPort, spec.RPCPort())
+			assert.Equal(t, redpandav1alpha2.DefaultSchemaRegistryPort, spec.SchemaRegistryPort())
+		})
+
+		t.Run("custom ports", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				Listeners: &redpandav1alpha2.StretchListeners{
+					Admin: &redpandav1alpha2.StretchAPIListener{
+						StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(1234))},
+					},
+					Kafka: &redpandav1alpha2.StretchAPIListener{
+						StretchListener: redpandav1alpha2.StretchListener{Port: ptr.To(int32(5678))},
+					},
+					RPC: &redpandav1alpha2.StretchRPC{Port: ptr.To(9999)},
+				},
+			})
+			assert.Equal(t, int32(1234), spec.AdminPort())
+			assert.Equal(t, int32(5678), spec.KafkaPort())
+			assert.Equal(t, int32(9999), spec.RPCPort())
+		})
+	})
+
+	t.Run("ClusterDomain", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    *redpandav1alpha2.BrokerPoolSpec
+			expected string
+		}{
+			{"nil receiver", nil, redpandav1alpha2.DefaultClusterDomain},
+			{"zero value", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}), redpandav1alpha2.DefaultClusterDomain},
+			{"custom domain", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{ClusterDomain: ptr.To("custom.local")}), "custom.local"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				assert.Equal(t, tt.expected, tt.input.GetClusterDomain())
+			})
+		}
+	})
+
+	t.Run("InternalDomain", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    *redpandav1alpha2.BrokerPoolSpec
+			expected string
+		}{
+			{"default domain", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}), "release.ns.svc.cluster.local."},
+			{"custom domain without trailing dot", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{ClusterDomain: ptr.To("custom.local")}), "release.ns.svc.custom.local"},
+			{"custom domain with trailing dot", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{ClusterDomain: ptr.To("custom.local.")}), "release.ns.svc.custom.local."},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				assert.Equal(t, tt.expected, tt.input.InternalDomain("release", "ns"))
+			})
+		}
+	})
+
+	t.Run("InUseCerts", func(t *testing.T) {
+		t.Run("no TLS", func(t *testing.T) {
+			assert.Nil(t, brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}).InUseServerCerts())
+			assert.Nil(t, brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}).InUseClientCerts())
+		})
+
+		t.Run("with listeners", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
+				Listeners: &redpandav1alpha2.StretchListeners{
+					Admin: &redpandav1alpha2.StretchAPIListener{
+						StretchListener: redpandav1alpha2.StretchListener{
+							TLS: &redpandav1alpha2.StretchListenerTLS{
+								Cert:              ptr.To("admin-cert"),
+								RequireClientAuth: ptr.To(true),
+							},
+						},
+					},
+					Kafka: &redpandav1alpha2.StretchAPIListener{
+						StretchListener: redpandav1alpha2.StretchListener{
+							TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("kafka-cert")},
+						},
+					},
+				},
+			})
+			assert.Equal(t, []string{"admin-cert", "kafka-cert"}, spec.InUseServerCerts())
+			assert.Equal(t, []string{"admin-cert"}, spec.InUseClientCerts())
+		})
+	})
+
+	t.Run("AdminInternalHTTPProtocol", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			input    *redpandav1alpha2.BrokerPoolSpec
+			expected string
+		}{
+			{"no TLS", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}), "http"},
+			{"with TLS", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}}), "https"},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				assert.Equal(t, tt.expected, tt.input.AdminInternalHTTPProtocol())
+			})
+		}
+	})
+
+	t.Run("AdminAPIURLs", func(t *testing.T) {
+		spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{})
+		assert.Equal(t, "${SERVICE_NAME}.release.ns.svc.cluster.local.:9644", spec.AdminAPIURLs("release", "ns"))
+	})
+
+	t.Run("AdminInternalURL", func(t *testing.T) {
+		t.Run("without TLS", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{})
+			assert.Equal(t, "http://${SERVICE_NAME}.release.ns.svc.cluster.local:9644", spec.AdminInternalURL("release", "ns"))
+		})
+
+		t.Run("with TLS", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)}})
+			assert.Equal(t, "https://${SERVICE_NAME}.release.ns.svc.cluster.local:9644", spec.AdminInternalURL("release", "ns"))
+		})
+	})
+
+	t.Run("GetServiceAccountName", func(t *testing.T) {
+		t.Run("nil spec", func(t *testing.T) {
+			assert.Equal(t, "fallback", (*redpandav1alpha2.BrokerPoolSpec)(nil).GetServiceAccountName("fallback"))
+		})
+
+		t.Run("create=true no name returns fullname", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				ServiceAccount: &redpandav1alpha2.ServiceAccount{Create: ptr.To(true)},
+			})
+			assert.Equal(t, "cluster-first", spec.GetServiceAccountName("cluster-first"))
+		})
+
+		t.Run("explicit name overrides", func(t *testing.T) {
+			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				ServiceAccount: &redpandav1alpha2.ServiceAccount{
+					Create: ptr.To(true),
+					Name:   ptr.To("my-sa"),
+				},
+			})
+			assert.Equal(t, "my-sa", spec.GetServiceAccountName("cluster-first"))
 		})
 	})
 }

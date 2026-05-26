@@ -29,7 +29,7 @@ func pandaProxyConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerP
 		authMethod = "http_basic"
 	}
 
-	configureAPIListener(cfg, state, pool, http, "pandaproxy_api", "pandaproxy_api_tls",
+	configureAPIListener(cfg, pool, http, "pandaproxy_api", "pandaproxy_api_tls",
 		pool.Spec.HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, authMethod)
 
 	return cfg

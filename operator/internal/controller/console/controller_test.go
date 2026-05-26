@@ -180,6 +180,23 @@ func TestController(t *testing.T) {
 		},
 	}))
 
+	// TLS / Listeners / ClusterDomain moved off StretchCluster.Spec onto each
+	// RedpandaBrokerPool. The Console controller resolves a representative
+	// pool to derive those fields for its connection config (it errors out
+	// otherwise), so create a minimal pool referencing test-stretch.
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.RedpandaBrokerPool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-stretch-pool",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.BrokerPoolSpec{
+			ClusterRef: redpandav1alpha2.ClusterRef{
+				Name: "test-stretch",
+				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+			},
+		},
+	}))
+
 	consoleCtrl := Controller{
 		Ctl: ctl,
 		rng: rand.New(rand.NewSource(0)),
