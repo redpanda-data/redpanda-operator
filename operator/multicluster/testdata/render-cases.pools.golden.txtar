@@ -9931,10 +9931,15 @@
       type: OnDelete
     volumeClaimTemplates:
     - metadata:
+        annotations:
+          env: staging
+          owner: pool-a
+          team: platform
         labels:
           app.kubernetes.io/component: redpanda
           app.kubernetes.io/instance: pool-overrides-cluster
           app.kubernetes.io/name: redpanda
+          tier: pool
         name: datadir
       spec:
         accessModes:

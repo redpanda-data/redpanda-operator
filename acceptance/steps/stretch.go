@@ -39,6 +39,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -496,6 +497,160 @@ func applyBrokerPoolWithStretchCluster(ctx context.Context, t framework.TestingT
 	cleanupWrapper(t, func(ctx context.Context) {
 		nodes.DeleteBrokerpools(ctx, manifest)
 	})
+}
+
+// checkDataDirPVCAnnotations verifies that the per-region StatefulSet's
+// `datadir` volumeClaimTemplate carries the expected annotations on its
+// ObjectMeta. The StatefulSet name is derived from <scName>-<poolName>,
+// where poolName is the RedpandaBrokerPool name for the named region
+// (resolved via nameMap, e.g. vc-0 → "first").
+//
+// Used by the acceptance test to validate the cluster→pool merge for
+// StretchClusterSpec.Storage.PersistentVolume.Annotations: cluster sets
+// some keys, the pool in this region may set/override others, and the
+// rendered PVC template should reflect the per-key merged result.
+//
+// Assertion semantics are partial-match: every key in the expected map
+// must be present with the expected value on the PVC annotations. Extra
+// annotations the operator may add (or that came from another region's
+// pool spec) are tolerated.
+func checkDataDirPVCAnnotations(ctx context.Context, t framework.TestingT, clusterName, regionName, scName string, expected *godog.DocString) {
+	var expectedAnnotations map[string]string
+	require.NoError(t, yaml.Unmarshal([]byte(expected.Content), &expectedAnnotations))
+
+	node := getRegion(ctx, t, clusterName, regionName)
+	poolName := nameMap[regionName]
+	stsName := scName + "-" + poolName
+	nn := types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: stsName}
+
+	require.Eventually(t, func() bool {
+		var sts appsv1.StatefulSet
+		if err := node.Get(ctx, nn, &sts); err != nil {
+			t.Logf("error fetching StatefulSet %s from %s: %v", stsName, node.Name(), err)
+			return false
+		}
+		for _, vct := range sts.Spec.VolumeClaimTemplates {
+			if vct.Name != "datadir" {
+				continue
+			}
+			for k, want := range expectedAnnotations {
+				got, ok := vct.Annotations[k]
+				if !ok || got != want {
+					t.Logf("datadir PVC annotation %q on %s/%s: want %q, got %q (present=%v)",
+						k, node.Name(), stsName, want, got, ok)
+					return false
+				}
+			}
+			return true
+		}
+		t.Logf("no datadir volumeClaimTemplate found on %s/%s", node.Name(), stsName)
+		return false
+	}, 2*time.Minute, 5*time.Second,
+		"datadir PVC annotations on %s/%s never matched expected set", node.Name(), stsName)
+}
+
+// applyBrokerPoolsWithRegionOverride applies the same base RedpandaBrokerPool
+// manifest to every region in the multicluster, with an additional
+// per-region spec fragment deep-merged into the named region's pool *at
+// creation time*.
+//
+// The docstring contains two YAML documents separated by a `---` line:
+//
+//   - Document 1: the base spec body (what gets applied to every region
+//     when no override is in play, identical to the spec block that the
+//     "I apply a RedpandaBrokerPool Kubernetes manifest to ..." step
+//     consumes).
+//   - Document 2: a partial spec fragment that's deep-merged into the
+//     base spec for the named region only. The other regions get the
+//     base spec unchanged.
+//
+// Creation-time merging (rather than a post-create patch) is required
+// because the override often targets immutable StatefulSet fields like
+// volumeClaimTemplates — the API server rejects updates to those
+// post-create, so the pool must carry the override before the operator
+// renders its first StatefulSet.
+//
+// Cleanup deletes the base manifest in every region; kubectl delete keys
+// off metadata.name, so the override region's pool is removed correctly
+// despite cleanup using the un-augmented body.
+func applyBrokerPoolsWithRegionOverride(ctx context.Context, t framework.TestingT, clusterName, regionName string, content *godog.DocString) {
+	parts := strings.SplitN(content.Content, "\n---\n", 2)
+	require.Len(t, parts, 2,
+		"docstring must contain a base spec and a per-region override separated by '---'")
+
+	baseSpec := parts[0]
+	var overrideMap map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(parts[1]), &overrideMap))
+	require.NotEmpty(t, overrideMap, "override block must contain at least one field")
+
+	nodes := getNodes(ctx, clusterName)
+	for i, node := range nodes {
+		var specBody string
+		if node.logicalName == regionName {
+			var baseMap map[string]any
+			require.NoError(t, yaml.Unmarshal([]byte(baseSpec), &baseMap))
+			merged := deepMergeMaps(baseMap, overrideMap)
+			mergedBytes, err := yaml.Marshal(merged)
+			require.NoError(t, err)
+			specBody = string(mergedBytes)
+		} else {
+			specBody = baseSpec
+		}
+
+		fullManifest := brokerpoolManifest(nameMap[node.logicalName], &godog.DocString{Content: specBody})
+		t.Logf("applying brokerpool manifest to %q (override region=%q match=%v)",
+			node.Name(), regionName, node.logicalName == regionName)
+		require.NoError(t, node.KubectlApply(ctx, fullManifest))
+		if i == 0 {
+			// Same wait-for-first-ready pattern as
+			// ApplyBrokerpoolsWithDifferentNamePerCluster: avoids the
+			// seed-server-mismatch race when pools come up in parallel.
+			require.Eventually(t, func() bool {
+				return waitForStatefulSetReadyInTheNode(ctx, node) == nil
+			}, 10*time.Minute, 10*time.Second,
+				"expected ready statefulset in %s cluster", node.Name())
+		}
+	}
+
+	// Cleanup uses the base spec only — kubectl delete keys off
+	// metadata.name, so the override region's pool is still matched.
+	cleanupWrapper(t, func(ctx context.Context) {
+		nodes.DeleteBrokerpools(ctx, &godog.DocString{Content: baseSpec})
+	})
+}
+
+// deepMergeMaps recursively merges src into dst. Nested maps are merged
+// per-key (src wins for scalar collisions); non-map values from src
+// replace dst's values at the same path.
+func deepMergeMaps(dst, src map[string]any) map[string]any {
+	if dst == nil {
+		dst = map[string]any{}
+	}
+	for k, v := range src {
+		if existing, ok := dst[k]; ok {
+			existingMap, dstIsMap := existing.(map[string]any)
+			vMap, srcIsMap := v.(map[string]any)
+			if dstIsMap && srcIsMap {
+				dst[k] = deepMergeMaps(existingMap, vMap)
+				continue
+			}
+		}
+		dst[k] = v
+	}
+	return dst
+}
+
+// getRegion returns the vclusterNode for the named region inside the named
+// multicluster. Fails the test if the region isn't found.
+func getRegion(ctx context.Context, t framework.TestingT, clusterName, regionName string) *vclusterNode {
+	nodes := getNodes(ctx, clusterName)
+	for i := range nodes {
+		if nodes[i].logicalName == regionName {
+			return nodes[i]
+		}
+	}
+	t.Fatalf("region %q not found in multicluster %q", regionName, clusterName)
+	return nil
 }
 
 func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clusterName, name, namespace, groupVersionKind, finalizer string) {

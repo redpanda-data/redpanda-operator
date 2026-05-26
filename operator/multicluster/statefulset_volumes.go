@@ -315,14 +315,24 @@ func volumeClaimTemplateDatadir(state *RenderState, pool *redpandav1alpha2.Redpa
 
 	pv := storage.PersistentVolume
 
+	// Operator-managed labels are written first; user labels from
+	// pv.Labels then layer in via mergeStringMapFrom, which keeps the
+	// operator's keys authoritative and adds user-only keys. User
+	// annotations on pv.Annotations are propagated as-is. Both maps
+	// arrive already merged across cluster + pool by MergeFromCluster
+	// (per-key merge: pool's keys win, cluster fills the rest).
+	labels := map[string]string{
+		labelNameKey:      labelNameValue,
+		labelInstanceKey:  state.releaseName,
+		labelComponentKey: labelNameValue,
+	}
+	labels = mergeStringMapFrom(labels, pv.Labels)
+
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: datadirVolumeName,
-			Labels: map[string]string{
-				labelNameKey:      labelNameValue,
-				labelInstanceKey:  state.releaseName,
-				labelComponentKey: labelNameValue,
-			},
+			Name:        datadirVolumeName,
+			Labels:      labels,
+			Annotations: copyStringMap(pv.Annotations),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
@@ -356,14 +366,22 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState, pool *redpandav1alp
 
 	volName := pool.Spec.TieredStorageVolumeName()
 
+	labels := map[string]string{
+		labelNameKey:      labelNameValue,
+		labelInstanceKey:  state.releaseName,
+		labelComponentKey: labelNameValue,
+	}
+	var annotations map[string]string
+	if tpv := storage.Tiered.PersistentVolume; tpv != nil {
+		labels = mergeStringMapFrom(labels, tpv.Labels)
+		annotations = copyStringMap(tpv.Annotations)
+	}
+
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: volName,
-			Labels: map[string]string{
-				labelNameKey:      labelNameValue,
-				labelInstanceKey:  state.releaseName,
-				labelComponentKey: labelNameValue,
-			},
+			Name:        volName,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{"ReadWriteOnce"},
@@ -384,6 +402,38 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState, pool *redpandav1alp
 	}
 
 	return pvc
+}
+
+// mergeStringMapFrom returns a map where dst's keys win and src fills any
+// keys not already present. Used to layer user-provided labels onto the
+// operator's authoritative label set without letting users overwrite the
+// operator's keys.
+func mergeStringMapFrom(dst, src map[string]string) map[string]string {
+	if len(src) == 0 {
+		return dst
+	}
+	if dst == nil {
+		dst = map[string]string{}
+	}
+	for k, v := range src {
+		if _, ok := dst[k]; !ok {
+			dst[k] = v
+		}
+	}
+	return dst
+}
+
+// copyStringMap returns a shallow copy of m, or nil if m is empty/nil. Used
+// for annotations to avoid aliasing the spec's map.
+func copyStringMap(m map[string]string) map[string]string {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
 }
 
 // resolveStorageClass maps a storage class string pointer to the PVC convention:
