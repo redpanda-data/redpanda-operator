@@ -373,7 +373,7 @@ func (b *SuiteBuilder) Strict() *SuiteBuilder {
 
 func setupErrorCheck(ctx context.Context, err error, cleanupFn func(ctx context.Context)) {
 	if err != nil {
-		fmt.Printf("setting up test suite: %v\n", err)
+		fmt.Printf("setting up test suite: %+v\n", err)
 		cleanupFn(ctx)
 		os.Exit(1)
 	}
@@ -587,7 +587,7 @@ func (s *Suite) suiteSetup(sc *suiteCleanup) func(*godog.TestSuiteContext) {
 
 		suiteContext.BeforeSuite(func() {
 			err := provider.Setup(ctx)
-			setupErrorCheck(ctx, err, cleanup)
+			setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
 			if provisioned, ok := provider.(internaltesting.ProvisionedProvider); ok {
 				fmt.Printf("Using Kubernetes configuration at: %v\n", provisioned.ConfigPath())
@@ -596,37 +596,37 @@ func (s *Suite) suiteSetup(sc *suiteCleanup) func(*godog.TestSuiteContext) {
 			kubeOptions = s.testingOpts.KubectlOptions
 
 			restConfig, err := s.testingOpts.KubectlOptions.RestConfig()
-			setupErrorCheck(ctx, err, cleanup)
+			setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
 			helmClient, err = helm.New(helm.Options{
 				KubeConfig: restConfig,
 			})
-			setupErrorCheck(ctx, err, cleanup)
+			setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
 			err = pullImages(s.images)
-			setupErrorCheck(ctx, err, cleanup)
+			setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
 			err = provider.LoadImages(ctx, s.images)
-			setupErrorCheck(ctx, err, cleanup)
+			setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
 			s.testingOpts.Images = s.images
 
 			for _, chart := range s.helmCharts {
 				err = helmClient.RepoAdd(ctx, chart.repo, chart.url)
-				setupErrorCheck(ctx, err, cleanup)
+				setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
-				_, err := helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
-				setupErrorCheck(ctx, err, cleanup)
+				_, err = helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
+				setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 			}
 
 			for _, fn := range s.afterSetup {
 				err = fn(ctx, restConfig)
-				setupErrorCheck(ctx, err, cleanup)
+				setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 			}
 
 			for _, directory := range s.crdDirectories {
-				_, err := internaltesting.KubectlApply(ctx, directory, s.testingOpts.KubectlOptions)
-				setupErrorCheck(ctx, err, cleanup)
+				_, err = internaltesting.KubectlApply(ctx, directory, s.testingOpts.KubectlOptions)
+				setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 			}
 
 			// Store the cleanup function for later teardown.
