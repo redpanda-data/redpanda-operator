@@ -127,4 +127,4 @@ Feature: Stretch Cluster Layered CRDs
         }
     """
     Then in "layered" the Kubernetes object "stretch-schema" in namespace "default" of type "Schema.v1alpha2.cluster.redpanda.com" should have condition "Synced" with status "True"
-    And I execute "rpk registry schema get stretch-schema" command in the statefulset container in each cluster
+    And I execute "rpk registry schema get stretch-schema --schema-version latest" command in the statefulset container in each cluster
