@@ -2,8 +2,9 @@
 Feature: Stretch Cluster Layered CRDs
   # Happy-path coverage that Topic / RedpandaRole / Schema CRs whose
   # spec.cluster.clusterRef points at a StretchCluster reach a Synced
-  # status when the multicluster operator is running. This is the GA
-  # surface for layered CR support — see the Setup*ControllerForMulticluster
+  # status when the multicluster operator is running, and that the
+  # resulting object is observable from the brokers via rpk. This is the
+  # GA surface for layered CR support — see the Setup*ControllerForMulticluster
   # wiring in operator/cmd/multicluster.
   #
   # We deliberately apply the CRs to every vcluster (mirroring how the
@@ -11,6 +12,14 @@ Feature: Stretch Cluster Layered CRDs
   # exercises the per-peer `req.ClusterName` plumbing on the factory —
   # nothing in production requires the CR to exist on every cluster, but
   # checking against all three is the same wall-clock cost.
+  #
+  # Topic / RedpandaRole / Schema cover the three distinct client paths
+  # the factory's StretchCluster handling added (Kafka, Admin API, Schema
+  # Registry). User / Group / ShadowLink go through the same factory paths
+  # and would require either SASL bootstrapping or a remote source cluster
+  # to drive end-to-end, so they're intentionally left out of this smoke
+  # test — the unit-level CR wiring is covered by Setup*ControllerForMulticluster
+  # for those types alongside the three exercised here.
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Layered CRs sync against a StretchCluster
@@ -70,6 +79,7 @@ Feature: Stretch Cluster Layered CRDs
       replicationFactor: 1
     """
     Then in "layered" the Kubernetes object "stretch-topic" in namespace "default" of type "Topic.v1alpha2.cluster.redpanda.com" should have condition "Ready" with status "True"
+    And I execute "rpk topic describe stretch-topic" command in the statefulset container in each cluster
 
     # RedpandaRole — generic resource controller, reports a Synced condition.
     When I apply a multicluster Kubernetes manifest to "layered":
@@ -88,6 +98,7 @@ Feature: Stretch Cluster Layered CRDs
           name: cluster
     """
     Then in "layered" the Kubernetes object "stretch-role" in namespace "default" of type "RedpandaRole.v1alpha2.cluster.redpanda.com" should have condition "Synced" with status "True"
+    And I execute "rpk security role describe stretch-role" command in the statefulset container in each cluster
 
     # Schema — exercises the Schema Registry endpoint discovery added to the
     # factory's StretchCluster path.
@@ -116,3 +127,4 @@ Feature: Stretch Cluster Layered CRDs
         }
     """
     Then in "layered" the Kubernetes object "stretch-schema" in namespace "default" of type "Schema.v1alpha2.cluster.redpanda.com" should have condition "Synced" with status "True"
+    And I execute "rpk registry schema get stretch-schema" command in the statefulset container in each cluster
