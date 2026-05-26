@@ -152,6 +152,13 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			}
 		}
 
+		// Dump layered CR objects (Topic, User, RedpandaRole, Schema, Group,
+		// ShadowLink) with their full conditions. The TopicFailed/Synced=False
+		// condition message in the CR is a generic "Topic reconciliation failed"
+		// or similar — combined with the operator-log filter below this gives
+		// the actual underlying error.
+		dumpLayeredCRs(diagCtx, t, node)
+
 		// Dump ClusterRoles.
 		var crList rbacv1.ClusterRoleList
 		if err := node.List(diagCtx, &crList); err != nil {
@@ -179,7 +186,13 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			}
 		}
 
-		// Dump operator pod logs (last 100 lines).
+		// Dump operator pod logs. We grab a long tail (4000 lines) because the
+		// StretchCluster reconciler runs roughly once per second and quickly
+		// flushes more interesting controller logs out of any shorter window —
+		// in the worst case (a 10-minute Eventually timeout) that's ~600
+		// reconciles before we even get to anything else. We also surface the
+		// subset filtered by layered-CR controller names so the actual error
+		// the Topic/User/Role/etc. reconciler hit is easy to find.
 		k8sClient, err := kubernetes.NewForConfig(node.RESTConfig())
 		if err != nil {
 			t.Logf("[multicluster-diagnostics] failed to create k8s client for logs: %v", err)
@@ -189,7 +202,7 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			if !strings.Contains(pod.Name, "operator") {
 				continue
 			}
-			tailLines := int64(100)
+			tailLines := int64(4000)
 			req := k8sClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{TailLines: &tailLines})
 			logStream, err := req.Stream(diagCtx)
 			if err != nil {
@@ -198,9 +211,120 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 			}
 			logBytes, _ := io.ReadAll(logStream)
 			_ = logStream.Close()
-			t.Logf("[multicluster-diagnostics] === operator logs %s (last 100 lines) ===\n%s", pod.Name, string(logBytes))
+
+			logStr := string(logBytes)
+			dumpLayeredControllerLogs(t, pod.Name, logStr)
+			t.Logf("[multicluster-diagnostics] === operator logs %s (last 4000 lines) ===\n%s", pod.Name, logStr)
 		}
 	}
+}
+
+// dumpLayeredCRs lists each layered CR kind and emits its conditions. The
+// generic "Topic reconciliation failed" / "Synced=False" status condition
+// messages are the same regardless of root cause, but having every CR's
+// observedGeneration plus all conditions in one place narrows the search
+// space.
+func dumpLayeredCRs(ctx context.Context, t framework.TestingT, node *vclusterNode) {
+	tag := "[multicluster-diagnostics]"
+
+	var topics redpandav1alpha2.TopicList
+	if err := node.List(ctx, &topics); err != nil {
+		t.Logf("%s failed to list Topics: %v", tag, err)
+	} else {
+		for _, o := range topics.Items {
+			t.Logf("%s Topic %s/%s: generation=%d observed=%d conditions=%d",
+				tag, o.Namespace, o.Name, o.Generation, o.Status.ObservedGeneration, len(o.Status.Conditions))
+			for _, c := range o.Status.Conditions {
+				t.Logf("%s   condition %s=%s reason=%s: %s", tag, c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+
+	var users redpandav1alpha2.UserList
+	if err := node.List(ctx, &users); err == nil {
+		for _, o := range users.Items {
+			t.Logf("%s User %s/%s: conditions=%d", tag, o.Namespace, o.Name, len(o.Status.Conditions))
+			for _, c := range o.Status.Conditions {
+				t.Logf("%s   condition %s=%s reason=%s: %s", tag, c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+
+	var roles redpandav1alpha2.RedpandaRoleList
+	if err := node.List(ctx, &roles); err == nil {
+		for _, o := range roles.Items {
+			t.Logf("%s RedpandaRole %s/%s: conditions=%d", tag, o.Namespace, o.Name, len(o.Status.Conditions))
+			for _, c := range o.Status.Conditions {
+				t.Logf("%s   condition %s=%s reason=%s: %s", tag, c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+
+	var schemas redpandav1alpha2.SchemaList
+	if err := node.List(ctx, &schemas); err == nil {
+		for _, o := range schemas.Items {
+			t.Logf("%s Schema %s/%s: conditions=%d", tag, o.Namespace, o.Name, len(o.Status.Conditions))
+			for _, c := range o.Status.Conditions {
+				t.Logf("%s   condition %s=%s reason=%s: %s", tag, c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+
+	var groups redpandav1alpha2.GroupList
+	if err := node.List(ctx, &groups); err == nil {
+		for _, o := range groups.Items {
+			t.Logf("%s Group %s/%s: conditions=%d", tag, o.Namespace, o.Name, len(o.Status.Conditions))
+			for _, c := range o.Status.Conditions {
+				t.Logf("%s   condition %s=%s reason=%s: %s", tag, c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+
+	var shadowLinks redpandav1alpha2.ShadowLinkList
+	if err := node.List(ctx, &shadowLinks); err == nil {
+		for _, o := range shadowLinks.Items {
+			t.Logf("%s ShadowLink %s/%s: conditions=%d", tag, o.Namespace, o.Name, len(o.Status.Conditions))
+			for _, c := range o.Status.Conditions {
+				t.Logf("%s   condition %s=%s reason=%s: %s", tag, c.Type, c.Status, c.Reason, c.Message)
+			}
+		}
+	}
+}
+
+// dumpLayeredControllerLogs extracts lines from the operator log that are
+// tagged with one of the layered-CR controllers, so the actual reconcile
+// errors aren't drowned out by the per-second StretchCluster reconcile churn
+// in the main log dump.
+func dumpLayeredControllerLogs(t framework.TestingT, podName, logs string) {
+	wanted := []string{
+		`"controller":"topic"`,
+		`"controller":"user"`,
+		`"controller":"redpandarole"`,
+		`"controller":"schema"`,
+		`"controller":"group"`,
+		`"controller":"shadowlink"`,
+		`TopicReconciler`,
+		`UserReconciler`,
+		`RoleReconciler`,
+		`SchemaReconciler`,
+		`GroupReconciler`,
+		`ShadowLinkReconciler`,
+	}
+
+	var matched []string
+	for _, line := range strings.Split(logs, "\n") {
+		for _, w := range wanted {
+			if strings.Contains(line, w) {
+				matched = append(matched, line)
+				break
+			}
+		}
+	}
+	if len(matched) == 0 {
+		return
+	}
+	t.Logf("[multicluster-diagnostics] === %s layered-CR controller log lines (%d) ===\n%s",
+		podName, len(matched), strings.Join(matched, "\n"))
 }
 
 var nameMap = map[string]string{
