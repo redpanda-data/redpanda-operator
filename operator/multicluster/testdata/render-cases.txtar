@@ -1214,3 +1214,46 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+-- pool-overrides-cluster --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec:
+  imagePullSecrets:
+  - name: cluster-pull-secret
+  storage:
+    persistentVolume:
+      enabled: true
+      size: 100Gi
+      storageClass: slow
+  resources:
+    limits:
+      cpu: "1"
+      memory: 4Gi
+    requests:
+      cpu: "1"
+      memory: 4Gi
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  imagePullSecrets:
+  - name: pool-pull-secret
+  storage:
+    persistentVolume:
+      storageClass: fast
+  resources:
+    limits:
+      cpu: "2"
+    requests:
+      cpu: "2"

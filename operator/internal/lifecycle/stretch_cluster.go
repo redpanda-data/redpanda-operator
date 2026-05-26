@@ -58,7 +58,7 @@ func (s *StretchClusterWithPools) GetBrokerPoolsForCluster(clusterName string) [
 	var result []*redpandav1alpha2.RedpandaBrokerPool
 	for _, brokerPool := range s.BrokerPools {
 		if brokerPool.cluster == clusterName {
-			result = append(result, defaultedPoolCopy(brokerPool.brokerPool))
+			result = append(result, s.defaultedPoolCopy(brokerPool.brokerPool))
 		}
 	}
 	return result
@@ -70,15 +70,29 @@ func (s *StretchClusterWithPools) GetBrokerPoolsForCluster(clusterName string) [
 func (s *StretchClusterWithPools) GetAllBrokerPools() []*redpandav1alpha2.RedpandaBrokerPool {
 	var result []*redpandav1alpha2.RedpandaBrokerPool
 	for _, brokerPool := range s.BrokerPools {
-		result = append(result, defaultedPoolCopy(brokerPool.brokerPool))
+		result = append(result, s.defaultedPoolCopy(brokerPool.brokerPool))
 	}
 	return result
 }
 
-// defaultedPoolCopy returns a deep copy of pool with MergeDefaults applied to
-// its spec. Centralized so the two getters can't drift.
-func defaultedPoolCopy(pool *redpandav1alpha2.RedpandaBrokerPool) *redpandav1alpha2.RedpandaBrokerPool {
+// defaultedPoolCopy returns a deep copy of pool with cluster-level
+// Storage/Resources/ImagePullSecrets inherited and MergeDefaults applied.
+// Centralized so the two getters can't drift. The pipeline is:
+//
+//  1. DeepCopy of the pool.
+//  2. Deep-copy of the cluster spec with cluster-level MergeDefaults applied
+//     — so any defaults the cluster would set (e.g. Storage.PV.Enabled) are
+//     visible during inheritance, even if the caller's StretchClusterWithPools
+//     was constructed from a raw etcd object.
+//  3. MergeFromCluster: pool's non-nil subfields win, cluster fills the rest.
+//  4. Pool-level MergeDefaults: any still-nil fields get pool defaults.
+func (s *StretchClusterWithPools) defaultedPoolCopy(pool *redpandav1alpha2.RedpandaBrokerPool) *redpandav1alpha2.RedpandaBrokerPool {
 	out := pool.DeepCopy()
+	if s != nil && s.StretchCluster != nil {
+		clusterSpec := s.StretchCluster.Spec.DeepCopy()
+		clusterSpec.MergeDefaults()
+		out.Spec.MergeFromCluster(clusterSpec)
+	}
 	out.Spec.MergeDefaults()
 	return out
 }

@@ -426,8 +426,18 @@ inClusterPools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -507,11 +517,21 @@ inClusterPools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -592,8 +612,18 @@ pools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -673,11 +703,21 @@ pools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -774,8 +814,18 @@ inClusterPools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -856,8 +906,18 @@ pools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -956,8 +1016,18 @@ inClusterPools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -1038,8 +1108,18 @@ pools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -1138,8 +1218,18 @@ inClusterPools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -1219,11 +1309,21 @@ inClusterPools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -1304,8 +1404,18 @@ pools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:
@@ -1385,11 +1495,21 @@ pools:
     rbac:
       enabled: true
     replicas: 1
+    resources:
+      cpu:
+        cores: "1"
+      memory:
+        container:
+          max: 2560Mi
     serviceAccount:
       create: true
     sidecarImage:
       repository: localhost/test
       tag: dev
+    storage:
+      persistentVolume:
+        enabled: true
+        size: 20Gi
     tls:
       certs:
         default:

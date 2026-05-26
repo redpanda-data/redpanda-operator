@@ -1579,6 +1579,252 @@ func TestBrokerPoolSpecHelpers(t *testing.T) {
 	})
 }
 
+func TestMergeFromCluster(t *testing.T) {
+	t.Run("nil receivers are safe", func(t *testing.T) {
+		(*redpandav1alpha2.BrokerPoolSpec)(nil).MergeFromCluster(&redpandav1alpha2.StretchClusterSpec{})
+		(&redpandav1alpha2.BrokerPoolSpec{}).MergeFromCluster(nil)
+	})
+
+	t.Run("Storage", func(t *testing.T) {
+		t.Run("pool nil inherits cluster", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				Storage: &redpandav1alpha2.StretchStorage{
+					HostPath: ptr.To("/data"),
+					PersistentVolume: &redpandav1alpha2.PersistentVolume{
+						Enabled:      ptr.To(true),
+						Size:         ptrQuantity("20Gi"),
+						StorageClass: ptr.To("fast"),
+						Annotations:  map[string]string{"a": "1"},
+					},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{}
+			pool.MergeFromCluster(cluster)
+			require.NotNil(t, pool.Storage)
+			assert.Equal(t, "/data", *pool.Storage.HostPath)
+			assert.True(t, *pool.Storage.PersistentVolume.Enabled)
+			assert.Equal(t, "20Gi", pool.Storage.PersistentVolume.Size.String())
+			assert.Equal(t, "fast", *pool.Storage.PersistentVolume.StorageClass)
+			assert.Equal(t, "1", pool.Storage.PersistentVolume.Annotations["a"])
+		})
+
+		t.Run("pool subfield wins; cluster fills the rest", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				Storage: &redpandav1alpha2.StretchStorage{
+					HostPath: ptr.To("/cluster-path"),
+					PersistentVolume: &redpandav1alpha2.PersistentVolume{
+						Enabled:      ptr.To(true),
+						Size:         ptrQuantity("20Gi"),
+						StorageClass: ptr.To("slow"),
+						Annotations:  map[string]string{"a": "1", "b": "2"},
+					},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Storage: &redpandav1alpha2.StretchStorage{
+						PersistentVolume: &redpandav1alpha2.PersistentVolume{
+							StorageClass: ptr.To("fast"),
+							Annotations:  map[string]string{"b": "POOL"},
+						},
+					},
+				},
+			}
+			pool.MergeFromCluster(cluster)
+			// pool didn't set HostPath → inherits cluster's
+			assert.Equal(t, "/cluster-path", *pool.Storage.HostPath)
+			// pool didn't set Enabled / Size → inherit cluster's
+			assert.True(t, *pool.Storage.PersistentVolume.Enabled)
+			assert.Equal(t, "20Gi", pool.Storage.PersistentVolume.Size.String())
+			// pool set StorageClass → pool wins
+			assert.Equal(t, "fast", *pool.Storage.PersistentVolume.StorageClass)
+			// map merge: pool's "b" wins, cluster's "a" preserved
+			assert.Equal(t, "POOL", pool.Storage.PersistentVolume.Annotations["b"])
+			assert.Equal(t, "1", pool.Storage.PersistentVolume.Annotations["a"])
+		})
+
+		t.Run("cluster nil leaves pool alone", func(t *testing.T) {
+			pool := &redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Storage: &redpandav1alpha2.StretchStorage{
+						HostPath: ptr.To("/pool-path"),
+					},
+				},
+			}
+			pool.MergeFromCluster(&redpandav1alpha2.StretchClusterSpec{})
+			assert.Equal(t, "/pool-path", *pool.Storage.HostPath)
+		})
+
+		t.Run("tiered config subfield merge", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				Storage: &redpandav1alpha2.StretchStorage{
+					Tiered: &redpandav1alpha2.StretchTiered{
+						MountType: ptr.To("emptyDir"),
+						Config: &redpandav1alpha2.StretchTieredConfig{
+							CloudStorageEnabled:   ptr.To(true),
+							CloudStorageBucket:    ptr.To("cluster-bucket"),
+							CloudStorageRegion:    ptr.To("us-east-1"),
+							CloudStorageCacheSize: ptr.To("10Gi"),
+						},
+					},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Storage: &redpandav1alpha2.StretchStorage{
+						Tiered: &redpandav1alpha2.StretchTiered{
+							Config: &redpandav1alpha2.StretchTieredConfig{
+								CloudStorageBucket: ptr.To("pool-bucket"),
+							},
+						},
+					},
+				},
+			}
+			pool.MergeFromCluster(cluster)
+			assert.Equal(t, "emptyDir", *pool.Storage.Tiered.MountType)
+			assert.True(t, *pool.Storage.Tiered.Config.CloudStorageEnabled)
+			assert.Equal(t, "pool-bucket", *pool.Storage.Tiered.Config.CloudStorageBucket)
+			assert.Equal(t, "us-east-1", *pool.Storage.Tiered.Config.CloudStorageRegion)
+			assert.Equal(t, "10Gi", *pool.Storage.Tiered.Config.CloudStorageCacheSize)
+		})
+	})
+
+	t.Run("Resources", func(t *testing.T) {
+		t.Run("pool nil inherits cluster", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				Resources: &redpandav1alpha2.StretchResources{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("4"),
+						corev1.ResourceMemory: resource.MustParse("8Gi"),
+					},
+					CPU:    &redpandav1alpha2.CPU{Cores: ptrQuantity("4")},
+					Memory: &redpandav1alpha2.Memory{EnableMemoryLocking: ptr.To(true)},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{}
+			pool.MergeFromCluster(cluster)
+			require.NotNil(t, pool.Resources)
+			assert.Equal(t, "4", pool.Resources.Limits.Cpu().String())
+			assert.Equal(t, "8Gi", pool.Resources.Limits.Memory().String())
+			assert.Equal(t, "4", pool.Resources.CPU.Cores.String())
+			assert.True(t, *pool.Resources.Memory.EnableMemoryLocking)
+		})
+
+		t.Run("per-key Limits merge", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				Resources: &redpandav1alpha2.StretchResources{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("4"),
+						corev1.ResourceMemory: resource.MustParse("8Gi"),
+					},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Resources: &redpandav1alpha2.StretchResources{
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU: resource.MustParse("8"),
+						},
+					},
+				},
+			}
+			pool.MergeFromCluster(cluster)
+			// pool overrides CPU
+			assert.Equal(t, "8", pool.Resources.Limits.Cpu().String())
+			// pool inherits Memory (cluster's key, pool didn't set)
+			assert.Equal(t, "8Gi", pool.Resources.Limits.Memory().String())
+		})
+
+		t.Run("CPU and Memory subfield merge", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				Resources: &redpandav1alpha2.StretchResources{
+					CPU: &redpandav1alpha2.CPU{
+						Cores:           ptrQuantity("2"),
+						Overprovisioned: ptr.To(false),
+					},
+					Memory: &redpandav1alpha2.Memory{
+						Container:           &redpandav1alpha2.ContainerResources{Max: ptrQuantity("4Gi")},
+						EnableMemoryLocking: ptr.To(true),
+					},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					Resources: &redpandav1alpha2.StretchResources{
+						CPU:    &redpandav1alpha2.CPU{Cores: ptrQuantity("8")},
+						Memory: &redpandav1alpha2.Memory{Container: &redpandav1alpha2.ContainerResources{Max: ptrQuantity("16Gi")}},
+					},
+				},
+			}
+			pool.MergeFromCluster(cluster)
+			// pool's CPU.Cores wins
+			assert.Equal(t, "8", pool.Resources.CPU.Cores.String())
+			// pool didn't set Overprovisioned → inherits cluster's
+			assert.False(t, *pool.Resources.CPU.Overprovisioned)
+			// pool's Memory.Container.Max wins
+			assert.Equal(t, "16Gi", pool.Resources.Memory.Container.Max.String())
+			// pool didn't set EnableMemoryLocking → inherits cluster's
+			assert.True(t, *pool.Resources.Memory.EnableMemoryLocking)
+		})
+	})
+
+	t.Run("ImagePullSecrets", func(t *testing.T) {
+		t.Run("pool empty inherits cluster", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: "registry-cluster"},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{}
+			pool.MergeFromCluster(cluster)
+			require.Len(t, pool.ImagePullSecrets, 1)
+			assert.Equal(t, "registry-cluster", pool.ImagePullSecrets[0].Name)
+		})
+
+		t.Run("pool non-empty overrides cluster entirely", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: "registry-cluster"},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+					ImagePullSecrets: []corev1.LocalObjectReference{
+						{Name: "registry-pool"},
+					},
+				},
+			}
+			pool.MergeFromCluster(cluster)
+			require.Len(t, pool.ImagePullSecrets, 1)
+			assert.Equal(t, "registry-pool", pool.ImagePullSecrets[0].Name)
+		})
+
+		t.Run("both empty produces empty", func(t *testing.T) {
+			pool := &redpandav1alpha2.BrokerPoolSpec{}
+			pool.MergeFromCluster(&redpandav1alpha2.StretchClusterSpec{})
+			assert.Empty(t, pool.ImagePullSecrets)
+		})
+
+		t.Run("inherited slice is independent of cluster's", func(t *testing.T) {
+			cluster := &redpandav1alpha2.StretchClusterSpec{
+				ImagePullSecrets: []corev1.LocalObjectReference{
+					{Name: "registry"},
+				},
+			}
+			pool := &redpandav1alpha2.BrokerPoolSpec{}
+			pool.MergeFromCluster(cluster)
+			// Mutate the cluster's slice; pool's must be unaffected.
+			cluster.ImagePullSecrets[0].Name = "MUTATED"
+			assert.Equal(t, "registry", pool.ImagePullSecrets[0].Name)
+		})
+	})
+}
+
+func ptrQuantity(s string) *resource.Quantity {
+	q := resource.MustParse(s)
+	return &q
+}
+
 func TestInitContainerFlags(t *testing.T) {
 	t.Run("FsValidator", func(t *testing.T) {
 		t.Run("IsEnabled", func(t *testing.T) {

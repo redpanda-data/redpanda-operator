@@ -147,10 +147,10 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	}
 
 	// Data directory volume.
-	volumes = append(volumes, statefulSetVolumeDataDir(state))
+	volumes = append(volumes, statefulSetVolumeDataDir(pool))
 
 	// Tiered storage volume.
-	if vol := statefulSetVolumeTieredStorageDir(state); vol != nil {
+	if vol := statefulSetVolumeTieredStorageDir(pool); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
@@ -212,8 +212,8 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 	}
 }
 
-func statefulSetVolumeDataDir(state *RenderState) corev1.Volume {
-	storage := state.Spec().Storage
+func statefulSetVolumeDataDir(pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Volume {
+	storage := pool.Spec.Storage
 
 	var source corev1.VolumeSource
 	switch {
@@ -263,11 +263,11 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 	}
 
 	// Tiered storage cache directory mount.
-	mountType := state.Spec().TieredMountType()
+	mountType := pool.Spec.TieredMountType()
 	if mountType != "none" {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      state.Spec().TieredStorageVolumeName(),
-			MountPath: state.Spec().TieredCacheDirectory(),
+			Name:      pool.Spec.TieredStorageVolumeName(),
+			MountPath: pool.Spec.TieredCacheDirectory(),
 		})
 	}
 
@@ -276,13 +276,13 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 
 // statefulSetVolumeTieredStorageDir returns the tiered storage volume, or nil if
 // the mount type is "none" or "persistentVolume" (PVC is handled via VolumeClaimTemplates).
-func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
-	mountType := state.Spec().TieredMountType()
-	volName := state.Spec().TieredStorageVolumeName()
+func statefulSetVolumeTieredStorageDir(pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.Volume {
+	mountType := pool.Spec.TieredMountType()
+	volName := pool.Spec.TieredStorageVolumeName()
 
 	switch mountType {
 	case "hostPath":
-		hostPath := state.Spec().TieredStorageHostPath()
+		hostPath := pool.Spec.TieredStorageHostPath()
 		return &corev1.Volume{
 			Name: volName,
 			VolumeSource: corev1.VolumeSource{
@@ -292,7 +292,7 @@ func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
 			},
 		}
 	case "emptyDir":
-		sizeLimit := state.Spec().GetTieredStorageCacheSize()
+		sizeLimit := pool.Spec.GetTieredStorageCacheSize()
 		return &corev1.Volume{
 			Name: volName,
 			VolumeSource: corev1.VolumeSource{
@@ -307,8 +307,8 @@ func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
 	}
 }
 
-func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClaim {
-	storage := state.Spec().Storage
+func volumeClaimTemplateDatadir(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.PersistentVolumeClaim {
+	storage := pool.Spec.Storage
 	if storage == nil || !storage.PersistentVolume.IsEnabled() {
 		return nil
 	}
@@ -344,17 +344,17 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 
 // volumeClaimTemplateTieredStorageDir returns a PVC template for the tiered storage
 // cache directory when mount type is "persistentVolume", or nil otherwise.
-func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentVolumeClaim {
-	if state.Spec().TieredMountType() != "persistentVolume" {
+func volumeClaimTemplateTieredStorageDir(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *corev1.PersistentVolumeClaim {
+	if pool.Spec.TieredMountType() != "persistentVolume" {
 		return nil
 	}
 
-	storage := state.Spec().Storage
+	storage := pool.Spec.Storage
 	if storage == nil || storage.Tiered == nil {
 		return nil
 	}
 
-	volName := state.Spec().TieredStorageVolumeName()
+	volName := pool.Spec.TieredStorageVolumeName()
 
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -371,7 +371,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 	}
 
 	// Size from cloud_storage_cache_size config.
-	if q := state.Spec().GetTieredStorageCacheSize(); q != nil {
+	if q := pool.Spec.GetTieredStorageCacheSize(); q != nil {
 		pvc.Spec.Resources = corev1.VolumeResourceRequirements{
 			Requests: corev1.ResourceList{
 				corev1.ResourceStorage: *q,
