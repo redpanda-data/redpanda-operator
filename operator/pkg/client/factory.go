@@ -244,6 +244,15 @@ func (c *Factory) KafkaClientForCluster(ctx context.Context, obj any, clusterNam
 		return c.kafkaForCluster(ctx, cluster, clusterName, opts...)
 	}
 
+	stretchCluster, err := c.getStretchCluster(ctx, o, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	if stretchCluster != nil {
+		return c.kafkaForStretchCluster(ctx, stretchCluster, clusterName, opts...)
+	}
+
 	v1Cluster, err := c.getV1Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
@@ -295,6 +304,15 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 
 	if cluster != nil {
 		return c.redpandaAdminForCluster(ctx, cluster, clusterName)
+	}
+
+	stretchCluster, err := c.getStretchCluster(ctx, o, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	if stretchCluster != nil {
+		return c.redpandaAdminForStretchCluster(ctx, stretchCluster, clusterName)
 	}
 
 	v1Cluster, err := c.getV1Cluster(ctx, o, clusterName)
@@ -354,6 +372,15 @@ func (c *Factory) SchemaRegistryClientForCluster(ctx context.Context, obj any, c
 		return c.schemaRegistryForCluster(ctx, cluster, clusterName)
 	}
 
+	stretchCluster, err := c.getStretchCluster(ctx, o, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	if stretchCluster != nil {
+		return c.schemaRegistryForStretchCluster(ctx, stretchCluster, clusterName)
+	}
+
 	v1Cluster, err := c.getV1Cluster(ctx, o, clusterName)
 	if err != nil {
 		return nil, err
@@ -375,7 +402,7 @@ func (c *Factory) SchemaRegistryClient(ctx context.Context, obj any) (*sr.Client
 }
 
 func (c *Factory) SchemasForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string) (*schemas.Syncer, error) {
-	schemaRegistryClient, err := c.SchemaRegistryClient(ctx, obj)
+	schemaRegistryClient, err := c.SchemaRegistryClientForCluster(ctx, obj, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -388,7 +415,7 @@ func (c *Factory) Schemas(ctx context.Context, obj redpandav1alpha2.ClusterRefer
 }
 
 func (c *Factory) ShadowLinksForCluster(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (*shadow.Syncer, error) {
-	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	adminClient, err := c.RedpandaAdminClientForCluster(ctx, obj, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +428,7 @@ func (c *Factory) ShadowLinks(ctx context.Context, obj redpandav1alpha2.RemoteCl
 }
 
 func (c *Factory) ACLsForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*acls.Syncer, error) {
-	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
+	kafkaClient, err := c.KafkaClientForCluster(ctx, obj, clusterName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -448,12 +475,12 @@ func (c *Factory) UsersForCluster(ctx context.Context, obj redpandav1alpha2.Clus
 		return nil, err
 	}
 
-	kafkaClient, err := c.KafkaClient(ctx, obj, opts...)
+	kafkaClient, err := c.KafkaClientForCluster(ctx, obj, clusterName, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	adminClient, err := c.RedpandaAdminClientForCluster(ctx, obj, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -466,7 +493,7 @@ func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 }
 
 func (c *Factory) RolesForCluster(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...roles.Option) (*roles.Client, error) {
-	adminClient, err := c.RedpandaAdminClient(ctx, obj)
+	adminClient, err := c.RedpandaAdminClientForCluster(ctx, obj, clusterName)
 	if err != nil {
 		return nil, err
 	}
@@ -581,6 +608,41 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
 			var cluster redpandav1alpha2.Redpanda
+
+			client, err := c.GetClient(ctx, clusterName)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
+				return nil, err
+			}
+
+			return &cluster, nil
+		}
+	}
+
+	return nil, nil
+}
+
+// getStretchCluster resolves a StretchCluster CR referenced by obj's
+// spec.cluster.clusterRef. Used by the layered-CR (Topic/User/Role/Schema/
+// Group/ShadowLink) reconcilers running in multicluster mode, where the
+// referenced cluster CR is a StretchCluster rather than a Redpanda CR.
+// clusterName must be the cluster on which obj itself lives so the lookup
+// targets the right peer Kubernetes API.
+func (c *Factory) getStretchCluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.StretchCluster, error) {
+	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
+
+	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
+		if ref := source.GetClusterRef(); ref != nil && ref.IsStretchCluster() {
+			var cluster redpandav1alpha2.StretchCluster
 
 			client, err := c.GetClient(ctx, clusterName)
 			if err != nil {

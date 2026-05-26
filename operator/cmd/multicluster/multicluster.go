@@ -381,6 +381,37 @@ func Run(
 		return err
 	}
 
+	// Register the layered Redpanda CR controllers (Topic, User, RedpandaRole,
+	// Group, Schema, ShadowLink). These reconcile resources whose
+	// spec.cluster.clusterRef points at a StretchCluster — the cluster ref
+	// kind the multicluster operator manages — by talking to the underlying
+	// Redpanda data plane via the shared client factory.
+	namespace := ""
+	if err := redpandacontrollers.SetupTopicControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Topic")
+		return err
+	}
+	if err := redpandacontrollers.SetupUserControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "User")
+		return err
+	}
+	if err := redpandacontrollers.SetupRoleControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
+		return err
+	}
+	if err := redpandacontrollers.SetupGroupControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Group")
+		return err
+	}
+	if err := redpandacontrollers.SetupSchemaControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Schema")
+		return err
+	}
+	if err := redpandacontrollers.SetupShadowLinkControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
+		return err
+	}
+
 	if opts.EnableConsoleController {
 		localMgr := manager.GetLocalManager()
 		ctl, err := kube.FromRESTConfig(localMgr.GetConfig(), kube.Options{

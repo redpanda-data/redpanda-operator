@@ -113,6 +113,7 @@ func init() {
 	framework.RegisterStep(`^I create a multicluster operator named "([^"]*)" with (\d+) nodes$`, createNetworkedVClusterOperators)
 	framework.RegisterStep(`^I apply a multicluster Kubernetes manifest to "([^"]*)":$`, iApplyKuberneteMulticlusterManifest)
 	framework.RegisterStep(`^in "([^"]*)" the Kubernetes object "([^"]*)" in namespace "([^"]*)" of type "([^"]*)" should have finalizer "([^"]*)"$`, checkMulticlusterFinalizers)
+	framework.RegisterStep(`^in "([^"]*)" the Kubernetes object "([^"]*)" in namespace "([^"]*)" of type "([^"]*)" should have condition "([^"]*)" with status "([^"]*)"$`, checkMulticlusterCondition)
 	framework.RegisterStep(`^I apply a RedpandaBrokerPool Kubernetes manifest to "([^"]*)":$`, applyBrokerPoolWithStretchCluster)
 	framework.RegisterStep(`^I expect (\d+) statefulsets in (\d+) kubernetes cluster to be created and eventually ready$`, expectStatefulsetsReady)
 	framework.RegisterStep(`^I expect all (\d+) RedpandaBrokerPools in "([^"]*)" to be eventually bound and deployed$`, expectBrokerPoolsBoundAndDeployed)

@@ -14,9 +14,12 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -72,12 +75,12 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 	state := shadowLink.Status.State
 	tasks := shadowLink.Status.TaskStatuses
 	topics := shadowLink.Status.ShadowTopicStatuses
-	syncer, err := request.factory.ShadowLinks(ctx, shadowLink)
+	syncer, err := request.factory.ShadowLinksForCluster(ctx, shadowLink, request.clusterName)
 	if err != nil {
 		return createPatch(err, state, tasks, topics)
 	}
 
-	remoteCluster, err := request.factory.RemoteClusterSettings(ctx, shadowLink)
+	remoteCluster, err := request.factory.RemoteClusterSettingsForCluster(ctx, shadowLink, request.clusterName)
 	if err != nil {
 		return createPatch(err, state, tasks, topics)
 	}
@@ -90,7 +93,7 @@ func (r *ShadowLinkReconciler) SyncResource(ctx context.Context, request Resourc
 }
 
 func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.ShadowLink]) error {
-	syncer, err := request.factory.ShadowLinks(ctx, request.object)
+	syncer, err := request.factory.ShadowLinksForCluster(ctx, request.object, request.clusterName)
 	if err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
@@ -133,6 +136,28 @@ func SetupShadowLinkController(ctx context.Context, mgr multicluster.Manager, ex
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
 	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+}
+
+// SetupShadowLinkControllerForMulticluster registers the ShadowLink reconciler
+// against a multicluster manager and watches StretchCluster CRs.
+func SetupShadowLinkControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			SkipNameValidation: ptr.To(true),
+		}).
+		For(&redpandav1alpha2.ShadowLink{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true), mcbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		enqueueStretch, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "shadow_link_stretch", clusterName, &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+	}
+
+	ctl := NewResourceController(mgr, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")
+
+	return builder.Complete(ctl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }
 
 func ShadowLinkTaskStatusesToConfigs(existing, updated []redpandav1alpha2.ShadowLinkTaskStatus) []*redpandav1alpha2ac.ShadowLinkTaskStatusApplyConfiguration {

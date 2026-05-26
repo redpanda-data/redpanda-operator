@@ -18,8 +18,11 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -261,12 +264,12 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 
 func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {
 	role := request.object
-	rolesClient, err := request.factory.Roles(ctx, role, r.rolesOptions...)
+	rolesClient, err := request.factory.RolesForCluster(ctx, role, request.clusterName, r.rolesOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	syncer, err := request.factory.ACLs(ctx, role, r.extraOptions...)
+	syncer, err := request.factory.ACLsForCluster(ctx, role, request.clusterName, r.extraOptions...)
 	if err != nil {
 		return nil, nil, false, err
 	}
@@ -310,4 +313,29 @@ func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
 	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+}
+
+// SetupRoleControllerForMulticluster registers the RedpandaRole reconciler
+// against a multicluster manager and watches StretchCluster CRs. See
+// [SetupTopicControllerForMulticluster] for the rationale on why this is
+// a separate entry point.
+func SetupRoleControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			SkipNameValidation: ptr.To(true),
+		}).
+		For(&redpandav1alpha2.RedpandaRole{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
+		Owns(&corev1.Secret{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		enqueueStretch, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "role_stretch", clusterName, &redpandav1alpha2.RedpandaRole{}, &redpandav1alpha2.RedpandaRoleList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+	}
+
+	ctl := NewResourceController(mgr, factory, &RoleReconciler{}, "RoleReconciler")
+
+	return builder.Complete(ctl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }

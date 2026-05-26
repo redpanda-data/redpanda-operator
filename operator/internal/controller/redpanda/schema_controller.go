@@ -15,8 +15,11 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -65,7 +68,7 @@ func (r *SchemaReconciler) SyncResource(ctx context.Context, request ResourceReq
 
 	hash := schema.Status.SchemaHash
 	versions := schema.Status.Versions
-	syncer, err := request.factory.Schemas(ctx, schema)
+	syncer, err := request.factory.SchemasForCluster(ctx, schema, request.clusterName)
 	if err != nil {
 		return createPatch(err, hash, versions)
 	}
@@ -75,7 +78,7 @@ func (r *SchemaReconciler) SyncResource(ctx context.Context, request ResourceReq
 }
 
 func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Schema]) error {
-	syncer, err := request.factory.Schemas(ctx, request.object)
+	syncer, err := request.factory.SchemasForCluster(ctx, request.object, request.clusterName)
 	if err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
@@ -115,4 +118,26 @@ func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expand
 	// happened on the resource synced to the cluster and attempt to correct
 	// any drift.
 	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+}
+
+// SetupSchemaControllerForMulticluster registers the Schema reconciler against
+// a multicluster manager and watches StretchCluster CRs.
+func SetupSchemaControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+	builder := mcbuilder.ControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			SkipNameValidation: ptr.To(true),
+		}).
+		For(&redpandav1alpha2.Schema{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
+
+	for _, clusterName := range mgr.GetClusterNames() {
+		enqueueStretch, err := controller.RegisterStretchClusterSourceIndex(ctx, mgr, "schema_stretch", clusterName, &redpandav1alpha2.Schema{}, &redpandav1alpha2.SchemaList{})
+		if err != nil {
+			return err
+		}
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+	}
+
+	ctl := NewResourceController(mgr, factory, &SchemaReconciler{}, "SchemaReconciler")
+
+	return builder.Complete(ctl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
 }
