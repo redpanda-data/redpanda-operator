@@ -29,55 +29,70 @@ type bootstrappedCert struct {
 }
 
 // bootstrappedCerts returns the set of in-use cert names (with durations) that
-// require self-signed issuer and root CA bootstrapping.
-func bootstrappedCerts(spec *redpandav1alpha2.StretchClusterSpec) []bootstrappedCert {
+// require self-signed issuer and root CA bootstrapping. Names are the union
+// across local pools' TLS configs; the duration for each name is the longest
+// Duration any pool sets, falling back to defaultCertDuration.
+func bootstrappedCerts(state *RenderState) []bootstrappedCert {
+	names := BootstrappedCertNames(state.inClusterPools)
 	var result []bootstrappedCert
-	for _, name := range BootstrappedCertNames(spec) {
+	for _, name := range names {
 		duration := defaultCertDuration
-		if cert, ok := spec.TLS.Certs[name]; ok && cert != nil && cert.Duration != nil {
-			duration = cert.Duration.Duration
+		for _, pool := range state.inClusterPools {
+			if pool.Spec.TLS == nil {
+				continue
+			}
+			if cert, ok := pool.Spec.TLS.Certs[name]; ok && cert != nil && cert.Duration != nil {
+				if cert.Duration.Duration > duration {
+					duration = cert.Duration.Duration
+				}
+			}
 		}
 		result = append(result, bootstrappedCert{name: name, duration: duration})
 	}
 	return result
 }
 
-// BootstrappedCertNames returns the sorted set of in-use cert names that
-// require operator-managed CA bootstrapping. A cert is excluded if:
-//   - TLS is disabled
-//   - it's explicitly disabled
-//   - it has a user-provided SecretRef (externally managed cert)
-//   - it has an external IssuerRef (user manages their own cert-manager issuer)
-func BootstrappedCertNames(spec *redpandav1alpha2.StretchClusterSpec) []string {
-	if spec.TLS == nil || !spec.TLS.IsEnabled() {
-		return nil
-	}
-
-	inUseCerts := map[string]bool{}
-	for _, name := range spec.InUseServerCerts() {
-		inUseCerts[name] = true
-	}
-	for _, name := range spec.InUseClientCerts() {
-		inUseCerts[name] = true
-	}
-
-	sortedNames := make([]string, 0, len(inUseCerts))
-	for name := range inUseCerts {
-		sortedNames = append(sortedNames, name)
-	}
-	sort.Strings(sortedNames)
-
-	var result []string
-	for _, name := range sortedNames {
-		cert := spec.TLS.Certs[name]
-		if cert != nil {
-			if !cert.IsEnabled() || cert.SecretRef != nil || cert.IssuerRef != nil {
-				continue
-			}
+// BootstrappedCertNames returns the sorted union of in-use cert names across
+// the given local pools that require operator-managed CA bootstrapping. A
+// cert is excluded only if for EVERY pool it's either disabled, has a
+// user-provided SecretRef, or has an external IssuerRef. If any pool wants
+// the bootstrapped CA-issued form for that cert name, it's included.
+//
+// Used by both the renderer (this package) and the multicluster controller's
+// syncCA path so the union derivation has a single source of truth. Callers
+// must pass pools whose specs already have MergeDefaults applied — both
+// existing call sites do so (the renderer via RenderState, the controller
+// via [lifecycle.StretchClusterWithPools.GetAllBrokerPools]).
+func BootstrappedCertNames(pools []*redpandav1alpha2.RedpandaBrokerPool) []string {
+	bootstrap := map[string]bool{}
+	for _, pool := range pools {
+		spec := &pool.Spec
+		if spec.TLS == nil || !spec.TLS.IsEnabled() {
+			continue
 		}
-		result = append(result, name)
+		inUse := map[string]bool{}
+		for _, name := range spec.InUseServerCerts() {
+			inUse[name] = true
+		}
+		for _, name := range spec.InUseClientCerts() {
+			inUse[name] = true
+		}
+		for name := range inUse {
+			cert := spec.TLS.Certs[name]
+			if cert != nil {
+				if !cert.IsEnabled() || cert.SecretRef != nil || cert.IssuerRef != nil {
+					continue
+				}
+			}
+			bootstrap[name] = true
+		}
 	}
-	return result
+	sorted := make([]string, 0, len(bootstrap))
+	for name := range bootstrap {
+		sorted = append(sorted, name)
+	}
+	sort.Strings(sorted)
+	return sorted
 }
 
 // CASecretName returns the well-known Secret name for a shared root CA,
@@ -95,7 +110,7 @@ func certIssuers(state *RenderState) []*certmanagerv1.Issuer {
 	fullname := state.fullname()
 	var issuers []*certmanagerv1.Issuer
 
-	for _, bc := range bootstrappedCerts(state.Spec()) {
+	for _, bc := range bootstrappedCerts(state) {
 		issuers = append(issuers, &certmanagerv1.Issuer{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",

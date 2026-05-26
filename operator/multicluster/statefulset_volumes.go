@@ -19,8 +19,10 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// commonMounts returns the VolumeMounts shared across all containers (TLS + SASL).
-func (r *RenderState) commonMounts() []corev1.VolumeMount {
+// commonMounts returns the VolumeMounts shared across all containers (TLS + SASL)
+// for the given pool. TLS cert mounts come from the pool's in-use cert set;
+// SASL stays cluster-wide via Auth.
+func (r *RenderState) commonMounts(pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
 	if r.Spec().Auth.IsSASLEnabled() {
 		sasl := r.Spec().Auth.SASL
@@ -32,13 +34,13 @@ func (r *RenderState) commonMounts() []corev1.VolumeMount {
 			})
 		}
 	}
-	for _, name := range r.Spec().InUseServerCerts() {
+	for _, name := range pool.Spec.InUseServerCerts() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      certServerVolumeName(name),
 			MountPath: certServerMountPoint(name),
 		})
 	}
-	for _, name := range r.Spec().InUseClientCerts() {
+	for _, name := range pool.Spec.InUseClientCerts() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      certClientVolumeName(name),
 			MountPath: certClientMountPoint(name),
@@ -47,26 +49,30 @@ func (r *RenderState) commonMounts() []corev1.VolumeMount {
 	return mounts
 }
 
-// commonVolumes returns the Volumes shared across all containers (TLS + SASL).
-func (r *RenderState) commonVolumes() []corev1.Volume {
+// commonVolumes returns the Volumes shared across all containers (TLS + SASL)
+// for the given pool. TLS volumes reference per-pool Secret names (keyed on
+// the pool fullname so two pools using cert name "default" don't collide);
+// SASL stays cluster-wide via Auth.
+func (r *RenderState) commonVolumes(pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Volume {
+	poolFullname := r.poolFullname(pool)
 	var volumes []corev1.Volume
-	for _, name := range r.Spec().InUseServerCerts() {
+	for _, name := range pool.Spec.InUseServerCerts() {
 		volumes = append(volumes, corev1.Volume{
 			Name: certServerVolumeName(name),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  r.Spec().TLS.CertServerSecretName(r.fullname(), name),
+					SecretName:  pool.Spec.TLS.CertServerSecretName(poolFullname, name),
 					DefaultMode: ptr.To[int32](0o440),
 				},
 			},
 		})
 	}
-	for _, name := range r.Spec().InUseClientCerts() {
+	for _, name := range pool.Spec.InUseClientCerts() {
 		volumes = append(volumes, corev1.Volume{
 			Name: certClientVolumeName(name),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  r.Spec().TLS.CertClientSecretName(r.fullname(), name),
+					SecretName:  pool.Spec.TLS.CertClientSecretName(poolFullname, name),
 					DefaultMode: ptr.To[int32](0o440),
 				},
 			},
@@ -90,16 +96,15 @@ func (r *RenderState) commonVolumes() []corev1.Volume {
 
 // statefulSetVolumes returns the Volumes for the Redpanda StatefulSet.
 func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Volume {
-	fullname := state.fullname()
 	poolFullname := state.poolFullname(pool)
-	volumes := state.commonVolumes()
+	volumes := state.commonVolumes(pool)
 
 	volumes = append(volumes,
 		corev1.Volume{
 			Name: lifecycleScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  fmt.Sprintf("%.50s-sts-lifecycle", fullname),
+					SecretName:  fmt.Sprintf("%.50s-sts-lifecycle", poolFullname),
 					DefaultMode: ptr.To[int32](0o775),
 				},
 			},
@@ -119,7 +124,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 			},
 		},
 		corev1.Volume{
-			Name: fmt.Sprintf("%.51s-configurator", fullname),
+			Name: fmt.Sprintf("%.51s-configurator", poolFullname),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.51s-configurator", poolFullname),
@@ -131,7 +136,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 
 	if pool.Spec.InitContainers != nil && pool.Spec.InitContainers.FSValidator.IsEnabled() {
 		volumes = append(volumes, corev1.Volume{
-			Name: fmt.Sprintf("%.49s-fs-validator", fullname),
+			Name: fmt.Sprintf("%.49s-fs-validator", poolFullname),
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.49s-fs-validator", poolFullname),
@@ -150,7 +155,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	}
 
 	// Truststore volume (projected from ConfigMaps/Secrets).
-	if vol := state.Spec().Listeners.TrustStoreVolume(state.Spec().TLS); vol != nil {
+	if vol := pool.Spec.Listeners.TrustStoreVolume(pool.Spec.TLS); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
@@ -237,8 +242,8 @@ func statefulSetVolumeDataDir(state *RenderState) corev1.Volume {
 }
 
 // statefulSetVolumeMounts returns the VolumeMounts for the Redpanda container.
-func statefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
-	mounts := state.commonMounts()
+func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.VolumeMount {
+	mounts := state.commonMounts(pool)
 
 	mounts = append(mounts,
 		corev1.VolumeMount{Name: configVolumeName, MountPath: redpandaConfigMountPath},
@@ -249,7 +254,7 @@ func statefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	)
 
 	// Truststore mount.
-	if len(state.Spec().Listeners.TrustStores(state.Spec().TLS)) > 0 {
+	if len(pool.Spec.Listeners.TrustStores(pool.Spec.TLS)) > 0 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "truststores",
 			MountPath: redpandav1alpha2.TrustStoreMountPath,

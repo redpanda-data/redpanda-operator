@@ -12,15 +12,15 @@ Feature: Stretch Cluster Rolling Restart
     metadata:
       name: cluster
       namespace: default
+    spec: {}
+    """
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "rolling":
+    """
     spec:
       external:
         enabled: false
       rbac:
         enabled: true
-    """
-    And I apply a RedpandaBrokerPool Kubernetes manifest to "rolling":
-    """
-    spec:
       clusterRef:
         group: cluster.redpanda.com
         kind: StretchCluster

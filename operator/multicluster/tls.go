@@ -19,18 +19,22 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// TLSConfig constructs a tls.Config for the given TLS certificate name.
-func (r *RenderState) TLSConfig(certName string) (*tls.Config, error) {
+// TLSConfig constructs a tls.Config for the given TLS certificate name using
+// the given pool's TLS/Listeners/ClusterDomain. Caller picks a representative
+// pool when bridging cluster-wide consumers (e.g. the Console controller).
+func (r *RenderState) TLSConfig(pool *redpandav1alpha2.RedpandaBrokerPool, certName string) (*tls.Config, error) {
 	if r.client == nil {
 		return nil, fmt.Errorf("no kubernetes client available for TLS config lookup")
 	}
 
 	namespace := r.namespace
-	serverName := r.Spec().InternalDomain(r.fullname(), r.namespace)
+	serverName := pool.Spec.InternalDomain(r.fullname(), r.namespace)
 
-	rootCertName, rootCertKey, clientCertName := r.Spec().TLS.CertificatesFor(r.fullname(), certName)
+	rootCertName, rootCertKey, clientCertName := pool.Spec.TLS.CertificatesFor(r.poolFullname(pool), certName)
 
 	serverTLSError := func(err error) error {
 		return fmt.Errorf("error fetching server root CA %s/%s: %w", namespace, rootCertName, err)
@@ -63,12 +67,12 @@ func (r *RenderState) TLSConfig(certName string) (*tls.Config, error) {
 	if err != nil {
 		return nil, serverTLSError(fmt.Errorf("unable to parse public key %w", err))
 	}
-	pool := x509.NewCertPool()
-	pool.AddCert(serverParsedCertificate)
+	certPool := x509.NewCertPool()
+	certPool.AddCert(serverParsedCertificate)
 
-	tlsConfig.RootCAs = pool
+	tlsConfig.RootCAs = certPool
 
-	if r.Spec().Listeners.CertRequiresClientAuth(certName) {
+	if pool.Spec.Listeners.CertRequiresClientAuth(certName) {
 		var clientCert corev1.Secret
 		lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: clientCertName, Namespace: namespace}, &clientCert)
 		if lookupErr != nil {

@@ -12,6 +12,11 @@ Feature: Multicluster Operator
     metadata:
       name: cluster
       namespace: default
+    spec: {}
+    """
+    Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "multicluster":
+    """
     spec:
       external:
         enabled: false
@@ -48,11 +53,6 @@ Feature: Multicluster Operator
         rpc:
           tls:
             cert: issuer-managed
-    """
-    Then in "multicluster" the Kubernetes object "cluster" in namespace "default" of type "StretchCluster.v1alpha2.cluster.redpanda.com" should have finalizer "operator.redpanda.com/finalizer"
-    And I apply a RedpandaBrokerPool Kubernetes manifest to "multicluster":
-    """
-    spec:
       clusterRef:
         group: cluster.redpanda.com
         kind: StretchCluster

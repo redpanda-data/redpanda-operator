@@ -12,35 +12,42 @@ package multicluster
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mcsv1alpha1 "sigs.k8s.io/mcs-api/pkg/apis/v1alpha1"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // serviceExports returns ServiceExport resources for local per-pod Services
 // in MCS mode. Exporting a Service makes it discoverable via the
 // clusterset.local DNS domain by remote clusters.
 func serviceExports(state *RenderState) []*mcsv1alpha1.ServiceExport {
-	if !state.Spec().Networking.IsMCS() {
-		return nil
-	}
-
 	var exports []*mcsv1alpha1.ServiceExport
 	for _, pool := range state.pools {
-		if !state.isLocalPool(pool) {
-			continue
-		}
-		for i := int32(0); i < pool.GetReplicas(); i++ {
-			name := PerPodServiceName(state.poolFullname(pool), i)
-			exports = append(exports, &mcsv1alpha1.ServiceExport{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "multicluster.x-k8s.io/v1alpha1",
-					Kind:       "ServiceExport",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: state.namespace,
-					Labels:    state.commonLabels(),
-				},
-			})
-		}
+		exports = append(exports, serviceExportsForPool(state, pool)...)
+	}
+	return exports
+}
+
+// serviceExportsForPool returns ServiceExport resources for one local pool's
+// per-pod Services in MCS mode. Returns nil for remote pools (those are
+// imported, not exported) or when MCS is disabled.
+func serviceExportsForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []*mcsv1alpha1.ServiceExport {
+	if !state.Spec().Networking.IsMCS() || !state.isLocalPool(pool) {
+		return nil
+	}
+	var exports []*mcsv1alpha1.ServiceExport
+	for i := int32(0); i < pool.GetReplicas(); i++ {
+		name := PerPodServiceName(state.poolFullname(pool), i)
+		exports = append(exports, &mcsv1alpha1.ServiceExport{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "multicluster.x-k8s.io/v1alpha1",
+				Kind:       "ServiceExport",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: state.namespace,
+				Labels:    state.commonLabels(),
+			},
+		})
 	}
 	return exports
 }
@@ -49,42 +56,47 @@ func serviceExports(state *RenderState) []*mcsv1alpha1.ServiceExport {
 // in MCS mode. Importing a Service from another cluster creates a local
 // virtual service backed by the MCS controller.
 func serviceImports(state *RenderState) []*mcsv1alpha1.ServiceImport {
-	if !state.Spec().Networking.IsMCS() {
-		return nil
-	}
-
 	var imports []*mcsv1alpha1.ServiceImport
 	for _, pool := range state.pools {
-		if state.isLocalPool(pool) {
-			continue
-		}
-		for i := int32(0); i < pool.GetReplicas(); i++ {
-			name := PerPodServiceName(state.poolFullname(pool), i)
-			ports := perPodServicePorts(state.Spec())
-			var importPorts []mcsv1alpha1.ServicePort
-			for _, p := range ports {
-				importPorts = append(importPorts, mcsv1alpha1.ServicePort{
-					Name:     p.Name,
-					Protocol: p.Protocol,
-					Port:     p.Port,
-				})
-			}
-			imports = append(imports, &mcsv1alpha1.ServiceImport{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "multicluster.x-k8s.io/v1alpha1",
-					Kind:       "ServiceImport",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      name,
-					Namespace: state.namespace,
-					Labels:    state.commonLabels(),
-				},
-				Spec: mcsv1alpha1.ServiceImportSpec{
-					Type:  mcsv1alpha1.ClusterSetIP,
-					Ports: importPorts,
-				},
+		imports = append(imports, serviceImportsForPool(state, pool)...)
+	}
+	return imports
+}
+
+// serviceImportsForPool returns ServiceImport resources for one remote pool's
+// per-pod Services in MCS mode. Returns nil for local pools (those are
+// exported, not imported) or when MCS is disabled.
+func serviceImportsForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []*mcsv1alpha1.ServiceImport {
+	if !state.Spec().Networking.IsMCS() || state.isLocalPool(pool) {
+		return nil
+	}
+	var imports []*mcsv1alpha1.ServiceImport
+	for i := int32(0); i < pool.GetReplicas(); i++ {
+		name := PerPodServiceName(state.poolFullname(pool), i)
+		ports := perPodServicePorts(&pool.Spec)
+		var importPorts []mcsv1alpha1.ServicePort
+		for _, p := range ports {
+			importPorts = append(importPorts, mcsv1alpha1.ServicePort{
+				Name:     p.Name,
+				Protocol: p.Protocol,
+				Port:     p.Port,
 			})
 		}
+		imports = append(imports, &mcsv1alpha1.ServiceImport{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "multicluster.x-k8s.io/v1alpha1",
+				Kind:       "ServiceImport",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: state.namespace,
+				Labels:    state.commonLabels(),
+			},
+			Spec: mcsv1alpha1.ServiceImportSpec{
+				Type:  mcsv1alpha1.ClusterSetIP,
+				Ports: importPorts,
+			},
+		})
 	}
 	return imports
 }

@@ -39,22 +39,48 @@ func (s *StretchClusterWithPools) GetClusters() []string {
 	return s.clusters
 }
 
+// GetBrokerPoolsForCluster returns the BrokerPools associated with the named
+// k8s cluster. The returned pools are deep-copied and have MergeDefaults
+// applied to their spec — callers may read any field (including ones
+// populated only by in-memory defaulting such as ServiceAccount, RBAC, TLS,
+// External, Listeners) without first re-defaulting.
+//
+// Defaulting is done in-memory rather than at API-server / etcd level (see
+// BrokerPoolSpec.MergeDefaults) because the defaults are composite and map-
+// entry-based, which CRD schema defaults can't express. Returning defaulted
+// copies from the getter eliminates the footgun of consumers reading
+// default-populated fields on the raw etcd object and silently getting nil.
+//
+// The deep copy also means callers can mutate the returned pools (e.g. to
+// apply operator-level image overrides) without affecting other consumers
+// or the underlying cache.
 func (s *StretchClusterWithPools) GetBrokerPoolsForCluster(clusterName string) []*redpandav1alpha2.RedpandaBrokerPool {
 	var result []*redpandav1alpha2.RedpandaBrokerPool
 	for _, brokerPool := range s.BrokerPools {
 		if brokerPool.cluster == clusterName {
-			result = append(result, brokerPool.brokerPool)
+			result = append(result, defaultedPoolCopy(brokerPool.brokerPool))
 		}
 	}
 	return result
 }
 
+// GetAllBrokerPools returns every BrokerPool across all k8s clusters. Like
+// GetBrokerPoolsForCluster, the returned pools are deep-copied and have
+// MergeDefaults applied — see that method for rationale.
 func (s *StretchClusterWithPools) GetAllBrokerPools() []*redpandav1alpha2.RedpandaBrokerPool {
 	var result []*redpandav1alpha2.RedpandaBrokerPool
 	for _, brokerPool := range s.BrokerPools {
-		result = append(result, brokerPool.brokerPool)
+		result = append(result, defaultedPoolCopy(brokerPool.brokerPool))
 	}
 	return result
+}
+
+// defaultedPoolCopy returns a deep copy of pool with MergeDefaults applied to
+// its spec. Centralized so the two getters can't drift.
+func defaultedPoolCopy(pool *redpandav1alpha2.RedpandaBrokerPool) *redpandav1alpha2.RedpandaBrokerPool {
+	out := pool.DeepCopy()
+	out.Spec.MergeDefaults()
+	return out
 }
 
 // V2ResourceManagers is a factory function for tying together all of our v2 interfaces.

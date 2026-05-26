@@ -748,7 +748,7 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 	// TLS by default when TLS is nil).
 	defaultedSpec := *sc.Spec.DeepCopy()
 	defaultedSpec.MergeDefaults()
-	managedCerts := rendermulticluster.BootstrappedCertNames(&defaultedSpec)
+	managedCerts := rendermulticluster.BootstrappedCertNames(state.cluster.GetAllBrokerPools())
 	if len(managedCerts) == 0 {
 		logger.V(log.TraceLevel).Info("no operator-managed TLS certs, skipping CA sync")
 		return ctrl.Result{}, nil
@@ -958,6 +958,10 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 	logger := log.FromContext(ctx)
 	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.StretchCluster)
 	if err != nil {
+		if internalclient.IsNoRepresentativePoolError(err) {
+			// it may happen when there's no BrokerPool for this StretchCluster yet available
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err
 	}

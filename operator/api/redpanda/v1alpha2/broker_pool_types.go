@@ -11,6 +11,7 @@ package v1alpha2
 
 import (
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
@@ -54,54 +55,15 @@ type BrokerPoolSpec struct {
 }
 
 type EmbeddedBrokerPoolSpec struct {
-	// Chart default: {}
-	AdditionalSelectorLabels map[string]string `json:"additionalSelectorLabels,omitempty"`
-	// Chart default: 3
-	Replicas *int32 `json:"replicas,omitempty"`
-	// Chart default: []
-	AdditionalRedpandaCmdFlags []string `json:"additionalRedpandaCmdFlags,omitempty"`
-	// Chart default:
-	//     labels: {}
-	//     annotations: {}
-	//     spec:
-	//       securityContext: {}
-	//       affinity:
-	//         podAntiAffinity:
-	//           requiredDuringSchedulingIgnoredDuringExecution:
-	//           - topologyKey: kubernetes.io/hostname
-	//             labelSelector:
-	//               matchLabels:
-	//                 "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
-	//                 "app.kubernetes.io/instance":  '{{ .Release.Name }}'
-	//                 "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
-	//       terminationGracePeriodSeconds: 90
-	//       nodeSelector: {}
-	//       priorityClassName: ""
-	//       tolerations: []
-	//       topologySpreadConstraints:
-	//       - maxSkew: 1
-	//         topologyKey: topology.kubernetes.io/zone
-	//         whenUnsatisfiable: ScheduleAnyway
-	//         labelSelector:
-	//           matchLabels:
-	//             "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
-	//             "app.kubernetes.io/instance":  '{{ .Release.Name }}'
-	//             "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
-	PodTemplate *PodTemplate `json:"podTemplate,omitempty"`
+	AdditionalSelectorLabels   map[string]string `json:"additionalSelectorLabels,omitempty"`
+	Replicas                   *int32            `json:"replicas,omitempty"`
+	AdditionalRedpandaCmdFlags []string          `json:"additionalRedpandaCmdFlags,omitempty"`
+	PodTemplate                *PodTemplate      `json:"podTemplate,omitempty"`
 	// Services configures overrides for Services created by the operator.
-	Services       *NodePoolServices   `json:"services,omitempty"`
-	InitContainers *PoolInitContainers `json:"initContainers,omitempty"`
-	// Default:
-	//     repository: docker.redpanda.com/redpandadata/redpanda
-	//     tag: {{.redpandaVersion}}
-	Image *RedpandaImage `json:"image,omitempty"`
-	// Default:
-	//     repository: docker.redpanda.com/redpandadata/redpanda-operator
-	//     tag: {{.operatorVersion}}
-	SidecarImage *RedpandaImage `json:"sidecarImage,omitempty"`
-	// Chart default:
-	//     repository: busybox
-	//     tag: latest
+	Services           *NodePoolServices   `json:"services,omitempty"`
+	InitContainers     *PoolInitContainers `json:"initContainers,omitempty"`
+	Image              *RedpandaImage      `json:"image,omitempty"`
+	SidecarImage       *RedpandaImage      `json:"sidecarImage,omitempty"`
 	InitContainerImage *InitContainerImage `json:"initContainerImage,omitempty"`
 	// PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for
 	// PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces
@@ -112,6 +74,30 @@ type EmbeddedBrokerPoolSpec struct {
 	// scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's
 	// StatefulSet is deleted.
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
+	// Customizes the Kubernetes cluster domain. This domain is used to generate the internal domains of the StatefulSet Pods. The default is the `cluster.local` domain.
+	ClusterDomain *string `json:"clusterDomain,omitempty"`
+	// Defines TLS settings for listeners.
+	TLS *TLS `json:"tls,omitempty"`
+	// Defines external access settings.
+	External *External `json:"external,omitempty"`
+	// Defines settings for listeners, including HTTP Proxy, Schema Registry, the Admin API and the Kafka API.
+	Listeners *StretchListeners `json:"listeners,omitempty"`
+	// Defines Role Based Access Control (RBAC) settings.
+	RBAC *RBAC `json:"rbac,omitempty"`
+	// Defines Service account settings.
+	ServiceAccount *ServiceAccount `json:"serviceAccount,omitempty"`
+	// Defines settings for monitoring Redpanda.
+	Monitoring *Monitoring `json:"monitoring,omitempty"`
+	// Defines storage settings for the Redpanda data directory and the Tiered Storage cache.
+	Storage *StretchStorage `json:"storage,omitempty"`
+	// Defines container resource settings.
+	Resources *StretchResources `json:"resources,omitempty"`
+	// Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	// Defines rack awareness settings.
+	RackAwareness *RackAwareness `json:"rackAwareness,omitempty"`
+	// Defines the log level settings.
+	Logging *StretchLogging `json:"logging,omitempty"`
 }
 
 // BrokerPoolStatus defines the observed state of any node pools tied to this cluster

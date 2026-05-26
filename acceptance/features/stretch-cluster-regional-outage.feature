@@ -17,15 +17,15 @@ Feature: Stretch Cluster Regional Outage
     metadata:
       name: cluster
       namespace: default
+    spec: {}
+    """
+    And I apply a RedpandaBrokerPool Kubernetes manifest to "outage":
+    """
     spec:
       external:
         enabled: false
       rbac:
         enabled: true
-    """
-    And I apply a RedpandaBrokerPool Kubernetes manifest to "outage":
-    """
-    spec:
       clusterRef:
         group: cluster.redpanda.com
         kind: StretchCluster
@@ -69,10 +69,6 @@ Feature: Stretch Cluster Regional Outage
       name: cluster
       namespace: default
     spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
       config:
         cluster:
           log_segment_size_min: "16777216"
@@ -93,10 +89,6 @@ Feature: Stretch Cluster Regional Outage
       name: cluster
       namespace: default
     spec:
-      external:
-        enabled: false
-      rbac:
-        enabled: true
       config:
         cluster:
           log_segment_size_min: "16777216"

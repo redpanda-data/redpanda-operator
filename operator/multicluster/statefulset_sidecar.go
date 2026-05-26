@@ -30,11 +30,11 @@ func statefulSetContainerSidecar(state *RenderState, pool *redpandav1alpha2.Redp
 		fmt.Sprintf("--selector=%s=%s,%s=%s", labelNameKey, labelNameValue, labelInstanceKey, state.releaseName),
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,
-		fmt.Sprintf("$(SERVICE_NAME).%s:%d", state.Spec().InternalDomain(state.fullname(), state.namespace), state.Spec().AdminPort()),
+		fmt.Sprintf("$(SERVICE_NAME).%s:%d", pool.Spec.InternalDomain(state.fullname(), state.namespace), pool.Spec.AdminPort()),
 	}
 
 	volumeMounts := append(
-		state.commonMounts(),
+		state.commonMounts(pool),
 		corev1.VolumeMount{Name: configVolumeName, MountPath: redpandaConfigMountPath},
 		corev1.VolumeMount{Name: serviceAccountVolumeName, MountPath: defaultAPITokenMountPath, ReadOnly: true},
 	)

@@ -15,15 +15,31 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// serviceMonitor returns a ServiceMonitor for the Redpanda cluster.
-func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
-	if !state.Spec().Monitoring.IsEnabled() {
+// serviceMonitor returns ServiceMonitors across every local pool with
+// monitoring enabled. Wrapper used by RenderResources.
+func serviceMonitor(state *RenderState) []*monitoringv1.ServiceMonitor {
+	var out []*monitoringv1.ServiceMonitor
+	for _, pool := range state.inClusterPools {
+		if sm := serviceMonitorForPool(state, pool); sm != nil {
+			out = append(out, sm)
+		}
+	}
+	return out
+}
+
+// serviceMonitorForPool returns a ServiceMonitor for a single local pool,
+// named <cluster>-<pool>. Scrape interval, labels, TLS config come from
+// the pool's Monitoring; the admin-TLS check reads the pool's TLS.
+func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) *monitoringv1.ServiceMonitor {
+	if !pool.Spec.Monitoring.IsEnabled() {
 		return nil
 	}
 
-	mon := state.Spec().Monitoring
+	mon := pool.Spec.Monitoring
 
 	var interval monitoringv1.Duration
 	if mon.ScrapeInterval != nil {
@@ -37,7 +53,7 @@ func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
 	}
 
-	if state.Spec().IsAdminTLSEnabled() || mon.TLSConfig != nil {
+	if pool.Spec.IsAdminTLSEnabled() || mon.TLSConfig != nil {
 		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
 
 		// Use custom TLS config if provided, otherwise fall back to insecure skip verify.
@@ -67,7 +83,7 @@ func serviceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			Kind:       monitoringv1.ServiceMonitorsKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      state.fullname(),
+			Name:      state.poolFullname(pool),
 			Namespace: state.namespace,
 			Labels:    labels,
 		},

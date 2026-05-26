@@ -93,7 +93,7 @@ func seedServersFromBrokerPools(cluster *redpandav1alpha2.StretchCluster, pools 
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.Suffix()
 			name := PerPodServiceName(poolFullname, i)
-			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), cluster.Spec.RPCPort()))
+			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), pool.Spec.RPCPort()))
 		}
 	}
 	return seedServers
@@ -134,6 +134,15 @@ func NewRenderState(
 
 	// Apply Helm-equivalent defaults to nil fields.
 	cluster.Spec.MergeDefaults()
+	// Apply per-pool defaults (TLS, Listeners, External, RBAC, ServiceAccount)
+	// to nil fields on each pool — mirrors the API migration where these
+	// fields moved off StretchClusterSpec onto EmbeddedBrokerPoolSpec.
+	for _, p := range copiedInClusterPools {
+		p.Spec.MergeDefaults()
+	}
+	for _, p := range copiedPools {
+		p.Spec.MergeDefaults()
+	}
 
 	releaseName := cluster.Name
 
@@ -285,6 +294,21 @@ func (r *RenderState) allPodNames() []string {
 		}
 	}
 	return names
+}
+
+// podOrdinalOffset returns the flattened index of the first pod of pool
+// within the local-pool pod list. Lets per-pool helpers index into
+// per-broker config (e.g. External.Addresses) using the same offset they
+// would have under the pre-split single-loop emission order.
+func (r *RenderState) podOrdinalOffset(pool *redpandav1alpha2.RedpandaBrokerPool) int {
+	offset := 0
+	for _, p := range r.inClusterPools {
+		if p.Name == pool.Name {
+			return offset
+		}
+		offset += int(p.GetReplicas())
+	}
+	return offset
 }
 
 // fetchBootstrapUser looks up an existing bootstrap user secret so that we

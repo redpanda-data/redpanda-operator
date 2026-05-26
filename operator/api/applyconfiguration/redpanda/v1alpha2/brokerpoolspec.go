@@ -12,7 +12,7 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // BrokerPoolSpecApplyConfiguration represents a declarative configuration of the BrokerPoolSpec type for use
@@ -108,11 +108,101 @@ func (b *BrokerPoolSpecApplyConfiguration) WithInitContainerImage(value *InitCon
 	return b
 }
 
-// WithPersistentVolumeClaimRetentionPolicy sets the PersistentVolumeClaimRetentionPolicy field in the declarative configuration to the given value
+// WithClusterDomain sets the ClusterDomain field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the PersistentVolumeClaimRetentionPolicy field is set to the value of the last call.
-func (b *BrokerPoolSpecApplyConfiguration) WithPersistentVolumeClaimRetentionPolicy(value v1.StatefulSetPersistentVolumeClaimRetentionPolicy) *BrokerPoolSpecApplyConfiguration {
-	b.EmbeddedBrokerPoolSpecApplyConfiguration.PersistentVolumeClaimRetentionPolicy = &value
+// If called multiple times, the ClusterDomain field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithClusterDomain(value string) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.ClusterDomain = &value
+	return b
+}
+
+// WithTLS sets the TLS field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the TLS field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithTLS(value *TLSApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.TLS = value
+	return b
+}
+
+// WithExternal sets the External field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the External field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithExternal(value *ExternalApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.External = value
+	return b
+}
+
+// WithListeners sets the Listeners field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Listeners field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithListeners(value *StretchListenersApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.Listeners = value
+	return b
+}
+
+// WithRBAC sets the RBAC field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RBAC field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithRBAC(value *RBACApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.RBAC = value
+	return b
+}
+
+// WithServiceAccount sets the ServiceAccount field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ServiceAccount field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithServiceAccount(value *ServiceAccountApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.ServiceAccount = value
+	return b
+}
+
+// WithMonitoring sets the Monitoring field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Monitoring field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithMonitoring(value *MonitoringApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.Monitoring = value
+	return b
+}
+
+// WithStorage sets the Storage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Storage field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithStorage(value *StretchStorageApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.Storage = value
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithResources(value *StretchResourcesApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.Resources = value
+	return b
+}
+
+// WithImagePullSecrets adds the given value to the ImagePullSecrets field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ImagePullSecrets field.
+func (b *BrokerPoolSpecApplyConfiguration) WithImagePullSecrets(values ...v1.LocalObjectReference) *BrokerPoolSpecApplyConfiguration {
+	for i := range values {
+		b.EmbeddedBrokerPoolSpecApplyConfiguration.ImagePullSecrets = append(b.EmbeddedBrokerPoolSpecApplyConfiguration.ImagePullSecrets, values[i])
+	}
+	return b
+}
+
+// WithRackAwareness sets the RackAwareness field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the RackAwareness field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithRackAwareness(value *RackAwarenessApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.RackAwareness = value
+	return b
+}
+
+// WithLogging sets the Logging field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Logging field is set to the value of the last call.
+func (b *BrokerPoolSpecApplyConfiguration) WithLogging(value *StretchLoggingApplyConfiguration) *BrokerPoolSpecApplyConfiguration {
+	b.EmbeddedBrokerPoolSpecApplyConfiguration.Logging = value
 	return b
 }
 

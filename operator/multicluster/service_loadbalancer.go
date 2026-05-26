@@ -15,12 +15,28 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// loadBalancerServices returns per-pod LoadBalancer Services for external access.
+// loadBalancerServices returns per-pod LoadBalancer Services for external
+// access across every local BrokerPool.
 func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
-	ext := state.Spec().External
+	var out []*corev1.Service
+	for _, pool := range state.inClusterPools {
+		svcs, err := loadBalancerServicesForPool(state, pool)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, svcs...)
+	}
+	return out, nil
+}
+
+// loadBalancerServicesForPool returns the per-pod LoadBalancer Services for
+// a single local BrokerPool. Caller iterates state.InClusterPools().
+func loadBalancerServicesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*corev1.Service, error) {
+	ext := pool.Spec.External
 	if ext == nil || !ext.IsEnabled() {
 		return nil, nil
 	}
@@ -37,10 +53,15 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 
 	selector := state.clusterPodLabelsSelector()
 
-	var services []*corev1.Service
-	podNames := state.allPodNames()
+	// addrIndex tracks the position into ext.Addresses across pools so that a
+	// pre-allocated address list maps to brokers in deterministic pool order,
+	// matching pre-split behaviour where allPodNames() returned a single
+	// flattened slice.
+	addrIndex := state.podOrdinalOffset(pool)
 
-	for i, podname := range podNames {
+	var services []*corev1.Service
+	for ord := int32(0); ord < pool.GetReplicas(); ord++ {
+		podname := fmt.Sprintf("%s-%d", state.poolFullname(pool), ord)
 		annotations := map[string]string{}
 		for k, v := range ext.Annotations {
 			annotations[k] = v
@@ -50,6 +71,7 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 			// Determine the DNS prefix: per-pod address if available,
 			// single shared address, or fall back to the pod name.
 			prefix := podname
+			i := addrIndex + int(ord)
 			switch {
 			case len(ext.Addresses) > 1 && i < len(ext.Addresses):
 				prefix = ext.Addresses[i]
@@ -70,7 +92,7 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 		}
 		podSelector["statefulset.kubernetes.io/pod-name"] = podname
 
-		ports := lbExternalPorts(state)
+		ports := lbExternalPorts(pool)
 
 		svc := &corev1.Service{
 			TypeMeta: metav1.TypeMeta{
@@ -100,6 +122,6 @@ func loadBalancerServices(state *RenderState) ([]*corev1.Service, error) {
 	return services, nil
 }
 
-func lbExternalPorts(state *RenderState) []corev1.ServicePort {
-	return externalServicePorts(state.Spec().Listeners, false)
+func lbExternalPorts(pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.ServicePort {
+	return externalServicePorts(pool.Spec.Listeners, false)
 }

@@ -32,12 +32,52 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
-// defaultedSpec returns a copy of the StretchCluster spec with defaults applied,
-// matching what the renderer sees.
-func defaultedSpec(sc *redpandav1alpha2.StretchCluster) *redpandav1alpha2.StretchClusterSpec {
-	spec := sc.Spec.DeepCopy()
+// defaultedPoolSpec returns a copy of the RedpandaBrokerPool spec with defaults
+// applied, matching what the renderer sees. TLS, Listeners, ClusterDomain, and
+// the listener port helpers (AdminPort/KafkaPort/SchemaRegistryPort) all live
+// on the pool spec.
+func defaultedPoolSpec(pool *redpandav1alpha2.RedpandaBrokerPool) *redpandav1alpha2.BrokerPoolSpec {
+	spec := pool.Spec.DeepCopy()
 	spec.MergeDefaults()
 	return spec
+}
+
+// representativeBrokerPool returns the first RedpandaBrokerPool in sc's
+// namespace (within the given k8sClient's cluster) that references sc.
+//
+// Listener and TLS config live on each pool to support heterogeneous pools.
+// The Factory needs a single set of ports / TLS settings to build a client,
+// so it picks one pool as representative. Callers should treat the
+// heterogeneous case as a known limitation: if pools advertise different
+// listener ports or TLS configs, only the representative's view is used.
+//
+// Returns (nil, nil) if no matching pool exists in this k8s cluster — the
+// caller surfaces that as an error since a Factory client can't be built
+// without listener config.
+func (c *Factory) representativeBrokerPool(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (*redpandav1alpha2.RedpandaBrokerPool, error) {
+	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
+	defer listCancel()
+
+	var pools redpandav1alpha2.RedpandaBrokerPoolList
+	if err := k8sClient.List(listCtx, &pools, client.InNamespace(sc.Namespace)); err != nil {
+		return nil, err
+	}
+	for i := range pools.Items {
+		pool := &pools.Items[i]
+		ref := pool.Spec.ClusterRef
+		if ref.IsStretchCluster() && ref.Name == sc.Name {
+			return pool, nil
+		}
+	}
+	return nil, nil
+}
+
+// noRepresentativePoolError returns a typed [NoRepresentativePoolError] for sc.
+// Callers (e.g. the multicluster reconciler's initAdminClient) can detect this
+// via [IsNoRepresentativePoolError] and treat it as a transient "not ready"
+// signal rather than a terminal failure.
+func noRepresentativePoolError(sc *redpandav1alpha2.StretchCluster) error {
+	return &NoRepresentativePoolError{Namespace: sc.Namespace, Name: sc.Name}
 }
 
 // redpandaAdminForStretchCluster builds an admin API client for a StretchCluster
@@ -49,9 +89,16 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 		return nil, errors.Wrap(err, "getting k8s client")
 	}
 
-	spec := defaultedSpec(sc)
+	pool, err := c.representativeBrokerPool(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding representative broker pool")
+	}
+	if pool == nil {
+		return nil, noRepresentativePoolError(sc)
+	}
+	poolSpec := defaultedPoolSpec(pool)
 
-	endpoints, err := c.stretchClusterEndpoints(ctx, sc, spec.AdminPort())
+	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.AdminPort())
 	if err != nil {
 		return nil, errors.Wrap(err, "discovering admin endpoints")
 	}
@@ -60,10 +107,10 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 	}
 
 	var listener *redpandav1alpha2.StretchAPIListener
-	if spec.Listeners != nil {
-		listener = spec.Listeners.Admin
+	if poolSpec.Listeners != nil {
+		listener = poolSpec.Listeners.Admin
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, spec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -88,9 +135,16 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 		return nil, errors.Wrap(err, "getting k8s client")
 	}
 
-	spec := defaultedSpec(sc)
+	pool, err := c.representativeBrokerPool(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding representative broker pool")
+	}
+	if pool == nil {
+		return nil, noRepresentativePoolError(sc)
+	}
+	poolSpec := defaultedPoolSpec(pool)
 
-	brokers, err := c.stretchClusterEndpoints(ctx, sc, spec.KafkaPort())
+	brokers, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.KafkaPort())
 	if err != nil {
 		return nil, errors.Wrap(err, "discovering kafka endpoints")
 	}
@@ -99,10 +153,10 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 	}
 
 	var listener *redpandav1alpha2.StretchAPIListener
-	if spec.Listeners != nil {
-		listener = spec.Listeners.Kafka
+	if poolSpec.Listeners != nil {
+		listener = poolSpec.Listeners.Kafka
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, spec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -137,9 +191,16 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 		return nil, errors.Wrap(err, "getting k8s client")
 	}
 
-	spec := defaultedSpec(sc)
+	pool, err := c.representativeBrokerPool(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding representative broker pool")
+	}
+	if pool == nil {
+		return nil, noRepresentativePoolError(sc)
+	}
+	poolSpec := defaultedPoolSpec(pool)
 
-	endpoints, err := c.stretchClusterEndpoints(ctx, sc, spec.SchemaRegistryPort())
+	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.SchemaRegistryPort())
 	if err != nil {
 		return nil, errors.Wrap(err, "discovering schema registry endpoints")
 	}
@@ -148,10 +209,10 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 	}
 
 	var listener *redpandav1alpha2.StretchAPIListener
-	if spec.Listeners != nil {
-		listener = spec.Listeners.SchemaRegistry
+	if poolSpec.Listeners != nil {
+		listener = poolSpec.Listeners.SchemaRegistry
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, spec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -237,10 +298,15 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 
 // stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS is
 // enabled, reading the CA certificate from the shared root CA secret.
-func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, spec *redpandav1alpha2.StretchClusterSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
+//
+// TLS lives on each pool spec to support heterogeneous pools; poolSpec is the
+// defaulted spec of the representative pool. The CA secret itself is resolved
+// via sc.Name (the operator-managed root CA is cluster-wide, shared across
+// pools — see syncCA in the multicluster controller).
+func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.BrokerPoolSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
 	tlsEnabled := false
 	if listener != nil {
-		tlsEnabled = listener.IsTLSEnabled(spec.TLS)
+		tlsEnabled = listener.IsTLSEnabled(poolSpec.TLS)
 	}
 	if !tlsEnabled {
 		return nil, nil
@@ -253,7 +319,7 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 
 	// CertificatesFor resolves the CA secret name and key based on the cert
 	// type: operator-managed CA, user-provided SecretRef, or external IssuerRef.
-	caSecretName, caKey, _ := spec.TLS.CertificatesFor(sc.Name, certName)
+	caSecretName, caKey, _ := poolSpec.TLS.CertificatesFor(sc.Name, certName)
 	var caSecret corev1.Secret
 	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: caSecretName}, &caSecret); err != nil {
 		return nil, errors.Wrapf(err, "reading CA secret %q", caSecretName)
@@ -273,15 +339,15 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 	}
 
 	if len(caCert) > 0 {
-		pool := x509.NewCertPool()
-		if !pool.AppendCertsFromPEM(caCert) {
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(caCert) {
 			return nil, fmt.Errorf("failed to parse CA certificate from secret %q", caSecretName)
 		}
-		tlsConfig.RootCAs = pool
+		tlsConfig.RootCAs = certPool
 	}
 
 	if listener.TLS.RequiresClientAuth() {
-		clientSecretName := spec.TLS.CertClientSecretName(sc.Name, certName)
+		clientSecretName := poolSpec.TLS.CertClientSecretName(sc.Name, certName)
 		var clientSecret corev1.Secret
 		if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: clientSecretName}, &clientSecret); err != nil {
 			return nil, errors.Wrapf(err, "reading client cert secret %q", clientSecretName)

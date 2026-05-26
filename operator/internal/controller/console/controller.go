@@ -529,7 +529,22 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 				return console.PartialRenderValues{}, err
 			}
 
-			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc)
+			// TLS / Listeners / ClusterDomain live on each pool's spec (to
+			// support heterogeneous pools), so we need a representative
+			// RedpandaBrokerPool to derive the Console connection config.
+			// Pick the first pool in this cluster that references the
+			// StretchCluster; if none exists yet, return an empty fragment
+			// — the Console will be re-reconciled when pools appear (see
+			// SetupWithMulticlusterManager's StretchCluster watch).
+			pool, err := r.findRepresentativePool(ctx, &sc)
+			if err != nil {
+				return console.PartialRenderValues{}, err
+			}
+			if pool == nil {
+				return console.PartialRenderValues{}, nil
+			}
+
+			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, pool)
 			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil
 		}
 
@@ -558,4 +573,24 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 	}
 
 	return console.PartialRenderValues{}, nil
+}
+
+// findRepresentativePool returns the first RedpandaBrokerPool in the
+// StretchCluster's namespace that references sc. Pools live in the same
+// K8s cluster as the Console (the local cluster the renderer's r.ctl is
+// scoped to). Returns (nil, nil) if no matching pool exists yet — Console
+// will be re-reconciled via the StretchCluster watch as pools come and go.
+func (r *render) findRepresentativePool(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*redpandav1alpha2.RedpandaBrokerPool, error) {
+	var pools redpandav1alpha2.RedpandaBrokerPoolList
+	if err := r.ctl.List(ctx, sc.Namespace, &pools); err != nil {
+		return nil, err
+	}
+	for i := range pools.Items {
+		pool := &pools.Items[i]
+		ref := pool.Spec.ClusterRef
+		if ref.IsStretchCluster() && ref.Name == sc.Name {
+			return pool, nil
+		}
+	}
+	return nil, fmt.Errorf("no RedpandaBrokerPool found in this k8s cluster for stretch cluster %s. Please create one before creating Console", sc.Name)
 }

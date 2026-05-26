@@ -16,12 +16,14 @@ import (
 	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 // perPodEndpoints renders Endpoints and EndpointSlices for selector-less
-// per-pod Services in flat network mode. Each per-pod Service gets an
-// Endpoints object (for CoreDNS) and an EndpointSlice (for kube-proxy/mesh)
-// pointing to the actual pod IP.
+// per-pod Services in flat network mode, across every pool in every region.
+// Each per-pod Service gets an Endpoints object (for CoreDNS) and an
+// EndpointSlice (for kube-proxy/mesh) pointing to the actual pod IP.
 func perPodEndpoints(state *RenderState) []kube.Object {
 	logger := log.FromContext(state.Context()).WithName("perPodEndpoints")
 	if !state.Spec().Networking.IsFlatNetwork() {
@@ -44,36 +46,50 @@ func perPodEndpoints(state *RenderState) []kube.Object {
 		"pools", len(state.pools),
 	)
 
-	spec := state.Spec()
-	ports := perPodServicePorts(spec)
-
 	var objects []kube.Object
 	for _, pool := range state.pools {
-		for i := int32(0); i < pool.GetReplicas(); i++ {
-			svcName := PerPodServiceName(state.poolFullname(pool), i)
-
-			var ep PodEndpoint
-			found := false
-			for _, e := range state.podEndpoints {
-				if e.Name == svcName {
-					ep = e
-					found = true
-					break
-				}
-			}
-			if !found {
-				logger.V(log.TraceLevel).Info(
-					"no PodEndpoint entry for per-pod service, skipping (its Endpoints will be GC'd)",
-					"svcName", svcName,
-				)
-				continue
-			}
-
-			objects = append(objects, endpointsForService(state, svcName, ep, ports)...)
-		}
+		objects = append(objects, perPodEndpointsForPool(state, pool)...)
 	}
 	logger.V(log.TraceLevel).Info("rendered per-pod endpoints", "objectCount", len(objects))
 
+	return objects
+}
+
+// perPodEndpointsForPool renders Endpoints + EndpointSlice for one pool's
+// replicas. Caller iterates state.Pools(); guards against non-flat networking
+// and empty podEndpoints state should be enforced at the call site (matches
+// the behavior of the umbrella perPodEndpoints) — when called individually,
+// helper returns nil if guards fail.
+func perPodEndpointsForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []kube.Object {
+	if !state.Spec().Networking.IsFlatNetwork() || len(state.podEndpoints) == 0 {
+		return nil
+	}
+	logger := log.FromContext(state.Context()).WithName("perPodEndpointsForPool")
+	ports := perPodServicePorts(&pool.Spec)
+
+	var objects []kube.Object
+	for i := int32(0); i < pool.GetReplicas(); i++ {
+		svcName := PerPodServiceName(state.poolFullname(pool), i)
+
+		var ep PodEndpoint
+		found := false
+		for _, e := range state.podEndpoints {
+			if e.Name == svcName {
+				ep = e
+				found = true
+				break
+			}
+		}
+		if !found {
+			logger.V(log.TraceLevel).Info(
+				"no PodEndpoint entry for per-pod service, skipping (its Endpoints will be GC'd)",
+				"svcName", svcName,
+			)
+			continue
+		}
+
+		objects = append(objects, endpointsForService(state, svcName, ep, ports)...)
+	}
 	return objects
 }
 
