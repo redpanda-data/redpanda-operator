@@ -157,9 +157,9 @@ func statefulSet(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) 
 			ServiceName:         state.fullname(),
 			Replicas:            ptr.To(pool.GetReplicas()),
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			// PersistentVolumeClaimRetentionPolicy is not yet exposed on
-			// BrokerPoolSpec; default behavior (retain) applies.
-			PersistentVolumeClaimRetentionPolicy: nil,
+			// PVC retention follows the pool spec; nil means Kubernetes
+			// defaults apply (Retain on both scale-down and delete).
+			PersistentVolumeClaimRetentionPolicy: pool.Spec.PersistentVolumeClaimRetentionPolicy,
 			// OnDelete lets the operator control rollout ordering (e.g.
 			// maintenance mode drain → restart → clear maintenance) rather
 			// than letting the StatefulSet controller do a blind rolling update.
