@@ -42,6 +42,12 @@ func defaultedPoolSpec(pool *redpandav1alpha2.RedpandaBrokerPool) *redpandav1alp
 	return spec
 }
 
+// poolFullnameFor computes the full resource-name prefix for a pool's
+// rendered objects, matching the renderer's poolFullname convention.
+func poolFullnameFor(sc *redpandav1alpha2.StretchCluster, pool *redpandav1alpha2.RedpandaBrokerPool) string {
+	return tplutil.CleanForK8s(sc.Name) + pool.Suffix()
+}
+
 // representativeBrokerPool returns the first RedpandaBrokerPool in sc's
 // namespace (within the given k8sClient's cluster) that references sc.
 //
@@ -97,6 +103,7 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 		return nil, noRepresentativePoolError(sc)
 	}
 	poolSpec := defaultedPoolSpec(pool)
+	poolFullname := poolFullnameFor(sc, pool)
 
 	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.AdminPort())
 	if err != nil {
@@ -110,7 +117,7 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 	if poolSpec.Listeners != nil {
 		listener = poolSpec.Listeners.Admin
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolFullname, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -143,6 +150,7 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 		return nil, noRepresentativePoolError(sc)
 	}
 	poolSpec := defaultedPoolSpec(pool)
+	poolFullname := poolFullnameFor(sc, pool)
 
 	brokers, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.KafkaPort())
 	if err != nil {
@@ -156,7 +164,7 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 	if poolSpec.Listeners != nil {
 		listener = poolSpec.Listeners.Kafka
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolFullname, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -199,6 +207,7 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 		return nil, noRepresentativePoolError(sc)
 	}
 	poolSpec := defaultedPoolSpec(pool)
+	poolFullname := poolFullnameFor(sc, pool)
 
 	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.SchemaRegistryPort())
 	if err != nil {
@@ -212,7 +221,7 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 	if poolSpec.Listeners != nil {
 		listener = poolSpec.Listeners.SchemaRegistry
 	}
-	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolSpec, listener, k8sClient)
+	tlsConfig, err := c.stretchClusterListenerTLSConfig(ctx, sc, poolFullname, poolSpec, listener, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "building TLS config")
 	}
@@ -296,14 +305,15 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 	return endpoints, nil
 }
 
-// stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS is
-// enabled, reading the CA certificate from the shared root CA secret.
+// stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS
+// is enabled, reading the CA certificate from the appropriate secret.
 //
-// TLS lives on each pool spec to support heterogeneous pools; poolSpec is the
-// defaulted spec of the representative pool. The CA secret itself is resolved
-// via sc.Name (the operator-managed root CA is cluster-wide, shared across
-// pools — see syncCA in the multicluster controller).
-func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav1alpha2.BrokerPoolSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
+// The CA secret naming scope differs by cert type:
+//   - Operator-managed CA: cluster-scoped root CA named after sc.Name.
+//   - SecretRef: literal user-provided secret name.
+//   - IssuerRef: pool-scoped leaf cert secret named after poolFullname
+//     (cert-manager populates ca.crt with the CA chain).
+func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpandav1alpha2.StretchCluster, poolFullname string, poolSpec *redpandav1alpha2.BrokerPoolSpec, listener *redpandav1alpha2.StretchAPIListener, k8sClient client.Client) (*tls.Config, error) {
 	tlsEnabled := false
 	if listener != nil {
 		tlsEnabled = listener.IsTLSEnabled(poolSpec.TLS)
@@ -317,9 +327,25 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 		certName = "default"
 	}
 
-	// CertificatesFor resolves the CA secret name and key based on the cert
-	// type: operator-managed CA, user-provided SecretRef, or external IssuerRef.
-	caSecretName, caKey, _ := poolSpec.TLS.CertificatesFor(sc.Name, certName)
+	// Resolve the CA secret. Naming scope varies:
+	// - Operator-managed CA → cluster-scoped root CA (sc.Name).
+	// - SecretRef → user-provided literal name.
+	// - IssuerRef → pool-scoped leaf cert (poolFullname); cert-manager
+	//   puts the CA chain in ca.crt.
+	var caSecretName, caKey string
+	cert := poolSpec.TLS.Certs[certName]
+	switch {
+	case cert != nil && cert.SecretRef != nil && cert.SecretRef.Name != nil:
+		caSecretName = *cert.SecretRef.Name
+		caKey = corev1.TLSCertKey
+	case cert != nil && cert.IssuerRef != nil:
+		caSecretName = poolSpec.TLS.CertServerSecretName(poolFullname, certName)
+		caKey = "ca.crt"
+	default:
+		caSecretName = rendermulticluster.CASecretName(sc.Name, certName)
+		caKey = corev1.TLSCertKey
+	}
+
 	var caSecret corev1.Secret
 	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: caSecretName}, &caSecret); err != nil {
 		return nil, errors.Wrapf(err, "reading CA secret %q", caSecretName)
@@ -347,7 +373,7 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 	}
 
 	if listener.TLS.RequiresClientAuth() {
-		clientSecretName := poolSpec.TLS.CertClientSecretName(sc.Name, certName)
+		clientSecretName := poolSpec.TLS.CertClientSecretName(poolFullname, certName)
 		var clientSecret corev1.Secret
 		if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: clientSecretName}, &clientSecret); err != nil {
 			return nil, errors.Wrapf(err, "reading client cert secret %q", clientSecretName)
