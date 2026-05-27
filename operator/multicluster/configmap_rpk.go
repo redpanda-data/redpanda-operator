@@ -11,6 +11,7 @@ package multicluster
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,15 +34,15 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool
 		"overprovisioned":        pool.Spec.GetOverProvisionValue(),
 		"enable_memory_locking":  pool.Spec.GetEnableMemoryLocking(),
 		"kafka_api": map[string]any{
-			"brokers": state.BrokerList(pool.Spec.KafkaPort()),
+			"brokers": state.kafkaApiBrokerList(),
 			"tls":     rpkListenerTLS(pool, l.Kafka),
 		},
 		"admin_api": map[string]any{
-			"addresses": state.BrokerList(pool.Spec.AdminPort()),
+			"addresses": state.adminApiBrokerList(),
 			"tls":       rpkListenerTLS(pool, l.Admin),
 		},
 		"schema_registry": map[string]any{
-			"addresses": state.BrokerList(pool.Spec.SchemaRegistryPort()),
+			"addresses": state.schemaRegistryBrokerList(),
 			"tls":       rpkListenerTLS(pool, l.SchemaRegistry),
 		},
 	}
@@ -96,11 +97,12 @@ func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBroker
 			"port":    pool.Spec.KafkaPort(),
 		})
 	} else {
-		for _, addr := range state.BrokerList(pool.Spec.KafkaPort()) {
-			// BrokerList returns "host:port" strings; split for the map format.
+		for _, addr := range state.kafkaApiBrokerList() {
+			host, portStr := addr[:strings.LastIndex(addr, ":")], addr[strings.LastIndex(addr, ":")+1:]
+			port, _ := strconv.Atoi(portStr)
 			brokerList = append(brokerList, map[string]any{
-				"address": addr[:strings.LastIndex(addr, ":")],
-				"port":    pool.Spec.KafkaPort(),
+				"address": host,
+				"port":    port,
 			})
 		}
 	}

@@ -274,25 +274,66 @@ func (r *RenderState) totalReplicas() int32 {
 	return total
 }
 
-// BrokerList returns a list of broker addresses for the given port.
+// --- The three functions below are almost identical, only difference is the port getter per pool. ---
+
+// kafkaApiBrokerList returns a list of broker addresses for the kafkaApi section in the config.
 // For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
 // uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
 // resolves across clusters via the synced per-pod Services.
-func (r *RenderState) BrokerList(port int32) []string {
+func (r *RenderState) kafkaApiBrokerList() []string {
 	addressFmt := "%s.%s:%d"
 	if r.Spec().Networking.IsMCS() {
 		addressFmt = "%s.%s.svc.clusterset.local:%d"
 	}
-
 	var brokers []string
 	for _, pool := range r.pools {
 		for i := int32(0); i < pool.GetReplicas(); i++ {
 			name := PerPodServiceName(r.poolFullname(pool), i)
-			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, port))
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, pool.Spec.KafkaPort()))
 		}
 	}
 	return brokers
 }
+
+// adminApiBrokerList returns a list of broker addresses for the adminApi section in the config.
+// For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
+// uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
+// resolves across clusters via the synced per-pod Services.
+func (r *RenderState) adminApiBrokerList() []string {
+	addressFmt := "%s.%s:%d"
+	if r.Spec().Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+	var brokers []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			name := PerPodServiceName(r.poolFullname(pool), i)
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, pool.Spec.AdminPort()))
+		}
+	}
+	return brokers
+}
+
+// schemaRegistryBrokerList returns a list of broker addresses for the schemaRegistry section in the config.
+// For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
+// uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
+// resolves across clusters via the synced per-pod Services.
+func (r *RenderState) schemaRegistryBrokerList() []string {
+	addressFmt := "%s.%s:%d"
+	if r.Spec().Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+	var brokers []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			name := PerPodServiceName(r.poolFullname(pool), i)
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, pool.Spec.SchemaRegistryPort()))
+		}
+	}
+	return brokers
+}
+
+// --- ---
 
 // podOrdinalOffset returns the flattened index of the first pod of pool
 // within the local-pool pod list. Lets per-pool helpers index into
