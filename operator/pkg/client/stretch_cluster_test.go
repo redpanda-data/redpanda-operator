@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/trace"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -640,6 +642,128 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 			return count == 0
 		}, 2*time.Minute, 5*time.Second, "Pods were not cleaned up after full deletion")
 	})
+}
+
+// TestFactoryClientsWithIssuerRefTLS verifies that the Factory correctly
+// resolves pool-scoped leaf cert secrets when TLS uses an external IssuerRef.
+// Before the fix, the Factory looked for <sc.Name>-<cert>-cert but the
+// renderer creates secrets named <poolFullname>-<cert>-cert.
+func (s *StretchClusterFactorySuite) TestFactoryClientsWithIssuerRefTLS() {
+	t := s.T()
+	t.Parallel()
+	ctx := trace.Test(t)
+	tn := s.mc.CreateTestNamespace(t)
+	ns := tn.Name
+	nn := types.NamespacedName{Name: "issuerref-tls", Namespace: ns}
+
+	// Bootstrap a cert-manager CA Issuer chain on every cluster:
+	// SelfSigned Issuer → CA Certificate → CA Issuer.
+	s.mc.ApplyAll(t, ctx, &certmanagerv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{Name: "bootstrap-selfsigned", Namespace: ns},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+			},
+		},
+	})
+	s.mc.ApplyAll(t, ctx, &certmanagerv1.Certificate{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-ca", Namespace: ns},
+		Spec: certmanagerv1.CertificateSpec{
+			IsCA:       true,
+			CommonName: "test-ca",
+			SecretName: "test-ca-key-pair",
+			PrivateKey: &certmanagerv1.CertificatePrivateKey{
+				Algorithm: certmanagerv1.ECDSAKeyAlgorithm,
+				Size:      256,
+			},
+			IssuerRef: cmmetav1.ObjectReference{
+				Name:  "bootstrap-selfsigned",
+				Kind:  "Issuer",
+				Group: "cert-manager.io",
+			},
+		},
+	})
+	for _, env := range s.mc.Envs {
+		require.Eventually(t, func() bool {
+			var secret corev1.Secret
+			return env.Client().Get(ctx, client.ObjectKey{Namespace: ns, Name: "test-ca-key-pair"}, &secret) == nil
+		}, 1*time.Minute, 1*time.Second, "CA cert secret never appeared on %s", env.Name)
+	}
+	s.mc.ApplyAll(t, ctx, &certmanagerv1.Issuer{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-ca-issuer", Namespace: ns},
+		Spec: certmanagerv1.IssuerSpec{
+			IssuerConfig: certmanagerv1.IssuerConfig{
+				CA: &certmanagerv1.CAIssuer{
+					SecretName: "test-ca-key-pair",
+				},
+			},
+		},
+	})
+
+	sc := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: nn.Name, Namespace: ns},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			Networking: &redpandav1alpha2.Networking{
+				CrossClusterMode: ptr.To(redpandav1alpha2.CrossClusterModeFlat),
+			},
+		},
+	}
+	s.mc.ApplyAll(t, ctx, sc)
+
+	// BrokerPools use IssuerRef for both default and external certs.
+	// The operator renders cert-manager Certificates with pool-scoped
+	// secret names; the Factory must resolve the same names when building
+	// its TLS config.
+	issuerRef := &redpandav1alpha2.IssuerRef{
+		Name:  ptr.To("test-ca-issuer"),
+		Kind:  ptr.To("Issuer"),
+		Group: ptr.To("cert-manager.io"),
+	}
+	s.applyBrokerPools(t, ctx, nn.Name, ns, "ir-pool", redpandav1alpha2.EmbeddedBrokerPoolSpec{
+		External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
+		TLS: &redpandav1alpha2.TLS{
+			Enabled: ptr.To(true),
+			Certs: map[string]*redpandav1alpha2.Certificate{
+				"default": {
+					CAEnabled: ptr.To(true),
+					IssuerRef: issuerRef,
+				},
+				"external": {
+					CAEnabled: ptr.To(true),
+					IssuerRef: issuerRef,
+				},
+			},
+		},
+	})
+
+	s.waitForFinalizer(t, ctx, nn)
+	s.waitForBrokerReady(t, ctx, nn)
+
+	require.NoError(t, s.mc.Envs[0].Client().Get(ctx, nn, sc))
+
+	require.Eventually(t, func() bool {
+		adminClient, err := s.factory.RedpandaAdminClient(ctx, sc)
+		if err != nil {
+			t.Logf("AdminClient error (will retry): %v", err)
+			return false
+		}
+		defer adminClient.Close()
+
+		brokers, err := adminClient.Brokers(context.Background())
+		if err != nil {
+			t.Logf("Brokers error (will retry): %v", err)
+			return false
+		}
+		if len(brokers) == 0 {
+			return false
+		}
+		for _, b := range brokers {
+			if b.MembershipStatus != rpadmin.MembershipStatusActive {
+				return false
+			}
+		}
+		return true
+	}, 2*time.Minute, 5*time.Second, "admin client with IssuerRef TLS never connected")
 }
 
 // countOwnedResourcesAcrossClusters counts resources matching the given options
