@@ -1,0 +1,65 @@
+# ===== Cluster: cluster-a =====
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: cluster-a
+    app.kubernetes.io/name: operator
+    operator.redpanda.com/bootstrap-managed: "true"
+  name: cluster-a-multicluster-peer
+  namespace: redpanda
+spec:
+  ports:
+  - name: raft
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: cluster-a
+    app.kubernetes.io/name: operator
+  type: LoadBalancer
+---
+# ===== Cluster: cluster-b =====
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: cluster-b
+    app.kubernetes.io/name: operator
+    operator.redpanda.com/bootstrap-managed: "true"
+  name: cluster-b-multicluster-peer
+  namespace: redpanda
+spec:
+  ports:
+  - name: raft
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: cluster-b
+    app.kubernetes.io/name: operator
+  type: LoadBalancer
+---
+# ===== Cluster: cluster-c =====
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: cluster-c
+    app.kubernetes.io/name: operator
+    operator.redpanda.com/bootstrap-managed: "true"
+  name: cluster-c-multicluster-peer
+  namespace: redpanda
+spec:
+  ports:
+  - name: raft
+    port: 9443
+    protocol: TCP
+    targetPort: 9443
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: cluster-c
+    app.kubernetes.io/name: operator
+  type: LoadBalancer
