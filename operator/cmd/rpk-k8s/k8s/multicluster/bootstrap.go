@@ -10,16 +10,25 @@
 package multicluster
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 )
+
+// outputYAML is the value of --output that switches the command from
+// applying resources to printing them as YAML on stdout.
+const outputYAML = "yaml"
 
 // BootstrapConfig holds the configuration for the bootstrap command.
 // It can be populated from CLI flags via the cobra command or set
@@ -33,10 +42,24 @@ type BootstrapConfig struct {
 	CreateNS               bool
 	ProvisionLoadBalancers bool
 	LoadBalancerTimeout    time.Duration
+	// Output controls the command's mode. Empty (default) applies
+	// resources to each remote cluster. "yaml" prints the manifests to
+	// stdout and makes no cluster calls — for GitOps workflows that prefer
+	// committing the artifacts and applying via Argo/Flux.
+	Output string
 }
 
 // Run executes the bootstrap operation.
 func (c *BootstrapConfig) Run(ctx context.Context, out io.Writer) error {
+	switch c.Output {
+	case "":
+		// default flow: apply to clusters
+	case outputYAML:
+		return c.runYAML(out)
+	default:
+		return fmt.Errorf("unsupported --output value %q, only %q is supported", c.Output, outputYAML)
+	}
+
 	conns, err := c.Connection.Resolve()
 	if err != nil {
 		return err
@@ -105,6 +128,186 @@ func (c *BootstrapConfig) Run(ctx context.Context, out io.Writer) error {
 		printPeersBlock(out, config.RemoteClusters)
 	}
 	return nil
+}
+
+// runYAML implements the --output=yaml mode: it generates the same
+// resources Run would apply, but writes them to out as a single YAML stream
+// instead of touching any cluster. The output is grouped per remote cluster
+// with comment headers so a GitOps pipeline can split or route blocks per
+// destination.
+//
+// Unlike the live-apply path, yaml mode does not require a kubeconfig or
+// any cluster connectivity. Cluster names are derived from --context flags
+// (LB mode) or --dns-override keys (bootstrap mode), and --name-override
+// is applied the same way Resolve() would.
+func (c *BootstrapConfig) runYAML(out io.Writer) error {
+	if c.ProvisionLoadBalancers {
+		return c.runYAMLLoadBalancers(out)
+	}
+	return c.runYAMLBootstrap(out)
+}
+
+// runYAMLLoadBalancers emits LoadBalancer Service manifests — step 1 of
+// the GitOps workflow. The user applies these, waits for external IPs,
+// then runs bootstrap --output=yaml with --dns-override to get TLS/NS
+// manifests.
+//
+// Cluster names come from --context flags; no kubeconfig is needed.
+func (c *BootstrapConfig) runYAMLLoadBalancers(out io.Writer) error {
+	if len(c.Connection.Contexts) == 0 {
+		return errors.New("--output=yaml --loadbalancer requires --context flags to specify cluster names")
+	}
+
+	nameOverrides, err := parseNameOverrides(c.Connection.NameOverrides)
+	if err != nil {
+		return err
+	}
+
+	remoteClusters := make([]bootstrap.RemoteConfiguration, len(c.Connection.Contexts))
+	for i, name := range c.Connection.Contexts {
+		prefix := name
+		if override, ok := nameOverrides[name]; ok {
+			prefix = override
+		}
+		remoteClusters[i] = bootstrap.RemoteConfiguration{
+			ContextName: name,
+			Name:        prefix,
+		}
+	}
+
+	config := bootstrap.BootstrapClusterConfiguration{
+		OperatorNamespace: c.Connection.Namespace,
+		ServiceName:       c.Connection.ServiceName,
+		RemoteClusters:    remoteClusters,
+	}
+
+	objsByCluster := bootstrap.GenerateLoadBalancerObjects(config)
+	return writeYAMLStream(out, objsByCluster)
+}
+
+// runYAMLBootstrap emits Namespace and TLS Secret manifests — step 2 of
+// the GitOps workflow (or the only step when LB addresses are already known).
+//
+// Cluster names are derived from --dns-override keys; no kubeconfig is needed.
+func (c *BootstrapConfig) runYAMLBootstrap(out io.Writer) error {
+	if !c.TLS && !c.CreateNS {
+		return errors.New("--output=yaml requires at least one of --tls or --create-namespace; otherwise no resources would be emitted")
+	}
+
+	dnsOverrides, err := parseDNSOverrides(c.DNSOverrides)
+	if err != nil {
+		return err
+	}
+	if len(dnsOverrides) == 0 {
+		return errors.New("--output=yaml requires --dns-override for every cluster (LoadBalancer provisioning is disabled)")
+	}
+
+	nameOverrides, err := parseNameOverrides(c.Connection.NameOverrides)
+	if err != nil {
+		return err
+	}
+
+	contexts := make([]string, 0, len(dnsOverrides))
+	for name := range dnsOverrides {
+		contexts = append(contexts, name)
+	}
+	sort.Strings(contexts)
+
+	remoteClusters := make([]bootstrap.RemoteConfiguration, len(contexts))
+	for i, name := range contexts {
+		prefix := name
+		if override, ok := nameOverrides[name]; ok {
+			prefix = override
+		}
+		remoteClusters[i] = bootstrap.RemoteConfiguration{
+			ContextName:    name,
+			ServiceAddress: dnsOverrides[name],
+			Name:           prefix,
+		}
+	}
+
+	config := bootstrap.BootstrapClusterConfiguration{
+		BootstrapTLS:      c.TLS,
+		EnsureNamespace:   c.CreateNS,
+		OperatorNamespace: c.Connection.Namespace,
+		ServiceName:       c.Connection.ServiceName,
+		RemoteClusters:    remoteClusters,
+	}
+
+	objsByCluster, err := bootstrap.GenerateBootstrapObjects(c.Organization, config)
+	if err != nil {
+		return fmt.Errorf("generating bootstrap objects: %w", err)
+	}
+
+	return writeYAMLStream(out, objsByCluster)
+}
+
+func writeYAMLStream(out io.Writer, objsByCluster map[string][]client.Object) error {
+	contexts := make([]string, 0, len(objsByCluster))
+	for name := range objsByCluster {
+		contexts = append(contexts, name)
+	}
+	sort.Strings(contexts)
+
+	first := true
+	for _, name := range contexts {
+		objs := objsByCluster[name]
+		if !first {
+			if _, err := fmt.Fprintln(out, "---"); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprintf(out, "# ===== Cluster: %s =====\n", name); err != nil {
+			return err
+		}
+		for j, obj := range objs {
+			if j > 0 {
+				if _, err := fmt.Fprintln(out, "---"); err != nil {
+					return err
+				}
+			}
+			data, err := marshalManifest(obj)
+			if err != nil {
+				return fmt.Errorf("marshalling object for %s: %w", name, err)
+			}
+			if _, err := out.Write(data); err != nil {
+				return err
+			}
+		}
+		first = false
+	}
+	return nil
+}
+
+// marshalManifest renders a Kubernetes object as YAML and strips noise lines
+// (creationTimestamp: null, status: {}, spec: {}) that sigs.k8s.io/yaml.Marshal
+// emits for default-valued fields. The output is intended to be committed to
+// git, so any line that conveys no information is worth removing.
+func marshalManifest(obj client.Object) ([]byte, error) {
+	data, err := yaml.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	return stripEmptyLines(data), nil
+}
+
+// NB: only safe for the object types we currently emit (Namespace, Secret,
+// Service) — all have empty status/spec blocks. Revisit if new types are added.
+func stripEmptyLines(data []byte) []byte {
+	lines := bytes.Split(data, []byte("\n"))
+	out := make([][]byte, 0, len(lines))
+	for _, line := range lines {
+		trimmed := bytes.TrimSpace(line)
+		if bytes.Equal(trimmed, []byte("creationTimestamp: null")) ||
+			bytes.Equal(trimmed, []byte("status: {}")) ||
+			bytes.Equal(trimmed, []byte("status:")) ||
+			bytes.Equal(trimmed, []byte("loadBalancer: {}")) ||
+			bytes.Equal(trimmed, []byte("spec: {}")) {
+			continue
+		}
+		out = append(out, line)
+	}
+	return bytes.Join(out, []byte("\n"))
 }
 
 // provisionWithSpinner calls bootstrap.EnsurePeerLoadBalancer with an
@@ -176,7 +379,29 @@ before signing certificates, waits for the cloud provider to assign an
 external address, and bakes that address into the cert SANs. This resolves
 the deploy/redeploy cycle that otherwise forces a first helm install just
 to learn each cluster's external IP/hostname. The resulting peer list is
-printed on success for pasting into helm values.`,
+printed on success for pasting into helm values.
+
+--output=yaml skips applying anything and prints all manifests to stdout,
+grouped per cluster with comment headers, separated by '---'. No cluster
+contact or kubeconfig is needed — cluster names are derived from --context
+flags (LB mode) or --dns-override keys (bootstrap mode).
+Use this for GitOps pipelines that commit manifests and apply them via
+Argo, Flux, or similar.
+
+Two-step GitOps workflow:
+
+  1. bootstrap --output=yaml --loadbalancer --context <ctx> ...
+     Emits only LoadBalancer Service manifests. Apply them, wait for the
+     cloud provider to assign external addresses.
+
+  2. bootstrap --output=yaml --dns-override ctx=<address> ...
+     Emits Namespace and TLS Secret manifests with the known addresses
+     baked into the cert SANs.
+
+When --loadbalancer is NOT set, --dns-override is required for every
+cluster; cluster names are derived from the override keys.
+ServiceAccount, SA token, and kubeconfig cache Secrets are not emitted
+because the operator regenerates them at runtime.`,
 		Example: `  # Bootstrap all clusters from a kubeconfig file
   rpk k8s multicluster bootstrap \
     --kubeconfig /path/to/kubeconfig \
@@ -212,7 +437,21 @@ printed on success for pasting into helm values.`,
   rpk k8s multicluster bootstrap \
     --kubeconfig /path/to/kubeconfig \
     --namespace redpanda \
-    --tls --kubeconfigs=false`,
+    --tls --kubeconfigs=false
+
+  # GitOps step 1: emit LoadBalancer Services (no kubeconfig needed)
+  rpk k8s multicluster bootstrap \
+    --context cluster-a --context cluster-b \
+    --namespace redpanda \
+    --loadbalancer \
+    --output=yaml > multicluster-services.yaml
+
+  # GitOps step 2: emit Namespace + TLS Secrets (no kubeconfig needed)
+  rpk k8s multicluster bootstrap \
+    --namespace redpanda \
+    --dns-override cluster-a=cluster-a.example.com \
+    --dns-override cluster-b=cluster-b.example.com \
+    --output=yaml > multicluster-bootstrap.yaml`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cfg.Run(cmd.Context(), cmd.OutOrStdout())
 		},
@@ -226,6 +465,7 @@ printed on success for pasting into helm values.`,
 	cmd.Flags().BoolVar(&cfg.CreateNS, "create-namespace", cfg.CreateNS, "Create the namespace if it does not exist")
 	cmd.Flags().BoolVar(&cfg.ProvisionLoadBalancers, "loadbalancer", cfg.ProvisionLoadBalancers, "Provision a standalone LoadBalancer Service per cluster and use its external address for TLS SANs")
 	cmd.Flags().DurationVar(&cfg.LoadBalancerTimeout, "loadbalancer-timeout", 0, "Per-cluster timeout waiting for a LoadBalancer address (0 = default of 10m)")
+	cmd.Flags().StringVar(&cfg.Output, "output", "", `Output mode. Empty (default) applies resources to clusters. "yaml" prints manifests to stdout for GitOps and makes no cluster calls`)
 
 	return cmd
 }
