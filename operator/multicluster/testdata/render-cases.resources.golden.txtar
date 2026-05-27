@@ -36,6 +36,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: audit-logging
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -823,6 +824,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: common-labels
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -1644,6 +1646,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: custom-cluster-domain
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -2429,6 +2432,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: custom-config
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -3215,6 +3219,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: custom-image
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -4000,6 +4005,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: custom-resources
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -4785,6 +4791,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: custom-resources-explicit
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -5570,6 +5577,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: enterprise
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -6355,6 +6363,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: external-loadbalancer
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -7140,6 +7149,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: external-nodeport
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -7925,6 +7935,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: external-tls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -8710,6 +8721,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: flat-network
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -9557,6 +9569,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: flat-network-tls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -10520,8 +10533,10 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-cold-statefulset
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/name: redpanda
+      tier: cold
     sessionAffinity: None
     type: NodePort
   status:
@@ -10564,8 +10579,10 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-hot-statefulset
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/name: redpanda
+      tier: hot
     sessionAffinity: None
     type: NodePort
   status:
@@ -12142,6 +12159,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: init-containers
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -12979,6 +12997,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: mcs-network
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -13746,6 +13765,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: mcs-network-tls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -14584,6 +14604,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: memory-locking
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -15369,6 +15390,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: minimal
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -16154,6 +16176,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -16939,6 +16962,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -16982,8 +17006,10 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-b-statefulset
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/name: redpanda
+      pool-type: hot-storage
     sessionAffinity: None
     type: NodePort
   status:
@@ -18417,6 +18443,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: per-pod-service-overrides
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -19092,6 +19119,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: per-pod-service-remote-disabled
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -19764,6 +19792,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: pool-overrides-cluster
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -20549,6 +20578,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: pvc-retention-policy
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -21334,6 +21364,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: rack-awareness
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -22119,6 +22150,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: sasl-scram256
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -22923,6 +22955,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: sasl-scram512-with-tls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -23727,6 +23760,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: single-replica
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -24399,6 +24433,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: storage-hostpath
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -25184,6 +25219,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: storage-pv-custom
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -25969,6 +26005,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tiered-storage-emptydir
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -26754,6 +26791,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tiered-storage-hostpath
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -27539,6 +27577,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tiered-storage-pv
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -28324,6 +28363,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tls-issuer-ref
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -29109,6 +29149,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tls-issuer-ref-mtls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -29894,6 +29935,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tls-mtls
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -30679,6 +30721,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: tls-self-signed
       app.kubernetes.io/name: redpanda
     sessionAffinity: None

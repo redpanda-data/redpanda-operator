@@ -70,7 +70,7 @@ func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.RedpandaB
 			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
 			Ports:                    ports,
 			PublishNotReadyAddresses: true,
-			Selector:                 state.clusterPodLabelsSelector(),
+			Selector:                 statefulSetPodLabelsSelector(state, pool),
 			SessionAffinity:          corev1.ServiceAffinityNone,
 			Type:                     corev1.ServiceTypeNodePort,
 		},
