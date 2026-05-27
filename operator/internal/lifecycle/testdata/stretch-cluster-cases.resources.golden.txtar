@@ -1207,6 +1207,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-a-statefulset
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -1772,6 +1773,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-b-statefulset
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -2527,6 +2529,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: flat-network-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -3296,6 +3299,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-pool-a-statefulset
       app.kubernetes.io/instance: mcs-network-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -4037,6 +4041,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-a-statefulset
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None
@@ -4602,6 +4607,7 @@
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
+      app.kubernetes.io/component: redpanda-basic-b-statefulset
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     sessionAffinity: None

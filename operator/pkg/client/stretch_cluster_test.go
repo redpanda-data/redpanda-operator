@@ -649,52 +649,94 @@ func (s *StretchClusterFactorySuite) TestResourceCleanup() {
 // Before the fix, the Factory looked for <sc.Name>-<cert>-cert but the
 // renderer creates secrets named <poolFullname>-<cert>-cert.
 func (s *StretchClusterFactorySuite) TestFactoryClientsWithIssuerRefTLS() {
+	const (
+		scName           = "issuerref-tls"
+		poolPrefix       = "ir-pool"
+		bootstrapIssuer  = "bootstrap-selfsigned"
+		caIssuer         = "test-ca-issuer"
+		caCertName       = "test-ca"
+		caSecretName     = "test-ca-key-pair"
+		certManagerGroup = "cert-manager.io"
+		certManagerKind  = "Issuer"
+	)
+
 	t := s.T()
 	t.Parallel()
 	ctx := trace.Test(t)
 	tn := s.mc.CreateTestNamespace(t)
 	ns := tn.Name
-	nn := types.NamespacedName{Name: "issuerref-tls", Namespace: ns}
+	nn := types.NamespacedName{Name: scName, Namespace: ns}
 
-	// Bootstrap a cert-manager CA Issuer chain on every cluster:
-	// SelfSigned Issuer → CA Certificate → CA Issuer.
-	s.mc.ApplyAll(t, ctx, &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{Name: "bootstrap-selfsigned", Namespace: ns},
-		Spec: certmanagerv1.IssuerSpec{
-			IssuerConfig: certmanagerv1.IssuerConfig{
-				SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+	// Bootstrap a shared CA across all clusters. Generate the CA key pair
+	// on cluster-0 only, then copy the Secret to the remaining clusters so
+	// every cert-manager instance signs leaf certs with the same CA.
+	primaryEnv := s.mc.Envs[0]
+
+	// Step 1: SelfSigned Issuer + CA Certificate on cluster-0 only.
+	for _, obj := range []client.Object{
+		&certmanagerv1.Issuer{
+			ObjectMeta: metav1.ObjectMeta{Name: bootstrapIssuer, Namespace: ns},
+			Spec: certmanagerv1.IssuerSpec{
+				IssuerConfig: certmanagerv1.IssuerConfig{
+					SelfSigned: &certmanagerv1.SelfSignedIssuer{},
+				},
 			},
 		},
-	})
-	s.mc.ApplyAll(t, ctx, &certmanagerv1.Certificate{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-ca", Namespace: ns},
-		Spec: certmanagerv1.CertificateSpec{
-			IsCA:       true,
-			CommonName: "test-ca",
-			SecretName: "test-ca-key-pair",
-			PrivateKey: &certmanagerv1.CertificatePrivateKey{
-				Algorithm: certmanagerv1.ECDSAKeyAlgorithm,
-				Size:      256,
-			},
-			IssuerRef: cmmetav1.ObjectReference{
-				Name:  "bootstrap-selfsigned",
-				Kind:  "Issuer",
-				Group: "cert-manager.io",
+		&certmanagerv1.Certificate{
+			ObjectMeta: metav1.ObjectMeta{Name: caCertName, Namespace: ns},
+			Spec: certmanagerv1.CertificateSpec{
+				IsCA:       true,
+				CommonName: caCertName,
+				SecretName: caSecretName,
+				PrivateKey: &certmanagerv1.CertificatePrivateKey{
+					Algorithm: certmanagerv1.ECDSAKeyAlgorithm,
+					Size:      256,
+				},
+				IssuerRef: cmmetav1.ObjectReference{
+					Name:  bootstrapIssuer,
+					Kind:  certManagerKind,
+					Group: certManagerGroup,
+				},
 			},
 		},
-	})
-	for _, env := range s.mc.Envs {
-		require.Eventually(t, func() bool {
-			var secret corev1.Secret
-			return env.Client().Get(ctx, client.ObjectKey{Namespace: ns, Name: "test-ca-key-pair"}, &secret) == nil
-		}, 1*time.Minute, 1*time.Second, "CA cert secret never appeared on %s", env.Name)
+	} {
+		gvk, err := primaryEnv.Client().GroupVersionKindFor(obj)
+		require.NoError(t, err)
+		obj.GetObjectKind().SetGroupVersionKind(gvk)
+		obj.SetManagedFields(nil)
+		require.NoError(t, primaryEnv.Client().Patch(ctx, obj, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
 	}
+
+	// Step 2: Wait for the CA Secret on cluster-0.
+	var caSecret corev1.Secret
+	require.Eventually(t, func() bool {
+		return primaryEnv.Client().Get(ctx, client.ObjectKey{Namespace: ns, Name: caSecretName}, &caSecret) == nil
+	}, 1*time.Minute, 1*time.Second, "CA cert secret never appeared on %s", primaryEnv.Name)
+
+	// Step 3: Copy the CA Secret to the remaining clusters.
+	for _, env := range s.mc.Envs[1:] {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      caSecretName,
+				Namespace: ns,
+			},
+			Type: caSecret.Type,
+			Data: caSecret.Data,
+		}
+		gvk, err := env.Client().GroupVersionKindFor(secret)
+		require.NoError(t, err)
+		secret.GetObjectKind().SetGroupVersionKind(gvk)
+		secret.SetManagedFields(nil)
+		require.NoError(t, env.Client().Patch(ctx, secret, client.Apply, client.ForceOwnership, client.FieldOwner("tests"))) //nolint:staticcheck // TODO
+	}
+
+	// Step 4: Create the CA Issuer on all clusters (all pointing to the shared secret).
 	s.mc.ApplyAll(t, ctx, &certmanagerv1.Issuer{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-ca-issuer", Namespace: ns},
+		ObjectMeta: metav1.ObjectMeta{Name: caIssuer, Namespace: ns},
 		Spec: certmanagerv1.IssuerSpec{
 			IssuerConfig: certmanagerv1.IssuerConfig{
 				CA: &certmanagerv1.CAIssuer{
-					SecretName: "test-ca-key-pair",
+					SecretName: caSecretName,
 				},
 			},
 		},
@@ -713,24 +755,28 @@ func (s *StretchClusterFactorySuite) TestFactoryClientsWithIssuerRefTLS() {
 	// BrokerPools use IssuerRef for both default and external certs.
 	// The operator renders cert-manager Certificates with pool-scoped
 	// secret names; the Factory must resolve the same names when building
-	// its TLS config.
+	// its TLS config. ApplyInternalDNSNames is required so the renderer
+	// populates cert DNSNames (without it, IssuerRef certs get an empty
+	// SAN list and cert-manager rejects them).
 	issuerRef := &redpandav1alpha2.IssuerRef{
-		Name:  ptr.To("test-ca-issuer"),
-		Kind:  ptr.To("Issuer"),
-		Group: ptr.To("cert-manager.io"),
+		Name:  ptr.To(caIssuer),
+		Kind:  ptr.To(certManagerKind),
+		Group: ptr.To(certManagerGroup),
 	}
-	s.applyBrokerPools(t, ctx, nn.Name, ns, "ir-pool", redpandav1alpha2.EmbeddedBrokerPoolSpec{
+	s.applyBrokerPools(t, ctx, nn.Name, ns, poolPrefix, redpandav1alpha2.EmbeddedBrokerPoolSpec{
 		External: &redpandav1alpha2.External{Enabled: ptr.To(false)},
 		TLS: &redpandav1alpha2.TLS{
 			Enabled: ptr.To(true),
 			Certs: map[string]*redpandav1alpha2.Certificate{
 				"default": {
-					CAEnabled: ptr.To(true),
-					IssuerRef: issuerRef,
+					CAEnabled:             ptr.To(true),
+					IssuerRef:             issuerRef,
+					ApplyInternalDNSNames: ptr.To(true),
 				},
 				"external": {
-					CAEnabled: ptr.To(true),
-					IssuerRef: issuerRef,
+					CAEnabled:             ptr.To(true),
+					IssuerRef:             issuerRef,
+					ApplyInternalDNSNames: ptr.To(true),
 				},
 			},
 		},
