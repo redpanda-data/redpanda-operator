@@ -1267,6 +1267,69 @@ spec:
       cpu: "2"
     requests:
       cpu: "2"
+-- multi-pool-heterogeneous-ports --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  listeners:
+    kafka:
+      port: 9093
+    admin:
+      port: 9644
+    schemaRegistry:
+      port: 8081
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-b
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  listeners:
+    kafka:
+      port: 19093
+    admin:
+      port: 19644
+    schemaRegistry:
+      port: 18081
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-c
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 1
+  listeners:
+    kafka:
+      port: 29093
+    admin:
+      port: 29644
+    schemaRegistry:
+      port: 28081
 -- pvc-retention-policy --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
