@@ -192,6 +192,7 @@ func (c *BootstrapConfig) runYAMLLoadBalancers(out io.Writer) error {
 	}
 
 	config := bootstrap.BootstrapClusterConfiguration{
+		EnsureNamespace:   c.CreateNS,
 		OperatorNamespace: c.Connection.Namespace,
 		ServiceName:       c.Connection.ServiceName,
 		RemoteClusters:    remoteClusters,

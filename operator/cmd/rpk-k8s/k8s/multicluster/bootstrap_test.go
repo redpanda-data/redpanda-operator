@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/redpanda-data/common-go/goldenfile"
@@ -128,6 +129,59 @@ func TestBootstrapRun_OutputYAML_LoadBalancer_Golden(t *testing.T) {
 	want, err := os.ReadFile(goldenPath)
 	require.NoError(t, err, "reading golden file (run with -update-golden to create)")
 	assert.Equal(t, string(want), buf.String())
+}
+
+// TestBootstrapRun_OutputYAML_LoadBalancer_IncludesNamespace pins the
+// behavior the live-apply path already has (EnsurePeerLoadBalancer calls
+// EnsureNamespace before creating the Service): when --create-namespace
+// is set, the YAML path must also emit a Namespace before the Service,
+// or applying the file to a fresh cluster fails with "namespace not found".
+func TestBootstrapRun_OutputYAML_LoadBalancer_IncludesNamespace(t *testing.T) {
+	cfg := threeClusterYAMLConfig()
+	cfg.ProvisionLoadBalancers = true
+	cfg.CreateNS = true
+
+	var buf bytes.Buffer
+	require.NoError(t, cfg.Run(context.Background(), &buf))
+
+	out := buf.String()
+	// Each cluster's section must contain a Namespace before its Service.
+	for _, ctxName := range []string{"cluster-a", "cluster-b", "cluster-c"} {
+		header := "# ===== Cluster: " + ctxName + " ====="
+		idx := strings.Index(out, header)
+		require.GreaterOrEqual(t, idx, 0, "missing header for %s", ctxName)
+		nextIdx := len(out)
+		for _, other := range []string{"cluster-a", "cluster-b", "cluster-c"} {
+			if other == ctxName {
+				continue
+			}
+			otherHeader := "# ===== Cluster: " + other + " ====="
+			if oi := strings.Index(out, otherHeader); oi > idx && oi < nextIdx {
+				nextIdx = oi
+			}
+		}
+		section := out[idx:nextIdx]
+		nsAt := strings.Index(section, "kind: Namespace")
+		svcAt := strings.Index(section, "kind: Service")
+		require.GreaterOrEqual(t, nsAt, 0, "%s section missing Namespace", ctxName)
+		require.GreaterOrEqual(t, svcAt, 0, "%s section missing Service", ctxName)
+		assert.Less(t, nsAt, svcAt, "%s Namespace must precede Service", ctxName)
+	}
+}
+
+// TestBootstrapRun_OutputYAML_LoadBalancer_NoNamespaceWhenDisabled covers
+// the inverse: with --create-namespace=false the YAML path must not emit
+// a Namespace (callers manage it externally, e.g. via a separate Argo
+// app-of-apps).
+func TestBootstrapRun_OutputYAML_LoadBalancer_NoNamespaceWhenDisabled(t *testing.T) {
+	cfg := threeClusterYAMLConfig()
+	cfg.ProvisionLoadBalancers = true
+	cfg.CreateNS = false
+
+	var buf bytes.Buffer
+	require.NoError(t, cfg.Run(context.Background(), &buf))
+
+	assert.NotContains(t, buf.String(), "kind: Namespace")
 }
 
 func TestBootstrapRun_OutputYAML_NameOverride(t *testing.T) {
