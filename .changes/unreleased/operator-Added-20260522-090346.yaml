@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: Added RepandaBrokerPool CRD to manage pools in the Redpanda StretchCluster
-time: 2026-05-22T09:03:46.70010266+02:00
