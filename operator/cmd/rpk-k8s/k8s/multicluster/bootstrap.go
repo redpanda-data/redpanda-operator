@@ -15,6 +15,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -47,6 +49,14 @@ type BootstrapConfig struct {
 	// stdout and makes no cluster calls — for GitOps workflows that prefer
 	// committing the artifacts and applying via Argo/Flux.
 	Output string
+	// OutputDir, when set together with Output="yaml", writes one YAML file
+	// per cluster (<OutputDir>/<context>.yaml) instead of a single stream
+	// on stdout. This is required for the TLS bootstrap path because each
+	// cluster's tls.key is identity material that must not be applied to
+	// any other cluster — a single multi-document stream cannot encode
+	// that routing (comment headers are not honored by kubectl/GitOps
+	// controllers).
+	OutputDir string
 }
 
 // Run executes the bootstrap operation.
@@ -131,10 +141,16 @@ func (c *BootstrapConfig) Run(ctx context.Context, out io.Writer) error {
 }
 
 // runYAML implements the --output=yaml mode: it generates the same
-// resources Run would apply, but writes them to out as a single YAML stream
-// instead of touching any cluster. The output is grouped per remote cluster
-// with comment headers so a GitOps pipeline can split or route blocks per
-// destination.
+// resources Run would apply, but writes them as YAML instead of touching
+// any cluster. When --output-dir is set, one file per cluster is written
+// into that directory (<context>.yaml); otherwise resources are streamed
+// to out grouped by comment headers.
+//
+// The TLS bootstrap path requires --output-dir because each cluster's
+// generated tls.key is per-cluster identity material; a single stream
+// would carry every peer's private key into whichever cluster the file
+// is applied to. The LoadBalancer-only path allows stream output since
+// it emits no secrets.
 //
 // Unlike the live-apply path, yaml mode does not require a kubeconfig or
 // any cluster connectivity. Cluster names are derived from --context flags
@@ -182,13 +198,17 @@ func (c *BootstrapConfig) runYAMLLoadBalancers(out io.Writer) error {
 	}
 
 	objsByCluster := bootstrap.GenerateLoadBalancerObjects(config)
-	return writeYAMLStream(out, objsByCluster)
+	return c.writeYAMLOutput(out, objsByCluster)
 }
 
 // runYAMLBootstrap emits Namespace and TLS Secret manifests — step 2 of
 // the GitOps workflow (or the only step when LB addresses are already known).
 //
 // Cluster names are derived from --dns-override keys; no kubeconfig is needed.
+//
+// --output-dir is required here: the TLS Secrets are per-cluster identity
+// material, so a single multi-document stream cannot be safely applied
+// to multiple destinations.
 func (c *BootstrapConfig) runYAMLBootstrap(out io.Writer) error {
 	if !c.TLS && !c.CreateNS {
 		return errors.New("--output=yaml requires at least one of --tls or --create-namespace; otherwise no resources would be emitted")
@@ -200,6 +220,9 @@ func (c *BootstrapConfig) runYAMLBootstrap(out io.Writer) error {
 	}
 	if len(dnsOverrides) == 0 {
 		return errors.New("--output=yaml requires --dns-override for every cluster (LoadBalancer provisioning is disabled)")
+	}
+	if c.TLS && c.OutputDir == "" {
+		return errors.New("--output=yaml with --tls requires --output-dir to write per-cluster files; a single stream would carry every cluster's tls.key into any destination it is applied to")
 	}
 
 	nameOverrides, err := parseNameOverrides(c.Connection.NameOverrides)
@@ -239,7 +262,58 @@ func (c *BootstrapConfig) runYAMLBootstrap(out io.Writer) error {
 		return fmt.Errorf("generating bootstrap objects: %w", err)
 	}
 
+	return c.writeYAMLOutput(out, objsByCluster)
+}
+
+// writeYAMLOutput dispatches to per-cluster files when OutputDir is set,
+// otherwise streams the manifests to out grouped by comment headers.
+// The stream form is only safe for resources that have no per-cluster
+// identity material (Namespace, LoadBalancer Service).
+func (c *BootstrapConfig) writeYAMLOutput(out io.Writer, objsByCluster map[string][]client.Object) error {
+	if c.OutputDir != "" {
+		return writeYAMLPerCluster(c.OutputDir, objsByCluster)
+	}
 	return writeYAMLStream(out, objsByCluster)
+}
+
+// writeYAMLPerCluster writes one YAML file per cluster into dir, named
+// "<context>.yaml". Each file contains only that cluster's manifests, so
+// applying it to the wrong cluster cannot leak per-cluster identity
+// material across the trust boundary.
+func writeYAMLPerCluster(dir string, objsByCluster map[string][]client.Object) error {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return fmt.Errorf("creating output dir %s: %w", dir, err)
+	}
+
+	contexts := make([]string, 0, len(objsByCluster))
+	for name := range objsByCluster {
+		contexts = append(contexts, name)
+	}
+	sort.Strings(contexts)
+
+	for _, name := range contexts {
+		var buf bytes.Buffer
+		for j, obj := range objsByCluster[name] {
+			if j > 0 {
+				if _, err := fmt.Fprintln(&buf, "---"); err != nil {
+					return err
+				}
+			}
+			data, err := marshalManifest(obj)
+			if err != nil {
+				return fmt.Errorf("marshalling object for %s: %w", name, err)
+			}
+			if _, err := buf.Write(data); err != nil {
+				return err
+			}
+		}
+
+		path := filepath.Join(dir, name+".yaml")
+		if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil {
+			return fmt.Errorf("writing %s: %w", path, err)
+		}
+	}
+	return nil
 }
 
 func writeYAMLStream(out io.Writer, objsByCluster map[string][]client.Object) error {
@@ -381,10 +455,16 @@ the deploy/redeploy cycle that otherwise forces a first helm install just
 to learn each cluster's external IP/hostname. The resulting peer list is
 printed on success for pasting into helm values.
 
---output=yaml skips applying anything and prints all manifests to stdout,
-grouped per cluster with comment headers, separated by '---'. No cluster
-contact or kubeconfig is needed — cluster names are derived from --context
-flags (LB mode) or --dns-override keys (bootstrap mode).
+--output=yaml skips applying anything and writes manifests as YAML. No
+cluster contact or kubeconfig is needed — cluster names are derived from
+--context flags (LB mode) or --dns-override keys (bootstrap mode).
+
+When --output-dir <dir> is set, one file per cluster is written into the
+directory as <context>.yaml. This is required for the TLS bootstrap path
+because each cluster's tls.key is per-cluster identity material that
+must not be applied to other clusters. The LoadBalancer-only step has
+no secrets and additionally allows streaming to stdout (split on '---'
+with comment headers).
 Use this for GitOps pipelines that commit manifests and apply them via
 Argo, Flux, or similar.
 
@@ -394,9 +474,9 @@ Two-step GitOps workflow:
      Emits only LoadBalancer Service manifests. Apply them, wait for the
      cloud provider to assign external addresses.
 
-  2. bootstrap --output=yaml --dns-override ctx=<address> ...
-     Emits Namespace and TLS Secret manifests with the known addresses
-     baked into the cert SANs.
+  2. bootstrap --output=yaml --output-dir <dir> --dns-override ctx=<address> ...
+     Emits Namespace and TLS Secret manifests into <dir>/<ctx>.yaml with
+     the known addresses baked into the cert SANs.
 
 When --loadbalancer is NOT set, --dns-override is required for every
 cluster; cluster names are derived from the override keys.
@@ -451,7 +531,7 @@ because the operator regenerates them at runtime.`,
     --namespace redpanda \
     --dns-override cluster-a=cluster-a.example.com \
     --dns-override cluster-b=cluster-b.example.com \
-    --output=yaml > multicluster-bootstrap.yaml`,
+    --output=yaml --output-dir ./multicluster-bootstrap`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cfg.Run(cmd.Context(), cmd.OutOrStdout())
 		},
@@ -465,7 +545,8 @@ because the operator regenerates them at runtime.`,
 	cmd.Flags().BoolVar(&cfg.CreateNS, "create-namespace", cfg.CreateNS, "Create the namespace if it does not exist")
 	cmd.Flags().BoolVar(&cfg.ProvisionLoadBalancers, "loadbalancer", cfg.ProvisionLoadBalancers, "Provision a standalone LoadBalancer Service per cluster and use its external address for TLS SANs")
 	cmd.Flags().DurationVar(&cfg.LoadBalancerTimeout, "loadbalancer-timeout", 0, "Per-cluster timeout waiting for a LoadBalancer address (0 = default of 10m)")
-	cmd.Flags().StringVar(&cfg.Output, "output", "", `Output mode. Empty (default) applies resources to clusters. "yaml" prints manifests to stdout for GitOps and makes no cluster calls`)
+	cmd.Flags().StringVar(&cfg.Output, "output", "", `Output mode. Empty (default) applies resources to clusters. "yaml" emits manifests for GitOps and makes no cluster calls`)
+	cmd.Flags().StringVar(&cfg.OutputDir, "output-dir", "", "With --output=yaml, write one file per cluster (<context>.yaml) into this directory. Required when emitting TLS Secrets; per-cluster routing prevents leaking peer identity keys across the trust boundary")
 
 	return cmd
 }
