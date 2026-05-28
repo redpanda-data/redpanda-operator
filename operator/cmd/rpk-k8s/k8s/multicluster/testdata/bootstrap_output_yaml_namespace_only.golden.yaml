@@ -1,0 +1,17 @@
+# ===== Cluster: cluster-a =====
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
+---
+# ===== Cluster: cluster-b =====
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
+---
+# ===== Cluster: cluster-c =====
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
