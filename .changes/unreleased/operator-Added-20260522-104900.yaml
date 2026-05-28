@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: 'Added `persistentVolumeClaimRetentionPolicy` to the Redpanda CRD (`spec.clusterSpec.statefulset.persistentVolumeClaimRetentionPolicy`) and to the NodePool CRD (`spec.persistentVolumeClaimRetentionPolicy`) so PVCs can be deleted automatically when brokers are decommissioned via scale-down or when the cluster is torn down. The Redpanda CRD value applies as the default for every NodePool (default and named); a NodePool''s own value, if set, overrides the cluster-level default.'
-time: 2026-05-22T10:49:00.000000-04:00

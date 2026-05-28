@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: Fixed a deadlock where an unhealthy cluster could not recover by adding more broker pods. Scale-up operations in node pools are no longer gated on cluster health; only scale-down (decommission) operations remain gated.
-time: 2026-04-29T00:00:00.000000Z
