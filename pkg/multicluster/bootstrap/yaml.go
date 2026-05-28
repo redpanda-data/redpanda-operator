@@ -103,6 +103,12 @@ func GenerateBootstrapObjects(organization string, configuration BootstrapCluste
 // use the same naming, labels, selector, and port configuration as
 // EnsurePeerLoadBalancer so they are fully compatible with the live-apply path.
 //
+// When EnsureNamespace is set, the operator Namespace is prepended to each
+// cluster's object list — mirroring the live-apply path
+// (EnsurePeerLoadBalancer calls EnsureNamespace before creating the Service)
+// so a freshly-bootstrapped cluster does not fail with "namespace not found"
+// when the LoadBalancer Service is applied.
+//
 // This is the first half of a two-step GitOps workflow:
 //  1. bootstrap --output=yaml --loadbalancer → apply Services, wait for IPs
 //  2. bootstrap --output=yaml --dns-override … → apply Namespace + TLS Secrets
@@ -110,6 +116,20 @@ func GenerateLoadBalancerObjects(configuration BootstrapClusterConfiguration) ma
 	out := make(map[string][]client.Object, len(configuration.RemoteClusters))
 
 	for _, cluster := range configuration.RemoteClusters {
+		var objs []client.Object
+
+		if configuration.EnsureNamespace {
+			objs = append(objs, &corev1.Namespace{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Namespace",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: configuration.OperatorNamespace,
+				},
+			})
+		}
+
 		instance := cluster.Name
 		if instance == "" {
 			instance = configuration.ServiceName
@@ -145,8 +165,9 @@ func GenerateLoadBalancerObjects(configuration BootstrapClusterConfiguration) ma
 				}},
 			},
 		}
+		objs = append(objs, svc)
 
-		out[cluster.ContextName] = []client.Object{svc}
+		out[cluster.ContextName] = objs
 	}
 
 	return out

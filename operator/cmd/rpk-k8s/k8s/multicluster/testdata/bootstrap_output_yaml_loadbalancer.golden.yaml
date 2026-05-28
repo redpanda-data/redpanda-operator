@@ -1,5 +1,10 @@
 # ===== Cluster: cluster-a =====
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
+---
+apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -22,6 +27,11 @@ spec:
 ---
 # ===== Cluster: cluster-b =====
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
+---
+apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -43,6 +53,11 @@ spec:
   type: LoadBalancer
 ---
 # ===== Cluster: cluster-c =====
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: redpanda
+---
 apiVersion: v1
 kind: Service
 metadata:
