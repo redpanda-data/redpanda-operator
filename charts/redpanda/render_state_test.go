@@ -118,6 +118,45 @@ func TestCertificates(t *testing.T) {
 	}
 }
 
+// TestClientCertsExtraDNSNames asserts that user-specified extra SANs are
+// appended to the generated server certificate's dnsNames, in addition to the
+// automatic internal names. This is what allows a stable, shared hostname to be
+// baked into the broker certificates of two clusters for TLS failover.
+func TestClientCertsExtraDNSNames(t *testing.T) {
+	dot, err := Chart.Dot(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "redpanda",
+		Service:   "Helm",
+	}, map[string]any{
+		"tls": map[string]any{
+			"certs": map[string]any{
+				"default": map[string]any{
+					"caEnabled":     true,
+					"extraDNSNames": []any{"redpanda.failover.example.com", "*.redpanda.failover.example.com"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	state, err := RenderStateFromDot(dot)
+	require.NoError(t, err)
+
+	var serverDNSNames []string
+	for _, cert := range ClientCerts(state) {
+		if cert.Name == "redpanda-default-cert" {
+			serverDNSNames = cert.Spec.DNSNames
+		}
+	}
+
+	require.NotEmpty(t, serverDNSNames, "expected a generated default server certificate")
+	// Automatic internal names are still present.
+	require.Contains(t, serverDNSNames, "redpanda.redpanda.svc.cluster.local")
+	// User-specified extra SANs are appended.
+	require.Contains(t, serverDNSNames, "redpanda.failover.example.com")
+	require.Contains(t, serverDNSNames, "*.redpanda.failover.example.com")
+}
+
 func TestFetchBootstrapUser(t *testing.T) {
 	ctl := kubetest.NewEnv(t)
 	ctx := t.Context()

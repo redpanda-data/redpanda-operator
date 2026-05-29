@@ -60,6 +60,10 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
 		}
 
+		// User-specified extra SANs are always added, regardless of issuer, so a
+		// stable hostname shared across clusters can be baked in for TLS failover.
+		names = append(names, data.ExtraDNSNames...)
+
 		duration := helmette.Default("43800h", data.Duration)
 		issuerRef := ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
 			Kind:  "Issuer",

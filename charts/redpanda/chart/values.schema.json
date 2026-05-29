@@ -22247,6 +22247,12 @@
                 "enabled": {
                   "type": "boolean"
                 },
+                "extraDNSNames": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
                 "issuerRef": {
                   "additionalProperties": false,
                   "properties": {

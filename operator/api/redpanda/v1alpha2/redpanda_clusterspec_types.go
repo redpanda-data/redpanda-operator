@@ -450,6 +450,9 @@ type Certificate struct {
 	// Specifies you wish to have Kubernetes internal dns names (IE the headless service of the redpanda StatefulSet) included in `dnsNames` of the  certificate even, when supplying an issuer.
 	ApplyInternalDNSNames *bool `json:"applyInternalDNSNames,omitempty"`
 
+	// ExtraDNSNames specifies additional DNS names (Subject Alternative Names) to include in the generated server certificate. These are always added, regardless of whether an `issuerRef` is supplied. A common use is adding a stable, shared hostname across two clusters so clients can fail over between them without a TLS hostname mismatch. Ignored when `secretRef` is set, since the operator does not generate the certificate in that case.
+	ExtraDNSNames []string `json:"extraDNSNames,omitempty"`
+
 	Enabled *bool `json:"enabled,omitempty"`
 }
 

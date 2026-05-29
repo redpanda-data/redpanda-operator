@@ -24,6 +24,7 @@ type CertificateApplyConfiguration struct {
 	Duration              *v1.Duration                 `json:"duration,omitempty"`
 	CAEnabled             *bool                        `json:"caEnabled,omitempty"`
 	ApplyInternalDNSNames *bool                        `json:"applyInternalDNSNames,omitempty"`
+	ExtraDNSNames         []string                     `json:"extraDNSNames,omitempty"`
 	Enabled               *bool                        `json:"enabled,omitempty"`
 }
 
@@ -78,6 +79,16 @@ func (b *CertificateApplyConfiguration) WithCAEnabled(value bool) *CertificateAp
 // If called multiple times, the ApplyInternalDNSNames field is set to the value of the last call.
 func (b *CertificateApplyConfiguration) WithApplyInternalDNSNames(value bool) *CertificateApplyConfiguration {
 	b.ApplyInternalDNSNames = &value
+	return b
+}
+
+// WithExtraDNSNames adds the given value to the ExtraDNSNames field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ExtraDNSNames field.
+func (b *CertificateApplyConfiguration) WithExtraDNSNames(values ...string) *CertificateApplyConfiguration {
+	for i := range values {
+		b.ExtraDNSNames = append(b.ExtraDNSNames, values[i])
+	}
 	return b
 }
 

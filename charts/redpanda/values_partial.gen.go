@@ -376,6 +376,7 @@ type PartialTLSCert struct {
 	IssuerRef             *cmmetav1.ObjectReference    "json:\"issuerRef,omitempty\""
 	SecretRef             *corev1.LocalObjectReference "json:\"secretRef,omitempty\""
 	ClientSecretRef       *corev1.LocalObjectReference "json:\"clientSecretRef,omitempty\""
+	ExtraDNSNames         []string                     "json:\"extraDNSNames,omitempty\""
 }
 
 type PartialTieredStorageCredentials struct {

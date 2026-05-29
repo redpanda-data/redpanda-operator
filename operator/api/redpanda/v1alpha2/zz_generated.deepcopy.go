@@ -532,6 +532,11 @@ func (in *Certificate) DeepCopyInto(out *Certificate) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.ExtraDNSNames != nil {
+		in, out := &in.ExtraDNSNames, &out.ExtraDNSNames
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Enabled != nil {
 		in, out := &in.Enabled, &out.Enabled
 		*out = new(bool)

@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Added
+body: "Added `tls.certs.<name>.extraDNSNames`, a list of additional DNS names (Subject Alternative Names) to include in generated server certificates. The names are always added regardless of whether an `issuerRef` is supplied (and are ignored when `secretRef` is set). A common use is baking a stable, shared hostname into the broker certificates of two clusters so clients can fail over between them without a TLS hostname mismatch."
+time: 2026-05-29T12:00:00.000000-04:00

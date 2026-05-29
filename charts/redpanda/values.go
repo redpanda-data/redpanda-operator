@@ -1228,6 +1228,13 @@ type TLSCert struct {
 	IssuerRef             *cmmetav1.ObjectReference    `json:"issuerRef"`
 	SecretRef             *corev1.LocalObjectReference `json:"secretRef"`
 	ClientSecretRef       *corev1.LocalObjectReference `json:"clientSecretRef"`
+	// ExtraDNSNames specifies additional DNS names (Subject Alternative Names)
+	// to include in the generated server certificate. These are always added,
+	// regardless of whether an `issuerRef` is supplied. A common use is adding a
+	// stable, shared hostname across two clusters so clients can fail over
+	// between them without a TLS hostname mismatch. Ignored when `secretRef` is
+	// set, since the operator does not generate the certificate in that case.
+	ExtraDNSNames []string `json:"extraDNSNames"`
 }
 
 func (c *TLSCert) ServerVolumeName(name string) string {
