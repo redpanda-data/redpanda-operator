@@ -1,4 +1,4 @@
 project: operator
 kind: Added
-body: "Added `extraDNSNames` to the `Certificate` TLS configuration (Redpanda CRD and multicluster broker pools). It lets you specify additional DNS names (Subject Alternative Names) for the generated server certificate of each cluster. The names are always added regardless of `issuerRef` (and ignored when `secretRef` is set), enabling a stable, shared hostname across clusters to support TLS failover."
+body: "Added `extraDNSNames` to the `Certificate` TLS configuration in the Redpanda CRD. It lets you specify additional DNS names (Subject Alternative Names) for the generated server certificate of a cluster. The names are always added regardless of `issuerRef` (and ignored when `secretRef` is set), enabling a stable, shared hostname across clusters to support TLS failover."
 time: 2026-05-29T12:00:00.000000-04:00

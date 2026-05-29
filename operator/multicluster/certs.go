@@ -135,10 +135,6 @@ func certificatesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrok
 			names = append(names, fmt.Sprintf("*.%s", expandedDomain))
 		}
 
-		// User-specified extra SANs are always added, regardless of issuer, so a
-		// stable hostname shared across clusters can be baked in for TLS failover.
-		names = append(names, cert.GetExtraDNSNames()...)
-
 		certs = append(certs, &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",

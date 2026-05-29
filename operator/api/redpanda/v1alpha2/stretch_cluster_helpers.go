@@ -222,14 +222,6 @@ func (c *Certificate) ShouldApplyInternalDNSNames() bool {
 	return c != nil && ptr.Deref(c.ApplyInternalDNSNames, false)
 }
 
-// GetExtraDNSNames returns user-specified extra SANs to add to the server certificate. Safe to call on nil receiver.
-func (c *Certificate) GetExtraDNSNames() []string {
-	if c == nil {
-		return nil
-	}
-	return c.ExtraDNSNames
-}
-
 // --- IssuerRef ---
 
 // GetName returns the issuer name, or empty string if unset. Safe to call on nil receiver.

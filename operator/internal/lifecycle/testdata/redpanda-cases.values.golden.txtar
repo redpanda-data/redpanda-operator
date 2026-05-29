@@ -420,6 +420,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
       external:
@@ -428,6 +429,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
     enabled: true
@@ -1024,6 +1026,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
       external:
@@ -1032,6 +1035,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
     enabled: true
@@ -1395,6 +1399,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
       external:
@@ -1403,6 +1408,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
     enabled: true
@@ -1996,6 +2002,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
       external:
@@ -2004,6 +2011,7 @@ values:
         clientSecretRef: null
         duration: ""
         enabled: null
+        extraDNSNames: null
         issuerRef: null
         secretRef: null
     enabled: true
