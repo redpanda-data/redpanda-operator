@@ -4,16 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.1
-  name: nodepools.cluster.redpanda.com
+  name: redpandabrokerpools.cluster.redpanda.com
 spec:
   group: cluster.redpanda.com
   names:
-    kind: NodePool
-    listKind: NodePoolList
-    plural: nodepools
+    kind: RedpandaBrokerPool
+    listKind: RedpandaBrokerPoolList
+    plural: redpandabrokerpools
     shortNames:
-    - np
-    singular: nodepool
+    - rpbrokerpool
+    singular: redpandabrokerpool
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -52,15 +52,28 @@ spec:
               override the defaults.
             properties:
               additionalRedpandaCmdFlags:
-                description: 'Chart default: []'
+                description: |-
+                  AdditionalRedpandaCmdFlags are extra flags appended to the
+                  `rpk redpanda start` command line for every broker in this pool.
                 items:
                   type: string
                 type: array
               additionalSelectorLabels:
                 additionalProperties:
                   type: string
-                description: 'Chart default: {}'
+                description: |-
+                  AdditionalSelectorLabels are extra labels added to the StatefulSet's
+                  pod selector and pod template. Lets operators bucket pods by custom
+                  dimensions (e.g. team, environment) without affecting the operator-
+                  managed labels.
                 type: object
+              clusterDomain:
+                description: |-
+                  ClusterDomain customizes the Kubernetes cluster DNS domain used to
+                  generate internal pod hostnames (`<pod>.<svc>.<ns>.svc.<domain>`).
+                  Defaults to `cluster.local`. Per-pool to support clusters that span
+                  k8s environments with different DNS roots.
+                type: string
               clusterRef:
                 description: ClusterRef represents a reference to a cluster that is
                   being targeted.
@@ -89,11 +102,78 @@ spec:
                 required:
                 - name
                 type: object
+              external:
+                description: |-
+                  External configures external access (NodePort / LoadBalancer types,
+                  advertised addresses, ExternalDNS hookup). Per-pool so pools in
+                  different regions/clouds can expose themselves differently.
+                properties:
+                  addresses:
+                    description: Specifies addresses for the external listeners to
+                      advertise.Provide one entry for each broker in order of StatefulSet
+                      replicas. The number of brokers is defined in `statefulset.replicas`.
+                      The values can be IP addresses or DNS names. If `external.domain`
+                      is set, the domain is appended to these values.
+                    items:
+                      type: string
+                    type: array
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Adds custom annotations to the external Service.
+                    type: object
+                  domain:
+                    description: Specifies the domain to advertise to external clients.
+                      If specified, then it will be appended to the `external.addresses`
+                      values as each broker's advertised address.
+                    type: string
+                  enabled:
+                    description: Specifies whether the external access is enabled.
+                    type: boolean
+                  externalDns:
+                    description: Defines externalDNS configurations.
+                    properties:
+                      enabled:
+                        description: Specifies whether externalDNS annotations are
+                          added to LoadBalancer Services. If you enable externalDns,
+                          each LoadBalancer Service defined in `external.type` will
+                          be annotated with an external-dns hostname that matches
+                          `external.addresses[i]`.`external.domain`.
+                        type: boolean
+                    type: object
+                  prefixTemplate:
+                    description: Specifies a naming prefix template for external Services.
+                    type: string
+                  service:
+                    description: Configures the external Service resource.
+                    properties:
+                      enabled:
+                        description: Specifies whether to create the external Service.
+                          If set to `false`, the external Service type is not created.
+                          You can still set your cluster with external access but
+                          not create the supporting Service. Set this to `false` to
+                          manage your own Service.
+                        type: boolean
+                    type: object
+                  sourceRanges:
+                    description: Source range for external access. Only applicable
+                      when `external.type` is LoadBalancer.
+                    items:
+                      type: string
+                    type: array
+                  type:
+                    description: Specifies the external Service type. Only NodePort
+                      and LoadBalancer are supported. If undefined, then advertised
+                      listeners will be configured in Redpanda, but the Helm chart
+                      will not create a Service. NodePort is recommended in cases
+                      where latency is a priority.
+                    type: string
+                type: object
               image:
                 description: |-
-                  Default:
-                      repository: docker.redpanda.com/redpandadata/redpanda
-                      tag: {{.redpandaVersion}}
+                  Image is the Redpanda container image (repository + tag) for this
+                  pool. Defaults to the operator's built-in chart-pinned image when
+                  unset.
                 properties:
                   pullPolicy:
                     description: Specifies the strategy used for pulling images from
@@ -106,11 +186,35 @@ spec:
                     description: Specifies the image tag.
                     type: string
                 type: object
+              imagePullSecrets:
+                description: |-
+                  ImagePullSecrets are private-registry credentials for pulling the
+                  Redpanda / sidecar / init-container images. When non-empty, this
+                  list fully overrides any list set on StretchClusterSpec; when
+                  empty/nil, the cluster's list is inherited. See
+                  BrokerPoolSpec.MergeFromCluster.
+                items:
+                  description: |-
+                    LocalObjectReference contains enough information to let you locate the
+                    referenced object inside the same namespace.
+                  properties:
+                    name:
+                      default: ""
+                      description: |-
+                        Name of the referent.
+                        This field is effectively required, but due to backwards compatibility is
+                        allowed to be empty. Instances of this type with an empty value here are
+                        almost certainly wrong.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               initContainerImage:
                 description: |-
-                  Chart default:
-                      repository: busybox
-                      tag: latest
+                  InitContainerImage is the image used for init containers that don't
+                  need the full Redpanda binary (e.g. busybox for fs-validator,
+                  chown). Defaults to busybox:latest.
                 properties:
                   repository:
                     type: string
@@ -118,6 +222,10 @@ spec:
                     type: string
                 type: object
               initContainers:
+                description: |-
+                  InitContainers controls the init containers the operator renders
+                  (fs-validator, set-data-dir-ownership, configurator). Lets users
+                  toggle them on/off and tune flags.
                 properties:
                   configurator:
                     properties:
@@ -143,35 +251,979 @@ spec:
                         type: boolean
                     type: object
                 type: object
+              listeners:
+                description: |-
+                  Listeners configures the Admin / Kafka / HTTP-Proxy / Schema-Registry
+                  / RPC listeners (ports, TLS cert references, external listener
+                  blocks). Per-pool to permit heterogeneous listener layouts.
+                properties:
+                  admin:
+                    description: Configures settings for the Admin API listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  http:
+                    description: Configures settings for the HTTP Proxy listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  kafka:
+                    description: Configures settings for the Kafka API listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  rpc:
+                    description: Configures settings for the RPC API listener.
+                    properties:
+                      port:
+                        description: Specifies the container port number for the internal
+                          listener.
+                        type: integer
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                  schemaRegistry:
+                    description: Configures settings for the Schema Registry listeners.
+                    properties:
+                      appProtocol:
+                        type: string
+                      authenticationMethod:
+                        description: Specifies the authentication method for this
+                          listener.
+                        type: string
+                      enabled:
+                        description: Specifies whether this Listener is enabled.
+                        type: boolean
+                      external:
+                        additionalProperties:
+                          description: |-
+                            StretchExternalListener configures an external listener in stretch clusters.
+
+                            Forked from ExternalListener: embeds StretchListener instead of Listener.
+                          properties:
+                            advertisedPorts:
+                              description: Specifies the network port that the external
+                                Service listens on.
+                              items:
+                                format: int32
+                                type: integer
+                              type: array
+                            appProtocol:
+                              type: string
+                            authenticationMethod:
+                              description: Specifies the authentication method for
+                                this listener.
+                              type: string
+                            enabled:
+                              description: Specifies whether this Listener is enabled.
+                              type: boolean
+                            nodePort:
+                              format: int32
+                              type: integer
+                            port:
+                              description: Specifies the container port number for
+                                this listener.
+                              format: int32
+                              type: integer
+                            prefixTemplate:
+                              description: Specifies the template used for generating
+                                the advertised addresses of Services.
+                              type: string
+                            tls:
+                              description: Configures TLS settings for the internal
+                                listener.
+                              properties:
+                                cert:
+                                  description: References a specific certificate for
+                                    the listener.
+                                  type: string
+                                enabled:
+                                  description: Specifies whether TLS is enabled for
+                                    the listener.
+                                  type: boolean
+                                requireClientAuth:
+                                  description: Indicates whether client authentication
+                                    (mTLS) is required.
+                                  type: boolean
+                                trustStore:
+                                  description: TrustStore allows setting the `truststore_path`
+                                    on this listener.
+                                  maxProperties: 1
+                                  minProperties: 1
+                                  properties:
+                                    configMapKeyRef:
+                                      description: Selects a key from a ConfigMap.
+                                      properties:
+                                        key:
+                                          description: The key to select.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the ConfigMap
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    secretKeyRef:
+                                      description: SecretKeySelector selects a key
+                                        of a Secret.
+                                      properties:
+                                        key:
+                                          description: The key of the secret to select
+                                            from.  Must be a valid secret key.
+                                          type: string
+                                        name:
+                                          default: ""
+                                          description: |-
+                                            Name of the referent.
+                                            This field is effectively required, but due to backwards compatibility is
+                                            allowed to be empty. Instances of this type with an empty value here are
+                                            almost certainly wrong.
+                                            More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                          type: string
+                                        optional:
+                                          description: Specify whether the Secret
+                                            or its key must be defined
+                                          type: boolean
+                                      required:
+                                      - key
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                  type: object
+                              type: object
+                          type: object
+                        description: Defines settings for the external listeners.
+                        type: object
+                      port:
+                        description: Specifies the container port number for this
+                          listener.
+                        format: int32
+                        type: integer
+                      prefixTemplate:
+                        description: Specifies the template used for generating the
+                          advertised addresses of Services.
+                        type: string
+                      tls:
+                        description: Configures TLS settings for the internal listener.
+                        properties:
+                          cert:
+                            description: References a specific certificate for the
+                              listener.
+                            type: string
+                          enabled:
+                            description: Specifies whether TLS is enabled for the
+                              listener.
+                            type: boolean
+                          requireClientAuth:
+                            description: Indicates whether client authentication (mTLS)
+                              is required.
+                            type: boolean
+                          trustStore:
+                            description: TrustStore allows setting the `truststore_path`
+                              on this listener.
+                            maxProperties: 1
+                            minProperties: 1
+                            properties:
+                              configMapKeyRef:
+                                description: Selects a key from a ConfigMap.
+                                properties:
+                                  key:
+                                    description: The key to select.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the ConfigMap or
+                                      its key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                description: SecretKeySelector selects a key of a
+                                  Secret.
+                                properties:
+                                  key:
+                                    description: The key of the secret to select from.  Must
+                                      be a valid secret key.
+                                    type: string
+                                  name:
+                                    default: ""
+                                    description: |-
+                                      Name of the referent.
+                                      This field is effectively required, but due to backwards compatibility is
+                                      allowed to be empty. Instances of this type with an empty value here are
+                                      almost certainly wrong.
+                                      More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                    type: string
+                                  optional:
+                                    description: Specify whether the Secret or its
+                                      key must be defined
+                                    type: boolean
+                                required:
+                                - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        type: object
+                    type: object
+                type: object
+              logging:
+                description: |-
+                  Logging overrides the log level and usage-stats settings for brokers
+                  in this pool. Per-pool so a noisy debug pool doesn't force the
+                  whole cluster into verbose logging.
+                properties:
+                  logLevel:
+                    description: Specifies the log level.
+                    type: string
+                  usageStats:
+                    description: Defines settings for usage statistics reporting.
+                    properties:
+                      enabled:
+                        description: Specifies whether usage statistics are enabled.
+                        type: boolean
+                    type: object
+                type: object
+              monitoring:
+                description: |-
+                  Monitoring toggles the per-pool ServiceMonitor. Per-pool so different
+                  pools can opt in/out of Prometheus scraping independently.
+                properties:
+                  enableHttp2:
+                    type: boolean
+                  enabled:
+                    description: Specifies whether to create a ServiceMonitor that
+                      can be used by Prometheus Operator or VictoriaMetrics Operator
+                      to scrape the metrics.
+                    type: boolean
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: Adds custom labels to the ServiceMonitor resource.
+                    type: object
+                  scrapeInterval:
+                    description: Specifies how often to scrape metrics.
+                    type: string
+                  tlsConfig:
+                    description: Specifies tls configuration properties.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
+              persistentVolumeClaimRetentionPolicy:
+                description: |-
+                  PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for
+                  PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces
+                  any value inherited from the parent Redpanda CRD's
+                  `statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level
+                  value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used.
+                  Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via
+                  scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's
+                  StatefulSet is deleted.
+                properties:
+                  whenDeleted:
+                    description: |-
+                      WhenDeleted specifies what happens to PVCs created from StatefulSet
+                      VolumeClaimTemplates when the StatefulSet is deleted. The default policy
+                      of `Retain` causes PVCs to not be affected by StatefulSet deletion. The
+                      `Delete` policy causes those PVCs to be deleted.
+                    type: string
+                  whenScaled:
+                    description: |-
+                      WhenScaled specifies what happens to PVCs created from StatefulSet
+                      VolumeClaimTemplates when the StatefulSet is scaled down. The default
+                      policy of `Retain` causes PVCs to not be affected by a scaledown. The
+                      `Delete` policy causes the associated PVCs for any excess pods above
+                      the replica count to be deleted.
+                    type: string
+                type: object
               podTemplate:
                 description: |-
-                  Chart default:
-                      labels: {}
-                      annotations: {}
-                      spec:
-                        securityContext: {}
-                        affinity:
-                          podAntiAffinity:
-                            requiredDuringSchedulingIgnoredDuringExecution:
-                            - topologyKey: kubernetes.io/hostname
-                              labelSelector:
-                                matchLabels:
-                                  "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
-                                  "app.kubernetes.io/instance":  '{{ .Release.Name }}'
-                                  "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
-                        terminationGracePeriodSeconds: 90
-                        nodeSelector: {}
-                        priorityClassName: ""
-                        tolerations: []
-                        topologySpreadConstraints:
-                        - maxSkew: 1
-                          topologyKey: topology.kubernetes.io/zone
-                          whenUnsatisfiable: ScheduleAnyway
-                          labelSelector:
-                            matchLabels:
-                              "app.kubernetes.io/component": '{{ include "redpanda.name" . }}-{{pool.name}}-statefulset'
-                              "app.kubernetes.io/instance":  '{{ .Release.Name }}'
-                              "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
+                  PodTemplate is a strategic-merge patch applied on top of the
+                  operator-rendered Pod template. Common uses: nodeSelector,
+                  tolerations, custom volumes, sidecar containers, security context
+                  overrides.
                 properties:
                   annotations:
                     additionalProperties:
@@ -8348,15 +9400,904 @@ spec:
                         type: object
                     type: object
                 type: object
+              rackAwareness:
+                description: |-
+                  RackAwareness configures the Kubernetes node-label that's mapped to
+                  the broker's `rack` config so Redpanda places replicas across racks/
+                  zones. Per-pool because rack labels can differ between K8s clusters.
+                properties:
+                  enabled:
+                    description: Specifies whether rack awareness is enabled. When
+                      enabled, Kubernetes failure zones are treated as racks. Redpanda
+                      maps each rack to a failure zone and places partition replicas
+                      across them. Requires `rbac.enabled` set to `true`.
+                    type: boolean
+                  nodeAnnotation:
+                    description: Specifies the key in Node labels or annotations to
+                      use to denote failure zones.
+                    type: string
+                type: object
+              rbac:
+                description: |-
+                  RBAC toggles operator-managed Roles / ClusterRoles for this pool
+                  (sidecar perms, rpk-debug-bundle perms, metrics-reader). Per-pool
+                  because the bound ServiceAccount is per-pool.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Adds custom annotations to the RBAC resources.
+                    type: object
+                  enabled:
+                    description: Whether RBAC is enabled. Enable for features that
+                      need extra privileges, such as rack awareness. If you use the
+                      Redpanda Operator, you must deploy it with the `--set rbac.createRPKBundleCRs=true`
+                      flag to give it the required ClusterRoles.
+                    type: boolean
+                  rpkDebugBundle:
+                    type: boolean
+                type: object
               replicas:
-                description: 'Chart default: 3'
+                description: |-
+                  Replicas is the desired number of broker pods in this pool. Defaults
+                  to 1 if unset.
                 format: int32
                 type: integer
+              resources:
+                description: |-
+                  Resources configures container resource requests/limits (and the
+                  legacy CPU/Memory shorthand). When also set on StretchClusterSpec,
+                  the pool's value wins on a deep field-by-field merge, with
+                  per-key merging on the Limits/Requests maps. See
+                  BrokerPoolSpec.MergeFromCluster.
+                properties:
+                  cpu:
+                    description: Specifies the number of CPU cores.
+                    properties:
+                      cores:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: 'Specifies the number of CPU cores available
+                          to the application. Redpanda makes use of a thread per core
+                          model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model.
+                          For this reason, Redpanda should only be given full cores.
+                          Note: You can increase cores, but decreasing cores is not
+                          currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350.
+                          This setting is equivalent to `--smp`, `resources.requests.cpu`,
+                          and `resources.limits.cpu`. For production, use `4` or greater.'
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      overprovisioned:
+                        description: 'Specifies whether Redpanda assumes it has all
+                          of the provisioned CPU. This should be `true` unless the
+                          container has CPU affinity. Equivalent to: `--idle-poll-time-us
+                          0`, `--thread-affinity 0`, and `--poll-aio 0`. If the value
+                          of full cores in `resources.cpu.cores` is less than `1`,
+                          this setting is set to `true`.'
+                        type: boolean
+                    type: object
+                  limits:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: Standard K8s resource limits.
+                    type: object
+                  memory:
+                    description: Specifies the amount of memory.
+                    properties:
+                      container:
+                        description: Defines resource limits for containers.
+                        properties:
+                          max:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Specifies the maximum resources that can
+                              be allocated to a container.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          min:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Specifies the minimum resources required
+                              for a container.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                        type: object
+                      enable_memory_locking:
+                        description: Enables memory locking. For production, set to
+                          `true`.
+                        type: boolean
+                      redpanda:
+                        description: Allows you to optionally specify the memory size
+                          for both the Redpanda process and the underlying reserved
+                          memory used by Seastar.
+                        properties:
+                          memory:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Memory for the Redpanda process. This must
+                              be lower than the container's memory (`resources.memory.container.min`
+                              if provided, otherwise `resources.memory.container.max`).
+                              Equivalent to `--memory`. For production, use 8Gi or
+                              greater.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          reserveMemory:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Memory reserved for the OS. Any value above
+                              1Gi will provide diminishing performance benefits. Equivalent
+                              to `--reserve-memory`. For production, use 1Gi.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                        type: object
+                    type: object
+                  requests:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: Standard K8s resource requests.
+                    type: object
+                type: object
+              serviceAccount:
+                description: |-
+                  ServiceAccount controls creation and naming of the per-pool
+                  ServiceAccount used by broker / sidecar pods. Per-pool so users can
+                  pre-create SAs with their own IAM bindings (workload identity, etc.).
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Adds custom annotations to the ServiceAccount resources.
+                    type: object
+                  automountServiceAccountToken:
+                    description: Specifies whether a service account should automount
+                      API-Credentials
+                    type: boolean
+                  create:
+                    description: Specifies whether a ServiceAccount should be created.
+                    type: boolean
+                  name:
+                    description: Specifies the name of the ServiceAccount.
+                    type: string
+                type: object
+              services:
+                description: |-
+                  Services configures overrides for the per-pod Services created by
+                  the operator (e.g. selector/annotation tweaks, remote-Service
+                  suppression).
+                properties:
+                  perPod:
+                    description: PerPod configures overrides for per-pod ClusterIP
+                      Services.
+                    properties:
+                      local:
+                        description: Local overrides are applied to per-pod Services
+                          for pods in the local cluster.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          enabled:
+                            description: Enabled controls whether this per-pod Service
+                              is created. Defaults to true.
+                            type: boolean
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          spec:
+                            description: |-
+                              ServiceSpecApplyConfiguration represents a declarative configuration of the ServiceSpec type for use
+                              with apply.
+
+                              ServiceSpec describes the attributes that a user creates on a service.
+                            properties:
+                              allocateLoadBalancerNodePorts:
+                                description: |-
+                                  allocateLoadBalancerNodePorts defines if NodePorts will be automatically
+                                  allocated for services with type LoadBalancer.  Default is "true". It
+                                  may be set to "false" if the cluster load-balancer does not rely on
+                                  NodePorts.  If the caller requests specific NodePorts (by specifying a
+                                  value), those requests will be respected, regardless of this field.
+                                  This field may only be set for services with type LoadBalancer and will
+                                  be cleared if the type is changed to any other type.
+                                type: boolean
+                              clusterIP:
+                                description: |-
+                                  clusterIP is the IP address of the service and is usually assigned
+                                  randomly. If an address is specified manually, is in-range (as per
+                                  system configuration), and is not in use, it will be allocated to the
+                                  service; otherwise creation of the service will fail. This field may not
+                                  be changed through updates unless the type field is also being changed
+                                  to ExternalName (which requires this field to be blank) or the type
+                                  field is being changed from ExternalName (in which case this field may
+                                  optionally be specified, as describe above).  Valid values are "None",
+                                  empty string (""), or a valid IP address. Setting this to "None" makes a
+                                  "headless service" (no virtual IP), which is useful when direct endpoint
+                                  connections are preferred and proxying is not required.  Only applies to
+                                  types ClusterIP, NodePort, and LoadBalancer. If this field is specified
+                                  when creating a Service of type ExternalName, creation will fail. This
+                                  field will be wiped when updating a Service to type ExternalName.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                type: string
+                              clusterIPs:
+                                description: |-
+                                  ClusterIPs is a list of IP addresses assigned to this service, and are
+                                  usually assigned randomly.  If an address is specified manually, is
+                                  in-range (as per system configuration), and is not in use, it will be
+                                  allocated to the service; otherwise creation of the service will fail.
+                                  This field may not be changed through updates unless the type field is
+                                  also being changed to ExternalName (which requires this field to be
+                                  empty) or the type field is being changed from ExternalName (in which
+                                  case this field may optionally be specified, as describe above).  Valid
+                                  values are "None", empty string (""), or a valid IP address.  Setting
+                                  this to "None" makes a "headless service" (no virtual IP), which is
+                                  useful when direct endpoint connections are preferred and proxying is
+                                  not required.  Only applies to types ClusterIP, NodePort, and
+                                  LoadBalancer. If this field is specified when creating a Service of type
+                                  ExternalName, creation will fail. This field will be wiped when updating
+                                  a Service to type ExternalName.  If this field is not specified, it will
+                                  be initialized from the clusterIP field.  If this field is specified,
+                                  clients must ensure that clusterIPs[0] and clusterIP have the same
+                                  value.
+
+                                  This field may hold a maximum of two entries (dual-stack IPs, in either order).
+                                  These IPs must correspond to the values of the ipFamilies field. Both
+                                  clusterIPs and ipFamilies are governed by the ipFamilyPolicy field.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                items:
+                                  type: string
+                                type: array
+                              externalIPs:
+                                description: |-
+                                  externalIPs is a list of IP addresses for which nodes in the cluster
+                                  will also accept traffic for this service.  These IPs are not managed by
+                                  Kubernetes.  The user is responsible for ensuring that traffic arrives
+                                  at a node with this IP.  A common example is external load-balancers
+                                  that are not part of the Kubernetes system.
+                                items:
+                                  type: string
+                                type: array
+                              externalName:
+                                description: |-
+                                  externalName is the external reference that discovery mechanisms will
+                                  return as an alias for this service (e.g. a DNS CNAME record). No
+                                  proxying will be involved.  Must be a lowercase RFC-1123 hostname
+                                  (https://tools.ietf.org/html/rfc1123) and requires `type` to be "ExternalName".
+                                type: string
+                              externalTrafficPolicy:
+                                description: |-
+                                  externalTrafficPolicy describes how nodes distribute service traffic they
+                                  receive on one of the Service's "externally-facing" addresses (NodePorts,
+                                  ExternalIPs, and LoadBalancer IPs). If set to "Local", the proxy will configure
+                                  the service in a way that assumes that external load balancers will take care
+                                  of balancing the service traffic between nodes, and so each node will deliver
+                                  traffic only to the node-local endpoints of the service, without masquerading
+                                  the client source IP. (Traffic mistakenly sent to a node with no endpoints will
+                                  be dropped.) The default value, "Cluster", uses the standard behavior of
+                                  routing to all endpoints evenly (possibly modified by topology and other
+                                  features). Note that traffic sent to an External IP or LoadBalancer IP from
+                                  within the cluster will always get "Cluster" semantics, but clients sending to
+                                  a NodePort from within the cluster may need to take traffic policy into account
+                                  when picking a node.
+                                type: string
+                              healthCheckNodePort:
+                                description: |-
+                                  healthCheckNodePort specifies the healthcheck nodePort for the service.
+                                  This only applies when type is set to LoadBalancer and
+                                  externalTrafficPolicy is set to Local. If a value is specified, is
+                                  in-range, and is not in use, it will be used.  If not specified, a value
+                                  will be automatically allocated.  External systems (e.g. load-balancers)
+                                  can use this port to determine if a given node holds endpoints for this
+                                  service or not.  If this field is specified when creating a Service
+                                  which does not need it, creation will fail. This field will be wiped
+                                  when updating a Service to no longer need it (e.g. changing type).
+                                  This field cannot be updated once set.
+                                format: int32
+                                type: integer
+                              internalTrafficPolicy:
+                                description: |-
+                                  InternalTrafficPolicy describes how nodes distribute service traffic they
+                                  receive on the ClusterIP. If set to "Local", the proxy will assume that pods
+                                  only want to talk to endpoints of the service on the same node as the pod,
+                                  dropping the traffic if there are no local endpoints. The default value,
+                                  "Cluster", uses the standard behavior of routing to all endpoints evenly
+                                  (possibly modified by topology and other features).
+                                type: string
+                              ipFamilies:
+                                description: |-
+                                  IPFamilies is a list of IP families (e.g. IPv4, IPv6) assigned to this
+                                  service. This field is usually assigned automatically based on cluster
+                                  configuration and the ipFamilyPolicy field. If this field is specified
+                                  manually, the requested family is available in the cluster,
+                                  and ipFamilyPolicy allows it, it will be used; otherwise creation of
+                                  the service will fail. This field is conditionally mutable: it allows
+                                  for adding or removing a secondary IP family, but it does not allow
+                                  changing the primary IP family of the Service. Valid values are "IPv4"
+                                  and "IPv6".  This field only applies to Services of types ClusterIP,
+                                  NodePort, and LoadBalancer, and does apply to "headless" services.
+                                  This field will be wiped when updating a Service to type ExternalName.
+
+                                  This field may hold a maximum of two entries (dual-stack families, in
+                                  either order).  These families must correspond to the values of the
+                                  clusterIPs field, if specified. Both clusterIPs and ipFamilies are
+                                  governed by the ipFamilyPolicy field.
+                                items:
+                                  description: |-
+                                    IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+                                    to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
+                                  type: string
+                                type: array
+                              ipFamilyPolicy:
+                                description: |-
+                                  IPFamilyPolicy represents the dual-stack-ness requested or required by
+                                  this Service. If there is no value provided, then this field will be set
+                                  to SingleStack. Services can be "SingleStack" (a single IP family),
+                                  "PreferDualStack" (two IP families on dual-stack configured clusters or
+                                  a single IP family on single-stack clusters), or "RequireDualStack"
+                                  (two IP families on dual-stack configured clusters, otherwise fail). The
+                                  ipFamilies and clusterIPs fields depend on the value of this field. This
+                                  field will be wiped when updating a service to type ExternalName.
+                                type: string
+                              loadBalancerClass:
+                                description: |-
+                                  loadBalancerClass is the class of the load balancer implementation this Service belongs to.
+                                  If specified, the value of this field must be a label-style identifier, with an optional prefix,
+                                  e.g. "internal-vip" or "example.com/internal-vip". Unprefixed names are reserved for end-users.
+                                  This field can only be set when the Service type is 'LoadBalancer'. If not set, the default load
+                                  balancer implementation is used, today this is typically done through the cloud provider integration,
+                                  but should apply for any default implementation. If set, it is assumed that a load balancer
+                                  implementation is watching for Services with a matching class. Any default load balancer
+                                  implementation (e.g. cloud providers) should ignore Services that set this field.
+                                  This field can only be set when creating or updating a Service to type 'LoadBalancer'.
+                                  Once set, it can not be changed. This field will be wiped when a service is updated to a non 'LoadBalancer' type.
+                                type: string
+                              loadBalancerIP:
+                                description: |-
+                                  Only applies to Service Type: LoadBalancer.
+                                  This feature depends on whether the underlying cloud-provider supports specifying
+                                  the loadBalancerIP when a load balancer is created.
+                                  This field will be ignored if the cloud-provider does not support the feature.
+                                  Deprecated: This field was under-specified and its meaning varies across implementations.
+                                  Using it is non-portable and it may not support dual-stack.
+                                  Users are encouraged to use implementation-specific annotations when available.
+                                type: string
+                              loadBalancerSourceRanges:
+                                description: |-
+                                  If specified and supported by the platform, this will restrict traffic through the cloud-provider
+                                  load-balancer will be restricted to the specified client IPs. This field will be ignored if the
+                                  cloud-provider does not support the feature."
+                                  More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+                                items:
+                                  type: string
+                                type: array
+                              ports:
+                                description: |-
+                                  The list of ports that are exposed by this service.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                items:
+                                  description: |-
+                                    ServicePortApplyConfiguration represents a declarative configuration of the ServicePort type for use
+                                    with apply.
+
+                                    ServicePort contains information on service's port.
+                                  properties:
+                                    appProtocol:
+                                      description: |-
+                                        The application protocol for this port.
+                                        This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+                                        This field follows standard Kubernetes label syntax.
+                                        Valid values are either:
+
+                                        * Un-prefixed protocol names - reserved for IANA standard service names (as per
+                                        RFC-6335 and https://www.iana.org/assignments/service-names).
+
+                                        * Kubernetes-defined prefixed names:
+                                        * 'kubernetes.io/h2c' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-
+                                        * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+                                        * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+
+                                        * Other protocols should use implementation-defined prefixed names such as
+                                        mycompany.com/my-custom-protocol.
+                                      type: string
+                                    name:
+                                      description: |-
+                                        The name of this port within the service. This must be a DNS_LABEL.
+                                        All ports within a ServiceSpec must have unique names. When considering
+                                        the endpoints for a Service, this must match the 'name' field in the
+                                        EndpointPort.
+                                        Optional if only one ServicePort is defined on this service.
+                                      type: string
+                                    nodePort:
+                                      description: |-
+                                        The port on each node on which this service is exposed when type is
+                                        NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+                                        specified, in-range, and not in use it will be used, otherwise the
+                                        operation will fail.  If not specified, a port will be allocated if this
+                                        Service requires one.  If this field is specified when creating a
+                                        Service which does not need it, creation will fail. This field will be
+                                        wiped when updating a Service to no longer need it (e.g. changing type
+                                        from NodePort to ClusterIP).
+                                        More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                                      format: int32
+                                      type: integer
+                                    port:
+                                      description: The port that will be exposed by
+                                        this service.
+                                      format: int32
+                                      type: integer
+                                    protocol:
+                                      description: |-
+                                        The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+                                        Default is TCP.
+                                      type: string
+                                    targetPort:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      description: |-
+                                        Number or name of the port to access on the pods targeted by the service.
+                                        Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                                        If this is a string, it will be looked up as a named port in the
+                                        target Pod's container ports. If this is not specified, the value
+                                        of the 'port' field is used (an identity map).
+                                        This field is ignored for services with clusterIP=None, and should be
+                                        omitted or set equal to the 'port' field.
+                                        More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service
+                                      x-kubernetes-int-or-string: true
+                                  type: object
+                                type: array
+                              publishNotReadyAddresses:
+                                description: |-
+                                  publishNotReadyAddresses indicates that any agent which deals with endpoints for this
+                                  Service should disregard any indications of ready/not-ready.
+                                  The primary use case for setting this field is for a StatefulSet's Headless Service to
+                                  propagate SRV DNS records for its Pods for the purpose of peer discovery.
+                                  The Kubernetes controllers that generate Endpoints and EndpointSlice resources for
+                                  Services interpret this to mean that all endpoints are considered "ready" even if the
+                                  Pods themselves are not. Agents which consume only Kubernetes generated endpoints
+                                  through the Endpoints or EndpointSlice resources can safely assume this behavior.
+                                type: boolean
+                              selector:
+                                additionalProperties:
+                                  type: string
+                                description: |-
+                                  Route service traffic to pods with label keys and values matching this
+                                  selector. If empty or not present, the service is assumed to have an
+                                  external process managing its endpoints, which Kubernetes will not
+                                  modify. Only applies to types ClusterIP, NodePort, and LoadBalancer.
+                                  Ignored if type is ExternalName.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/
+                                type: object
+                              sessionAffinity:
+                                description: |-
+                                  Supports "ClientIP" and "None". Used to maintain session affinity.
+                                  Enable client IP based session affinity.
+                                  Must be ClientIP or None.
+                                  Defaults to None.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                type: string
+                              sessionAffinityConfig:
+                                description: sessionAffinityConfig contains the configurations
+                                  of session affinity.
+                                properties:
+                                  clientIP:
+                                    description: clientIP contains the configurations
+                                      of Client IP based session affinity.
+                                    properties:
+                                      timeoutSeconds:
+                                        description: |-
+                                          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+                                          The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+                                          Default value is 10800(for 3 hours).
+                                        format: int32
+                                        type: integer
+                                    type: object
+                                type: object
+                              trafficDistribution:
+                                description: |-
+                                  TrafficDistribution offers a way to express preferences for how traffic
+                                  is distributed to Service endpoints. Implementations can use this field
+                                  as a hint, but are not required to guarantee strict adherence. If the
+                                  field is not set, the implementation will apply its default routing
+                                  strategy. If set to "PreferClose", implementations should prioritize
+                                  endpoints that are in the same zone.
+                                type: string
+                              type:
+                                description: |-
+                                  type determines how the Service is exposed. Defaults to ClusterIP. Valid
+                                  options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
+                                  "ClusterIP" allocates a cluster-internal IP address for load-balancing
+                                  to endpoints. Endpoints are determined by the selector or if that is not
+                                  specified, by manual construction of an Endpoints object or
+                                  EndpointSlice objects. If clusterIP is "None", no virtual IP is
+                                  allocated and the endpoints are published as a set of endpoints rather
+                                  than a virtual IP.
+                                  "NodePort" builds on ClusterIP and allocates a port on every node which
+                                  routes to the same endpoints as the clusterIP.
+                                  "LoadBalancer" builds on NodePort and creates an external load-balancer
+                                  (if supported in the current cloud) which routes to the same endpoints
+                                  as the clusterIP.
+                                  "ExternalName" aliases this service to the specified externalName.
+                                  Several other fields do not apply to ExternalName services.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+                                type: string
+                            type: object
+                        type: object
+                      remote:
+                        description: Remote overrides are applied to per-pod Services
+                          for pods in remote clusters.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          enabled:
+                            description: Enabled controls whether this per-pod Service
+                              is created. Defaults to true.
+                            type: boolean
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          spec:
+                            description: |-
+                              ServiceSpecApplyConfiguration represents a declarative configuration of the ServiceSpec type for use
+                              with apply.
+
+                              ServiceSpec describes the attributes that a user creates on a service.
+                            properties:
+                              allocateLoadBalancerNodePorts:
+                                description: |-
+                                  allocateLoadBalancerNodePorts defines if NodePorts will be automatically
+                                  allocated for services with type LoadBalancer.  Default is "true". It
+                                  may be set to "false" if the cluster load-balancer does not rely on
+                                  NodePorts.  If the caller requests specific NodePorts (by specifying a
+                                  value), those requests will be respected, regardless of this field.
+                                  This field may only be set for services with type LoadBalancer and will
+                                  be cleared if the type is changed to any other type.
+                                type: boolean
+                              clusterIP:
+                                description: |-
+                                  clusterIP is the IP address of the service and is usually assigned
+                                  randomly. If an address is specified manually, is in-range (as per
+                                  system configuration), and is not in use, it will be allocated to the
+                                  service; otherwise creation of the service will fail. This field may not
+                                  be changed through updates unless the type field is also being changed
+                                  to ExternalName (which requires this field to be blank) or the type
+                                  field is being changed from ExternalName (in which case this field may
+                                  optionally be specified, as describe above).  Valid values are "None",
+                                  empty string (""), or a valid IP address. Setting this to "None" makes a
+                                  "headless service" (no virtual IP), which is useful when direct endpoint
+                                  connections are preferred and proxying is not required.  Only applies to
+                                  types ClusterIP, NodePort, and LoadBalancer. If this field is specified
+                                  when creating a Service of type ExternalName, creation will fail. This
+                                  field will be wiped when updating a Service to type ExternalName.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                type: string
+                              clusterIPs:
+                                description: |-
+                                  ClusterIPs is a list of IP addresses assigned to this service, and are
+                                  usually assigned randomly.  If an address is specified manually, is
+                                  in-range (as per system configuration), and is not in use, it will be
+                                  allocated to the service; otherwise creation of the service will fail.
+                                  This field may not be changed through updates unless the type field is
+                                  also being changed to ExternalName (which requires this field to be
+                                  empty) or the type field is being changed from ExternalName (in which
+                                  case this field may optionally be specified, as describe above).  Valid
+                                  values are "None", empty string (""), or a valid IP address.  Setting
+                                  this to "None" makes a "headless service" (no virtual IP), which is
+                                  useful when direct endpoint connections are preferred and proxying is
+                                  not required.  Only applies to types ClusterIP, NodePort, and
+                                  LoadBalancer. If this field is specified when creating a Service of type
+                                  ExternalName, creation will fail. This field will be wiped when updating
+                                  a Service to type ExternalName.  If this field is not specified, it will
+                                  be initialized from the clusterIP field.  If this field is specified,
+                                  clients must ensure that clusterIPs[0] and clusterIP have the same
+                                  value.
+
+                                  This field may hold a maximum of two entries (dual-stack IPs, in either order).
+                                  These IPs must correspond to the values of the ipFamilies field. Both
+                                  clusterIPs and ipFamilies are governed by the ipFamilyPolicy field.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                items:
+                                  type: string
+                                type: array
+                              externalIPs:
+                                description: |-
+                                  externalIPs is a list of IP addresses for which nodes in the cluster
+                                  will also accept traffic for this service.  These IPs are not managed by
+                                  Kubernetes.  The user is responsible for ensuring that traffic arrives
+                                  at a node with this IP.  A common example is external load-balancers
+                                  that are not part of the Kubernetes system.
+                                items:
+                                  type: string
+                                type: array
+                              externalName:
+                                description: |-
+                                  externalName is the external reference that discovery mechanisms will
+                                  return as an alias for this service (e.g. a DNS CNAME record). No
+                                  proxying will be involved.  Must be a lowercase RFC-1123 hostname
+                                  (https://tools.ietf.org/html/rfc1123) and requires `type` to be "ExternalName".
+                                type: string
+                              externalTrafficPolicy:
+                                description: |-
+                                  externalTrafficPolicy describes how nodes distribute service traffic they
+                                  receive on one of the Service's "externally-facing" addresses (NodePorts,
+                                  ExternalIPs, and LoadBalancer IPs). If set to "Local", the proxy will configure
+                                  the service in a way that assumes that external load balancers will take care
+                                  of balancing the service traffic between nodes, and so each node will deliver
+                                  traffic only to the node-local endpoints of the service, without masquerading
+                                  the client source IP. (Traffic mistakenly sent to a node with no endpoints will
+                                  be dropped.) The default value, "Cluster", uses the standard behavior of
+                                  routing to all endpoints evenly (possibly modified by topology and other
+                                  features). Note that traffic sent to an External IP or LoadBalancer IP from
+                                  within the cluster will always get "Cluster" semantics, but clients sending to
+                                  a NodePort from within the cluster may need to take traffic policy into account
+                                  when picking a node.
+                                type: string
+                              healthCheckNodePort:
+                                description: |-
+                                  healthCheckNodePort specifies the healthcheck nodePort for the service.
+                                  This only applies when type is set to LoadBalancer and
+                                  externalTrafficPolicy is set to Local. If a value is specified, is
+                                  in-range, and is not in use, it will be used.  If not specified, a value
+                                  will be automatically allocated.  External systems (e.g. load-balancers)
+                                  can use this port to determine if a given node holds endpoints for this
+                                  service or not.  If this field is specified when creating a Service
+                                  which does not need it, creation will fail. This field will be wiped
+                                  when updating a Service to no longer need it (e.g. changing type).
+                                  This field cannot be updated once set.
+                                format: int32
+                                type: integer
+                              internalTrafficPolicy:
+                                description: |-
+                                  InternalTrafficPolicy describes how nodes distribute service traffic they
+                                  receive on the ClusterIP. If set to "Local", the proxy will assume that pods
+                                  only want to talk to endpoints of the service on the same node as the pod,
+                                  dropping the traffic if there are no local endpoints. The default value,
+                                  "Cluster", uses the standard behavior of routing to all endpoints evenly
+                                  (possibly modified by topology and other features).
+                                type: string
+                              ipFamilies:
+                                description: |-
+                                  IPFamilies is a list of IP families (e.g. IPv4, IPv6) assigned to this
+                                  service. This field is usually assigned automatically based on cluster
+                                  configuration and the ipFamilyPolicy field. If this field is specified
+                                  manually, the requested family is available in the cluster,
+                                  and ipFamilyPolicy allows it, it will be used; otherwise creation of
+                                  the service will fail. This field is conditionally mutable: it allows
+                                  for adding or removing a secondary IP family, but it does not allow
+                                  changing the primary IP family of the Service. Valid values are "IPv4"
+                                  and "IPv6".  This field only applies to Services of types ClusterIP,
+                                  NodePort, and LoadBalancer, and does apply to "headless" services.
+                                  This field will be wiped when updating a Service to type ExternalName.
+
+                                  This field may hold a maximum of two entries (dual-stack families, in
+                                  either order).  These families must correspond to the values of the
+                                  clusterIPs field, if specified. Both clusterIPs and ipFamilies are
+                                  governed by the ipFamilyPolicy field.
+                                items:
+                                  description: |-
+                                    IPFamily represents the IP Family (IPv4 or IPv6). This type is used
+                                    to express the family of an IP expressed by a type (e.g. service.spec.ipFamilies).
+                                  type: string
+                                type: array
+                              ipFamilyPolicy:
+                                description: |-
+                                  IPFamilyPolicy represents the dual-stack-ness requested or required by
+                                  this Service. If there is no value provided, then this field will be set
+                                  to SingleStack. Services can be "SingleStack" (a single IP family),
+                                  "PreferDualStack" (two IP families on dual-stack configured clusters or
+                                  a single IP family on single-stack clusters), or "RequireDualStack"
+                                  (two IP families on dual-stack configured clusters, otherwise fail). The
+                                  ipFamilies and clusterIPs fields depend on the value of this field. This
+                                  field will be wiped when updating a service to type ExternalName.
+                                type: string
+                              loadBalancerClass:
+                                description: |-
+                                  loadBalancerClass is the class of the load balancer implementation this Service belongs to.
+                                  If specified, the value of this field must be a label-style identifier, with an optional prefix,
+                                  e.g. "internal-vip" or "example.com/internal-vip". Unprefixed names are reserved for end-users.
+                                  This field can only be set when the Service type is 'LoadBalancer'. If not set, the default load
+                                  balancer implementation is used, today this is typically done through the cloud provider integration,
+                                  but should apply for any default implementation. If set, it is assumed that a load balancer
+                                  implementation is watching for Services with a matching class. Any default load balancer
+                                  implementation (e.g. cloud providers) should ignore Services that set this field.
+                                  This field can only be set when creating or updating a Service to type 'LoadBalancer'.
+                                  Once set, it can not be changed. This field will be wiped when a service is updated to a non 'LoadBalancer' type.
+                                type: string
+                              loadBalancerIP:
+                                description: |-
+                                  Only applies to Service Type: LoadBalancer.
+                                  This feature depends on whether the underlying cloud-provider supports specifying
+                                  the loadBalancerIP when a load balancer is created.
+                                  This field will be ignored if the cloud-provider does not support the feature.
+                                  Deprecated: This field was under-specified and its meaning varies across implementations.
+                                  Using it is non-portable and it may not support dual-stack.
+                                  Users are encouraged to use implementation-specific annotations when available.
+                                type: string
+                              loadBalancerSourceRanges:
+                                description: |-
+                                  If specified and supported by the platform, this will restrict traffic through the cloud-provider
+                                  load-balancer will be restricted to the specified client IPs. This field will be ignored if the
+                                  cloud-provider does not support the feature."
+                                  More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
+                                items:
+                                  type: string
+                                type: array
+                              ports:
+                                description: |-
+                                  The list of ports that are exposed by this service.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                items:
+                                  description: |-
+                                    ServicePortApplyConfiguration represents a declarative configuration of the ServicePort type for use
+                                    with apply.
+
+                                    ServicePort contains information on service's port.
+                                  properties:
+                                    appProtocol:
+                                      description: |-
+                                        The application protocol for this port.
+                                        This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+                                        This field follows standard Kubernetes label syntax.
+                                        Valid values are either:
+
+                                        * Un-prefixed protocol names - reserved for IANA standard service names (as per
+                                        RFC-6335 and https://www.iana.org/assignments/service-names).
+
+                                        * Kubernetes-defined prefixed names:
+                                        * 'kubernetes.io/h2c' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-
+                                        * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+                                        * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+
+                                        * Other protocols should use implementation-defined prefixed names such as
+                                        mycompany.com/my-custom-protocol.
+                                      type: string
+                                    name:
+                                      description: |-
+                                        The name of this port within the service. This must be a DNS_LABEL.
+                                        All ports within a ServiceSpec must have unique names. When considering
+                                        the endpoints for a Service, this must match the 'name' field in the
+                                        EndpointPort.
+                                        Optional if only one ServicePort is defined on this service.
+                                      type: string
+                                    nodePort:
+                                      description: |-
+                                        The port on each node on which this service is exposed when type is
+                                        NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+                                        specified, in-range, and not in use it will be used, otherwise the
+                                        operation will fail.  If not specified, a port will be allocated if this
+                                        Service requires one.  If this field is specified when creating a
+                                        Service which does not need it, creation will fail. This field will be
+                                        wiped when updating a Service to no longer need it (e.g. changing type
+                                        from NodePort to ClusterIP).
+                                        More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                                      format: int32
+                                      type: integer
+                                    port:
+                                      description: The port that will be exposed by
+                                        this service.
+                                      format: int32
+                                      type: integer
+                                    protocol:
+                                      description: |-
+                                        The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+                                        Default is TCP.
+                                      type: string
+                                    targetPort:
+                                      anyOf:
+                                      - type: integer
+                                      - type: string
+                                      description: |-
+                                        Number or name of the port to access on the pods targeted by the service.
+                                        Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                                        If this is a string, it will be looked up as a named port in the
+                                        target Pod's container ports. If this is not specified, the value
+                                        of the 'port' field is used (an identity map).
+                                        This field is ignored for services with clusterIP=None, and should be
+                                        omitted or set equal to the 'port' field.
+                                        More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service
+                                      x-kubernetes-int-or-string: true
+                                  type: object
+                                type: array
+                              publishNotReadyAddresses:
+                                description: |-
+                                  publishNotReadyAddresses indicates that any agent which deals with endpoints for this
+                                  Service should disregard any indications of ready/not-ready.
+                                  The primary use case for setting this field is for a StatefulSet's Headless Service to
+                                  propagate SRV DNS records for its Pods for the purpose of peer discovery.
+                                  The Kubernetes controllers that generate Endpoints and EndpointSlice resources for
+                                  Services interpret this to mean that all endpoints are considered "ready" even if the
+                                  Pods themselves are not. Agents which consume only Kubernetes generated endpoints
+                                  through the Endpoints or EndpointSlice resources can safely assume this behavior.
+                                type: boolean
+                              selector:
+                                additionalProperties:
+                                  type: string
+                                description: |-
+                                  Route service traffic to pods with label keys and values matching this
+                                  selector. If empty or not present, the service is assumed to have an
+                                  external process managing its endpoints, which Kubernetes will not
+                                  modify. Only applies to types ClusterIP, NodePort, and LoadBalancer.
+                                  Ignored if type is ExternalName.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/
+                                type: object
+                              sessionAffinity:
+                                description: |-
+                                  Supports "ClientIP" and "None". Used to maintain session affinity.
+                                  Enable client IP based session affinity.
+                                  Must be ClientIP or None.
+                                  Defaults to None.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+                                type: string
+                              sessionAffinityConfig:
+                                description: sessionAffinityConfig contains the configurations
+                                  of session affinity.
+                                properties:
+                                  clientIP:
+                                    description: clientIP contains the configurations
+                                      of Client IP based session affinity.
+                                    properties:
+                                      timeoutSeconds:
+                                        description: |-
+                                          timeoutSeconds specifies the seconds of ClientIP type session sticky time.
+                                          The value must be >0 && <=86400(for 1 day) if ServiceAffinity == "ClientIP".
+                                          Default value is 10800(for 3 hours).
+                                        format: int32
+                                        type: integer
+                                    type: object
+                                type: object
+                              trafficDistribution:
+                                description: |-
+                                  TrafficDistribution offers a way to express preferences for how traffic
+                                  is distributed to Service endpoints. Implementations can use this field
+                                  as a hint, but are not required to guarantee strict adherence. If the
+                                  field is not set, the implementation will apply its default routing
+                                  strategy. If set to "PreferClose", implementations should prioritize
+                                  endpoints that are in the same zone.
+                                type: string
+                              type:
+                                description: |-
+                                  type determines how the Service is exposed. Defaults to ClusterIP. Valid
+                                  options are ExternalName, ClusterIP, NodePort, and LoadBalancer.
+                                  "ClusterIP" allocates a cluster-internal IP address for load-balancing
+                                  to endpoints. Endpoints are determined by the selector or if that is not
+                                  specified, by manual construction of an Endpoints object or
+                                  EndpointSlice objects. If clusterIP is "None", no virtual IP is
+                                  allocated and the endpoints are published as a set of endpoints rather
+                                  than a virtual IP.
+                                  "NodePort" builds on ClusterIP and allocates a port on every node which
+                                  routes to the same endpoints as the clusterIP.
+                                  "LoadBalancer" builds on NodePort and creates an external load-balancer
+                                  (if supported in the current cloud) which routes to the same endpoints
+                                  as the clusterIP.
+                                  "ExternalName" aliases this service to the specified externalName.
+                                  Several other fields do not apply to ExternalName services.
+                                  More info: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
+                                type: string
+                            type: object
+                        type: object
+                    type: object
+                type: object
               sidecarImage:
                 description: |-
-                  Default:
-                      repository: docker.redpanda.com/redpandadata/redpanda-operator
-                      tag: {{.operatorVersion}}
+                  SidecarImage is the operator sidecar container image for this pool.
+                  Defaults to the operator's own image at build time.
                 properties:
                   pullPolicy:
                     description: Specifies the strategy used for pulling images from
@@ -8368,6 +10309,269 @@ spec:
                   tag:
                     description: Specifies the image tag.
                     type: string
+                type: object
+              storage:
+                description: |-
+                  Storage configures the Redpanda data directory and tiered-storage
+                  cache (hostPath / PVC / emptyDir). When also set on
+                  StretchClusterSpec, the pool's value wins on a deep field-by-field
+                  merge — pool's non-nil subfields override, cluster fills any
+                  subfields the pool didn't set. See BrokerPoolSpec.MergeFromCluster.
+                properties:
+                  hostPath:
+                    description: Specifies the absolute path on the worker node to
+                      store the Redpanda data directory.
+                    type: string
+                  persistentVolume:
+                    description: Configures a PersistentVolumeClaim (PVC) template
+                      to create for each Pod.
+                    properties:
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: Adds annotations to the PersistentVolumeClaims
+                          to provide additional information or metadata that can be
+                          used by other tools or libraries.
+                        type: object
+                      enabled:
+                        description: Specifies whether to enable the Helm chart to
+                          create PersistentVolumeClaims for Pods.
+                        type: boolean
+                      labels:
+                        additionalProperties:
+                          type: string
+                        description: Applies labels to the PersistentVolumeClaims
+                          to facilitate identification and selection based on custom
+                          criteria.
+                        type: object
+                      nameOverwrite:
+                        description: Option to change volume claim template name for
+                          tiered storage persistent volume if tiered.mountType is
+                          set to `persistentVolume`
+                        type: string
+                      size:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Specifies the storage capacity required.
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      storageClass:
+                        description: Specifies the StorageClass for the PersistentVolumeClaims
+                          to determine how PersistentVolumes are provisioned and managed.
+                        type: string
+                    type: object
+                  tiered:
+                    description: Configures storage for the Tiered Storage cache.
+                    properties:
+                      config:
+                        description: Configures Tiered Storage properties.
+                        properties:
+                          cloud_storage_api_endpoint:
+                            type: string
+                          cloud_storage_api_endpoint_port:
+                            type: integer
+                          cloud_storage_azure_adls_endpoint:
+                            type: string
+                          cloud_storage_azure_adls_port:
+                            type: integer
+                          cloud_storage_azure_container:
+                            type: string
+                          cloud_storage_azure_managed_identity_id:
+                            type: string
+                          cloud_storage_azure_shared_key:
+                            type: string
+                          cloud_storage_azure_storage_account:
+                            type: string
+                          cloud_storage_bucket:
+                            type: string
+                          cloud_storage_cache_check_interval:
+                            type: integer
+                          cloud_storage_cache_directory:
+                            type: string
+                          cloud_storage_cache_size:
+                            type: string
+                          cloud_storage_credentials_source:
+                            type: string
+                          cloud_storage_disable_tls:
+                            type: boolean
+                          cloud_storage_enable_remote_read:
+                            type: boolean
+                          cloud_storage_enable_remote_write:
+                            type: boolean
+                          cloud_storage_enabled:
+                            type: boolean
+                          cloud_storage_initial_backoff_ms:
+                            type: integer
+                          cloud_storage_manifest_upload_timeout_ms:
+                            type: integer
+                          cloud_storage_max_connection_idle_time_ms:
+                            type: integer
+                          cloud_storage_max_connections:
+                            type: integer
+                          cloud_storage_region:
+                            type: string
+                          cloud_storage_segment_max_upload_interval_sec:
+                            type: integer
+                          cloud_storage_segment_upload_timeout_ms:
+                            type: integer
+                          cloud_storage_trust_file:
+                            type: string
+                          cloud_storage_upload_ctrl_d_coeff:
+                            type: integer
+                          cloud_storage_upload_ctrl_max_shares:
+                            type: integer
+                          cloud_storage_upload_ctrl_min_shares:
+                            type: integer
+                          cloud_storage_upload_ctrl_p_coeff:
+                            type: integer
+                          cloud_storage_upload_ctrl_update_interval_ms:
+                            type: integer
+                        type: object
+                      credentialsSecretRef:
+                        description: CredentialsSecretRef sets cloud_storage_secret_key
+                          and/or cloud_storage_access_key from a referenced Secret.
+                        properties:
+                          accessKey:
+                            properties:
+                              configurationKey:
+                                type: string
+                              key:
+                                type: string
+                              name:
+                                type: string
+                            type: object
+                          secretKey:
+                            properties:
+                              configurationKey:
+                                type: string
+                              key:
+                                type: string
+                              name:
+                                type: string
+                            type: object
+                        type: object
+                      hostPath:
+                        description: Specifies the absolute path on the worker node
+                          to store the Tiered Storage cache.
+                        type: string
+                      mountType:
+                        description: 'mountType: "none", "hostPath", "emptyDir", or
+                          "persistentVolume".'
+                        type: string
+                      persistentVolume:
+                        description: Configures a PersistentVolumeClaim (PVC) template
+                          for the Tiered Storage cache.
+                        properties:
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            description: Adds annotations to the PersistentVolumeClaims
+                              to provide additional information or metadata that can
+                              be used by other tools or libraries.
+                            type: object
+                          enabled:
+                            description: Specifies whether to enable the Helm chart
+                              to create PersistentVolumeClaims for Pods.
+                            type: boolean
+                          labels:
+                            additionalProperties:
+                              type: string
+                            description: Applies labels to the PersistentVolumeClaims
+                              to facilitate identification and selection based on
+                              custom criteria.
+                            type: object
+                          nameOverwrite:
+                            description: Option to change volume claim template name
+                              for tiered storage persistent volume if tiered.mountType
+                              is set to `persistentVolume`
+                            type: string
+                          size:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            description: Specifies the storage capacity required.
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          storageClass:
+                            description: Specifies the StorageClass for the PersistentVolumeClaims
+                              to determine how PersistentVolumes are provisioned and
+                              managed.
+                            type: string
+                        type: object
+                    type: object
+                type: object
+              tls:
+                description: |-
+                  TLS configures the listener cert set (server certs, optional client
+                  certs, CA toggles, custom issuers). Per-pool so different pools can
+                  run different listener TLS configurations while sharing the
+                  cluster-wide root CA managed by the operator.
+                properties:
+                  certs:
+                    additionalProperties:
+                      description: Certificate configures TLS certificates.
+                      properties:
+                        applyInternalDNSNames:
+                          description: Specifies you wish to have Kubernetes internal
+                            dns names (IE the headless service of the redpanda StatefulSet)
+                            included in `dnsNames` of the  certificate even, when
+                            supplying an issuer.
+                          type: boolean
+                        caEnabled:
+                          description: Specifies whether to include the `ca.crt` file
+                            in the trust stores of all listeners. Set to `true` only
+                            for certificates that are not authenticated using public
+                            certificate authorities (CAs).
+                          type: boolean
+                        clientSecretRef:
+                          description: Specify the name of an existing Secret resource
+                            that contains your client TLS certificate.
+                          properties:
+                            name:
+                              description: Specifies the name of the Secret resource.
+                              type: string
+                          type: object
+                        duration:
+                          description: Specifies the validity duration of certificates
+                            generated with `issuerRef`.
+                          type: string
+                        enabled:
+                          type: boolean
+                        issuerRef:
+                          description: Specify the name of an existing Issuer or ClusterIssuer
+                            resource to use to generate certificates. Requires cert-manager.
+                            See https://cert-manager.io/v1.1-docs.
+                          properties:
+                            group:
+                              type: string
+                            kind:
+                              description: Specifies the kind of resource. One of
+                                `Issuer` or `ClusterIssuer`.
+                              type: string
+                            name:
+                              description: Specifies the name of the resource.
+                              type: string
+                          type: object
+                        secretRef:
+                          description: Specify the name of an existing Secret resource
+                            that contains your TLS certificate.
+                          properties:
+                            name:
+                              description: Specifies the name of the Secret resource.
+                              type: string
+                          type: object
+                      type: object
+                    description: Lists all available certificates in the cluster.
+                      You can reference a specific certificate’s name in each listener’s
+                      `listeners.<listener name>.tls.cert` setting.
+                    type: object
+                  enabled:
+                    description: Enables TLS globally for all listeners. Each listener
+                      must include a certificate name in its `<listener>.tls` object.
+                      To allow you to enable TLS for individual listeners, certificates
+                      are always loaded, even if TLS is disabled.
+                    type: boolean
                 type: object
             required:
             - clusterRef
@@ -8395,7 +10599,7 @@ spec:
                 reason: NotReconciled
                 status: Unknown
                 type: Stable
-            description: NodePoolStatus defines the observed state of any node pools
+            description: BrokerPoolStatus defines the observed state of any node pools
               tied to this cluster
             properties:
               condemnedReplicas:

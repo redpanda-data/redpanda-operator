@@ -509,7 +509,7 @@ func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object, clusterNa
 		if ref := source.GetClusterRef(); ref != nil && ref.IsV1() {
 			var cluster vectorizedv1alpha1.Cluster
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -537,7 +537,7 @@ func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object, clu
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -566,7 +566,7 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
@@ -580,6 +580,44 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 	return nil, nil
 }
 
+<<<<<<< HEAD
+=======
+// getStretchCluster resolves a StretchCluster CR referenced by obj's
+// spec.cluster.clusterRef. Used by the layered-CR (Topic/User/Role/Schema/
+// Group/ShadowLink) reconcilers running in multicluster mode, where the
+// referenced cluster CR is a StretchCluster rather than a Redpanda CR.
+// clusterName must be the cluster on which obj itself lives so the lookup
+// targets the right peer Kubernetes API.
+func (c *Factory) getStretchCluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.StretchCluster, error) {
+	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
+	if !ok {
+		return nil, nil
+	}
+
+	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
+		if ref := source.GetClusterRef(); ref != nil && ref.IsStretchCluster() {
+			var cluster redpandav1alpha2.StretchCluster
+
+			client, err := c.GetClient(ctx, clusterName)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
+				if apierrors.IsNotFound(err) {
+					return nil, ErrInvalidClusterRef
+				}
+				return nil, err
+			}
+
+			return &cluster, nil
+		}
+	}
+
+	return nil, nil
+}
+
+>>>>>>> 46d333eb (operator: support cross-namespace clusterRef for shadow links (K8S-816))
 func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.Redpanda, error) {
 	o, ok := obj.(redpandav1alpha2.RemoteClusterReferencingObject)
 	if !ok {
@@ -595,7 +633,7 @@ func (c *Factory) getRemoteV2Cluster(ctx context.Context, obj client.Object, clu
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: ref.Name}, &cluster); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}
