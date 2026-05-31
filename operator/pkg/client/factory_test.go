@@ -33,6 +33,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -40,6 +41,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
@@ -605,4 +607,65 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 		}
 		return len(brokers) == 1
 	}, 2*time.Minute, 5*time.Second, "failed to connect to admin API with TLS")
+}
+
+// TestCrossNamespaceClusterRefResolution verifies that a ShadowLink can resolve
+// a source cluster that lives in a different namespace via
+// sourceCluster.clusterRef.namespace (K8S-816). It runs against envtest (no
+// real Redpanda) since it only exercises the clusterRef -> CR lookup.
+func TestCrossNamespaceClusterRefResolution(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
+	require.NoError(t, err)
+
+	// Source cluster lives in namespace "a"; the ShadowLink will live in "b".
+	for _, ns := range []string{"a", "b"} {
+		require.NoError(t, c.Create(ctx, &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{Name: ns},
+		}))
+	}
+	require.NoError(t, c.Create(ctx, &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "redpanda-source", Namespace: "a"},
+	}))
+
+	mgr := setupTestManager(t, ctx, cfg, c)
+	factory := NewFactory(mgr, nil)
+
+	newLink := func(sourceRef *redpandav1alpha2.ClusterRef) *redpandav1alpha2.ShadowLink {
+		return &redpandav1alpha2.ShadowLink{
+			ObjectMeta: metav1.ObjectMeta{Name: "link", Namespace: "b"},
+			Spec: redpandav1alpha2.ShadowLinkSpec{
+				ShadowCluster: &redpandav1alpha2.ClusterSource{
+					ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda-target"},
+				},
+				SourceCluster: &redpandav1alpha2.ClusterSource{ClusterRef: sourceRef},
+			},
+		}
+	}
+
+	t.Run("resolves a source cluster in another namespace", func(t *testing.T) {
+		link := newLink(&redpandav1alpha2.ClusterRef{Name: "redpanda-source", Namespace: ptr.To("a")})
+
+		cluster, err := factory.getRemoteV2Cluster(ctx, link, mcmanager.LocalCluster)
+		require.NoError(t, err)
+		require.NotNil(t, cluster)
+		require.Equal(t, "redpanda-source", cluster.Name)
+		require.Equal(t, "a", cluster.Namespace)
+	})
+
+	t.Run("without a namespace it looks in the ShadowLink namespace and fails", func(t *testing.T) {
+		// No namespace on the ref -> resolution falls back to the ShadowLink's
+		// namespace ("b"), where redpanda-source does not exist.
+		link := newLink(&redpandav1alpha2.ClusterRef{Name: "redpanda-source"})
+
+		_, err := factory.getRemoteV2Cluster(ctx, link, mcmanager.LocalCluster)
+		require.ErrorIs(t, err, ErrInvalidClusterRef)
+	})
 }
