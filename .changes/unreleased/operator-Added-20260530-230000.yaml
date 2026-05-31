@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "Added an optional `namespace` field to `clusterRef` (used by `ShadowLink`, `Topic`, `User`, `Role`, `Schema`, and `Group` resources). When set, the referenced Redpanda/Cluster is resolved in that namespace instead of the referencing object's namespace, enabling cross-namespace references such as a `ShadowLink` whose source and shadow clusters live in separate namespaces on the same Kubernetes cluster."
+time: 2026-05-30T23:00:00.000000-07:00
