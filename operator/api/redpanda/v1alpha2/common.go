@@ -323,6 +323,13 @@ type ClusterRef struct {
 	// Name specifies the name of the cluster being referenced.
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
+	// Namespace specifies the namespace of the cluster being referenced.
+	// If unspecified, defaults to the namespace of the referencing object.
+	// Setting this allows referencing a cluster that resides in a different
+	// namespace, e.g. a ShadowLink whose source and shadow Redpanda clusters
+	// live in separate namespaces on the same Kubernetes cluster.
+	// +optional
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 const (
@@ -335,6 +342,13 @@ const (
 
 func (c *ClusterRef) GetGroup() string {
 	return ptr.Deref(c.Group, v2ClusterRefGroup)
+}
+
+// GetNamespace returns the namespace of the referenced cluster, falling back to
+// fallback (typically the referencing object's namespace) when no namespace is
+// explicitly set on the reference.
+func (c *ClusterRef) GetNamespace(fallback string) string {
+	return ptr.Deref(c.Namespace, fallback)
 }
 
 func (c *ClusterRef) GetKind() string {
