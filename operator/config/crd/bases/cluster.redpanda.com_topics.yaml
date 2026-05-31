@@ -76,6 +76,14 @@ spec:
                         description: Name specifies the name of the cluster being
                           referenced.
                         type: string
+                      namespace:
+                        description: |-
+                          Namespace specifies the namespace of the cluster being referenced.
+                          If unspecified, defaults to the namespace of the referencing object.
+                          Setting this allows referencing a cluster that resides in a different
+                          namespace, e.g. a ShadowLink whose source and shadow Redpanda clusters
+                          live in separate namespaces on the same Kubernetes cluster.
+                        type: string
                     required:
                     - name
                     type: object
@@ -3589,6 +3597,14 @@ spec:
                       name:
                         description: Name specifies the name of the cluster being
                           referenced.
+                        type: string
+                      namespace:
+                        description: |-
+                          Namespace specifies the namespace of the cluster being referenced.
+                          If unspecified, defaults to the namespace of the referencing object.
+                          Setting this allows referencing a cluster that resides in a different
+                          namespace, e.g. a ShadowLink whose source and shadow Redpanda clusters
+                          live in separate namespaces on the same Kubernetes cluster.
                         type: string
                     required:
                     - name

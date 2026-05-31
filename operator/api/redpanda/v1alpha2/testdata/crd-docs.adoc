@@ -728,6 +728,12 @@ If unspecified, defaults to "cluster.redpanda.com". + |  |
 If unspecified, defaults to "Redpanda". + |  | 
 | *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: \{} +
 
+| *`namespace`* __string__ | Namespace specifies the namespace of the cluster being referenced. +
+If unspecified, defaults to the namespace of the referencing object. +
+Setting this allows referencing a cluster that resides in a different +
+namespace, e.g. a ShadowLink whose source and shadow Redpanda clusters +
+live in separate namespaces on the same Kubernetes cluster. + |  | Optional: \{} +
+
 |===
 
 
