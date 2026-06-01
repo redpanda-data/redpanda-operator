@@ -90,6 +90,17 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
+	// Defer to the per-broker broker-decommissioner sidecar when it is enabled
+	// for this cluster (statefulset.sideCars.brokerDecommissioner.enabled). The
+	// sidecar runs `--run-decommissioner` inside the broker Pods and owns
+	// decommissioning; running this operator-wide controller in parallel would
+	// double-process the same cluster. This lets users migrate to the sidecar
+	// per-cluster while keeping --additional-controllers=decommission set.
+	if runsDecommissionerSidecar(&sts.Spec.Template.Spec) {
+		log.Info("broker-decommissioner sidecar is enabled for this cluster; deferring to it", "statefulset", req.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
 	decomCondition, _ := getConditionOfTypeAndListWithout(DecommissionCondition, sts.Status.Conditions)
 	if decomCondition == nil {
 		decomCondition = &ConditionUnknown
@@ -568,6 +579,25 @@ func (r *DecommissionReconciler) tryToDeletePVC(log logr.Logger, ctx context.Con
 	}
 
 	return pvcErrorList
+}
+
+// decommissionerSidecarFlag is the flag the chart adds to the broker Pod's
+// sidecar container when statefulset.sideCars.brokerDecommissioner is enabled.
+const decommissionerSidecarFlag = "--run-decommissioner"
+
+// runsDecommissionerSidecar reports whether the Pod template runs the
+// broker-decommissioner sidecar, which indicates the sidecar owns
+// decommissioning for this cluster and this operator-wide controller should
+// defer to it.
+func runsDecommissionerSidecar(spec *corev1.PodSpec) bool {
+	for i := range spec.Containers {
+		for _, arg := range spec.Containers[i].Args {
+			if arg == decommissionerSidecarFlag || strings.HasPrefix(arg, decommissionerSidecarFlag+"=") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func isNameInList(name string, keys []string) bool {

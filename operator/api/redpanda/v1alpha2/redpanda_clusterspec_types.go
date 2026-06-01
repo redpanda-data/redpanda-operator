@@ -1066,6 +1066,41 @@ type SideCars struct {
 	ConfigWatcher *ConfigWatcher `json:"configWatcher,omitempty"`
 	RpkStatus     *SideCarObj    `json:"rpkStatus,omitempty"`
 	Controllers   *RPControllers `json:"controllers,omitempty"`
+	// Configures the `pvc-unbinder` sidecar, which unbinds the PersistentVolumeClaim
+	// of a broker Pod that is stuck `Pending` due to a volume node-affinity scheduling
+	// failure so it can be rescheduled. Enabling this runs the unbinder as a sidecar in
+	// each broker Pod; it is the recommended alternative to the operator-wide
+	// `--unbind-pvcs-after` flag and takes precedence over it for this cluster.
+	PVCUnbinder *PVCUnbinder `json:"pvcUnbinder,omitempty"`
+	// Configures the `broker-decommissioner` sidecar, which decommissions brokers
+	// from the cluster when their Pods are removed (for example when scaling in the
+	// StatefulSet). Enabling this runs the decommissioner as a sidecar in each broker
+	// Pod; it is the recommended alternative to the operator-wide
+	// `--additional-controllers=decommission` flag and takes precedence over it for
+	// this cluster.
+	BrokerDecommissioner *BrokerDecommissioner `json:"brokerDecommissioner,omitempty"`
+}
+
+// PVCUnbinder configures the `pvc-unbinder` sidecar.
+type PVCUnbinder struct {
+	// Specifies whether the sidecar is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies how long a broker Pod must be stuck `Pending` (due to a volume
+	// node-affinity scheduling failure) before its PersistentVolumeClaim is unbound.
+	// Accepts a Go duration string, for example `60s`.
+	UnbindAfter *string `json:"unbindAfter,omitempty"`
+}
+
+// BrokerDecommissioner configures the `broker-decommissioner` sidecar.
+type BrokerDecommissioner struct {
+	// Specifies whether the sidecar is enabled.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Specifies how long to wait after a broker's Pod is removed before
+	// decommissioning it. Accepts a Go duration string, for example `60s`.
+	DecommissionAfter *string `json:"decommissionAfter,omitempty"`
+	// Specifies how long to wait before re-checking a broker that is being
+	// decommissioned. Accepts a Go duration string, for example `10s`.
+	DecommissionRequeueTimeout *string `json:"decommissionRequeueTimeout,omitempty"`
 }
 
 // RPControllers configures additional controllers that can be deployed as sidecars in rp helm

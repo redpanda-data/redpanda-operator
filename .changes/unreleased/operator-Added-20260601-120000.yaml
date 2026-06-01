@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "The `Redpanda` resource now exposes `statefulset.sideCars.pvcUnbinder` and `statefulset.sideCars.brokerDecommissioner`, so operator-managed clusters can run the PVCUnbinder and BrokerDecommissioner as per-broker sidecars (previously these keys were silently dropped because they were not part of the CRD, and the controllers could only be enabled operator-wide via `--unbind-pvcs-after` / `--additional-controllers=decommission`). Enablement is backwards compatible: when a cluster runs the corresponding sidecar, the operator-wide controllers defer to it for that cluster, so the sidecar can be adopted per-cluster without removing the operator flags."
+time: 2026-06-01T12:00:00.000000-07:00

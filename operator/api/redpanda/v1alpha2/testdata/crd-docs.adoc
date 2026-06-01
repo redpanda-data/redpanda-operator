@@ -447,6 +447,31 @@ password will be read from. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerdecommissioner"]
+==== BrokerDecommissioner
+
+
+
+BrokerDecommissioner configures the `broker-decommissioner` sidecar.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether the sidecar is enabled. + |  | 
+| *`decommissionAfter`* __string__ | Specifies how long to wait after a broker's Pod is removed before +
+decommissioning it. Accepts a Go duration string, for example `60s`. + |  | 
+| *`decommissionRequeueTimeout`* __string__ | Specifies how long to wait before re-checking a broker that is being +
+decommissioned. Accepts a Go duration string, for example `10s`. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec"]
 ==== BrokerPoolSpec
 
@@ -2413,6 +2438,30 @@ and `patternType` must be `literal` + | * |
 |===
 | Field | Description | Default | Validation
 | *`clientSecret`* __string__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pvcunbinder"]
+==== PVCUnbinder
+
+
+
+PVCUnbinder configures the `pvc-unbinder` sidecar.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether the sidecar is enabled. + |  | 
+| *`unbindAfter`* __string__ | Specifies how long a broker Pod must be stuck `Pending` (due to a volume +
+node-affinity scheduling failure) before its PersistentVolumeClaim is unbound. +
+Accepts a Go duration string, for example `60s`. + |  | 
 |===
 
 
@@ -4514,6 +4563,17 @@ SideCars configures the additional sidecar containers that run alongside the mai
 | *`configWatcher`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-configwatcher[$$ConfigWatcher$$]__ | Configures the `config-watcher` sidecar. The `config-watcher` sidecar polls the Secret resource in `auth.sasl.secretRef` for changes and triggers a rolling upgrade to add the new superusers to the Redpanda cluster. + |  | 
 | *`rpkStatus`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecarobj[$$SideCarObj$$]__ |  |  | 
 | *`controllers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]__ |  |  | 
+| *`pvcUnbinder`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pvcunbinder[$$PVCUnbinder$$]__ | Configures the `pvc-unbinder` sidecar, which unbinds the PersistentVolumeClaim +
+of a broker Pod that is stuck `Pending` due to a volume node-affinity scheduling +
+failure so it can be rescheduled. Enabling this runs the unbinder as a sidecar in +
+each broker Pod; it is the recommended alternative to the operator-wide +
+`--unbind-pvcs-after` flag and takes precedence over it for this cluster. + |  | 
+| *`brokerDecommissioner`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerdecommissioner[$$BrokerDecommissioner$$]__ | Configures the `broker-decommissioner` sidecar, which decommissions brokers +
+from the cluster when their Pods are removed (for example when scaling in the +
+StatefulSet). Enabling this runs the decommissioner as a sidecar in each broker +
+Pod; it is the recommended alternative to the operator-wide +
+`--additional-controllers=decommission` flag and takes precedence over it for +
+this cluster. + |  | 
 |===
 
 

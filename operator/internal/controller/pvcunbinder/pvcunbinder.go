@@ -347,6 +347,17 @@ func (r *Controller) maybeRecyclePersistentVolume(ctx context.Context, pv *corev
 }
 
 func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool, time.Duration) {
+	// Defer to the per-broker pvc-unbinder sidecar when it is enabled for this
+	// cluster (statefulset.sideCars.pvcUnbinder.enabled). The sidecar runs
+	// `--run-pvc-unbinder` inside the broker Pods and owns PVC remediation;
+	// running this operator-wide controller in parallel would double-process the
+	// same Pod. This lets users migrate to the sidecar per-cluster while keeping
+	// --unbind-pvcs-after set on the operator.
+	if runsPVCUnbinderSidecar(pod) {
+		log.FromContext(ctx).Info("pvc-unbinder sidecar is enabled for this Pod's cluster; deferring to it", "name", pod.Name)
+		return false, 0
+	}
+
 	if r.Selector != nil && !r.Selector.Matches(labels.Set(pod.Labels)) {
 		log.FromContext(ctx).Info("selector not satisfied; skipping", "name", pod.Name, "labels", pod.Labels, "selector", r.Selector.String())
 		return false, 0
@@ -381,6 +392,24 @@ func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool
 	}
 
 	return true, 0
+}
+
+// pvcUnbinderSidecarFlag is the flag the chart adds to the broker Pod's sidecar
+// container when statefulset.sideCars.pvcUnbinder is enabled.
+const pvcUnbinderSidecarFlag = "--run-pvc-unbinder"
+
+// runsPVCUnbinderSidecar reports whether the Pod runs the pvc-unbinder sidecar,
+// which indicates the sidecar owns PVC remediation for this cluster and this
+// operator-wide controller should defer to it.
+func runsPVCUnbinderSidecar(pod *corev1.Pod) bool {
+	for i := range pod.Spec.Containers {
+		for _, arg := range pod.Spec.Containers[i].Args {
+			if arg == pvcUnbinderSidecarFlag || strings.HasPrefix(arg, pvcUnbinderSidecarFlag+"=") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func pvcUnbinderPredicate(obj client.Object) bool {
