@@ -126,18 +126,31 @@ tasks:
     sources:
     - ./go.mod
     - ./go.sum
+    - ../licensereport/main.go
+    - ../licensereport/go.mod
+    - ../licensereport/go.sum
     cmds:
-    # Our own packages should not be reported as third party license
-    # The example.com/example depedency is ignored as it's part of the
-    # gotohelm test suite (visit ./pkg/gotohelm/testdata/src/example/go.mod)
+    # licensereport replaces go-licenses report. It resolves URLs via
+    # proxy.golang.org (no vanity-URL meta-tag dependency, so no gopkg.in
+    # flake) and classifies licenses with Google's licenseclassifier.
+    # Our own packages and pure-generated buf.build paths are ignored to
+    # mirror prior behavior. example.com/example is the gotohelm test fake.
+    # Write to a tmp file then mv: redirecting > directly to the target
+    # would truncate it before licensereport can read --fallback-from.
     - |
-      go-licenses report ./... --template ../licenses/third_party.md.tpl \
-      --ignore buf.build/gen/go/redpandadata \
-      --ignore example.com/example \
-      --ignore github.com/redpanda-data/common-go \
-      --ignore github.com/redpanda-data/console/backend \
-      --ignore github.com/redpanda-data/redpanda \
-      --ignore github.com/redpanda-data/redpanda-operator > ../licenses/third_party.md
+      go run github.com/redpanda-data/redpanda-operator/licensereport \
+        --dir . \
+        --fallback-from ../licenses/third_party.md \
+        --ignore buf.build/gen/go/redpandadata \
+        --ignore buf.build/gen/go/bufbuild \
+        --ignore buf.build/gen/go/grpc-ecosystem \
+        --ignore example.com/example \
+        --ignore github.com/redpanda-data/common-go \
+        --ignore github.com/redpanda-data/console/backend \
+        --ignore github.com/redpanda-data/redpanda \
+        --ignore github.com/redpanda-data/redpanda-operator \
+        > ../licenses/third_party.md.new
+      mv ../licenses/third_party.md.new ../licenses/third_party.md
 
   generate:changelog:
     generates:
