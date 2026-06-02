@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: "Made the broker-decommissioner sidecar NodePool/RedpandaBrokerPool aware. A cluster split across multiple StatefulSets (NodePools) now compares its total broker count against the sum of every pool's desired replicas when deciding whether brokers are in excess, and the per-pool scale-down decision uses each StatefulSet's own replicas and only acts on Pods belonging to that StatefulSet. Previously the sidecar compared the cluster-wide broker count against a single StatefulSet's replicas and could evaluate the wrong pool's ordinals."
+time: 2026-06-01T18:00:00.000000-07:00

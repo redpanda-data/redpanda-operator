@@ -25,8 +25,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/configwatcher"
@@ -237,17 +239,42 @@ func Run(
 			return err
 		}
 
+		decomClient := mgr.GetLocalManager().GetClient()
 		if err := decommissioning.NewStatefulSetDecommissioner(
 			mgr.GetLocalManager(),
 			func(ctx context.Context, _ *appsv1.StatefulSet) (*rpadmin.AdminAPI, error) {
-				// Always use the config that's loaded from redpanda.yaml, in
-				// sidecar mode no other STS's should be watched.
+				// Always use the config that's loaded from redpanda.yaml; the
+				// admin client targets this Pod's cluster regardless of which
+				// StatefulSet (NodePool) triggered reconciliation.
 				return rpkadminapi.NewClient(ctx, fs, config.VirtualProfile())
 			},
 			decommissioning.WithSelector(selector),
 			decommissioning.WithRequeueTimeout(decommissionRequeueTimeout),
 			decommissioning.WithDelayedCacheInterval(decommissionVoteInterval),
 			decommissioning.WithDelayedCacheMaxCount(decommissionMaxVoteCount),
+			// NodePool/RedpandaBrokerPool awareness: a cluster may be split
+			// across several StatefulSets, so the "do we have excess brokers?"
+			// gate must compare the cluster's total broker count against the sum
+			// of every pool's desired replicas — not a single StatefulSet's.
+			// The per-pool scale-down decision still uses each StatefulSet's own
+			// replicas (handled inside the decommissioner).
+			decommissioning.WithDesiredReplicasFetcher(func(ctx context.Context, _ *appsv1.StatefulSet) (int32, error) {
+				var stsList appsv1.StatefulSetList
+				if err := decomClient.List(ctx, &stsList,
+					client.InNamespace(clusterNamespace),
+					client.MatchingLabelsSelector{Selector: selector},
+				); err != nil {
+					return 0, fmt.Errorf("listing cluster StatefulSets for desired replicas: %w", err)
+				}
+				if len(stsList.Items) == 0 {
+					return 0, fmt.Errorf("found no StatefulSets matching selector %q in namespace %q", selector, clusterNamespace)
+				}
+				var total int32
+				for i := range stsList.Items {
+					total += ptr.Deref(stsList.Items[i].Spec.Replicas, 0)
+				}
+				return total, nil
+			}),
 		).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
