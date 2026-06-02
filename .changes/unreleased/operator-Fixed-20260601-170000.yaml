@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: "Fixed the operator-wide broker decommissioner (`--additional-controllers=decommission`) constructing the wrong broker Admin API hostname when `fullnameOverride` is set. It used the Helm release name for the Pod segment (`<release>-N.<fullname>...`) while the actual broker Pod is named from the chart fullname (`<fullname>-N.<fullname>...`), so the cluster-health check failed with `no such host` and decommission/PVC cleanup never completed. The Pod hostname now uses the fullname (honoring `fullnameOverride`); behavior is unchanged when `fullnameOverride` is unset."
+time: 2026-06-01T17:00:00.000000-07:00

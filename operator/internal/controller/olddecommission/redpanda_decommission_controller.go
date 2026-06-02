@@ -643,12 +643,20 @@ func createBrokerURLs(release, namespace string, replicas int32, ordinal *int, v
 		return brokerList, fmt.Errorf("could not retrieve clusterDomain: %s; error: %w", domain, err)
 	}
 
+	// The broker Pod hostname is derived from the chart's fullname (the
+	// StatefulSet name), not the Helm release name. These differ when
+	// `fullnameOverride` is set, so the pod segment must use serviceName (which
+	// already accounts for fullnameOverride) rather than release — otherwise the
+	// admin-api health check targets a nonexistent host
+	// (e.g. `<release>-0.<fullname>...` instead of `<fullname>-0.<fullname>...`)
+	// and decommission/PVC cleanup never completes. When fullnameOverride is
+	// unset, serviceName == release, so this is a no-op for the common case.
 	if ordinal == nil {
 		for i := 0; i < int(replicas); i++ {
-			brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, i, serviceName, namespace, domain, port))
+			brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", serviceName, i, serviceName, namespace, domain, port))
 		}
 	} else {
-		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", release, *ordinal, serviceName, namespace, domain, port))
+		brokerList = append(brokerList, fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", serviceName, *ordinal, serviceName, namespace, domain, port))
 	}
 
 	return brokerList, nil
