@@ -15,6 +15,7 @@
 .Resource Types
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool[$$RedpandaBrokerPool$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
@@ -746,6 +747,7 @@ ClusterSource defines how to connect to a particular Redpanda cluster.
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
@@ -2393,6 +2395,34 @@ and `patternType` must be `literal` + | * |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namedvaluesource"]
+==== NamedValueSource
+
+
+
+NamedValueSource binds a name to a value provider so the pipeline YAML
+can reference it via ${NAME} interpolation.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name is the environment-variable name the pipeline YAML references. +
+Must match standard env-var characters: [A-Z_][A-Z0-9_]*. + |  | MinLength: 1 +
+Pattern: `^[A-Z_][A-Z0-9_]*$` +
+
+| *`source`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Source is the value provider. Exactly one of inline / configMapKeyRef +
+/ secretKeyRef / externalSecretRef must be set; the ValueSource +
+XValidation rules enforce this. + |  | 
+|===
+
+
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-oidcloginsecrets"]
@@ -2536,6 +2566,295 @@ PersistentVolume configures configurations for a PersistentVolumeClaim to use to
 | *`size`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the storage capacity required. + |  | 
 | *`storageClass`* __string__ | Specifies the StorageClass for the PersistentVolumeClaims to determine how PersistentVolumes are provisioned and managed. + |  | 
 | *`nameOverwrite`* __string__ | Option to change volume claim template name for tiered storage persistent volume if tiered.mountType is set to `persistentVolume` + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline"]
+==== Pipeline
+
+
+
+Connect defines a Redpanda Connect pipeline managed by the operator.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Pipeline` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]__ | Spec defines the desired state of the Connect pipeline. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus[$$PipelineStatus$$]__ | Status represents the current observed state of the Connect pipeline. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinebudget"]
+==== PipelineBudget
+
+
+
+PipelineBudget configures a PodDisruptionBudget for the pipeline.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`maxUnavailable`* __integer__ | MaxUnavailable defines the maximum number of pipeline pods that can be +
+unavailable during a voluntary disruption. Defaults to 1 if not set. + | 1 | Minimum: 0 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinephase"]
+==== PipelinePhase
+
+_Underlying type:_ _string_
+
+PipelinePhase describes the lifecycle phase of a Pipeline.
+
+.Validation:
+- Enum: [Pending Provisioning Running Stopped Unknown]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus[$$PipelineStatus$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec"]
+==== PipelineSpec
+
+
+
+PipelineSpec defines the desired state of a Redpanda Connect pipeline.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`configYaml`* __string__ | ConfigYAML is the user-supplied Redpanda Connect pipeline YAML. +
+Reference cluster-bound or sensitive values from .valueSources via +
+${NAME} interpolation; the operator resolves them at render time. +
+
+When .cluster is set, the operator inline-merges connection fields +
+(seed_brokers, tls, sasl) into any `input.redpanda` and +
+`output.redpanda` blocks in this YAML, derived from the resolved +
+cluster connection and .userRef. Users only need to write the +
+per-plugin fields (topic, key, consumer_group, etc.); brokers, TLS, +
+and SASL are filled in by the operator. +
+
+User-side keys win on conflict — set a key explicitly (for example, +
+seed_brokers pointing at a different cluster) and the operator's +
+generated value is skipped for that key. +
+
+The merge targets the `redpanda` input/output plugins specifically. +
+Any `redpanda_common` blocks the user authors are passed through +
+unchanged — the operator does not inject connection fields into +
+them. + |  | Required: \{} +
+
+| *`displayName`* __string__ | DisplayName is a human-readable name for the pipeline. +
+Maps to the pipeline display name when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`description`* __string__ | Description is an optional description of what this pipeline does. +
+Maps to the pipeline description when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`tags`* __object (keys:string, values:string)__ | Tags are key-value pairs for organizing and filtering pipelines. +
+Maps to pipeline tags when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`configFiles`* __object (keys:string, values:string)__ | ConfigFiles defines additional configuration files to mount alongside +
+the main pipeline configuration. Each entry maps a filename to its content. +
+Files are mounted in the /config directory alongside connect.yaml. +
+The key "connect.yaml" is reserved and cannot be used. +
+Maps to pipeline config files when migrating to Redpanda Cloud. + |  | Optional: \{} +
+
+| *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. + | 1 | Minimum: 0 +
+Optional: \{} +
+
+| *`image`* __string__ | Image is the container image for the Redpanda Connect deployment. + |  | Optional: \{} +
+
+| *`serviceAccountName`* __string__ | ServiceAccountName is the ServiceAccount to bind to the pipeline pod. +
+When unset, the namespace's default ServiceAccount is used. +
+
+Setting this is the recommended way to scope per-pipeline cloud-IAM +
+trust (e.g. IRSA on EKS, Workload Identity on GKE, Pod Identity on +
+AKS). Annotating the namespace's default SA works but grants every +
+pipeline in the namespace the same role — naming a Pipeline-specific +
+SA here keeps the trust boundary per-pipeline. +
+
+The operator does NOT create the ServiceAccount; provision it +
+(along with the appropriate cloud-IAM annotations) out-of-band. + |  | Optional: \{} +
+
+| *`paused`* __boolean__ | Paused stops the pipeline by scaling replicas to zero when set to true. + |  | Optional: \{} +
+
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Resources defines the compute resource requirements for the pipeline pods. + |  | Optional: \{} +
+
+| *`valueSources`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namedvaluesource[$$NamedValueSource$$] array__ | ValueSources is a list of named values the pipeline YAML can reference +
+via ${NAME} interpolation. Each value is fetched at render time from +
+inline / ConfigMap / Secret / ExternalSecret and projected into the +
+pipeline pod as an environment variable. One named pull per entry — +
+avoids the bag-of-Secrets env-splat pattern. +
+
+Example: +
+spec: +
+valueSources: +
+- name: S3_SECRET_KEY +
+source: +
+secretKeyRef: +
+name: s3-creds +
+key: secret_access_key +
+configYaml: \| +
+output: +
+aws_s3: +
+bucket: my-bucket +
+credentials: +
+secret: ${S3_SECRET_KEY} +
+
+See: https://docs.redpanda.com/redpanda-connect/configuration/secrets/ + |  | Optional: \{} +
+
+| *`annotations`* __object (keys:string, values:string)__ | Annotations specifies additional annotations to apply to the pipeline pod +
+template. These are merged with any operator-level commonAnnotations, with +
+per-pipeline annotations taking precedence. Useful for integrations like +
+Datadog autodiscovery that rely on pod annotations. + |  | Optional: \{} +
+
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#toleration-v1-core[$$Toleration$$] array__ | Tolerations for the pipeline pods, allowing them to be scheduled on tainted nodes. + |  | Optional: \{} +
+
+| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector constrains pipeline pods to nodes with matching labels. + |  | Optional: \{} +
+
+| *`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ | TopologySpreadConstraints controls how pipeline pods are spread across +
+topology domains such as availability zones. When Zones is specified, +
+a default topology spread constraint is generated automatically. +
+Any constraints specified here are used in addition to (or instead of) +
+the auto-generated zone constraint. + |  | Optional: \{} +
+
+| *`zones`* __string array__ | Zones specifies the availability zones across which pipeline pods should +
+be spread. When set, the controller configures: +
+- A node affinity to schedule pods only on nodes in these zones +
+- A topology spread constraint to distribute pods evenly across zones +
+The zone label used is "topology.kubernetes.io/zone". + |  | Optional: \{} +
+
+| *`budget`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinebudget[$$PipelineBudget$$]__ | Budget configures a PodDisruptionBudget for the pipeline Deployment, +
+protecting pipeline pods from voluntary disruptions such as node drains +
+and cluster autoscaler evictions. When not set, no PDB is created. + |  | Optional: \{} +
+
+| *`cluster`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]__ | ClusterSource declaratively binds the pipeline's redpanda input/output +
+to a Redpanda cluster. Mirrors the ClusterSource pattern used by the +
+User/Topic CRDs: +
+
+- clusterRef: point at an existing Redpanda CR by name. The operator +
+resolves the internal broker addresses + TLS material automatically; +
+the SASL identity is taken from .userRef. +
+- staticConfiguration: hard-code brokers, TLS, and SASL. The password +
+is a ValueSource so it can come from inline / Secret / ConfigMap / +
+ExternalSecret. +
+
+When unset, the pipeline runs against whatever brokers the user wires +
+inline in configYaml (e.g. an external Kafka, Confluent Cloud, etc.). + |  | Optional: \{} +
+
+| *`userRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineuserref[$$PipelineUserRef$$]__ | UserRef binds the pipeline to a User CR. When set alongside +
+.cluster.clusterRef, the operator reads the referenced User's +
+password Secret + SASL mechanism and uses the User's metadata.name +
+as the SASL username, emitting REDPANDA_SASL_USERNAME / _PASSWORD / +
+_MECHANISM env vars in the pipeline pod and a `sasl:` block in the +
+auto-generated `redpanda` config. +
+
+Set this when the cluster the pipeline talks to has SASL enabled. +
+On unauthenticated clusters (and in clusterRef-only modes that +
+only need broker discovery), leave it empty. +
+
+CEL restrictions: +
+- userRef must NOT be set alongside .cluster.staticConfiguration — +
+the static path carries its own inline SASL config. +
+- userRef must NOT be set without .cluster.clusterRef — there's no +
+cluster context to authenticate against otherwise. +
+
+The referenced User CR is expected to live in the same namespace as +
+the Pipeline and to declare ACLs scoped to the topics, schema +
+subjects, and consumer groups this pipeline reads/writes. The +
+operator does NOT auto-create or modify the User CR — ACL scoping +
+stays an explicit, auditable user-controlled action. + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus"]
+==== PipelineStatus
+
+
+
+PipelineStatus defines the observed state of a Connect resource.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Connect resource. + |  | Optional: \{} +
+
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Connect resource. + |  | Optional: \{} +
+
+| *`phase`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinephase[$$PipelinePhase$$]__ | Phase describes the current phase of the pipeline lifecycle. + |  | Enum: [Pending Provisioning Running Stopped Unknown] +
+Optional: \{} +
+
+| *`replicas`* __integer__ | Replicas is the number of desired replicas. + |  | Optional: \{} +
+
+| *`readyReplicas`* __integer__ | ReadyReplicas is the number of ready pipeline pods. + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelineuserref"]
+==== PipelineUserRef
+
+
+
+PipelineUserRef points at a User CR whose password Secret + SCRAM
+mechanism the pipeline will use to authenticate to Redpanda.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name of the User CR (in the same namespace as the Pipeline). + |  | Required: \{} +
+
 |===
 
 
@@ -5222,6 +5541,7 @@ ValueSource represents where a value can be pulled from
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslawsmskiam[$$KafkaSASLAWSMskIam$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namedvaluesource[$$NamedValueSource$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
 ****
 

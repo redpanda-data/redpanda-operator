@@ -123,6 +123,7 @@ type Values struct {
 	PodLabels             map[string]string             `json:"podLabels"`
 	AdditionalCmdFlags    []string                      `json:"additionalCmdFlags"`
 	CommonLabels          map[string]string             `json:"commonLabels"`
+	CommonAnnotations     map[string]string             `json:"commonAnnotations"`
 	Monitoring            MonitoringConfig              `json:"monitoring"`
 	WebhookSecretName     string                        `json:"webhookSecretName"`
 	PodTemplate           *PodTemplateSpec              `json:"podTemplate,omitempty"`
@@ -130,11 +131,38 @@ type Values struct {
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
+	ConnectController     ConnectController             `json:"connectController"`
 	Multicluster          Multicluster                  `json:"multicluster"`
 }
 
 type VectorizedControllers struct {
 	Enabled bool `json:"enabled"`
+}
+
+type ConnectMonitoringConfig struct {
+	Enabled        bool              `json:"enabled"`
+	ScrapeInterval string            `json:"scrapeInterval,omitempty"`
+	Labels         map[string]string `json:"labels,omitempty"`
+}
+
+type ConnectController struct {
+	Enabled    bool                    `json:"enabled"`
+	Monitoring ConnectMonitoringConfig `json:"monitoring"`
+	// Image overrides the Redpanda Connect image used for every Pipeline
+	// CR that doesn't pin its own .spec.image. Per-Pipeline .spec.image
+	// still wins; if neither is set, the operator falls back to the
+	// PipelineDefaultImage constant baked into the binary.
+	//
+	// Plumbed through to the operator via the --connect-default-image
+	// command-line flag.
+	Image *ConnectControllerImage `json:"image,omitempty"`
+}
+
+// ConnectControllerImage is a chart-level default Redpanda Connect image
+// applied to every Pipeline CR that doesn't pin its own .spec.image.
+type ConnectControllerImage struct {
+	Repository string `json:"repository"`
+	Tag        string `json:"tag"`
 }
 
 type CRDs struct {

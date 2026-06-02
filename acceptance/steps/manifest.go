@@ -103,6 +103,13 @@ func PatchManifest(t framework.TestingT, content string) string {
 			return t.Namespace()
 		}
 
+		// Pass through Redpanda Connect runtime env var interpolations
+		// (e.g., ${RPK_BROKERS}) that are resolved inside the container,
+		// not by the test framework.
+		if strings.HasPrefix(key, "RPK_") {
+			return match
+		}
+
 		t.Fatalf("unhandled expansion: %s", key)
 		return "UNREACHABLE"
 	})

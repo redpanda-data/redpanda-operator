@@ -137,90 +137,28 @@ enterprise:
   licenseSecretRef:
     name: my-secret
 
--- multicluster service mesh --
-crds:
+-- connect-controller-enabled --
+connectController:
   enabled: true
-multicluster:
+
+-- connect-controller-with-license --
+connectController:
   enabled: true
-  name: blue
-  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
-  peers:
-    - name: blue
-      address: blue.example.com
-    - name: west
-      address: west.example.com
-      annotations:
-        service.cilium.io/affinity: west
-    - name: east
-      address: east.example.com
-  service:
+enterprise:
+  licenseSecretRef:
+    name: redpanda-license
+    key: license
+
+-- common-annotations --
+commonAnnotations:
+  owner: "platform-team@example.com"
+  environment: "production"
+
+-- connect-monitoring-enabled --
+connectController:
+  enabled: true
+  monitoring:
     enabled: true
-    type: ClusterIP
-    mesh: true
-    annotations:
-      service.cilium.io/global: "true"
-      service.cilium.io/shared: "false"
-
--- multicluster service mcs --
-crds:
-  enabled: true
-multicluster:
-  enabled: true
-  name: blue
-  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
-  peers:
-    - name: blue
-      address: blue.example.com
-    - name: west
-      address: west.example.com
-    - name: east
-      address: east.example.com
-  service:
-    enabled: true
-    type: ClusterIP
-    mcs: true
-
--- monitoring-enabled --
-monitoring:
-  enabled: true
-
--- monitoring-with-scrape-interval --
-monitoring:
-  enabled: true
-  scrapeInterval: 60s
-
--- monitoring-with-labels --
-monitoring:
-  enabled: true
-  labels:
-    team: platform
-    env: production
-
--- monitoring-with-labels-and-interval --
-monitoring:
-  enabled: true
-  scrapeInterval: 15s
-  labels:
-    prometheus.io/scrape: "true"
-
--- multicluster service loadbalancer --
-crds:
-  enabled: true
-multicluster:
-  enabled: true
-  name: blue
-  apiServerExternalAddress: https://dns.address.for.my.kubernetes.api.server:8080
-  peers:
-    - name: blue
-      address: blue.example.com
-    - name: west
-      address: west.example.com
-  service:
-    enabled: true
-    type: LoadBalancer
-    annotations:
-      service.beta.kubernetes.io/aws-load-balancer-type: nlb
-
--- monitoring-rules-enabled --
-monitoring:
-  rulesEnabled: true
+    scrapeInterval: "30s"
+    labels:
+      team: platform
