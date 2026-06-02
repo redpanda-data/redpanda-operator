@@ -284,6 +284,9 @@ func Run(
 	if runUnbinder {
 		setupLog.Info("PVC unbinder enabled", "namespace", clusterNamespace, "selector", selector)
 
+		// DeferToSidecar is intentionally left false here: this IS the sidecar,
+		// so it must perform remediation. A surviving broker's sidecar unbinds a
+		// Pod stranded on a dead Node (whose own sidecar is down).
 		if err := (&pvcunbinder.Controller{
 			Client:   mgr.GetLocalManager().GetClient(),
 			Timeout:  unbinderTimeout,

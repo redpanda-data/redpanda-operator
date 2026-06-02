@@ -525,6 +525,10 @@ func Run(
 			Timeout:        opts.unbindPVCsAfter,
 			Selector:       opts.unbinderSelector.Selector,
 			AllowRebinding: opts.allowPVRebinding,
+			// Operator-wide controller: yield to the per-broker sidecar when a
+			// cluster enables it. The sidecar (cmd/sidecar) leaves this false so
+			// it actually remediates.
+			DeferToSidecar: true,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err

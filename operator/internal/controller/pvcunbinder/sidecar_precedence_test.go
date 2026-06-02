@@ -40,7 +40,8 @@ func TestRunsPVCUnbinderSidecar(t *testing.T) {
 // backs off for a Pod whose cluster already runs the pvc-unbinder sidecar, even
 // when the Pod would otherwise be a remediation candidate.
 func TestShouldRemediateDefersToSidecar(t *testing.T) {
-	r := &Controller{}
+	// Only the operator-wide controller defers (DeferToSidecar: true).
+	r := &Controller{DeferToSidecar: true}
 
 	pod := podWithSidecarArgs("--run-pvc-unbinder")
 	pod.Status.Phase = corev1.PodPending
@@ -48,4 +49,26 @@ func TestShouldRemediateDefersToSidecar(t *testing.T) {
 	ok, requeue := r.ShouldRemediate(context.Background(), pod)
 	require.False(t, ok)
 	require.Zero(t, requeue)
+}
+
+// TestShouldRemediateSidecarDoesNotDefer verifies the sidecar's own controller
+// (DeferToSidecar: false) does NOT back off for a Pod carrying the
+// --run-pvc-unbinder arg — the flag must have no effect on its decision.
+// Otherwise the sidecar would defer to itself and a Pod stranded on a dead Node
+// (its own sidecar down) would never have its PVC unbound.
+func TestShouldRemediateSidecarDoesNotDefer(t *testing.T) {
+	r := &Controller{} // sidecar mode: DeferToSidecar defaults false
+
+	withFlag := podWithSidecarArgs("--run-pvc-unbinder")
+	withFlag.Status.Phase = corev1.PodPending
+	without := podWithSidecarArgs()
+	without.Status.Phase = corev1.PodPending
+
+	okFlag, requeueFlag := r.ShouldRemediate(context.Background(), withFlag)
+	okNo, requeueNo := r.ShouldRemediate(context.Background(), without)
+
+	// The sidecar flag must not change the remediation decision when not
+	// deferring: a flagged Pod is treated exactly like an unflagged one.
+	require.Equal(t, okNo, okFlag)
+	require.Equal(t, requeueNo, requeueFlag)
 }

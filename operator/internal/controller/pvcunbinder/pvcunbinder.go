@@ -71,6 +71,14 @@ type Controller struct {
 	// Volume is assumed to exist. This can lead to Permission errors or
 	// referencing a directory that does not exist.
 	AllowRebinding bool
+	// DeferToSidecar makes this controller skip Pods whose cluster runs the
+	// per-broker pvc-unbinder sidecar (--run-pvc-unbinder). The operator-wide
+	// controller sets this so it yields to the sidecar; the sidecar runs the
+	// same Controller with this left false so it actually performs remediation.
+	// Without this gate the sidecar would also defer, and a Pod stranded on a
+	// dead Node (whose own sidecar is therefore down) would never have its PVC
+	// unbound by anyone.
+	DeferToSidecar bool
 }
 
 // MulticlusterController is a multicluster-aware version of Controller that
@@ -353,7 +361,12 @@ func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool
 	// running this operator-wide controller in parallel would double-process the
 	// same Pod. This lets users migrate to the sidecar per-cluster while keeping
 	// --unbind-pvcs-after set on the operator.
-	if runsPVCUnbinderSidecar(pod) {
+	//
+	// Only the operator-wide controller defers (DeferToSidecar). The sidecar
+	// runs this same Controller and must NOT defer — otherwise both back off and
+	// a Pod stranded on a dead Node (whose own sidecar is down) never gets its
+	// PVC unbound. A surviving broker's sidecar remediates the stranded Pod.
+	if r.DeferToSidecar && runsPVCUnbinderSidecar(pod) {
 		log.FromContext(ctx).Info("pvc-unbinder sidecar is enabled for this Pod's cluster; deferring to it", "name", pod.Name)
 		return false, 0
 	}
