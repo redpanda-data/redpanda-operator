@@ -10,6 +10,7 @@ use (
 	./gotohelm
 	./gotohelm/testdata/src/example
 	./harpoon
+	./licensereport
 	./operator
 	./pkg
 )
