@@ -42,6 +42,7 @@ import (
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
+	pipelinecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/pipeline"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
@@ -106,6 +107,7 @@ type RunOptions struct {
 
 	enableV2NodepoolController  bool
 	enableBrokerController      bool
+	enableConnectController     bool
 	enableConsoleController     bool
 	managerOptions              ctrl.Options
 	clusterDomain               string
@@ -155,6 +157,13 @@ type RunOptions struct {
 	telemetryPeriod           time.Duration
 	telemetryFeatures         map[string]string
 	licenseFilePath           string
+
+	// Connect (Pipeline CRD) controller configuration.
+	commonAnnotations               map[string]string
+	connectMonitoringEnabled        bool
+	connectMonitoringScrapeInterval string
+	connectMonitoringLabels         map[string]string
+	connectDefaultImage             string
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -179,6 +188,12 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
+	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
+	cmd.Flags().StringToStringVar(&o.commonAnnotations, "common-annotations", nil, "Annotations to propagate to all operator-managed resources (key=value pairs)")
+	cmd.Flags().BoolVar(&o.connectMonitoringEnabled, "connect-monitoring-enabled", false, "Enable PodMonitor creation for Connect pipelines")
+	cmd.Flags().StringVar(&o.connectMonitoringScrapeInterval, "connect-monitoring-scrape-interval", "", "Prometheus scrape interval for Connect pipeline PodMonitors (e.g. 30s)")
+	cmd.Flags().StringToStringVar(&o.connectMonitoringLabels, "connect-monitoring-labels", nil, "Additional labels for Connect pipeline PodMonitors (key=value pairs)")
+	cmd.Flags().StringVar(&o.connectDefaultImage, "connect-default-image", "", "Default Redpanda Connect image (repo:tag) used when a Pipeline CR does not pin its own .spec.image. Per-Pipeline .spec.image wins; if neither is set, falls back to the operator binary's hardcoded PipelineDefaultImage.")
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableBrokerController, "enable-broker", false, "Specifies whether or not to enable the Broker controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
@@ -541,6 +556,37 @@ func Run(
 
 			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig()}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
+				return err
+			}
+		}
+
+		// Connect Reconciler (enterprise feature, gated by license on each CR or operator-level license).
+		if opts.enableConnectController {
+			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+				Options: client.Options{
+					Scheme: mgr.GetScheme(),
+					Cache: &client.CacheOptions{
+						Reader: mgr.GetCache(),
+					},
+				},
+				FieldManager: string(lifecycle.DefaultFieldOwner),
+			})
+			if err != nil {
+				return err
+			}
+
+			if err := (&pipelinecontroller.Controller{
+				Ctl:               pipelineCtl,
+				LicenseFilePath:   opts.licenseFilePath,
+				CommonAnnotations: opts.commonAnnotations,
+				DefaultImage:      opts.connectDefaultImage,
+				Monitoring: pipelinecontroller.MonitoringConfig{
+					Enabled:        opts.connectMonitoringEnabled,
+					ScrapeInterval: opts.connectMonitoringScrapeInterval,
+					Labels:         opts.connectMonitoringLabels,
+				},
+			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
 			}
 		}
