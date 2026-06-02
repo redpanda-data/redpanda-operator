@@ -1,0 +1,181 @@
+-- basic-pipeline --
+- apiVersion: v1
+  data:
+    connect.yaml: |
+      input:
+        generate:
+          mapping: 'root.message = "hello"'
+          interval: "5s"
+      output:
+        stdout: {}
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: basic-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: basic-pipeline
+    namespace: default
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: basic-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: basic-pipeline
+    namespace: default
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: connect-pipeline
+        app.kubernetes.io/instance: basic-pipeline
+        app.kubernetes.io/managed-by: redpanda-operator
+        app.kubernetes.io/name: redpanda-connect
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/component: connect-pipeline
+          app.kubernetes.io/instance: basic-pipeline
+          app.kubernetes.io/managed-by: redpanda-operator
+          app.kubernetes.io/name: redpanda-connect
+      spec:
+        containers:
+        - command:
+          - /redpanda-connect
+          - run
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.87.0
+          name: connect
+          ports:
+          - containerPort: 4195
+            name: http
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 4195
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        initContainers:
+        - command:
+          - /redpanda-connect
+          - lint
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.87.0
+          name: lint
+          resources: {}
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        volumes:
+        - configMap:
+            name: basic-pipeline
+          name: config
+  status: {}
+-- pipeline-with-annotations --
+- apiVersion: v1
+  data:
+    connect.yaml: |
+      input:
+        generate:
+          mapping: 'root = "hello"'
+      output:
+        stdout: {}
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: annotated-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: annotated-pipeline
+    namespace: default
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/component: connect-pipeline
+      app.kubernetes.io/instance: annotated-pipeline
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda-connect
+    name: annotated-pipeline
+    namespace: default
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/component: connect-pipeline
+        app.kubernetes.io/instance: annotated-pipeline
+        app.kubernetes.io/managed-by: redpanda-operator
+        app.kubernetes.io/name: redpanda-connect
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        annotations:
+          ad.datadoghq.com/connect.checks: openmetrics
+        labels:
+          app.kubernetes.io/component: connect-pipeline
+          app.kubernetes.io/instance: annotated-pipeline
+          app.kubernetes.io/managed-by: redpanda-operator
+          app.kubernetes.io/name: redpanda-connect
+      spec:
+        containers:
+        - command:
+          - /redpanda-connect
+          - run
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.87.0
+          name: connect
+          ports:
+          - containerPort: 4195
+            name: http
+            protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 4195
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        initContainers:
+        - command:
+          - /redpanda-connect
+          - lint
+          - /config/connect.yaml
+          image: docker.redpanda.com/redpandadata/connect:4.87.0
+          name: lint
+          resources: {}
+          terminationMessagePolicy: FallbackToLogsOnError
+          volumeMounts:
+          - mountPath: /config
+            name: config
+            readOnly: true
+        volumes:
+        - configMap:
+            name: annotated-pipeline
+          name: config
+  status: {}

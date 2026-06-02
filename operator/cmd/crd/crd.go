@@ -32,6 +32,7 @@ import (
 var (
 	stableCRDs = []*apiextensionsv1.CustomResourceDefinition{
 		crds.Console(),
+		crds.Pipeline(),
 		crds.Redpanda(),
 		crds.Group(),
 		crds.Role(),

@@ -41,6 +41,7 @@ type PartialValues struct {
 	PodLabels             map[string]string             "json:\"podLabels,omitempty\""
 	AdditionalCmdFlags    []string                      "json:\"additionalCmdFlags,omitempty\""
 	CommonLabels          map[string]string             "json:\"commonLabels,omitempty\""
+	CommonAnnotations     map[string]string             "json:\"commonAnnotations,omitempty\""
 	Monitoring            *PartialMonitoringConfig      "json:\"monitoring,omitempty\""
 	WebhookSecretName     *string                       "json:\"webhookSecretName,omitempty\""
 	PodTemplate           *PartialPodTemplateSpec       "json:\"podTemplate,omitempty\""
@@ -48,6 +49,7 @@ type PartialValues struct {
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
+	ConnectController     *PartialConnectController     "json:\"connectController,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
 }
 
@@ -98,6 +100,12 @@ type PartialVectorizedControllers struct {
 	Enabled *bool "json:\"enabled,omitempty\""
 }
 
+type PartialConnectController struct {
+	Enabled    *bool                           "json:\"enabled,omitempty\""
+	Monitoring *PartialConnectMonitoringConfig "json:\"monitoring,omitempty\""
+	Image      *PartialConnectControllerImage  "json:\"image,omitempty\""
+}
+
 type PartialMulticluster struct {
 	Enabled                      *bool                       "json:\"enabled,omitempty\""
 	Service                      *PartialMulticlusterService "json:\"service,omitempty\""
@@ -132,6 +140,12 @@ type PartialLeaderElectionConfig struct {
 	ResourceName *string "json:\"resourceName,omitempty\""
 }
 
+type PartialConnectMonitoringConfig struct {
+	Enabled        *bool             "json:\"enabled,omitempty\""
+	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
+	Labels         map[string]string "json:\"labels,omitempty\""
+}
+
 type PartialMulticlusterService struct {
 	Enabled     *bool               "json:\"enabled,omitempty\""
 	Type        *corev1.ServiceType "json:\"type,omitempty\" jsonschema:\"pattern=^(ClusterIP|LoadBalancer)$\""
@@ -143,6 +157,11 @@ type PartialMulticlusterService struct {
 type PartialMetadata struct {
 	Labels      map[string]string "json:\"labels,omitempty\""
 	Annotations map[string]string "json:\"annotations,omitempty\""
+}
+
+type PartialConnectControllerImage struct {
+	Repository *string "json:\"repository,omitempty\""
+	Tag        *string "json:\"tag,omitempty\""
 }
 
 type PartialPeer struct {
