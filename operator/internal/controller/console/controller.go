@@ -520,7 +520,7 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 	if ref := r.console.Spec.ClusterSource.ClusterRef; ref != nil {
 		key := kube.ObjectKey{
 			Name:      ref.Name,
-			Namespace: r.console.Namespace,
+			Namespace: ref.GetNamespace(r.console.Namespace),
 		}
 
 		if ref.IsStretchCluster() {

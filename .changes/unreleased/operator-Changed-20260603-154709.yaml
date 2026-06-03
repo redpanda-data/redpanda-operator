@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: "The Console controller now honors the `namespace` field of its `clusterSource.clusterRef`. Previously the renderer always resolved the referenced cluster in the Console's own namespace, so the `clusterRef.namespace` field exposed by the CRD was silently inert: a Console could fail to find the intended cluster, or — if a same-named cluster existed in its own namespace — silently bind to the wrong Redpanda and deploy against it. The lookup now uses `clusterRef.namespace` when set and falls back to the Console's namespace otherwise (no behavior change for same-namespace references). This covers `Redpanda`, `StretchCluster`, and v1 `Cluster` lookups."
+time: 2026-06-03T15:47:09.000000+02:00
