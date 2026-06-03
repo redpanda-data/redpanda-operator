@@ -39,6 +39,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -107,6 +108,20 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
 	simpleResourceRenderer SimpleResourceRenderer[T, U]
+	// brokerPodNodeUnavailableToleration is the operator-flag value
+	// applied to broker pod templates at apply time. See
+	// [resources.MaybeInjectNodeUnavailableTolerations] for the
+	// duration semantics (0=off, positive=seconds, negative=forever).
+	brokerPodNodeUnavailableToleration time.Duration
+}
+
+// WithBrokerPodNodeUnavailableToleration sets the operator-binary-level
+// toleration that the lifecycle client will inject onto broker pod
+// templates at apply time. See [resources.MaybeInjectNodeUnavailableTolerations]
+// for the duration semantics (0=off, positive=seconds, negative=forever).
+func (r *ResourceClient[T, U]) WithBrokerPodNodeUnavailableToleration(d time.Duration) *ResourceClient[T, U] {
+	r.brokerPodNodeUnavailableToleration = d
+	return r
 }
 
 func (r *ResourceClient[T, U]) ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
@@ -202,6 +217,15 @@ func (r *ResourceClient[T, U]) PatchPoolSet(ctx context.Context, owner U, set *M
 	}
 	maps.Copy(set.GetLabels(), r.ownershipResolver.AddLabels(owner))
 	set.SetOwnerReferences([]metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GetObjectKind().GroupVersionKind())})
+
+	// Operator-flag-driven injection of NotReady/Unreachable
+	// tolerations onto the broker pod template. No-op when the flag
+	// is 0 (the default); user-set tolerations for these keys are
+	// always preserved by the helper.
+	set.Spec.Template.Spec.Tolerations = resources.MaybeInjectNodeUnavailableTolerations(
+		set.Spec.Template.Spec.Tolerations,
+		r.brokerPodNodeUnavailableToleration,
+	)
 
 	return ctl.Apply(ctx, set.StatefulSet, client.ForceOwnership)
 }

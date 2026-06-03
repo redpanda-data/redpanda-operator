@@ -104,6 +104,7 @@ type RunOptions struct {
 	unbindPVCsAfter                     time.Duration
 	unbinderSelector                    pflagutil.LabelSelectorValue
 	allowPVRebinding                    bool
+	brokerPodNodeUnavailableToleration  time.Duration
 	autoDeletePVCs                      bool
 	webhookCertPath                     string
 	webhookCertName                     string
@@ -157,8 +158,10 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
 	cmd.Flags().StringSliceVar(&o.additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
 	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
-	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
+	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "DEPRECATED. When the PVCUnbinder fires, also clear the freed PV's ClaimRef so the disk can be reused if the node returns. Risks cross-broker disk swap when multiple PVs are cleared concurrently. Leave at false (the default) — the unbinder's pause-annotation, multi-pod auto-detect, and per-cluster serialization gates make this flag unnecessary in practice and unsafe in the cases where it would have been useful.")
+	_ = cmd.Flags().MarkDeprecated("allow-pv-rebinding", "the gating checks added to the PVCUnbinder (pause annotation, multi-pod auto-detect, per-cluster serialization) supersede this flag; see the PVCUnbinder controller godoc")
 	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
+	cmd.Flags().DurationVar(&o.brokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
@@ -398,7 +401,7 @@ func Run(
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
 			Manager:              mcmanager,
-			LifecycleClient:      lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			LifecycleClient:      lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
 			ClientFactory:        factory,
 			CloudSecretsExpander: cloudExpander,
 			UseNodePools:         opts.enableV2NodepoolController,
@@ -587,17 +590,18 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 	adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
 
 	if err := (&vectorizedcontrollers.ClusterReconciler{
-		Client:                    mgr.GetClient(),
-		Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
-		Scheme:                    mgr.GetScheme(),
-		AdminAPIClientFactory:     adminAPIClientFactory,
-		DecommissionWaitInterval:  opts.decommissionWaitInterval,
-		MetricsTimeout:            opts.metricsTimeout,
-		RestrictToRedpandaVersion: opts.restrictToRedpandaVersion,
-		GhostDecommissioning:      opts.ghostbuster,
-		AutoDeletePVCs:            opts.autoDeletePVCs,
-		CloudSecretsExpander:      cloudExpander,
-		Timeout:                   opts.rpClientTimeout,
+		Client:                             mgr.GetClient(),
+		Log:                                ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
+		Scheme:                             mgr.GetScheme(),
+		AdminAPIClientFactory:              adminAPIClientFactory,
+		DecommissionWaitInterval:           opts.decommissionWaitInterval,
+		MetricsTimeout:                     opts.metricsTimeout,
+		RestrictToRedpandaVersion:          opts.restrictToRedpandaVersion,
+		GhostDecommissioning:               opts.ghostbuster,
+		AutoDeletePVCs:                     opts.autoDeletePVCs,
+		BrokerPodNodeUnavailableToleration: opts.brokerPodNodeUnavailableToleration,
+		CloudSecretsExpander:               cloudExpander,
+		Timeout:                            opts.rpClientTimeout,
 	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 		log.Error(ctx, err, "Unable to create controller", "controller", "Cluster")
 		return err

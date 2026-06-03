@@ -13,3 +13,20 @@ rules:
       - list
       - patch
       - watch
+  - apiGroups:
+      - cluster.redpanda.com
+    resources:
+      - redpandas
+      - stretchclusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - redpanda.vectorized.io
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+      - watch

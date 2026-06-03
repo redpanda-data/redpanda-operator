@@ -80,8 +80,13 @@ type ClusterReconciler struct {
 	RestrictToRedpandaVersion      string
 	GhostDecommissioning           bool
 	AutoDeletePVCs                 bool
-	Dialer                         redpanda.DialContextFunc
-	Timeout                        time.Duration
+	// BrokerPodNodeUnavailableToleration, when non-zero, causes the
+	// operator to inject NotReady/Unreachable NoExecute tolerations onto
+	// broker pod templates. See resources.MaybeInjectNodeUnavailableTolerations
+	// for the duration semantics (0=off, positive=seconds, negative=forever).
+	BrokerPodNodeUnavailableToleration time.Duration
+	Dialer                             redpanda.DialContextFunc
+	Timeout                            time.Duration
 	// this is provided if external cloud secret resolution is configured. It's
 	// used to expand external cloud secrets from config
 	CloudSecretsExpander *pkgsecrets.CloudExpander
