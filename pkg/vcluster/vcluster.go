@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -245,8 +246,24 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 		}
 	}()
 
+	// helm.New isolates the repository *config* per client (a unique temp
+	// HELM_CONFIG_HOME) but, by default, shares the global repository *cache*
+	// (~/.cache/helm/repository). vcluster.New is frequently called from
+	// parallel goroutines (e.g. the stretch-cluster acceptance tests create
+	// several vclusters concurrently), and each call runs `helm repo add loft`.
+	// Concurrent adds race that shared cache index file — against each other and
+	// against the parallel `helm install loft/vcluster` reads — surfacing as the
+	// intermittent "empty index.yaml file" / "no cached repo found" failure.
+	// Give each client its own cache so config and cache are fully hermetic; the
+	// per-client repo add then populates only this client's cache and config.
+	cacheHome, err := os.MkdirTemp("", "vcluster-helm-cache")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	hc, err := helm.New(helm.Options{
 		KubeConfig: config,
+		CacheHome:  cacheHome,
 	})
 	if err != nil {
 		return nil, errors.WithStack(err)
