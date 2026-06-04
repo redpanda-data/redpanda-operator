@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: Bump operator sidecar image tag to v25.3.6 release
-time: 2026-06-03T23:42:04.127427+02:00
