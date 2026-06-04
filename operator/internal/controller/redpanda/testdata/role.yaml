@@ -32,7 +32,6 @@ rules:
   - ""
   resources:
   - namespaces
-  - nodes
   verbs:
   - get
   - list
@@ -40,10 +39,25 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - persistentvolumeclaims
-  - persistentvolumes
   verbs:
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
   - get
   - list
   - patch
@@ -302,6 +316,7 @@ rules:
   resources:
   - endpoints
   - limitranges
+  - persistentvolumeclaims
   - pods
   - pods/log
   - replicationcontrollers
@@ -320,16 +335,6 @@ rules:
   - get
   - list
   - patch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
 - apiGroups:
   - coordination.k8s.io
   resources:

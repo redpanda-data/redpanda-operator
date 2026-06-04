@@ -37,14 +37,13 @@ func TestControllerEnabledDecommission(t *testing.T) {
 		controllers []string
 		decomm      bool
 		legacy      bool
-		nodeWatcher bool
 	}{
-		{name: "none", controllers: []string{""}, decomm: false, legacy: false, nodeWatcher: false},
-		{name: "all selects new decommission, not legacy", controllers: []string{"all"}, decomm: true, legacy: false, nodeWatcher: true},
-		{name: "explicit decommission", controllers: []string{"decommission"}, decomm: true, legacy: false, nodeWatcher: false},
-		{name: "decommissionV2 alias", controllers: []string{"decommissionV2"}, decomm: true, legacy: false, nodeWatcher: false},
-		{name: "explicit legacy-decommission", controllers: []string{"legacy-decommission"}, decomm: false, legacy: true, nodeWatcher: false},
-		{name: "all plus legacy-decommission", controllers: []string{"all", "legacy-decommission"}, decomm: true, legacy: true, nodeWatcher: true},
+		{name: "none", controllers: []string{""}, decomm: false, legacy: false},
+		{name: "all selects new decommission, not legacy", controllers: []string{"all"}, decomm: true, legacy: false},
+		{name: "explicit decommission", controllers: []string{"decommission"}, decomm: true, legacy: false},
+		{name: "decommissionV2 alias", controllers: []string{"decommissionV2"}, decomm: true, legacy: false},
+		{name: "explicit legacy-decommission", controllers: []string{"legacy-decommission"}, decomm: false, legacy: true},
+		{name: "all plus legacy-decommission", controllers: []string{"all", "legacy-decommission"}, decomm: true, legacy: true},
 	}
 
 	for _, tc := range cases {
@@ -52,7 +51,6 @@ func TestControllerEnabledDecommission(t *testing.T) {
 			o := &RunOptions{additionalControllers: tc.controllers}
 			assert.Equal(t, tc.decomm, o.ControllerEnabled(DecommissionController), "decommission")
 			assert.Equal(t, tc.legacy, o.ControllerEnabled(LegacyDecommissionController), "legacy-decommission")
-			assert.Equal(t, tc.nodeWatcher, o.ControllerEnabled(NodeWatcherController), "nodeWatcher")
 		})
 	}
 }

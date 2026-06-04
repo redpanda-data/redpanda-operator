@@ -16,6 +16,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -40,7 +41,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/nodewatcher"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
@@ -63,7 +63,11 @@ const (
 	DefaultRedpandaRepository         = "docker.redpanda.com/redpandadata/redpanda"
 
 	AllNonVectorizedControllers = Controller("all")
-	NodeWatcherController       = Controller("nodeWatcher")
+	// NodeWatcherController ("nodeWatcher") is removed: the RedpandaNodePVCReconciler
+	// has been deleted in favor of the PVCUnbinder (--unbind-pvcs-after), which owns
+	// PVC remediation. The value is still recognized so operators that pass it do not
+	// fail, but it is a no-op (see the warning in Run) and is excluded from "all".
+	NodeWatcherController = Controller("nodeWatcher")
 	// DecommissionController ("decommission") runs the NodePool-aware
 	// StatefulSetDecommissioner operator-wide for V2 (Redpanda / chart-based)
 	// clusters. As of this release the long-standing "decommission" value routes
@@ -80,7 +84,6 @@ const (
 )
 
 var availableControllers = []string{
-	string(NodeWatcherController),
 	string(DecommissionController),
 	string(LegacyDecommissionController),
 }
@@ -520,14 +523,13 @@ func Run(
 		}
 	}
 
-	if opts.ControllerEnabled(NodeWatcherController) {
-		if err = (&nodewatcher.RedpandaNodePVCReconciler{
-			Client:       mgr.GetClient(),
-			OperatorMode: true,
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "RedpandaNodePVCReconciler")
-			return err
-		}
+	// The nodeWatcher controller (RedpandaNodePVCReconciler) has been removed in
+	// favor of the PVCUnbinder (--unbind-pvcs-after), which is the single owner of
+	// PVC remediation. Accept the value without failing for operators that still
+	// pass it explicitly, but warn that it is now a no-op. "all" no longer enables
+	// it.
+	if slices.Contains(opts.additionalControllers, string(NodeWatcherController)) {
+		setupLog.Info("WARNING: the 'nodeWatcher' controller has been removed; PVC remediation is now handled by the PVCUnbinder (--unbind-pvcs-after). The 'nodeWatcher' value is a no-op and will be rejected in a future release.")
 	}
 
 	// The legacy escape hatch takes precedence: when an operator explicitly opts

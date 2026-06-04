@@ -55,8 +55,6 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 			RuleFiles: map[string]bool{
 				"files/rbac/decommission.ClusterRole.yaml":     true,
 				"files/rbac/decommission.Role.yaml":            true,
-				"files/rbac/node-watcher.ClusterRole.yaml":     true, // Deprecated but not yet removed.
-				"files/rbac/node-watcher.Role.yaml":            true, // Deprecated but not yet removed.
 				"files/rbac/old-decommission.ClusterRole.yaml": true, // Deprecated but not yet removed.
 				"files/rbac/old-decommission.Role.yaml":        true, // Deprecated but not yet removed.
 				"files/rbac/pvcunbinder.ClusterRole.yaml":      true,
