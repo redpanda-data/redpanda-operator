@@ -24,7 +24,7 @@ Kubernetes: `>= 1.25.0-0`
 
 ### [additionalCmdFlags](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=additionalCmdFlags)
 
-Passes additional flags to the Redpanda Operator at startup. Additional flags include:  - `--additional-controllers`: Additional controllers to deploy. The supported value is `decommission`, which runs the NodePool-aware broker decommissioner; `legacy-decommission` opts into the deprecated controller. For more information about the Decommission controller, see [Use the Decommission controller](https://docs.redpanda.com/current/manage/kubernetes/k-decommission-brokers/#Automated). PVC remediation is handled by the PVCUnbinder via `--unbind-pvcs-after` (the removed `nodeWatcher` controller is accepted as a no-op).
+Passes additional flags to the Redpanda Operator at startup. Additional flags include:  - `--additional-controllers`: Additional controllers to deploy. The supported value is `decommission`, which runs the NodePool-aware broker decommissioner; `legacy-decommission` opts into the deprecated controller. For more information about the Decommission controller, see [Use the Decommission controller](https://docs.redpanda.com/current/manage/kubernetes/k-decommission-brokers/#Automated). PVC remediation is handled by the PVCUnbinder via `--unbind-pvcs-after`.
 
 **Default:** `[]`
 
