@@ -25,31 +25,63 @@ import (
 	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
-// TestControllerEnabledDecommissionV2 documents that decommissionV2 is opt-in
-// only: it is NOT enabled by "all" (it conflicts with the "decommission"
-// controller), but IS enabled when listed explicitly. The legacy controllers
-// remain enabled by "all".
-func TestControllerEnabledDecommissionV2(t *testing.T) {
+// TestControllerEnabledDecommission documents the re-pointed controller
+// selection: "decommission" (and its alias "decommissionV2", and "all") now
+// select the new NodePool-aware StatefulSetDecommissioner, while the deprecated
+// old reconciler is opt-in only via "legacy-decommission" and excluded from
+// "all". When both are selected, Run() lets legacy-decommission win (asserted in
+// TestDecommissionControllerPrecedence).
+func TestControllerEnabledDecommission(t *testing.T) {
 	cases := []struct {
 		name        string
 		controllers []string
-		decommV2    bool
-		oldDecomm   bool
+		decomm      bool
+		legacy      bool
 		nodeWatcher bool
 	}{
-		{name: "none", controllers: []string{""}, decommV2: false, oldDecomm: false, nodeWatcher: false},
-		{name: "all excludes decommissionV2", controllers: []string{"all"}, decommV2: false, oldDecomm: true, nodeWatcher: true},
-		{name: "explicit decommissionV2", controllers: []string{"decommissionV2"}, decommV2: true, oldDecomm: false, nodeWatcher: false},
-		{name: "explicit decommission", controllers: []string{"decommission"}, decommV2: false, oldDecomm: true, nodeWatcher: false},
-		{name: "all plus decommissionV2", controllers: []string{"all", "decommissionV2"}, decommV2: true, oldDecomm: true, nodeWatcher: true},
+		{name: "none", controllers: []string{""}, decomm: false, legacy: false, nodeWatcher: false},
+		{name: "all selects new decommission, not legacy", controllers: []string{"all"}, decomm: true, legacy: false, nodeWatcher: true},
+		{name: "explicit decommission", controllers: []string{"decommission"}, decomm: true, legacy: false, nodeWatcher: false},
+		{name: "decommissionV2 alias", controllers: []string{"decommissionV2"}, decomm: true, legacy: false, nodeWatcher: false},
+		{name: "explicit legacy-decommission", controllers: []string{"legacy-decommission"}, decomm: false, legacy: true, nodeWatcher: false},
+		{name: "all plus legacy-decommission", controllers: []string{"all", "legacy-decommission"}, decomm: true, legacy: true, nodeWatcher: true},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			o := &RunOptions{additionalControllers: tc.controllers}
-			assert.Equal(t, tc.decommV2, o.ControllerEnabled(DecommissionController), "decommissionV2")
-			assert.Equal(t, tc.oldDecomm, o.ControllerEnabled(OldDecommissionController), "decommission")
+			assert.Equal(t, tc.decomm, o.ControllerEnabled(DecommissionController), "decommission")
+			assert.Equal(t, tc.legacy, o.ControllerEnabled(LegacyDecommissionController), "legacy-decommission")
 			assert.Equal(t, tc.nodeWatcher, o.ControllerEnabled(NodeWatcherController), "nodeWatcher")
+		})
+	}
+}
+
+// TestDecommissionControllerPrecedence asserts the escape-hatch precedence used
+// in Run(): when legacy-decommission is explicitly selected it wins, and the new
+// controller does not also run, so the two never double-process a cluster.
+func TestDecommissionControllerPrecedence(t *testing.T) {
+	cases := []struct {
+		name        string
+		controllers []string
+		runNew      bool
+		runLegacy   bool
+	}{
+		{name: "decommission runs new only", controllers: []string{"decommission"}, runNew: true, runLegacy: false},
+		{name: "all runs new only", controllers: []string{"all"}, runNew: true, runLegacy: false},
+		{name: "legacy runs legacy only", controllers: []string{"legacy-decommission"}, runNew: false, runLegacy: true},
+		{name: "both selected: legacy wins", controllers: []string{"decommission", "legacy-decommission"}, runNew: false, runLegacy: true},
+		{name: "all plus legacy: legacy wins", controllers: []string{"all", "legacy-decommission"}, runNew: false, runLegacy: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			o := &RunOptions{additionalControllers: tc.controllers}
+			// Mirrors the resolution in Run().
+			runLegacy := o.ControllerEnabled(LegacyDecommissionController)
+			runNew := !runLegacy && o.ControllerEnabled(DecommissionController)
+			assert.Equal(t, tc.runNew, runNew, "runDecommission")
+			assert.Equal(t, tc.runLegacy, runLegacy, "runLegacyDecommission")
 		})
 	}
 }

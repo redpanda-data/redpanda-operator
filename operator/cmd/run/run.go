@@ -64,18 +64,25 @@ const (
 
 	AllNonVectorizedControllers = Controller("all")
 	NodeWatcherController       = Controller("nodeWatcher")
-	OldDecommissionController   = Controller("decommission")
-	// DecommissionController enables the NodePool-aware StatefulSetDecommissioner
-	// operator-wide for V2 (Redpanda / chart-based) clusters. It is a centralized
-	// alternative to OldDecommissionController ("decommission"); enable one or the
-	// other for a given cluster, not both.
-	DecommissionController = Controller("decommissionV2")
+	// DecommissionController ("decommission") runs the NodePool-aware
+	// StatefulSetDecommissioner operator-wide for V2 (Redpanda / chart-based)
+	// clusters. As of this release the long-standing "decommission" value routes
+	// here: operators that already pass --additional-controllers=decommission are
+	// migrated to the new controller automatically on upgrade.
+	DecommissionController = Controller("decommission")
+	// DecommissionV2Alias is a forward-compatible alias for DecommissionController.
+	DecommissionV2Alias = Controller("decommissionV2")
+	// LegacyDecommissionController ("legacy-decommission") runs the deprecated
+	// olddecommission.DecommissionReconciler. It is an opt-in escape hatch (e.g.
+	// for the Cloud Azure path or regression fallback) while the old controller is
+	// being removed, and is intentionally excluded from "all". Deprecated.
+	LegacyDecommissionController = Controller("legacy-decommission")
 )
 
 var availableControllers = []string{
 	string(NodeWatcherController),
-	string(OldDecommissionController),
 	string(DecommissionController),
+	string(LegacyDecommissionController),
 }
 
 type RunOptions struct {
@@ -197,13 +204,19 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 
 func (o *RunOptions) ControllerEnabled(controller Controller) bool {
 	for _, c := range o.additionalControllers {
-		if Controller(c) == controller {
+		selected := Controller(c)
+		if selected == controller {
 			return true
 		}
-		// DecommissionController conflicts with OldDecommissionController, so it
-		// is opt-in only and intentionally excluded from "all" — enabling "all"
-		// must not run two decommissioners against the same cluster.
-		if Controller(c) == AllNonVectorizedControllers && controller != DecommissionController {
+		// "decommissionV2" is a forward-compatible alias for "decommission".
+		if controller == DecommissionController && selected == DecommissionV2Alias {
+			return true
+		}
+		// "all" enables the standard controllers, but NOT the deprecated
+		// legacy-decommission escape hatch — "all" already enables the
+		// decommission controller, and running both would double-process the
+		// same cluster.
+		if selected == AllNonVectorizedControllers && controller != LegacyDecommissionController {
 			return true
 		}
 	}
@@ -517,7 +530,15 @@ func Run(
 		}
 	}
 
-	if opts.ControllerEnabled(OldDecommissionController) {
+	// The legacy escape hatch takes precedence: when an operator explicitly opts
+	// into legacy-decommission, run only the old reconciler (even if "all" or
+	// "decommission" would otherwise also select the new controller) so the two
+	// never double-process the same cluster.
+	runLegacyDecommission := opts.ControllerEnabled(LegacyDecommissionController)
+	runDecommission := !runLegacyDecommission && opts.ControllerEnabled(DecommissionController)
+
+	if runLegacyDecommission {
+		setupLog.Info("WARNING: the 'legacy-decommission' controller is deprecated and will be removed in a future release; migrate to the default NodePool-aware 'decommission' controller")
 		if err = (&olddecommission.DecommissionReconciler{
 			Client:                   mgr.GetClient(),
 			OperatorMode:             true,
@@ -528,7 +549,7 @@ func Run(
 		}
 	}
 
-	if opts.ControllerEnabled(DecommissionController) {
+	if runDecommission {
 		// NodePool-aware, centralized decommissioner for V2 (Redpanda) clusters.
 		// Watches chart-rendered Redpanda StatefulSets (app.kubernetes.io/name=redpanda)
 		// and resolves each back to its Redpanda CR for the admin client and the
