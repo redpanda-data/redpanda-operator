@@ -24,6 +24,7 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -47,6 +48,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
@@ -63,11 +65,17 @@ const (
 	AllNonVectorizedControllers = Controller("all")
 	NodeWatcherController       = Controller("nodeWatcher")
 	OldDecommissionController   = Controller("decommission")
+	// DecommissionController enables the NodePool-aware StatefulSetDecommissioner
+	// operator-wide for V2 (Redpanda / chart-based) clusters. It is a centralized
+	// alternative to OldDecommissionController ("decommission"); enable one or the
+	// other for a given cluster, not both.
+	DecommissionController = Controller("decommissionV2")
 )
 
 var availableControllers = []string{
 	string(NodeWatcherController),
 	string(OldDecommissionController),
+	string(DecommissionController),
 }
 
 type RunOptions struct {
@@ -189,7 +197,13 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 
 func (o *RunOptions) ControllerEnabled(controller Controller) bool {
 	for _, c := range o.additionalControllers {
-		if Controller(c) == AllNonVectorizedControllers || Controller(c) == controller {
+		if Controller(c) == controller {
+			return true
+		}
+		// DecommissionController conflicts with OldDecommissionController, so it
+		// is opt-in only and intentionally excluded from "all" — enabling "all"
+		// must not run two decommissioners against the same cluster.
+		if Controller(c) == AllNonVectorizedControllers && controller != DecommissionController {
 			return true
 		}
 	}
@@ -510,6 +524,30 @@ func Run(
 			DecommissionWaitInterval: opts.decommissionWaitInterval,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "DecommissionReconciler")
+			return err
+		}
+	}
+
+	if opts.ControllerEnabled(DecommissionController) {
+		// NodePool-aware, centralized decommissioner for V2 (Redpanda) clusters.
+		// Watches chart-rendered Redpanda StatefulSets (app.kubernetes.io/name=redpanda)
+		// and resolves each back to its Redpanda CR for the admin client and the
+		// cluster-wide desired replica count.
+		adapter := redpandaDecommissionerAdapter{client: mgr.GetClient(), factory: factory}
+		d := decommissioning.NewStatefulSetDecommissioner(
+			mgr,
+			adapter.getAdminClient,
+			decommissioning.WithSelector(labels.SelectorFromSet(labels.Set{pkglabels.NameKey: "redpanda"})),
+			decommissioning.WithFilter(adapter.filter),
+			// A V2 cluster may span multiple StatefulSets (NodePools); the
+			// excess-broker gate must compare against the sum of every pool's
+			// replicas, while the per-pool scale-down decision uses each
+			// StatefulSet's own replicas (handled inside the decommissioner).
+			decommissioning.WithDesiredReplicasFetcher(adapter.desiredReplicas),
+		)
+
+		if err := d.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
 			return err
 		}
 	}

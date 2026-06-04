@@ -414,11 +414,20 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 	// the counting happens below as a guard for *when we actually do clean
 	// something up*
 
+	// requestedNodes is the cluster-wide desired broker count, used to decide
+	// whether the cluster has excess brokers at all. With NodePools a cluster
+	// spans several StatefulSets, so desiredReplicasFetcher must sum the
+	// replicas of every pool (the default fetcher returns this set's replicas,
+	// which is correct only for the single-StatefulSet case).
 	desiredReplicas, err := s.desiredReplicasFetcher(ctx, set)
 	if err != nil {
 		return false, fmt.Errorf("failed to fetch desired replicas: %w", err)
 	}
 	requestedNodes := int(desiredReplicas)
+	// setReplicas is the desired size of the StatefulSet being reconciled (this
+	// pool). The too-high-ordinal check below compares a broker's per-pool Pod
+	// ordinal against this, not against the cluster-wide requestedNodes.
+	setReplicas := int(ptr.Deref(set.Spec.Replicas, 0))
 	if len(health.AllNodes) <= requestedNodes {
 		// we don't need to decommission anything since we're at the proper
 		// capacity, we also clear the cache here because nothing should
@@ -512,13 +521,20 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 				// On Operator v1, we do not want this, because high ordinals are supposed to be handled by
 				// Operator v1's decomissioning handling.
 				if s.decommissionOnTooHighOrdinal {
-					ordinal, err := ordinalFromResourceName(podName)
-					if err == nil {
-						if ordinal >= requestedNodes {
-							// this broker is old and should be deleted
-							brokersToDecommission = append(brokersToDecommission, downedNode)
-							continue
-						}
+					// Only consider the ordinal of Pods that belong to the
+					// StatefulSet being reconciled, and compare against that
+					// StatefulSet's own desired replicas (setReplicas). With
+					// NodePools a cluster has multiple StatefulSets whose Pod
+					// ordinals are per-pool and whose names share a prefix
+					// (e.g. "redpanda" vs "redpanda-poolb"); using the
+					// cluster-wide requestedNodes here, or another pool's
+					// ordinal, would decommission the wrong broker. Brokers
+					// belonging to other pools are decommissioned when their own
+					// StatefulSet reconciles.
+					if ordinal, ok := podOrdinalForStatefulSet(podName, set.Name); ok && ordinal >= setReplicas {
+						// this broker is beyond its pool's desired size and should be decommissioned
+						brokersToDecommission = append(brokersToDecommission, downedNode)
+						continue
 					}
 				}
 
@@ -747,17 +763,19 @@ func podNameFromFQDN(fqdn string) (string, error) {
 	return tokens[0], nil
 }
 
-func ordinalFromResourceName(name string) (int, error) {
-	resourceTokens := strings.Split(name, "-")
-	if len(resourceTokens) < 2 {
-		return 0, fmt.Errorf("invalid resource name for ordinal fetching: %s", name)
+// podOrdinalForStatefulSet returns the ordinal of podName when it is a Pod of
+// the named StatefulSet (i.e. exactly "<stsName>-<ordinal>"), and false
+// otherwise. This distinguishes Pods across NodePools, whose StatefulSets share
+// a name prefix: "redpanda-poolb-0" belongs to "redpanda-poolb", not to
+// "redpanda" (whose Pods are "redpanda-0", "redpanda-1", ...).
+func podOrdinalForStatefulSet(podName, stsName string) (int, bool) {
+	suffix, ok := strings.CutPrefix(podName, stsName+"-")
+	if !ok {
+		return 0, false
 	}
-
-	// grab the last item after the "-"" which should be the ordinal and parse it
-	ordinal, err := strconv.Atoi(resourceTokens[len(resourceTokens)-1])
+	ordinal, err := strconv.Atoi(suffix)
 	if err != nil {
-		return 0, fmt.Errorf("parsing resource name %q: %w", name, err)
+		return 0, false
 	}
-
-	return ordinal, nil
+	return ordinal, true
 }

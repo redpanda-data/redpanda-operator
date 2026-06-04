@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "Added a new `--additional-controllers=decommissionV2` option that runs the NodePool-aware `StatefulSetDecommissioner` operator-wide for V2 (`Redpanda`) clusters. It is a centralized alternative to the existing `decommission` controller: it resolves each chart-rendered StatefulSet back to its `Redpanda` CR and builds the admin client from the chart-rendered DNS (avoiding the `olddecommission` `fullnameOverride` DNS bug) and is correct for clusters split across multiple NodePools. It is opt-in and intentionally excluded from `all`; enable either `decommission` or `decommissionV2` for a given cluster, not both."
+time: 2026-06-01T12:00:00.000000-07:00
