@@ -374,7 +374,7 @@ func applyBasicClusterForDevEnv(ctx context.Context, restConfig *rest.Config) er
 func operatorCmdFlags() []string {
 	flags := []string{
 		"--configurator-image-pull-policy=IfNotPresent",
-		"--additional-controllers=nodeWatcher,decommission",
+		"--additional-controllers=decommission",
 		"--unbind-pvcs-after=5s",
 		"--cluster-connection-timeout=500ms",
 		"--enable-shadowlinks",

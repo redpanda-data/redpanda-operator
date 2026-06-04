@@ -41,9 +41,18 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
-  - persistentvolumes
   verbs:
   - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
   - get
   - list
   - patch
@@ -377,16 +386,6 @@ rules:
   - ""
   resources:
   - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - pods
   verbs:
   - delete
