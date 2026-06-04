@@ -1,0 +1,4 @@
+project: operator
+kind: Deprecated
+body: "The old broker `DecommissionReconciler` is deprecated. It is no longer reached by `--additional-controllers=decommission` (which now runs the NodePool-aware `StatefulSetDecommissioner`); it remains available only as an opt-in escape hatch via `--additional-controllers=legacy-decommission` (excluded from `all`) for regression fallback and the Cloud Azure path, and will be removed in a future release. The operator logs a warning at startup when it is enabled."
+time: 2026-06-01T13:00:00.000000-07:00
