@@ -16,7 +16,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -63,11 +62,6 @@ const (
 	DefaultRedpandaRepository         = "docker.redpanda.com/redpandadata/redpanda"
 
 	AllNonVectorizedControllers = Controller("all")
-	// NodeWatcherController ("nodeWatcher") is removed: the RedpandaNodePVCReconciler
-	// has been deleted in favor of the PVCUnbinder (--unbind-pvcs-after), which owns
-	// PVC remediation. The value is still recognized so operators that pass it do not
-	// fail, but it is a no-op (see the warning in Run) and is excluded from "all".
-	NodeWatcherController = Controller("nodeWatcher")
 	// DecommissionController ("decommission") runs the NodePool-aware
 	// StatefulSetDecommissioner operator-wide for V2 (Redpanda / chart-based)
 	// clusters. As of this release the long-standing "decommission" value routes
@@ -521,15 +515,6 @@ func Run(
 		if err := setupVectorizedControllers(ctx, mgr, factory, cloudExpander, opts); err != nil {
 			return err
 		}
-	}
-
-	// The nodeWatcher controller (RedpandaNodePVCReconciler) has been removed in
-	// favor of the PVCUnbinder (--unbind-pvcs-after), which is the single owner of
-	// PVC remediation. Accept the value without failing for operators that still
-	// pass it explicitly, but warn that it is now a no-op. "all" no longer enables
-	// it.
-	if slices.Contains(opts.additionalControllers, string(NodeWatcherController)) {
-		setupLog.Info("WARNING: the 'nodeWatcher' controller has been removed; PVC remediation is now handled by the PVCUnbinder (--unbind-pvcs-after). The 'nodeWatcher' value is a no-op and will be rejected in a future release.")
 	}
 
 	// The legacy escape hatch takes precedence: when an operator explicitly opts

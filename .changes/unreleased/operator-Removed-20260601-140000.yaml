@@ -1,4 +1,4 @@
 project: operator
 kind: Removed
-body: "Removed the `nodeWatcher` controller (`RedpandaNodePVCReconciler`). PVC remediation after node loss is now owned solely by the PVCUnbinder (`--unbind-pvcs-after`), which reacts to the actual unschedulable Pod and only touches non-remountable (local/hostPath) volumes. `--additional-controllers=nodeWatcher` is still accepted as a no-op (the operator logs a warning) so deployments that pass it do not fail, and it is no longer included in `--additional-controllers=all`; the value will be rejected in a future release."
+body: "Removed the `nodeWatcher` controller (`RedpandaNodePVCReconciler`). PVC remediation after node loss is now owned solely by the PVCUnbinder (`--unbind-pvcs-after`), which reacts to the actual unschedulable Pod and only touches non-remountable (local/hostPath) volumes. The `nodeWatcher` value for `--additional-controllers` is no longer recognized; deployments should remove it and rely on `--unbind-pvcs-after` instead."
 time: 2026-06-01T14:00:00.000000-07:00
