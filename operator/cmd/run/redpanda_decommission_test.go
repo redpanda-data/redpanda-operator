@@ -163,7 +163,12 @@ func TestRedpandaDecommissionerAdapter(t *testing.T) {
 			assert.True(t, ok)
 		})
 
-		t.Run("skips a cluster that is not Ready", func(t *testing.T) {
+		// The decommissioner must NOT gate on readiness/observed-generation: a
+		// scale-down keeps the cluster non-Ready (generation unobserved) until
+		// the excess broker is decommissioned, so gating there would deadlock
+		// the decommission. The decommissioner's own admin-API health check
+		// guards against premature action.
+		t.Run("does not gate on a not-Ready cluster", func(t *testing.T) {
 			rp := readyRedpanda("redpanda", "ns")
 			rp.Status.Conditions[0].Status = metav1.ConditionFalse
 			c := fake.NewClientBuilder().WithScheme(controller.V2Scheme).WithObjects(rp, sts).Build()
@@ -171,18 +176,18 @@ func TestRedpandaDecommissionerAdapter(t *testing.T) {
 
 			ok, err := adapter.filter(ctx, sts)
 			require.NoError(t, err)
-			assert.False(t, ok)
+			assert.True(t, ok)
 		})
 
-		t.Run("skips a cluster whose generation is not observed", func(t *testing.T) {
+		t.Run("does not gate on an unobserved generation", func(t *testing.T) {
 			rp := readyRedpanda("redpanda", "ns")
-			rp.Generation = 2 // status still observes generation 1
+			rp.Generation = 2 // status still observes generation 1 (mid scale-down)
 			c := fake.NewClientBuilder().WithScheme(controller.V2Scheme).WithObjects(rp, sts).Build()
 			adapter := &redpandaDecommissionerAdapter{client: c}
 
 			ok, err := adapter.filter(ctx, sts)
 			require.NoError(t, err)
-			assert.False(t, ok)
+			assert.True(t, ok)
 		})
 
 		t.Run("skips a cluster that is being deleted", func(t *testing.T) {

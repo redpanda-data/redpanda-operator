@@ -17,7 +17,6 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -92,10 +91,16 @@ func (b *redpandaDecommissionerAdapter) desiredReplicas(ctx context.Context, sts
 	return total, nil
 }
 
-// filter gates reconciliation to managed, reconciled, Ready Redpanda clusters.
-// The per-broker health and excess-broker checks are still performed inside the
-// decommissioner against the admin API; this only avoids acting on clusters that
-// are being deleted or have not converged on their current generation.
+// filter gates reconciliation to Redpanda-managed StatefulSets that are not
+// being torn down.
+//
+// It deliberately does NOT gate on the Redpanda's Ready/Quiesced conditions or
+// observed generation: a scale-down leaves the cluster non-Ready (and its
+// generation unobserved) precisely until the excess broker is decommissioned,
+// so a readiness gate would deadlock the very operation this controller exists
+// to perform. Guarding against premature action is the decommissioner's own
+// job — it reads live cluster health from the admin API and only decommissions
+// when the registered broker count exceeds the summed desired replicas.
 func (b *redpandaDecommissionerAdapter) filter(ctx context.Context, sts *appsv1.StatefulSet) (bool, error) {
 	log := ctrl.LoggerFrom(ctx, "namespace", sts.Namespace).WithName("StatefulSetDecomissioner.Filter")
 
@@ -109,16 +114,6 @@ func (b *redpandaDecommissionerAdapter) filter(ctx context.Context, sts *appsv1.
 
 	if redpanda.DeletionTimestamp != nil {
 		log.V(1).Info("Redpanda is being deleted; skipping", "redpanda", redpanda.Name)
-		return false, nil
-	}
-
-	if !redpanda.GenerationObserved() {
-		log.V(1).Info("Redpanda generation not yet observed; skipping", "redpanda", redpanda.Name, "generation", redpanda.Generation)
-		return false, nil
-	}
-
-	if !apimeta.IsStatusConditionTrue(redpanda.Status.Conditions, redpandav1alpha2.ReadyCondition) {
-		log.V(1).Info("Redpanda is not Ready; skipping", "redpanda", redpanda.Name)
 		return false, nil
 	}
 
