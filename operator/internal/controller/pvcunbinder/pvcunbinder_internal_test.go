@@ -59,6 +59,16 @@ func newPod(name, namespace, instance string) *corev1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
+			Labels: map[string]string{
+				// Every pod created via this helper is treated as
+				// operator-managed via the v1/StretchCluster label
+				// (`managed-by=redpanda-operator`). Tests can:
+				//   - clear ManagedByKey to model an unrelated workload, or
+				//   - replace with the v2 operator label
+				//     (`cluster.redpanda.com/operator=v2`) to exercise
+				//     Gate 2's second LIST.
+				operatorlabels.ManagedByKey: "redpanda-operator",
+			},
 			OwnerReferences: []metav1.OwnerReference{{
 				APIVersion: "apps/v1",
 				Kind:       "StatefulSet",
@@ -69,7 +79,7 @@ func newPod(name, namespace, instance string) *corev1.Pod {
 		Status: corev1.PodStatus{Phase: corev1.PodPending},
 	}
 	if instance != "" {
-		p.Labels = map[string]string{operatorlabels.InstanceKey: instance}
+		p.Labels[operatorlabels.InstanceKey] = instance
 	}
 	return p
 }
@@ -165,6 +175,44 @@ func TestInFlightTracker(t *testing.T) {
 		require.True(t, tr.IsHeld(key, map[string]types.UID{}))
 		time.Sleep(20 * time.Millisecond)
 		require.False(t, tr.IsHeld(key, map[string]types.UID{}))
+	})
+
+	t.Run("TTL expiry with verifier: held when PVC still missing", func(t *testing.T) {
+		// Simulates a PVC stuck in Terminating past the TTL —
+		// without the verifier, the tracker would drop the entry
+		// and the next reconcile would unbind a sibling pod
+		// despite the original delete still in flight.
+		tr := NewInFlightTracker(10 * time.Millisecond)
+		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
+		time.Sleep(20 * time.Millisecond)
+		verify := func(_ context.Context, _ string) (bool, error) { return false, nil }
+		held, err := tr.IsHeldWithVerify(context.Background(), key, map[string]types.UID{}, verify)
+		require.NoError(t, err)
+		require.True(t, held, "verifier reports not-settled, entry must be kept")
+		// Subsequent IsHeld (no verifier) should also still be held
+		// because the TTL window was reset by the verify call.
+		require.True(t, tr.IsHeld(key, map[string]types.UID{}))
+	})
+
+	t.Run("TTL expiry with verifier: dropped when PVC settled", func(t *testing.T) {
+		tr := NewInFlightTracker(10 * time.Millisecond)
+		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
+		time.Sleep(20 * time.Millisecond)
+		verify := func(_ context.Context, _ string) (bool, error) { return true, nil }
+		held, err := tr.IsHeldWithVerify(context.Background(), key, map[string]types.UID{}, verify)
+		require.NoError(t, err)
+		require.False(t, held, "verifier reports settled, entry must be expunged")
+	})
+
+	t.Run("TTL expiry verifier error propagates", func(t *testing.T) {
+		tr := NewInFlightTracker(10 * time.Millisecond)
+		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
+		time.Sleep(20 * time.Millisecond)
+		verify := func(_ context.Context, _ string) (bool, error) {
+			return false, fmt.Errorf("api server down")
+		}
+		_, err := tr.IsHeldWithVerify(context.Background(), key, map[string]types.UID{}, verify)
+		require.Error(t, err)
 	})
 
 	t.Run("Mark with empty map is a no-op", func(t *testing.T) {
@@ -611,6 +659,48 @@ func TestMultiNodeEventInProgress(t *testing.T) {
 		got, err := r.multiNodeEventInProgress(ctx)
 		require.NoError(t, err)
 		require.False(t, got)
+	})
+
+	t.Run("unrelated workload stuck on another node is NOT counted (managed-by scope)", func(t *testing.T) {
+		// pod0 is operator-managed and stuck on node-a; podOther is a
+		// non-operator workload (e.g., a Postgres StatefulSet using
+		// local PVs) stuck on node-b. Before the managed-by scope
+		// fix, this flipped Gate 2 to "multi-node" and caused silent
+		// inaction on legitimate single-node Redpanda failures.
+		pod0 := withPVC(podWithVolumeAffinityFailure("rp-0", "ns", "redpanda"), "datadir-rp-0")
+		podOther := withPVC(podWithVolumeAffinityFailure("postgres-0", "ns", "postgres"), "datadir-postgres-0")
+		// Drop the managed-by label that newPod adds — model an
+		// unrelated workload.
+		delete(podOther.Labels, operatorlabels.ManagedByKey)
+		pvc0 := newPVC("datadir-rp-0", "ns", "redpanda", "pv-0")
+		pvc1 := newPVC("datadir-postgres-0", "ns", "postgres", "pv-1")
+		pv0 := newPVWithAffinity("pv-0", "ns", "datadir-rp-0", "node-a")
+		pv1 := newPVWithAffinity("pv-1", "ns", "datadir-postgres-0", "node-b")
+		r := newController(t, s, pod0, podOther, pvc0, pvc1, pv0, pv1)
+		got, err := r.multiNodeEventInProgress(ctx)
+		require.NoError(t, err)
+		require.False(t, got, "unrelated workload on a different node must not flip Gate 2")
+	})
+
+	t.Run("v2 pod with cluster.redpanda.com/operator=v2 label IS counted (second LIST)", func(t *testing.T) {
+		// Models a v2 Redpanda whose pods carry managed-by=Helm
+		// (chart default) but operator=v2 — Gate 2's second LIST
+		// catches it. Paired with a v1 pod on a different node, this
+		// must be classified as a multi-node event.
+		pod0 := withPVC(podWithVolumeAffinityFailure("rp-0", "ns-a", "redpanda-a"), "datadir-rp-0")
+		pod1 := withPVC(podWithVolumeAffinityFailure("rpb-0", "ns-b", "redpanda-b"), "datadir-rpb-0")
+		// pod1 represents a v2 pod: replace managed-by with
+		// cluster.redpanda.com/operator=v2.
+		delete(pod1.Labels, operatorlabels.ManagedByKey)
+		pod1.Labels["cluster.redpanda.com/operator"] = "v2"
+		pvc0 := newPVC("datadir-rp-0", "ns-a", "redpanda-a", "pv-0")
+		pvc1 := newPVC("datadir-rpb-0", "ns-b", "redpanda-b", "pv-1")
+		pv0 := newPVWithAffinity("pv-0", "ns-a", "datadir-rp-0", "node-a")
+		pv1 := newPVWithAffinity("pv-1", "ns-b", "datadir-rpb-0", "node-b")
+		r := newController(t, s, pod0, pod1, pvc0, pvc1, pv0, pv1)
+		got, err := r.multiNodeEventInProgress(ctx)
+		require.NoError(t, err)
+		require.True(t, got, "v2 pod via cluster.redpanda.com/operator=v2 label must count toward Gate 2")
 	})
 
 	t.Run("stuck pod whose PV node can't be resolved is skipped from counting", func(t *testing.T) {

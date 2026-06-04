@@ -109,6 +109,57 @@ func TestInjectNodeUnavailableTolerations(t *testing.T) {
 		require.Len(t, got, 3)
 		require.Equal(t, "custom.example.com/maintenance", got[0].Key)
 	})
+
+	t.Run("NoSchedule-only toleration on same key does not cover", func(t *testing.T) {
+		// User's NoSchedule entry would only block scheduling, not
+		// eviction. The operator must still inject its NoExecute
+		// toleration alongside, or the pod is evicted on NotReady.
+		existing := []corev1.Toleration{{
+			Key:      corev1.TaintNodeNotReady,
+			Operator: corev1.TolerationOpExists,
+			Effect:   corev1.TaintEffectNoSchedule,
+		}}
+		got := resources.InjectNodeUnavailableTolerations(existing, ptr.To(int64(1800)))
+		require.Len(t, got, 3, "NoSchedule should not be treated as covering NoExecute")
+		// The original NoSchedule entry is preserved.
+		require.Equal(t, corev1.TaintEffectNoSchedule, got[0].Effect)
+		// And the operator-added NoExecute entries are present.
+		var sawInjectedNotReady, sawInjectedUnreachable bool
+		for _, tol := range got[1:] {
+			if tol.Effect == corev1.TaintEffectNoExecute && tol.Key == corev1.TaintNodeNotReady {
+				sawInjectedNotReady = true
+			}
+			if tol.Effect == corev1.TaintEffectNoExecute && tol.Key == corev1.TaintNodeUnreachable {
+				sawInjectedUnreachable = true
+			}
+		}
+		require.True(t, sawInjectedNotReady)
+		require.True(t, sawInjectedUnreachable)
+	})
+
+	t.Run("Equal-with-specific-value on same key does not cover", func(t *testing.T) {
+		// The NotReady/Unreachable taints have empty value, so an
+		// Equal-with-specific-value toleration does not match the
+		// taint and the pod is still evicted.
+		existing := []corev1.Toleration{{
+			Key:      corev1.TaintNodeNotReady,
+			Operator: corev1.TolerationOpEqual,
+			Value:    "some-value",
+			Effect:   corev1.TaintEffectNoExecute,
+		}}
+		got := resources.InjectNodeUnavailableTolerations(existing, ptr.To(int64(1800)))
+		require.Len(t, got, 3)
+		// The user's entry is preserved.
+		require.Equal(t, "some-value", got[0].Value)
+		// The injected NotReady is also present (with no value).
+		var sawInjectedNotReady bool
+		for _, tol := range got[1:] {
+			if tol.Key == corev1.TaintNodeNotReady && tol.Effect == corev1.TaintEffectNoExecute && tol.Value == "" {
+				sawInjectedNotReady = true
+			}
+		}
+		require.True(t, sawInjectedNotReady, "must inject our own NotReady when user's Equal-with-value doesn't cover")
+	})
 }
 
 // TestMaybeInjectNodeUnavailableTolerations verifies the

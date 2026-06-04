@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -35,6 +36,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	operatorlabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -55,6 +57,47 @@ const PauseAnnotation = "operator.redpanda.com/pause-pvc-unbinder"
 // concurrent K8s-wide disruption detected, or another sibling unbind
 // in flight).
 const requeueDuringDisruption = 30 * time.Second
+
+// Gate names used as label values on the
+// `operator_controller_pvc_unbinder_gate_deferred_total` metric and as
+// the Event Reason recorded on the Pod whose remediation was deferred.
+// Keep this list closed — these are the only allowed values.
+const (
+	gateInFlight     = "in-flight"
+	gatePause        = "pause"
+	gateMultiNode    = "multi-node"
+	gatePVCRebinding = "pvc-rebinding"
+)
+
+// eventReasonGateDeferred is the EventReason emitted on the Pod when a
+// safety gate defers remediation. Operators watching for "why isn't
+// the PVCUnbinder acting on my stuck pod" can `kubectl describe pod`
+// and see this reason + the gate label.
+const eventReasonGateDeferred = "PVCUnbinderDeferred"
+
+// Gate 2 identifies "Redpanda broker pod" via two label sets, because
+// the three cluster types and the direct-Helm install don't share a
+// single label that uniquely marks operator-managed Redpanda:
+//
+//   - v1 Cluster (operator): `app.kubernetes.io/managed-by=redpanda-operator`
+//     (hardcoded at operator/pkg/labels/labels.go).
+//   - StretchCluster: same — multicluster render overrides the chart's
+//     managed-by to `redpanda-operator`.
+//   - v2 Redpanda (operator → chart): the chart writes
+//     `app.kubernetes.io/managed-by=Helm`, but the operator stamps
+//     `cluster.redpanda.com/operator=v2`.
+//   - Direct Helm install (no operator): no operator labels at all,
+//     and not considered a target of Gate 2.
+//
+// Filtering on `app.kubernetes.io/name=redpanda` would catch all of
+// these by default but breaks for users running with `nameOverride`
+// (which is a supported customization in production). So Gate 2 does
+// two LIST queries and unions the results by (namespace, name).
+const (
+	managedByLabelValue            = "redpanda-operator"
+	clusterRedpandaOperatorLabel   = "cluster.redpanda.com/operator"
+	clusterRedpandaOperatorV2Value = "v2"
+)
 
 // Controller is a Kubernetes Controller that watches for Pods stuck in a
 // Pending state due to volume affinities and attempts a remediation.
@@ -102,6 +145,11 @@ type Controller struct {
 	// across K8s clusters in multicluster mode. Empty for single-cluster
 	// operation.
 	ClusterName string
+	// Recorder, if non-nil, receives an Event on the Pod every time a
+	// safety gate defers remediation. Nil-safe — if unset, only the
+	// metric is incremented. Uses the new k8s.io/client-go/tools/events
+	// API rather than the deprecated tools/record API.
+	Recorder events.EventRecorder
 }
 
 // MulticlusterController is a multicluster-aware version of Controller that
@@ -115,6 +163,21 @@ type MulticlusterController struct {
 	// this MulticlusterController. SetupWithMultiClusterManager
 	// allocates a fresh one if nil.
 	Tracker *InFlightTracker
+}
+
+// recordGateDeferred increments the gate-defer metric and emits a
+// Kubernetes Event on the Pod whose reconcile got deferred. The metric
+// path always runs (operators rely on it to alert on silent inaction);
+// the Event is skipped when Recorder is nil (the test path).
+//
+// `action` is the new-events-API verb describing what the unbinder
+// just did ("Defer"); `gate` is included in the message so operators
+// can tell which gate fired from `kubectl describe pod`.
+func (r *Controller) recordGateDeferred(pod *corev1.Pod, gate, message string) {
+	observability.PVCUnbinderGateDeferred.WithLabelValues(gate).Inc()
+	if r.Recorder != nil && pod != nil {
+		r.Recorder.Eventf(pod, nil, corev1.EventTypeNormal, eventReasonGateDeferred, "Defer", "gate=%s: %s", gate, message)
+	}
 }
 
 func (r *MulticlusterController) SetupWithMultiClusterManager() error {
@@ -158,6 +221,7 @@ func (r *MulticlusterController) Reconcile(ctx context.Context, req mcreconcile.
 		AllowRebinding: r.AllowRebinding,
 		Tracker:        r.Tracker,
 		ClusterName:    req.ClusterName,
+		Recorder:       k8sCluster.GetEventRecorder("pvc-unbinder"),
 	}
 	return c.Reconcile(ctx, req.Request)
 }
@@ -166,13 +230,25 @@ func (r *MulticlusterController) Reconcile(ctx context.Context, req mcreconcile.
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch
 // +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // +kubebuilder:rbac:groups=core,namespace=default,resources=pods,verbs=get;list;watch;delete
-// +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;watch;delete;
+// +kubebuilder:rbac:groups=core,namespace=default,resources=persistentvolumeclaims,verbs=get;list;watch;delete
+
+// Gate 2 (multiNodeEventInProgress) needs cluster-wide Pod LIST to
+// detect multi-node K8s events. This is in addition to the namespaced
+// Pod permission above. If the operator is installed namespaced and
+// this ClusterRole permission is denied, Gate 2 fails closed and
+// every reconcile defers — see the graceful fallback in
+// multiNodeEventInProgress.
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=list;watch
 
 func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Tracker == nil {
 		r.Tracker = NewInFlightTracker(DefaultTrackerTTL)
+	}
+	if r.Recorder == nil {
+		r.Recorder = mgr.GetEventRecorder("pvc-unbinder")
 	}
 	selectorPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		if r.Selector == nil {
@@ -232,9 +308,17 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	for name, pvc := range clusterPVCsByName {
 		visibleUIDs[name] = pvc.UID
 	}
-	if key := r.trackerKey(&pod); key != "" && r.Tracker.IsHeld(key, visibleUIDs) {
-		logger.Info("recent unbind for this cluster not yet observed as settled; deferring", "name", pod.Name)
-		return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+	if key := r.trackerKey(&pod); key != "" {
+		held, err := r.Tracker.IsHeldWithVerify(ctx, key, visibleUIDs, r.verifyPVCSettled(pod.Namespace))
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if held {
+			const msg = "recent unbind for this cluster not yet observed as settled; deferring"
+			logger.Info(msg, "name", pod.Name)
+			r.recordGateDeferred(&pod, gateInFlight, msg)
+			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+		}
 	}
 
 	// Gate 1: parent CR has the pause annotation set. Operators set this
@@ -243,7 +327,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if paused, err := r.isClusterPaused(ctx, &pod); err != nil {
 		return ctrl.Result{}, err
 	} else if paused {
-		logger.Info("parent CR is paused via annotation; skipping", "name", pod.Name)
+		const msg = "parent CR is paused via annotation; skipping"
+		logger.Info(msg, "name", pod.Name)
+		r.recordGateDeferred(&pod, gatePause, msg)
 		return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 	}
 
@@ -261,7 +347,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if multiNode, err := r.multiNodeEventInProgress(ctx); err != nil {
 		return ctrl.Result{}, err
 	} else if multiNode {
-		logger.Info("stuck Pods are pinned to multiple nodes; deferring as a likely K8s-wide event", "name", pod.Name)
+		const msg = "stuck Pods are pinned to multiple nodes; deferring as a likely K8s-wide event"
+		logger.Info(msg, "name", pod.Name)
+		r.recordGateDeferred(&pod, gateMultiNode, msg)
 		return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 	}
 
@@ -271,7 +359,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// window; Gate 3 covers the recreated-but-not-yet-bound window.
 	for _, pvc := range clusterPVCsByName {
 		if pvc.Spec.VolumeName == "" {
-			logger.Info("a recreated PVC in this cluster has no volumeName yet; deferring", "name", pod.Name)
+			const msg = "a recreated PVC in this cluster has no volumeName yet; deferring"
+			logger.Info(msg, "name", pod.Name)
+			r.recordGateDeferred(&pod, gatePVCRebinding, msg)
 			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 		}
 	}
@@ -347,7 +437,18 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// 3. Delete all Bound PVCs, capturing the UID we observed at
 	// deletion time so the tracker can later verify the cache has seen
 	// the recreated PVC (same name, new UID).
+	//
+	// Deferring Mark on the deletedByName map ensures that if any PVC
+	// delete, PV recycle, or pod delete fails partway through, the
+	// PVCs we already deleted are still recorded as in-flight. Without
+	// this, a partial failure leaves the next reconcile blind to the
+	// fact that an unbind has started for this cluster.
 	deletedByName := map[string]types.UID{}
+	defer func() {
+		if key := r.trackerKey(&pod); key != "" {
+			r.Tracker.Mark(key, deletedByName)
+		}
+	}()
 	for key, pvc := range pvcByKey {
 		if pvc == nil || pvc.Spec.VolumeName == "" {
 			continue
@@ -400,15 +501,6 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		},
 	}); err != nil {
 		return ctrl.Result{}, err
-	}
-
-	// Record the deleted PVCs' UIDs so subsequent reconciles defer
-	// until the cache observes the StatefulSet recreating each one with
-	// a new UID. Without this, the cache-staleness window between
-	// delete-propagated and recreate-observed lets Gate 3 falsely
-	// conclude "no unbind in flight" and act on a sibling Pod.
-	if key := r.trackerKey(&pod); key != "" {
-		r.Tracker.Mark(key, deletedByName)
 	}
 
 	return ctrl.Result{}, nil
@@ -602,21 +694,23 @@ func cannotCheckCRType(err error) bool {
 }
 
 // multiNodeEventInProgress reports whether the set of currently-stuck
-// StatefulSet pods spans more than one distinct node. Returning true
-// means the unbinder should defer — the symptom matches a K8s-wide
+// operator-managed pods spans more than one distinct node. Returning
+// true means the unbinder should defer — the symptom matches a K8s-wide
 // event (cloud upgrade, AZ flake, node-pool surge) rather than a
 // single-node failure.
 //
 // Counting distinct nodes rather than distinct pods matters for the
 // case where multiple co-tenant pods share a failed node — that's a
 // legitimate single-node failure that the unbinder *should* act on,
-// not a multi-node K8s event. The check is K8s-cluster-wide (not
-// filtered by the operator's Selector) so an outage that disrupts
-// multiple Redpanda clusters at once is correctly identified.
+// not a multi-node K8s event.
 //
-// Each stuck pod's node is resolved via the NodeAffinity of the PV
-// bound to its PVCs. Pods whose PV / NodeAffinity / hostname can't be
-// resolved are skipped (we can't classify them as same-or-different).
+// The pod list is scoped by `app.kubernetes.io/managed-by=
+// redpanda-operator` so unrelated workloads with stuck local-PV pods
+// can't push this gate to "multi-node" and cause silent inaction.
+// Cross-Redpanda-cluster events are still caught because every cluster
+// the operator manages carries this label. Pods whose PV /
+// NodeAffinity / hostname can't be resolved are skipped (we can't
+// classify them as same-or-different).
 func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error) {
 	var pvList corev1.PersistentVolumeList
 	if err := r.Client.List(ctx, &pvList); err != nil {
@@ -635,9 +729,43 @@ func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error)
 		nodeByClaim[pv.Spec.ClaimRef.Namespace+"/"+pv.Spec.ClaimRef.Name] = hostname
 	}
 
-	var podList corev1.PodList
-	if err := r.Client.List(ctx, &podList); err != nil {
-		return false, err
+	// Two label-scoped LIST queries unioned by (namespace, name):
+	//   - v1 + StretchCluster pods carry managed-by=redpanda-operator.
+	//   - v2 Redpanda pods carry cluster.redpanda.com/operator=v2 (the
+	//     chart-set managed-by=Helm is identical to a direct Helm
+	//     install and can't be used to distinguish).
+	pods := map[string]*corev1.Pod{}
+	for _, sel := range []labels.Set{
+		{operatorlabels.ManagedByKey: managedByLabelValue},
+		{clusterRedpandaOperatorLabel: clusterRedpandaOperatorV2Value},
+	} {
+		var podList corev1.PodList
+		if err := r.Client.List(ctx, &podList, &client.ListOptions{
+			LabelSelector: labels.SelectorFromSet(sel),
+		}); err != nil {
+			// In namespaced installs the cluster-wide ClusterRole
+			// binding may be absent — Gate 2 then can't see the
+			// K8s-wide signal. Fail open rather than fail closed:
+			// returning an error here would defer the reconcile,
+			// which combined with permanent permission denial would
+			// stall every unbind forever. Gate 3 (per-cluster PVC
+			// serialization) and Gate 0 (cache-staleness bridge)
+			// still protect against concurrent unbinds for the same
+			// Redpanda cluster.
+			if apierrors.IsForbidden(err) {
+				log.FromContext(ctx).Info("cluster-wide Pod LIST forbidden; Gate 2 disabled, swap-prevention falls back to Gates 0+3", "error", err)
+				return false, nil
+			}
+			return false, err
+		}
+		for i := range podList.Items {
+			p := &podList.Items[i]
+			pods[p.Namespace+"/"+p.Name] = p
+		}
+	}
+	podList := corev1.PodList{Items: make([]corev1.Pod, 0, len(pods))}
+	for _, p := range pods {
+		podList.Items = append(podList.Items, *p)
 	}
 	nodes := map[string]struct{}{}
 	for i := range podList.Items {
@@ -661,9 +789,20 @@ func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error)
 }
 
 // nodeFromPVAffinity extracts the hostname value pinned by a PV's
-// NodeAffinity (the standard kubernetes.io/hostname selector that
-// Local volumes carry). Returns "" if the PV has no NodeAffinity or
-// uses an affinity expression we don't recognize (e.g. a topology key).
+// NodeAffinity, used by Gate 2 to bucket stuck pods by their pinned
+// node. Only `kubernetes.io/hostname` `In` selectors with a single
+// value are recognized — that's the shape Local / HostPath volumes
+// use, and the actual unbinder only ever acts on those (see the
+// `pv.Spec.HostPath == nil && pv.Spec.Local == nil` filter in
+// Reconcile). PVs with zone-topology affinity, NotIn selectors,
+// multi-value `In`, or unfamiliar keys aren't in the unbinder's scope
+// in the first place, so they don't need to contribute to Gate 2's
+// distinct-node count.
+//
+// Gate 2 is best-effort regardless: any PV we can't classify just
+// doesn't contribute to the count. The swap-prevention invariant
+// still rests on Gate 3 (per-cluster PVC serialization) plus Gate 0
+// (cache-staleness bridge).
 func nodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 	if pv.Spec.NodeAffinity == nil || pv.Spec.NodeAffinity.Required == nil {
 		return ""
@@ -682,6 +821,47 @@ func nodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 		}
 	}
 	return ""
+}
+
+// verifyPVCSettled returns a [SettledVerifier] bound to the given
+// namespace. It does a live API Get (bypassing the informer cache via
+// the controller-runtime client, which by default reads through the
+// cache — see the note below) on the PVC name and reports whether
+// it's safe to drop the tracker entry:
+//
+//   - NotFound → not settled (the PVC was deleted but not yet
+//     recreated; the StatefulSet may still be working on it).
+//   - DeletionTimestamp != nil → not settled (stuck in Terminating,
+//     often a finalizer; whatever cleared the cache hasn't actually
+//     removed the object yet).
+//   - Otherwise → settled (the PVC exists fresh).
+//
+// Used by Gate 0 on TTL expiry. Without this check, a PVC stuck in
+// Terminating past the 1-minute TTL would let the tracker silently
+// drop its entry and a sibling reconcile would unbind another pod.
+//
+// Note on cache vs API: controller-runtime's split client serves Gets
+// from the informer cache by default. That's typically what we want
+// (cheap), but here we explicitly want the API-server view because
+// the *whole point* of this path is that the cache is stale. The
+// client we have is the cached one, so this is a best-effort live
+// check that may still hit the cache if it's been re-warmed — good
+// enough for the TTL-expiry narrow case.
+func (r *Controller) verifyPVCSettled(namespace string) SettledVerifier {
+	return func(ctx context.Context, name string) (bool, error) {
+		var pvc corev1.PersistentVolumeClaim
+		err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &pvc)
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		if pvc.DeletionTimestamp != nil {
+			return false, nil
+		}
+		return true, nil
+	}
 }
 
 // listClusterPVCsByName returns a name→PVC snapshot for the PVCs that

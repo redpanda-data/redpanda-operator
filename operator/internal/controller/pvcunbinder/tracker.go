@@ -10,11 +10,25 @@
 package pvcunbinder
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/types"
 )
+
+// SettledVerifier is an optional callback used by [InFlightTracker.IsHeld]
+// to confirm whether the tracker should drop an entry that has aged
+// past the TTL. The tracker calls it for each PVC name in the entry;
+// if any returns false (still missing from the API or stuck
+// Terminating), the entry is kept and the TTL window is reset.
+//
+// This bridges the rare case where the cache and the API both fail to
+// settle a deleted PVC within the TTL — e.g., the PVC has a finalizer
+// holding it in Terminating. Without this check, the TTL would drop
+// the tracker entry and the next reconcile would unbind a sibling pod
+// despite the original deletion still being in flight.
+type SettledVerifier func(ctx context.Context, name string) (settled bool, err error)
 
 // DefaultTrackerTTL is the upper bound on how long a tracker entry can
 // hold up subsequent reconciles for the same cluster. It's a safety net:
@@ -76,19 +90,55 @@ func NewInFlightTracker(ttl time.Duration) *InFlightTracker {
 // Auto-expires entries past the TTL and auto-expunges entries that the
 // cache shows have settled. Safe on a nil receiver (returns false).
 func (t *InFlightTracker) IsHeld(key string, visible map[string]types.UID) bool {
+	held, _ := t.IsHeldWithVerify(context.Background(), key, visible, nil)
+	return held
+}
+
+// IsHeldWithVerify is the TTL-fallback-aware variant of [IsHeld]. When
+// the entry's TTL has expired, instead of unconditionally dropping it,
+// the tracker calls `verify` on each PVC name. If any returns false
+// (still missing from the API or stuck Terminating), the entry's
+// `markedAt` is reset to now and the call returns held=true. This
+// closes the rare window where the informer cache and the API both
+// fail to settle a deleted PVC within the TTL (e.g., a finalizer
+// holds it in Terminating).
+//
+// Verify is invoked at most once per name per IsHeldWithVerify call,
+// and only on TTL expiry — the cache-based settled path remains the
+// hot, allocation-free check. Pass `verify == nil` (or use [IsHeld])
+// to keep the old TTL-drop behavior.
+//
+// Safe on a nil receiver (returns held=false, err=nil).
+func (t *InFlightTracker) IsHeldWithVerify(ctx context.Context, key string, visible map[string]types.UID, verify SettledVerifier) (bool, error) {
 	if t == nil {
-		return false
+		return false, nil
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	e, ok := t.entries[key]
 	if !ok {
-		return false
+		return false, nil
 	}
-	// TTL safety net.
+	// TTL safety net. Before dropping the entry, give the caller a
+	// chance to re-affirm via a live API check.
 	if time.Since(e.markedAt) >= t.ttl {
+		if verify == nil {
+			delete(t.entries, key)
+			return false, nil
+		}
+		for name := range e.deletedByName {
+			settled, err := verify(ctx, name)
+			if err != nil {
+				return false, err
+			}
+			if !settled {
+				e.markedAt = time.Now()
+				t.entries[key] = e
+				return true, nil
+			}
+		}
 		delete(t.entries, key)
-		return false
+		return false, nil
 	}
 	// Settled iff every deleted PVC name now resolves to a different
 	// UID in the cache. If the name is missing entirely, we're in the
@@ -96,12 +146,12 @@ func (t *InFlightTracker) IsHeld(key string, visible map[string]types.UID) bool 
 	for name, oldUID := range e.deletedByName {
 		currentUID, exists := visible[name]
 		if !exists || currentUID == oldUID {
-			return true
+			return true, nil
 		}
 	}
 	// Cache has caught up past every delete + recreate. Expunge.
 	delete(t.entries, key)
-	return false
+	return false, nil
 }
 
 // Mark records that a reconcile has just deleted PVCs from the

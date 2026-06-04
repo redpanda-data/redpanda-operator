@@ -32,14 +32,22 @@ import (
 //   - If `seconds` is a non-nil pointer to a number, that number is
 //     used as `tolerationSeconds`.
 //
-// User-set tolerations for these two keys are preserved (the helper
-// only appends defaults when no toleration for that specific key
-// already exists). This ensures operator-level fleet defaults don't
-// silently override per-cluster overrides provided via the CR or chart.
+// User-set tolerations for these two keys are preserved when they
+// already cover the NoExecute taint we care about. A toleration counts
+// as covering when it (a) targets a matching key, (b) has effect
+// NoExecute or the empty string (which matches all effects), and (c)
+// is broadly applicable — Operator=Exists, or Operator=Equal with an
+// empty Value. A NoSchedule-only or Equal-with-specific-value
+// toleration on the same key does NOT count as covering, since the
+// pod would still be evicted on NoExecute; in that case the operator
+// appends its own toleration alongside the user's.
 func InjectNodeUnavailableTolerations(existing []corev1.Toleration, seconds *int64) []corev1.Toleration {
 	hasNotReady := false
 	hasUnreachable := false
 	for _, t := range existing {
+		if !coversNoExecute(t) {
+			continue
+		}
 		switch t.Key {
 		case corev1.TaintNodeNotReady:
 			hasNotReady = true
@@ -65,6 +73,32 @@ func InjectNodeUnavailableTolerations(existing []corev1.Toleration, seconds *int
 		})
 	}
 	return out
+}
+
+// coversNoExecute reports whether `t` would actually prevent
+// NoExecute-based eviction for the broker pod. The NotReady and
+// Unreachable taints are applied by the node lifecycle controller
+// with an empty value, so a toleration covers iff:
+//
+//   - effect == NoExecute (or empty, which matches every effect), AND
+//   - operator == Exists (matches any value), OR
+//     operator == Equal (or empty, the default) with an empty Value.
+//
+// A NoSchedule-only toleration or an Equal-with-specific-value
+// toleration on the same key does not cover, since the pod would
+// still be evicted on NoExecute.
+func coversNoExecute(t corev1.Toleration) bool {
+	if t.Effect != corev1.TaintEffectNoExecute && t.Effect != "" {
+		return false
+	}
+	switch t.Operator {
+	case corev1.TolerationOpExists:
+		return true
+	case corev1.TolerationOpEqual, "":
+		return t.Value == ""
+	default:
+		return false
+	}
 }
 
 // MaybeInjectNodeUnavailableTolerations is the operator-flag-driven

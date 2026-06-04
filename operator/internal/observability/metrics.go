@@ -72,6 +72,21 @@ var (
 		Name:      "reconcile_last_success_timestamp_seconds",
 		Help:      "Unix timestamp of the most recent steady-state reconcile per controller. Use time() - this for seconds-since-last-success.",
 	}, []string{"controller"})
+
+	// PVCUnbinderGateDeferred counts reconciles where the PVCUnbinder
+	// declined to act because one of its gates fired. Use this to
+	// detect silent inaction — e.g., a forgotten pause annotation, a
+	// stuck multi-node-event signal, or a cache-staleness hold that
+	// never clears. The `gate` label values are: "pause" (Gate 1),
+	// "multi-node" (Gate 2), "in-flight" (Gate 0 cache-staleness
+	// bridge), and "pvc-rebinding" (Gate 3, a PVC in the cluster is
+	// recreated but not yet bound).
+	PVCUnbinderGateDeferred = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "pvc_unbinder_gate_deferred_total",
+		Help:      "PVCUnbinder reconciles that returned early because a safety gate deferred remediation, labeled by which gate fired.",
+	}, []string{"gate"})
 )
 
 // ====================================================================
@@ -174,6 +189,7 @@ func init() {
 		// Group 1 — reconcile-health (wrapper-emitted).
 		ReconcileSteadyStateTotal,
 		ReconcileLastSuccessTimestampSeconds,
+		PVCUnbinderGateDeferred,
 
 		// Group 2 — StretchCluster member status.
 		StretchClusterMemberReachable,
