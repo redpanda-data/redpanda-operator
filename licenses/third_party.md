@@ -307,7 +307,6 @@ Run `task generate:third-party-licenses-list`.
 | k8s.io/client-go | [Apache-2.0](https://github.com/kubernetes/client-go/blob/v0.35.1/LICENSE) |
 | k8s.io/client-go/third_party/forked/golang/template | [BSD-3-Clause](https://github.com/kubernetes/client-go/blob/v0.35.1/third_party/forked/golang/LICENSE) |
 | k8s.io/component-base | [Apache-2.0](https://github.com/kubernetes/component-base/blob/v0.35.1/LICENSE) |
-| k8s.io/component-helpers | [Apache-2.0](https://github.com/kubernetes/component-helpers/blob/v0.35.1/LICENSE) |
 | k8s.io/klog/v2 | [Apache-2.0](https://github.com/kubernetes/klog/blob/v2.130.1/LICENSE) |
 | k8s.io/kms | [Apache-2.0](https://github.com/kubernetes/kms/blob/v0.35.1/LICENSE) |
 | k8s.io/kube-openapi/pkg | [Apache-2.0](https://github.com/kubernetes/kube-openapi/blob/a19766b6e2d4/LICENSE) |
