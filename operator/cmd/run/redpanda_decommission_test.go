@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -85,12 +86,19 @@ func TestDecommissionControllerPrecedence(t *testing.T) {
 }
 
 func redpandaSTS(name, namespace, instance string, replicas int32) *appsv1.StatefulSet {
+	return redpandaSTSWithName(name, namespace, instance, "redpanda", replicas)
+}
+
+// redpandaSTSWithName builds a StatefulSet whose app.kubernetes.io/name label is
+// nameLabel, modeling the chart's behavior of stamping spec.clusterSpec.nameOverride
+// into that label. Ownership is always carried by the stable instance label.
+func redpandaSTSWithName(name, namespace, instance, nameLabel string, replicas int32) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels: map[string]string{
-				pkglabels.NameKey:     "redpanda",
+				pkglabels.NameKey:     nameLabel,
 				pkglabels.InstanceKey: instance,
 			},
 		},
@@ -111,6 +119,55 @@ func readyRedpanda(name, namespace string) *redpandav1alpha2.Redpanda {
 	return rp
 }
 
+// TestRedpandaDecommissionerSelector locks in the fix for the nameOverride
+// regression: the operator-wide decommissioner must select StatefulSets and
+// PVCs by the stable app.kubernetes.io/instance label, never by
+// app.kubernetes.io/name. A cluster that sets spec.clusterSpec.nameOverride has
+// app.kubernetes.io/name=<override>, so a name-based selector would silently
+// exclude it from decommissioning entirely.
+func TestRedpandaDecommissionerSelector(t *testing.T) {
+	selector, err := redpandaDecommissionerSelector()
+	require.NoError(t, err)
+
+	cases := []struct {
+		name   string
+		labels map[string]string
+		match  bool
+	}{
+		{
+			name:   "default name label",
+			labels: map[string]string{pkglabels.NameKey: "redpanda", pkglabels.InstanceKey: "redpanda"},
+			match:  true,
+		},
+		{
+			name:   "nameOverride name label still matches",
+			labels: map[string]string{pkglabels.NameKey: "my-override", pkglabels.InstanceKey: "my-release"},
+			match:  true,
+		},
+		{
+			name:   "instance label present without name label",
+			labels: map[string]string{pkglabels.InstanceKey: "my-release"},
+			match:  true,
+		},
+		{
+			name:   "no instance label is excluded",
+			labels: map[string]string{pkglabels.NameKey: "redpanda"},
+			match:  false,
+		},
+		{
+			name:   "no labels at all is excluded",
+			labels: map[string]string{},
+			match:  false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.match, selector.Matches(labels.Set(tc.labels)))
+		})
+	}
+}
+
 func TestRedpandaDecommissionerAdapter(t *testing.T) {
 	ctx := context.Background()
 
@@ -128,6 +185,34 @@ func TestRedpandaDecommissionerAdapter(t *testing.T) {
 		got, err := adapter.desiredReplicas(ctx, base)
 		require.NoError(t, err)
 		assert.Equal(t, int32(5), got, "should sum base(3) + pool-a(2), excluding other cluster")
+	})
+
+	// Regression for the nameOverride finding: a cluster that sets
+	// spec.clusterSpec.nameOverride has app.kubernetes.io/name=<override> on its
+	// StatefulSets, but the instance label (and thus ownership resolution) is
+	// unaffected. The adapter must still resolve it, sum its pools, and pass the
+	// filter.
+	t.Run("resolves a cluster that sets nameOverride", func(t *testing.T) {
+		rp := readyRedpanda("my-release", "ns")
+		base := redpandaSTSWithName("my-release", "ns", "my-release", "my-override", 3)
+		poolA := redpandaSTSWithName("my-release-pool-a", "ns", "my-release", "my-override", 2)
+
+		c := fake.NewClientBuilder().WithScheme(controller.V2Scheme).
+			WithObjects(rp, base, poolA).Build()
+		adapter := &redpandaDecommissionerAdapter{client: c}
+
+		got, err := adapter.getRedpanda(ctx, base)
+		require.NoError(t, err)
+		require.NotNil(t, got)
+		assert.Equal(t, "my-release", got.Name)
+
+		replicas, err := adapter.desiredReplicas(ctx, base)
+		require.NoError(t, err)
+		assert.Equal(t, int32(5), replicas, "should sum base(3) + pool-a(2) regardless of nameOverride")
+
+		ok, err := adapter.filter(ctx, base)
+		require.NoError(t, err)
+		assert.True(t, ok)
 	})
 
 	t.Run("getRedpanda returns nil for non-Redpanda StatefulSet", func(t *testing.T) {

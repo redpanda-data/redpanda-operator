@@ -24,7 +24,6 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -47,7 +46,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	pkglabels "github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
@@ -538,14 +536,23 @@ func Run(
 
 	if runDecommission {
 		// NodePool-aware, centralized decommissioner for V2 (Redpanda) clusters.
-		// Watches chart-rendered Redpanda StatefulSets (app.kubernetes.io/name=redpanda)
-		// and resolves each back to its Redpanda CR for the admin client and the
-		// cluster-wide desired replica count.
+		// Watches chart-rendered Redpanda StatefulSets and resolves each back to
+		// its Redpanda CR (via the app.kubernetes.io/instance label) for the admin
+		// client and the cluster-wide desired replica count.
+		//
+		// The selector gates which objects the controller watches (notably PVCs,
+		// which have no owner ref and so are matched by label). It must NOT key off
+		// app.kubernetes.io/name (see redpandaDecommissionerSelector): that label
+		// carries the chart's nameOverride and would exclude clusters that set it.
+		selector, err := redpandaDecommissionerSelector()
+		if err != nil {
+			return err
+		}
 		adapter := redpandaDecommissionerAdapter{client: mgr.GetClient(), factory: factory}
 		d := decommissioning.NewStatefulSetDecommissioner(
 			mgr,
 			adapter.getAdminClient,
-			decommissioning.WithSelector(labels.SelectorFromSet(labels.Set{pkglabels.NameKey: "redpanda"})),
+			decommissioning.WithSelector(selector),
 			decommissioning.WithFilter(adapter.filter),
 			// A V2 cluster may span multiple StatefulSets (NodePools); the
 			// excess-broker gate must compare against the sum of every pool's
