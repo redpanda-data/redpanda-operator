@@ -17,6 +17,8 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -39,10 +41,39 @@ type redpandaDecommissionerAdapter struct {
 	factory internalclient.ClientFactory
 }
 
+// redpandaDecommissionerSelector returns the label selector that gates which
+// objects the operator-wide StatefulSetDecommissioner watches. The selector is
+// applied to PVCs (which have no controller owner ref and so must be matched by
+// label) and acts as a cheap pre-filter for StatefulSets before the adapter
+// resolves true ownership.
+//
+// It deliberately keys off the stable app.kubernetes.io/instance label (the
+// Redpanda release/CR name, stamped on both broker StatefulSets and their
+// datadir PVCs) rather than app.kubernetes.io/name. The chart derives
+// app.kubernetes.io/name from spec.clusterSpec.nameOverride (defaulting to
+// "redpanda" but user-overridable), so a hard-coded
+// app.kubernetes.io/name=redpanda selector would silently exclude every cluster
+// that sets nameOverride — its StatefulSets and PVCs would be filtered out
+// before adapter.filter / getRedpanda ever ran, and excess brokers and orphaned
+// PVCs would never be reconciled. Requiring only the presence of the instance
+// label keeps the watch broad and stable; adapter.filter / getRedpanda then
+// validate ownership by resolving the instance label to a real Redpanda CR.
+func redpandaDecommissionerSelector() (labels.Selector, error) {
+	instanceLabelExists, err := labels.NewRequirement(pkglabels.InstanceKey, selection.Exists, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "building decommissioner label selector")
+	}
+	return labels.NewSelector().Add(*instanceLabelExists), nil
+}
+
 // getRedpanda resolves the Redpanda CR that owns sts via its
 // app.kubernetes.io/instance label. It returns (nil, nil) when the StatefulSet
 // is not a Redpanda-managed one (no/unknown instance label) so callers can skip
 // it without treating that as an error.
+//
+// Ownership is resolved exclusively through the instance label (the release/CR
+// name), which is stable regardless of spec.clusterSpec.nameOverride — so this
+// works identically for clusters that override app.kubernetes.io/name.
 func (b *redpandaDecommissionerAdapter) getRedpanda(ctx context.Context, sts *appsv1.StatefulSet) (*redpandav1alpha2.Redpanda, error) {
 	instance, ok := sts.Labels[pkglabels.InstanceKey]
 	if !ok || instance == "" {
