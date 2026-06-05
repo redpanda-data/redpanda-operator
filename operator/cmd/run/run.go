@@ -94,21 +94,29 @@ type RunOptions struct {
 	// a different set of cluster CRDs.
 	enableRedpandaControllers bool
 
-	enableV2NodepoolController          bool
-	enableConsoleController             bool
-	managerOptions                      ctrl.Options
-	clusterDomain                       string
-	secureMetrics                       bool
-	enableHTTP2                         bool
-	webhookEnabled                      bool
-	configuratorBaseImage               string
-	configuratorTag                     string
-	configuratorImagePullPolicy         string
-	redpandaDefaultTag                  string
-	redpandaDefaultRepository           string
-	decommissionWaitInterval            time.Duration
-	metricsTimeout                      time.Duration
-	rpClientTimeout                     time.Duration
+	enableV2NodepoolController  bool
+	enableConsoleController     bool
+	managerOptions              ctrl.Options
+	clusterDomain               string
+	secureMetrics               bool
+	enableHTTP2                 bool
+	webhookEnabled              bool
+	configuratorBaseImage       string
+	configuratorTag             string
+	configuratorImagePullPolicy string
+	redpandaDefaultTag          string
+	redpandaDefaultRepository   string
+	decommissionWaitInterval    time.Duration
+	metricsTimeout              time.Duration
+	rpClientTimeout             time.Duration
+	// Per-controller default reconcile (sync) intervals. A per-CR spec.interval
+	// (Topic) always takes precedence; the others have no per-CR field today.
+	topicSyncInterval                   time.Duration
+	userSyncInterval                    time.Duration
+	groupSyncInterval                   time.Duration
+	schemaSyncInterval                  time.Duration
+	roleSyncInterval                    time.Duration
+	shadowLinkSyncInterval              time.Duration
 	restrictToRedpandaVersion           string
 	ghostbuster                         bool
 	unbindPVCsAfter                     time.Duration
@@ -162,6 +170,17 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
 	cmd.Flags().DurationVar(&o.metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
 	cmd.Flags().DurationVar(&o.rpClientTimeout, "cluster-connection-timeout", 10*time.Second, "Set the timeout for internal clients used to connect to Redpanda clusters")
+	// Per-controller default reconcile (sync) intervals. These replace the
+	// previously hard-coded controller cadences (notably the Topic CRD's baked-in
+	// 3s default) and are rendered from the chart's controllers.<resource>.syncInterval
+	// values. A per-CR spec.interval (Topic) always takes precedence. Introduced
+	// in the v26.2 operator.
+	cmd.Flags().DurationVar(&o.topicSyncInterval, "topic-sync-interval", redpandacontrollers.DefaultTopicSyncInterval, "Default Topic reconcile interval. A per-CR spec.interval takes precedence.")
+	cmd.Flags().DurationVar(&o.userSyncInterval, "user-sync-interval", redpandacontrollers.DefaultUserSyncInterval, "Default User reconcile interval.")
+	cmd.Flags().DurationVar(&o.groupSyncInterval, "group-sync-interval", redpandacontrollers.DefaultGroupSyncInterval, "Default Group reconcile interval.")
+	cmd.Flags().DurationVar(&o.schemaSyncInterval, "schema-sync-interval", redpandacontrollers.DefaultSchemaSyncInterval, "Default Schema reconcile interval.")
+	cmd.Flags().DurationVar(&o.roleSyncInterval, "role-sync-interval", redpandacontrollers.DefaultRoleSyncInterval, "Default Role reconcile interval.")
+	cmd.Flags().DurationVar(&o.shadowLinkSyncInterval, "shadowlink-sync-interval", redpandacontrollers.DefaultShadowLinkSyncInterval, "Default ShadowLink reconcile interval.")
 	cmd.Flags().StringVar(&o.restrictToRedpandaVersion, "restrict-redpanda-version", "", "Restrict management of clusters to those with this version")
 	cmd.Flags().BoolVar(&o.ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
@@ -476,32 +495,32 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.topicSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.userSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.roleSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.groupSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Group")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.schemaSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

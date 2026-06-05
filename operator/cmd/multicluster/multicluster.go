@@ -90,6 +90,15 @@ type MulticlusterOptions struct {
 	ClusterConnectionTimeout time.Duration
 	ReconcileTimeout         time.Duration
 
+	// Per-controller default reconcile (sync) intervals. A per-CR spec.interval
+	// always takes precedence. Mirror the `run` command's flags.
+	TopicSyncInterval      time.Duration
+	UserSyncInterval       time.Duration
+	GroupSyncInterval      time.Duration
+	SchemaSyncInterval     time.Duration
+	RoleSyncInterval       time.Duration
+	ShadowLinkSyncInterval time.Duration
+
 	EnableConsoleController bool
 }
 
@@ -185,6 +194,14 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
 	cmd.Flags().BoolVar(&o.EnableConsoleController, "enable-console", true, "Specifies whether or not to enable the Redpanda Console controller")
+	// Per-controller default reconcile (sync) intervals. Same flags/defaults as
+	// the `run` command; a per-CR spec.interval takes precedence.
+	cmd.Flags().DurationVar(&o.TopicSyncInterval, "topic-sync-interval", redpandacontrollers.DefaultTopicSyncInterval, "Default Topic reconcile interval. A per-CR spec.interval takes precedence.")
+	cmd.Flags().DurationVar(&o.UserSyncInterval, "user-sync-interval", redpandacontrollers.DefaultUserSyncInterval, "Default User reconcile interval. A per-CR spec.interval takes precedence.")
+	cmd.Flags().DurationVar(&o.GroupSyncInterval, "group-sync-interval", redpandacontrollers.DefaultGroupSyncInterval, "Default Group reconcile interval. A per-CR spec.interval takes precedence.")
+	cmd.Flags().DurationVar(&o.SchemaSyncInterval, "schema-sync-interval", redpandacontrollers.DefaultSchemaSyncInterval, "Default Schema reconcile interval. A per-CR spec.interval takes precedence.")
+	cmd.Flags().DurationVar(&o.RoleSyncInterval, "role-sync-interval", redpandacontrollers.DefaultRoleSyncInterval, "Default Role reconcile interval. A per-CR spec.interval takes precedence.")
+	cmd.Flags().DurationVar(&o.ShadowLinkSyncInterval, "shadowlink-sync-interval", redpandacontrollers.DefaultShadowLinkSyncInterval, "Default ShadowLink reconcile interval.")
 }
 
 func Command() *cobra.Command {
@@ -387,27 +404,27 @@ func Run(
 	// kind the multicluster operator manages — by talking to the underlying
 	// Redpanda data plane via the shared client factory.
 	namespace := ""
-	if err := redpandacontrollers.SetupTopicControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+	if err := redpandacontrollers.SetupTopicControllerForMulticluster(ctx, manager, factory, namespace, opts.TopicSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
-	if err := redpandacontrollers.SetupUserControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+	if err := redpandacontrollers.SetupUserControllerForMulticluster(ctx, manager, factory, namespace, opts.UserSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
-	if err := redpandacontrollers.SetupRoleControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+	if err := redpandacontrollers.SetupRoleControllerForMulticluster(ctx, manager, factory, namespace, opts.RoleSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
-	if err := redpandacontrollers.SetupGroupControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+	if err := redpandacontrollers.SetupGroupControllerForMulticluster(ctx, manager, factory, namespace, opts.GroupSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Group")
 		return err
 	}
-	if err := redpandacontrollers.SetupSchemaControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+	if err := redpandacontrollers.SetupSchemaControllerForMulticluster(ctx, manager, factory, namespace, opts.SchemaSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}
-	if err := redpandacontrollers.SetupShadowLinkControllerForMulticluster(ctx, manager, factory, namespace); err != nil {
+	if err := redpandacontrollers.SetupShadowLinkControllerForMulticluster(ctx, manager, factory, namespace, opts.ShadowLinkSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 		return err
 	}

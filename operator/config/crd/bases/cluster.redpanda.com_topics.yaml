@@ -2347,10 +2347,17 @@ spec:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
               interval:
-                default: 3s
                 description: |-
                   Defines when the topic controller will schedule the next reconciliation.
-                  Default is 3 seconds.
+                  If unset, the operator-wide default is used (the operator's
+                  --topic-sync-interval flag, 30s by default). A per-CR value here always
+                  takes precedence over the operator default.
+
+                  NB: the CRD no longer carries a baked-in default (previously "3s"). Pinning
+                  the default in the operator instead of the CRD lets cluster operators tune
+                  reconcile pressure without editing every Topic. This is introduced in the
+                  v26.2 operator; on that upgrade, Topics that never set this field move from
+                  the old 3s cadence to the operator default.
                 format: duration
                 type: string
               kafkaApiSpec:
@@ -5869,10 +5876,17 @@ spec:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
               interval:
-                default: 3s
                 description: |-
                   Defines when the topic controller will schedule the next reconciliation.
-                  Default is 3 seconds.
+                  If unset, the operator-wide default is used (the operator's
+                  --topic-sync-interval flag, 30s by default). A per-CR value here always
+                  takes precedence over the operator default.
+
+                  NB: the CRD no longer carries a baked-in default (previously "3s"). Pinning
+                  the default in the operator instead of the CRD lets cluster operators tune
+                  reconcile pressure without editing every Topic. This is introduced in the
+                  v26.2 operator; on that upgrade, Topics that never set this field move from
+                  the old 3s cadence to the operator default.
                 format: duration
                 type: string
               kafkaApiSpec:

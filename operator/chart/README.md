@@ -122,6 +122,52 @@ Sets the port for the webhook server to listen on.
 
 **Default:** `9443`
 
+### [controllers](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers)
+
+Default reconcile intervals for the per-CR controllers, rendered into the operator's `--<resource>-sync-interval` flags. Each `interval` is a Go duration string (for example `30s` or `5m`); leaving it empty (`""`) uses the operator's built-in default. The key is named `interval` to match the CRs' `spec.interval` field, which always takes precedence over these defaults. Introduced in the v26.2 operator. For example, to slow Topic reconciliation down to once a minute: `controllers: {topic: {interval: 1m}}`.
+
+**Default:**
+
+```
+{"group":{"interval":""},"role":{"interval":""},"schema":{"interval":""},"shadowLink":{"interval":""},"topic":{"interval":""},"user":{"interval":""}}
+```
+
+### [controllers.group.interval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers.group.interval)
+
+Group controller default reconcile interval (Go duration, e.g. `5m`). Empty (`""`) uses the operator default of `5m`. A Group's `spec.interval` overrides this.
+
+**Default:** `""`
+
+### [controllers.role.interval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers.role.interval)
+
+Role controller default reconcile interval (Go duration, e.g. `5m`). Empty (`""`) uses the operator default of `5m`. A RedpandaRole's `spec.interval` overrides this.
+
+**Default:** `""`
+
+### [controllers.schema.interval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers.schema.interval)
+
+Schema controller default reconcile interval (Go duration, e.g. `5m`). Empty (`""`) uses the operator default of `5m`. A Schema's `spec.interval` overrides this.
+
+**Default:** `""`
+
+### [controllers.shadowLink.interval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers.shadowLink.interval)
+
+ShadowLink controller default reconcile interval (Go duration, e.g. `5m`). Empty (`""`) uses the operator default of `5m`. (ShadowLink has no per-CR reconcile interval.)
+
+**Default:** `""`
+
+### [controllers.topic.interval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers.topic.interval)
+
+Topic controller default reconcile interval (Go duration, e.g. `30s`). Empty (`""`) uses the operator default of `30s`. A Topic's `spec.interval` overrides this.
+
+**Default:** `""`
+
+### [controllers.user.interval](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers.user.interval)
+
+User controller default reconcile interval (Go duration, e.g. `5m`). Empty (`""`) uses the operator default of `5m`. A User's `spec.interval` overrides this.
+
+**Default:** `""`
+
 ### [crds](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=crds)
 
 Flags to control CRD installation.

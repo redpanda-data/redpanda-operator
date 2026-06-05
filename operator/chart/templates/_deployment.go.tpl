@@ -175,6 +175,7 @@
 {{- $values := $dot.Values.AsMap -}}
 {{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
 {{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
+{{- $_ := (get (fromJson (include "operator.addControllerSyncIntervalArgs" (dict "a" (list $defaults $values)))) "r") -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
 {{- end -}}
@@ -193,6 +194,32 @@
 {{- $_is_returning = true -}}
 {{- (dict "r" $flags) | toJson -}}
 {{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.addControllerSyncIntervalArgs" -}}
+{{- $defaults := (index .a 0) -}}
+{{- $values := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (ne $values.controllers.topic.interval "") -}}
+{{- $_ := (set $defaults "--topic-sync-interval" $values.controllers.topic.interval) -}}
+{{- end -}}
+{{- if (ne $values.controllers.user.interval "") -}}
+{{- $_ := (set $defaults "--user-sync-interval" $values.controllers.user.interval) -}}
+{{- end -}}
+{{- if (ne $values.controllers.group.interval "") -}}
+{{- $_ := (set $defaults "--group-sync-interval" $values.controllers.group.interval) -}}
+{{- end -}}
+{{- if (ne $values.controllers.schema.interval "") -}}
+{{- $_ := (set $defaults "--schema-sync-interval" $values.controllers.schema.interval) -}}
+{{- end -}}
+{{- if (ne $values.controllers.role.interval "") -}}
+{{- $_ := (set $defaults "--role-sync-interval" $values.controllers.role.interval) -}}
+{{- end -}}
+{{- if (ne $values.controllers.shadowLink.interval "") -}}
+{{- $_ := (set $defaults "--shadowlink-sync-interval" $values.controllers.shadowLink.interval) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

@@ -194,7 +194,7 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 
 const userPasswordSecretIndex = "__user_referencing_password_secret"
 
-func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -243,10 +243,11 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 
 	ctrl := NewResourceController(mgr, factory, &UserReconciler{}, "UserReconciler")
 
-	// Every 5 minutes try and check to make sure no manual modifications
-	// happened on the resource synced to the cluster and attempt to correct
-	// any drift.
-	return builder.Complete(ctrl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+	// Periodically re-check to make sure no manual modifications happened on the
+	// resource synced to the cluster and attempt to correct any drift. The
+	// cadence is the operator-wide default (--user-sync-interval), falling back
+	// to DefaultUserSyncInterval.
+	return builder.Complete(ctrl.PeriodicallyReconcile(intervalOrDefault(syncInterval, DefaultUserSyncInterval)).FilterNamespace(namespace))
 }
 
 // SetupUserControllerForMulticluster registers the User reconciler against a
@@ -254,7 +255,7 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 // only watches StretchCluster cluster refs — Redpanda CRs are not deployed in
 // multicluster mode. Per-cluster password-secret indexes are still installed
 // so external Secret rotations (e.g. ESO) trigger immediate reconciliation.
-func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string, syncInterval time.Duration) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 			SkipNameValidation: ptr.To(true),
@@ -291,7 +292,7 @@ func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Ma
 
 	ctrl := NewResourceController(mgr, factory, &UserReconciler{}, "UserReconciler")
 
-	return builder.Complete(ctrl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+	return builder.Complete(ctrl.PeriodicallyReconcile(intervalOrDefault(syncInterval, DefaultUserSyncInterval)).FilterNamespace(namespace))
 }
 
 // enqueueUsersForSecret returns an event handler that, when a Secret changes,

@@ -92,6 +92,7 @@
 {{- $_ := (set $defaults "--webhook-key-path" (printf "%s%s" "/tmp/k8s-webhook-server/serving-certs" "/tls.key")) -}}
 {{- end -}}
 {{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
+{{- $_ := (get (fromJson (include "operator.addControllerSyncIntervalArgs" (dict "a" (list $defaults $values)))) "r") -}}
 {{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
 {{- $flags := (list "multicluster") -}}
 {{- range $key, $value := (merge (dict) $defaults $userProvided) -}}

@@ -668,6 +668,66 @@
       },
       "type": "object"
     },
+    "controllers": {
+      "additionalProperties": false,
+      "properties": {
+        "group": {
+          "additionalProperties": false,
+          "properties": {
+            "interval": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "role": {
+          "additionalProperties": false,
+          "properties": {
+            "interval": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "schema": {
+          "additionalProperties": false,
+          "properties": {
+            "interval": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "shadowLink": {
+          "additionalProperties": false,
+          "properties": {
+            "interval": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "topic": {
+          "additionalProperties": false,
+          "properties": {
+            "interval": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "user": {
+          "additionalProperties": false,
+          "properties": {
+            "interval": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "crds": {
       "additionalProperties": false,
       "properties": {

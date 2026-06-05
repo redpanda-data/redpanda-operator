@@ -224,3 +224,10 @@ multicluster:
 -- monitoring-rules-enabled --
 monitoring:
   rulesEnabled: true
+
+-- controllers-sync-intervals --
+controllers:
+  topic:
+    interval: 45s
+  user:
+    interval: 20s

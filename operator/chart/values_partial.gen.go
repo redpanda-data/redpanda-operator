@@ -48,6 +48,7 @@ type PartialValues struct {
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
+	Controllers           *PartialControllers           "json:\"controllers,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
 }
 
@@ -98,6 +99,15 @@ type PartialVectorizedControllers struct {
 	Enabled *bool "json:\"enabled,omitempty\""
 }
 
+type PartialControllers struct {
+	Topic      *PartialControllerSyncConfig "json:\"topic,omitempty\""
+	User       *PartialControllerSyncConfig "json:\"user,omitempty\""
+	Group      *PartialControllerSyncConfig "json:\"group,omitempty\""
+	Schema     *PartialControllerSyncConfig "json:\"schema,omitempty\""
+	Role       *PartialControllerSyncConfig "json:\"role,omitempty\""
+	ShadowLink *PartialControllerSyncConfig "json:\"shadowLink,omitempty\""
+}
+
 type PartialMulticluster struct {
 	Enabled                      *bool                       "json:\"enabled,omitempty\""
 	Service                      *PartialMulticlusterService "json:\"service,omitempty\""
@@ -130,6 +140,10 @@ type PartialWebhookConfig struct {
 type PartialLeaderElectionConfig struct {
 	LeaderElect  *bool   "json:\"leaderElect,omitempty\""
 	ResourceName *string "json:\"resourceName,omitempty\""
+}
+
+type PartialControllerSyncConfig struct {
+	Interval *string "json:\"interval,omitempty\""
 }
 
 type PartialMulticlusterService struct {
