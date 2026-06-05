@@ -130,11 +130,37 @@ type Values struct {
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
+	Controllers           Controllers                   `json:"controllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
 }
 
 type VectorizedControllers struct {
 	Enabled bool `json:"enabled"`
+}
+
+// ControllerSyncConfig configures one CR controller's default reconcile cadence.
+type ControllerSyncConfig struct {
+	// Interval overrides the operator's default reconcile interval for this
+	// controller; it is rendered into the operator's --<resource>-sync-interval
+	// flag. A Go duration string (e.g. "30s", "5m"). When empty, the operator's
+	// built-in default applies (Topic 30s; User/Group/Schema/Role/ShadowLink 5m).
+	// A per-CR spec.interval always takes precedence over this default. Named to
+	// match the CRs' spec.interval field.
+	//
+	// NB: no omitempty — values.yaml lists `interval: ""` explicitly, and
+	// TestValues requires the struct tags to mirror values.yaml.
+	Interval string `json:"interval"`
+}
+
+// Controllers configures the per-CR controllers' default reconcile intervals.
+// Introduced in the v26.2 operator.
+type Controllers struct {
+	Topic      ControllerSyncConfig `json:"topic"`
+	User       ControllerSyncConfig `json:"user"`
+	Group      ControllerSyncConfig `json:"group"`
+	Schema     ControllerSyncConfig `json:"schema"`
+	Role       ControllerSyncConfig `json:"role"`
+	ShadowLink ControllerSyncConfig `json:"shadowLink"`
 }
 
 type CRDs struct {

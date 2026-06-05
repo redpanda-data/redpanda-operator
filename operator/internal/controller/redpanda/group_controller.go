@@ -119,7 +119,7 @@ func (r *GroupReconciler) aclClient(ctx context.Context, request ResourceRequest
 	return request.factory.ACLsForCluster(ctx, request.object, request.clusterName, r.extraOptions...)
 }
 
-func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	factory := internalclient.NewFactory(mgr, expander)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -145,15 +145,16 @@ func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expande
 
 	controller := NewResourceController(mgr, factory, &GroupReconciler{}, "GroupReconciler")
 
-	// Every 5 minutes try and check to make sure no manual modifications
-	// happened on the resource synced to the cluster and attempt to correct
-	// any drift.
-	return builder.Complete(controller.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+	// Periodically re-check to make sure no manual modifications happened on the
+	// resource synced to the cluster and attempt to correct any drift. The
+	// cadence is the operator-wide default (--group-sync-interval), falling back
+	// to DefaultGroupSyncInterval.
+	return builder.Complete(controller.PeriodicallyReconcile(intervalOrDefault(syncInterval, DefaultGroupSyncInterval)).FilterNamespace(namespace))
 }
 
 // SetupGroupControllerForMulticluster registers the Group reconciler against a
 // multicluster manager and watches StretchCluster CRs.
-func SetupGroupControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+func SetupGroupControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string, syncInterval time.Duration) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 			SkipNameValidation: ptr.To(true),
@@ -170,5 +171,5 @@ func SetupGroupControllerForMulticluster(ctx context.Context, mgr multicluster.M
 
 	ctl := NewResourceController(mgr, factory, &GroupReconciler{}, "GroupReconciler")
 
-	return builder.Complete(ctl.PeriodicallyReconcile(5 * time.Minute).FilterNamespace(namespace))
+	return builder.Complete(ctl.PeriodicallyReconcile(intervalOrDefault(syncInterval, DefaultGroupSyncInterval)).FilterNamespace(namespace))
 }

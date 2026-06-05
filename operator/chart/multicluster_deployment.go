@@ -199,6 +199,9 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 	}
 
 	addLicenseFilePathArg(defaults, values)
+	// The multicluster operator runs the same per-CR controllers, so the
+	// controllers.<resource>.interval values apply here too.
+	addControllerSyncIntervalArgs(defaults, values)
 
 	userProvided := chartutil.ParseFlags(values.AdditionalCmdFlags)
 

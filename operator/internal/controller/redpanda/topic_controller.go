@@ -61,6 +61,10 @@ type TopicReconciler struct {
 	Manager      multicluster.Manager
 	Factory      internalclient.ClientFactory
 	RecordEvents bool
+	// SyncInterval is the operator-wide default reconcile interval applied when a
+	// Topic does not set spec.interval. When zero, DefaultTopicSyncInterval is
+	// used. A per-CR spec.interval always takes precedence.
+	SyncInterval time.Duration
 }
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=topics,verbs=get;list;watch;update;patch
@@ -142,10 +146,11 @@ func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	return nil
 }
 
-func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string) error {
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	r := &TopicReconciler{
-		Manager: mgr,
-		Factory: internalclient.NewFactory(mgr, expander),
+		Manager:      mgr,
+		Factory:      internalclient.NewFactory(mgr, expander),
+		SyncInterval: intervalOrDefault(syncInterval, DefaultTopicSyncInterval),
 	}
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -178,10 +183,11 @@ func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expande
 // SetupWithMulticlusterManager pattern used by the Console controller —
 // Redpanda CRs are not deployed in multicluster mode, so the only cluster ref
 // kind worth watching here is StretchCluster.
-func SetupTopicControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string) error {
+func SetupTopicControllerForMulticluster(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, namespace string, syncInterval time.Duration) error {
 	r := &TopicReconciler{
-		Manager: mgr,
-		Factory: factory,
+		Manager:      mgr,
+		Factory:      factory,
+		SyncInterval: intervalOrDefault(syncInterval, DefaultTopicSyncInterval),
 	}
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
@@ -204,7 +210,10 @@ func SetupTopicControllerForMulticluster(ctx context.Context, mgr multicluster.M
 func (r *TopicReconciler) reconcile(ctx context.Context, recorder record.EventRecorder, topic *redpandav1alpha2.Topic, clusterName string, l logr.Logger) (*redpandav1alpha2.Topic, ctrl.Result, error) {
 	l = l.WithName("reconcile")
 
-	interval := metav1.Duration{Duration: time.Second * 3}
+	// The reconcile cadence is the operator-wide default (from --topic-sync-interval,
+	// falling back to DefaultTopicSyncInterval) unless the Topic overrides it via
+	// spec.interval, which always wins.
+	interval := metav1.Duration{Duration: intervalOrDefault(r.SyncInterval, DefaultTopicSyncInterval)}
 	if topic.Spec.SynchronizationInterval != nil {
 		interval = *topic.Spec.SynchronizationInterval
 	}

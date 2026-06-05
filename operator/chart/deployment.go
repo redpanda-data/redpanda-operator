@@ -348,6 +348,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 	}
 
 	addLicenseFilePathArg(defaults, values)
+	addControllerSyncIntervalArgs(defaults, values)
 
 	if values.Webhook.Enabled {
 		defaults["--webhook-cert-path"] = webhookCertificatePath
@@ -365,6 +366,31 @@ func operatorArguments(dot *helmette.Dot) []string {
 	}
 
 	return flags
+}
+
+// addControllerSyncIntervalArgs renders the controllers.<resource>.interval
+// values into the operator's --<resource>-sync-interval flags. Only non-empty
+// values are rendered; an empty value leaves the operator's built-in default in
+// place. AdditionalCmdFlags still override these (userProvided wins on merge).
+func addControllerSyncIntervalArgs(defaults map[string]string, values Values) {
+	if values.Controllers.Topic.Interval != "" {
+		defaults["--topic-sync-interval"] = values.Controllers.Topic.Interval
+	}
+	if values.Controllers.User.Interval != "" {
+		defaults["--user-sync-interval"] = values.Controllers.User.Interval
+	}
+	if values.Controllers.Group.Interval != "" {
+		defaults["--group-sync-interval"] = values.Controllers.Group.Interval
+	}
+	if values.Controllers.Schema.Interval != "" {
+		defaults["--schema-sync-interval"] = values.Controllers.Schema.Interval
+	}
+	if values.Controllers.Role.Interval != "" {
+		defaults["--role-sync-interval"] = values.Controllers.Role.Interval
+	}
+	if values.Controllers.ShadowLink.Interval != "" {
+		defaults["--shadowlink-sync-interval"] = values.Controllers.ShadowLink.Interval
+	}
 }
 
 func addLicenseFilePathArg(defaults map[string]string, values Values) {

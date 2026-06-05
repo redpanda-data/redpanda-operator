@@ -63,10 +63,17 @@ type TopicSpec struct {
 	MetricsNamespace *string `json:"metricsNamespace,omitempty"`
 
 	// Defines when the topic controller will schedule the next reconciliation.
-	// Default is 3 seconds.
+	// If unset, the operator-wide default is used (the operator's
+	// --topic-sync-interval flag, 30s by default). A per-CR value here always
+	// takes precedence over the operator default.
+	//
+	// NB: the CRD no longer carries a baked-in default (previously "3s"). Pinning
+	// the default in the operator instead of the CRD lets cluster operators tune
+	// reconcile pressure without editing every Topic. This is introduced in the
+	// v26.2 operator; on that upgrade, Topics that never set this field move from
+	// the old 3s cadence to the operator default.
 	// +kubebuilder:validation:Type=string
 	// +kubebuilder:validation:Format=duration
-	// +kubebuilder:default="3s"
 	SynchronizationInterval *metav1.Duration `json:"interval,omitempty"`
 }
 
