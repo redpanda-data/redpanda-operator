@@ -1131,3 +1131,114 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 		})
 	}
 }
+
+// TestHasRecentlyReplacedPods pins the gate semantics that prevent the rolling
+// restart loop from deleting a second pod while a just-replaced peer is still
+// coming up — the window where Redpanda's cluster health view lags behind pod
+// state, so two pods can end up Terminating concurrently without it.
+func TestHasRecentlyReplacedPods(t *testing.T) {
+	pool := &MulticlusterStatefulSet{
+		clusterName: mcmanager.LocalCluster,
+		StatefulSet: &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool"}},
+	}
+	revisions := []*appsv1.ControllerRevision{
+		{ObjectMeta: metav1.ObjectMeta{Name: "old"}},
+		{ObjectMeta: metav1.ObjectMeta{Name: "new"}},
+	}
+
+	readyPod := func(name, rev string) *corev1.Pod {
+		return &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   name,
+				Labels: map[string]string{appsv1.StatefulSetRevisionLabel: rev},
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				Conditions: []corev1.PodCondition{
+					{Type: corev1.PodReady, Status: corev1.ConditionTrue},
+				},
+			},
+		}
+	}
+	notReadyPod := func(name, rev string) *corev1.Pod {
+		p := readyPod(name, rev)
+		p.Status.Conditions[0].Status = corev1.ConditionFalse
+		return p
+	}
+	terminatingPod := func(name, rev string) *corev1.Pod {
+		p := readyPod(name, rev)
+		now := metav1.Now()
+		p.DeletionTimestamp = &now
+		// Pods being deleted often retain Ready=True briefly while
+		// preStop hooks run; the gate must catch them anyway.
+		p.Finalizers = []string{"keep-alive-during-test"}
+		return p
+	}
+
+	for name, tt := range map[string]struct {
+		pods     []*corev1.Pod
+		expected bool
+	}{
+		"no pods": {},
+		"all pods on old revision are not 'recently replaced'": {
+			pods: []*corev1.Pod{
+				readyPod("pod-0", "old"),
+				readyPod("pod-1", "old"),
+			},
+			expected: false,
+		},
+		"all pods Ready on new revision is the post-roll steady state": {
+			pods: []*corev1.Pod{
+				readyPod("pod-0", "new"),
+				readyPod("pod-1", "new"),
+				readyPod("pod-2", "new"),
+			},
+			expected: false,
+		},
+		"just-replaced pod on new revision but not yet Ready blocks the next roll": {
+			pods: []*corev1.Pod{
+				notReadyPod("pod-0", "new"),
+				readyPod("pod-1", "old"),
+				readyPod("pod-2", "old"),
+			},
+			expected: true,
+		},
+		"any pod with a DeletionTimestamp blocks regardless of revision": {
+			pods: []*corev1.Pod{
+				terminatingPod("pod-0", "old"),
+				readyPod("pod-1", "old"),
+				readyPod("pod-2", "old"),
+			},
+			expected: true,
+		},
+		"new-revision pod stuck in Pending blocks": {
+			pods: []*corev1.Pod{
+				func() *corev1.Pod {
+					p := readyPod("pod-0", "new")
+					p.Status.Phase = corev1.PodPending
+					return p
+				}(),
+				readyPod("pod-1", "old"),
+			},
+			expected: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			withOrdinals := make([]*podsWithOrdinals, 0, len(tt.pods))
+			for i, p := range tt.pods {
+				withOrdinals = append(withOrdinals, &podsWithOrdinals{ordinal: i, pod: p})
+			}
+
+			tracker := NewPoolTracker(0)
+			tracker.addExisting(&poolWithOrdinals{
+				pods:      withOrdinals,
+				set:       pool,
+				revisions: revisions,
+			})
+
+			require.Equal(t, tt.expected, tracker.HasRecentlyReplacedPods())
+		})
+	}
+}
