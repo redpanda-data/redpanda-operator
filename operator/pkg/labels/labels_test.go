@@ -69,3 +69,26 @@ func TestLabels(t *testing.T) {
 		}
 	}
 }
+
+// TestWithNodePoolDoesNotCorruptSecondPool is a regression test for the mutation bug where
+// Helm adds app.kubernetes.io/managed-by: Helm to the Cluster CR, making cluster.Labels
+// non-nil. WithNodePool must produce independent labels for each nodepool.
+func TestWithNodePoolDoesNotCorruptSecondPool(t *testing.T) {
+	cluster := &vectorizedv1alpha1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testcluster",
+			Namespace: "default",
+			Labels:    map[string]string{"app.kubernetes.io/managed-by": "Helm"},
+		},
+	}
+
+	pool1Labels := labels.ForCluster(cluster).WithNodePool("blue-a")
+	pool2Labels := labels.ForCluster(cluster).WithNodePool("green-a")
+
+	if pool1Labels[labels.NodePoolKey] != "blue-a" {
+		t.Errorf("pool1 nodepool label: want blue-a, got %s", pool1Labels[labels.NodePoolKey])
+	}
+	if pool2Labels[labels.NodePoolKey] != "green-a" {
+		t.Errorf("pool2 nodepool label: want green-a, got %s (mutation bug)", pool2Labels[labels.NodePoolKey])
+	}
+}

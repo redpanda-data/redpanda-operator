@@ -53,7 +53,7 @@ type CommonLabels map[string]string
 // recommended by the kubernetes documentation https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func ForCluster(cluster *vectorizedv1alpha1.Cluster) CommonLabels {
 	dl := defaultClusterLabels(cluster)
-	labels := merge(cluster.Labels, dl)
+	labels := union(cluster.Labels, dl)
 
 	return labels
 }
@@ -108,27 +108,31 @@ func (cl CommonLabels) nodePoolSelectorLabels() k8slabels.Set {
 }
 
 func (cl CommonLabels) WithNodePool(nodePool string) CommonLabels {
-	return merge(cl, map[string]string{
-		"cluster.redpanda.com/nodepool": nodePool,
-	})
+	// union(cl, nil) hands back a fresh copy of cl, so mutating the result
+	// below can never corrupt cl itself or any other CommonLabels derived
+	// from the same underlying map (see the regression test). NodePoolKey is
+	// set unconditionally, rather than through union()'s "existing key wins"
+	// rule, since cl may already carry a (possibly different) nodepool value.
+	result := CommonLabels(union(cl, nil))
+	result[NodePoolKey] = nodePool
+	return result
 }
 
-// merge merges two sets of labels
-// if label is set in mainLabels, it won't be overwritten by newLabels
-func merge(
+// union returns a new map containing the union of mainLabels and newLabels;
+// neither input is mutated. If a key is set in mainLabels, that value wins
+// over newLabels.
+func union(
 	mainLabels map[string]string, newLabels map[string]string,
 ) map[string]string {
-	if mainLabels == nil {
-		mainLabels = make(map[string]string)
-	}
-
+	merged := make(map[string]string, len(mainLabels)+len(newLabels))
 	for k, v := range newLabels {
-		if _, ok := mainLabels[k]; !ok {
-			mainLabels[k] = v
-		}
+		merged[k] = v
+	}
+	for k, v := range mainLabels {
+		merged[k] = v
 	}
 
-	return mainLabels
+	return merged
 }
 
 func defaultClusterLabels(cluster *vectorizedv1alpha1.Cluster) map[string]string {
