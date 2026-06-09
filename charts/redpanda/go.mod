@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/charts/redpanda/v25
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/cert-manager/cert-manager v1.19.3
