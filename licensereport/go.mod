@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/licensereport
 
-go 1.25.0
+go 1.25.11
 
 require github.com/google/licenseclassifier/v2 v2.0.0
 
