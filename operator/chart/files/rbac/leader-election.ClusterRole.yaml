@@ -5,6 +5,12 @@ metadata:
   name: leader-election
 rules:
   - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - list
+  - apiGroups:
       - authentication.k8s.io
     resources:
       - tokenreviews

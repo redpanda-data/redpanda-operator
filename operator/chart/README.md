@@ -386,6 +386,10 @@ Sets deployment strategy. For details, see the [Kubernetes documentation](https:
 
 **Default:** `{"type":"RollingUpdate"}`
 
+### [telemetry.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=telemetry.enabled)
+
+**Default:** `true`
+
 ### [tolerations](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=tolerations)
 
 Taints to be tolerated by Pods. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).

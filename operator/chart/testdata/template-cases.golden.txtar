@@ -165,6 +165,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -195,6 +201,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -824,7 +836,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -1009,6 +1029,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -1039,6 +1065,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -1641,6 +1673,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -1671,6 +1709,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -2300,7 +2344,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 82:UkFHNyv
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -2512,6 +2564,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -2542,6 +2600,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -3164,6 +3228,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -3194,6 +3264,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -3822,7 +3898,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -4021,6 +4105,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -4051,6 +4141,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -4659,6 +4755,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -4689,6 +4791,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -5475,7 +5583,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -5719,6 +5835,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -5749,6 +5871,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -6614,6 +6742,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -6644,6 +6778,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -7275,7 +7415,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -7472,6 +7620,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -7502,6 +7656,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -8108,6 +8268,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -8138,6 +8304,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -8766,7 +8938,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -9004,6 +9184,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -9034,6 +9220,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -9728,6 +9920,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -9758,6 +9956,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -10387,7 +10591,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: Fd0:cOgp6ac
         imagePullPolicy: Always
         livenessProbe:
@@ -10670,6 +10882,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -10700,6 +10918,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -11427,6 +11651,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -11457,6 +11687,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -12100,7 +12336,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 1F5:82lZfTf2
         imagePullPolicy: Never
         livenessProbe:
@@ -12302,6 +12546,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -12332,6 +12582,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -12941,6 +13197,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -12971,6 +13233,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -13602,7 +13870,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: Hol:8ePENyCLz
         imagePullPolicy: Never
         livenessProbe:
@@ -13804,6 +14080,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -13834,6 +14116,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -14445,6 +14733,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -14475,6 +14769,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -15105,7 +15405,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: j:efh5i
         imagePullPolicy: Never
         livenessProbe:
@@ -15341,6 +15649,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -15371,6 +15685,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -15980,6 +16300,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -16010,6 +16336,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -16475,7 +16807,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -16683,6 +17023,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -16713,6 +17059,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -17336,6 +17688,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -17366,6 +17724,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -18002,7 +18366,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -18206,6 +18578,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -18236,6 +18614,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -18863,6 +19247,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -18893,6 +19283,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -19731,7 +20127,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -19940,6 +20344,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -19970,6 +20380,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -20746,6 +21162,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -20776,6 +21198,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -21295,7 +21723,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -21495,6 +21931,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -21525,6 +21967,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -22122,6 +22570,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -22152,6 +22606,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -22786,7 +23246,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -22994,6 +23462,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -23024,6 +23498,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -23641,6 +24121,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -23671,6 +24157,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -24301,7 +24793,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: YVfoVe:wqmCFiuJSq
         imagePullPolicy: Never
         livenessProbe:
@@ -24505,6 +25005,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -24535,6 +25041,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -25145,7 +25657,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 5ZJUE:25V2E90p
         imagePullPolicy: Always
         livenessProbe:
@@ -25511,6 +26031,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -25541,6 +26067,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -26215,7 +26747,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: hchsZ8:9lUTX
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -26593,6 +27133,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -26623,6 +27169,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -27241,6 +27793,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -27271,6 +27829,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -27949,7 +28513,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -28144,6 +28716,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -28174,6 +28752,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -28783,6 +29367,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -28813,6 +29403,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -29608,7 +30204,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -29803,6 +30407,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -29833,6 +30443,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -30600,7 +31216,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -30970,6 +31594,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -31000,6 +31630,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -31774,7 +32410,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: T1Xvq:JedSySWkwU
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -31989,6 +32633,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -32019,6 +32669,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -32630,6 +33286,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -32660,6 +33322,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -33531,7 +34199,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -33890,6 +34566,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -33920,6 +34602,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -34695,6 +35383,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -34725,6 +35419,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -35362,7 +36062,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: cWng:afUH16iMvi
         imagePullPolicy: Never
         livenessProbe:
@@ -35571,6 +36279,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -35601,6 +36315,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -36227,6 +36947,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -36257,6 +36983,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -36994,7 +37726,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 8ta:N5m1k
         imagePullPolicy: Always
         livenessProbe:
@@ -37413,6 +38153,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -37443,6 +38189,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -38226,7 +38978,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: OLVAhRBe:iR9tH
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -38562,6 +39322,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -38592,6 +39358,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -39166,7 +39938,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: Jy:QK8rajxXu7
         imagePullPolicy: Always
         livenessProbe:
@@ -39630,6 +40410,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -39660,6 +40446,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -40345,7 +41137,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: :yLRNE5
         imagePullPolicy: Never
         livenessProbe:
@@ -40688,6 +41488,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -40718,6 +41524,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -41520,7 +42332,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: O:F0pU
         imagePullPolicy: Never
         livenessProbe:
@@ -41780,6 +42600,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -41810,6 +42636,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -42438,6 +43270,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -42468,6 +43306,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -43234,7 +44078,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -43516,6 +44368,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -43546,6 +44404,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -44165,6 +45029,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -44195,6 +45065,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -44911,7 +45787,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -45271,6 +46155,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -45301,6 +46191,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -46204,7 +47100,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: h6rx:yXNMX
         imagePullPolicy: Always
         livenessProbe:
@@ -46758,6 +47662,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -46788,6 +47698,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -47665,7 +48581,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: :vO
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -48020,6 +48944,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -48050,6 +48980,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -48778,6 +49714,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -48808,6 +49750,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -49324,7 +50272,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: HJ:0ORIQruw
         imagePullPolicy: Always
         livenessProbe:
@@ -49677,6 +50633,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -49707,6 +50669,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -50478,6 +51446,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -50508,6 +51482,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -51391,7 +52371,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: JoEOn0Quud0uJ:Jzj6fJDqK
         imagePullPolicy: Always
         livenessProbe:
@@ -51808,6 +52796,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -51838,6 +52832,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -52642,7 +53642,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: bR:TxCthY7Ie
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -53273,7 +54281,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: :9dFbDt
         imagePullPolicy: Always
         livenessProbe:
@@ -54011,6 +55027,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -54041,6 +55063,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -54978,7 +56006,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: HOES5h7c:blks9
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -55446,6 +56482,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -55476,6 +56518,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -56618,7 +57666,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: cbG:0q7KunZ1RCP
         imagePullPolicy: Never
         livenessProbe:
@@ -57207,6 +58263,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -57237,6 +58299,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -57926,7 +58994,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: RF7Jmqe27:bC
         imagePullPolicy: Never
         livenessProbe:
@@ -58378,6 +59454,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -58408,6 +59490,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -59197,7 +60285,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: UqP:XrgP
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -60019,7 +61115,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 0HXtC:xSn6
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -60707,6 +61811,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -60737,6 +61847,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -61651,7 +62767,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 95JHcsXy:YVZ
         imagePullPolicy: Always
         livenessProbe:
@@ -62116,6 +63240,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -62146,6 +63276,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -62873,6 +64009,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -62903,6 +64045,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -63903,7 +65051,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: gkRs29P:kgK
         imagePullPolicy: Always
         livenessProbe:
@@ -64319,6 +65475,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -64349,6 +65511,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -65245,7 +66413,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: UG:zsECOIlUnlWTDC
         imagePullPolicy: Always
         livenessProbe:
@@ -65740,6 +66916,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -65770,6 +66952,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -66483,7 +67671,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: 929tqf:VZB
         imagePullPolicy: Never
         livenessProbe:
@@ -66905,6 +68101,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -66935,6 +68137,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -67683,7 +68891,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: FlBYj:fS
         imagePullPolicy: Always
         livenessProbe:
@@ -68252,6 +69468,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -68282,6 +69504,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -69149,7 +70377,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: Iedc3BYXQ:UoBs
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -69654,6 +70890,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -69684,6 +70926,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -70590,6 +71838,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -70620,6 +71874,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -71274,7 +72534,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: zg2YXP:Cp
         imagePullPolicy: Never
         livenessProbe:
@@ -71806,6 +73074,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -71836,6 +73110,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -72594,6 +73874,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -72624,6 +73910,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -73627,7 +74919,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: mLw:5QaeLH
         imagePullPolicy: Never
         livenessProbe:
@@ -74050,6 +75350,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -74080,6 +75386,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -74965,6 +76277,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -74995,6 +76313,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -75848,7 +77172,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: ZuVTlT:J
         imagePullPolicy: Never
         livenessProbe:
@@ -76323,6 +77655,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -76353,6 +77691,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -77083,6 +78427,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -77113,6 +78463,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -77743,7 +79099,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -77928,6 +79292,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -77958,6 +79328,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -78560,6 +79936,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -78590,6 +79972,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -79218,7 +80606,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -79447,6 +80843,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -79477,6 +80879,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -80170,6 +81578,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -80200,6 +81614,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -80828,7 +82248,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -81057,6 +82485,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -81087,6 +82521,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -81779,6 +83219,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -81809,6 +83255,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -82437,7 +83889,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -82622,6 +84082,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -82652,6 +84118,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -83254,6 +84726,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -83284,6 +84762,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -83912,7 +85396,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -84114,6 +85606,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -84144,6 +85642,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -84746,6 +86250,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -84776,6 +86286,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -85404,7 +86920,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -85589,6 +87113,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -85619,6 +87149,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -86221,6 +87757,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -86251,6 +87793,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -86879,7 +88427,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -87064,6 +88620,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -87094,6 +88656,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -87696,6 +89264,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -87726,6 +89300,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -88355,7 +89935,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -88547,6 +90135,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -88577,6 +90171,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -89179,6 +90779,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -89209,6 +90815,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -89838,7 +91450,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -90030,6 +91650,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -90060,6 +91686,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -90662,6 +92294,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -90692,6 +92330,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -91320,7 +92964,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -91539,6 +93191,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -91569,6 +93227,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -92171,6 +93835,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -92201,6 +93871,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -92829,7 +94505,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -93138,6 +94822,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -93168,6 +94858,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -93770,6 +95466,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -93800,6 +95502,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -94428,7 +96136,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -94649,6 +96365,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -94679,6 +96401,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -95281,6 +97009,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -95311,6 +97045,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -95939,7 +97679,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -96160,6 +97908,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -96190,6 +97944,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -96792,6 +98552,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -96822,6 +98588,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -97450,7 +99222,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -97670,6 +99450,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -97700,6 +99486,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -98302,6 +100094,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -98333,6 +100131,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -98354,6 +100158,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -99003,7 +100813,15 @@ spec:
         - --peer=west://west.example.com:9443
         command:
         - /redpanda-operator
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -99245,6 +101063,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -99276,6 +101100,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -99297,6 +101127,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -99978,6 +101814,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -100009,6 +101851,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -100030,6 +101878,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -100679,7 +102533,15 @@ spec:
         - --peer=east://east.example.com:9443
         command:
         - /redpanda-operator
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -100976,6 +102838,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -101007,6 +102875,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -101028,6 +102902,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -101709,6 +103589,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -101740,6 +103626,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -101761,6 +103653,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -102459,7 +104357,15 @@ spec:
         - --peer=east://east.example.com:9443
         command:
         - /redpanda-operator
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -102701,6 +104607,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -102732,6 +104644,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -102753,6 +104671,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -103434,6 +105358,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -103465,6 +105395,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -103486,6 +105422,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -104110,7 +106052,15 @@ spec:
         - --peer=east://some.other.dns.label:9443
         command:
         - /redpanda-operator
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -104359,6 +106309,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -104390,6 +106346,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -104411,6 +106373,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -105092,6 +107060,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -105123,6 +107097,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -105144,6 +107124,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -105767,7 +107753,15 @@ spec:
         - --peer=east://some.other.dns.label:9443
         command:
         - /redpanda-operator
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -106009,6 +108003,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -106040,6 +108040,12 @@ rules:
   - create
   - patch
 - apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
   - coordination.k8s.io
   resources:
   - leases
@@ -106061,6 +108067,12 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
 - apiGroups:
   - ""
   resources:
@@ -106742,6 +108754,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -106772,6 +108790,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -107422,7 +109446,15 @@ spec:
         - --webhook-enabled=true
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -107716,6 +109748,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -107746,6 +109784,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -108348,6 +110392,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -108378,6 +110428,12 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:
@@ -109006,7 +111062,15 @@ spec:
         - --webhook-enabled=false
         command:
         - /manager
-        env: []
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -109198,6 +111262,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
@@ -109228,6 +111298,1520 @@ rules:
   verbs:
   - create
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  - stretchclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - pods
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - controllerrevisions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  - issuers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  - nodepools
+  - redpandabrokerpools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
+  - redpandaroles
+  - schemas
+  - shadowlinks
+  - stretchclusters
+  - topics
+  - users
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/finalizers
+  - nodepools/finalizers
+  - redpandabrokerpools/finalizers
+  - redpandaroles/finalizers
+  - redpandas/finalizers
+  - schemas/finalizers
+  - shadowlinks/finalizers
+  - stretchclusters/finalizers
+  - topics/finalizers
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/status
+  - nodepools/status
+  - redpandabrokerpools/status
+  - redpandaroles/status
+  - redpandas/status
+  - schemas/status
+  - shadowlinks/status
+  - stretchclusters/status
+  - topics/status
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - multicluster.x-k8s.io
+  resources:
+  - serviceexports
+  - serviceimports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations:
+    helm.sh/hook: post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-migration-job-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-migration-job-default
+subjects:
+- kind: ServiceAccount
+  name: operator-migration-job
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-4"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-migration
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app.kubernetes.io/instance: operator
+        app.kubernetes.io/name: operator
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - migration
+        command:
+        - /redpanda-operator
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        imagePullPolicy: IfNotPresent
+        name: migration
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      imagePullSecrets: []
+      nodeSelector: {}
+      restartPolicy: OnFailure
+      serviceAccountName: operator-migration-job
+      terminationGracePeriodSeconds: 10
+      tolerations: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+-- testdata/telemetry-disabled.yaml.golden --
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |-
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    health:
+      healthProbeBindAddress: :8081
+    kind: ControllerManagerConfig
+    leaderElection:
+      leaderElect: true
+      resourceName: aa9fc693.vectorized.io
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+kind: ConfigMap
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-config
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-default-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  - stretchclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - pods
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - controllerrevisions
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  - issuers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  - nodepools
+  - redpandabrokerpools
+  - redpandas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups
+  - redpandaroles
+  - schemas
+  - shadowlinks
+  - stretchclusters
+  - topics
+  - users
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/finalizers
+  - nodepools/finalizers
+  - redpandabrokerpools/finalizers
+  - redpandaroles/finalizers
+  - redpandas/finalizers
+  - schemas/finalizers
+  - shadowlinks/finalizers
+  - stretchclusters/finalizers
+  - topics/finalizers
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - groups/status
+  - nodepools/status
+  - redpandabrokerpools/status
+  - redpandaroles/status
+  - redpandas/status
+  - schemas/status
+  - shadowlinks/status
+  - stretchclusters/status
+  - topics/status
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - multicluster.x-k8s.io
+  resources:
+  - serviceexports
+  - serviceimports
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-additional-controllers-default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - patch
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - redpandas
+  - stretchclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - delete
+  - get
+  - list
+  - watch
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-default-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-default
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-additional-controllers-default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operator-additional-controllers-default
+subjects:
+- kind: ServiceAccount
+  name: operator
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-metrics-service
+  namespace: default
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/name: operator
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: null
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: operator
+      app.kubernetes.io/name: operator
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        app.kubernetes.io/instance: operator
+        app.kubernetes.io/name: operator
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
+        - --configurator-tag=v26.2.1-beta.2
+        - --enable-console=true
+        - --enable-vectorized-controllers=false
+        - --health-probe-bind-address=:8081
+        - --leader-elect
+        - --log-level=info
+        - --metrics-bind-address=:8443
+        - --webhook-enabled=false
+        - --disable-telemetry
+        command:
+        - /manager
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz/
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      ephemeralContainers: null
+      imagePullSecrets: []
+      initContainers: []
+      nodeSelector: {}
+      securityContext:
+        runAsUser: 65532
+      serviceAccountName: operator
+      terminationGracePeriodSeconds: 10
+      tolerations: []
+      volumes:
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations:
+    helm.sh/hook: post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-migration-job
+  namespace: default
+---
+# Source: operator/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    helm.sh/hook: post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    helm.sh/hook-weight: "-10"
+  labels:
+    app.kubernetes.io/instance: operator
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: operator
+    app.kubernetes.io/version: v26.2.1-beta.2
+    helm.sh/chart: operator-26.2.1-beta.2
+  name: operator-migration-job-default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - serviceaccounts
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - consoles/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:

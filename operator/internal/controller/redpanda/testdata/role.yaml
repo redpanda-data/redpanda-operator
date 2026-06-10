@@ -64,6 +64,12 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apiextensions.k8s.io
+  resources:
+  - customresourcedefinitions
+  verbs:
+  - list
+- apiGroups:
   - apps
   resources:
   - controllerrevisions
@@ -335,6 +341,12 @@ rules:
   - get
   - list
   - patch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - coordination.k8s.io
   resources:

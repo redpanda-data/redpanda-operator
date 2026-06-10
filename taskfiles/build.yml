@@ -39,6 +39,16 @@ tasks:
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.commit={{.COMMIT}}"
         -X "github.com/redpanda-data/redpanda-operator/operator/cmd/version.Version={{.OPERATOR_VERSION}}"
     cmds:
+    # Inject the telemetry signing key (official builds only). When
+    # TELEMETRY_PRIVATE_KEY is set, write it to the //go:embed'd key.pem so the
+    # built operator emits anonymous telemetry; otherwise the committed empty
+    # key.pem leaves the telemetry client disabled (dev builds send nothing).
+    # Must run before `go build`, which embeds key.pem at compile time.
+    - |
+      if [ -n "${TELEMETRY_PRIVATE_KEY:-}" ]; then
+        echo "Injecting telemetry signing key into operator/internal/telemetry/key.pem"
+        printf '%s' "$TELEMETRY_PRIVATE_KEY" > operator/internal/telemetry/key.pem
+      fi
     - |
       for goos in ${BUILD_GOOS:-linux darwin}; do
         for goarch in ${BUILD_GOARCH:-arm64 amd64}; do

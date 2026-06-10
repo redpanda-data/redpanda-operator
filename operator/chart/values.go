@@ -96,6 +96,10 @@ type Multicluster struct {
 	Peers                        []Peer              `json:"peers"`
 }
 
+type Telemetry struct {
+	Enabled bool `json:"enabled"`
+}
+
 type Enterprise struct {
 	LicenseSecretRef *corev1.SecretKeySelector `json:"licenseSecretRef,omitempty"`
 }
@@ -132,6 +136,7 @@ type Values struct {
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
 	Controllers           Controllers                   `json:"controllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
+	Telemetry             Telemetry                     `json:"telemetry"`
 }
 
 type VectorizedControllers struct {
