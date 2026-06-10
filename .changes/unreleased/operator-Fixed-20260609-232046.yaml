@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Resource controllers (Topic, User, Group, Schema, Role, ShadowLink) no longer re-enqueue every CR on status-only updates of the referenced cluster CR. Cluster watches now filter to generation changes, so configured sync intervals (e.g. Topic `spec.interval`) take effect.
+time: 2026-06-09T23:20:46.850507-07:00

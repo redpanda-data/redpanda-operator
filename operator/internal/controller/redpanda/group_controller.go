@@ -128,7 +128,7 @@ func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expande
 			if err != nil {
 				return err
 			}
-			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Group, controller.WatchOptions(clusterName)...)
+			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Group, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 
 		if includeV2 {
@@ -136,7 +136,7 @@ func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expande
 			if err != nil {
 				return err
 			}
-			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Group, controller.WatchOptions(clusterName)...)
+			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Group, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 	}
 
