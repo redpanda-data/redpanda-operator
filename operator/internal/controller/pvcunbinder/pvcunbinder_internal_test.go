@@ -13,7 +13,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -48,9 +46,10 @@ func newScheme(t *testing.T, withV2, withStretch, withV1 bool) *runtime.Scheme {
 func newController(t *testing.T, s *runtime.Scheme, objs ...client.Object) *Controller {
 	t.Helper()
 	c := fake.NewClientBuilder().WithScheme(s).WithObjects(objs...).Build()
+	// Reader is left nil — the Controller falls back to Client, so the
+	// fake client serves both the cached and "uncached" roles in tests.
 	return &Controller{
-		Client:  c,
-		Tracker: NewInFlightTracker(DefaultTrackerTTL),
+		Client: c,
 	}
 }
 
@@ -61,11 +60,11 @@ func newPod(name, namespace, instance string) *corev1.Pod {
 			Namespace: namespace,
 			Labels: map[string]string{
 				// Every pod created via this helper is treated as
-				// operator-managed via the v1/StretchCluster label
+				// operator-managed via the v1 label
 				// (`managed-by=redpanda-operator`). Tests can:
 				//   - clear ManagedByKey to model an unrelated workload, or
-				//   - replace with the v2 operator label
-				//     (`cluster.redpanda.com/operator=v2`) to exercise
+				//   - replace with the chart's broker label
+				//     (`cluster.redpanda.com/broker=true`) to exercise
 				//     Gate 2's second LIST.
 				operatorlabels.ManagedByKey: "redpanda-operator",
 			},
@@ -106,163 +105,342 @@ func newPVC(name, namespace, instance, volumeName string) *corev1.PersistentVolu
 	}
 }
 
-// TestInFlightTracker exercises the cache-staleness bridge: Mark records
-// the UIDs of just-deleted PVCs, and IsHeld defers until every name in
-// the map resolves to a *different* UID in the cache. Critical
-// scenarios to cover are the two cache windows we're trying to plug —
-// "delete propagated but recreate not yet visible" (name missing) and
-// "delete not yet propagated" (old UID still visible).
-func TestInFlightTracker(t *testing.T) {
-	const key = "ns/redpanda"
-
-	t.Run("unmarked key is not held", func(t *testing.T) {
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		require.False(t, tr.IsHeld(key, map[string]types.UID{}))
-	})
-
-	t.Run("after Mark, old UID still visible -> held", func(t *testing.T) {
-		// Window 1: cache hasn't yet observed the delete.
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		require.True(t, tr.IsHeld(key, map[string]types.UID{"datadir-rp-0": "uid-old"}))
-	})
-
-	t.Run("after Mark, PVC missing from cache -> held", func(t *testing.T) {
-		// Window 2: cache observed delete; StatefulSet hasn't recreated
-		// (or cache hasn't observed the recreate) yet.
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		require.True(t, tr.IsHeld(key, map[string]types.UID{}))
-	})
-
-	t.Run("after Mark, new UID visible -> not held and entry expunged", func(t *testing.T) {
-		// Cache has caught up past both delete and recreate.
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		require.False(t, tr.IsHeld(key, map[string]types.UID{"datadir-rp-0": "uid-new"}))
-		// Entry should be expunged; another IsHeld call with stale
-		// snapshot must still return false.
-		require.False(t, tr.IsHeld(key, map[string]types.UID{"datadir-rp-0": "uid-old"}))
-	})
-
-	t.Run("multiple deleted PVCs all need new UIDs to settle", func(t *testing.T) {
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark(key, map[string]types.UID{
-			"datadir-rp-0": "uid-0",
-			"datadir-rp-1": "uid-1",
-		})
-		// Only one recreated -> still held.
-		require.True(t, tr.IsHeld(key, map[string]types.UID{
-			"datadir-rp-0": "uid-0-new",
-			// datadir-rp-1 missing
-		}))
-		// Both recreated -> released.
-		require.False(t, tr.IsHeld(key, map[string]types.UID{
-			"datadir-rp-0": "uid-0-new",
-			"datadir-rp-1": "uid-1-new",
-		}))
-	})
-
-	t.Run("different keys are independent", func(t *testing.T) {
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark("ns/redpanda-a", map[string]types.UID{"pvc-a": "u1"})
-		require.False(t, tr.IsHeld("ns/redpanda-b", map[string]types.UID{}))
-	})
-
-	t.Run("TTL expires entries even if cache never shows settlement", func(t *testing.T) {
-		tr := NewInFlightTracker(10 * time.Millisecond)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		require.True(t, tr.IsHeld(key, map[string]types.UID{}))
-		time.Sleep(20 * time.Millisecond)
-		require.False(t, tr.IsHeld(key, map[string]types.UID{}))
-	})
-
-	t.Run("TTL expiry with verifier: held when PVC still missing", func(t *testing.T) {
-		// Simulates a PVC stuck in Terminating past the TTL —
-		// without the verifier, the tracker would drop the entry
-		// and the next reconcile would unbind a sibling pod
-		// despite the original delete still in flight.
-		tr := NewInFlightTracker(10 * time.Millisecond)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		time.Sleep(20 * time.Millisecond)
-		verify := func(_ context.Context, _ string) (bool, error) { return false, nil }
-		held, err := tr.IsHeldWithVerify(context.Background(), key, map[string]types.UID{}, verify)
-		require.NoError(t, err)
-		require.True(t, held, "verifier reports not-settled, entry must be kept")
-		// Subsequent IsHeld (no verifier) should also still be held
-		// because the TTL window was reset by the verify call.
-		require.True(t, tr.IsHeld(key, map[string]types.UID{}))
-	})
-
-	t.Run("TTL expiry with verifier: dropped when PVC settled", func(t *testing.T) {
-		tr := NewInFlightTracker(10 * time.Millisecond)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		time.Sleep(20 * time.Millisecond)
-		verify := func(_ context.Context, _ string) (bool, error) { return true, nil }
-		held, err := tr.IsHeldWithVerify(context.Background(), key, map[string]types.UID{}, verify)
-		require.NoError(t, err)
-		require.False(t, held, "verifier reports settled, entry must be expunged")
-	})
-
-	t.Run("TTL expiry verifier error propagates", func(t *testing.T) {
-		tr := NewInFlightTracker(10 * time.Millisecond)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		time.Sleep(20 * time.Millisecond)
-		verify := func(_ context.Context, _ string) (bool, error) {
-			return false, fmt.Errorf("api server down")
+// pvWithAnnotations builds a PV in the given phase carrying the given
+// annotations, pinned to `hostname` when non-empty. Used to exercise
+// the durable PV gates (Gates 0 and 4).
+func pvWithAnnotations(name string, phase corev1.PersistentVolumePhase, hostname string, annotations map[string]string) *corev1.PersistentVolume {
+	pv := &corev1.PersistentVolume{
+		ObjectMeta: metav1.ObjectMeta{Name: name, Annotations: annotations},
+		Status:     corev1.PersistentVolumeStatus{Phase: phase},
+	}
+	if hostname != "" {
+		pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
+			Required: &corev1.NodeSelector{
+				NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+					MatchExpressions: []corev1.NodeSelectorRequirement{{
+						Key:      corev1.LabelHostname,
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{hostname},
+					}},
+				}},
+			},
 		}
-		_, err := tr.IsHeldWithVerify(context.Background(), key, map[string]types.UID{}, verify)
-		require.Error(t, err)
+	}
+	return pv
+}
+
+func newNode(name string) *corev1.Node {
+	return &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: name}}
+}
+
+// TestCheckPVGates exercises the durable, uncached PV-annotation gates
+// that replaced the in-memory tracker. Gate 0 (unbindInFlight) holds
+// while a PV's recorded claim hasn't been observed recreated (new UID)
+// and bound; Gate 4 (freedPVUnresolved) holds while a freed PV is a
+// live rebinding candidate. Both must survive "restarts" by
+// construction — there is no process state, so every subtest starting
+// from bare API objects IS the restart case.
+func TestCheckPVGates(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+	const key = "/ns/redpanda"
+
+	inFlightAnns := func(claim string) map[string]string {
+		return map[string]string{
+			InFlightAnnotation:      key,
+			InFlightClaimAnnotation: claim,
+		}
+	}
+
+	// otherPod is a sibling broker in the same cluster whose claims
+	// never overlap the in-flight annotations used below — the default
+	// perspective from which the gates are evaluated.
+	otherPod := func() *corev1.Pod {
+		return withPVC(newPod("rp-9", "ns", "redpanda"), "datadir-rp-9")
+	}
+
+	t.Run("empty cluster key engages no gates", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeAvailable, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv)
+		state, err := r.checkPVGates(ctx, "", otherPod())
+		require.NoError(t, err)
+		require.False(t, state.unbindInFlight)
+		require.False(t, state.freedPVUnresolved)
 	})
 
-	t.Run("Mark with empty map is a no-op", func(t *testing.T) {
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark(key, map[string]types.UID{})
-		require.False(t, tr.IsHeld(key, map[string]types.UID{}))
+	t.Run("no annotated PVs engages no gates", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeBound, "node-a", nil)
+		r := newController(t, s, pv)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.False(t, state.unbindInFlight)
+		require.False(t, state.freedPVUnresolved)
 	})
 
-	t.Run("nil receiver is permissive and safe", func(t *testing.T) {
-		var tr *InFlightTracker
-		require.False(t, tr.IsHeld(key, map[string]types.UID{}))
-		require.NotPanics(t, func() { tr.Mark(key, map[string]types.UID{"a": "b"}) })
+	t.Run("annotations for a different cluster are ignored", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeReleased, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv)
+		state, err := r.checkPVGates(ctx, "/other-ns/other", otherPod())
+		require.NoError(t, err)
+		require.False(t, state.unbindInFlight)
 	})
 
-	t.Run("Mark sweeps expired entries for other keys", func(t *testing.T) {
-		// Cluster A unbinds, then the cluster object disappears entirely
-		// (CR deleted, label changed, etc.) so A's key never reconciles
-		// again. Cluster B's later Mark should reclaim A's stale entry
-		// even though nothing else ever touches it.
-		tr := NewInFlightTracker(10 * time.Millisecond)
-		tr.Mark("ns/cluster-a", map[string]types.UID{"pvc-a": "uid-a"})
-		time.Sleep(20 * time.Millisecond)
-		tr.Mark("ns/cluster-b", map[string]types.UID{"pvc-b": "uid-b"})
-		tr.mu.Lock()
-		_, hasA := tr.entries["ns/cluster-a"]
-		_, hasB := tr.entries["ns/cluster-b"]
-		tr.mu.Unlock()
-		require.False(t, hasA, "Mark should evict TTL-expired entries from other keys")
-		require.True(t, hasB)
+	t.Run("in-flight: claim deleted but not recreated holds the gate", func(t *testing.T) {
+		// The restart-mid-unbind case: PVC deleted, pod deleted,
+		// operator restarted. No PVC object exists yet.
+		pv := pvWithAnnotations("pv-0", corev1.VolumeReleased, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.unbindInFlight)
 	})
 
-	t.Run("re-Mark refreshes the entry", func(t *testing.T) {
-		tr := NewInFlightTracker(DefaultTrackerTTL)
-		tr.Mark(key, map[string]types.UID{"datadir-rp-0": "uid-old"})
-		// Subsequent delete in a follow-up reconcile records the new UID.
-		tr.Mark(key, map[string]types.UID{"datadir-rp-1": "uid-1-old"})
-		// First name no longer tracked; only the latest entry matters.
-		require.True(t, tr.IsHeld(key, map[string]types.UID{
-			"datadir-rp-0": "anything",
-			"datadir-rp-1": "uid-1-old",
-		}))
+	t.Run("in-flight: old claim Terminating holds the gate for siblings", func(t *testing.T) {
+		// Deleted PVC held in Terminating by the pvc-protection
+		// finalizer (its pod hasn't been deleted yet).
+		pvc := newPVC("datadir-rp-0", "ns", "redpanda", "pv-0")
+		pvc.UID = "uid-old"
+		pvc.DeletionTimestamp = &metav1.Time{Time: metav1.Now().Time}
+		pvc.Finalizers = []string{"kubernetes.io/pvc-protection"}
+		pv := pvWithAnnotations("pv-0", corev1.VolumeBound, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv, pvc)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.unbindInFlight)
+	})
+
+	t.Run("in-flight: pod's OWN Terminating claim does not block its retry (deadlock guard)", func(t *testing.T) {
+		// The pod-delete-failed case: the claim is stuck Terminating
+		// because pvc-protection waits for the pod, and only THIS
+		// pod's reconcile can complete the unbind by deleting the pod.
+		// Blocking it would deadlock the cluster's unbinder.
+		pvc := newPVC("datadir-rp-0", "ns", "redpanda", "pv-0")
+		pvc.UID = "uid-old"
+		pvc.DeletionTimestamp = &metav1.Time{Time: metav1.Now().Time}
+		pvc.Finalizers = []string{"kubernetes.io/pvc-protection"}
+		pv := pvWithAnnotations("pv-0", corev1.VolumeBound, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		owner := withPVC(newPod("rp-0", "ns", "redpanda"), "datadir-rp-0")
+		r := newController(t, s, pv, pvc)
+		state, err := r.checkPVGates(ctx, key, owner)
+		require.NoError(t, err)
+		require.False(t, state.unbindInFlight, "a pod must be allowed to finish its own unbind")
+	})
+
+	t.Run("in-flight: intact old claim settles and clears annotations (deadlock guard)", func(t *testing.T) {
+		// The delete-never-happened case: a previous reconcile wrote
+		// the annotation, then failed before the PVC delete. The old
+		// claim is alive, bound, and not Terminating — the pre-unbind
+		// state. Holding the gate here would deadlock (the retry that
+		// would delete the claim is the thing being deferred).
+		pvc := newPVC("datadir-rp-0", "ns", "redpanda", "pv-0")
+		pvc.UID = "uid-old"
+		pv := pvWithAnnotations("pv-0", corev1.VolumeBound, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv, pvc)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.False(t, state.unbindInFlight)
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.NotContains(t, got.Annotations, InFlightAnnotation)
+	})
+
+	t.Run("in-flight: recreated claim with new UID but unbound holds the gate", func(t *testing.T) {
+		pvc := newPVC("datadir-rp-0", "ns", "redpanda", "")
+		pvc.UID = "uid-new"
+		pv := pvWithAnnotations("pv-0", corev1.VolumeReleased, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv, pvc)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.unbindInFlight)
+	})
+
+	t.Run("in-flight: recreated claim bound with new UID settles and clears annotations", func(t *testing.T) {
+		pvc := newPVC("datadir-rp-0", "ns", "redpanda", "pv-new")
+		pvc.UID = "uid-new"
+		pv := pvWithAnnotations("pv-0", corev1.VolumeReleased, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		r := newController(t, s, pv, pvc)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.False(t, state.unbindInFlight)
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.NotContains(t, got.Annotations, InFlightAnnotation)
+		require.NotContains(t, got.Annotations, InFlightClaimAnnotation)
+	})
+
+	t.Run("in-flight: malformed claim annotation holds the gate (conservative)", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeReleased, "node-a", inFlightAnns("garbage"))
+		r := newController(t, s, pv)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.unbindInFlight)
+	})
+
+	t.Run("freed: Available with live node holds the gate", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeAvailable, "node-a", map[string]string{FreedPVAnnotation: key})
+		r := newController(t, s, pv, newNode("node-a"))
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.freedPVUnresolved)
+	})
+
+	t.Run("freed: Available with node permanently gone does not hold, keeps annotation", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeAvailable, "node-a", map[string]string{FreedPVAnnotation: key})
+		r := newController(t, s, pv) // no Node object
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.False(t, state.freedPVUnresolved)
+
+		// Annotation kept: node-name reuse would make the PV a live
+		// candidate again and the gate must be able to re-engage.
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.Contains(t, got.Annotations, FreedPVAnnotation)
+	})
+
+	t.Run("freed: re-Bound clears the annotation and does not hold", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeBound, "node-a", map[string]string{FreedPVAnnotation: key})
+		r := newController(t, s, pv, newNode("node-a"))
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.False(t, state.freedPVUnresolved)
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.NotContains(t, got.Annotations, FreedPVAnnotation)
+	})
+
+	t.Run("freed: Available with unresolvable affinity holds the gate (conservative)", func(t *testing.T) {
+		pv := pvWithAnnotations("pv-0", corev1.VolumeAvailable, "", map[string]string{FreedPVAnnotation: key})
+		r := newController(t, s, pv)
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.freedPVUnresolved)
+	})
+
+	t.Run("both gates evaluated in one pass", func(t *testing.T) {
+		inflight := pvWithAnnotations("pv-0", corev1.VolumeReleased, "node-a", inFlightAnns("ns/datadir-rp-0/uid-old"))
+		freed := pvWithAnnotations("pv-1", corev1.VolumeAvailable, "node-b", map[string]string{FreedPVAnnotation: key})
+		r := newController(t, s, inflight, freed, newNode("node-b"))
+		state, err := r.checkPVGates(ctx, key, otherPod())
+		require.NoError(t, err)
+		require.True(t, state.unbindInFlight)
+		require.True(t, state.freedPVUnresolved)
 	})
 }
 
-// TestTrackerKey verifies the key construction used for InFlightTracker
-// entries. Different K8s clusters (multicluster mode) must produce
-// distinct keys for the same cluster name+namespace, and pods without
-// the instance label intentionally produce an empty key to fall back
-// to non-serialized behavior.
-func TestTrackerKey(t *testing.T) {
+// TestPrepareForUnbind verifies the pre-deletion patch that makes the
+// in-flight gate durable: Retain policy + both in-flight annotations
+// (cluster key and claim namespace/name/uid) must land in one call,
+// BEFORE the PVC delete that follows.
+func TestPrepareForUnbind(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+	const key = "/ns/redpanda"
+
+	boundPV := func() *corev1.PersistentVolume {
+		return &corev1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{Name: "pv-0"},
+			Spec: corev1.PersistentVolumeSpec{
+				PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimDelete,
+				ClaimRef: &corev1.ObjectReference{
+					Namespace: "ns",
+					Name:      "datadir-rp-0",
+					UID:       "uid-old",
+				},
+			},
+			Status: corev1.PersistentVolumeStatus{Phase: corev1.VolumeBound},
+		}
+	}
+
+	t.Run("sets retain policy and in-flight annotations", func(t *testing.T) {
+		pv := boundPV()
+		r := newController(t, s, pv)
+		require.NoError(t, r.prepareForUnbind(ctx, pv, key))
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.Equal(t, corev1.PersistentVolumeReclaimRetain, got.Spec.PersistentVolumeReclaimPolicy)
+		require.Equal(t, key, got.Annotations[InFlightAnnotation])
+		require.Equal(t, "ns/datadir-rp-0/uid-old", got.Annotations[InFlightClaimAnnotation])
+	})
+
+	t.Run("empty cluster key only sets retain policy", func(t *testing.T) {
+		pv := boundPV()
+		r := newController(t, s, pv)
+		require.NoError(t, r.prepareForUnbind(ctx, pv, ""))
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.Equal(t, corev1.PersistentVolumeReclaimRetain, got.Spec.PersistentVolumeReclaimPolicy)
+		require.NotContains(t, got.Annotations, InFlightAnnotation)
+	})
+
+	t.Run("idempotent when already prepared", func(t *testing.T) {
+		pv := boundPV()
+		pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
+		pv.Annotations = map[string]string{
+			InFlightAnnotation:      key,
+			InFlightClaimAnnotation: "ns/datadir-rp-0/uid-old",
+		}
+		r := newController(t, s, pv)
+		require.NoError(t, r.prepareForUnbind(ctx, pv, key))
+	})
+}
+
+// TestMaybeRecyclePersistentVolume verifies the rebinding path's write
+// side: clearing the ClaimRef must stamp the freed-PV annotation in
+// the same patch so Gate 4 can see the floating disk durably.
+func TestMaybeRecyclePersistentVolume(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+	const key = "/ns/redpanda"
+
+	releasedPV := func() *corev1.PersistentVolume {
+		return &corev1.PersistentVolume{
+			ObjectMeta: metav1.ObjectMeta{Name: "pv-0"},
+			Spec: corev1.PersistentVolumeSpec{
+				PersistentVolumeSource: corev1.PersistentVolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
+				},
+				ClaimRef: &corev1.ObjectReference{Namespace: "ns", Name: "datadir-rp-0", UID: "uid-old"},
+			},
+			Status: corev1.PersistentVolumeStatus{Phase: corev1.VolumeReleased},
+		}
+	}
+
+	t.Run("rebinding on clears ClaimRef and stamps freed annotation", func(t *testing.T) {
+		pv := releasedPV()
+		r := newController(t, s, pv)
+		r.AllowRebinding = true
+		require.NoError(t, r.maybeRecyclePersistentVolume(ctx, pv, key))
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.Nil(t, got.Spec.ClaimRef)
+		require.Equal(t, key, got.Annotations[FreedPVAnnotation])
+	})
+
+	t.Run("rebinding off leaves ClaimRef and annotations untouched", func(t *testing.T) {
+		pv := releasedPV()
+		r := newController(t, s, pv)
+		require.NoError(t, r.maybeRecyclePersistentVolume(ctx, pv, key))
+
+		var got corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
+		require.NotNil(t, got.Spec.ClaimRef)
+		require.NotContains(t, got.Annotations, FreedPVAnnotation)
+	})
+}
+
+// TestClusterKey verifies the key written into the PV gate annotations.
+// Different K8s clusters (multicluster mode) must produce distinct keys
+// for the same cluster name+namespace, and pods without the instance
+// label intentionally produce an empty key to fall back to
+// non-serialized behavior.
+func TestClusterKey(t *testing.T) {
 	cases := []struct {
 		name        string
 		clusterName string
@@ -291,7 +469,7 @@ func TestTrackerKey(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := &Controller{ClusterName: tc.clusterName}
-			require.Equal(t, tc.want, r.trackerKey(tc.pod))
+			require.Equal(t, tc.want, r.clusterKey(tc.pod))
 		})
 	}
 }
@@ -682,17 +860,22 @@ func TestMultiNodeEventInProgress(t *testing.T) {
 		require.False(t, got, "unrelated workload on a different node must not flip Gate 2")
 	})
 
-	t.Run("v2 pod with cluster.redpanda.com/operator=v2 label IS counted (second LIST)", func(t *testing.T) {
-		// Models a v2 Redpanda whose pods carry managed-by=Helm
-		// (chart default) but operator=v2 — Gate 2's second LIST
-		// catches it. Paired with a v1 pod on a different node, this
-		// must be classified as a multi-node event.
+	t.Run("chart-rendered broker pod (managed-by=Helm + broker=true) IS counted (second LIST)", func(t *testing.T) {
+		// Pins the label contract from charts/redpanda/statefulset.go
+		// StatefulSetPodLabels: every chart-rendered broker pod —
+		// v2 Redpanda, StretchCluster, and direct Helm installs —
+		// carries cluster.redpanda.com/broker=true on the pod, while
+		// managed-by is "Helm" (NOT redpanda-operator) and the
+		// operator's cluster.redpanda.com/operator=v2 ownership label
+		// is on the StatefulSet object only, never the pod. Gate 2's
+		// second LIST must catch these pods; selecting on operator=v2
+		// would match nothing (the regression from PR review).
 		pod0 := withPVC(podWithVolumeAffinityFailure("rp-0", "ns-a", "redpanda-a"), "datadir-rp-0")
 		pod1 := withPVC(podWithVolumeAffinityFailure("rpb-0", "ns-b", "redpanda-b"), "datadir-rpb-0")
-		// pod1 represents a v2 pod: replace managed-by with
-		// cluster.redpanda.com/operator=v2.
+		// pod1 carries exactly the chart-rendered label set.
 		delete(pod1.Labels, operatorlabels.ManagedByKey)
-		pod1.Labels["cluster.redpanda.com/operator"] = "v2"
+		pod1.Labels[operatorlabels.ManagedByKey] = "Helm"
+		pod1.Labels[brokerLabelKey] = brokerLabelValue
 		pvc0 := newPVC("datadir-rp-0", "ns-a", "redpanda-a", "pv-0")
 		pvc1 := newPVC("datadir-rpb-0", "ns-b", "redpanda-b", "pv-1")
 		pv0 := newPVWithAffinity("pv-0", "ns-a", "datadir-rp-0", "node-a")
@@ -700,7 +883,7 @@ func TestMultiNodeEventInProgress(t *testing.T) {
 		r := newController(t, s, pod0, pod1, pvc0, pvc1, pv0, pv1)
 		got, err := r.multiNodeEventInProgress(ctx)
 		require.NoError(t, err)
-		require.True(t, got, "v2 pod via cluster.redpanda.com/operator=v2 label must count toward Gate 2")
+		require.True(t, got, "chart-rendered broker pod must count toward Gate 2 via cluster.redpanda.com/broker=true")
 	})
 
 	t.Run("stuck pod whose PV node can't be resolved is skipped from counting", func(t *testing.T) {

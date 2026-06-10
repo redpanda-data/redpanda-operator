@@ -210,10 +210,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -239,6 +238,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -674,10 +680,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -703,6 +708,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -1080,10 +1092,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -1109,6 +1120,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -1706,10 +1724,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -1735,6 +1752,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -2170,10 +2194,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -2199,6 +2222,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -2603,10 +2633,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -2632,6 +2661,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -3249,10 +3285,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -3278,6 +3313,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -3713,10 +3755,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -3742,6 +3783,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -4132,10 +4180,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -4161,6 +4208,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -4764,10 +4818,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -4793,6 +4846,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -5386,10 +5446,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -5415,6 +5474,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -5850,10 +5916,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -5879,6 +5944,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -6739,10 +6811,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -6768,6 +6839,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -7203,10 +7281,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -7232,6 +7309,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -7623,10 +7707,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -7652,6 +7735,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -8253,10 +8343,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -8282,6 +8371,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -8717,10 +8813,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -8746,6 +8841,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -9175,10 +9277,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -9204,6 +9305,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -9893,10 +10001,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -9922,6 +10029,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -10357,10 +10471,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -10386,6 +10499,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -10861,10 +10981,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -10890,6 +11009,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -11612,10 +11738,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -11641,6 +11766,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -12078,10 +12210,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -12107,6 +12238,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -12513,10 +12651,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -12542,6 +12679,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -13146,10 +13290,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -13175,6 +13318,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -13610,10 +13760,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -13639,6 +13788,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -14035,10 +14191,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -14064,6 +14219,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -14670,10 +14832,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -14699,6 +14860,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -15134,10 +15302,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -15163,6 +15330,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -15592,10 +15766,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -15621,6 +15794,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -16225,10 +16405,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -16254,6 +16433,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -16922,10 +17108,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -16951,6 +17136,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -17569,10 +17761,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -17598,6 +17789,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -18034,10 +18232,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -18063,6 +18260,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -18465,10 +18669,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -18494,6 +18697,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -19116,10 +19326,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -19145,6 +19354,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -19741,10 +19957,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -19770,6 +19985,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -20219,10 +20441,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -20248,6 +20469,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -21019,10 +21247,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -21048,6 +21275,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -21762,10 +21996,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -21791,6 +22024,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -22383,10 +22623,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -22412,6 +22651,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -22848,10 +23094,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -22877,6 +23122,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -23281,10 +23533,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -23310,6 +23561,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -23922,10 +24180,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -23951,6 +24208,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -24386,10 +24650,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -24415,6 +24678,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -24812,10 +25082,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -24841,6 +25110,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -25812,10 +26088,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -25841,6 +26116,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -26279,10 +26561,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -26308,6 +26589,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -26920,10 +27208,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -26949,6 +27236,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -27562,10 +27856,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -27591,6 +27884,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -28026,10 +28326,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -28055,6 +28354,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -28491,10 +28797,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -28520,6 +28825,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -29124,10 +29436,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -29153,6 +29464,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -29746,10 +30064,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -29775,6 +30092,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -30170,10 +30494,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -30199,6 +30522,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -31331,10 +31661,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -31360,6 +31689,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -31801,10 +32137,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -31830,6 +32165,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -32376,10 +32718,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -32405,6 +32746,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -33011,10 +33359,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -33040,6 +33387,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -33634,10 +33988,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -33663,6 +34016,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -34297,10 +34657,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -34326,6 +34685,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -35096,10 +35462,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -35125,6 +35490,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -35560,10 +35932,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -35589,6 +35960,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -35998,10 +36376,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -36027,6 +36404,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -36648,10 +37032,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -36677,6 +37060,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -37828,10 +38218,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -37857,6 +38246,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -38971,10 +39367,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -39000,6 +39395,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -40033,10 +40435,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -40062,6 +40463,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -41085,10 +41493,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -41114,6 +41521,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -41550,10 +41964,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -41579,6 +41992,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -42203,10 +42623,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -42232,6 +42651,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -42855,10 +43281,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -42884,6 +43309,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -43321,10 +43753,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -43350,6 +43781,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -43959,10 +44397,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -43988,6 +44425,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -44602,10 +45046,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -44631,6 +45074,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -45702,10 +46152,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -45731,6 +46180,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -47183,10 +47639,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -47212,6 +47667,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -47649,10 +48111,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -47678,6 +48139,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -48471,10 +48939,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -48500,6 +48967,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -49223,10 +49697,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -49252,6 +49725,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -50116,10 +50596,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -50145,6 +50624,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -50911,10 +51397,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -50940,6 +51425,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -51377,10 +51869,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -51406,6 +51897,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -52267,10 +52765,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -52296,6 +52793,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -54464,10 +54968,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -54493,6 +54996,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -55893,10 +56403,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -55922,6 +56431,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -57648,10 +58164,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -57677,6 +58192,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -58813,10 +59335,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -58842,6 +59363,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -61136,10 +61664,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -61165,6 +61692,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -61600,10 +62134,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -61629,6 +62162,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -62571,10 +63111,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -62600,6 +63139,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -63322,10 +63868,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -63351,6 +63896,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -63786,10 +64338,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -63815,6 +64366,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -64794,10 +65352,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -64823,6 +65380,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -66209,10 +66773,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -66238,6 +66801,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -67368,10 +67938,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -67397,6 +67966,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -68709,10 +69285,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -68738,6 +69313,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -70105,10 +70687,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -70134,6 +70715,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -71035,10 +71623,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -71064,6 +71651,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -72245,10 +72839,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -72274,6 +72867,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -73027,10 +73627,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -73056,6 +73655,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -73653,10 +74259,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -73682,6 +74287,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -74509,10 +75121,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -74538,6 +75149,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -75418,10 +76036,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -75447,6 +76064,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -75887,10 +76511,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -75916,6 +76539,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -76802,10 +77432,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -76831,6 +77460,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -77556,10 +78192,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -77585,6 +78220,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -78020,10 +78662,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -78049,6 +78690,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -78469,10 +79117,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -78498,6 +79145,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -79186,10 +79840,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -79215,6 +79868,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -79650,10 +80310,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -79679,6 +80338,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -80099,10 +80765,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -80128,6 +80793,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -80815,10 +81487,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -80844,6 +81515,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -81279,10 +81957,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -81308,6 +81985,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -81684,10 +82368,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -81713,6 +82396,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -82310,10 +83000,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -82339,6 +83028,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -82774,10 +83470,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -82803,6 +83498,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -83196,10 +83898,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -83225,6 +83926,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -83822,10 +84530,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -83851,6 +84558,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -84286,10 +85000,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -84315,6 +85028,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -84691,10 +85411,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -84720,6 +85439,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -85317,10 +86043,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -85346,6 +86071,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -85781,10 +86513,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -85810,6 +86541,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -86186,10 +86924,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -86215,6 +86952,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -86812,10 +87556,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -86841,6 +87584,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -87276,10 +88026,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -87305,6 +88054,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -87689,10 +88445,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -87718,6 +88473,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -88315,10 +89077,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -88344,6 +89105,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -88779,10 +89547,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -88808,6 +89575,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -89192,10 +89966,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -89221,6 +89994,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -89818,10 +90598,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -89847,6 +90626,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -90282,10 +91068,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -90311,6 +91096,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -90721,10 +91513,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -90750,6 +91541,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -91347,10 +92145,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -91376,6 +92173,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -91811,10 +92615,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -91840,6 +92643,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -92340,10 +93150,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -92369,6 +93178,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -92966,10 +93782,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -92995,6 +93810,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -93430,10 +94252,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -93459,6 +94280,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -93871,10 +94699,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -93900,6 +94727,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -94497,10 +95331,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -94526,6 +95359,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -94961,10 +95801,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -94990,6 +95829,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -95402,10 +96248,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -95431,6 +96276,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -96028,10 +96880,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -96057,6 +96908,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -96492,10 +97350,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -96521,6 +97378,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -96932,10 +97796,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -96961,6 +97824,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -97568,10 +98438,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -97597,6 +98466,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -98032,10 +98908,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -98061,6 +98936,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -98537,10 +99419,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -98566,6 +99447,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -99264,10 +100152,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -99293,6 +100180,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -99728,10 +100622,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -99757,6 +100650,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -100288,10 +101188,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -100317,6 +101216,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -101015,10 +101921,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -101044,6 +101949,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -101479,10 +102391,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -101508,6 +102419,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -102033,10 +102951,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -102062,6 +102979,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -102760,10 +103684,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -102789,6 +103712,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -103224,10 +104154,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -103253,6 +104182,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -103711,10 +104647,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -103740,6 +104675,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -104438,10 +105380,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -104467,6 +105408,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -104902,10 +105850,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -104931,6 +105878,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -105381,10 +106335,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -105410,6 +106363,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -106098,10 +107058,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -106127,6 +107086,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -106562,10 +107528,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -106591,6 +107556,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -107098,10 +108070,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -107127,6 +108098,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -107724,10 +108702,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -107753,6 +108730,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -108188,10 +109172,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -108217,6 +109200,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:
@@ -108600,10 +109590,9 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - events
+  - nodes
   verbs:
-  - create
-  - patch
+  - get
 - apiGroups:
   - ""
   resources:
@@ -108629,6 +109618,13 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 - apiGroups:
   - redpanda.vectorized.io
   resources:

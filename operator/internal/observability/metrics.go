@@ -79,8 +79,10 @@ var (
 	// stuck multi-node-event signal, or a cache-staleness hold that
 	// never clears. The `gate` label values are: "pause" (Gate 1),
 	// "multi-node" (Gate 2), "in-flight" (Gate 0 cache-staleness
-	// bridge), and "pvc-rebinding" (Gate 3, a PVC in the cluster is
-	// recreated but not yet bound).
+	// bridge), "pvc-rebinding" (Gate 3, a PVC in the cluster is
+	// recreated but not yet bound), and "freed-pv" (Gate 4, a PV whose
+	// ClaimRef we cleared under --allow-pv-rebinding is still Available
+	// with a live node — unbinding more pods could mis-pair disks).
 	PVCUnbinderGateDeferred = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
