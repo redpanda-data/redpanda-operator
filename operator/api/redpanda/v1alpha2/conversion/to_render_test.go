@@ -16,10 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/fuzzing"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
@@ -112,6 +114,61 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 			require.Equal(t, tc.wantDeleted, got.WhenDeleted)
 		})
 	}
+}
+
+// TestConvertStatefulsetV2FieldsBrokerContainer is a regression test for
+// https://github.com/redpanda-data/redpanda-operator/issues/1577:
+// convertStatefulsetV2Fields retained a pointer to the redpanda container
+// across the append that adds the sidecar container. The append reallocated
+// the slice's backing array, so extraVolumeMounts, livenessProbe, and
+// startupProbe were written to an orphaned copy and silently dropped from
+// the broker container — they only ever landed on the sidecar.
+func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
+	dot, err := redpanda.Chart.Dot(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "redpanda",
+		Service:   "Helm",
+	}, struct{}{})
+	require.NoError(t, err)
+
+	state := &redpanda.RenderState{Dot: dot}
+	values := redpanda.Values{}
+	spec := &redpandav1alpha2.Statefulset{
+		ExtraVolumeMounts: ptr.To("- name: io-config\n  mountPath: /etc/redpanda-io-config"),
+		LivenessProbe: &redpandav1alpha2.LivenessProbe{
+			InitialDelaySeconds: ptr.To(33),
+		},
+		StartupProbe: &redpandav1alpha2.StartupProbe{
+			InitialDelaySeconds: ptr.To(44),
+		},
+	}
+
+	require.NoError(t, convertStatefulsetV2Fields(state, &values, spec))
+
+	containerByName := func(name string) *applycorev1.ContainerApplyConfiguration {
+		for i, container := range values.Statefulset.PodTemplate.Spec.Containers {
+			if ptr.Deref(container.Name, "") == name {
+				return &values.Statefulset.PodTemplate.Spec.Containers[i]
+			}
+		}
+		t.Fatalf("container %q not found", name)
+		return nil
+	}
+	mountNames := func(container *applycorev1.ContainerApplyConfiguration) []string {
+		return functional.MapFn(func(m applycorev1.VolumeMountApplyConfiguration) string {
+			return ptr.Deref(m.Name, "")
+		}, container.VolumeMounts)
+	}
+
+	broker := containerByName(redpanda.RedpandaContainerName)
+	require.Contains(t, mountNames(broker), "io-config", "extraVolumeMounts must land on the broker container")
+	require.NotNil(t, broker.LivenessProbe)
+	require.Equal(t, ptr.To(int32(33)), broker.LivenessProbe.InitialDelaySeconds, "livenessProbe must land on the broker container")
+	require.NotNil(t, broker.StartupProbe)
+	require.Equal(t, ptr.To(int32(44)), broker.StartupProbe.InitialDelaySeconds, "startupProbe must land on the broker container")
+
+	sidecar := containerByName(redpanda.SidecarContainerName)
+	require.Contains(t, mountNames(sidecar), "io-config", "extraVolumeMounts must also land on the sidecar container")
 }
 
 func TestConvertV2Fields(t *testing.T) {
