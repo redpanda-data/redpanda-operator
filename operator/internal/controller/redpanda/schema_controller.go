@@ -100,7 +100,7 @@ func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expand
 			if err != nil {
 				return err
 			}
-			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, controller.WatchOptions(clusterName)...)
+			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 
 		if includeV2 {
@@ -108,7 +108,7 @@ func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expand
 			if err != nil {
 				return err
 			}
-			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema, controller.WatchOptions(clusterName)...)
+			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 	}
 
@@ -135,7 +135,7 @@ func SetupSchemaControllerForMulticluster(ctx context.Context, mgr multicluster.
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.ClusterSourceWatchOptions(clusterName)...)
 	}
 
 	ctl := NewResourceController(mgr, factory, &SchemaReconciler{}, "SchemaReconciler")
