@@ -607,7 +607,9 @@ func generateConf(
 	setConf = make(map[string]string)
 	specialSetConf = make(map[string]string)
 
+	liveValues := make(map[string]*string, len(describedConfig))
 	for _, conf := range describedConfig {
+		liveValues[conf.Name] = conf.Value
 		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && !slices.Contains(undeletableConfigs, conf.Name) {
 			deleteConf[conf.Name] = nil
 		}
@@ -628,12 +630,21 @@ func generateConf(
 			delete(deleteConf, k)
 		}
 		if v != nil {
+			// Only issue a SET when the broker's live value differs from the
+			// desired value; otherwise every reconcile of a converged topic
+			// emits a no-op IncrementalAlterConfigs that spams the broker's
+			// audit log.
+			if live, ok := liveValues[k]; ok && live != nil && *live == *v {
+				continue
+			}
 			setConf[k] = *v
 		}
 	}
 	if remoteWrite && remoteRead {
-		delete(setConf, "redpanda.remote.write")
-		specialSetConf["redpanda.remote.write"] = *topicSpecSingleValue["redpanda.remote.write"]
+		if _, ok := setConf["redpanda.remote.write"]; ok {
+			delete(setConf, "redpanda.remote.write")
+			specialSetConf["redpanda.remote.write"] = *topicSpecSingleValue["redpanda.remote.write"]
+		}
 	}
 
 	if desiredReplicationFactor != actualReplicationFactor {
