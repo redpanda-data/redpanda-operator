@@ -73,6 +73,7 @@ rules:
   verbs:
   - create
   - get
+  - list
   - patch
   - update
 - apiGroups:
@@ -400,6 +401,12 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - get
 - apiGroups:
   - apps
   resources:

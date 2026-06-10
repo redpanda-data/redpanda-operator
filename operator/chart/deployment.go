@@ -119,6 +119,24 @@ func operatorContainers(dot *helmette.Dot, podTerminationGracePeriodSeconds *int
 			ImagePullPolicy: values.Image.PullPolicy,
 			Command:         []string{"/manager"},
 			Args:            operatorArguments(dot),
+			Env: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "POD_NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.namespace",
+						},
+					},
+				},
+			},
 			SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To(false)},
 			Ports: []corev1.ContainerPort{
 				{
@@ -363,6 +381,10 @@ func operatorArguments(dot *helmette.Dot) []string {
 		} else {
 			flags = append(flags, fmt.Sprintf("%s=%s", key, value))
 		}
+	}
+
+	if !values.Telemetry.Enabled {
+		flags = append(flags, "--telemetry-disabled")
 	}
 
 	return flags

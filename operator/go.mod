@@ -35,6 +35,7 @@ require (
 	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rpadmin v0.2.4
 	github.com/redpanda-data/common-go/rpsr v0.1.4
+	github.com/redpanda-data/common-go/telemetry v0.1.0
 	github.com/redpanda-data/console/backend v0.0.0-20260330203659-9db13eb40ef4
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.7.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1
@@ -162,6 +163,7 @@ require (
 	github.com/go-chi/chi/v5 v5.2.5 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -179,6 +181,7 @@ require (
 	github.com/go-openapi/swag/stringutils v0.25.4 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.4 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
+	github.com/go-resty/resty/v2 v2.17.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect

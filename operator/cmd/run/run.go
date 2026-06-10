@@ -24,6 +24,7 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/discovery"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -44,6 +45,7 @@ import (
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/telemetry"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -134,6 +136,12 @@ type RunOptions struct {
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
+
+	disableTelemetry          bool
+	telemetrySourceIdentifier string
+	telemetryEndpoint         string
+	telemetryPeriod           time.Duration
+	telemetryFeatures         map[string]string
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -192,6 +200,13 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 
+	// Telemetry related flags.
+	cmd.Flags().BoolVar(&o.disableTelemetry, "disable-telemetry", false, "Disable anonymous cluster-shape telemetry.")
+	cmd.Flags().StringVar(&o.telemetrySourceIdentifier, "telemetry-source-identifier", "", "Override the auto-detected Deployment UID used to identify this operator installation in telemetry.")
+	cmd.Flags().StringVar(&o.telemetryEndpoint, "telemetry-endpoint", "", "Override the telemetry ingestion endpoint (testing).")
+	cmd.Flags().DurationVar(&o.telemetryPeriod, "telemetry-period", 0, "Interval between telemetry reports. 0 uses the library default (24h).")
+	cmd.Flags().StringToStringVar(&o.telemetryFeatures, "telemetry-features", nil, "Additional ad-hoc feature flags to include in every telemetry report, as name=bool pairs (e.g. redpanda-cloud=true). Repeatable or comma-separated; entries override the built-in feature flags.")
+
 	// Secret store related flags.
 	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
 	cmd.Flags().StringVar(&o.cloudSecretsPrefix, "cloud-secrets-prefix", "", "Prefix for all names of cloud secrets")
@@ -246,6 +261,13 @@ func (o *RunOptions) ControllerEnabled(controller Controller) bool {
 // +kubebuilder:rbac:groups=coordination.k8s.io,namespace=default,resources=leases,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,namespace=default,resources=events,verbs=create;patch
+
+// Telemetry permissions: the telemetry collector lists CRDs cluster-wide to
+// count Redpanda CRDs, and the source-identifier resolver reads the operator's
+// own ReplicaSet to walk up to the owning Deployment. The collector uses the
+// uncached API reader, so only "list" (not "watch") is required.
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=list
+// +kubebuilder:rbac:groups=apps,namespace=default,resources=replicasets,verbs=get
 
 func Command() *cobra.Command {
 	var options RunOptions
@@ -624,6 +646,75 @@ func Run(
 
 		if err := mgr.AddHealthzCheck("webhook", hookServer.StartedChecker()); err != nil {
 			setupLog.Error(err, "unable to create health check")
+			return err
+		}
+	}
+
+	if !opts.disableTelemetry && telemetry.Enabled() {
+		id := opts.telemetrySourceIdentifier
+		if id == "" {
+			// Use the uncached API reader: this runs before mgr.Start(), so the
+			// cached client would return ErrCacheNotStarted (and would need
+			// list+watch RBAC for its informers). A direct GET works pre-start
+			// and matches the "get"-only RBAC on pods/replicasets.
+			id = telemetry.ResolveSourceID(ctx, mgr.GetAPIReader())
+		}
+
+		// Build a discovery client so the collector can resolve the Kubernetes
+		// server version each cycle. Best-effort: on failure pass nil and the
+		// collector omits kubeVersion.
+		var disco discovery.ServerVersionInterface
+		if dc, err := discovery.NewDiscoveryClientForConfig(mgr.GetConfig()); err != nil {
+			setupLog.Error(err, "unable to build discovery client for telemetry; kube version will be omitted")
+		} else {
+			disco = dc
+		}
+
+		features := map[string]bool{
+			// Controllers.
+			"vectorizedControllers":   opts.enableVectorizedControllers,
+			"redpandaControllers":     opts.enableRedpandaControllers,
+			"v2NodepoolController":    opts.enableV2NodepoolController,
+			"consoleController":       opts.enableConsoleController,
+			"decommission":            opts.ControllerEnabled(DecommissionController),
+			"legacyDecommission":      opts.ControllerEnabled(LegacyDecommissionController),
+			"ghostBrokerDecommission": opts.enableGhostBrokerDecommissioner,
+			"ghostbuster":             opts.ghostbuster,
+			// Operator-shape configuration (no extra API calls).
+			"pvcUnbinder":      opts.unbindPVCsAfter > 0,
+			"autoDeletePVCs":   opts.autoDeletePVCs,
+			"allowPVRebinding": opts.allowPVRebinding,
+			"webhook":          opts.webhookEnabled,
+			"namespaceScoped":  opts.namespace != "",
+			"leaderElection":   opts.managerOptions.LeaderElection,
+			// Cloud-secrets backend (provider only, never the secret values).
+			"cloudSecrets":      opts.cloudSecretsEnabled,
+			"cloudSecretsAWS":   opts.cloudSecretsEnabled && (opts.cloudSecretsConfig.AWSRegion != "" || opts.cloudSecretsConfig.AWSRoleARN != ""),
+			"cloudSecretsGCP":   opts.cloudSecretsEnabled && opts.cloudSecretsConfig.GCPProjectID != "",
+			"cloudSecretsAzure": opts.cloudSecretsEnabled && opts.cloudSecretsConfig.AzureKeyVaultURI != "",
+		}
+		// Deployer-supplied ad-hoc features (e.g. redpanda-cloud=true) ride along
+		// in every report.
+		features, err := telemetry.MergeAdHocFeatures(features, opts.telemetryFeatures)
+		if err != nil {
+			setupLog.Error(err, "invalid --telemetry-features")
+			return err
+		}
+
+		tele, err := telemetry.NewRunnable(mgr.GetAPIReader(), disco, setupLog, telemetry.Options{
+			Endpoint:        opts.telemetryEndpoint,
+			ID:              id,
+			OperatorVersion: version.Version,
+			Features:        features,
+			Period:          opts.telemetryPeriod,
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to build telemetry runnable")
+			return err
+		}
+
+		if err := mgr.Add(tele); err != nil {
+			setupLog.Error(err, "unable to add telemetry runnable")
 			return err
 		}
 	}

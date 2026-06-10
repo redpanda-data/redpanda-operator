@@ -98,6 +98,24 @@ func multiclusterOperatorContainers(dot *helmette.Dot, podTerminationGracePeriod
 			ImagePullPolicy: values.Image.PullPolicy,
 			Command:         []string{"/redpanda-operator"},
 			Args:            multiclusterOperatorArguments(dot),
+			Env: []corev1.EnvVar{
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
+				{
+					Name: "POD_NAMESPACE",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.namespace",
+						},
+					},
+				},
+			},
 			SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: ptr.To(false)},
 			Ports: []corev1.ContainerPort{
 				{
@@ -217,6 +235,10 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 
 	for _, peer := range values.Multicluster.Peers {
 		flags = append(flags, fmt.Sprintf("--peer=%s://%s:9443", peer.Name, peer.Address))
+	}
+
+	if !values.Telemetry.Enabled {
+		flags = append(flags, "--telemetry-disabled")
 	}
 
 	return flags
