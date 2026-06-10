@@ -292,7 +292,7 @@ func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander
 			if err != nil {
 				return err
 			}
-			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Role, controller.WatchOptions(clusterName)...)
+			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Role, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 
 		if includeV2 {
@@ -300,7 +300,7 @@ func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander
 			if err != nil {
 				return err
 			}
-			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role, controller.WatchOptions(clusterName)...)
+			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 	}
 

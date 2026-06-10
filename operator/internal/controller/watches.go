@@ -11,9 +11,27 @@ package controller
 
 import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 )
+
+// ClusterSourcePredicate filters the events of cluster CR watches down to
+// spec changes (and Create/Delete). Cluster CRs receive frequent status-only
+// updates from their own controllers; those bump resourceVersion but not
+// generation, and carry no information for resources connecting to the
+// cluster — connection details are derived from the cluster spec.
+var ClusterSourcePredicate predicate.Predicate = predicate.GenerationChangedPredicate{}
+
+// ClusterSourceWatchOptions returns WatchOptions extended with
+// ClusterSourcePredicate. It is meant for watches on cluster CRs (Redpanda,
+// V1 Cluster, StretchCluster) whose event handlers fan out to every resource
+// referencing the cluster: without the predicate each status-only update
+// re-enqueues every referencing resource, keeping the workqueue saturated
+// and overriding any configured sync interval.
+func ClusterSourceWatchOptions(clusterName string) []mcbuilder.WatchesOption {
+	return append(WatchOptions(clusterName), mcbuilder.WithPredicates(ClusterSourcePredicate))
+}
 
 func WatchOptions(clusterName string) []mcbuilder.WatchesOption {
 	if clusterName == mcmanager.LocalCluster {
