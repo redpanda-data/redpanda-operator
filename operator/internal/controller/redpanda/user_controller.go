@@ -207,7 +207,7 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 			if err != nil {
 				return err
 			}
-			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User, controller.WatchOptions(clusterName)...)
+			builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 
 		if includeV2 {
@@ -215,7 +215,7 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 			if err != nil {
 				return err
 			}
-			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User, controller.WatchOptions(clusterName)...)
+			builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User, controller.ClusterSourceWatchOptions(clusterName)...)
 		}
 
 		// Index Users by the password Secret they reference so we can
@@ -238,6 +238,9 @@ func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander
 			return err
 		}
 
+		// Secrets never bump metadata.generation, so this watch must not use
+		// ClusterSourceWatchOptions — a generation predicate would filter out
+		// every Secret update.
 		builder.Watches(&corev1.Secret{}, enqueueUsersForSecret(mgr, clusterName), controller.WatchOptions(clusterName)...)
 	}
 
@@ -268,7 +271,7 @@ func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Ma
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.WatchOptions(clusterName)...)
+		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.ClusterSourceWatchOptions(clusterName)...)
 
 		cluster, err := mgr.GetCluster(ctx, clusterName)
 		if err != nil {
@@ -287,6 +290,9 @@ func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Ma
 			return err
 		}
 
+		// Secrets never bump metadata.generation, so this watch must not use
+		// ClusterSourceWatchOptions — a generation predicate would filter out
+		// every Secret update.
 		builder.Watches(&corev1.Secret{}, enqueueUsersForSecret(mgr, clusterName), controller.WatchOptions(clusterName)...)
 	}
 
