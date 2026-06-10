@@ -174,8 +174,13 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.InitContainers = []applycorev1.ContainerApplyConfiguration{}
 	}
 
-	redpandaContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
-	sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.SidecarContainerName)
+	// NB: Both pointers must be acquired in a single containersOrInit call.
+	// Two consecutive containerOrInit calls used to leave the first returned
+	// pointer dangling into a stale backing array (the second call's append
+	// reallocates it), silently discarding every write to the redpanda
+	// container below. See https://github.com/redpanda-data/redpanda-operator/issues/1577.
+	brokerAndSidecar := containersOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName, redpanda.SidecarContainerName)
+	redpandaContainer, sidecarContainer := brokerAndSidecar[0], brokerAndSidecar[1]
 
 	if spec.Annotations != nil {
 		values.Statefulset.PodTemplate.Annotations = spec.Annotations
