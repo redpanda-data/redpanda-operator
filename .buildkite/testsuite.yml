@@ -41,6 +41,7 @@ steps:
     plugins:
     - github.com/seek-oss/aws-sm-buildkite-plugin#v2.3.2:
         json-to-env:
+        - secret-id: sdlc/prod/buildkite/dockerhub
         - secret-id: sdlc/prod/buildkite/github_api_token
         - secret-id: sdlc/prod/buildkite/redpanda_sample_license
         - secret-id: sdlc/prod/buildkite/slack_vbot_token
@@ -88,6 +89,7 @@ steps:
     plugins:
     - github.com/seek-oss/aws-sm-buildkite-plugin#v2.3.2:
         json-to-env:
+        - secret-id: sdlc/prod/buildkite/dockerhub
         - secret-id: sdlc/prod/buildkite/github_api_token
         - secret-id: sdlc/prod/buildkite/redpanda_sample_license
         - secret-id: sdlc/prod/buildkite/slack_vbot_token
@@ -138,6 +140,7 @@ steps:
     plugins:
     - github.com/seek-oss/aws-sm-buildkite-plugin#v2.3.2:
         json-to-env:
+        - secret-id: sdlc/prod/buildkite/dockerhub
         - secret-id: sdlc/prod/buildkite/github_api_token
         - secret-id: sdlc/prod/buildkite/redpanda_sample_license
         - secret-id: sdlc/prod/buildkite/slack_vbot_token
@@ -189,6 +192,7 @@ steps:
     plugins:
     - github.com/seek-oss/aws-sm-buildkite-plugin#v2.3.2:
         json-to-env:
+        - secret-id: sdlc/prod/buildkite/dockerhub
         - secret-id: sdlc/prod/buildkite/github_api_token
         - secret-id: sdlc/prod/buildkite/redpanda_sample_license
         - secret-id: sdlc/prod/buildkite/slack_vbot_token
@@ -239,6 +243,7 @@ steps:
     plugins:
     - github.com/seek-oss/aws-sm-buildkite-plugin#v2.3.2:
         json-to-env:
+        - secret-id: sdlc/prod/buildkite/dockerhub
         - secret-id: sdlc/prod/buildkite/github_api_token
         - secret-id: sdlc/prod/buildkite/redpanda_sample_license
         - secret-id: sdlc/prod/buildkite/slack_vbot_token

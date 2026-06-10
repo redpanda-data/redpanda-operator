@@ -117,6 +117,7 @@ func (suite *TestSuite) ToStep() pipeline.Step {
 				},
 				Plugins: pipeline.Plugins{
 					secretEnvVars(
+						DOCKERHUB,        // Authenticates docker pulls (test:pull-images) to avoid Docker Hub's anonymous rate limit.
 						GITHUB_API_TOKEN, // Required to clone private GH repos (Flux Shims, buildkite slack).
 						REDPANDA_SAMPLE_LICENSE,
 						SLACK_VBOT_TOKEN, // Used to notify us of build failures in slack.
