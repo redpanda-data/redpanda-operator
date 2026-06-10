@@ -202,24 +202,32 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = ptr.To(int64(*spec.TerminationGracePeriodSeconds))
 	}
 
-	if redpandaContainer.LivenessProbe == nil {
-		redpandaContainer.LivenessProbe = &applycorev1.ProbeApplyConfiguration{}
+	// Only materialize probe overrides the CR actually sets; unconditionally
+	// initializing them would emit a spurious `livenessProbe: {}` (etc.) on
+	// every rendered pod template.
+	if spec.LivenessProbe != nil {
+		if redpandaContainer.LivenessProbe == nil {
+			redpandaContainer.LivenessProbe = &applycorev1.ProbeApplyConfiguration{}
+		}
+		if err := convertJSONNotNil(spec.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
+			return err
+		}
 	}
-	if redpandaContainer.StartupProbe == nil {
-		redpandaContainer.StartupProbe = &applycorev1.ProbeApplyConfiguration{}
+	if spec.StartupProbe != nil {
+		if redpandaContainer.StartupProbe == nil {
+			redpandaContainer.StartupProbe = &applycorev1.ProbeApplyConfiguration{}
+		}
+		if err := convertJSONNotNil(spec.StartupProbe, redpandaContainer.StartupProbe); err != nil {
+			return err
+		}
 	}
-	if sidecarContainer.ReadinessProbe == nil {
-		sidecarContainer.ReadinessProbe = &applycorev1.ProbeApplyConfiguration{}
-	}
-
-	if err := convertJSONNotNil(spec.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
-		return err
-	}
-	if err := convertJSONNotNil(spec.StartupProbe, redpandaContainer.StartupProbe); err != nil {
-		return err
-	}
-	if err := convertJSONNotNil(spec.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
-		return err
+	if spec.ReadinessProbe != nil {
+		if sidecarContainer.ReadinessProbe == nil {
+			sidecarContainer.ReadinessProbe = &applycorev1.ProbeApplyConfiguration{}
+		}
+		if err := convertJSONNotNil(spec.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
+			return err
+		}
 	}
 
 	if err := convertAndAppendJSONNotNil(spec.Tolerations, &values.Statefulset.PodTemplate.Spec.Tolerations); err != nil {
