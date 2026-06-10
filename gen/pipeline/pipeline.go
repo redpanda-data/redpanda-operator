@@ -26,6 +26,7 @@ import (
 var (
 	// Known/Permitted environment variables pulled from AWS secret store.
 
+	DOCKERHUB               = secretEnvVar{SecretID: "sdlc/prod/buildkite/dockerhub"}
 	GITHUB_API_TOKEN        = secretEnvVar{SecretID: "sdlc/prod/buildkite/github_api_token"}
 	REDPANDA_SAMPLE_LICENSE = secretEnvVar{SecretID: "sdlc/prod/buildkite/redpanda_sample_license"}
 	SLACK_VBOT_TOKEN        = secretEnvVar{SecretID: "sdlc/prod/buildkite/slack_vbot_token"}

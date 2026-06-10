@@ -156,6 +156,97 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	return cluster, nil
 }
 
+<<<<<<< HEAD
+=======
+// imageMarkerPath returns a file path used to track whether an image has
+// already been imported into a given k3d cluster.
+func imageMarkerPath(clusterName, image string) string {
+	// Sanitize image name for use as a filename.
+	safe := strings.NewReplacer("/", "_", ":", "_", ".", "_").Replace(image)
+	return filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s-img-%s", clusterName, safe))
+}
+
+func imageAlreadyImported(clusterName, image string) bool {
+	_, err := os.Stat(imageMarkerPath(clusterName, image))
+	return err == nil
+}
+
+func markImageImported(clusterName, image string) {
+	os.WriteFile(imageMarkerPath(clusterName, image), nil, 0o600) //nolint:errcheck
+}
+
+// clearImageMarkers removes all image import marker files for a given cluster,
+// so that a freshly (re)created cluster re-imports all needed images.
+func clearImageMarkers(clusterName string) {
+	prefix := fmt.Sprintf("k3d-%s-img-", clusterName)
+	entries, err := os.ReadDir(os.TempDir())
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), prefix) {
+			os.Remove(filepath.Join(os.TempDir(), e.Name())) //nolint:errcheck
+		}
+	}
+}
+
+// lockFile acquires an exclusive file lock for the given cluster name.
+// It returns an unlock function that must be called when the critical section is done.
+func lockFile(name string) (func(), error) {
+	lockPath := filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s.lock", name))
+	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := unix.Flock(int(f.Fd()), unix.LOCK_EX); err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	return func() {
+		unix.Flock(int(f.Fd()), unix.LOCK_UN) //nolint:errcheck
+		f.Close()
+	}, nil
+}
+
+// dockerHubRegistryConfig writes a k3s registries.yaml granting containerd
+// authenticated access to Docker Hub, sourced from the DOCKERHUB_USER and
+// DOCKERHUB_TOKEN environment variables. It returns "" when the credentials
+// aren't set (e.g. local development), in which case pulls remain anonymous.
+func dockerHubRegistryConfig() (string, error) {
+	user := os.Getenv("DOCKERHUB_USER")
+	token := os.Getenv("DOCKERHUB_TOKEN")
+	if user == "" || token == "" {
+		return "", nil
+	}
+
+	auth := map[string]any{"auth": map[string]string{"username": user, "password": token}}
+	registries, err := yaml.Marshal(map[string]any{
+		// k3s normalizes docker.io to registry-1.docker.io; include both so
+		// the auth applies regardless of which endpoint containerd resolves.
+		"configs": map[string]any{
+			"docker.io":            auth,
+			"registry-1.docker.io": auth,
+		},
+	})
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	f, err := os.CreateTemp("", "k3d-registries-*.yaml")
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer f.Close()
+
+	if _, err := f.Write(registries); err != nil {
+		return "", errors.WithStack(err)
+	}
+	return f.Name(), nil
+}
+
+>>>>>>> 308b7c1e (ci: authenticate Docker Hub pulls in test suites to avoid rate limiting)
 func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
 	if !usagePermitted {
 		return nil, errors.New(`use of the k3d package is only permitted when using the integration or acceptance build tag.
@@ -199,6 +290,16 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 			// hardware failures
 			`--k3s-arg`, `--node-taint=server=true:NoSchedule@server:*`,
 		}...)
+	}
+
+	// When Docker Hub credentials are available (CI), authenticate the
+	// cluster's containerd against docker.io so in-cluster image pulls
+	// (images not pre-imported, or re-pulled after kubelet image GC) aren't
+	// subject to the anonymous pull rate limit (429 Too Many Requests).
+	if registryConfig, err := dockerHubRegistryConfig(); err != nil {
+		return nil, err
+	} else if registryConfig != "" {
+		args = append(args, `--registry-config`, registryConfig)
 	}
 
 	out, err := exec.Command("k3d", args...).CombinedOutput()
