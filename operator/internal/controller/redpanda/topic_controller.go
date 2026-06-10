@@ -27,8 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kuberecorder "k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -138,7 +140,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	if includeV2 {
@@ -146,7 +148,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
@@ -542,12 +544,7 @@ func generateConf(
 
 	liveValues := make(map[string]*string, len(describedConfig))
 	for _, conf := range describedConfig {
-<<<<<<< HEAD
 		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && conf.Name != "cleanup.policy" {
-=======
-		liveValues[conf.Name] = conf.Value
-		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && !slices.Contains(undeletableConfigs, conf.Name) {
->>>>>>> d2a7d68d (operator: skip no-op IncrementalAlterConfigs in Topic reconciliation)
 			deleteConf[conf.Name] = nil
 		}
 	}

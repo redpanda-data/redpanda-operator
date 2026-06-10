@@ -15,7 +15,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -109,14 +109,14 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *
 	factory := internalclient.NewFactory(config, c, expander)
 
 	builder := ctrl.NewControllerManagedBy(mgr).
-		For(&redpandav1alpha2.ShadowLink{}, builder.WithPredicates(predicate.GenerationChangedPredicate{}))
+		For(&redpandav1alpha2.ShadowLink{}, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 
 	if includeV1 {
 		enqueueV1ShadowLink, err := controller.RegisterV1ClusterSourceIndex(ctx, mgr, "shadow_link_v1", &redpandav1alpha2.ShadowLink{}, &redpandav1alpha2.ShadowLinkList{})
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	if includeV2 {
@@ -124,7 +124,7 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")

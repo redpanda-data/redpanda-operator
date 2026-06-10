@@ -16,7 +16,9 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -97,7 +99,7 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secr
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	if includeV2 {
@@ -105,7 +107,7 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secr
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	controller := NewResourceController(c, factory, &SchemaReconciler{}, "SchemaReconciler")
