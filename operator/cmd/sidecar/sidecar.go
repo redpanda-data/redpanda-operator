@@ -12,6 +12,7 @@ package sidecar
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -33,6 +34,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/rpkprofile"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
@@ -58,6 +60,8 @@ func Command() *cobra.Command {
 		redpandaYAMLPath           string
 		usersDirectoryPath         string
 		watchUsers                 bool
+		watchRPKProfile            bool
+		rpkProfileSource           string
 		noSetSuperusers            bool
 		runDecommissioner          bool
 		runBrokerProbe             bool
@@ -89,6 +93,8 @@ func Command() *cobra.Command {
 				redpandaYAMLPath,
 				usersDirectoryPath,
 				watchUsers,
+				watchRPKProfile,
+				rpkProfileSource,
 				noSetSuperusers,
 				runDecommissioner,
 				runBrokerProbe,
@@ -127,6 +133,10 @@ func Command() *cobra.Command {
 	cmd.Flags().StringVar(&usersDirectoryPath, "users-directory", "/etc/secrets/users/", "Path to users directory where secrets are mounted.")
 	cmd.Flags().MarkHidden("no-set-superusers") // nolint:gosec
 
+	// rpk profile refresh flags (K8S-755)
+	cmd.Flags().BoolVar(&watchRPKProfile, "watch-rpk-profile", false, "Specifies if the sidecar should keep the rpk stanza of --redpanda-yaml in sync with the chart-rendered source so in-pod rpk tracks topology changes without a pod restart.")
+	cmd.Flags().StringVar(&rpkProfileSource, "rpk-profile-source", "/tmp/base-config/redpanda.yaml", "Path to the chart-rendered redpanda.yaml (on a kubelet-refreshed ConfigMap mount) whose rpk stanza is the source of truth.")
+
 	// broker probe flags
 	cmd.Flags().BoolVar(&runBrokerProbe, "run-broker-probe", false, "Specifies if the sidecar should run the health probe.")
 	cmd.Flags().StringVar(&brokerProbeAddr, "broker-probe-bind-address", ":8093", "The address the broker probe endpoint binds to.")
@@ -158,6 +168,8 @@ func Run(
 	redpandaYAMLPath string,
 	usersDirectoryPath string,
 	watchUsers bool,
+	watchRPKProfile bool,
+	rpkProfileSource string,
 	noSetSuperusers bool,
 	runDecommissioner bool,
 	runBrokerProbe bool,
@@ -305,6 +317,25 @@ func Run(
 		)
 		if err := mgr.GetLocalManager().Add(watcher); err != nil {
 			setupLog.Error(err, "unable to run config watcher")
+			return err
+		}
+	}
+
+	// Keep the rpk stanza of redpanda.yaml in sync with the chart-rendered
+	// source on the kubelet-refreshed ConfigMap mount (K8S-755). The init
+	// container renders redpanda.yaml once at pod startup, and seed-server
+	// changes deliberately do not roll pods, so without this the in-pod rpk
+	// broker list goes stale whenever brokers join or leave. Shares its
+	// watch loop with the v1 rpk-profile-watcher command.
+	if watchRPKProfile {
+		if err := mgr.GetLocalManager().Add(&rpkprofile.Watcher{
+			Log:       mgr.GetLogger().WithName("RPKProfileWatcher"),
+			SourceDir: filepath.Dir(rpkProfileSource),
+			Render: func(context.Context) error {
+				return rpkprofile.SyncRPKStanza(rpkProfileSource, redpandaYAMLPath)
+			},
+		}); err != nil {
+			setupLog.Error(err, "unable to run rpk profile watcher")
 			return err
 		}
 	}

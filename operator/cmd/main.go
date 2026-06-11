@@ -48,6 +48,7 @@ func init() {
 	rootCmd.AddCommand(
 		bootstrap.Command(),
 		configurator.Command(),
+		configurator.WatchRPKProfileCommand(),
 		crd.Command(),
 		multicluster.Command(),
 		ready.Command(),

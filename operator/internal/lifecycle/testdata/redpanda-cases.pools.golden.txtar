@@ -182,6 +182,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           - --no-set-superusers
           command:
           - /redpanda-operator
@@ -219,6 +221,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -571,6 +576,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           - --no-set-superusers
           command:
           - /redpanda-operator
@@ -611,6 +618,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -962,6 +972,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           command:
           - /redpanda-operator
           env:
@@ -1001,6 +1013,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -1409,6 +1424,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).console-disabled.console-disabled.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           - --no-set-superusers
           command:
           - /redpanda-operator
@@ -1446,6 +1463,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -1798,6 +1818,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           - --no-set-superusers
           command:
           - /redpanda-operator
@@ -1835,6 +1857,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -2188,6 +2213,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           command:
           - /redpanda-operator
           env:
@@ -2224,6 +2251,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
@@ -2577,6 +2607,8 @@
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
+          - --watch-rpk-profile
+          - --rpk-profile-source=/tmp/base-config/redpanda.yaml
           command:
           - /redpanda-operator
           env:
@@ -2613,6 +2645,9 @@
             name: redpanda-external-cert
           - mountPath: /etc/redpanda
             name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+            readOnly: true
           - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             name: kube-api-access
             readOnly: true
