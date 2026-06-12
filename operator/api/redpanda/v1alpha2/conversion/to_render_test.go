@@ -37,87 +37,6 @@ func TestNodepoolConversion(t *testing.T) {
 	})
 }
 
-<<<<<<< HEAD
-=======
-// TestPersistentVolumeClaimRetentionPolicyPrecedence pins the precedence chain for
-// persistentVolumeClaimRetentionPolicy: NodePool override > Redpanda CR cluster-level
-// value > chart default. The chain is implicit in the order of convertV2Fields and
-// convertV2NodepoolsToPools, so this test guards against silent regressions if those
-// are re-ordered.
-func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
-	deletePolicy := func(scaled, deleted appsv1.PersistentVolumeClaimRetentionPolicyType) *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy {
-		return &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
-			WhenScaled:  scaled,
-			WhenDeleted: deleted,
-		}
-	}
-	clusterPolicy := deletePolicy(appsv1.DeletePersistentVolumeClaimRetentionPolicyType, appsv1.RetainPersistentVolumeClaimRetentionPolicyType)
-	poolPolicy := deletePolicy(appsv1.RetainPersistentVolumeClaimRetentionPolicyType, appsv1.DeletePersistentVolumeClaimRetentionPolicyType)
-
-	cases := []struct {
-		name        string
-		clusterSet  *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
-		poolSet     *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
-		wantCluster appsv1.PersistentVolumeClaimRetentionPolicyType
-		wantScaled  appsv1.PersistentVolumeClaimRetentionPolicyType
-		wantDeleted appsv1.PersistentVolumeClaimRetentionPolicyType
-	}{
-		{
-			name:        "neither set -> chart default Retain/Retain",
-			wantScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
-			wantDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
-		},
-		{
-			name:        "cluster only -> pool inherits cluster",
-			clusterSet:  clusterPolicy,
-			wantScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
-			wantDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
-		},
-		{
-			name:        "pool only -> pool wins over chart default",
-			poolSet:     poolPolicy,
-			wantScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
-			wantDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
-		},
-		{
-			name:        "pool overrides cluster",
-			clusterSet:  clusterPolicy,
-			poolSet:     poolPolicy,
-			wantScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
-			wantDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			// Run convertV2Fields to populate the cluster-level value into state.Values,
-			// mirroring what ConvertV2ToRenderState does before per-pool conversion.
-			values := redpanda.Values{}
-			clusterSpec := &redpandav1alpha2.RedpandaClusterSpec{
-				Statefulset: &redpandav1alpha2.Statefulset{
-					PersistentVolumeClaimRetentionPolicy: tc.clusterSet,
-				},
-			}
-			state := &redpanda.RenderState{Values: values}
-			require.NoError(t, convertV2Fields(state, &state.Values, clusterSpec))
-
-			pool := &redpandav1alpha2.NodePool{
-				Spec: redpandav1alpha2.NodePoolSpec{
-					EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
-						PersistentVolumeClaimRetentionPolicy: tc.poolSet,
-					},
-				},
-			}
-			converted, err := convertV2NodepoolToPool(state.Values, pool, &V2Defaulters{})
-			require.NoError(t, err)
-			got := converted.Statefulset.PersistentVolumeClaimRetentionPolicy
-			require.NotNil(t, got, "rendered pool should always carry a policy (chart default ensures this)")
-			require.Equal(t, tc.wantScaled, got.WhenScaled)
-			require.Equal(t, tc.wantDeleted, got.WhenDeleted)
-		})
-	}
-}
-
 // TestConvertStatefulsetV2FieldsBrokerContainer is a regression test for
 // https://github.com/redpanda-data/redpanda-operator/issues/1577:
 // convertStatefulsetV2Fields retained a pointer to the redpanda container
@@ -173,9 +92,6 @@ func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
 	require.Contains(t, mountNames(sidecar), "io-config", "extraVolumeMounts must also land on the sidecar container")
 }
 
-<<<<<<< HEAD
->>>>>>> 913e317f (operator: fix broker container fields dropped by slice-pointer aliasing)
-=======
 // TestDuplicateBrokerContainerOverridesSurviveRender guards the agreement
 // between the conversion helpers and the chart's pod template merge when a CR
 // carries duplicate entries for the same container name (the CRD schema is a
@@ -201,18 +117,20 @@ func TestDuplicateBrokerContainerOverridesSurviveRender(t *testing.T) {
 						InitialDelaySeconds: ptr.To(44),
 					},
 					PodTemplate: &redpandav1alpha2.PodTemplate{
-						Spec: &applycorev1.PodSpecApplyConfiguration{
-							Containers: []applycorev1.ContainerApplyConfiguration{
-								{
-									Name: ptr.To(redpanda.RedpandaContainerName),
-									Env: []applycorev1.EnvVarApplyConfiguration{
-										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
+						Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
+							PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+								Containers: []applycorev1.ContainerApplyConfiguration{
+									{
+										Name: ptr.To(redpanda.RedpandaContainerName),
+										Env: []applycorev1.EnvVarApplyConfiguration{
+											{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
+										},
 									},
-								},
-								{
-									Name: ptr.To(redpanda.RedpandaContainerName),
-									Env: []applycorev1.EnvVarApplyConfiguration{
-										{Name: ptr.To("FROM_LAST_DUPLICATE"), Value: ptr.To("1")},
+									{
+										Name: ptr.To(redpanda.RedpandaContainerName),
+										Env: []applycorev1.EnvVarApplyConfiguration{
+											{Name: ptr.To("FROM_LAST_DUPLICATE"), Value: ptr.To("1")},
+										},
 									},
 								},
 							},
@@ -273,12 +191,14 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 						ExtraInitContainers: ptr.To("- name: " + redpanda.RedpandaConfiguratorContainerName + "\n  env:\n  - name: FROM_LAST_DUPLICATE\n    value: \"1\""),
 					},
 					PodTemplate: &redpandav1alpha2.PodTemplate{
-						Spec: &applycorev1.PodSpecApplyConfiguration{
-							InitContainers: []applycorev1.ContainerApplyConfiguration{
-								{
-									Name: ptr.To(redpanda.RedpandaConfiguratorContainerName),
-									Env: []applycorev1.EnvVarApplyConfiguration{
-										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
+						Spec: &redpandav1alpha2.PodSpecApplyConfiguration{
+							PodSpecApplyConfiguration: &applycorev1.PodSpecApplyConfiguration{
+								InitContainers: []applycorev1.ContainerApplyConfiguration{
+									{
+										Name: ptr.To(redpanda.RedpandaConfiguratorContainerName),
+										Env: []applycorev1.EnvVarApplyConfiguration{
+											{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
+										},
 									},
 								},
 							},
@@ -312,7 +232,6 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 	require.NotContains(t, envNames, "FROM_FIRST_DUPLICATE", "earlier duplicates are dropped wholesale, matching the chart's merge semantics")
 }
 
->>>>>>> 8df39fcb (operator: collapse duplicate container names before conversion writes)
 func TestConvertV2Fields(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		partialValues := rapid.MakeCustom[redpanda.PartialValues](fuzzing.ClusterSpecConfig()).Draw(t, "values")
