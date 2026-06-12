@@ -178,6 +178,12 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.InitContainers = []applycorev1.ContainerApplyConfiguration{}
 	}
 
+	// Collapse duplicate container names before taking any pointers: the
+	// chart's pod template merge keeps only the last duplicate, so a write
+	// to any earlier duplicate would be silently dropped at render time.
+	values.Statefulset.PodTemplate.Spec.Containers = dedupeContainersByName(values.Statefulset.PodTemplate.Spec.Containers)
+	values.Statefulset.PodTemplate.Spec.InitContainers = dedupeContainersByName(values.Statefulset.PodTemplate.Spec.InitContainers)
+
 	// NB: Both pointers must be acquired in a single containersOrInit call.
 	// Two consecutive containerOrInit calls used to leave the first returned
 	// pointer dangling into a stale backing array (the second call's append
@@ -273,6 +279,10 @@ func convertStatefulsetInitContainersV2Fields(state *redpanda.RenderState, value
 	if err := convertAndAppendYAMLNotNil(state, spec.ExtraInitContainers, &values.Statefulset.PodTemplate.Spec.InitContainers); err != nil {
 		return err
 	}
+	// extraInitContainers may duplicate an entry already declared in
+	// podTemplate.spec.initContainers; collapse again so the writes below
+	// land on the entry the chart's last-wins merge actually renders.
+	values.Statefulset.PodTemplate.Spec.InitContainers = dedupeContainersByName(values.Statefulset.PodTemplate.Spec.InitContainers)
 
 	if err := convertInitContainer(state, values, redpanda.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
 		return err
