@@ -105,6 +105,28 @@ func containerOrInit(containers *[]applycorev1.ContainerApplyConfiguration, name
 	return &(*containers)[len(*containers)-1]
 }
 
+// dedupeContainersByName collapses duplicate named entries in a container
+// list, keeping the content of the last occurrence at the position of the
+// first. The CRD schema accepts duplicates (plain array, no listType=map) and
+// the chart's pod template merge (mergeSliceBy) keys overrides by name with
+// last-wins semantics, so containerOrInit's first-match lookup would
+// otherwise mutate an entry the chart never renders — silently dropping the
+// write. Entries without a name are passed through untouched.
+func dedupeContainersByName(containers []applycorev1.ContainerApplyConfiguration) []applycorev1.ContainerApplyConfiguration {
+	indexByName := make(map[string]int, len(containers))
+	out := make([]applycorev1.ContainerApplyConfiguration, 0, len(containers))
+	for _, container := range containers {
+		name := ptr.Deref(container.Name, "")
+		if i, ok := indexByName[name]; ok && name != "" {
+			out[i] = container
+			continue
+		}
+		indexByName[name] = len(out)
+		out = append(out, container)
+	}
+	return out
+}
+
 // containersOrInit returns pointers to the containers with the given names,
 // appending any that don't exist yet. All appends happen before any pointer
 // is taken, so, unlike consecutive containerOrInit calls, the returned
