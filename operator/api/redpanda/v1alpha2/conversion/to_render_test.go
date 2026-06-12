@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
@@ -172,7 +173,146 @@ func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
 	require.Contains(t, mountNames(sidecar), "io-config", "extraVolumeMounts must also land on the sidecar container")
 }
 
+<<<<<<< HEAD
 >>>>>>> 913e317f (operator: fix broker container fields dropped by slice-pointer aliasing)
+=======
+// TestDuplicateBrokerContainerOverridesSurviveRender guards the agreement
+// between the conversion helpers and the chart's pod template merge when a CR
+// carries duplicate entries for the same container name (the CRD schema is a
+// plain array, so duplicates pass admission). containerOrInit matches the
+// first duplicate while the chart's mergeSliceBy keeps the last, so without
+// normalization every conversion write to the broker container (probes,
+// extraVolumeMounts) lands on an entry the chart never renders — the same
+// silent-drop failure as issue #1577, for malformed-but-accepted input.
+func TestDuplicateBrokerContainerOverridesSurviveRender(t *testing.T) {
+	cluster := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rp",
+			Namespace: "redpanda",
+		},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{
+					ExtraVolumeMounts: ptr.To("- name: io-config\n  mountPath: /etc/redpanda-io-config"),
+					LivenessProbe: &redpandav1alpha2.LivenessProbe{
+						InitialDelaySeconds: ptr.To(33),
+					},
+					StartupProbe: &redpandav1alpha2.StartupProbe{
+						InitialDelaySeconds: ptr.To(44),
+					},
+					PodTemplate: &redpandav1alpha2.PodTemplate{
+						Spec: &applycorev1.PodSpecApplyConfiguration{
+							Containers: []applycorev1.ContainerApplyConfiguration{
+								{
+									Name: ptr.To(redpanda.RedpandaContainerName),
+									Env: []applycorev1.EnvVarApplyConfiguration{
+										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
+									},
+								},
+								{
+									Name: ptr.To(redpanda.RedpandaContainerName),
+									Env: []applycorev1.EnvVarApplyConfiguration{
+										{Name: ptr.To("FROM_LAST_DUPLICATE"), Value: ptr.To("1")},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{}, cluster, nil)
+	require.NoError(t, err)
+
+	sets := redpanda.StatefulSets(state)
+	require.NotEmpty(t, sets)
+
+	var broker *corev1.Container
+	for i, container := range sets[0].Spec.Template.Spec.Containers {
+		if container.Name == redpanda.RedpandaContainerName {
+			require.Nil(t, broker, "rendered pod spec must contain exactly one redpanda container")
+			broker = &sets[0].Spec.Template.Spec.Containers[i]
+		}
+	}
+	require.NotNil(t, broker, "redpanda container not found in rendered StatefulSet")
+
+	require.NotNil(t, broker.LivenessProbe)
+	require.Equal(t, int32(33), broker.LivenessProbe.InitialDelaySeconds, "livenessProbe must survive duplicate container overrides")
+	require.NotNil(t, broker.StartupProbe)
+	require.Equal(t, int32(44), broker.StartupProbe.InitialDelaySeconds, "startupProbe must survive duplicate container overrides")
+
+	mountNames := functional.MapFn(func(m corev1.VolumeMount) string { return m.Name }, broker.VolumeMounts)
+	require.Contains(t, mountNames, "io-config", "extraVolumeMounts must survive duplicate container overrides")
+
+	envNames := functional.MapFn(func(e corev1.EnvVar) string { return e.Name }, broker.Env)
+	require.Contains(t, envNames, "FROM_LAST_DUPLICATE", "the last duplicate wins, matching the chart's merge semantics")
+	require.NotContains(t, envNames, "FROM_FIRST_DUPLICATE", "earlier duplicates are dropped wholesale, matching the chart's merge semantics")
+}
+
+// TestDuplicateInitContainerOverridesSurviveRender covers the second entry
+// vector for duplicate container names: extraInitContainers is appended to
+// the pod template's initContainers during conversion, so an entry there can
+// duplicate one declared in podTemplate.spec.initContainers. Conversion
+// writes (e.g. the configurator's extraVolumeMounts) must land on the entry
+// the chart's last-wins merge actually renders.
+func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
+	cluster := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rp",
+			Namespace: "redpanda",
+		},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{
+					InitContainers: &redpandav1alpha2.InitContainers{
+						Configurator: &redpandav1alpha2.Configurator{
+							ExtraVolumeMounts: ptr.To("- name: cfg-extra\n  mountPath: /cfg-extra"),
+						},
+						ExtraInitContainers: ptr.To("- name: " + redpanda.RedpandaConfiguratorContainerName + "\n  env:\n  - name: FROM_LAST_DUPLICATE\n    value: \"1\""),
+					},
+					PodTemplate: &redpandav1alpha2.PodTemplate{
+						Spec: &applycorev1.PodSpecApplyConfiguration{
+							InitContainers: []applycorev1.ContainerApplyConfiguration{
+								{
+									Name: ptr.To(redpanda.RedpandaConfiguratorContainerName),
+									Env: []applycorev1.EnvVarApplyConfiguration{
+										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{}, cluster, nil)
+	require.NoError(t, err)
+
+	sets := redpanda.StatefulSets(state)
+	require.NotEmpty(t, sets)
+
+	var configurator *corev1.Container
+	for i, container := range sets[0].Spec.Template.Spec.InitContainers {
+		if container.Name == redpanda.RedpandaConfiguratorContainerName {
+			require.Nil(t, configurator, "rendered pod spec must contain exactly one configurator init container")
+			configurator = &sets[0].Spec.Template.Spec.InitContainers[i]
+		}
+	}
+	require.NotNil(t, configurator, "configurator init container not found in rendered StatefulSet")
+
+	mountNames := functional.MapFn(func(m corev1.VolumeMount) string { return m.Name }, configurator.VolumeMounts)
+	require.Contains(t, mountNames, "cfg-extra", "configurator extraVolumeMounts must survive duplicate init container overrides")
+
+	envNames := functional.MapFn(func(e corev1.EnvVar) string { return e.Name }, configurator.Env)
+	require.Contains(t, envNames, "FROM_LAST_DUPLICATE", "the last duplicate wins, matching the chart's merge semantics")
+	require.NotContains(t, envNames, "FROM_FIRST_DUPLICATE", "earlier duplicates are dropped wholesale, matching the chart's merge semantics")
+}
+
+>>>>>>> 8df39fcb (operator: collapse duplicate container names before conversion writes)
 func TestConvertV2Fields(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		partialValues := rapid.MakeCustom[redpanda.PartialValues](fuzzing.ClusterSpecConfig()).Draw(t, "values")
