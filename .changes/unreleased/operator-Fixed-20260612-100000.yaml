@@ -1,4 +1,4 @@
 project: operator
 kind: Fixed
-body: Fixed `clusterSpec.statefulset` overrides (probes, `extraVolumeMounts`) being silently dropped when `podTemplate.spec.containers` or `podTemplate.spec.initContainers` contains duplicate entries with the same name — duplicates are now collapsed (last entry wins) to match the chart's merge semantics.
+body: Fixed `clusterSpec.statefulset` overrides (probes, `extraVolumeMounts`) being silently dropped when `podTemplate.spec.containers` or `podTemplate.spec.initContainers` contains duplicate entries with the same name — conversion now applies overrides to the entry the chart actually renders (the last duplicate, matching the chart's merge semantics).
 time: 2026-06-12T10:00:00.000000-07:00
