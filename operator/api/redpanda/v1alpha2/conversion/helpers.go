@@ -83,8 +83,21 @@ func convertJSONNotNil[T any, U *T, V any](from U, to *V) error {
 	return convertJSON(from, to)
 }
 
+// containerOrInit returns a pointer to the container with the given name,
+// appending one if it doesn't exist yet. If multiple entries share the name
+// (the CRD schema is a plain array, no listType=map, so duplicates pass
+// admission), the LAST one is returned: the chart's pod template merge
+// (mergeSliceBy) keys overrides by name with last-wins semantics, so the
+// last entry is the one the chart actually renders — a write to any earlier
+// duplicate would be silently dropped at render time.
+//
+// WARNING: The returned pointer points into the slice's backing array. Any
+// subsequent append to the slice may reallocate that array, after which
+// writes through previously returned pointers are silently lost. Never hold
+// the returned pointer across another containerOrInit (or append) on the
+// same slice — use containersOrInit to acquire multiple pointers at once.
 func containerOrInit(containers *[]applycorev1.ContainerApplyConfiguration, name string) *applycorev1.ContainerApplyConfiguration {
-	for i := range *containers {
+	for i := len(*containers) - 1; i >= 0; i-- {
 		container := &(*containers)[i]
 		if ptr.Deref(container.Name, "") == name {
 			return container
@@ -95,6 +108,22 @@ func containerOrInit(containers *[]applycorev1.ContainerApplyConfiguration, name
 	}
 	*containers = append(*containers, container)
 	return &(*containers)[len(*containers)-1]
+}
+
+// containersOrInit returns pointers to the containers with the given names,
+// appending any that don't exist yet. All appends happen before any pointer
+// is taken, so, unlike consecutive containerOrInit calls, the returned
+// pointers all point into the slice's final backing array and stay valid
+// while mutating any of them.
+func containersOrInit(containers *[]applycorev1.ContainerApplyConfiguration, names ...string) []*applycorev1.ContainerApplyConfiguration {
+	for _, name := range names {
+		containerOrInit(containers, name)
+	}
+	out := make([]*applycorev1.ContainerApplyConfiguration, len(names))
+	for i, name := range names {
+		out[i] = containerOrInit(containers, name)
+	}
+	return out
 }
 
 type containerSpec interface {
