@@ -197,7 +197,7 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, expander *secret
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Role)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Role, controller.ClusterSourceWatchOptions()...)
 	}
 
 	if includeV2 {
@@ -205,7 +205,7 @@ func SetupRoleController(ctx context.Context, mgr ctrl.Manager, expander *secret
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Role, controller.ClusterSourceWatchOptions()...)
 	}
 
 	controller := NewResourceController(c, factory, &RoleReconciler{}, "RoleReconciler")

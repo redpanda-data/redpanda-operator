@@ -176,7 +176,7 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secret
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User, controller.ClusterSourceWatchOptions()...)
 	}
 
 	if includeV2 {
@@ -184,7 +184,7 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secret
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User, controller.ClusterSourceWatchOptions()...)
 	}
 
 	controller := NewResourceController(c, factory, &UserReconciler{}, "UserReconciler")
