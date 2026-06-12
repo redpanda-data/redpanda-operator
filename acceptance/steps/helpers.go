@@ -32,6 +32,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -525,6 +526,31 @@ func userFromRow(t framework.TestingT, version, cluster, name, password, mechani
 	}
 
 	return user
+}
+
+// requireConditionAtCurrentGeneration polls until the object's condition of
+// the given type is True AND reflects the object's current generation.
+//
+// Checking the condition alone is racy: after a spec update, the condition
+// left over from the PREVIOUS sync still reads True until the controller
+// reconciles the new generation, so a follow-up assertion can observe
+// pre-update state (seen in "Replace all managed principals", where the
+// member check read the pre-swap principals). checkStableResource doesn't
+// close the race either — it only watches resourceVersion quiescence, not
+// whether the controller has caught up. Conditions written through
+// utils.StatusConditionConfigs (and the Topic condition builders) carry
+// ObservedGeneration, which is what ties "synced" to "synced at THIS
+// generation".
+func requireConditionAtCurrentGeneration(ctx context.Context, t framework.TestingT, o runtimeclient.Object, conditionType string, conditions func() []metav1.Condition) {
+	key := runtimeclient.ObjectKeyFromObject(o)
+
+	t.Logf("Waiting for condition %q of resource %q to reflect generation", conditionType, key.String())
+	require.Eventually(t, func() bool {
+		require.NoError(t, t.Get(ctx, key, o))
+		condition := apimeta.FindStatusCondition(conditions(), conditionType)
+		return condition != nil && condition.Status == metav1.ConditionTrue && condition.ObservedGeneration == o.GetGeneration()
+	}, 2*time.Minute, 1*time.Second, "Condition %q of resource %q never became True at the resource's current generation", conditionType, key.String())
+	t.Logf("Condition %q of resource %q reflects the current generation", conditionType, key.String())
 }
 
 func checkStableResource(ctx context.Context, t framework.TestingT, o runtimeclient.Object) {

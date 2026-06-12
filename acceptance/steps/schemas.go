@@ -23,6 +23,11 @@ func schemaIsSuccessfullySynced(ctx context.Context, t framework.TestingT, schem
 	var schemaObject redpandav1alpha2.Schema
 	require.NoError(t, t.Get(ctx, t.ResourceKey(schema), &schemaObject))
 
+	// make sure the controller has observed the resource's current
+	// generation; the synced/ready condition alone can be left over from a
+	// previous generation's sync (see requireConditionAtCurrentGeneration).
+	requireConditionAtCurrentGeneration(ctx, t, &schemaObject, redpandav1alpha2.ResourceConditionTypeSynced, func() []metav1.Condition { return schemaObject.Status.Conditions })
+
 	// make sure the resource is stable
 	checkStableResource(ctx, t, &schemaObject)
 
