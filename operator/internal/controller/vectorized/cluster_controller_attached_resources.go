@@ -434,7 +434,8 @@ func (a *attachedResources) statefulSet(cfg *clusterconfiguration.CombinedCfg) e
 			a.log,
 			a.reconciler.MetricsTimeout,
 			*np,
-			a.autoDeletePVCs)
+			a.autoDeletePVCs,
+			a.reconciler.BrokerPodNodeUnavailableToleration)
 
 		a.order = append(a.order, stsKey)
 	}

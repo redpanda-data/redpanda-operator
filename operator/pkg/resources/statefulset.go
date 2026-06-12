@@ -119,8 +119,13 @@ type StatefulSetResource struct {
 	nodePool          vectorizedv1alpha1.NodePoolSpecWithDeleted
 
 	autoDeletePVCs bool
-	timeout        time.Duration
-	dialer         redpanda.DialContextFunc
+	// brokerPodNodeUnavailableToleration is the operator-flag value
+	// passed through from the controller. See
+	// [resources.MaybeInjectNodeUnavailableTolerations] for the
+	// duration semantics (0=off, positive=seconds, negative=forever).
+	brokerPodNodeUnavailableToleration time.Duration
+	timeout                            time.Duration
+	dialer                             redpanda.DialContextFunc
 }
 
 func (r *StatefulSetResource) GetNodePool() *vectorizedv1alpha1.NodePoolSpecWithDeleted {
@@ -147,28 +152,30 @@ func NewStatefulSet(
 	metricsTimeout time.Duration,
 	nodePool vectorizedv1alpha1.NodePoolSpecWithDeleted, //nolint:gocritic // we want to pass by value
 	autoDeletePVCs bool,
+	brokerPodNodeUnavailableToleration time.Duration,
 ) *StatefulSetResource {
 	ssr := &StatefulSetResource{
-		Client:                   client,
-		scheme:                   scheme,
-		pandaCluster:             pandaCluster,
-		serviceFQDN:              serviceFQDN,
-		serviceName:              serviceName,
-		nodePortName:             nodePortName,
-		nodePortSvc:              corev1.Service{},
-		volumeProvider:           volumeProvider,
-		adminTLSConfigProvider:   adminTLSConfigProvider,
-		serviceAccountName:       serviceAccountName,
-		configuratorSettings:     configuratorSettings,
-		cfg:                      cfg,
-		adminAPIClientFactory:    adminAPIClientFactory,
-		dialer:                   dialer,
-		decommissionWaitInterval: decommissionWaitInterval,
-		logger:                   logger.WithName("StatefulSetResource"),
-		metricsTimeout:           defaultAdminAPITimeout,
-		LastObservedState:        nil,
-		nodePool:                 nodePool,
-		autoDeletePVCs:           autoDeletePVCs,
+		Client:                             client,
+		scheme:                             scheme,
+		pandaCluster:                       pandaCluster,
+		serviceFQDN:                        serviceFQDN,
+		serviceName:                        serviceName,
+		nodePortName:                       nodePortName,
+		nodePortSvc:                        corev1.Service{},
+		volumeProvider:                     volumeProvider,
+		adminTLSConfigProvider:             adminTLSConfigProvider,
+		serviceAccountName:                 serviceAccountName,
+		configuratorSettings:               configuratorSettings,
+		cfg:                                cfg,
+		adminAPIClientFactory:              adminAPIClientFactory,
+		dialer:                             dialer,
+		decommissionWaitInterval:           decommissionWaitInterval,
+		logger:                             logger.WithName("StatefulSetResource"),
+		metricsTimeout:                     defaultAdminAPITimeout,
+		LastObservedState:                  nil,
+		nodePool:                           nodePool,
+		autoDeletePVCs:                     autoDeletePVCs,
+		brokerPodNodeUnavailableToleration: brokerPodNodeUnavailableToleration,
 	}
 
 	if metricsTimeout != 0 {
@@ -362,7 +369,7 @@ func (r *StatefulSetResource) obj(
 	nps := r.getNodePoolStatus()
 	replicas := nps.CurrentReplicas
 
-	tolerations := r.nodePool.Tolerations
+	tolerations := MaybeInjectNodeUnavailableTolerations(r.nodePool.Tolerations, r.brokerPodNodeUnavailableToleration)
 	nodeSelector := r.nodePool.NodeSelector
 	resLimits := r.nodePool.Resources.Limits
 	resRequests := r.nodePool.Resources.Requests

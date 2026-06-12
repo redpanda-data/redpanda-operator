@@ -83,9 +83,10 @@ type MulticlusterOptions struct {
 
 	LicenseFilePath string
 
-	UnbindPVCsAfter  time.Duration
-	AllowPVRebinding bool
-	UnbinderSelector pflagutil.LabelSelectorValue
+	UnbindPVCsAfter                    time.Duration
+	AllowPVRebinding                   bool
+	UnbinderSelector                   pflagutil.LabelSelectorValue
+	BrokerPodNodeUnavailableToleration time.Duration
 
 	ClusterConnectionTimeout time.Duration
 	ReconcileTimeout         time.Duration
@@ -189,8 +190,10 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.LeaderElectionRenewDeadline, "local-leader-election-renew-deadline", 0, "Renew deadline for the local leader election lease (0 uses controller-runtime default of 10s)")
 	cmd.Flags().DurationVar(&o.LeaderElectionRetryPeriod, "local-leader-election-retry-period", 0, "Retry period for the local leader election lease (0 uses controller-runtime default of 2s)")
 	cmd.Flags().DurationVar(&o.UnbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
-	cmd.Flags().BoolVar(&o.AllowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
+	cmd.Flags().BoolVar(&o.AllowPVRebinding, "allow-pv-rebinding", false, "DEPRECATED. When the PVCUnbinder fires, also clear the freed PV's ClaimRef so the disk can be reused if the node returns. Risks cross-broker disk swap when multiple PVs are cleared concurrently. Leave at false (the default) — the unbinder's pause-annotation, multi-pod auto-detect, and per-cluster serialization gates make this flag unnecessary in practice and unsafe in the cases where it would have been useful.")
+	_ = cmd.Flags().MarkDeprecated("allow-pv-rebinding", "the gating checks added to the PVCUnbinder (pause annotation, multi-pod auto-detect, per-cluster serialization) supersede this flag; see the PVCUnbinder controller godoc")
 	cmd.Flags().Var(&o.UnbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
+	cmd.Flags().DurationVar(&o.BrokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
 	cmd.Flags().BoolVar(&o.EnableConsoleController, "enable-console", true, "Specifies whether or not to enable the Redpanda Console controller")
@@ -371,7 +374,7 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout); err != nil {
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}
