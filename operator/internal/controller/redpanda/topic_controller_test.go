@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr/testr"
-	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
@@ -37,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/pkg/otelutil/log"
 )
 
 func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
@@ -978,8 +978,7 @@ func TestUnsetStorageMode(t *testing.T) {
 	c, err := client.New(cfg, client.Options{Scheme: controller.UnifiedScheme})
 	require.NoError(t, err)
 
-	mgr := SetupTestManager(t, ctx, cfg, c)
-	factory := internalclient.NewFactory(mgr, nil)
+	factory := internalclient.NewFactory(cfg, c, nil)
 
 	defer os.Unsetenv("TESTCONTAINERS_RYUK_DISABLED")
 	if os.Getenv("CI") == "true" {
@@ -1018,8 +1017,9 @@ func TestUnsetStorageMode(t *testing.T) {
 	defer kafkaCl.Close()
 
 	tr := TopicReconciler{
-		Manager: mgr,
+		Client:  c,
 		Factory: factory,
+		Scheme:  controller.UnifiedScheme,
 	}
 
 	topicName := "unset-storage-mode-test"
@@ -1048,7 +1048,7 @@ func TestUnsetStorageMode(t *testing.T) {
 	require.NoError(t, c.Create(ctx, &topic))
 
 	key := types.NamespacedName{Name: topicName, Namespace: testNamespace}
-	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+	req := ctrl.Request{NamespacedName: key}
 
 	// First reconcile: creates the topic with storage mode in AdditionalConfig
 	// (returns early after creation, before alter config path)
