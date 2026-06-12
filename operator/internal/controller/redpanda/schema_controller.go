@@ -97,7 +97,7 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secr
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, controller.ClusterSourceWatchOptions()...)
 	}
 
 	if includeV2 {
@@ -105,7 +105,7 @@ func SetupSchemaController(ctx context.Context, mgr ctrl.Manager, expander *secr
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Schema, controller.ClusterSourceWatchOptions()...)
 	}
 
 	controller := NewResourceController(c, factory, &SchemaReconciler{}, "SchemaReconciler")

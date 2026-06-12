@@ -28,6 +28,11 @@ func userIsSuccessfullySynced(ctx context.Context, t framework.TestingT, user st
 	var userObject redpandav1alpha2.User
 	require.NoError(t, t.Get(ctx, t.ResourceKey(user), &userObject))
 
+	// make sure the controller has observed the resource's current
+	// generation; the synced/ready condition alone can be left over from a
+	// previous generation's sync (see requireConditionAtCurrentGeneration).
+	requireConditionAtCurrentGeneration(ctx, t, &userObject, redpandav1alpha2.ResourceConditionTypeSynced, func() []metav1.Condition { return userObject.Status.Conditions })
+
 	// make sure the resource is stable
 	checkStableResource(ctx, t, &userObject)
 

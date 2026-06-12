@@ -24,6 +24,11 @@ func topicIsSuccessfullySynced(ctx context.Context, t framework.TestingT, topic 
 	var topicObject redpandav1alpha2.Topic
 	require.NoError(t, t.Get(ctx, t.ResourceKey(topic), &topicObject))
 
+	// make sure the controller has observed the resource's current
+	// generation; the synced/ready condition alone can be left over from a
+	// previous generation's sync (see requireConditionAtCurrentGeneration).
+	requireConditionAtCurrentGeneration(ctx, t, &topicObject, redpandav1alpha2.ReadyCondition, func() []metav1.Condition { return topicObject.Status.Conditions })
+
 	// make sure the resource is stable
 	checkStableResource(ctx, t, &topicObject)
 

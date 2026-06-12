@@ -116,7 +116,7 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1ShadowLink, controller.ClusterSourceWatchOptions()...)
 	}
 
 	if includeV2 {
@@ -124,7 +124,7 @@ func SetupShadowLinkController(ctx context.Context, mgr ctrl.Manager, expander *
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2ShadowLink, controller.ClusterSourceWatchOptions()...)
 	}
 
 	controller := NewResourceController(c, factory, &ShadowLinkReconciler{}, "ShadowLinkReconciler")

@@ -28,6 +28,11 @@ func roleIsSuccessfullySynced(ctx context.Context, t framework.TestingT, role st
 	var roleObject redpandav1alpha2.RedpandaRole
 	require.NoError(t, t.Get(ctx, t.ResourceKey(role), &roleObject))
 
+	// make sure the controller has observed the resource's current
+	// generation; the synced/ready condition alone can be left over from a
+	// previous generation's sync (see requireConditionAtCurrentGeneration).
+	requireConditionAtCurrentGeneration(ctx, t, &roleObject, redpandav1alpha2.ResourceConditionTypeSynced, func() []metav1.Condition { return roleObject.Status.Conditions })
+
 	// make sure the resource is stable
 	checkStableResource(ctx, t, &roleObject)
 
