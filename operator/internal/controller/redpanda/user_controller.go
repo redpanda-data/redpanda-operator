@@ -18,7 +18,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -176,7 +178,7 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secret
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1User, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	if includeV2 {
@@ -184,7 +186,7 @@ func SetupUserController(ctx context.Context, mgr ctrl.Manager, expander *secret
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2User, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	controller := NewResourceController(c, factory, &UserReconciler{}, "UserReconciler")

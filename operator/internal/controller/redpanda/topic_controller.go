@@ -28,8 +28,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kuberecorder "k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	v2 "sigs.k8s.io/controller-runtime/pkg/webhook/conversion/testdata/api/v2"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -139,7 +141,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		if err != nil {
 			return err
 		}
-		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema)
+		builder.Watches(&vectorizedv1alpha1.Cluster{}, enqueueV1Schema, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	if includeV2 {
@@ -147,7 +149,7 @@ func SetupTopicController(ctx context.Context, mgr ctrl.Manager, expander *secre
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic)
+		builder.Watches(&redpandav1alpha2.Redpanda{}, enqueueV2Topic, ctrlbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))
 	}
 
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, r))
@@ -550,7 +552,9 @@ func generateConf(
 	setConf = make(map[string]string)
 	specialSetConf = make(map[string]string)
 
+	liveValues := make(map[string]*string, len(describedConfig))
 	for _, conf := range describedConfig {
+		liveValues[conf.Name] = conf.Value
 		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && !slices.Contains(undeletableConfigs, conf.Name) {
 			deleteConf[conf.Name] = nil
 		}
@@ -571,12 +575,21 @@ func generateConf(
 			delete(deleteConf, k)
 		}
 		if v != nil {
+			// Only issue a SET when the broker's live value differs from the
+			// desired value; otherwise every reconcile of a converged topic
+			// emits a no-op IncrementalAlterConfigs that spams the broker's
+			// audit log.
+			if live, ok := liveValues[k]; ok && live != nil && *live == *v {
+				continue
+			}
 			setConf[k] = *v
 		}
 	}
 	if remoteWrite && remoteRead {
-		delete(setConf, "redpanda.remote.write")
-		specialSetConf["redpanda.remote.write"] = *topicSpecSingleValue["redpanda.remote.write"]
+		if _, ok := setConf["redpanda.remote.write"]; ok {
+			delete(setConf, "redpanda.remote.write")
+			specialSetConf["redpanda.remote.write"] = *topicSpecSingleValue["redpanda.remote.write"]
+		}
 	}
 
 	if desiredReplicationFactor != actualReplicationFactor {

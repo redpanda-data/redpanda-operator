@@ -964,6 +964,155 @@ func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear su
 	})
 }
 
+func describedConf(name, value string, source kmsg.ConfigSource) kmsg.DescribeConfigsResponseResourceConfig {
+	conf := kmsg.NewDescribeConfigsResponseResourceConfig()
+	conf.Name = name
+	conf.Value = ptr.To(value)
+	conf.Source = source
+	return conf
+}
+
+func TestGenerateConf(t *testing.T) {
+	for name, tc := range map[string]struct {
+		described          []kmsg.DescribeConfigsResponseResourceConfig
+		spec               map[string]*string
+		desiredReplicas    int16
+		actualReplicas     int16
+		expectedSet        map[string]string
+		expectedSpecialSet map[string]string
+		expectedDelete     map[string]any
+	}{
+		"converged topic issues no operations": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("retention.ms", "43200000", kmsg.ConfigSourceDynamicTopicConfig),
+				describedConf("cleanup.policy", "delete", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec: map[string]*string{
+				"retention.ms":   ptr.To("43200000"),
+				"cleanup.policy": ptr.To("delete"),
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"only the differing key is set": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("retention.ms", "43200000", kmsg.ConfigSourceDynamicTopicConfig),
+				describedConf("max.message.bytes", "1048576", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec: map[string]*string{
+				"retention.ms":      ptr.To("86400000"),
+				"max.message.bytes": ptr.To("1048576"),
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{"retention.ms": "86400000"},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"key matching the broker default is not re-set": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("retention.ms", "43200000", kmsg.ConfigSourceDefaultConfig),
+			},
+			spec: map[string]*string{
+				"retention.ms": ptr.To("43200000"),
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"key absent from the broker is set": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{},
+			spec: map[string]*string{
+				"retention.ms": ptr.To("43200000"),
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{"retention.ms": "43200000"},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"dynamic broker key removed from the spec is deleted": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("segment.bytes", "104857600", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec:               map[string]*string{},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{"segment.bytes": nil},
+		},
+		"nil spec value is neither set nor deleted": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("retention.ms", "43200000", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec: map[string]*string{
+				"retention.ms": nil,
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"changed remote.read and remote.write are split into a special set": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("redpanda.remote.read", "false", kmsg.ConfigSourceDynamicTopicConfig),
+				describedConf("redpanda.remote.write", "false", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec: map[string]*string{
+				"redpanda.remote.read":  ptr.To("true"),
+				"redpanda.remote.write": ptr.To("true"),
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{"redpanda.remote.read": "true"},
+			expectedSpecialSet: map[string]string{"redpanda.remote.write": "true"},
+			expectedDelete:     map[string]any{},
+		},
+		"converged remote.read and remote.write issue no operations": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("redpanda.remote.read", "true", kmsg.ConfigSourceDynamicTopicConfig),
+				describedConf("redpanda.remote.write", "true", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec: map[string]*string{
+				"redpanda.remote.read":  ptr.To("true"),
+				"redpanda.remote.write": ptr.To("true"),
+			},
+			desiredReplicas:    1,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+		"replication factor change is set even when configs are converged": {
+			described: []kmsg.DescribeConfigsResponseResourceConfig{
+				describedConf("retention.ms", "43200000", kmsg.ConfigSourceDynamicTopicConfig),
+			},
+			spec: map[string]*string{
+				"retention.ms": ptr.To("43200000"),
+			},
+			desiredReplicas:    3,
+			actualReplicas:     1,
+			expectedSet:        map[string]string{"replication.factor": "3"},
+			expectedSpecialSet: map[string]string{},
+			expectedDelete:     map[string]any{},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			setConf, specialSetConf, deleteConf := generateConf(tc.described, tc.spec, tc.desiredReplicas, tc.actualReplicas)
+			assert.Equal(t, tc.expectedSet, setConf)
+			assert.Equal(t, tc.expectedSpecialSet, specialSetConf)
+			assert.Equal(t, tc.expectedDelete, deleteConf)
+		})
+	}
+}
+
 func TestUnsetStorageMode(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()

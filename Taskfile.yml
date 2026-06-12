@@ -252,8 +252,33 @@ tasks:
       - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
 
     cmds:
-      - for: {var: IMAGES}
-        cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
+      # Authenticate to Docker Hub when credentials are available (CI) so
+      # pulls aren't subject to the anonymous rate limit (429 Too Many
+      # Requests), which otherwise causes silent pull failures here and
+      # ImagePullBackOff timeouts mid-test.
+      - cmd: |
+          if [ -n "${DOCKERHUB_USER:-}" ] && [ -n "${DOCKERHUB_TOKEN:-}" ]; then
+            echo "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USER" --password-stdin
+          fi
+        silent: true
+      - |
+        pids=""
+        {{range .IMAGES}}
+        (docker inspect "{{.}}" > /dev/null 2>&1 || docker pull -q "{{.}}") &
+        pids="$pids $!"
+        {{end}}
+        for pid in $pids; do wait "$pid" || true; done
+        # Pulls above are parallel and best-effort; verify afterwards so a
+        # missing image fails here with a clear message instead of as a k3d
+        # import error or an in-cluster ImagePullBackOff timeout mid-test.
+        missing=""
+        {{range .IMAGES}}
+        docker inspect "{{.}}" > /dev/null 2>&1 || missing="$missing {{.}}"
+        {{end}}
+        if [ -n "$missing" ]; then
+          echo "ERROR: failed to pull image(s):$missing" >&2
+          exit 1
+        fi
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"
