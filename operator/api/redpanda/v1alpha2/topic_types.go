@@ -43,6 +43,19 @@ type TopicSpec struct {
 	// `redpanda.remote.read=true`
 	// `redpanda.remote.recovery=true`
 	// `redpanda.remote.delete=true`
+	//
+	// The map is reconciled declaratively against the live topic configuration:
+	//
+	// - A key with a string value is kept in sync on the topic: whenever the
+	//   live value differs from the desired one, the operator sets it back.
+	// - A key absent from the map is not managed; if the topic carries a
+	//   non-default value for it, the operator resets it to the cluster
+	//   default. (Exceptions: `cleanup.policy` and `redpanda.storage.mode`
+	//   are never reset.)
+	// - A key with a null value is exempt from both: the operator neither
+	//   updates it nor resets it to the cluster default. Use this for a
+	//   configuration that is managed outside the operator (e.g. set via
+	//   `rpk` or another client) and should be left untouched.
 	AdditionalConfig map[string]*string `json:"additionalConfig,omitempty"`
 
 	// ClusterSource is a reference to the cluster where the user should be created.
