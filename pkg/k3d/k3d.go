@@ -156,60 +156,6 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 	return cluster, nil
 }
 
-<<<<<<< HEAD
-=======
-// imageMarkerPath returns a file path used to track whether an image has
-// already been imported into a given k3d cluster.
-func imageMarkerPath(clusterName, image string) string {
-	// Sanitize image name for use as a filename.
-	safe := strings.NewReplacer("/", "_", ":", "_", ".", "_").Replace(image)
-	return filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s-img-%s", clusterName, safe))
-}
-
-func imageAlreadyImported(clusterName, image string) bool {
-	_, err := os.Stat(imageMarkerPath(clusterName, image))
-	return err == nil
-}
-
-func markImageImported(clusterName, image string) {
-	os.WriteFile(imageMarkerPath(clusterName, image), nil, 0o600) //nolint:errcheck
-}
-
-// clearImageMarkers removes all image import marker files for a given cluster,
-// so that a freshly (re)created cluster re-imports all needed images.
-func clearImageMarkers(clusterName string) {
-	prefix := fmt.Sprintf("k3d-%s-img-", clusterName)
-	entries, err := os.ReadDir(os.TempDir())
-	if err != nil {
-		return
-	}
-	for _, e := range entries {
-		if strings.HasPrefix(e.Name(), prefix) {
-			os.Remove(filepath.Join(os.TempDir(), e.Name())) //nolint:errcheck
-		}
-	}
-}
-
-// lockFile acquires an exclusive file lock for the given cluster name.
-// It returns an unlock function that must be called when the critical section is done.
-func lockFile(name string) (func(), error) {
-	lockPath := filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s.lock", name))
-	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o600)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := unix.Flock(int(f.Fd()), unix.LOCK_EX); err != nil {
-		f.Close()
-		return nil, err
-	}
-
-	return func() {
-		unix.Flock(int(f.Fd()), unix.LOCK_UN) //nolint:errcheck
-		f.Close()
-	}, nil
-}
-
 // dockerHubRegistryConfig writes a k3s registries.yaml granting containerd
 // authenticated access to Docker Hub, sourced from the DOCKERHUB_USER and
 // DOCKERHUB_TOKEN environment variables. It returns "" when the credentials
@@ -246,7 +192,6 @@ func dockerHubRegistryConfig() (string, error) {
 	return f.Name(), nil
 }
 
->>>>>>> 308b7c1e (ci: authenticate Docker Hub pulls in test suites to avoid rate limiting)
 func NewCluster(name string, opts ...ClusterOpt) (*Cluster, error) {
 	if !usagePermitted {
 		return nil, errors.New(`use of the k3d package is only permitted when using the integration or acceptance build tag.

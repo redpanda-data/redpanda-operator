@@ -252,10 +252,6 @@ tasks:
       - docker.redpanda.com/redpandadata/redpanda-operator:{{.TEST_UPGRADE_OPERATOR_VERSION}}
 
     cmds:
-<<<<<<< HEAD
-      - for: {var: IMAGES}
-        cmd: docker inspect {{.ITEM}} > /dev/null || docker pull {{.ITEM}}
-=======
       # Authenticate to Docker Hub when credentials are available (CI) so
       # pulls aren't subject to the anonymous rate limit (429 Too Many
       # Requests), which otherwise causes silent pull failures here and
@@ -283,7 +279,6 @@ tasks:
           echo "ERROR: failed to pull image(s):$missing" >&2
           exit 1
         fi
->>>>>>> 308b7c1e (ci: authenticate Docker Hub pulls in test suites to avoid rate limiting)
 
   pending-prs:
     desc: "Get all pending PRs for watched branches"
