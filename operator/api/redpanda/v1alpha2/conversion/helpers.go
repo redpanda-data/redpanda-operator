@@ -84,7 +84,12 @@ func convertJSONNotNil[T any, U *T, V any](from U, to *V) error {
 }
 
 // containerOrInit returns a pointer to the container with the given name,
-// appending one if it doesn't exist yet.
+// appending one if it doesn't exist yet. If multiple entries share the name
+// (the CRD schema is a plain array, no listType=map, so duplicates pass
+// admission), the LAST one is returned: the chart's pod template merge
+// (mergeSliceBy) keys overrides by name with last-wins semantics, so the
+// last entry is the one the chart actually renders — a write to any earlier
+// duplicate would be silently dropped at render time.
 //
 // WARNING: The returned pointer points into the slice's backing array. Any
 // subsequent append to the slice may reallocate that array, after which
@@ -92,7 +97,7 @@ func convertJSONNotNil[T any, U *T, V any](from U, to *V) error {
 // the returned pointer across another containerOrInit (or append) on the
 // same slice — use containersOrInit to acquire multiple pointers at once.
 func containerOrInit(containers *[]applycorev1.ContainerApplyConfiguration, name string) *applycorev1.ContainerApplyConfiguration {
-	for i := range *containers {
+	for i := len(*containers) - 1; i >= 0; i-- {
 		container := &(*containers)[i]
 		if ptr.Deref(container.Name, "") == name {
 			return container
@@ -103,28 +108,6 @@ func containerOrInit(containers *[]applycorev1.ContainerApplyConfiguration, name
 	}
 	*containers = append(*containers, container)
 	return &(*containers)[len(*containers)-1]
-}
-
-// dedupeContainersByName collapses duplicate named entries in a container
-// list, keeping the content of the last occurrence at the position of the
-// first. The CRD schema accepts duplicates (plain array, no listType=map) and
-// the chart's pod template merge (mergeSliceBy) keys overrides by name with
-// last-wins semantics, so containerOrInit's first-match lookup would
-// otherwise mutate an entry the chart never renders — silently dropping the
-// write. Entries without a name are passed through untouched.
-func dedupeContainersByName(containers []applycorev1.ContainerApplyConfiguration) []applycorev1.ContainerApplyConfiguration {
-	indexByName := make(map[string]int, len(containers))
-	out := make([]applycorev1.ContainerApplyConfiguration, 0, len(containers))
-	for _, container := range containers {
-		name := ptr.Deref(container.Name, "")
-		if i, ok := indexByName[name]; ok && name != "" {
-			out[i] = container
-			continue
-		}
-		indexByName[name] = len(out)
-		out = append(out, container)
-	}
-	return out
 }
 
 // containersOrInit returns pointers to the containers with the given names,
