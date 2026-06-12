@@ -544,6 +544,7 @@ func generateConf(
 
 	liveValues := make(map[string]*string, len(describedConfig))
 	for _, conf := range describedConfig {
+		liveValues[conf.Name] = conf.Value
 		if conf.Source != kmsg.ConfigSourceDefaultConfig && conf.Value != nil && conf.Name != "cleanup.policy" {
 			deleteConf[conf.Name] = nil
 		}
