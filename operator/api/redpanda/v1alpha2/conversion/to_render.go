@@ -178,8 +178,13 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.InitContainers = []applycorev1.ContainerApplyConfiguration{}
 	}
 
-	redpandaContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
-	sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.SidecarContainerName)
+	// NB: Both pointers must be acquired in a single containersOrInit call.
+	// Two consecutive containerOrInit calls used to leave the first returned
+	// pointer dangling into a stale backing array (the second call's append
+	// reallocates it), silently discarding every write to the redpanda
+	// container below. See https://github.com/redpanda-data/redpanda-operator/issues/1577.
+	brokerAndSidecar := containersOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName, redpanda.SidecarContainerName)
+	redpandaContainer, sidecarContainer := brokerAndSidecar[0], brokerAndSidecar[1]
 
 	if spec.Annotations != nil {
 		values.Statefulset.PodTemplate.Annotations = spec.Annotations
@@ -194,24 +199,32 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = ptr.To(int64(*spec.TerminationGracePeriodSeconds))
 	}
 
-	if redpandaContainer.LivenessProbe == nil {
-		redpandaContainer.LivenessProbe = &applycorev1.ProbeApplyConfiguration{}
+	// Only materialize probe overrides the CR actually sets; unconditionally
+	// initializing them would emit a spurious `livenessProbe: {}` (etc.) on
+	// every rendered pod template.
+	if spec.LivenessProbe != nil {
+		if redpandaContainer.LivenessProbe == nil {
+			redpandaContainer.LivenessProbe = &applycorev1.ProbeApplyConfiguration{}
+		}
+		if err := convertJSONNotNil(spec.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
+			return err
+		}
 	}
-	if redpandaContainer.StartupProbe == nil {
-		redpandaContainer.StartupProbe = &applycorev1.ProbeApplyConfiguration{}
+	if spec.StartupProbe != nil {
+		if redpandaContainer.StartupProbe == nil {
+			redpandaContainer.StartupProbe = &applycorev1.ProbeApplyConfiguration{}
+		}
+		if err := convertJSONNotNil(spec.StartupProbe, redpandaContainer.StartupProbe); err != nil {
+			return err
+		}
 	}
-	if sidecarContainer.ReadinessProbe == nil {
-		sidecarContainer.ReadinessProbe = &applycorev1.ProbeApplyConfiguration{}
-	}
-
-	if err := convertJSONNotNil(spec.LivenessProbe, redpandaContainer.LivenessProbe); err != nil {
-		return err
-	}
-	if err := convertJSONNotNil(spec.StartupProbe, redpandaContainer.StartupProbe); err != nil {
-		return err
-	}
-	if err := convertJSONNotNil(spec.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
-		return err
+	if spec.ReadinessProbe != nil {
+		if sidecarContainer.ReadinessProbe == nil {
+			sidecarContainer.ReadinessProbe = &applycorev1.ProbeApplyConfiguration{}
+		}
+		if err := convertJSONNotNil(spec.ReadinessProbe, sidecarContainer.ReadinessProbe); err != nil {
+			return err
+		}
 	}
 
 	if err := convertAndAppendJSONNotNil(spec.Tolerations, &values.Statefulset.PodTemplate.Spec.Tolerations); err != nil {
