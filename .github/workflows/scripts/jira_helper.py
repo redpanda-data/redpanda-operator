@@ -304,7 +304,10 @@ issue that triggered this issue's creation.
     def _find_jira_issue_by_gh_issue_url(self) -> str:
         issue_url = os.environ['ISSUE_URL']
         jql_request = f'project = {self._project_key} and "External GitHub Issue[URL Field]" = "{issue_url}"'
-        issues = self._jira.jql(jql=jql_request, fields='summary')
+        # Jira Cloud removed /rest/api/{2,3}/search (HTTP 410, see
+        # https://developer.atlassian.com/changelog/#CHANGE-2046); enhanced_jql
+        # targets the replacement /rest/api/2/search/jql endpoint.
+        issues = self._jira.enhanced_jql(jql_request, fields='summary')
         issues = issues['issues']
         if len(issues) == 0:
             raise NoJiraIssueFound()
