@@ -244,6 +244,10 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 	if registryConfig, err := dockerHubRegistryConfig(); err != nil {
 		return nil, err
 	} else if registryConfig != "" {
+		// `k3d cluster create` copies the config into the node containers,
+		// so the host copy is only needed while the command runs. Remove it
+		// on return so the credentials don't linger in the temp dir.
+		defer os.Remove(registryConfig) //nolint:errcheck
 		args = append(args, `--registry-config`, registryConfig)
 	}
 
