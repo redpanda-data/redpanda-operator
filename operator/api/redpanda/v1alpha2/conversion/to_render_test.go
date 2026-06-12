@@ -179,11 +179,11 @@ func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
 // TestDuplicateBrokerContainerOverridesSurviveRender guards the agreement
 // between the conversion helpers and the chart's pod template merge when a CR
 // carries duplicate entries for the same container name (the CRD schema is a
-// plain array, so duplicates pass admission). containerOrInit matches the
-// first duplicate while the chart's mergeSliceBy keeps the last, so without
-// normalization every conversion write to the broker container (probes,
-// extraVolumeMounts) lands on an entry the chart never renders — the same
-// silent-drop failure as issue #1577, for malformed-but-accepted input.
+// plain array, so duplicates pass admission). The chart's mergeSliceBy keeps
+// only the last duplicate, so a conversion write to any earlier duplicate
+// (probes, extraVolumeMounts) would land on an entry the chart never renders
+// — the same silent-drop failure as issue #1577, for malformed-but-accepted
+// input. containerOrInit therefore has to match the LAST duplicate.
 func TestDuplicateBrokerContainerOverridesSurviveRender(t *testing.T) {
 	cluster := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
