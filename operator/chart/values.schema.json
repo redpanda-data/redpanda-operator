@@ -1046,9 +1046,6 @@
       },
       "type": "object"
     },
-    "priorityClassName": {
-      "type": "string"
-    },
     "podAnnotations": {
       "additionalProperties": {
         "type": "string"
@@ -6322,6 +6319,9 @@
         "spec"
       ],
       "type": "object"
+    },
+    "priorityClassName": {
+      "type": "string"
     },
     "rbac": {
       "additionalProperties": false,

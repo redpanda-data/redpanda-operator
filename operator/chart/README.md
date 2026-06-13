@@ -304,12 +304,6 @@ Node selection constraints for scheduling Pods on specific nodes. For details, s
 
 **Default:** `{}`
 
-### [priorityClassName](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=priorityClassName)
-
-PriorityClassName assigned to the Redpanda Operator Pods. Set this to a higher-priority PriorityClass so the operator is less likely to be preempted when the cluster is under resource pressure. Empty by default (uses the cluster's global default PriorityClass, if any). For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/).
-
-**Default:** `""`
-
 ### [podTemplate](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=podTemplate)
 
 Sets almost all fields of operator Deployment PodTemplate For details, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec).
@@ -329,6 +323,12 @@ A subset of Kubernetes' PodSpec type that will be merged into the final PodSpec.
 ```
 {"containers":[{"name":"manager","resources":{}}],"securityContext":{"runAsUser":65532}}
 ```
+
+### [priorityClassName](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=priorityClassName)
+
+PriorityClassName assigned to the Redpanda Operator Pods. Set this to a higher-priority PriorityClass so the operator is less likely to be preempted when the cluster is under resource pressure. Empty by default (uses the cluster's global default PriorityClass, if any). For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/).
+
+**Default:** `""`
 
 ### [rbac](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=rbac)
 
