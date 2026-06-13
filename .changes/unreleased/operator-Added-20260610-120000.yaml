@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "Added optional anonymous cluster-shape telemetry (NodePools, stretch clusters, Connect, storage CSI drivers, PVC Unbinder, CRD/Topic counts), disabled in builds without an embedded key and via --disable-telemetry."
+time: 2026-06-10T12:00:00.000000-07:00

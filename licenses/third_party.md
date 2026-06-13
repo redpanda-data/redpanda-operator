@@ -90,6 +90,8 @@ Run `task generate:third-party-licenses-list`.
 | github.com/go-chi/chi/v5 | [MIT](https://github.com/go-chi/chi/blob/v5.2.5/LICENSE) |
 | github.com/go-errors/errors | [MIT](https://github.com/go-errors/errors/blob/v1.5.1/LICENSE.MIT) |
 | github.com/go-gorp/gorp/v3 | [MIT](https://github.com/go-gorp/gorp/blob/v3.1.0/LICENSE) |
+| github.com/go-jose/go-jose/v4 | [Apache-2.0](https://github.com/go-jose/go-jose/blob/v4.1.4/LICENSE) |
+| github.com/go-jose/go-jose/v4/json | [BSD-3-Clause](https://github.com/go-jose/go-jose/blob/v4.1.4/json/LICENSE) |
 | github.com/go-logr/logr | [Apache-2.0](https://github.com/go-logr/logr/blob/v1.4.3/LICENSE) |
 | github.com/go-logr/stdr | [Apache-2.0](https://github.com/go-logr/stdr/blob/v1.2.2/LICENSE) |
 | github.com/go-logr/zapr | [Apache-2.0](https://github.com/go-logr/zapr/blob/v1.3.0/LICENSE) |
@@ -107,6 +109,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/go-openapi/swag/stringutils | [Apache-2.0](https://github.com/go-openapi/swag/blob/stringutils/v0.25.4/LICENSE) |
 | github.com/go-openapi/swag/typeutils | [Apache-2.0](https://github.com/go-openapi/swag/blob/typeutils/v0.25.4/LICENSE) |
 | github.com/go-openapi/swag/yamlutils | [Apache-2.0](https://github.com/go-openapi/swag/blob/yamlutils/v0.25.4/LICENSE) |
+| github.com/go-resty/resty/v2 | [MIT](https://github.com/go-resty/resty/blob/v2.17.2/LICENSE) |
 | github.com/go-viper/mapstructure/v2 | [MIT](https://github.com/go-viper/mapstructure/blob/v2.5.0/LICENSE) |
 | github.com/gobwas/glob | [MIT](https://github.com/gobwas/glob/blob/v0.2.3/LICENSE) |
 | github.com/gogo/protobuf | [BSD-3-Clause](https://github.com/gogo/protobuf/blob/v1.3.2/LICENSE) |

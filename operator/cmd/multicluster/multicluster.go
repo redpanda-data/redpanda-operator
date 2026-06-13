@@ -21,6 +21,7 @@ import (
 	"github.com/redpanda-data/common-go/license"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/discovery"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
@@ -30,11 +31,13 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/telemetry"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/watcher"
@@ -46,6 +49,13 @@ import (
 
 //+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;create;update;patch
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;create;update;patch
+
+// Telemetry permissions: the telemetry collector lists CRDs cluster-wide to
+// count Redpanda CRDs, and the source-identifier resolver reads the operator's
+// own ReplicaSet to walk up to the owning Deployment. The collector uses the
+// uncached API reader, so only "list" (not "watch") is required.
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=list
+// +kubebuilder:rbac:groups=apps,namespace=default,resources=replicasets,verbs=get
 
 type RaftCluster struct {
 	Name    string
@@ -101,6 +111,12 @@ type MulticlusterOptions struct {
 	ShadowLinkSyncInterval time.Duration
 
 	EnableConsoleController bool
+
+	disableTelemetry          bool
+	telemetrySourceIdentifier string
+	telemetryEndpoint         string
+	telemetryPeriod           time.Duration
+	telemetryFeatures         map[string]string
 }
 
 func (o *MulticlusterOptions) validate() error {
@@ -205,6 +221,12 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.SchemaSyncInterval, "schema-sync-interval", redpandacontrollers.DefaultSchemaSyncInterval, "Default Schema reconcile interval. A per-CR spec.interval takes precedence.")
 	cmd.Flags().DurationVar(&o.RoleSyncInterval, "role-sync-interval", redpandacontrollers.DefaultRoleSyncInterval, "Default Role reconcile interval. A per-CR spec.interval takes precedence.")
 	cmd.Flags().DurationVar(&o.ShadowLinkSyncInterval, "shadowlink-sync-interval", redpandacontrollers.DefaultShadowLinkSyncInterval, "Default ShadowLink reconcile interval.")
+	// Telemetry related flags.
+	cmd.Flags().BoolVar(&o.disableTelemetry, "disable-telemetry", false, "Disable anonymous cluster-shape telemetry.")
+	cmd.Flags().StringVar(&o.telemetrySourceIdentifier, "telemetry-source-identifier", "", "Override the auto-detected Deployment UID used to identify this operator installation in telemetry.")
+	cmd.Flags().StringVar(&o.telemetryEndpoint, "telemetry-endpoint", "", "Override the telemetry ingestion endpoint (testing).")
+	cmd.Flags().DurationVar(&o.telemetryPeriod, "telemetry-period", 0, "Interval between telemetry reports. 0 uses the library default (24h).")
+	cmd.Flags().StringToStringVar(&o.telemetryFeatures, "telemetry-features", nil, "Additional ad-hoc feature flags to include in every telemetry report, as name=bool pairs (e.g. redpanda-cloud=true). Repeatable or comma-separated; entries override the built-in feature flags.")
 }
 
 func Command() *cobra.Command {
@@ -464,6 +486,57 @@ func Run(
 			AllowRebinding: opts.AllowPVRebinding,
 		}).SetupWithMultiClusterManager(); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
+			return err
+		}
+	}
+
+	if !opts.disableTelemetry && telemetry.Enabled() {
+		id := opts.telemetrySourceIdentifier
+		if id == "" {
+			// Use the uncached API reader: this runs before mgr.Start(), so the
+			// cached client would return ErrCacheNotStarted (and would need
+			// list+watch RBAC for its informers). A direct GET works pre-start
+			// and matches the "get"-only RBAC on pods/replicasets.
+			id = telemetry.ResolveSourceID(ctx, manager.GetLocalManager().GetAPIReader())
+		}
+
+		// Build a discovery client so the collector can resolve the Kubernetes
+		// server version each cycle. Best-effort: on failure pass nil and the
+		// collector omits kubeVersion.
+		var disco discovery.ServerVersionInterface
+		if dc, err := discovery.NewDiscoveryClientForConfig(manager.GetLocalManager().GetConfig()); err != nil {
+			setupLog.Error(err, "unable to build discovery client for telemetry; kube version will be omitted")
+		} else {
+			disco = dc
+		}
+
+		// Deployer-supplied ad-hoc features (e.g. redpanda-cloud=true) ride along
+		// in every report.
+		features, err := telemetry.MergeAdHocFeatures(map[string]bool{
+			"multicluster":      true,
+			"pvcUnbinder":       opts.UnbindPVCsAfter > 0,
+			"allowPVRebinding":  opts.AllowPVRebinding,
+			"consoleController": opts.EnableConsoleController,
+		}, opts.telemetryFeatures)
+		if err != nil {
+			setupLog.Error(err, "invalid --telemetry-features")
+			return err
+		}
+
+		tele, err := telemetry.NewRunnable(manager.GetLocalManager().GetAPIReader(), disco, setupLog, telemetry.Options{
+			Endpoint:        opts.telemetryEndpoint,
+			ID:              id,
+			OperatorVersion: version.Version,
+			Features:        features,
+			Period:          opts.telemetryPeriod,
+		})
+		if err != nil {
+			setupLog.Error(err, "unable to build telemetry runnable")
+			return err
+		}
+
+		if err := manager.Add(tele); err != nil {
+			setupLog.Error(err, "unable to add telemetry runnable")
 			return err
 		}
 	}
