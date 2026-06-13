@@ -168,7 +168,7 @@ func createSentinelTopicInStretchCluster(ctx context.Context, t framework.Testin
 
 	// CreateTopics often fires before every broker is fully through TLS
 	// startup — the BrokerPool `Deployed=True` condition only signals that
-	// StatefulSet replicas match desired, not that brokers accept Kafka
+	// all StatefulSet replicas are ready, not that brokers accept Kafka
 	// connections. First requests can fail with `EOF` mid-TLS-handshake
 	// while the broker is still loading its config or certs. Retry the
 	// whole RPC until the cluster is actually serving; tolerate
