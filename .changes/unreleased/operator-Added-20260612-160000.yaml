@@ -1,0 +1,15 @@
+project: operator
+kind: Added
+body: |-
+    The broker decommission controller now logs at startup ("starting
+    StatefulSetDecommissioner controller"), so you can confirm it is enabled
+    from the operator logs without running a disruptive scale-down. Its PVC
+    cleanup is also logged at info level when a claim is removed.
+
+    Added per-controller log-level flags `--decommission-log-level` and
+    `--pvcunbinder-log-level` (error|info|debug|trace; empty inherits
+    `--log-level`). These let you raise the verbosity of a single controller —
+    for example to observe broker decommissioning and PVC cleanup — without
+    making the whole operator verbose. Pass them via the operator chart's
+    `additionalCmdFlags`.
+time: 2026-06-12T16:00:00.000000-00:00

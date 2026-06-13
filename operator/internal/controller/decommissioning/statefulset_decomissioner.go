@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -116,6 +117,17 @@ func WithSyncPeriod(d time.Duration) Option {
 	}
 }
 
+// WithLogger sets a dedicated logger for this controller. When set, it is
+// injected into the reconcile context so the decommissioner can be run at a
+// different verbosity than the rest of the operator (see the
+// --decommission-log-level operator flag). When unset, the manager's logger
+// is used as before.
+func WithLogger(logger logr.Logger) Option {
+	return func(ssd *StatefulSetDecomissioner) {
+		ssd.logger = &logger
+	}
+}
+
 type ClientGetter func(context.Context, *appsv1.StatefulSet) (*rpadmin.AdminAPI, error)
 
 type StatefulSetDecomissioner struct {
@@ -135,6 +147,10 @@ type StatefulSetDecomissioner struct {
 	// decommissionOnTooHighOrdinal allows the decommissioner to decommission a node, if it has an
 	decommissionOnTooHighOrdinal bool
 	desiredReplicasFetcher       func(ctx context.Context, set *appsv1.StatefulSet) (int32, error)
+
+	// logger, when non-nil, overrides the context logger so this controller
+	// can run at an independent verbosity. Set via WithLogger.
+	logger *logr.Logger
 }
 
 func NewStatefulSetDecommissioner(mgr ctrl.Manager, getter ClientGetter, options ...Option) *StatefulSetDecomissioner {
@@ -222,6 +238,11 @@ func (s *StatefulSetDecomissioner) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// If a dedicated logger was configured (e.g. via --decommission-log-level),
+	// inject it so all downstream LoggerFrom(ctx) calls run at that verbosity.
+	if s.logger != nil {
+		ctx = ctrl.LoggerInto(ctx, *s.logger)
+	}
 	log := ctrl.LoggerFrom(ctx, "namespace", req.Namespace, "name", req.Name).WithName("StatefulSetDecomissioner.Reconcile")
 
 	set := &appsv1.StatefulSet{}
@@ -378,7 +399,10 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 					}, unboundVolumeClaims), ", "), client.ObjectKeyFromObject(claim).String(),
 				)
 
-				log.V(traceLevel).Info(message)
+				// Deleting a PVC is a notable state change; log at info so it's
+				// visible at the default operator log level (matches the broker
+				// decommission log below and the emitted Kubernetes Event).
+				log.Info(message)
 				s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
 
 				return nil

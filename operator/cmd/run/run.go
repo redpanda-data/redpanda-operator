@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/fluxcd/pkg/runtime/logger"
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/spf13/cobra"
@@ -109,6 +111,12 @@ type RunOptions struct {
 	decommissionWaitInterval    time.Duration
 	metricsTimeout              time.Duration
 	rpClientTimeout             time.Duration
+	// Per-controller log-level overrides. Empty means "inherit the global
+	// --log-level". Accepts the same vocabulary as --log-level
+	// (error|info|debug|trace) and lets an operator raise the verbosity of a
+	// single controller without making the whole operator noisy.
+	decommissionLogLevel string
+	pvcUnbinderLogLevel  string
 	// Per-controller default reconcile (sync) intervals. A per-CR spec.interval
 	// (Topic) always takes precedence; the others have no per-CR field today.
 	topicSyncInterval                   time.Duration
@@ -169,6 +177,8 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.redpandaDefaultRepository, "redpanda-repository", DefaultRedpandaRepository, "The default docker repository to pull redpanda images from")
 	cmd.Flags().StringVar(&o.configuratorImagePullPolicy, "configurator-image-pull-policy", "Always", "Set the configurator image pull policy")
 	cmd.Flags().DurationVar(&o.decommissionWaitInterval, "decommission-wait-interval", 8*time.Second, "Set the time to wait for a node decommission to happen in the cluster")
+	cmd.Flags().StringVar(&o.decommissionLogLevel, "decommission-log-level", "", "Log level (error|info|debug|trace) for the broker decommission controller only. Empty inherits --log-level. Use this to surface decommission/PVC-cleanup detail without making the whole operator verbose.")
+	cmd.Flags().StringVar(&o.pvcUnbinderLogLevel, "pvcunbinder-log-level", "", "Log level (error|info|debug|trace) for the PVCUnbinder controller only. Empty inherits --log-level.")
 	cmd.Flags().DurationVar(&o.metricsTimeout, "metrics-timeout", 8*time.Second, "Set the timeout for a checking metrics Admin API endpoint. If set to 0, then the 2 seconds default will be used")
 	cmd.Flags().DurationVar(&o.rpClientTimeout, "cluster-connection-timeout", 10*time.Second, "Set the timeout for internal clients used to connect to Redpanda clusters")
 	// Per-controller default reconcile (sync) intervals. These replace the
@@ -217,6 +227,18 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
 	cmd.Flags().Bool("operator-mode", true, "A deprecated and unused flag")
 	cmd.Flags().Bool("enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
+}
+
+// controllerLogger returns a dedicated logger for a single controller built at
+// the requested level (error|info|debug|trace), or nil to inherit the global
+// logger. This lets an operator raise the verbosity of one controller (e.g.
+// the broker decommissioner) without making the entire operator noisy.
+func controllerLogger(level, name string) *logr.Logger {
+	if level == "" {
+		return nil
+	}
+	l := logger.NewLogger(logger.Options{LogLevel: level}).WithName(name)
+	return &l
 }
 
 func (o *RunOptions) ControllerEnabled(controller Controller) bool {
@@ -570,10 +592,14 @@ func Run(
 		if err != nil {
 			return err
 		}
+		// Unlike most controllers, the decommissioner is event-driven on
+		// StatefulSet changes and is otherwise silent, so log at startup that
+		// it is loaded — this is how an operator can confirm the broker
+		// decommissioner is enabled without running a disruptive scale-down.
+		setupLog.Info("starting StatefulSetDecommissioner controller", "selector", selector.String(), "log-level", opts.decommissionLogLevel)
+
 		adapter := redpandaDecommissionerAdapter{client: mgr.GetClient(), factory: factory}
-		d := decommissioning.NewStatefulSetDecommissioner(
-			mgr,
-			adapter.getAdminClient,
+		decommissionOpts := []decommissioning.Option{
 			decommissioning.WithSelector(selector),
 			decommissioning.WithFilter(adapter.filter),
 			// A V2 cluster may span multiple StatefulSets (NodePools); the
@@ -581,6 +607,15 @@ func Run(
 			// replicas, while the per-pool scale-down decision uses each
 			// StatefulSet's own replicas (handled inside the decommissioner).
 			decommissioning.WithDesiredReplicasFetcher(adapter.desiredReplicas),
+		}
+		if l := controllerLogger(opts.decommissionLogLevel, "StatefulSetDecomissioner"); l != nil {
+			decommissionOpts = append(decommissionOpts, decommissioning.WithLogger(*l))
+		}
+
+		d := decommissioning.NewStatefulSetDecommissioner(
+			mgr,
+			adapter.getAdminClient,
+			decommissionOpts...,
 		)
 
 		if err := d.SetupWithManager(mgr); err != nil {
@@ -593,13 +628,14 @@ func Run(
 	if opts.unbindPVCsAfter <= 0 {
 		setupLog.Info("PVCUnbinder controller not active", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)
 	} else {
-		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)
+		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding, "log-level", opts.pvcUnbinderLogLevel)
 
 		if err := (&pvcunbinder.Controller{
 			Client:         mgr.GetClient(),
 			Timeout:        opts.unbindPVCsAfter,
 			Selector:       opts.unbinderSelector.Selector,
 			AllowRebinding: opts.allowPVRebinding,
+			Logger:         controllerLogger(opts.pvcUnbinderLogLevel, "PVCUnbinder"),
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err

@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -207,6 +208,10 @@ type Controller struct {
 	//
 	// Falls back to Client when nil (tests).
 	Reader client.Reader
+	// Logger, when non-nil, overrides the context logger so this controller
+	// can run at an independent verbosity (see --pvcunbinder-log-level). When
+	// nil, the manager's logger is used.
+	Logger *logr.Logger
 }
 
 // reader returns the uncached Reader if configured, otherwise the
@@ -342,6 +347,11 @@ func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
 // state that Gate 0 either holds on (siblings) or resumes from (the same pod
 // retrying — see checkPVGates' own-claim exemption).
 func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// If a dedicated logger was configured (--pvcunbinder-log-level), inject it
+	// so downstream LoggerFrom(ctx) calls run at that verbosity.
+	if r.Logger != nil {
+		ctx = ctrl.LoggerInto(ctx, *r.Logger)
+	}
 	logger := ctrl.LoggerFrom(ctx).WithName("PVCUnbinder")
 	ctx = log.IntoContext(ctx, logger)
 
