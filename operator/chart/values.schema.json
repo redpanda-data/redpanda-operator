@@ -1046,6 +1046,9 @@
       },
       "type": "object"
     },
+    "priorityClassName": {
+      "type": "string"
+    },
     "podAnnotations": {
       "additionalProperties": {
         "type": "string"
