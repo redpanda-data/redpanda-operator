@@ -6320,6 +6320,9 @@
       ],
       "type": "object"
     },
+    "priorityClassName": {
+      "type": "string"
+    },
     "rbac": {
       "additionalProperties": false,
       "properties": {
