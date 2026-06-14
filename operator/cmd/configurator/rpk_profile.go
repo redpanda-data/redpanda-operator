@@ -15,6 +15,8 @@ import (
 	"os"
 
 	"sigs.k8s.io/yaml"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/rpkprofile"
 )
 
 // TemplateRPKProfileYaml expands the rpk profile file
@@ -43,5 +45,7 @@ func TemplateRPKProfileYaml(ctx context.Context, inFile, outFile, fixups string)
 		return fmt.Errorf("cannot marshal rpkProfile: %w", err)
 	}
 
-	return os.WriteFile(outFile, output, 0o644)
+	// Atomic replace: the rpk-profile-watcher sidecar re-renders this file
+	// while in-pod rpk may be reading it concurrently.
+	return rpkprofile.WriteFileAtomic(outFile, output, 0o644)
 }

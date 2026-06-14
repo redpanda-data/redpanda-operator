@@ -848,6 +848,13 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 		// even though this is named "...URLs", it returns
 		// only the url for the given pod
 		adminURLsCLI(state),
+		// Keep the rpk stanza of redpanda.yaml in sync with the
+		// chart-rendered base-config (a ConfigMap mount the kubelet keeps up
+		// to date), so in-pod rpk tracks topology changes without a pod
+		// restart (K8S-755). Seed-server changes deliberately do not roll
+		// pods, so this is the only restart-free refresh path.
+		`--watch-rpk-profile`,
+		`--rpk-profile-source=/tmp/base-config/redpanda.yaml`,
 	}
 
 	if pool.Statefulset.SideCars.BrokerDecommissioner.Enabled {
@@ -880,6 +887,14 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 		corev1.VolumeMount{
 			Name:      "config",
 			MountPath: "/etc/redpanda",
+		},
+		// base-config is the chart-rendered ConfigMap; the kubelet keeps
+		// this mount up to date in running pods, which is what lets
+		// --watch-rpk-profile refresh the rpk stanza without a restart.
+		corev1.VolumeMount{
+			Name:      "base-config",
+			MountPath: "/tmp/base-config",
+			ReadOnly:  true,
 		},
 		corev1.VolumeMount{
 			Name:      ServiceAccountVolumeName,
