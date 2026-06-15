@@ -196,6 +196,19 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 	}
 
 	var status statuses.RedpandaBrokerPoolStatus
+
+	// Check binding first: a broker pool's StatefulSet is only ever rendered
+	// for a known Redpanda cluster, so there's no point in inspecting
+	// deployment state if we can't even resolve the cluster reference.
+	if err := r.getRedpandaCluster(ctx, req, pool, k8sClient); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+		status.SetBound(statuses.RedpandaBrokerPoolBoundReasonNotBound)
+	} else {
+		status.SetBound(statuses.RedpandaBrokerPoolBoundReasonBound)
+	}
+
 	var statefulSets appsv1.StatefulSetList
 	if err := k8sClient.List(ctx, &statefulSets, client.MatchingLabels{
 		lifecycle.DefaultNamespaceLabel:          pool.Namespace,
@@ -235,7 +248,8 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 			condemnedReplicas = 0
 		}
 
-		if desiredReplicas == sts.Status.Replicas {
+		specReplicas := ptr.Deref(sts.Spec.Replicas, 0)
+		if specReplicas != 0 && specReplicas == sts.Status.ReadyReplicas {
 			status.SetDeployed(statuses.RedpandaBrokerPoolDeployedReasonDeployed)
 		} else {
 			status.SetDeployed(statuses.RedpandaBrokerPoolDeployedReasonScaling)
@@ -251,16 +265,6 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 			OutOfDateReplicas: sts.Status.Replicas - sts.Status.UpdatedReplicas,
 			CondemnedReplicas: condemnedReplicas,
 		}
-	}
-
-	if err := r.getRedpandaCluster(ctx, req, pool, k8sClient); err != nil {
-		if apierrors.IsNotFound(err) {
-			status.SetBound(statuses.RedpandaBrokerPoolBoundReasonNotBound)
-		} else {
-			return ctrl.Result{}, err
-		}
-	} else {
-		status.SetBound(statuses.RedpandaBrokerPoolBoundReasonBound)
 	}
 
 	if status.UpdateConditions(pool) ||
