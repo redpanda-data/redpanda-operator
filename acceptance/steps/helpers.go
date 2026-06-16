@@ -411,12 +411,17 @@ const (
 // proxy/port-forward to a vcluster API server can be transiently disrupted under
 // CI load. Rebuilding from scratch re-establishes fresh port-forwards and
 // re-engages every cluster.
-func setupMulticlusterManager(ctx context.Context, nodes []*vclusterNode) (multicluster.Manager, map[string]*rest.Config) {
+//
+// Any types passed in warm are registered and synced per cluster during
+// engagement (under the generous engage budget), so a caller's first cached
+// read of those types hits a warm cache instead of paying the cold
+// informer-sync cost under its own (typically shorter) per-call timeout.
+func setupMulticlusterManager(ctx context.Context, nodes []*vclusterNode, warm ...runtimeclient.Object) (multicluster.Manager, map[string]*rest.Config) {
 	t := framework.T(ctx)
 
 	var lastErr error
 	for attempt := 1; attempt <= multiclusterManagerSetupAttempts; attempt++ {
-		mgr, pfCfgs, cancel, err := tryEngageMulticlusterManager(ctx, t, nodes)
+		mgr, pfCfgs, cancel, err := tryEngageMulticlusterManager(ctx, t, nodes, warm...)
 		if err == nil {
 			// Keep the successful attempt's port-forwards and manager goroutine
 			// alive for the rest of the scenario; tear them down at cleanup.
@@ -446,7 +451,12 @@ func setupMulticlusterManager(ctx context.Context, nodes []*vclusterNode) (multi
 // longer needed — cancelling tears down the port-forwards and the manager
 // goroutine. On failure it tears down everything it created and returns an error
 // naming which clusters did and did not come up.
-func tryEngageMulticlusterManager(ctx context.Context, t framework.TestingT, nodes []*vclusterNode) (mgr multicluster.Manager, pfCfgs map[string]*rest.Config, cancel context.CancelFunc, err error) {
+//
+// For every type in warm, each cluster's informer for that type is started and
+// synced before the attempt is considered successful, so a caller's first
+// cached read of those types hits a warm cache rather than triggering (and
+// blocking on) a cold initial sync under its own per-call timeout.
+func tryEngageMulticlusterManager(ctx context.Context, t framework.TestingT, nodes []*vclusterNode, warm ...runtimeclient.Object) (mgr multicluster.Manager, pfCfgs map[string]*rest.Config, cancel context.CancelFunc, err error) {
 	attemptCtx, attemptCancel := context.WithCancel(ctx)
 	// On any error path, release everything this attempt created. On success the
 	// cancel is handed to the caller instead (see the success return below).
@@ -508,6 +518,24 @@ func tryEngageMulticlusterManager(ctx context.Context, t framework.TestingT, nod
 			// remaining budget waiting on a single cluster's cache.
 			waitCtx, waitCancel := context.WithTimeout(engageCtx, 2*time.Second)
 			ok := cl.GetCache().WaitForCacheSync(waitCtx)
+			// Pre-warm the caller's informers. controller-runtime starts an
+			// informer lazily on the first Get/List of a type, and
+			// WaitForCacheSync only waits for informers already registered —
+			// so without this the first cached read of a warm type pays the
+			// cold initial-sync cost under its own (short) per-call timeout.
+			// GetInformer both registers the informer and blocks until its
+			// initial sync completes; once warmed, repeat calls return
+			// immediately. A miss within waitCtx just leaves this cluster
+			// unsynced for now — the informer keeps syncing in the background,
+			// so a later poll iteration finds it ready.
+			for _, obj := range warm {
+				if !ok {
+					break
+				}
+				if _, ierr := cl.GetCache().GetInformer(waitCtx, obj); ierr != nil {
+					ok = false
+				}
+			}
 			waitCancel()
 			if ok {
 				synced[name] = true
