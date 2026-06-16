@@ -6571,6 +6571,15 @@
       },
       "type": "object"
     },
+    "telemetry": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "tolerations": {
       "oneOf": [
         {

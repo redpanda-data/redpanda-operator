@@ -231,3 +231,9 @@ controllers:
     interval: 45s
   user:
     interval: 20s
+
+-- telemetry-disabled --
+# Asserts the opt-out renders the flag the operator binary actually registers
+# (--disable-telemetry), so the chart and binary can't drift apart again.
+telemetry:
+  enabled: false

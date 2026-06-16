@@ -289,3 +289,6 @@ multicluster:
     # controller (Submariner Lighthouse, GKE MCS, …). Mutually
     # exclusive with mesh.
     mcs: false
+
+telemetry:
+  enabled: true

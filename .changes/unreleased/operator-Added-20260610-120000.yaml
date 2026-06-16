@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "Added optional anonymous cluster-shape telemetry: NodePools, stretch clusters, managed Connectors, Redpanda/vectorized cluster and broker counts, broker CPU/memory sizing, Redpanda versions in use, per-cluster TLS/SASL/tiered-storage/console adoption, storage CSI drivers, PVC Unbinder, CRD and supporting-CR counts, and operator feature flags. Licensed clusters additionally report the enterprise license checksum (id_hash) for account correlation. Disabled in builds without an embedded key and via the telemetry.enabled chart value / --disable-telemetry."
+time: 2026-06-10T12:00:00.000000-07:00
