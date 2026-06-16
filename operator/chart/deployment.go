@@ -94,6 +94,7 @@ func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 						ServiceAccountName:            ServiceAccountName(dot),
 						NodeSelector:                  values.NodeSelector,
 						Tolerations:                   values.Tolerations,
+						PriorityClassName:             values.PriorityClassName,
 						Volumes:                       operatorPodVolumes(dot),
 						Containers:                    operatorContainers(dot, nil),
 					},
