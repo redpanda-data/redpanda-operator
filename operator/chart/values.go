@@ -60,6 +60,7 @@ type Values struct {
 	Resources             corev1.ResourceRequirements   `json:"resources"`
 	NodeSelector          map[string]string             `json:"nodeSelector"`
 	Tolerations           []corev1.Toleration           `json:"tolerations"`
+	PriorityClassName     string                        `json:"priorityClassName"`
 	Affinity              *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
 	Strategy              appsv1.DeploymentStrategy     `json:"strategy"`
 	Annotations           map[string]string             `json:"annotations,omitempty"`
