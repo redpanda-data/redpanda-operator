@@ -122,7 +122,12 @@ func getKafkaFactory(ctx context.Context, t framework.TestingT, clusterName stri
 func initKafkaFactory(ctx context.Context, _ framework.TestingT, clusterName string) (context.Context, *kafkaFactoryState) {
 	nodes := getNodes(ctx, clusterName)
 
-	mgr, pfCfgs := setupMulticlusterManager(ctx, nodes)
+	// Pre-warm the RedpandaBrokerPool informer per cluster: stretchClusterKafkaClient's
+	// factory.KafkaClient lists RedpandaBrokerPools to find a representative pool, and
+	// that first List would otherwise trigger a cold informer sync under the factory's
+	// short per-call RemoteCallTimeout. Warming it here, under the generous engage
+	// budget, makes that later List a warm-cache hit.
+	mgr, pfCfgs := setupMulticlusterManager(ctx, nodes, &redpandav1alpha2.RedpandaBrokerPool{})
 	dialer := vclusterPodDialer(nodes, pfCfgs)
 	factory := internalclient.NewFactory(mgr, nil).WithDialer(dialer)
 
@@ -153,28 +158,15 @@ func stretchClusterKafkaClient(ctx context.Context, t framework.TestingT, cluste
 		return false
 	}, 30*time.Second, 1*time.Second, "no StretchCluster found in vclusters for %q", clusterName)
 
-	// Building the client lists RedpandaBrokerPools through the factory's
-	// cached multicluster client. This call is the first use of a
-	// freshly-built manager whose informers haven't started yet, so the
-	// List starts the RedpandaBrokerPool informer and blocks on its initial
-	// cache sync — which crosses the port-forwarded vcluster connections and
-	// can exceed the factory's per-call RemoteCallTimeout on the first
-	// attempt, surfacing as "finding representative broker pool: Timeout:
-	// failed waiting for *v1alpha2.RedpandaBrokerPool Informer to sync".
-	// That is transient: the informer keeps syncing in the background, so a
-	// later attempt succeeds. Retry rather than failing the scenario on a
-	// cold-cache timeout (the sentinel/consume steps that follow already
-	// retry their own RPCs the same way).
-	var cl *kgo.Client
-	require.Eventually(t, func() bool {
-		var err error
-		cl, err = state.factory.KafkaClient(ctx, &sc, extraOpts...)
-		if err != nil {
-			t.Logf("creating stretch cluster kafka client for %q: %v", clusterName, err)
-			return false
-		}
-		return true
-	}, 2*time.Minute, 5*time.Second, "creating stretch cluster kafka client for %q", clusterName)
+	// Building the client lists RedpandaBrokerPools through the factory's cached
+	// multicluster client to find a representative pool. That cache is pre-warmed
+	// for RedpandaBrokerPool during manager engagement (see initKafkaFactory ->
+	// setupMulticlusterManager), so this List is a warm-cache hit and no longer
+	// risks the cold informer-sync timeout. Fail fast on any error here so a
+	// genuine readiness problem (no representative pool, TLS/auth failure) surfaces
+	// immediately instead of being masked behind a long retry.
+	cl, err := state.factory.KafkaClient(ctx, &sc, extraOpts...)
+	require.NoError(t, err, "creating stretch cluster kafka client for %q", clusterName)
 	return cl
 }
 
