@@ -113,6 +113,29 @@ jobs:
             tar -czf "${archive_base}-${version}.tar.gz" -C .build "$name"
           done
 
+      - name: configure aws credentials for rpk-plugins bucket
+        if: ${{ startsWith(steps.get_ref.outputs.ref_name, 'operator/v') }}
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ vars.RP_AWS_CRED_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}:role/${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}${{ github.event.repository.name }}
+
+      - name: publish rpk-k8s managed plugin to S3
+        if: ${{ startsWith(steps.get_ref.outputs.ref_name, 'operator/v') }}
+        continue-on-error: true
+        run: |
+          set -ex
+          tag="${{ steps.get_ref.outputs.ref_name }}"
+          version="$(basename "$tag")"
+          version="${version#v}"
+          nix develop -c go run ./rpk-k8s-publish \
+            --binary-dir .build \
+            --plugin k8s \
+            --version "$version" \
+            --bucket rpk-plugins-repo \
+            --region us-west-2 \
+            --repo-hostname rpk-plugins.redpanda.com
+
       - name: reformat change log
         run: |
           # Our CHANGE LOGS begin with '## VERSION - DATE', which is
