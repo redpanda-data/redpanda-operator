@@ -17,6 +17,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -225,5 +227,107 @@ func TestSha256Hex(t *testing.T) {
 	want := hex.EncodeToString(sum[:])
 	if got != want {
 		t.Fatalf("sha256Hex = %q, want %q", got, want)
+	}
+}
+
+func TestUploadArchives_EndToEnd(t *testing.T) {
+	dir := t.TempDir()
+
+	// Write two fake plugin binaries with distinct contents.
+	linuxContents := []byte("fake-linux-amd64-binary")
+	windowsContents := []byte("fake-windows-amd64-binary")
+	if err := os.WriteFile(filepath.Join(dir, "rpk-k8s-linux-amd64"), linuxContents, 0o755); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "rpk-k8s-windows-amd64.exe"), windowsContents, 0o755); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	// This non-plugin file must be ignored by uploadArchives.
+	if err := os.WriteFile(filepath.Join(dir, "README.txt"), []byte("docs"), 0o644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	store := newFakeStore()
+	if err := uploadArchives(context.Background(), store, dir, "k8s", "redpanda-k8s", "25.3.5"); err != nil {
+		t.Fatalf("uploadArchives: %v", err)
+	}
+
+	// Exactly two objects must have been uploaded (README.txt ignored).
+	if len(store.objects) != 2 {
+		t.Fatalf("expected 2 uploaded objects, got %d", len(store.objects))
+	}
+
+	type wantEntry struct {
+		key      string
+		goos     string
+		goarch   string
+		rawBytes []byte
+	}
+	wants := []wantEntry{
+		{
+			key:      "k8s/archives/25.3.5/redpanda-k8s-linux-amd64.tar.gz",
+			goos:     "linux",
+			goarch:   "amd64",
+			rawBytes: linuxContents,
+		},
+		{
+			key:      "k8s/archives/25.3.5/redpanda-k8s-windows-amd64.tar.gz",
+			goos:     "windows",
+			goarch:   "amd64",
+			rawBytes: windowsContents,
+		},
+	}
+
+	for _, w := range wants {
+		body, ok := store.objects[w.key]
+		if !ok {
+			t.Fatalf("expected key %q not found in store", w.key)
+		}
+		tags := store.tags[w.key]
+
+		// Verify tags.
+		if got := tags[tagBinaryName]; got != "redpanda-k8s" {
+			t.Errorf("[%s] tagBinaryName = %q, want redpanda-k8s", w.key, got)
+		}
+		if got := tags[tagVersion]; got != "25.3.5" {
+			t.Errorf("[%s] tagVersion = %q, want 25.3.5", w.key, got)
+		}
+		if got := tags[tagGOOS]; got != w.goos {
+			t.Errorf("[%s] tagGOOS = %q, want %q", w.key, got, w.goos)
+		}
+		if got := tags[tagGOARCH]; got != w.goarch {
+			t.Errorf("[%s] tagGOARCH = %q, want %q", w.key, got, w.goarch)
+		}
+		// Critical invariant: sha256 tag must be the hash of the RAW binary,
+		// NOT of the .tar.gz wrapper — this is what rpk uses to verify downloads.
+		wantSha := sha256Hex(w.rawBytes)
+		if got := tags[tagBinarySha256]; got != wantSha {
+			t.Errorf("[%s] tagBinarySha256 = %q, want %q (sha of raw binary)", w.key, got, wantSha)
+		}
+
+		// Verify the uploaded body is a valid gzip+tar containing exactly one
+		// file whose contents equal the raw binary.
+		gz, err := gzip.NewReader(bytes.NewReader(body))
+		if err != nil {
+			t.Fatalf("[%s] gzip.NewReader: %v", w.key, err)
+		}
+		tr := tar.NewReader(gz)
+		hdr, err := tr.Next()
+		if err != nil {
+			t.Fatalf("[%s] tar.Next: %v", w.key, err)
+		}
+		if hdr.Name == "" {
+			t.Errorf("[%s] tar entry has empty name", w.key)
+		}
+		got, err := io.ReadAll(tr)
+		if err != nil {
+			t.Fatalf("[%s] io.ReadAll from tar: %v", w.key, err)
+		}
+		if !bytes.Equal(got, w.rawBytes) {
+			t.Errorf("[%s] tar inner contents mismatch: got %q, want %q", w.key, got, w.rawBytes)
+		}
+		if _, err := tr.Next(); err != io.EOF {
+			t.Fatalf("[%s] expected exactly one file in the tar", w.key)
+		}
 	}
 }
