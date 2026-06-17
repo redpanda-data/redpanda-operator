@@ -160,6 +160,9 @@ func uploadArchives(ctx context.Context, store objectStore, binaryDir, plugin, b
 			return fmt.Errorf("unable to read %q: %w", path, err)
 		}
 		sha := sha256Hex(raw)
+		// The inner tar entry name is cosmetic: rpk's plugin installer untars the
+		// single file and writes it to ~/.local/bin/.rpk.managed-<slug> regardless
+		// of the entry name, so arcname need not match the S3 archive's redpanda-k8s-... basename.
 		arcname := filepath.Base(strings.TrimSuffix(path, ".exe"))
 		archive, err := tarGz(arcname, raw)
 		if err != nil {
