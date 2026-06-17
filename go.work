@@ -13,4 +13,5 @@ use (
 	./licensereport
 	./operator
 	./pkg
+	./rpk-k8s-publish
 )
