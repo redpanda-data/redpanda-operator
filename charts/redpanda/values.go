@@ -861,6 +861,11 @@ type Sidecars struct {
 	ConfigWatcher struct {
 		Enabled bool `json:"enabled"`
 	} `json:"configWatcher"`
+	// RPKProfileWatcher gates the in-pod rpk config refresh (K8S-755). On by
+	// default; set enabled: false as a kill switch.
+	RPKProfileWatcher struct {
+		Enabled bool `json:"enabled"`
+	} `json:"rpkProfileWatcher"`
 	Controllers struct {
 		DeprecatedImage *Image `json:"image"`
 		// Enabled use to act as a global toggle for sidecar controllers. It

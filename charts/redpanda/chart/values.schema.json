@@ -21751,6 +21751,15 @@
                 }
               },
               "type": "object"
+            },
+            "rpkProfileWatcher": {
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

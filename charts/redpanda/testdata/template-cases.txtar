@@ -1240,3 +1240,13 @@ statefulset:
       - name: "3rd-party-certs"
         secret:
           secretName: "redpanda-external-cert"
+
+-- rpk-profile-watcher-disabled --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# K8S-755: the in-pod rpk refresh is on by default; this is the kill switch.
+# The sidecar must then render without the --watch-rpk-profile args.
+statefulset:
+  sideCars:
+    rpkProfileWatcher:
+      enabled: false

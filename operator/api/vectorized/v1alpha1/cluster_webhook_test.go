@@ -208,6 +208,27 @@ func TestDefault(t *testing.T) {
 		assert.True(t, redpandaCluster.Spec.PodDisruptionBudget.Enabled)
 		assert.Equal(t, intstr.FromInt(1), *redpandaCluster.Spec.PodDisruptionBudget.MaxUnavailable)
 	})
+	t.Run("rpk profile updater defaults to enabled", func(t *testing.T) {
+		redpandaCluster := &vectorizedv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test"},
+			Spec:       vectorizedv1alpha1.ClusterSpec{Replicas: ptr.To(int32(1))},
+		}
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
+		require.NotNil(t, redpandaCluster.Spec.Sidecars.RpkProfileUpdater)
+		assert.True(t, redpandaCluster.Spec.Sidecars.RpkProfileUpdater.Enabled, "K8S-755 sidecar must default on")
+	})
+	t.Run("rpk profile updater opt-out is preserved", func(t *testing.T) {
+		redpandaCluster := &vectorizedv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "test"},
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				Replicas: ptr.To(int32(1)),
+				Sidecars: vectorizedv1alpha1.Sidecars{RpkProfileUpdater: &vectorizedv1alpha1.Sidecar{Enabled: false}},
+			},
+		}
+		require.NoError(t, webhook.Default(context.Background(), redpandaCluster))
+		require.NotNil(t, redpandaCluster.Spec.Sidecars.RpkProfileUpdater)
+		assert.False(t, redpandaCluster.Spec.Sidecars.RpkProfileUpdater.Enabled, "explicit opt-out must not be overwritten")
+	})
 	t.Run("cluster license key default is set", func(t *testing.T) {
 		redpandaCluster := &vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{

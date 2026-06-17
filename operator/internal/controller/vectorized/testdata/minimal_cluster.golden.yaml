@@ -672,6 +672,37 @@ spec:
           name: rpk-profile
         - mountPath: /var/lib/redpanda/data
           name: datadir
+      - args:
+        - rpk-profile-watcher
+        command:
+        - /redpanda-operator
+        env:
+        - name: CONFIG_SOURCE_DIR
+          value: /mnt/operator
+        - name: RPK_PROFILE_DESTINATION
+          value: /var/lib/redpanda/.config/rpk/rpk.yaml
+        image: ':'
+        imagePullPolicy: IfNotPresent
+        name: rpk-profile-updater
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 10m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsGroup: 101
+          runAsNonRoot: true
+          runAsUser: 101
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /mnt/operator
+          name: configmap-dir
+        - mountPath: /var/lib/redpanda/.config/rpk
+          name: rpk-profile
       dnsPolicy: ClusterFirst
       initContainers:
       - args:

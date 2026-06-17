@@ -173,6 +173,12 @@ func (r *Cluster) Default(_ context.Context, cl *Cluster) error {
 			UnderReplicatedPartitionThreshold: 0,
 		}
 	}
+
+	// The rpk-profile-updater sidecar (K8S-755) is on by default; surface that
+	// in the stored spec so the kill switch (enabled: false) is discoverable.
+	if cl.Spec.Sidecars.RpkProfileUpdater == nil {
+		cl.Spec.Sidecars.RpkProfileUpdater = &Sidecar{Enabled: true}
+	}
 	return nil
 }
 
