@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: 'Topic controller no longer issues no-op `IncrementalAlterConfigs` on every reconcile: desired config values are now compared against the live broker config and only changed keys are written.'
-time: 2026-06-09T23:15:49.368018-07:00
