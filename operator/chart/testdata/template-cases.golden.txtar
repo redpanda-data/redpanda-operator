@@ -112661,6 +112661,7 @@ spec:
       imagePullSecrets: []
       initContainers: []
       nodeSelector: {}
+      priorityClassName: ""
       securityContext:
         runAsUser: 65532
       serviceAccountName: operator
