@@ -12,12 +12,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	smithy "github.com/aws/smithy-go"
 )
 
 // s3Store is the production objectStore backed by an AWS S3 bucket.
@@ -69,17 +71,27 @@ func (s *s3Store) list(ctx context.Context, prefix string) ([]string, error) {
 	return keys, nil
 }
 
-func (s *s3Store) getTags(ctx context.Context, key string) (map[string]string, error) {
+func (s *s3Store) head(ctx context.Context, key string) (map[string]string, bool, error) {
 	out, err := s.client.GetObjectTagging(ctx, &s3.GetObjectTaggingInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		return nil, err
+		// A missing object is not an error for our purposes — report it as
+		// non-existent so callers can decide whether to upload. S3 returns
+		// NoSuchKey (and sometimes NotFound) as a smithy API error code.
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.ErrorCode() {
+			case "NoSuchKey", "NotFound":
+				return nil, false, nil
+			}
+		}
+		return nil, false, err
 	}
 	tags := map[string]string{}
 	for _, t := range out.TagSet {
 		tags[aws.ToString(t.Key)] = aws.ToString(t.Value)
 	}
-	return tags, nil
+	return tags, true, nil
 }

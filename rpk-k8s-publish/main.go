@@ -19,6 +19,11 @@ import (
 	"time"
 )
 
+// defaultPlatforms mirrors the PLATFORMS default of `task ci:build:rpk-k8s`.
+// The publisher requires every one of these before it will publish a version,
+// so a partial cross-compile never yields a partially published plugin.
+const defaultPlatforms = "linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64"
+
 func main() {
 	var (
 		binaryDir    = flag.String("binary-dir", ".build", "Directory containing rpk-k8s-<goos>-<goarch> binaries")
@@ -27,20 +32,36 @@ func main() {
 		bucket       = flag.String("bucket", "rpk-plugins-repo", "S3 bucket")
 		region       = flag.String("region", "us-west-2", "S3 bucket region")
 		repoHostname = flag.String("repo-hostname", "rpk-plugins.redpanda.com", "Public hostname serving the bucket")
+		platforms    = flag.String("platforms", defaultPlatforms, "Required <goos>/<goarch> platforms (space- or comma-separated); all must be present or the publish fails")
 		dryRun       = flag.Bool("dry-run", false, "Read from S3 but never write")
 	)
 	flag.Parse()
 
-	if err := run(*binaryDir, *plugin, *version, *bucket, *region, *repoHostname, *dryRun); err != nil {
+	if err := run(*binaryDir, *plugin, *version, *bucket, *region, *repoHostname, *platforms, *dryRun); err != nil {
 		fmt.Fprintf(os.Stderr, "rpk-k8s-publish: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(binaryDir, plugin, version, bucket, region, repoHostname string, dryRun bool) error {
+// parsePlatforms splits a space- or comma-separated "<goos>/<goarch>" list
+// into the "<goos>-<goarch>" keys used in archive paths and object tags.
+func parsePlatforms(s string) []string {
+	fields := strings.FieldsFunc(s, func(r rune) bool { return r == ' ' || r == ',' || r == '\t' || r == '\n' })
+	out := make([]string, 0, len(fields))
+	for _, f := range fields {
+		out = append(out, strings.ReplaceAll(f, "/", "-"))
+	}
+	return out
+}
+
+func run(binaryDir, plugin, version, bucket, region, repoHostname, platforms string, dryRun bool) error {
 	version = strings.TrimPrefix(strings.TrimSpace(version), "v")
 	if version == "" {
 		return fmt.Errorf("--version is required")
+	}
+	expectedPlatforms := parsePlatforms(platforms)
+	if len(expectedPlatforms) == 0 {
+		return fmt.Errorf("--platforms must list at least one <goos>/<goarch>")
 	}
 	binaryName := "redpanda-" + plugin
 
@@ -54,7 +75,7 @@ func run(binaryDir, plugin, version, bucket, region, repoHostname string, dryRun
 		store = &dryRunStore{inner: s3store}
 	}
 
-	if err := uploadArchives(ctx, store, binaryDir, plugin, binaryName, version); err != nil {
+	if err := uploadArchives(ctx, store, binaryDir, plugin, binaryName, version, expectedPlatforms); err != nil {
 		return err
 	}
 
@@ -106,9 +127,9 @@ func (d *dryRunStore) list(ctx context.Context, prefix string) ([]string, error)
 	return keys, nil
 }
 
-func (d *dryRunStore) getTags(ctx context.Context, key string) (map[string]string, error) {
+func (d *dryRunStore) head(ctx context.Context, key string) (map[string]string, bool, error) {
 	if t, ok := d.local[key]; ok {
-		return t, nil
+		return t, true, nil
 	}
-	return d.inner.getTags(ctx, key)
+	return d.inner.head(ctx, key)
 }
