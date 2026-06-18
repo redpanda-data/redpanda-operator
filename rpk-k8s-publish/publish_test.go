@@ -399,3 +399,50 @@ func TestUploadArchives_ImmutableRerun(t *testing.T) {
 		}
 	})
 }
+
+func TestLessVersion_SemverOrder(t *testing.T) {
+	in := []string{"25.3.10", "25.3.9", "25.4.0", "25.3.5", "25.3.5-rc1", "25.3.5-rc2"}
+	want := []string{"25.3.5-rc1", "25.3.5-rc2", "25.3.5", "25.3.9", "25.3.10", "25.4.0"}
+	got := append([]string(nil), in...)
+	sort.Slice(got, func(i, j int) bool { return lessVersion(got[i], got[j]) })
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("sorted order = %v, want %v", got, want)
+		}
+	}
+}
+
+// TestBuildManifest_ArchiveOrder asserts the manifest archives are emitted in
+// semver order (9 before 10), not lexical order.
+func TestBuildManifest_ArchiveOrder(t *testing.T) {
+	store := newFakeStore()
+	seed := func(version string) {
+		key := "k8s/archives/" + version + "/redpanda-k8s-linux-amd64.tar.gz"
+		store.objects[key] = []byte("x")
+		store.tags[key] = map[string]string{
+			tagBinaryName:   "redpanda-k8s",
+			tagBinarySha256: "s",
+			tagGOOS:         "linux",
+			tagGOARCH:       "amd64",
+			tagVersion:      version,
+		}
+	}
+	seed("25.3.9")
+	seed("25.3.10")
+	seed("25.3.5")
+
+	m, err := buildManifest(context.Background(), store, "k8s", "redpanda-k8s", "rpk-plugins.redpanda.com")
+	if err != nil {
+		t.Fatalf("buildManifest: %v", err)
+	}
+	var order []string
+	for _, a := range m.Archives {
+		order = append(order, a.Version)
+	}
+	want := []string{"25.3.5", "25.3.9", "25.3.10"}
+	for i := range want {
+		if order[i] != want[i] {
+			t.Fatalf("archive order = %v, want %v", order, want)
+		}
+	}
+}
