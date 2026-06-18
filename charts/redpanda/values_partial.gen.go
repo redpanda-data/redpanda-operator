@@ -299,6 +299,9 @@ type PartialSidecars struct {
 	ConfigWatcher *struct {
 		Enabled *bool "json:\"enabled,omitempty\""
 	} "json:\"configWatcher,omitempty\""
+	RPKProfileWatcher *struct {
+		Enabled *bool "json:\"enabled,omitempty\""
+	} "json:\"rpkProfileWatcher,omitempty\""
 	Controllers *struct {
 		DeprecatedImage    *PartialImage "json:\"image,omitempty\""
 		Enabled            *bool         "json:\"enabled,omitempty\""

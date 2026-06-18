@@ -368,6 +368,12 @@ type Sidecars struct {
 	// RpkStatus is sidecar running rpk status collecting status information
 	// from the running node
 	RpkStatus *Sidecar `json:"rpkStatus,omitempty"`
+	// RpkProfileUpdater is the sidecar that keeps the in-pod rpk
+	// configuration fresh after node operations (scale, NodePool swap)
+	// without a pod restart (K8S-755). Enabled by default (the defaulting
+	// webhook sets it when unset); set enabled: false as a kill switch.
+	// +optional
+	RpkProfileUpdater *Sidecar `json:"rpkProfileUpdater,omitempty"`
 }
 
 // Sidecar is a container running alongside redpanda, there's couple of them

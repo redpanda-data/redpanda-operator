@@ -52,6 +52,12 @@ const (
 	configuratorContainerName = "redpanda-configurator"
 	rpkStatusContainerName    = "rpk-status"
 
+	// rpkProfileUpdaterContainerName is the sidecar that re-renders the
+	// pod-local rpk profile whenever the operator-managed ConfigMap mount
+	// changes, so it keeps tracking topology after nodes join or leave
+	// (K8S-755).
+	rpkProfileUpdaterContainerName = "rpk-profile-updater"
+
 	userID  = 101
 	groupID = 101
 	fsGroup = 101
@@ -755,6 +761,19 @@ func (r *StatefulSetResource) obj(
 		ss.Spec.Template.Spec.Containers = append(ss.Spec.Template.Spec.Containers, *rpkStatusContainer)
 	}
 
+	// Keep the pod-local rpk profile in sync with the operator-managed
+	// ConfigMap (K8S-755). The configurator init container renders the
+	// profile once at startup; seed-server changes deliberately do not roll
+	// pods, so without this sidecar the profile goes stale whenever brokers
+	// join or leave. The sidecar re-renders it from the kubelet-propagated
+	// ConfigMap mount, restart-free. It needs the same fixup env vars
+	// (e.g. SASL credentials) as the configurator. On by default; nil is
+	// treated as enabled (the defaulting webhook sets it) so the kill switch
+	// is spec.sidecars.rpkProfileUpdater.enabled: false.
+	if u := r.pandaCluster.Spec.Sidecars.RpkProfileUpdater; u == nil || u.Enabled {
+		ss.Spec.Template.Spec.Containers = append(ss.Spec.Template.Spec.Containers, r.rpkProfileUpdaterContainer(additionalEnv))
+	}
+
 	err = controllerutil.SetControllerReference(r.pandaCluster, ss, r.scheme)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -880,6 +899,69 @@ func (r *StatefulSetResource) rpkStatusContainer(
 				MountPath: configDestinationDir,
 			},
 		}, tlsVolumeMounts...),
+	}
+}
+
+// rpkProfileUpdaterContainer builds the sidecar that watches the
+// operator-managed ConfigMap mount and re-renders the pod-local rpk profile
+// when it changes (K8S-755). It reuses the configurator image and env
+// contract, and shares the rpk-profile emptyDir with the redpanda container
+// so updates are visible to in-pod rpk invocations immediately.
+func (r *StatefulSetResource) rpkProfileUpdaterContainer(additionalEnv []corev1.EnvVar) corev1.Container {
+	return corev1.Container{
+		Name:    rpkProfileUpdaterContainerName,
+		Image:   r.fullConfiguratorImage(),
+		Command: []string{"/redpanda-operator"},
+		Args:    []string{"rpk-profile-watcher"},
+		// Same image as the configurator init container; keep the pull
+		// policy in lockstep so a mutable tag is pulled consistently.
+		ImagePullPolicy: r.configuratorSettings.ImagePullPolicy,
+		// NB: must run as the same uid/gid as the redpanda container: rpk
+		// rewrites rpk.yaml on load (including a chown to the file's
+		// owner), so a profile owned by any other uid breaks every rpk
+		// invocation in the redpanda container — including the readiness
+		// probe.
+		SecurityContext: &corev1.SecurityContext{
+			RunAsUser:                ptr.To(int64(userID)),
+			RunAsGroup:               ptr.To(int64(groupID)),
+			RunAsNonRoot:             ptr.To(true),
+			AllowPrivilegeEscalation: ptr.To(false),
+		},
+		Env: append([]corev1.EnvVar{
+			{
+				Name:  "CONFIG_SOURCE_DIR",
+				Value: configSourceDir,
+			},
+			{
+				Name:  "RPK_PROFILE_DESTINATION",
+				Value: "/var/lib/redpanda/.config/rpk/rpk.yaml",
+			},
+		}, additionalEnv...),
+		// NB: the memory limit must accommodate the redpanda-operator
+		// binary itself (~150MB): the executable's mapped pages count
+		// against the container's cgroup, so a small limit OOM-kills the
+		// sidecar at startup even though the watch loop's working set is
+		// tiny.
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("32Mi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("200m"),
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+			},
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      "configmap-dir",
+				MountPath: configSourceDir,
+			},
+			{
+				Name:      "rpk-profile",
+				MountPath: "/var/lib/redpanda/.config/rpk",
+			},
+		},
 	}
 }
 

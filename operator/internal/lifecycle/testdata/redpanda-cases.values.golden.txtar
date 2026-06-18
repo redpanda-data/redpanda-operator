@@ -371,6 +371,8 @@ values:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
   storage:
@@ -598,6 +600,8 @@ pools:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
 values:
@@ -974,6 +978,8 @@ values:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
   storage:
@@ -1344,6 +1350,8 @@ values:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
   storage:
@@ -1488,6 +1496,8 @@ pools:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
 - Generation: "0"
@@ -1571,6 +1581,8 @@ pools:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
 values:
@@ -1944,6 +1956,8 @@ values:
       pvcUnbinder:
         enabled: false
         unbindAfter: 60s
+      rpkProfileWatcher:
+        enabled: true
     updateStrategy:
       type: RollingUpdate
   storage:

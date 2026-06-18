@@ -901,6 +901,12 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 **Default:** `"60s"`
 
+### [statefulset.sideCars.rpkProfileWatcher](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.rpkProfileWatcher)
+
+Keeps the in-pod rpk configuration fresh after node operations (scale, NodePool swap) without a pod restart (K8S-755). Enabled by default; set to false as a kill switch.
+
+**Default:** `{"enabled":true}`
+
 ### [statefulset.updateStrategy.type](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.updateStrategy.type)
 
 **Default:** `"RollingUpdate"`

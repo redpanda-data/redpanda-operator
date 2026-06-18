@@ -142,6 +142,7 @@ func init() {
 	framework.RegisterStep(`^cluster "([^"]*)" is stable with (\d+) nodes$`, checkClusterStableWithCount)
 	framework.RegisterStep(`^I create a basic cluster "([^"]*)" with (\d+) nodes$`, iCreateABasicClusterWithNodes)
 	framework.RegisterStep(`^I scale "([^"]*)" to (\d+) nodes$`, iScaleToNodes)
+	framework.RegisterStep(`^the in-pod rpk broker list for every broker in "([^"]*)" matches the current pods without a restart$`, theInPodRPKSeedListMatchesCurrentPods)
 
 	// General cluster scenario steps
 	framework.RegisterStep(`^service "([^"]*)" has named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)

@@ -700,6 +700,11 @@ statefulset:
       decommissionRequeueTimeout: 10s
     configWatcher:
       enabled: true
+    # -- Keeps the in-pod rpk configuration fresh after node operations
+    # (scale, NodePool swap) without a pod restart (K8S-755). Enabled by
+    # default; set to false as a kill switch.
+    rpkProfileWatcher:
+      enabled: true
     controllers:
       enabled: false
       # -- DEPRECATED: Use `rbac.enabled` to control RBAC chart wide or control RBAC by selectively enabling/disabling specific sidecar controllers.

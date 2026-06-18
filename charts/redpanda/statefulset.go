@@ -850,6 +850,19 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 		adminURLsCLI(state),
 	}
 
+	// Keep the rpk stanza of redpanda.yaml in sync with the chart-rendered
+	// base-config (a ConfigMap mount the kubelet keeps up to date), so in-pod
+	// rpk tracks topology changes without a pod restart (K8S-755). Seed-server
+	// changes deliberately do not roll pods, so this is the only restart-free
+	// refresh path. On by default; statefulset.sideCars.rpkProfileWatcher.enabled
+	// is the kill switch.
+	if pool.Statefulset.SideCars.RPKProfileWatcher.Enabled {
+		args = append(args, []string{
+			`--watch-rpk-profile`,
+			`--rpk-profile-source=/tmp/base-config/redpanda.yaml`,
+		}...)
+	}
+
 	if pool.Statefulset.SideCars.BrokerDecommissioner.Enabled {
 		args = append(args, []string{
 			`--run-decommissioner`,
@@ -881,12 +894,30 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 			Name:      "config",
 			MountPath: "/etc/redpanda",
 		},
+		// base-config is the chart-rendered ConfigMap; the kubelet keeps
+		// this mount up to date in running pods, which is what lets
+		// --watch-rpk-profile refresh the rpk stanza without a restart.
+		corev1.VolumeMount{
+			Name:      "base-config",
+			MountPath: "/tmp/base-config",
+			ReadOnly:  true,
+		},
 		corev1.VolumeMount{
 			Name:      ServiceAccountVolumeName,
 			MountPath: DefaultAPITokenMountPath,
 			ReadOnly:  true,
 		},
 	)
+
+	// Pin the sidecar to redpanda's effective uid/gid. --watch-rpk-profile
+	// rewrites /etc/redpanda/redpanda.yaml in place (new inode via rename,
+	// mode 0644) and in-pod rpk — running as the redpanda uid — rewrites and
+	// chowns that file on load, so a foreign owner would break every rpk call
+	// including the readiness probe. securityContextUidGid resolves the
+	// redpanda container's uid, so this stays correct even when a user
+	// overrides only redpanda's uid (without a pod-level runAsUser). Same
+	// reason the v1 rpk-profile-updater pins RunAsUser. (K8S-755)
+	uid, gid := securityContextUidGid(state, pool, SidecarContainerName)
 
 	return &corev1.Container{
 		Name:         SidecarContainerName,
@@ -896,6 +927,8 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 		Env:          append(rpkEnvVars(state, nil), statefulSetRedpandaEnv()...),
 		VolumeMounts: volumeMounts,
 		SecurityContext: &corev1.SecurityContext{
+			RunAsUser:                ptr.To(uid),
+			RunAsGroup:               ptr.To(gid),
 			RunAsNonRoot:             ptr.To(true),
 			AllowPrivilegeEscalation: ptr.To(false),
 		},
