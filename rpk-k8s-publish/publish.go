@@ -53,7 +53,9 @@ type info struct{ goos, goarch, sha, path string }
 type objectStore interface {
 	put(ctx context.Context, key string, body []byte, tags map[string]string) error
 	list(ctx context.Context, prefix string) ([]string, error)
-	getTags(ctx context.Context, key string) (map[string]string, error)
+	// head returns an object's tags and whether it exists. A missing object
+	// is (nil, false, nil); a genuine lookup failure returns a non-nil error.
+	head(ctx context.Context, key string) (tags map[string]string, exists bool, err error)
 }
 
 // RepoArtifact / RepoArchive / RepoManifest mirror the shape rpk's
@@ -139,44 +141,91 @@ func discoverBinaries(dir string) ([]string, error) {
 	return out, nil
 }
 
+// foundBinary is a discovered local binary plus its parsed platform.
+type foundBinary struct {
+	path, goos, goarch string
+}
+
 // uploadArchives tar.gz's and uploads every rpk-k8s-* binary in binaryDir to
 // <plugin>/archives/<version>/<binaryName>-<goos>-<goarch>.tar.gz, tagging
 // each object so buildManifest can reconstruct the manifest later.
-func uploadArchives(ctx context.Context, store objectStore, binaryDir, plugin, binaryName, version string) error {
+//
+// expectedPlatforms is the set of "<goos>-<goarch>" the release must provide;
+// the full set is validated before anything is uploaded, so a partial build
+// (e.g. one cross-compile target failed) never results in a partially
+// published version. Each archive is also immutable: re-uploading the same
+// version/platform is a no-op if the bytes are identical and a hard error if
+// they differ, so a retried or re-dispatched release can never silently
+// replace already-published bytes.
+func uploadArchives(ctx context.Context, store objectStore, binaryDir, plugin, binaryName, version string, expectedPlatforms []string) error {
 	bins, err := discoverBinaries(binaryDir)
 	if err != nil {
 		return err
 	}
-	if len(bins) == 0 {
-		return fmt.Errorf("no %s* binaries found in %q", binaryPrefix, binaryDir)
-	}
+
+	found := make([]foundBinary, 0, len(bins))
+	have := map[string]bool{}
 	for _, path := range bins {
 		goos, goarch, err := parsePlatform(filepath.Base(path))
 		if err != nil {
 			return err
 		}
-		raw, err := os.ReadFile(path)
+		found = append(found, foundBinary{path: path, goos: goos, goarch: goarch})
+		have[goos+"-"+goarch] = true
+	}
+
+	// Validate the full expected platform matrix BEFORE uploading anything.
+	var missing []string
+	for _, p := range expectedPlatforms {
+		if !have[p] {
+			missing = append(missing, p)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return fmt.Errorf("refusing to publish %s %s: missing expected platform binaries %v in %q (expected all of %v)", plugin, version, missing, binaryDir, expectedPlatforms)
+	}
+
+	for _, b := range found {
+		raw, err := os.ReadFile(b.path)
 		if err != nil {
-			return fmt.Errorf("unable to read %q: %w", path, err)
+			return fmt.Errorf("unable to read %q: %w", b.path, err)
 		}
 		sha := sha256Hex(raw)
+		key := fmt.Sprintf("%s/archives/%s/%s-%s-%s.tar.gz", plugin, version, binaryName, b.goos, b.goarch)
+
+		// Published version artifacts are immutable: skip if identical bytes
+		// already exist, hard-fail if a different binary is already published
+		// at this version/platform (a rebuild bakes a fresh buildDate, so a
+		// rerun of the same tag would otherwise overwrite with new bytes).
+		existing, exists, err := store.head(ctx, key)
+		if err != nil {
+			return fmt.Errorf("unable to check existing object %q: %w", key, err)
+		}
+		if exists {
+			if existing[tagBinarySha256] == sha {
+				fmt.Printf("skipping %s: already published with identical sha256=%s\n", key, sha)
+				continue
+			}
+			return fmt.Errorf("refusing to overwrite %s: already published with sha256=%s but local binary has sha256=%s; published version artifacts are immutable", key, existing[tagBinarySha256], sha)
+		}
+
 		// The inner tar entry name is cosmetic: rpk's plugin installer untars the
 		// single file and writes it to ~/.local/bin/.rpk.managed-<slug> regardless
 		// of the entry name, so arcname need not match the S3 archive's redpanda-k8s-... basename.
-		arcname := filepath.Base(strings.TrimSuffix(path, ".exe"))
+		arcname := filepath.Base(strings.TrimSuffix(b.path, ".exe"))
 		archive, err := tarGz(arcname, raw)
 		if err != nil {
-			return fmt.Errorf("unable to archive %q: %w", path, err)
+			return fmt.Errorf("unable to archive %q: %w", b.path, err)
 		}
-		key := fmt.Sprintf("%s/archives/%s/%s-%s-%s.tar.gz", plugin, version, binaryName, goos, goarch)
 		tags := map[string]string{
 			tagBinaryName:   binaryName,
 			tagBinarySha256: sha,
-			tagGOOS:         goos,
-			tagGOARCH:       goarch,
+			tagGOOS:         b.goos,
+			tagGOARCH:       b.goarch,
 			tagVersion:      version,
 		}
-		fmt.Printf("uploading %s (%s, sha256=%s)\n", key, goos+"/"+goarch, sha)
+		fmt.Printf("uploading %s (%s, sha256=%s)\n", key, b.goos+"/"+b.goarch, sha)
 		if err := store.put(ctx, key, archive, tags); err != nil {
 			return fmt.Errorf("unable to upload %q: %w", key, err)
 		}
@@ -197,9 +246,14 @@ func buildManifest(ctx context.Context, store objectStore, plugin, binaryName, r
 
 	byVersion := map[string][]info{}
 	for _, key := range keys {
-		tags, err := store.getTags(ctx, key)
+		tags, exists, err := store.head(ctx, key)
 		if err != nil {
 			return nil, fmt.Errorf("unable to read tags for %q: %w", key, err)
+		}
+		if !exists {
+			// Listed but vanished between list and head (eventual consistency
+			// or concurrent delete); skip rather than fail the whole manifest.
+			continue
 		}
 		if tags[tagBinaryName] != binaryName {
 			continue

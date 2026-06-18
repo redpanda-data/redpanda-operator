@@ -86,7 +86,6 @@ jobs:
           helm package -u --version "$version" "$(dirname "$chart_path")"
 
       - name: build rpk-k8s binaries
-        continue-on-error: true
         run: |
           set -ex
           tag="${{ steps.get_ref.outputs.ref_name }}"
@@ -122,7 +121,6 @@ jobs:
 
       - name: publish rpk-k8s managed plugin to S3
         if: ${{ startsWith(steps.get_ref.outputs.ref_name, 'operator/v') }}
-        continue-on-error: true
         run: |
           set -ex
           tag="${{ steps.get_ref.outputs.ref_name }}"

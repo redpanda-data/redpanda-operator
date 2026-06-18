@@ -51,8 +51,9 @@ func (f *fakeStore) list(_ context.Context, prefix string) ([]string, error) {
 	return keys, nil
 }
 
-func (f *fakeStore) getTags(_ context.Context, key string) (map[string]string, error) {
-	return f.tags[key], nil
+func (f *fakeStore) head(_ context.Context, key string) (map[string]string, bool, error) {
+	tags, ok := f.tags[key]
+	return tags, ok, nil
 }
 
 func TestParsePlatformFromFilename(t *testing.T) {
@@ -248,7 +249,8 @@ func TestUploadArchives_EndToEnd(t *testing.T) {
 	}
 
 	store := newFakeStore()
-	if err := uploadArchives(context.Background(), store, dir, "k8s", "redpanda-k8s", "25.3.5"); err != nil {
+	expected := []string{"linux-amd64", "windows-amd64"}
+	if err := uploadArchives(context.Background(), store, dir, "k8s", "redpanda-k8s", "25.3.5", expected); err != nil {
 		t.Fatalf("uploadArchives: %v", err)
 	}
 
@@ -330,4 +332,70 @@ func TestUploadArchives_EndToEnd(t *testing.T) {
 			t.Fatalf("[%s] expected exactly one file in the tar", w.key)
 		}
 	}
+}
+
+// TestUploadArchives_MissingPlatform asserts the publisher refuses to publish
+// (uploading nothing) when the local build is missing any expected platform —
+// so a partial cross-compile can never produce a partially published version.
+func TestUploadArchives_MissingPlatform(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "rpk-k8s-linux-amd64"), []byte("only-linux"), 0o755); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	store := newFakeStore()
+	expected := []string{"linux-amd64", "darwin-arm64", "windows-amd64"}
+	err := uploadArchives(context.Background(), store, dir, "k8s", "redpanda-k8s", "25.3.5", expected)
+	if err == nil {
+		t.Fatalf("expected error for missing platforms, got nil")
+	}
+	if !strings.Contains(err.Error(), "missing expected platform") {
+		t.Fatalf("error = %v, want it to mention missing expected platforms", err)
+	}
+	// Fail fast: nothing should have been uploaded.
+	if len(store.objects) != 0 {
+		t.Fatalf("expected 0 uploads on validation failure, got %d", len(store.objects))
+	}
+}
+
+// TestUploadArchives_ImmutableRerun asserts that re-running for an
+// already-published version/platform is a no-op when the bytes are identical
+// and a hard error when they differ (published artifacts are immutable).
+func TestUploadArchives_ImmutableRerun(t *testing.T) {
+	dir := t.TempDir()
+	contents := []byte("binary-v1")
+	if err := os.WriteFile(filepath.Join(dir, "rpk-k8s-linux-amd64"), contents, 0o755); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	key := "k8s/archives/25.3.5/redpanda-k8s-linux-amd64.tar.gz"
+	expected := []string{"linux-amd64"}
+
+	// Identical bytes already published -> skip, no new upload, no error.
+	t.Run("identical sha is a no-op", func(t *testing.T) {
+		store := newFakeStore()
+		store.tags[key] = map[string]string{tagBinarySha256: sha256Hex(contents)}
+		// no body in store.objects: a skip must not write one
+		if err := uploadArchives(context.Background(), store, dir, "k8s", "redpanda-k8s", "25.3.5", expected); err != nil {
+			t.Fatalf("uploadArchives: %v", err)
+		}
+		if _, wrote := store.objects[key]; wrote {
+			t.Fatalf("expected no upload for identical sha, but object was written")
+		}
+	})
+
+	// Different bytes already published -> hard error, no overwrite.
+	t.Run("different sha is rejected", func(t *testing.T) {
+		store := newFakeStore()
+		store.tags[key] = map[string]string{tagBinarySha256: "deadbeef-different"}
+		err := uploadArchives(context.Background(), store, dir, "k8s", "redpanda-k8s", "25.3.5", expected)
+		if err == nil {
+			t.Fatalf("expected error overwriting with different sha, got nil")
+		}
+		if !strings.Contains(err.Error(), "immutable") {
+			t.Fatalf("error = %v, want it to mention immutability", err)
+		}
+		if _, wrote := store.objects[key]; wrote {
+			t.Fatalf("must not overwrite an existing object with different bytes")
+		}
+	})
 }
