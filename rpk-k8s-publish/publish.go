@@ -45,6 +45,11 @@ const (
 // 25.3.5-rc1 do not match and are therefore never marked is_latest.
 var stableVersionRe = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
 
+// versionPrefixRe captures the numeric X.Y.Z prefix plus any pre-release
+// remainder (e.g. "-rc1"), used to order manifest archives by semver rather
+// than lexically (so 25.3.9 sorts before 25.3.10, not after).
+var versionPrefixRe = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)(.*)$`)
+
 // info is one published artifact discovered from S3 object tags.
 type info struct{ goos, goarch, sha, path string }
 
@@ -277,7 +282,7 @@ func buildManifest(ctx context.Context, store objectStore, plugin, binaryName, r
 	for v := range byVersion {
 		versions = append(versions, v)
 	}
-	sort.Strings(versions)
+	sort.Slice(versions, func(i, j int) bool { return lessVersion(versions[i], versions[j]) })
 	for _, v := range versions {
 		artifacts := map[string]RepoArtifact{}
 		for _, in := range byVersion[v] {
@@ -293,6 +298,34 @@ func buildManifest(ctx context.Context, store objectStore, plugin, binaryName, r
 		})
 	}
 	return manifest, nil
+}
+
+// lessVersion orders versions by semver: numeric X.Y.Z ascending, and for an
+// equal X.Y.Z a pre-release (e.g. 25.3.5-rc1) sorts before its final release
+// (25.3.5). Versions that don't parse fall back to lexical comparison.
+func lessVersion(a, b string) bool {
+	am := versionPrefixRe.FindStringSubmatch(a)
+	bm := versionPrefixRe.FindStringSubmatch(b)
+	if am == nil || bm == nil {
+		return a < b
+	}
+	at := [3]int{atoiOr0(am[1]), atoiOr0(am[2]), atoiOr0(am[3])}
+	bt := [3]int{atoiOr0(bm[1]), atoiOr0(bm[2]), atoiOr0(bm[3])}
+	if c := slices.Compare(at[:], bt[:]); c != 0 {
+		return c < 0
+	}
+	// Same X.Y.Z: the final release (empty remainder) sorts after any of its
+	// pre-releases; otherwise compare the remainders lexically.
+	aSuf, bSuf := am[4], bm[4]
+	if (aSuf == "") != (bSuf == "") {
+		return aSuf != ""
+	}
+	return aSuf < bSuf
+}
+
+func atoiOr0(s string) int {
+	n, _ := strconv.Atoi(s)
+	return n
 }
 
 // maxStableVersion returns the greatest pure X.Y.Z among the given version
