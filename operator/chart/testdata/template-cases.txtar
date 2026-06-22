@@ -237,3 +237,7 @@ controllers:
 # (--disable-telemetry), so the chart and binary can't drift apart again.
 telemetry:
   enabled: false
+
+-- fix-additional-flags --
+additionalCmdFlags:
+  - --enable-console=false

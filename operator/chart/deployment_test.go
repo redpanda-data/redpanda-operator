@@ -111,3 +111,14 @@ func TestAddControllerSyncIntervalArgs(t *testing.T) {
 		assert.Empty(t, defaults)
 	})
 }
+
+func TestChangeDefaultFlag(t *testing.T) {
+	t.Run("change default enable console flag", func(t *testing.T) {
+		spec := renderDeployment(t, map[string]any{
+			"additionalCmdFlags": []string{
+				"--enable-console=false",
+			},
+		}).Spec.Template.Spec
+		assert.Contains(t, spec.Containers[0].Args, "--enable-console=false")
+	})
+}
