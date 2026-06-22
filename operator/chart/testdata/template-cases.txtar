@@ -143,3 +143,7 @@ monitoring:
   scrapeInterval: 15s
   labels:
     prometheus.io/scrape: "true"
+
+-- fix-additional-flags --
+additionalCmdFlags:
+  - --enable-console=false

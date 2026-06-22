@@ -77,3 +77,14 @@ func TestDeploymentSchedulingFields(t *testing.T) {
 		}, spec.Tolerations[0])
 	})
 }
+
+func TestChangeDefaultFlag(t *testing.T) {
+	t.Run("change default enable console flag", func(t *testing.T) {
+		spec := renderDeployment(t, map[string]any{
+			"additionalCmdFlags": []string{
+				"--enable-console=false",
+			},
+		}).Spec.Template.Spec
+		assert.Contains(t, spec.Containers[0].Args, "--enable-console=false")
+	})
+}
