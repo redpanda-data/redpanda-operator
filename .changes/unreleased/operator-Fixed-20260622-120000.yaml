@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed `additionalCmdFlags` not being able to override the operator's default command-line flags in the rendered Deployment. Flags the chart sets a default for (e.g. `--enable-console`) were silently dropped in favor of the default; user-provided values now take precedence.
+time: 2026-06-22T12:00:00.000000-07:00
