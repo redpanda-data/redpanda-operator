@@ -38,11 +38,12 @@ Feature: Helm chart to Redpanda Operator migration
         And I store "{.metadata.generation}" of Kubernetes object with type "StatefulSet.v1.apps" and name "name-override" as "generation"
         # Before migrating, assert the Secret-referenced property is applied to the running,
         # Helm-managed cluster. iceberg_rest_catalog_client_secret is a Redpanda secret, so the
-        # Admin API redacts its value to "[secret]" once set, while the rendered bootstrap file
+        # Admin API redacts its value once set; rpk YAML-encodes the redacted "[secret]" marker
+        # and single-quotes it because it begins with "[". The rendered bootstrap file instead
         # holds the cleartext resolved from the Secret.
         And I exec "rpk cluster config get iceberg_rest_catalog_client_secret" in a Pod matching "app.kubernetes.io/instance=redpanda-migration-example,app.kubernetes.io/component=redpanda-statefulset", it will output:
         """
-        [secret]
+        '[secret]'
         """
         And I exec "grep iceberg_rest_catalog_client_secret /etc/redpanda/.bootstrap.yaml" in a Pod matching "app.kubernetes.io/instance=redpanda-migration-example,app.kubernetes.io/component=redpanda-statefulset", it will output:
         """
@@ -79,7 +80,7 @@ Feature: Helm chart to Redpanda Operator migration
         # still be set on the running cluster and still resolved in the bootstrap file.
         And I exec "rpk cluster config get iceberg_rest_catalog_client_secret" in a Pod matching "app.kubernetes.io/instance=redpanda-migration-example,app.kubernetes.io/component=redpanda-statefulset", it will output:
         """
-        [secret]
+        '[secret]'
         """
         And I exec "grep iceberg_rest_catalog_client_secret /etc/redpanda/.bootstrap.yaml" in a Pod matching "app.kubernetes.io/instance=redpanda-migration-example,app.kubernetes.io/component=redpanda-statefulset", it will output:
         """
