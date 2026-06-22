@@ -96,3 +96,7 @@ additionalCmdFlags:
 - --configurator-base-image=my.repo.com/configurator
 - --configurator-tag=XYZ
 - --configurator-image-pull-policy=IfNotPresent
+
+-- fix-additional-flags --
+additionalCmdFlags:
+  - --enable-console=false
