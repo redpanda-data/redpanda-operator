@@ -192,7 +192,8 @@ func multiclusterOperatorArguments(dot *helmette.Dot) []string {
 	userProvided := chartutil.ParseFlags(values.AdditionalCmdFlags)
 
 	flags := []string{"multicluster"}
-	for key, value := range helmette.SortedMap(helmette.Merge(defaults, userProvided)) {
+
+	for key, value := range helmette.SortedMap(helmette.Merge(userProvided, defaults)) {
 		if value == "" {
 			flags = append(flags, key)
 		} else {
