@@ -95,7 +95,7 @@
 {{- $_ := (get (fromJson (include "operator.addControllerSyncIntervalArgs" (dict "a" (list $defaults $values)))) "r") -}}
 {{- $userProvided := (get (fromJson (include "chartutil.ParseFlags" (dict "a" (list $values.additionalCmdFlags)))) "r") -}}
 {{- $flags := (list "multicluster") -}}
-{{- range $key, $value := (merge (dict) $defaults $userProvided) -}}
+{{- range $key, $value := (merge (dict) $userProvided $defaults) -}}
 {{- if (eq $value "") -}}
 {{- $flags = (concat (default (list) $flags) (list $key)) -}}
 {{- else -}}
