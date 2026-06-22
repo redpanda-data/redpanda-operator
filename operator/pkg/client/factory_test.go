@@ -194,6 +194,19 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 			Image:    "docker.io/redpandadata/redpanda",
 			Version:  "v24.3.5",
 			Replicas: ptr.To(int32(1)),
+			// The rpk-profile-updater sidecar (K8S-755) runs the
+			// `rpk-profile-watcher` subcommand out of the configurator image.
+			// This test pins an old, hardcoded configurator nightly (see
+			// ConfiguratorTag below) that predates that subcommand, so the
+			// sidecar crashloops, the pod never becomes Ready, and
+			// OperatorQuiescent never flips True. This test exercises the
+			// client Factory, not rpk-profile freshness, so turn the sidecar
+			// off via its documented kill switch. (The Cluster is created
+			// directly without the defaulting webhook, so RpkProfileUpdater is
+			// otherwise nil, which the StatefulSet treats as enabled.)
+			Sidecars: vectorizedv1alpha1.Sidecars{
+				RpkProfileUpdater: &vectorizedv1alpha1.Sidecar{Enabled: false},
+			},
 			Configuration: vectorizedv1alpha1.RedpandaConfig{
 				RPCServer: vectorizedv1alpha1.SocketAddress{
 					Port: 33145,
