@@ -21,12 +21,14 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1apply "k8s.io/client-go/applyconfigurations/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -182,6 +184,50 @@ func isClusterGone(err error) bool {
 		isNotFoundInChain(err) ||
 		meta.IsNoMatchError(err) ||
 		apierrors.IsForbidden(err)
+}
+
+// DeleteWithClusterAnnotation opts a layered CR into garbage collection when its
+// referenced cluster is deleted. When set to "true", the reconciler stamps an
+// owner reference pointing at the resolved cluster so Kubernetes deletes the CR
+// along with the cluster. Absent (the default), the CR survives cluster deletion
+// and can be deleted on its own schedule.
+const DeleteWithClusterAnnotation = "operator.redpanda.com/delete-with-cluster"
+
+// ownerReferenceForCluster builds a garbage-collection owner reference linking a
+// layered CR to its referenced cluster, or nil when one must not be set.
+//
+// It returns nil when the cluster is unresolved or lives in a different
+// namespace than the object: Kubernetes garbage collection ignores
+// cross-namespace owner references. The reference is deliberately non-controller
+// and non-blocking (controller=false, blockOwnerDeletion=false) so it acts only
+// as a GC edge and never blocks the cluster's own deletion.
+func ownerReferenceForCluster(ref *redpandav1alpha2.ClusterRef, cluster client.Object, objectNamespace string) *metav1apply.OwnerReferenceApplyConfiguration {
+	if ref == nil || cluster == nil {
+		return nil
+	}
+	if cluster.GetNamespace() != objectNamespace {
+		return nil
+	}
+
+	var apiVersion, kind string
+	switch {
+	case ref.IsV1():
+		apiVersion, kind = vectorizedv1alpha1.GroupVersion.String(), "Cluster"
+	case ref.IsStretchCluster():
+		apiVersion, kind = redpandav1alpha2.GroupVersion.String(), "StretchCluster"
+	case ref.IsV2():
+		apiVersion, kind = redpandav1alpha2.GroupVersion.String(), "Redpanda"
+	default:
+		return nil
+	}
+
+	return metav1apply.OwnerReference().
+		WithAPIVersion(apiVersion).
+		WithKind(kind).
+		WithName(cluster.GetName()).
+		WithUID(cluster.GetUID()).
+		WithController(false).
+		WithBlockOwnerDeletion(false)
 }
 
 // isNotFoundInChain walks the error chain to check if a "not found" error

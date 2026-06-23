@@ -77,6 +77,18 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 
 	var srSyncWarning error
 
+	// Opt-in: stamp an owner reference so the role is garbage-collected when its
+	// referenced cluster is deleted. Owner references live in metadata, so they
+	// cannot ride on the status patch below; they are applied here under a
+	// dedicated field manager (separate from the finalizer/status owner) so SSA
+	// does not relinquish the finalizer. A failure to resolve or patch the owner
+	// reference is non-fatal: it must not block the role from syncing.
+	if role.Annotations[DeleteWithClusterAnnotation] == "true" {
+		if err := r.syncClusterOwnerReference(ctx, request); err != nil {
+			request.logger.V(1).Info("unable to set cluster owner reference for garbage collection", "error", err)
+		}
+	}
+
 	createPatch := func(err error) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace)
@@ -260,6 +272,39 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	}
 
 	return nil
+}
+
+// roleOwnerReferenceFieldManager is the dedicated server-side-apply field owner
+// for the cluster garbage-collection owner reference. Keeping it separate from
+// the default field owner (which manages the finalizer and status) ensures this
+// apply only ever owns metadata.ownerReferences and cannot relinquish the
+// finalizer.
+const roleOwnerReferenceFieldManager = "redpanda-operator-role-ownerref"
+
+// syncClusterOwnerReference resolves the referenced cluster and, when it lives in
+// the same namespace, stamps a garbage-collection owner reference on the role so
+// Kubernetes deletes it along with the cluster. It is a no-op for static
+// configurations and cross-namespace references.
+func (r *RoleReconciler) syncClusterOwnerReference(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) error {
+	role := request.object
+
+	cluster, err := request.factory.ClusterForObject(ctx, role, request.clusterName)
+	if err != nil || cluster == nil {
+		return err
+	}
+
+	owner := ownerReferenceForCluster(role.GetClusterSource().GetClusterRef(), cluster, role.Namespace)
+	if owner == nil {
+		return nil
+	}
+
+	k8sClient, err := request.factory.GetClient(ctx, request.clusterName)
+	if err != nil {
+		return err
+	}
+
+	patch := kubernetes.ApplyPatch(redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace).WithOwnerReferences(owner))
+	return k8sClient.Patch(ctx, role, patch, client.ForceOwnership, client.FieldOwner(roleOwnerReferenceFieldManager))
 }
 
 func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {
