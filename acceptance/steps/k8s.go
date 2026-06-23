@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
@@ -29,6 +30,7 @@ import (
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 )
 
 // this is a nasty hack due to the fact that we can't disable the linter for typecheck
@@ -46,8 +48,6 @@ func podWillEventuallyBeInPhase(ctx context.Context, t framework.TestingT, podNa
 }
 
 func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, groupVersionKind, resourceName, clusterName string) {
-	var cluster redpandav1alpha2.Redpanda
-
 	gvk, _ := schema.ParseKindArg(groupVersionKind)
 	obj, err := t.Scheme().New(*gvk)
 	require.NoError(t, err)
@@ -57,9 +57,12 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 	require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
 
 	require.Eventually(t, func() bool {
-		require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
 		require.NoError(t, t.Get(ctx, t.ResourceKey(resourceName), o))
-		cluster.SetGroupVersionKind(redpandav1alpha2.SchemeGroupVersion.WithKind("Redpanda"))
+
+		// The referenced cluster (and therefore the expected owner reference GVK)
+		// depends on the variant: the vectorized variant rewrites clusterRefs to
+		// the v1 Cluster, every other variant uses the v2 Redpanda.
+		expected := expectedClusterOwnerReference(ctx, t, clusterName)
 
 		references := o.GetOwnerReferences()
 		if len(references) != 1 {
@@ -68,13 +71,9 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 		}
 
 		actual := references[0]
-		expected := cluster.OwnerShipRefObj()
-
-		matchesAPIVersion := actual.APIVersion == expected.APIVersion
-		matchesKind := actual.Kind == expected.Kind
-		matchesName := actual.Name == expected.Name
-
-		matches := matchesAPIVersion && matchesKind && matchesName
+		matches := actual.APIVersion == expected.APIVersion &&
+			actual.Kind == expected.Kind &&
+			actual.Name == expected.Name
 
 		t.Logf(`Checking object contains cluster owner reference? (actual: %s/%s -> %s) (expected: %s/%s -> %s)`, actual.Kind, actual.APIVersion, actual.Name, expected.Kind, expected.APIVersion, expected.Name)
 		return matches
@@ -83,6 +82,27 @@ func kubernetesObjectHasClusterOwner(ctx context.Context, t framework.TestingT, 
 	}))
 
 	t.Logf("Object has cluster owner reference for %q", clusterName)
+}
+
+// expectedClusterOwnerReference returns the owner reference a garbage-collected
+// object should carry for clusterName, accounting for the active variant: the
+// vectorized variant resolves clusterRefs to the v1 Cluster, all others to the
+// v2 Redpanda.
+func expectedClusterOwnerReference(ctx context.Context, t framework.TestingT, clusterName string) metav1.OwnerReference {
+	if getVersion(t, "") == "vectorized" {
+		var cluster vectorizedv1alpha1.Cluster
+		require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
+		return metav1.OwnerReference{
+			APIVersion: vectorizedv1alpha1.GroupVersion.String(),
+			Kind:       "Cluster",
+			Name:       cluster.Name,
+		}
+	}
+
+	var cluster redpandav1alpha2.Redpanda
+	require.NoError(t, t.Get(ctx, t.ResourceKey(clusterName), &cluster))
+	cluster.SetGroupVersionKind(redpandav1alpha2.SchemeGroupVersion.WithKind("Redpanda"))
+	return cluster.OwnerShipRefObj()
 }
 
 type recordedVariable string
