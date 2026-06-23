@@ -14,11 +14,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/otelkube"
 	"github.com/redpanda-data/common-go/otelutil/trace"
@@ -99,6 +102,12 @@ type RedpandaReconciler struct {
 	ClientFactory        internalclient.ClientFactory
 	CloudSecretsExpander *pkgsecrets.CloudExpander
 	UseNodePools         bool
+	// PostRestartCaughtUpPercent is the load_reclaimed_pc a just-restarted
+	// broker must report (via the post-restart probe) before the rolling
+	// restart proceeds to the next broker. Defaults to
+	// probes.DefaultPostRestartCaughtUpPercent (100); set lower to accept
+	// partial recovery at the gate.
+	PostRestartCaughtUpPercent int
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -515,6 +524,13 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
 	}
 
+	// brokerMap keys brokers by the first DNS label of their internal RPC
+	// address (pod name when InternalRPCAddress is the per-pod FQDN).
+	// InternalRPCAddress can also come back as "host:port" (advertised RPC
+	// port suffix) or — in rarer misconfigurations — as a bare IP. Strip
+	// the port if present, then key by both the first label (pod-name
+	// lookup) and the raw host, so the roll loop below doesn't silently
+	// misclassify a registered broker as orphan.
 	brokerMap := map[string]int{}
 	for _, brokerID := range health.AllNodes {
 		broker, err := state.admin.Broker(ctx, brokerID)
@@ -522,8 +538,12 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			return ctrl.Result{}, errors.Wrap(err, "fetching broker")
 		}
 
-		brokerTokens := strings.Split(broker.InternalRPCAddress, ".")
-		brokerMap[brokerTokens[0]] = brokerID
+		host := broker.InternalRPCAddress
+		if h, _, splitErr := net.SplitHostPort(broker.InternalRPCAddress); splitErr == nil {
+			host = h
+		}
+		brokerMap[strings.SplitN(host, ".", 2)[0]] = brokerID
+		brokerMap[host] = brokerID
 	}
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
@@ -561,24 +581,83 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
 
+	// Second gate, Redpanda 25.1+: even when the prior pod is K8s-Ready, the
+	// broker inside it may still be replaying partition state from its
+	// peers. /v1/broker/post_restart_probe (load_reclaimed_pc) lets us wait
+	// for the broker to confirm it has reached the in-sync fraction we
+	// expect before we roll the next one. This is the ENG-222 RFC's "wait
+	// for post-restart probe" step. On Redpanda <25.1 the endpoint returns
+	// 404 for every broker; brokersStillRecovering then returns
+	// (false, nil) so behavior on older clusters is unchanged.
+	if len(rollSet) > 0 {
+		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, r.PostRestartCaughtUpPercent, logger)
+		if err != nil {
+			// Probe error is not fatal — the K8s-Ready gate above and
+			// the per-broker pre-restart probe below still protect us.
+			logger.V(log.DebugLevel).Info("post-restart probe check failed, proceeding without it", "error", err)
+		} else if recovering {
+			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
 	rolled := false
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false
 
-		if _, ok := brokerMap[pod.GetName()]; !ok {
-			// we don't actually have this broker in the cluster
-			// anymore, which means it's always safe to delete
-			// the pod and continue with the next operations
-			shouldRoll, continueExecution = true, true
-		} else if health.IsHealthy {
-			// TODO: don't just check overall cluster health, but use
-			// scoped API endpoints for rolling a broker
-
-			// roll and halt execution
-			shouldRoll, continueExecution = true, false
-		} else {
-			// see if we can at least roll the next pods
-			shouldRoll, continueExecution = false, true
+		brokerID, inBrokerMap := brokerMap[pod.GetName()]
+		switch {
+		case !inBrokerMap:
+			// The pod has no matching broker in our cluster view. That's
+			// usually safe to delete (orphan, ghost broker, mis-named
+			// replica), but treating *every* unmapped pod that way in a
+			// single reconcile would tear them all down at once if the
+			// mismatch is transient — slow admin API on a just-restarted
+			// broker, advertised-address format the parser missed, etc.
+			// Delete this one and requeue so we re-evaluate against a
+			// fresh view before touching the next pod.
+			//
+			// ...but only while the cluster is healthy. Because we have no
+			// broker ID for this pod we cannot run its per-broker pre-restart
+			// probe, so if the broker map is stale or mis-parsed (e.g. an
+			// IP-form internal RPC address that a pod-name lookup can't match)
+			// this "orphan" may actually be a live, in-sync replica.
+			// Restarting it while the cluster is under-replicated or has
+			// offline nodes risks data loss (RFC cases 3/4). When the cluster
+			// is not healthy, skip it and let the mapped pods be gated by
+			// their own pre-restart probes; the orphan is re-evaluated on a
+			// later pass once the cluster recovers.
+			if !health.IsHealthy {
+				logger.V(log.DebugLevel).Info("unmapped pod but cluster not healthy; deferring deletion (cannot pre-restart-probe an unidentified broker)", "Pod", client.ObjectKeyFromObject(pod.Pod).String())
+				shouldRoll, continueExecution = false, true
+			} else {
+				shouldRoll, continueExecution = true, false
+			}
+		default:
+			// Per-broker restart-safety probe (Redpanda 25.1+):
+			// /v1/broker/pre_restart_probe answers a per-broker
+			// counterfactual — "if I restart this broker now, which
+			// partitions are affected?" — rather than the cluster-wide
+			// IsHealthy boolean. When the endpoint returns true we know
+			// this specific broker can be restarted without risking
+			// acks=1 data loss, acks=-1 produce rejection, or partition
+			// unavailability. On clusters that don't expose the endpoint
+			// the helper falls back to cluster.IsHealthy so behavior on
+			// pre-25.1 brokers is unchanged.
+			safe, err := brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
+			switch {
+			case err != nil:
+				// Be conservative — skip rolling this pod but try the
+				// next one. The reconciler will retry on the next loop.
+				logger.V(log.DebugLevel).Info("pre-restart probe error, skipping pod", "pod", pod.GetName(), "error", err)
+				shouldRoll, continueExecution = false, true
+			case safe:
+				// roll and halt execution
+				shouldRoll, continueExecution = true, false
+			default:
+				// not safe right now — skip this pod, try the next
+				shouldRoll, continueExecution = false, true
+			}
 		}
 
 		if shouldRoll {
@@ -921,6 +1000,160 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, cluster cluster.Clu
 		syncResult.RequeueAfter = result.RequeueAfter
 	}
 	return syncResult, syncErr
+}
+
+// brokerSafeToRestart consults the broker's pre-restart probe (Redpanda 25.1+
+// — /v1/broker/pre_restart_probe) to decide whether rolling this particular
+// broker is currently safe. It returns true when none of the dangerous risk
+// categories are populated for this broker:
+//
+//   - acks1_data_loss                 (acks=1 producers may lose data)
+//   - unavailable                     (partitions reject produce and consume)
+//   - full_acks_produce_unavailable   (acks=-1 produce rejected)
+//
+// rf1_offline is acceptable — RF=1 already has no redundancy.
+//
+// When the broker is on a Redpanda version without the probe endpoint (404),
+// the function falls back to the legacy cluster-wide IsHealthy heuristic
+// passed in via clusterIsHealthy so behavior on older brokers is unchanged.
+// All other errors are returned as-is and the caller should treat them as
+// "skip this pod, retry next reconcile".
+func brokerSafeToRestart(ctx context.Context, admin *rpadmin.AdminAPI, brokerID int, clusterIsHealthy bool, logger logr.Logger, podName string) (bool, error) {
+	brokerURL, err := admin.BrokerIDToURL(ctx, brokerID)
+	if err != nil {
+		return false, fmt.Errorf("resolving broker %d URL: %w", brokerID, err)
+	}
+	scoped, err := admin.ForHost(brokerURL)
+	if err != nil {
+		return false, fmt.Errorf("scoping admin client to broker %d (%s): %w", brokerID, brokerURL, err)
+	}
+	defer scoped.Close()
+
+	result, err := scoped.PreRestartProbe(ctx, 0)
+	if err != nil {
+		var httpErr *rpadmin.HTTPResponseError
+		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
+			// Pre-25.1 broker — fall back to the cluster-wide
+			// heuristic. This preserves behavior on older clusters
+			// while letting 25.1+ benefit from the precise probe.
+			logger.V(log.DebugLevel).Info("pre-restart probe unsupported on broker, falling back to cluster IsHealthy", "pod", podName, "brokerID", brokerID)
+			return clusterIsHealthy, nil
+		}
+		return false, fmt.Errorf("fetching pre-restart probe for broker %d: %w", brokerID, err)
+	}
+
+	if n := len(result.Risks.Acks1DataLoss); n > 0 {
+		logger.V(log.DebugLevel).Info("broker not safe to restart: acks=1 data loss risk", "pod", podName, "partitions", n)
+		return false, nil
+	}
+	if n := len(result.Risks.Unavailable); n > 0 {
+		logger.V(log.DebugLevel).Info("broker not safe to restart: partitions would become unavailable", "pod", podName, "partitions", n)
+		return false, nil
+	}
+	if n := len(result.Risks.FullAcksProduceUnavailable); n > 0 {
+		logger.V(log.DebugLevel).Info("broker not safe to restart: acks=-1 produce would be rejected", "pod", podName, "partitions", n)
+		return false, nil
+	}
+	if n := len(result.Risks.RF1Offline); n > 0 {
+		logger.V(log.TraceLevel).Info("broker restart will briefly offline RF=1 partitions (acceptable)", "pod", podName, "partitions", n)
+	}
+	return true, nil
+}
+
+// brokerCaughtUp consults the broker's post-restart probe (Redpanda 25.1+ —
+// /v1/broker/post_restart_probe) to decide whether the broker has finished
+// replaying partition state since its last restart. Returns true when
+// LoadReclaimedPercent >= threshold (DefaultPostRestartCaughtUpPercent gives
+// the strictest 100% reading).
+//
+// On 404 the function returns (true, nil): the endpoint is absent on
+// pre-25.1 brokers, and we've never previously gated on this signal, so the
+// safe behavior is to act as though the broker is caught up (the
+// HasRecentlyReplacedPods K8s-Ready gate is still in place above).
+//
+// All other errors propagate so the caller can decide whether to skip or
+// retry — the controller treats them as non-fatal at the gate (see usage
+// in reconcileDecommission) because the K8s-Ready gate and the per-broker
+// pre-restart probe still cover the dangerous failure modes.
+func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, threshold int, logger logr.Logger, podName string) (bool, error) {
+	brokerURL, err := admin.BrokerIDToURL(ctx, brokerID)
+	if err != nil {
+		return false, fmt.Errorf("resolving broker %d URL: %w", brokerID, err)
+	}
+	scoped, err := admin.ForHost(brokerURL)
+	if err != nil {
+		return false, fmt.Errorf("scoping admin client to broker %d (%s): %w", brokerID, brokerURL, err)
+	}
+	defer scoped.Close()
+
+	result, err := scoped.PostRestartProbe(ctx, 0)
+	if err != nil {
+		var httpErr *rpadmin.HTTPResponseError
+		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
+			logger.V(log.DebugLevel).Info("post-restart probe unsupported on broker, treating as caught up", "pod", podName, "brokerID", brokerID)
+			return true, nil
+		}
+		return false, fmt.Errorf("fetching post-restart probe for broker %d: %w", brokerID, err)
+	}
+
+	if result.LoadReclaimedPercent < threshold {
+		logger.V(log.DebugLevel).Info("broker still post-restart recovering",
+			"pod", podName, "brokerID", brokerID,
+			"load_reclaimed_pc", result.LoadReclaimedPercent, "threshold", threshold)
+		return false, nil
+	}
+	return true, nil
+}
+
+// brokersStillRecovering returns true when any broker in brokerMap reports
+// load_reclaimed_pc < threshold via the post-restart probe. The roll loop uses
+// this to wait for a just-restarted broker to finish replaying its in-sync
+// replicas before proceeding to the next pod.
+//
+// threshold is the caught-up percentage the operator requires before rolling
+// the next broker. It defaults to probes.DefaultPostRestartCaughtUpPercent
+// (100 — the strictest reading) and is tunable via the operator's
+// --post-restart-caught-up-percent flag for clusters that want to accept
+// partial recovery at this gate.
+//
+// Implementation note: we query every broker in the map rather than
+// tracking which specific pods were "recently rolled," because the probe
+// answer is per-broker and consistent regardless — a broker that has been
+// running for hours and is fully caught up returns 100 every time. The
+// extra cost is one admin call per broker per reconcile, gated on
+// len(rollSet) > 0 so steady-state clusters don't pay it.
+func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, brokerMap map[string]int, threshold int, logger logr.Logger) (bool, error) {
+	// Deduplicate broker IDs — brokerMap intentionally double-keys (by
+	// first DNS label and raw host) so iterating values directly would
+	// query each broker twice.
+	seen := map[int]struct{}{}
+	var firstErr error
+	for podName, brokerID := range brokerMap {
+		if _, dup := seen[brokerID]; dup {
+			continue
+		}
+		seen[brokerID] = struct{}{}
+
+		caughtUp, err := brokerCaughtUp(ctx, admin, brokerID, threshold, logger, podName)
+		if err != nil {
+			// A probe error on one broker must not short-circuit the scan.
+			// brokerMap iteration order is random, and the caller treats a
+			// returned error as non-fatal and proceeds with the roll — so
+			// bailing on the first error could let us roll the next pod while
+			// a *different* broker is still recovering, reopening the
+			// under-replication window this gate exists to close (RFC
+			// cases 2/4). Record the first error and keep scanning; a
+			// confirmed still-recovering broker below takes precedence.
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		if !caughtUp {
+			return true, nil
+		}
+	}
+	return false, firstErr
 }
 
 func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpadmin.AdminAPI) (_ rpadmin.ClusterHealthOverview, err error) {

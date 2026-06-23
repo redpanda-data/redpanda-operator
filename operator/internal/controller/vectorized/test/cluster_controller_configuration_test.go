@@ -12,11 +12,12 @@ package test
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/moby/moby/pkg/namesgenerator"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -757,7 +758,13 @@ func getInitialTestCluster(
 	namespace *corev1.Namespace,
 	api *admin.MockAdminAPI,
 ) {
-	ns := strings.Replace(namesgenerator.GetRandomName(0), "_", "-", 1)
+	// Per-test namespace name. Previously pulled namesgenerator from
+	// github.com/moby/moby; the monolith now conflicts with the split-out
+	// moby/moby/api module pulled in via testcontainers. The actual name
+	// just needs to be unique within the suite.
+	suffix := make([]byte, 4)
+	_, _ = rand.Read(suffix)
+	ns := "test-" + strings.ToLower(hex.EncodeToString(suffix))
 	key = types.NamespacedName{
 		Name:      name,
 		Namespace: ns,

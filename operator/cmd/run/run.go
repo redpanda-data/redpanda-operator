@@ -46,6 +46,7 @@ import (
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/telemetry"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
@@ -135,6 +136,7 @@ type RunOptions struct {
 	metricsCertKey                      string
 	enableGhostBrokerDecommissioner     bool
 	ghostBrokerDecommissionerSyncPeriod time.Duration
+	postRestartCaughtUpPercent          int
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
@@ -204,6 +206,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
+	cmd.Flags().IntVar(&o.postRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
 
 	// Telemetry related flags.
 	cmd.Flags().BoolVar(&o.disableTelemetry, "disable-telemetry", false, "Disable anonymous cluster-shape telemetry.")
@@ -466,11 +469,12 @@ func Run(
 	if v2Controllers {
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
-			Manager:              mcmanager,
-			LifecycleClient:      lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
-			ClientFactory:        factory,
-			CloudSecretsExpander: cloudExpander,
-			UseNodePools:         opts.enableV2NodepoolController,
+			Manager:                    mcmanager,
+			LifecycleClient:            lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
+			ClientFactory:              factory,
+			CloudSecretsExpander:       cloudExpander,
+			UseNodePools:               opts.enableV2NodepoolController,
+			PostRestartCaughtUpPercent: opts.postRestartCaughtUpPercent,
 		}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
