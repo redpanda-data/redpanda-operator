@@ -1,0 +1,17 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    The schema registry's internal Kafka client now authenticates automatically
+    when SASL is enabled (`auth.sasl.enabled`). By default it is wired to the
+    bootstrap superuser the chart already manages — using that user's password
+    and SASL mechanism — so the common case needs no extra configuration.
+
+    For bring-your-own credentials, `config.schema_registry_client.saslSecretRef`
+    points the client at a Kubernetes Secret with `username`/`password` keys, and
+    `config.schema_registry_client.saslMechanism` overrides the mechanism (it
+    otherwise defaults to the bootstrap user's, so the client and the credentials
+    it presents always agree). Credentials are projected into the configurator
+    init container as environment variables and applied to `redpanda.yaml` at
+    pod start, so they never appear in plaintext in the ConfigMap or Helm
+    release history.
+time: 2026-05-11T21:58:25Z

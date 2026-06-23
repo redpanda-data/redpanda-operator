@@ -359,6 +359,29 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 			`rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`,
 		)
 	}
+
+	// Apply SASL credentials for schema_registry_client. The chart's
+	// redpanda.yaml is rendered by this bash configurator init container, so we
+	// set the SCRAM fields with `rpk redpanda config set` against the
+	// SCHEMA_REGISTRY_CLIENT_USERNAME / _PASSWORD env vars (projected from
+	// saslSecretRef if set, otherwise the auto-wired bootstrap-user Secret; see
+	// statefulset.go). The credentials are never written to the ConfigMap or the
+	// Helm release — only the env-var references are.
+	if state.Values.Auth.IsSASLEnabled() {
+		configuratorSh = append(configuratorSh,
+			``,
+			`# Inject schema_registry_client SCRAM credentials. The env vars are`,
+			`# projected from saslSecretRef (if set) or the bootstrap-user Secret`,
+			`# (auto-wired default) in the StatefulSet; see statefulset.go.`,
+			`set +x`,
+			`rpk --config "$CONFIG" redpanda config set schema_registry_client.scram_username "${SCHEMA_REGISTRY_CLIENT_USERNAME}"`,
+			`rpk --config "$CONFIG" redpanda config set schema_registry_client.scram_password "${SCHEMA_REGISTRY_CLIENT_PASSWORD}"`,
+			fmt.Sprintf(`rpk --config "$CONFIG" redpanda config set schema_registry_client.sasl_mechanism %s`,
+				helmette.Quote(SchemaRegistryClientSASLMechanism(state))),
+			`set -x`,
+		)
+	}
+
 	secret.StringData["configurator.sh"] = helmette.Join("\n", configuratorSh)
 	return secret
 }

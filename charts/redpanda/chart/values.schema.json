@@ -317,6 +317,22 @@
             },
             "retry_base_backoff_ms": {
               "type": "integer"
+            },
+            "saslMechanism": {
+              "enum": [
+                "SCRAM-SHA-256",
+                "SCRAM-SHA-512"
+              ],
+              "type": "string"
+            },
+            "saslSecretRef": {
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
             }
           },
           "type": "object"

@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
@@ -1038,4 +1039,98 @@ func TestRedpandaResources_RedpandaFlags(t *testing.T) {
 		flags := tc.Resources.GetRedpandaFlags()
 		assert.Equal(t, tc.Expected, flags)
 	}
+}
+
+func TestSASLEnvVars(t *testing.T) {
+	cases := []struct {
+		name        string
+		clientField string
+		secretName  string
+		want        []corev1.EnvVar
+	}{
+		{
+			name:        "schema_registry_client",
+			clientField: "schema_registry_client",
+			secretName:  "my-sasl-secret",
+			want: []corev1.EnvVar{
+				{
+					Name: "SCHEMA_REGISTRY_CLIENT_USERNAME",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "my-sasl-secret"},
+							Key:                  corev1.BasicAuthUsernameKey,
+						},
+					},
+				},
+				{
+					Name: "SCHEMA_REGISTRY_CLIENT_PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "my-sasl-secret"},
+							Key:                  corev1.BasicAuthPasswordKey,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, SASLEnvVars(tc.clientField, tc.secretName))
+		})
+	}
+}
+
+func TestSchemaRegistryClientSASLMechanism(t *testing.T) {
+	state := func(srMech *SASLMechanism, bootstrapMech SASLMechanism) *RenderState {
+		s := &RenderState{Release: &helmette.Release{Name: "redpanda", Namespace: "default"}}
+		s.Values.Auth.SASL = &SASLAuth{BootstrapUser: BootstrapUser{Mechanism: bootstrapMech}}
+		if srMech != nil {
+			s.Values.Config.SchemaRegistryClient = &SchemaRegistryClient{SASLMechanism: srMech}
+		}
+		return s
+	}
+
+	sha512 := SASLMechanism("SCRAM-SHA-512")
+
+	// No override + bootstrap default: falls back to the bootstrap user's
+	// default mechanism (SCRAM-SHA-256), not a hard-pinned value.
+	require.Equal(t, "SCRAM-SHA-256", SchemaRegistryClientSASLMechanism(state(nil, "")))
+	// No override + explicit bootstrap mechanism: follows the bootstrap user.
+	require.Equal(t, "SCRAM-SHA-512", SchemaRegistryClientSASLMechanism(state(nil, "SCRAM-SHA-512")))
+	// Explicit saslMechanism override wins over the bootstrap mechanism.
+	require.Equal(t, "SCRAM-SHA-512", SchemaRegistryClientSASLMechanism(state(&sha512, "SCRAM-SHA-256")))
+}
+
+func TestSchemaRegistryClientSASLEnvVars(t *testing.T) {
+	base := func() *RenderState {
+		s := &RenderState{Release: &helmette.Release{Name: "redpanda", Namespace: "default"}}
+		s.Values.Auth.SASL = &SASLAuth{Enabled: true}
+		return s
+	}
+
+	// SASL disabled: nothing is projected.
+	disabled := &RenderState{Release: &helmette.Release{Name: "redpanda", Namespace: "default"}}
+	disabled.Values.Auth.SASL = &SASLAuth{Enabled: false}
+	require.Nil(t, SchemaRegistryClientSASLEnvVars(disabled))
+
+	// saslSecretRef set: both username and password come from that Secret.
+	withRef := base()
+	withRef.Values.Config.SchemaRegistryClient = &SchemaRegistryClient{
+		SASLSecretRef: &corev1.LocalObjectReference{Name: "my-sasl-secret"},
+	}
+	require.Equal(t, SASLEnvVars("schema_registry_client", "my-sasl-secret"), SchemaRegistryClientSASLEnvVars(withRef))
+
+	// Auto-wire (no saslSecretRef): username is the bootstrap user's literal
+	// value; password is projected from the bootstrap-user Secret.
+	auto := base()
+	got := SchemaRegistryClientSASLEnvVars(auto)
+	require.Len(t, got, 2)
+	require.Equal(t, "SCHEMA_REGISTRY_CLIENT_USERNAME", got[0].Name)
+	require.Equal(t, "kubernetes-controller", got[0].Value)
+	require.Nil(t, got[0].ValueFrom)
+	require.Equal(t, "SCHEMA_REGISTRY_CLIENT_PASSWORD", got[1].Name)
+	require.Empty(t, got[1].Value)
+	require.Equal(t, auto.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(auto)), got[1].ValueFrom.SecretKeyRef)
 }

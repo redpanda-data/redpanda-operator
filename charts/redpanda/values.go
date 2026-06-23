@@ -1275,6 +1275,87 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 	return template, fixups, envVars
 }
 
+// SchemaRegistryClientSASLMechanism returns the SASL mechanism the schema
+// registry's internal Kafka client should use: an explicit
+// config.schema_registry_client.saslMechanism if set, otherwise the bootstrap
+// user's mechanism — so the client never defaults to a mechanism the
+// credentials it presents weren't created with.
+func SchemaRegistryClientSASLMechanism(state *RenderState) string {
+	src := state.Values.Config.SchemaRegistryClient
+	if src != nil && src.SASLMechanism != nil && string(*src.SASLMechanism) != "" {
+		return string(*src.SASLMechanism)
+	}
+	return state.Values.Auth.SASL.BootstrapUser.GetMechanism()
+}
+
+// SchemaRegistryClientSASLEnvVars returns the env vars that project the schema
+// registry client's SASL username/password into the configurator container, or
+// nil when SASL is disabled. When config.schema_registry_client.saslSecretRef
+// is set, both come from that Secret; otherwise the chart auto-wires to the
+// bootstrap superuser it already manages (username is a literal, password is
+// projected from the bootstrap-user Secret) so the common case is zero-config.
+func SchemaRegistryClientSASLEnvVars(state *RenderState) []corev1.EnvVar {
+	if !state.Values.Auth.IsSASLEnabled() {
+		return nil
+	}
+
+	field := "schema_registry_client"
+	src := state.Values.Config.SchemaRegistryClient
+	if src != nil && src.SASLSecretRef != nil {
+		return SASLEnvVars(field, src.SASLSecretRef.Name)
+	}
+
+	// Auto-wire to the bootstrap superuser.
+	bu := state.Values.Auth.SASL.BootstrapUser
+	return []corev1.EnvVar{
+		{
+			Name:  saslUsernameEnv(field),
+			Value: bu.Username(),
+		},
+		{
+			Name: saslPasswordEnv(field),
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: bu.SecretKeySelector(Fullname(state)),
+			},
+		},
+	}
+}
+
+// SASLEnvVars returns the environment variables that expose the SASL credentials
+// for clientField from the Kubernetes Secret named secretName.
+// The Secret must have keys "username" and "password"
+// (corev1.BasicAuthUsernameKey / BasicAuthPasswordKey).
+func SASLEnvVars(clientField string, secretName string) []corev1.EnvVar {
+	return []corev1.EnvVar{
+		{
+			Name: saslUsernameEnv(clientField),
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+					Key:                  corev1.BasicAuthUsernameKey,
+				},
+			},
+		},
+		{
+			Name: saslPasswordEnv(clientField),
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: secretName},
+					Key:                  corev1.BasicAuthPasswordKey,
+				},
+			},
+		},
+	}
+}
+
+func saslUsernameEnv(clientField string) string {
+	return strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_USERNAME"
+}
+
+func saslPasswordEnv(clientField string) string {
+	return strings.ToUpper(strings.ReplaceAll(clientField, ".", "_")) + "_PASSWORD"
+}
+
 func keyToEnvVar(k string) string {
 	return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 }
@@ -1290,6 +1371,19 @@ type SchemaRegistryClient struct {
 	ConsumerSessionTimeoutMS    int `json:"consumer_session_timeout_ms"`
 	ConsumerRebalanceTimeoutMS  int `json:"consumer_rebalance_timeout_ms"`
 	ConsumerHeartbeatIntervalMS int `json:"consumer_heartbeat_interval_ms"`
+	// SASLSecretRef references a Kubernetes Secret containing the SASL
+	// credentials for the schema registry's internal Kafka client.
+	// The Secret must have keys "username" and "password".
+	//
+	// Optional. When auth.sasl.enabled is true and this is unset, the chart
+	// auto-wires the client to the bootstrap superuser it already manages, so
+	// the common case needs no extra configuration.
+	SASLSecretRef *corev1.LocalObjectReference `json:"saslSecretRef,omitempty"`
+	// SASLMechanism overrides the SASL mechanism used by the schema registry's
+	// internal Kafka client. When unset, it defaults to the bootstrap user's
+	// mechanism (auth.sasl.bootstrapUser.mechanism), so the client and the
+	// credentials it authenticates with always agree.
+	SASLMechanism *SASLMechanism `json:"saslMechanism,omitempty"`
 }
 
 type PandaProxyClient struct {

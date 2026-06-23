@@ -1380,3 +1380,75 @@ listeners:
       default:
         type: tlsroute
         host: schema.example.com
+-- sasl-schema-registry-client-secret-ref --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_USERNAME')].valueFrom.secretKeyRef.name}", "my-sasl-secret"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.name}", "my-sasl-secret"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_USERNAME')].valueFrom.secretKeyRef.key}", "username"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.key}", "password"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.scram_username"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.scram_password"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.sasl_mechanism"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "SCHEMA_REGISTRY_CLIENT_USERNAME"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "SCHEMA_REGISTRY_CLIENT_PASSWORD"]
+auth:
+  sasl:
+    enabled: true
+    secretRef: users
+    bootstrapUser:
+      password: changeme
+config:
+  schema_registry_client:
+    saslSecretRef:
+      name: my-sasl-secret
+
+-- sasl-disabled-secret-ref-ignored --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-NOT-CONTAINS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[*].name}", "SCHEMA_REGISTRY_CLIENT_USERNAME"]
+# ASSERT-FIELD-NOT-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.scram_username"]
+config:
+  schema_registry_client:
+    saslSecretRef:
+      name: my-sasl-secret
+
+-- sasl-schema-registry-client-auto-wired --
+# ASSERT-NO-ERROR
+# SASL on with no saslSecretRef: the schema registry client is auto-wired to the
+# bootstrap superuser (username literal, password from the bootstrap-user Secret)
+# at the bootstrap user's mechanism (default SCRAM-SHA-256), so the client and the
+# credentials it presents agree — zero extra config required.
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_USERNAME')].value}", "kubernetes-controller"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.name}", "redpanda-bootstrap-user"]
+# ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.initContainers[?(@.name=='redpanda-configurator')].env[?(@.name=='SCHEMA_REGISTRY_CLIENT_PASSWORD')].valueFrom.secretKeyRef.key}", "password"]
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.sasl_mechanism \"SCRAM-SHA-256\""]
+auth:
+  sasl:
+    enabled: true
+    bootstrapUser:
+      password: changeme
+
+-- sasl-schema-registry-client-mechanism-override --
+# ASSERT-NO-ERROR
+# An explicit saslMechanism overrides the bootstrap-user default.
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.sasl_mechanism \"SCRAM-SHA-512\""]
+auth:
+  sasl:
+    enabled: true
+    bootstrapUser:
+      password: changeme
+config:
+  schema_registry_client:
+    saslMechanism: SCRAM-SHA-512
+
+-- sasl-schema-registry-client-auto-wired-bootstrap-mechanism --
+# ASSERT-NO-ERROR
+# Auto-wire (no saslSecretRef) follows the bootstrap user's mechanism, not a
+# hard-pinned default: setting bootstrapUser.mechanism to SCRAM-SHA-512 makes the
+# schema registry client use SCRAM-SHA-512 too, so client and credentials agree.
+# ASSERT-FIELD-CONTAINS ["v1/Secret", "default/redpanda-configurator", "{.stringData.configurator\\.sh}", "schema_registry_client.sasl_mechanism \"SCRAM-SHA-512\""]
+auth:
+  sasl:
+    enabled: true
+    bootstrapUser:
+      password: changeme
+      mechanism: SCRAM-SHA-512
