@@ -42,6 +42,9 @@ dist/
 charts/*/charts/*.tgz
 charts/*/*/charts/*.tgz
 
+# Ignore kuberlr-cached kubectl binaries (per-version, large)
+.kuberlr/
+
 # Ignore gotestsum junit reports
 charts/charts.xml
 genpartial/genpartial.xml

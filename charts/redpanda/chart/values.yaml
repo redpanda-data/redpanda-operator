@@ -298,6 +298,25 @@ external:
   # externalDns:
   #   enabled: true
   # prefixTemplate: ""
+  # -- Gateway API TLSRoute-based external access (alternative to NodePort/LoadBalancer).
+  # The chart creates a bootstrap TLSRoute plus one per-broker TLSRoute, routed by SNI
+  # through a Gateway you manage. Opt individual listeners in by setting their type:
+  # `listeners.<service>.external.<name>.type: tlsroute` (see listeners.kafka.external below).
+  # The Gateway itself is NOT created by the chart; reference it via parentRefs.
+  # gateway:
+  #   # Activates Gateway API TLSRoute mode. Takes precedence over external.type.
+  #   enabled: false
+  #   # Gateway(s) that handle the TLSRoutes. Passed directly into each TLSRoute's
+  #   # spec.parentRefs. At least one entry is required when enabled.
+  #   parentRefs:
+  #     - name: redpanda-gateway      # required: name of the Gateway
+  #       sectionName: kafka          # optional: Gateway listener section to attach to
+  #       # namespace: rp-gw          # optional: defaults to the TLSRoute's namespace
+  #       # kind: Gateway             # optional: defaults to "Gateway"
+  #       # group: gateway.networking.k8s.io  # optional: default API group
+  #   # Port advertised to clients in broker metadata. Defaults to 443. The actual
+  #   # listening port is configured on the Gateway, not on the TLSRoute.
+  #   advertisedPort: 9094
 
 # -- Log-level settings.
 logging:
@@ -866,6 +885,18 @@ listeners:
           cert: external
         # default is "sasl"
         authenticationMethod:
+        # -- External access type for this listener. Unset inherits the cluster-wide
+        # external.type (NodePort/LoadBalancer). Set to "tlsroute" to route this listener
+        # via Gateway API (requires external.gateway above): a bootstrap + per-broker
+        # TLSRoute is created and the listener is excluded from the NodePort/LoadBalancer
+        # service. Other listeners can stay on the conventional type, enabling gradual migration.
+        # type: tlsroute
+        # -- SNI hostname for the bootstrap TLSRoute (requires type: tlsroute).
+        # host: redpanda.example.com
+        # -- Template for per-broker TLSRoute SNI hostnames (requires type: tlsroute).
+        # Variables: $POD_ORDINAL, $POD_NAME. The broker advertises this same hostname,
+        # so the SNI the client reconnects on matches what the Gateway routes by.
+        # hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
   # -- RPC listener (this is never externally accessible).
   rpc:
     port: 33145

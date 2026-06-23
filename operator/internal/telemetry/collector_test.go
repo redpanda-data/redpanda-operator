@@ -118,6 +118,13 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 					Auth:       &redpandav1alpha2.Auth{SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true)}},
 					Console:    &redpandav1alpha2.RedpandaConsole{Enabled: ptr.To(true)},
 					Connectors: &redpandav1alpha2.RedpandaConnectors{Enabled: ptr.To(true)},
+					External: &redpandav1alpha2.External{
+						Enabled: ptr.To(true),
+						Gateway: &redpandav1alpha2.GatewayExternalConfig{
+							Enabled:    ptr.To(true),
+							ParentRefs: []redpandav1alpha2.GatewayParentRefConfig{{Name: "redpanda-gateway"}},
+						},
+					},
 					Storage: &redpandav1alpha2.Storage{
 						Tiered: &redpandav1alpha2.Tiered{
 							Config: &redpandav1alpha2.TieredConfig{
@@ -185,6 +192,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Redpanda.TieredStorage)
 	require.Equal(t, 1, payload.Redpanda.Console)
 	require.Equal(t, 1, payload.Redpanda.ManagedConnectors)
+	require.Equal(t, 1, payload.Redpanda.GatewayAPIExternalAccess)
 	// Sizing: 4c/16Gi per broker × 5 brokers (rp-1 default pool + correlated np-1).
 	require.Equal(t, 20, payload.Redpanda.TotalCPUCores)
 	require.Equal(t, 80, payload.Redpanda.TotalMemoryGiB)
@@ -262,10 +270,54 @@ func TestCollect_EmptyCluster(t *testing.T) {
 	require.Equal(t, 0, payload.Redpanda.BrokerCount)
 	require.Empty(t, payload.Redpanda.Versions)
 	require.Equal(t, 0, payload.Redpanda.ManagedConnectors)
+	require.Equal(t, 0, payload.Redpanda.GatewayAPIExternalAccess)
 	require.Equal(t, 0, payload.VectorizedClusters.Count)
 	require.Empty(t, payload.Storage.CSIDrivers)
 	require.Equal(t, 0, payload.Resources.Topics)
 	require.Equal(t, 0, payload.CRDCount)
+}
+
+// TestAggregateRedpandas_GatewayCountRequiresParentRefs locks the telemetry
+// counter to redpanda.ExternalConfig.IsGatewayEnabled() semantics: a cluster
+// that requests Gateway API mode but renders no TLSRoutes (empty parentRefs, or
+// external access disabled) must NOT be counted as adopting the feature.
+func TestAggregateRedpandas_GatewayCountRequiresParentRefs(t *testing.T) {
+	c := &Collector{}
+	items := []redpandav1alpha2.Redpanda{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "no-parentrefs", Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+					External: &redpandav1alpha2.External{
+						Enabled: ptr.To(true),
+						// gateway requested but no parentRefs -> renders no TLSRoutes.
+						Gateway: &redpandav1alpha2.GatewayExternalConfig{Enabled: ptr.To(true)},
+					},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "external-disabled", Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+					External: &redpandav1alpha2.External{
+						Enabled: ptr.To(false), // external access off, gateway block ignored.
+						Gateway: &redpandav1alpha2.GatewayExternalConfig{
+							Enabled:    ptr.To(true),
+							ParentRefs: []redpandav1alpha2.GatewayParentRefConfig{{Name: "gw"}},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	payload := &Payload{}
+	var rp sizing
+	c.aggregateRedpandas(payload, items, &rp, map[string]corev1.ResourceRequirements{})
+
+	require.Equal(t, 0, payload.Redpanda.GatewayAPIExternalAccess,
+		"half-configured gateway clusters (no parentRefs / external disabled) must not be counted")
 }
 
 func TestCollect_CSIDriversSortedAndDistinct(t *testing.T) {

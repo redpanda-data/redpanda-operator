@@ -19,6 +19,16 @@
 {{- $labels := (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (set $labels "repdanda.com/type" "loadbalancer") -}}
 {{- $selector := (get (fromJson (include "redpanda.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") -}}
+{{- $lbPorts := (coalesce nil) -}}
+{{- $lbPorts = (concat (default (list) $lbPorts) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.admin "admin" $state.Values.external)))) "r"))) -}}
+{{- $lbPorts = (concat (default (list) $lbPorts) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.kafka "kafka" $state.Values.external)))) "r"))) -}}
+{{- $lbPorts = (concat (default (list) $lbPorts) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.http "http" $state.Values.external)))) "r"))) -}}
+{{- $lbPorts = (concat (default (list) $lbPorts) (default (list) (get (fromJson (include "redpanda.ListenerConfig.ServicePorts" (dict "a" (list $state.Values.listeners.schemaRegistry "schema" $state.Values.external)))) "r"))) -}}
+{{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $lbPorts)))) "r") | int) (0 | int)) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (coalesce nil)) | toJson -}}
+{{- break -}}
+{{- end -}}
 {{- $services := (coalesce nil) -}}
 {{- $pods := (get (fromJson (include "redpanda.PodNames" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "") "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
 {{- range $_, $set := $state.Pools -}}

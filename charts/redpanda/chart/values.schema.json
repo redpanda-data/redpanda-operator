@@ -4526,6 +4526,49 @@
           ],
           "type": "object"
         },
+        "gateway": {
+          "additionalProperties": false,
+          "properties": {
+            "advertisedPort": {
+              "type": "integer"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "parentRefs": {
+              "oneOf": [
+                {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "group": {
+                        "type": "string"
+                      },
+                      "kind": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "namespace": {
+                        "type": "string"
+                      },
+                      "sectionName": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
         "prefixTemplate": {
           "type": "string"
         },
@@ -4644,6 +4687,12 @@
                     "enabled": {
                       "type": "boolean"
                     },
+                    "host": {
+                      "type": "string"
+                    },
+                    "hostTemplate": {
+                      "type": "string"
+                    },
                     "nodePort": {
                       "type": "integer"
                     },
@@ -4705,6 +4754,12 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "enum": [
+                        "tlsroute"
+                      ],
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -4835,6 +4890,12 @@
                     "enabled": {
                       "type": "boolean"
                     },
+                    "host": {
+                      "type": "string"
+                    },
+                    "hostTemplate": {
+                      "type": "string"
+                    },
                     "nodePort": {
                       "type": "integer"
                     },
@@ -4896,6 +4957,12 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "enum": [
+                        "tlsroute"
+                      ],
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -5028,6 +5095,12 @@
                     "enabled": {
                       "type": "boolean"
                     },
+                    "host": {
+                      "type": "string"
+                    },
+                    "hostTemplate": {
+                      "type": "string"
+                    },
                     "nodePort": {
                       "type": "integer"
                     },
@@ -5089,6 +5162,12 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "enum": [
+                        "tlsroute"
+                      ],
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -5281,6 +5360,12 @@
                     "enabled": {
                       "type": "boolean"
                     },
+                    "host": {
+                      "type": "string"
+                    },
+                    "hostTemplate": {
+                      "type": "string"
+                    },
                     "nodePort": {
                       "type": "integer"
                     },
@@ -5342,6 +5427,12 @@
                         }
                       },
                       "type": "object"
+                    },
+                    "type": {
+                      "enum": [
+                        "tlsroute"
+                      ],
+                      "type": "string"
                     }
                   },
                   "required": [

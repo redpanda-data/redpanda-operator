@@ -25,6 +25,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
@@ -56,6 +57,13 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
+		// Use the upstream Gateway API v1 TLSRoute (not the chart's lightweight
+		// TLSRoute struct) so controller-runtime can List/Watch it via the
+		// registered v1 scheme — which provides the required TLSRouteList kind.
+		// TLSRoute is GA (v1) as of Gateway API v1.5; the chart renders the same
+		// wire bytes and the lightweight struct exists only to keep the gotohelm
+		// transpiler happy — it is never used by the operator's controller cache.
+		&gatewayv1.TLSRoute{},
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
 		&networkingv1.Ingress{},
@@ -72,6 +80,19 @@ func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(certmanagerv1.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
+	addTLSRouteToScheme(Scheme)
+}
+
+// addTLSRouteToScheme registers the Gateway API v1 types (TLSRoute +
+// TLSRouteList) on the supplied scheme so the operator's controller-runtime
+// cache can List/Watch TLSRoutes that this chart renders. The earlier shape —
+// registering only the chart's lightweight TLSRoute kind via
+// AddKnownTypeWithName — was insufficient: controller-runtime needs the
+// matching List kind in the scheme to issue List calls, which it does on every
+// reconcile pass.
+// +gotohelm:ignore=true
+func addTLSRouteToScheme(s *runtime.Scheme) {
+	must(gatewayv1.Install(s))
 }
 
 // +gotohelm:ignore=true
@@ -115,6 +136,8 @@ func render(dot *helmette.Dot) []kube.Object {
 
 func renderResources(state *RenderState) []kube.Object {
 	checkVersion(state)
+	state.Values.External.ValidateGateway()
+	validateGatewayListeners(state)
 
 	manifests := []kube.Object{
 		NodePortService(state),
@@ -164,6 +187,14 @@ func renderResources(state *RenderState) []kube.Object {
 	}
 
 	for _, obj := range LoadBalancerServices(state) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range GatewayServices(state) {
+		manifests = append(manifests, obj)
+	}
+
+	for _, obj := range TLSRoutes(state) {
 		manifests = append(manifests, obj)
 	}
 

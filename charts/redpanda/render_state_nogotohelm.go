@@ -15,6 +15,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"reflect"
@@ -26,9 +27,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
@@ -305,9 +308,45 @@ func RenderResources(state *RenderState) (_ []kube.Object, err error) {
 				continue
 			}
 		}
-		resources[j] = resources[i]
+		obj := resources[i]
+		// The chart renders TLSRoutes as the lightweight, gotohelm-friendly
+		// *TLSRoute struct. The operator syncs against the type set returned by
+		// Types(), which lists the upstream gatewayv1.TLSRoute (the type the
+		// controller-runtime cache can List/Watch). Convert here so the rendered
+		// object's Go type matches Types(); helm rendering (which goes through
+		// the .tpl, not RenderResources) is unaffected.
+		if lw, ok := obj.(*TLSRoute); ok {
+			converted, err := tlsRouteToUpstream(lw)
+			if err != nil {
+				return nil, err
+			}
+			obj = converted
+		}
+		resources[j] = obj
 		j++
 	}
 
 	return resources[:j], nil
+}
+
+// tlsRouteToUpstream converts the chart's lightweight *TLSRoute into the
+// upstream (GA) gatewayv1.TLSRoute. The lightweight struct's JSON shape
+// mirrors the upstream type field-for-field (group/kind/name/namespace/
+// sectionName, hostnames, rules/backendRefs), so a JSON round-trip is a faithful
+// and low-maintenance conversion. TypeMeta is re-asserted because the upstream
+// type's marshaled TypeMeta is empty.
+func tlsRouteToUpstream(in *TLSRoute) (*gatewayv1.TLSRoute, error) {
+	data, err := json.Marshal(in)
+	if err != nil {
+		return nil, errors.Wrapf(err, "marshaling TLSRoute %s/%s", in.Namespace, in.Name)
+	}
+	var out gatewayv1.TLSRoute
+	if err := json.Unmarshal(data, &out); err != nil {
+		return nil, errors.Wrapf(err, "converting TLSRoute %s/%s to upstream type", in.Namespace, in.Name)
+	}
+	out.TypeMeta = metav1.TypeMeta{
+		APIVersion: "gateway.networking.k8s.io/v1",
+		Kind:       "TLSRoute",
+	}
+	return &out, nil
 }

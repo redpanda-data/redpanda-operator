@@ -41,6 +41,21 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 
 	selector := ClusterPodLabelsSelector(state)
 
+	// If every enabled external listener opted into gateway mode (or there are
+	// no external listener ports at all), there is nothing to publish. Emitting
+	// a LoadBalancer Service with an empty port list is rejected by the API
+	// server (`spec.ports: Required value`), so mirror the NodePort path and
+	// render no LoadBalancer Services in that case. The per-broker loop below
+	// recomputes the same (non-empty) port set.
+	var lbPorts []corev1.ServicePort
+	lbPorts = append(lbPorts, state.Values.Listeners.Admin.ServicePorts("admin", &state.Values.External)...)
+	lbPorts = append(lbPorts, state.Values.Listeners.Kafka.ServicePorts("kafka", &state.Values.External)...)
+	lbPorts = append(lbPorts, state.Values.Listeners.HTTP.ServicePorts("http", &state.Values.External)...)
+	lbPorts = append(lbPorts, state.Values.Listeners.SchemaRegistry.ServicePorts("schema", &state.Values.External)...)
+	if len(lbPorts) == 0 {
+		return nil
+	}
+
 	var services []*corev1.Service
 	pods := PodNames(state, Pool{Statefulset: state.Values.Statefulset})
 	for _, set := range state.Pools {
