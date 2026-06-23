@@ -19,6 +19,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -157,8 +158,7 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 	// able to clean ourselves up anyway.
 	if internalclient.IsTerminalClientError(err) ||
 		internalclient.IsConfigurationError(err) ||
-		internalclient.IsInvalidClusterError(err) ||
-		isNotFoundInChain(err) ||
+		isClusterGone(err) ||
 		isNetworkDialError(err) {
 		// We use Info rather than Error here because we don't want
 		// to ignore the verbosity settings. This is really only for
@@ -167,6 +167,21 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 		return nil
 	}
 	return err
+}
+
+// isClusterGone reports whether err means the referenced cluster can no longer
+// be resolved, so finalizer cleanup has nothing to act on and should proceed.
+// This covers the cluster CR being deleted (NotFound / ErrInvalidClusterRef) as
+// well as the whole kind being torn down: when the v1 (vectorized) operator is
+// uninstalled the CRD is removed and the lookup returns a *meta.NoKindMatchError
+// rather than NotFound, and a stripped RBAC for the type returns Forbidden.
+// Treating these as "cluster gone" keeps a RedpandaRole (or any layered CR)
+// from hanging in Terminating after its cluster is fully removed.
+func isClusterGone(err error) bool {
+	return internalclient.IsInvalidClusterError(err) ||
+		isNotFoundInChain(err) ||
+		meta.IsNoMatchError(err) ||
+		apierrors.IsForbidden(err)
 }
 
 // isNotFoundInChain walks the error chain to check if a "not found" error

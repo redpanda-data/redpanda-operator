@@ -19,6 +19,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
@@ -257,6 +258,71 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 		})
 	}
+}
+
+// TestRoleDeletionWithDeletedClusterRef validates the scenario the user hit: a
+// RedpandaRole references a cluster via clusterRef, that cluster is deleted, and
+// the role is then deleted afterwards.
+//
+// This covers the path where the cluster *CR* is gone but its CRD is still
+// installed (a v1 clusterRef to an absent Cluster), so the lookup returns a
+// plain NotFound. That NotFound is already swallowed during finalizer cleanup,
+// so the role deletes cleanly. This documents the green boundary: deleting the
+// cluster CR alone does not block role deletion. The blocking case (the entire
+// CRD/kind removed, surfacing as NoKindMatch) is covered deterministically by
+// TestIgnoreAllConnectionErrorsClusterGone.
+func TestRoleDeletionWithDeletedClusterRef(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	// A v1 clusterRef pointing at a Cluster that does not exist models the
+	// post-deletion state: CRD still installed, CR gone.
+	role := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "role-with-deleted-cluster",
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{
+					Name:  "deleted-cluster",
+					Group: ptr.To("redpanda.vectorized.io"),
+					Kind:  ptr.To("Cluster"),
+				},
+			},
+			Principals: []string{"User:testuser1"},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(role)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, k8sClient.Create(ctx, role))
+
+	// First reconcile: finalizer is added and the sync condition reflects the
+	// missing cluster.
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, []string{FinalizerKey}, role.Finalizers)
+	require.Len(t, role.Status.Conditions, 1)
+	require.Equal(t, environment.InvalidClusterRefCondition.Reason, role.Status.Conditions[0].Reason)
+
+	// Now delete the role and reconcile: the finalizer must be removed and the
+	// object fully deleted even though the referenced cluster is gone.
+	require.NoError(t, k8sClient.Delete(ctx, role))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)), "role should be fully deleted once the cluster CR is gone")
 }
 
 func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive test coverage
