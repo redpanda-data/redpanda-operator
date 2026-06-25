@@ -54,7 +54,7 @@ func TestIntegrationBrokerSafeToRestart(t *testing.T) {
 		t.Skip("TEST_REDPANDA_REPO / TEST_REDPANDA_VERSION not set")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
 	defer cancel()
 	logger := testr.New(t)
 
@@ -303,17 +303,15 @@ func TestIntegrationBrokerSafeToRestart(t *testing.T) {
 	}
 }
 
-// TestIntegrationBrokerCaughtUp pins the operator-side interpretation of the
+// TestBrokerCaughtUp pins the operator-side interpretation of the
 // /v1/broker/post_restart_probe contract — the "wait for post-restart probe"
 // step in the rolling-restart RFC. The probe returns load_reclaimed_pc (0..100)
 // representing the fraction of in-sync replicas this broker has reclaimed
 // since its last restart. The next roll is blocked until every broker in the
-// cluster reports >= threshold (100 by default).
-func TestIntegrationBrokerCaughtUp(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in -short mode")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+// cluster reports >= threshold (100 by default). Pure httptest stub — no real
+// Redpanda — so it runs in the normal unit pass.
+func TestBrokerCaughtUp(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second)
 	defer cancel()
 	logger := testr.New(t)
 
@@ -384,15 +382,13 @@ func TestIntegrationBrokerCaughtUp(t *testing.T) {
 	}
 }
 
-// TestIntegrationBrokersStillRecovering verifies the outer gate's behavior
+// TestBrokersStillRecovering verifies the outer gate's behavior
 // across a brokerMap: it returns "still recovering" when any broker is
 // below threshold, it deduplicates by broker ID (brokerMap double-keys), and
 // 404 is treated as "endpoint absent on this cluster, not recovering."
-func TestIntegrationBrokersStillRecovering(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in -short mode")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+// Pure httptest stubs — no real Redpanda — so it runs in the normal unit pass.
+func TestBrokersStillRecovering(t *testing.T) {
+	ctx, cancel := context.WithTimeout(t.Context(), 60*time.Second)
 	defer cancel()
 	logger := testr.New(t)
 
@@ -533,7 +529,7 @@ func TestIntegrationBrokersStillRecovering(t *testing.T) {
 // client here sets MaxRetries(0) so the non-retryable assertions stay fast and
 // deterministic.
 func TestBrokerCaughtUpNon404FailClosed(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	logger := testr.New(t)
 
 	newStub := func(t *testing.T, status int) *rpadmin.AdminAPI {
