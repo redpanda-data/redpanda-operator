@@ -37,6 +37,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/telemetry"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -101,6 +102,10 @@ type MulticlusterOptions struct {
 	ClusterConnectionTimeout time.Duration
 	ReconcileTimeout         time.Duration
 
+	// PostRestartCaughtUpPercent gates the rolling restart on the per-broker
+	// post-restart probe; mirrors the `run` command's flag of the same name.
+	PostRestartCaughtUpPercent int
+
 	// Per-controller default reconcile (sync) intervals. A per-CR spec.interval
 	// always takes precedence. Mirror the `run` command's flags.
 	TopicSyncInterval      time.Duration
@@ -149,6 +154,11 @@ func (o *MulticlusterOptions) validate() error {
 		if o.MetricsCertPath == "" || o.MetricsKeyPath == "" {
 			return errors.New("when one of metrics-cert-path or metrics-key-path is specified, both must be set")
 		}
+	}
+	if p := o.PostRestartCaughtUpPercent; p < 1 || p > 100 {
+		// >100 makes the per-broker caught-up gate unsatisfiable (rolling
+		// restart stalls forever); 0 silently disables it. Fail fast.
+		return errors.Newf("--post-restart-caught-up-percent must be in [1,100], got %d", p)
 	}
 	if o.WebhookCertPath != "" || o.WebhookKeyPath != "" {
 		// if one is set, both must be
@@ -212,6 +222,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.BrokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
+	cmd.Flags().IntVar(&o.PostRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
 	cmd.Flags().BoolVar(&o.EnableConsoleController, "enable-console", true, "Specifies whether or not to enable the Redpanda Console controller")
 	// Per-controller default reconcile (sync) intervals. Same flags/defaults as
 	// the `run` command; a per-CR spec.interval takes precedence.
@@ -396,7 +407,7 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration); err != nil {
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}

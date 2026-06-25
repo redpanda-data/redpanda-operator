@@ -1,0 +1,19 @@
+project: operator
+kind: Added
+body: |
+  Adopted Redpanda 25.1+'s per-broker pre-restart probe as the primary
+  rolling-restart gate. The operator now consults /v1/broker/pre_restart_probe
+  for the specific broker it's about to roll, and proceeds only when the broker
+  reports no acks=1 data-loss risk, no produce/consume unavailability, and no
+  acks=-1 produce rejection. RF=1 offline is treated as acceptable risk. On
+  clusters older than 25.1 the helper detects 404 and falls back to the
+  cluster-wide IsHealthy heuristic so behavior on pre-25.1 brokers is unchanged.
+  The rolling-restart loop also consults the matching post-restart probe
+  (/v1/broker/post_restart_probe, load_reclaimed_pc) to verify each broker has
+  finished its post-restart replica recovery before the next pod is rolled; a
+  non-404 probe error fails closed (the roll is deferred rather than proceeding
+  without confirmation). The required caught-up percentage is configurable via
+  the --post-restart-caught-up-percent flag (default 100, i.e. full recovery;
+  validated to the range 1-100). These per-broker gates apply to both the
+  Redpanda (single-cluster) and StretchCluster (multicluster) reconcilers.
+time: 2026-05-21T10:00:00.000000-07:00
