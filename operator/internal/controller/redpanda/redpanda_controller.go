@@ -612,63 +612,22 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 
 	rolled := false
 	for _, pod := range rollSet {
-		shouldRoll, continueExecution := false, false
-
+		// Resolve the pod to a broker (pod name, then pod IP for a bare-IP
+		// InternalRPCAddress), pre-restart-probe it when mapped, then apply the
+		// shared roll-safety decision (see decideRollAction for the rationale).
 		brokerID, inBrokerMap := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
-		switch {
-		case !inBrokerMap:
-			// The pod has no matching broker in our cluster view. That's
-			// usually safe to delete (orphan, ghost broker, mis-named
-			// replica), but treating *every* unmapped pod that way in a
-			// single reconcile would tear them all down at once if the
-			// mismatch is transient — slow admin API on a just-restarted
-			// broker, advertised-address format the parser missed, etc.
-			// Delete this one and requeue so we re-evaluate against a
-			// fresh view before touching the next pod.
-			//
-			// ...but only while the cluster is healthy. Because we have no
-			// broker ID for this pod we cannot run its per-broker pre-restart
-			// probe, so if the broker map is stale or mis-parsed this "orphan"
-			// may actually be a live, in-sync replica. (The common IP-form
-			// internal RPC address case is handled above by the PodIP lookup;
-			// this guards the residual cases a name/IP match still can't cover.)
-			// Restarting it while the cluster is under-replicated or has
-			// offline nodes risks data loss (RFC cases 3/4). When the cluster
-			// is not healthy, skip it and let the mapped pods be gated by
-			// their own pre-restart probes; the orphan is re-evaluated on a
-			// later pass once the cluster recovers.
-			if !health.IsHealthy {
-				logger.V(log.DebugLevel).Info("unmapped pod but cluster not healthy; deferring deletion (cannot pre-restart-probe an unidentified broker)", "Pod", client.ObjectKeyFromObject(pod.Pod).String())
-				shouldRoll, continueExecution = false, true
-			} else {
-				shouldRoll, continueExecution = true, false
-			}
-		default:
-			// Per-broker restart-safety probe (Redpanda 25.1+):
-			// /v1/broker/pre_restart_probe answers a per-broker
-			// counterfactual — "if I restart this broker now, which
-			// partitions are affected?" — rather than the cluster-wide
-			// IsHealthy boolean. When the endpoint returns true we know
-			// this specific broker can be restarted without risking
-			// acks=1 data loss, acks=-1 produce rejection, or partition
-			// unavailability. On clusters that don't expose the endpoint
-			// the helper falls back to cluster.IsHealthy so behavior on
-			// pre-25.1 brokers is unchanged.
-			safe, err := brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
-			switch {
-			case err != nil:
-				// Be conservative — skip rolling this pod but try the
-				// next one. The reconciler will retry on the next loop.
-				logger.V(log.DebugLevel).Info("pre-restart probe error, skipping pod", "pod", pod.GetName(), "error", err)
-				shouldRoll, continueExecution = false, true
-			case safe:
-				// roll and halt execution
-				shouldRoll, continueExecution = true, false
-			default:
-				// not safe right now — skip this pod, try the next
-				shouldRoll, continueExecution = false, true
-			}
+		var brokerSafe bool
+		var probeErr error
+		if inBrokerMap {
+			brokerSafe, probeErr = brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
 		}
+
+		shouldRoll, continueExecution, reason := decideRollAction(inBrokerMap, health.IsHealthy, brokerSafe, probeErr)
+		logArgs := []any{"pod", pod.GetName(), "inBrokerMap", inBrokerMap, "isHealthy", health.IsHealthy, "shouldRoll", shouldRoll, "reason", reason}
+		if probeErr != nil {
+			logArgs = append(logArgs, "error", probeErr)
+		}
+		logger.V(log.DebugLevel).Info("pod roll decision", logArgs...)
 
 		if shouldRoll {
 			rolled = true
@@ -1048,6 +1007,40 @@ func brokerIDForPod(brokerMap map[string]int, podName, podIP string) (int, bool)
 	return 0, false
 }
 
+// decideRollAction encodes the per-pod rolling-restart safety decision shared
+// by the RedpandaReconciler and MulticlusterReconciler roll loops. Inputs:
+// whether the pod maps to a known broker (after the pod-name/pod-IP lookup),
+// the cluster-wide health, and — for mapped pods — the per-broker pre-restart
+// probe result (brokerSafe, probeErr). It returns whether to roll (delete) the
+// pod now, whether to keep evaluating the rest of the rollSet this reconcile
+// (proceed=false ⇒ requeue after acting), and a reason for logging.
+//
+// The table is deliberately conservative:
+//   - At most one pod rolls per reconcile (roll=true always pairs with
+//     proceed=false), so a transient mis-classification can't tear down
+//     multiple brokers at once.
+//   - An unmapped pod is deleted only while the cluster is healthy. We have no
+//     broker ID for it, so we can't run its pre-restart probe; if the broker
+//     map is stale/mis-parsed the "orphan" may be a live, in-sync replica, and
+//     rolling it under-replicated risks data loss (RFC cases 3/4). When
+//     unhealthy we defer and let mapped pods be gated by their own probes.
+//   - A mapped pod rolls only when its pre-restart probe says it's safe; a
+//     probe error skips the pod conservatively (retry next reconcile).
+func decideRollAction(inBrokerMap, clusterHealthy, brokerSafe bool, probeErr error) (roll, proceed bool, reason string) {
+	switch {
+	case !inBrokerMap && !clusterHealthy:
+		return false, true, "unmapped pod but cluster not healthy; deferring deletion (cannot pre-restart-probe an unidentified broker)"
+	case !inBrokerMap:
+		return true, false, "unmapped pod, cluster healthy; deleting one pod and requeuing"
+	case probeErr != nil:
+		return false, true, "pre-restart probe error; skipping pod, will retry"
+	case brokerSafe:
+		return true, false, "broker safe to restart; rolling"
+	default:
+		return false, true, "broker not safe to restart right now; skipping pod"
+	}
+}
+
 func brokerSafeToRestart(ctx context.Context, admin *rpadmin.AdminAPI, brokerID int, clusterIsHealthy bool, logger logr.Logger, podName string) (bool, error) {
 	brokerURL, err := admin.BrokerIDToURL(ctx, brokerID)
 	if err != nil {
@@ -1211,7 +1204,10 @@ func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.Admin
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
-	brokerID, ok := brokerMap[set.LastPod.GetName()]
+	// Resolve by pod name, then pod IP — same as the roll loop — so a broker
+	// advertising a bare-IP InternalRPCAddress is decommissioned rather than
+	// having its pod deleted as if it were already removed from the cluster.
+	brokerID, ok := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
 	if ok {
 		// decommission if we have a brokerID, if not
 		// then the node has already been fully removed from

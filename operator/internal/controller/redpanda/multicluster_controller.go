@@ -1129,45 +1129,25 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 
 	rolled := false
 	for _, pod := range rollSet {
-		shouldRoll, continueExecution := false, false
+		// Same roll-safety decision as the single-cluster RedpandaReconciler:
+		// resolve the pod to a broker (pod name, then pod IP for stretch
+		// flat-network mode where InternalRPCAddress is a bare IP),
+		// pre-restart-probe it when mapped, then apply decideRollAction. These
+		// are live admin-API checks, not informer reads, so they don't add the
+		// cache-staleness concern stretch's multiple informers otherwise carry.
 		brokerID, inBrokerMap := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
-
-		switch {
-		case !inBrokerMap:
-			// No matching broker in our cluster view. Deleting *every* unmapped
-			// pod in one reconcile (the previous true,true) would tear them all
-			// down at once if the mismatch is transient — and because we have no
-			// broker ID we can't run this pod's pre-restart probe, so a stale or
-			// mis-parsed broker map could let us restart a live, in-sync replica
-			// and lose data (RFC cases 3/4). Only delete while the cluster is
-			// healthy, and one-at-a-time (true,false) so we re-evaluate against a
-			// fresh view before touching the next pod; otherwise defer.
-			if !health.IsHealthy {
-				logger.V(log.DebugLevel).Info("unmapped pod but cluster not healthy; deferring deletion (cannot pre-restart-probe an unidentified broker)", "pod", pod.GetName(), "cluster", pod.GetCluster())
-				shouldRoll, continueExecution = false, true
-			} else {
-				shouldRoll, continueExecution = true, false
-			}
-		default:
-			// Per-broker pre-restart probe (Redpanda 25.1+): ask this specific
-			// broker whether restarting it now risks acks=1 loss, acks=-1
-			// produce rejection, or partition unavailability — instead of the
-			// cluster-wide IsHealthy boolean. Falls back to IsHealthy on <25.1.
-			safe, err := brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
-			switch {
-			case err != nil:
-				// Conservative — skip this pod, try the next; retry next loop.
-				logger.V(log.DebugLevel).Info("pre-restart probe error, skipping pod", "pod", pod.GetName(), "error", err)
-				shouldRoll, continueExecution = false, true
-			case safe:
-				shouldRoll, continueExecution = true, false
-			default:
-				shouldRoll, continueExecution = false, true
-			}
+		var brokerSafe bool
+		var probeErr error
+		if inBrokerMap {
+			brokerSafe, probeErr = brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
 		}
 
-		logger.V(log.DebugLevel).Info("pod roll decision", "pod", pod.GetName(), "cluster", pod.GetCluster(),
-			"inBrokerMap", inBrokerMap, "isHealthy", health.IsHealthy, "shouldRoll", shouldRoll, "continueExecution", continueExecution)
+		shouldRoll, continueExecution, reason := decideRollAction(inBrokerMap, health.IsHealthy, brokerSafe, probeErr)
+		logArgs := []any{"pod", pod.GetName(), "cluster", pod.GetCluster(), "inBrokerMap", inBrokerMap, "isHealthy", health.IsHealthy, "shouldRoll", shouldRoll, "reason", reason}
+		if probeErr != nil {
+			logArgs = append(logArgs, "error", probeErr)
+		}
+		logger.V(log.DebugLevel).Info("pod roll decision", logArgs...)
 
 		if shouldRoll {
 			rolled = true
@@ -1466,7 +1446,10 @@ func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.A
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
-	brokerID, ok := brokerMap[set.LastPod.GetName()]
+	// Resolve by pod name, then pod IP (stretch flat-network advertises brokers
+	// by bare IP) so a live broker is decommissioned before its pod is removed
+	// rather than being misclassified as already-removed.
+	brokerID, ok := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
 	if ok {
 		// decommission if we have a brokerID, if not
 		// then the node has already been fully removed from

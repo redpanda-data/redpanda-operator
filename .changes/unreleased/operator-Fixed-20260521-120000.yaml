@@ -5,7 +5,12 @@ body: |
   one broker pod. The "pod has no matching broker in cluster view" branch used to
   delete and continue, which meant a transient admin-API blip or address-format
   mismatch could classify every pod as orphan and tear them all down in one pass —
-  now we delete one and requeue. The brokerMap parser also now strips a "host:port"
-  suffix and keys by both the first DNS label and the raw host, so a freshly-restarted
-  broker advertising "pod.svc:33145" is recognized instead of being misclassified.
+  now we delete one and requeue, and only while the cluster is healthy. The brokerMap
+  parser also strips a "host:port" suffix and keys by both the first DNS label and the
+  raw host, and pod lookup now falls back to the pod IP, so a broker advertising
+  "pod.svc:33145" or a bare-IP internal RPC address (e.g. stretch-cluster flat-network
+  mode) is recognized — for both rolling restart and scale-down decommission — instead
+  of being misclassified as an orphan. The same hardening now also applies to the
+  StretchCluster (multicluster) reconciler, which previously still ran the old
+  delete-all-orphans-at-once loop gated only on cluster-wide health.
 time: 2026-05-21T12:00:00.000000-07:00

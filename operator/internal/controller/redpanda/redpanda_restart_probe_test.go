@@ -568,6 +568,65 @@ func TestBrokerCaughtUpNon404FailClosed(t *testing.T) {
 	})
 }
 
+// TestDecideRollAction pins the roll-safety decision table shared by both the
+// RedpandaReconciler and MulticlusterReconciler roll loops — the StretchCluster
+// roll-loop regression the review asked for, exercised independently of the
+// envtest harness. The two invariants that prevent data loss:
+//   - at most one pod rolls per reconcile (roll ⇒ !proceed), and
+//   - an unmapped (unidentifiable) pod is deleted only while the cluster is
+//     healthy; otherwise it's deferred.
+func TestDecideRollAction(t *testing.T) {
+	probeErr := errors.New("probe boom")
+
+	for name, tc := range map[string]struct {
+		inBrokerMap    bool
+		clusterHealthy bool
+		brokerSafe     bool
+		probeErr       error
+		wantRoll       bool
+		wantProceed    bool
+	}{
+		"unmapped + healthy → delete one, requeue": {
+			inBrokerMap: false, clusterHealthy: true, wantRoll: true, wantProceed: false,
+		},
+		"unmapped + unhealthy → defer (cannot probe an unidentified broker)": {
+			inBrokerMap: false, clusterHealthy: false, wantRoll: false, wantProceed: true,
+		},
+		"mapped + probe error → skip pod, try next": {
+			inBrokerMap: true, clusterHealthy: true, probeErr: probeErr, wantRoll: false, wantProceed: true,
+		},
+		"mapped + safe → roll, halt": {
+			inBrokerMap: true, clusterHealthy: true, brokerSafe: true, wantRoll: true, wantProceed: false,
+		},
+		"mapped + not safe → skip pod, try next": {
+			inBrokerMap: true, clusterHealthy: true, brokerSafe: false, wantRoll: false, wantProceed: true,
+		},
+		// A mapped pod's decision must come from its own probe, not cluster
+		// health: even when the cluster is unhealthy, a broker its probe deems
+		// safe may roll (brokerSafeToRestart already folded IsHealthy into the
+		// pre-25.1 fallback), and a probe error never rolls.
+		"mapped + safe even when cluster unhealthy → roll": {
+			inBrokerMap: true, clusterHealthy: false, brokerSafe: true, wantRoll: true, wantProceed: false,
+		},
+		"mapped + probe error when cluster unhealthy → skip": {
+			inBrokerMap: true, clusterHealthy: false, probeErr: probeErr, wantRoll: false, wantProceed: true,
+		},
+	} {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
+			roll, proceed, reason := decideRollAction(tc.inBrokerMap, tc.clusterHealthy, tc.brokerSafe, tc.probeErr)
+			assert.Equal(t, tc.wantRoll, roll, "roll")
+			assert.Equal(t, tc.wantProceed, proceed, "proceed")
+			assert.NotEmpty(t, reason, "a reason is always set for logging")
+			// Core safety invariant: never roll a pod and also continue the
+			// loop — at most one delete per reconcile.
+			if roll {
+				assert.False(t, proceed, "rolling a pod must halt the loop (one delete per reconcile)")
+			}
+		})
+	}
+}
+
 // TestBrokerIDForPod covers review item #4: a pod is resolved to its broker ID
 // by name first, then by IP. The IP fallback is what keeps a bare-IP
 // InternalRPCAddress broker (whose brokerMap key is the raw IP, not the pod
