@@ -96,6 +96,12 @@ type MulticlusterReconciler struct {
 	// --reconcile-timeout flag, and tests may inject shorter values to
 	// exercise the deadline path without real latency.
 	ReconcileTimeout time.Duration
+
+	// PostRestartCaughtUpPercent is the load_reclaimed_pc a just-restarted
+	// broker must report on /v1/broker/post_restart_probe before the roll
+	// loop proceeds to the next broker. Mirrors RedpandaReconciler; defaults
+	// to probes.DefaultPostRestartCaughtUpPercent (100).
+	PostRestartCaughtUpPercent int
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -1096,25 +1102,68 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		logger.V(log.DebugLevel).Info("recently replaced pods not ready, deferring rolling restart")
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
+
+	// Post-restart recovery gate (Redpanda 25.1+), mirroring RedpandaReconciler:
+	// even when the prior pod is K8s-Ready the broker inside it may still be
+	// replaying partition state from its peers. Wait for every broker to report
+	// load_reclaimed_pc >= threshold before rolling the next one. These are live
+	// admin-API calls (not informer reads), so they don't add the cache-staleness
+	// concern stretch's multiple informers otherwise carry. On <25.1 the endpoint
+	// 404s and brokersStillRecovering reports not-recovering, so behavior is
+	// unchanged there.
+	if len(rollSet) > 0 {
+		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, r.PostRestartCaughtUpPercent, logger)
+		switch {
+		case err != nil:
+			// Fail closed — a non-404 probe error means we can't confirm the
+			// just-restarted broker finished recovering, so defer rather than
+			// risk rolling the next broker mid-recovery. (Bounded retry/backoff
+			// for transient errors is handled by the rpadmin client.)
+			logger.V(log.DebugLevel).Info("post-restart probe error, deferring rolling restart", "error", err)
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		case recovering:
+			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
 	rolled := false
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false
-		_, inBrokerMap := brokerMap[pod.GetName()]
+		brokerID, inBrokerMap := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
 
-		if !inBrokerMap {
-			// we don't actually have this broker in the cluster
-			// anymore, which means it's always safe to delete
-			// the pod and continue with the next operations
-			shouldRoll, continueExecution = true, true
-		} else if health.IsHealthy {
-			// TODO: don't just check overall cluster health, but use
-			// scoped API endpoints for rolling a broker
-
-			// roll and halt execution
-			shouldRoll, continueExecution = true, false
-		} else {
-			// see if we can at least roll the next pods
-			shouldRoll, continueExecution = false, true
+		switch {
+		case !inBrokerMap:
+			// No matching broker in our cluster view. Deleting *every* unmapped
+			// pod in one reconcile (the previous true,true) would tear them all
+			// down at once if the mismatch is transient — and because we have no
+			// broker ID we can't run this pod's pre-restart probe, so a stale or
+			// mis-parsed broker map could let us restart a live, in-sync replica
+			// and lose data (RFC cases 3/4). Only delete while the cluster is
+			// healthy, and one-at-a-time (true,false) so we re-evaluate against a
+			// fresh view before touching the next pod; otherwise defer.
+			if !health.IsHealthy {
+				logger.V(log.DebugLevel).Info("unmapped pod but cluster not healthy; deferring deletion (cannot pre-restart-probe an unidentified broker)", "pod", pod.GetName(), "cluster", pod.GetCluster())
+				shouldRoll, continueExecution = false, true
+			} else {
+				shouldRoll, continueExecution = true, false
+			}
+		default:
+			// Per-broker pre-restart probe (Redpanda 25.1+): ask this specific
+			// broker whether restarting it now risks acks=1 loss, acks=-1
+			// produce rejection, or partition unavailability — instead of the
+			// cluster-wide IsHealthy boolean. Falls back to IsHealthy on <25.1.
+			safe, err := brokerSafeToRestart(ctx, state.admin, brokerID, health.IsHealthy, logger, pod.GetName())
+			switch {
+			case err != nil:
+				// Conservative — skip this pod, try the next; retry next loop.
+				logger.V(log.DebugLevel).Info("pre-restart probe error, skipping pod", "pod", pod.GetName(), "error", err)
+				shouldRoll, continueExecution = false, true
+			case safe:
+				shouldRoll, continueExecution = true, false
+			default:
+				shouldRoll, continueExecution = false, true
+			}
 		}
 
 		logger.V(log.DebugLevel).Info("pod roll decision", "pod", pod.GetName(), "cluster", pod.GetCluster(),
@@ -1534,7 +1583,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -1568,10 +1617,11 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		}).
 		Complete(
 			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
-				Manager:          mgr,
-				LifecycleClient:  lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
-				ClientFactory:    factory,
-				ReconcileTimeout: reconcileTimeout,
+				Manager:                    mgr,
+				LifecycleClient:            lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
+				ClientFactory:              factory,
+				ReconcileTimeout:           reconcileTimeout,
+				PostRestartCaughtUpPercent: postRestartCaughtUpPercent,
 			}, "StretchCluster", periodicRequeue),
 		)
 }
