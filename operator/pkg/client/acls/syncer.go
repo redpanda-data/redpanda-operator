@@ -167,8 +167,10 @@ func (s *Syncer) deleteAllSRACL(ctx context.Context, principal string) error {
 		return fmt.Errorf("listing SR ACLs: %w", err)
 	}
 
-	if err := s.srClient.DeleteACLs(ctx, existing); err != nil {
-		return fmt.Errorf("deleting SR ACLs: %w", err)
+	if len(existing) > 0 {
+		if err := s.srClient.DeleteACLs(ctx, existing); err != nil {
+			return fmt.Errorf("deleting SR ACLs: %w", err)
+		}
 	}
 
 	return nil
