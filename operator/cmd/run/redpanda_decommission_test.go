@@ -298,3 +298,23 @@ func TestRedpandaDecommissionerAdapter(t *testing.T) {
 		})
 	})
 }
+
+// TestPostRestartCaughtUpPercentValidation covers review item #3: the
+// --post-restart-caught-up-percent flag is rejected outside [1,100]. A value
+// >100 would make the per-broker caught-up gate unsatisfiable (rolling restart
+// stalls forever) and 0 silently disables it, so RunE fails fast. Only the
+// invalid path is exercised here — a valid value lets RunE proceed to start the
+// operator, which needs a live cluster and isn't unit-testable.
+func TestPostRestartCaughtUpPercentValidation(t *testing.T) {
+	for _, value := range []string{"0", "-1", "101", "200"} {
+		t.Run("rejects "+value, func(t *testing.T) {
+			cmd := Command()
+			cmd.SetArgs([]string{"--post-restart-caught-up-percent=" + value})
+			cmd.SilenceUsage = true
+			cmd.SilenceErrors = true
+			err := cmd.ExecuteContext(context.Background())
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "post-restart-caught-up-percent")
+		})
+	}
+}

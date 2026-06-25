@@ -287,6 +287,14 @@ func Command() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
+			// Reject out-of-range post-restart thresholds early: a value >100
+			// makes the per-broker caught-up gate unsatisfiable (rolling restart
+			// stalls forever), and 0 silently disables the gate. Both are
+			// footguns, so fail fast rather than clamp silently.
+			if p := options.postRestartCaughtUpPercent; p < 1 || p > 100 {
+				return errors.Newf("--post-restart-caught-up-percent must be in [1,100], got %d", p)
+			}
+
 			var cloudExpander *pkgsecrets.CloudExpander
 			if options.cloudSecretsEnabled {
 				var err error

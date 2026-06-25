@@ -11,9 +11,7 @@ package probes
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -22,19 +20,6 @@ import (
 
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
-
-// ErrPreRestartProbeUnsupported is returned by IsBrokerSafeToRestart when the
-// broker doesn't expose the /v1/broker/pre_restart_probe endpoint — typically
-// Redpanda < 25.1. Callers should fall back to the cluster-wide health check
-// when they receive this sentinel.
-var ErrPreRestartProbeUnsupported = errors.New("broker pre-restart probe endpoint not available (Redpanda < 25.1)")
-
-// ErrPostRestartProbeUnsupported is the analogous sentinel for the
-// post-restart probe at /v1/broker/post_restart_probe. Both endpoints landed
-// together in Redpanda 25.1, but they're queried independently — keeping a
-// separate sentinel lets callers treat the two endpoints as independently-
-// negotiable feature gates if a cluster ever ships one without the other.
-var ErrPostRestartProbeUnsupported = errors.New("broker post-restart probe endpoint not available (Redpanda < 25.1)")
 
 // DefaultPostRestartCaughtUpPercent is the default threshold for "this
 // broker has finished its post-restart recovery": LoadReclaimedPercent must
@@ -79,90 +64,6 @@ func NewProber(factory internalclient.ClientFactory, configPath string, options 
 	}
 
 	return prober
-}
-
-// IsBrokerSafeToRestart asks the broker whether restarting it right now is
-// expected to affect partitions, via the per-broker /v1/broker/pre_restart_probe
-// endpoint (Redpanda 25.1+). A broker is considered safe to restart when none
-// of the dangerous risk categories are populated:
-//
-//   - acks1_data_loss                 (acks=1 producers may lose data)
-//   - unavailable                     (produce+consume reject)
-//   - full_acks_produce_unavailable   (acks=-1 produce reject)
-//
-// rf1_offline is treated as acceptable risk: an RF=1 topic already has no
-// redundancy, and bringing those partitions offline for the duration of the
-// restart is the user's stated tolerance.
-//
-// On clusters older than 25.1 the endpoint returns 404; this function then
-// returns ErrPreRestartProbeUnsupported so the caller can fall back to the
-// cluster-wide health overview.
-func (p *Prober) IsBrokerSafeToRestart(ctx context.Context, brokerURL string) (bool, error) {
-	client, _, err := p.getClient(ctx, brokerURL)
-	if err != nil {
-		return false, fmt.Errorf("initializing client to check broker restart safety: %w", err)
-	}
-	defer client.Close()
-
-	result, err := client.PreRestartProbe(ctx, 0)
-	if err != nil {
-		var httpErr *rpadmin.HTTPResponseError
-		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
-			return false, ErrPreRestartProbeUnsupported
-		}
-		return false, fmt.Errorf("fetching broker pre-restart probe: %w", err)
-	}
-
-	if n := len(result.Risks.Acks1DataLoss); n > 0 {
-		p.logger.Info("broker not safe to restart: would risk acks=1 data loss", "partitions", n)
-		return false, nil
-	}
-	if n := len(result.Risks.Unavailable); n > 0 {
-		p.logger.Info("broker not safe to restart: partitions would become unavailable", "partitions", n)
-		return false, nil
-	}
-	if n := len(result.Risks.FullAcksProduceUnavailable); n > 0 {
-		p.logger.Info("broker not safe to restart: acks=-1 produce would be rejected", "partitions", n)
-		return false, nil
-	}
-	// rf1_offline is acceptable — log for visibility but don't block.
-	if n := len(result.Risks.RF1Offline); n > 0 {
-		p.logger.V(1).Info("broker restart will briefly offline RF=1 partitions", "partitions", n)
-	}
-	return true, nil
-}
-
-// IsBrokerCaughtUp asks the broker whether it has finished its post-restart
-// recovery via /v1/broker/post_restart_probe (Redpanda 25.1+). A broker is
-// considered caught up when LoadReclaimedPercent is at least threshold; pass
-// DefaultPostRestartCaughtUpPercent (100) for the strictest reading. The
-// caller scopes this client to a specific broker via ForHost.
-//
-// On clusters older than 25.1 the endpoint returns 404; this function then
-// returns ErrPostRestartProbeUnsupported so the caller can fall back to
-// whatever pod-state signal it had previously.
-func (p *Prober) IsBrokerCaughtUp(ctx context.Context, brokerURL string, threshold int) (bool, error) {
-	client, _, err := p.getClient(ctx, brokerURL)
-	if err != nil {
-		return false, fmt.Errorf("initializing client to check post-restart recovery: %w", err)
-	}
-	defer client.Close()
-
-	result, err := client.PostRestartProbe(ctx, 0)
-	if err != nil {
-		var httpErr *rpadmin.HTTPResponseError
-		if errors.As(err, &httpErr) && httpErr.Response != nil && httpErr.Response.StatusCode == http.StatusNotFound {
-			return false, ErrPostRestartProbeUnsupported
-		}
-		return false, fmt.Errorf("fetching broker post-restart probe: %w", err)
-	}
-
-	if result.LoadReclaimedPercent < threshold {
-		p.logger.Info("broker still post-restart recovering",
-			"load_reclaimed_pc", result.LoadReclaimedPercent, "threshold", threshold)
-		return false, nil
-	}
-	return true, nil
 }
 
 // IsClusterBrokerHealthy checks that a cluster broker is up and ready to serve requests.

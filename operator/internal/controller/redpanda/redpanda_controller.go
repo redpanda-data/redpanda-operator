@@ -591,11 +591,20 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	// (false, nil) so behavior on older clusters is unchanged.
 	if len(rollSet) > 0 {
 		recovering, err := brokersStillRecovering(ctx, state.admin, brokerMap, r.PostRestartCaughtUpPercent, logger)
-		if err != nil {
-			// Probe error is not fatal — the K8s-Ready gate above and
-			// the per-broker pre-restart probe below still protect us.
-			logger.V(log.DebugLevel).Info("post-restart probe check failed, proceeding without it", "error", err)
-		} else if recovering {
+		switch {
+		case err != nil:
+			// Fail closed. A non-404 post-restart probe error (404s are
+			// swallowed as "caught up" inside brokerCaughtUp) means we cannot
+			// confirm a just-restarted broker has finished recovering.
+			// Proceeding could roll the next broker mid-recovery — and in a
+			// mixed-version cluster the next broker's pre-restart probe may 404
+			// and fall back to cluster-wide IsHealthy, so it can't catch it
+			// either. brokerCaughtUp already applied a bounded retry/backoff, so
+			// transient blips don't reach here; a persistent endpoint error
+			// stalls the roll safely rather than risking data loss.
+			logger.V(log.DebugLevel).Info("post-restart probe error, deferring rolling restart", "error", err)
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		case recovering:
 			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
 			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 		}
@@ -605,7 +614,7 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	for _, pod := range rollSet {
 		shouldRoll, continueExecution := false, false
 
-		brokerID, inBrokerMap := brokerMap[pod.GetName()]
+		brokerID, inBrokerMap := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
 		switch {
 		case !inBrokerMap:
 			// The pod has no matching broker in our cluster view. That's
@@ -619,9 +628,10 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			//
 			// ...but only while the cluster is healthy. Because we have no
 			// broker ID for this pod we cannot run its per-broker pre-restart
-			// probe, so if the broker map is stale or mis-parsed (e.g. an
-			// IP-form internal RPC address that a pod-name lookup can't match)
-			// this "orphan" may actually be a live, in-sync replica.
+			// probe, so if the broker map is stale or mis-parsed this "orphan"
+			// may actually be a live, in-sync replica. (The common IP-form
+			// internal RPC address case is handled above by the PodIP lookup;
+			// this guards the residual cases a name/IP match still can't cover.)
 			// Restarting it while the cluster is under-replicated or has
 			// offline nodes risks data loss (RFC cases 3/4). When the cluster
 			// is not healthy, skip it and let the mapped pods be gated by
@@ -1018,14 +1028,34 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, cluster cluster.Clu
 // passed in via clusterIsHealthy so behavior on older brokers is unchanged.
 // All other errors are returned as-is and the caller should treat them as
 // "skip this pod, retry next reconcile".
+// brokerIDForPod resolves a pod to its broker ID using the dual-keyed
+// brokerMap. It looks up by pod name first (the common case, when
+// InternalRPCAddress is the per-pod FQDN whose first DNS label is the pod
+// name), then falls back to the pod IP. The IP fallback covers a bare-IP
+// InternalRPCAddress (a rare misconfiguration): brokerMap then holds that IP
+// only as a raw-host key, which a pod-name lookup can't match — without the
+// fallback a live, in-sync broker would be misclassified as an orphan and
+// deleted without first running its pre-restart probe.
+func brokerIDForPod(brokerMap map[string]int, podName, podIP string) (int, bool) {
+	if id, ok := brokerMap[podName]; ok {
+		return id, true
+	}
+	if podIP != "" {
+		if id, ok := brokerMap[podIP]; ok {
+			return id, true
+		}
+	}
+	return 0, false
+}
+
 func brokerSafeToRestart(ctx context.Context, admin *rpadmin.AdminAPI, brokerID int, clusterIsHealthy bool, logger logr.Logger, podName string) (bool, error) {
 	brokerURL, err := admin.BrokerIDToURL(ctx, brokerID)
 	if err != nil {
-		return false, fmt.Errorf("resolving broker %d URL: %w", brokerID, err)
+		return false, errors.Wrapf(err, "resolving broker %d URL", brokerID)
 	}
 	scoped, err := admin.ForHost(brokerURL)
 	if err != nil {
-		return false, fmt.Errorf("scoping admin client to broker %d (%s): %w", brokerID, brokerURL, err)
+		return false, errors.Wrapf(err, "scoping admin client to broker %d (%s)", brokerID, brokerURL)
 	}
 	defer scoped.Close()
 
@@ -1039,7 +1069,7 @@ func brokerSafeToRestart(ctx context.Context, admin *rpadmin.AdminAPI, brokerID 
 			logger.V(log.DebugLevel).Info("pre-restart probe unsupported on broker, falling back to cluster IsHealthy", "pod", podName, "brokerID", brokerID)
 			return clusterIsHealthy, nil
 		}
-		return false, fmt.Errorf("fetching pre-restart probe for broker %d: %w", brokerID, err)
+		return false, errors.Wrapf(err, "fetching pre-restart probe for broker %d", brokerID)
 	}
 
 	if n := len(result.Risks.Acks1DataLoss); n > 0 {
@@ -1071,18 +1101,22 @@ func brokerSafeToRestart(ctx context.Context, admin *rpadmin.AdminAPI, brokerID 
 // safe behavior is to act as though the broker is caught up (the
 // HasRecentlyReplacedPods K8s-Ready gate is still in place above).
 //
-// All other errors propagate so the caller can decide whether to skip or
-// retry — the controller treats them as non-fatal at the gate (see usage
-// in reconcileDecommission) because the K8s-Ready gate and the per-broker
-// pre-restart probe still cover the dangerous failure modes.
+// Any other (non-404) error is wrapped and returned. The rpadmin client already
+// applies a bounded retry/backoff (MaxRetries, ~1.5s backoff) to transient
+// 5xx/network failures, so reaching this return means the failure persisted.
+// The caller MUST treat a returned error as "cannot confirm recovery — defer
+// the roll" (fail closed), not proceed: proceeding could roll the next broker
+// mid-recovery, especially in a mixed-version cluster where the next broker's
+// pre-restart probe 404s and falls back to cluster-wide IsHealthy and therefore
+// can't catch it either.
 func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, threshold int, logger logr.Logger, podName string) (bool, error) {
 	brokerURL, err := admin.BrokerIDToURL(ctx, brokerID)
 	if err != nil {
-		return false, fmt.Errorf("resolving broker %d URL: %w", brokerID, err)
+		return false, errors.Wrapf(err, "resolving broker %d URL", brokerID)
 	}
 	scoped, err := admin.ForHost(brokerURL)
 	if err != nil {
-		return false, fmt.Errorf("scoping admin client to broker %d (%s): %w", brokerID, brokerURL, err)
+		return false, errors.Wrapf(err, "scoping admin client to broker %d (%s)", brokerID, brokerURL)
 	}
 	defer scoped.Close()
 
@@ -1093,7 +1127,7 @@ func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, thre
 			logger.V(log.DebugLevel).Info("post-restart probe unsupported on broker, treating as caught up", "pod", podName, "brokerID", brokerID)
 			return true, nil
 		}
-		return false, fmt.Errorf("fetching post-restart probe for broker %d: %w", brokerID, err)
+		return false, errors.Wrapf(err, "fetching post-restart probe for broker %d", brokerID)
 	}
 
 	if result.LoadReclaimedPercent < threshold {

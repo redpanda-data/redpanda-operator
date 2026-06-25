@@ -524,3 +524,87 @@ func TestIntegrationBrokersStillRecovering(t *testing.T) {
 		assert.True(t, stillRecovering, "broker-2 at 50% must block even though broker-1's probe errored")
 	})
 }
+
+// TestBrokerCaughtUpNon404FailClosed covers review item #2: a non-404
+// post-restart probe error surfaces from brokerCaughtUp (so the caller fails
+// closed and defers the roll rather than proceeding mid-recovery), while a 404
+// short-circuits to "caught up". The bounded retry/backoff for transient
+// failures is provided by the rpadmin client itself (MaxRetries); the stub
+// client here sets MaxRetries(0) so the non-retryable assertions stay fast and
+// deterministic.
+func TestBrokerCaughtUpNon404FailClosed(t *testing.T) {
+	ctx := context.Background()
+	logger := testr.New(t)
+
+	newStub := func(t *testing.T, status int) *rpadmin.AdminAPI {
+		t.Helper()
+		mux := http.NewServeMux()
+		mux.HandleFunc("/v1/node_config", func(w http.ResponseWriter, _ *http.Request) {
+			_ = json.NewEncoder(w).Encode(map[string]any{"node_id": 7})
+		})
+		mux.HandleFunc("/v1/broker/post_restart_probe", func(w http.ResponseWriter, _ *http.Request) {
+			http.Error(w, http.StatusText(status), status)
+		})
+		srv := httptest.NewServer(mux)
+		t.Cleanup(srv.Close)
+		// MaxRetries(0): the client's built-in retry already provides the
+		// bounded retry/backoff; disable it here so the error path is fast.
+		client, err := rpadmin.NewAdminAPIWithDialer([]string{srv.URL}, new(rpadmin.NopAuth), nil, nil, rpadmin.MaxRetries(0))
+		require.NoError(t, err)
+		t.Cleanup(func() { client.Close() })
+		return client
+	}
+
+	t.Run("500 surfaces as error (caller fails closed)", func(t *testing.T) {
+		caughtUp, err := brokerCaughtUp(ctx, newStub(t, http.StatusInternalServerError), 7, 100, logger, "test-pod")
+		require.Error(t, err, "a non-404 error must surface so the caller defers the roll instead of proceeding")
+		assert.False(t, caughtUp)
+	})
+
+	t.Run("404 short-circuits to caught up (pre-25.1 broker)", func(t *testing.T) {
+		caughtUp, err := brokerCaughtUp(ctx, newStub(t, http.StatusNotFound), 7, 100, logger, "test-pod")
+		require.NoError(t, err)
+		assert.True(t, caughtUp)
+	})
+}
+
+// TestBrokerIDForPod covers review item #4: a pod is resolved to its broker ID
+// by name first, then by IP. The IP fallback is what keeps a bare-IP
+// InternalRPCAddress broker (whose brokerMap key is the raw IP, not the pod
+// name) from being misclassified as an orphan and deleted without a pre-restart
+// probe.
+func TestBrokerIDForPod(t *testing.T) {
+	// brokerMap is dual-keyed: first DNS label (pod name) AND raw host.
+	byName := map[string]int{"redpanda-0": 0, "redpanda-0.redpanda.ns.svc.cluster.local": 0}
+	byIP := map[string]int{"10": 2, "10.1.2.3": 2} // bare-IP InternalRPCAddress
+
+	for name, tc := range map[string]struct {
+		brokerMap map[string]int
+		podName   string
+		podIP     string
+		wantID    int
+		wantOK    bool
+	}{
+		"name match": {
+			brokerMap: byName, podName: "redpanda-0", podIP: "10.1.2.3", wantID: 0, wantOK: true,
+		},
+		"name miss, IP match (bare-IP InternalRPCAddress)": {
+			brokerMap: byIP, podName: "redpanda-1", podIP: "10.1.2.3", wantID: 2, wantOK: true,
+		},
+		"name miss, IP miss → orphan": {
+			brokerMap: byName, podName: "ghost-9", podIP: "10.9.9.9", wantID: 0, wantOK: false,
+		},
+		"name miss, empty IP → orphan (no false match)": {
+			brokerMap: byIP, podName: "ghost-9", podIP: "", wantID: 0, wantOK: false,
+		},
+	} {
+		name, tc := name, tc
+		t.Run(name, func(t *testing.T) {
+			id, ok := brokerIDForPod(tc.brokerMap, tc.podName, tc.podIP)
+			assert.Equal(t, tc.wantOK, ok)
+			if tc.wantOK {
+				assert.Equal(t, tc.wantID, id)
+			}
+		})
+	}
+}
