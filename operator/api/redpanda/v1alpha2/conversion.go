@@ -34,7 +34,10 @@ var (
 	// goverter:ignore InitContainers
 	// goverter:ignore NameOverride
 	// goverter:ignore FullnameOverride
+	// goverter:ignore HTTPRoute
 	// Ability to disable ConfigMaps or specific templated initContainers removed.
+	// HTTPRoute (Gateway API) is currently exposed only through the Helm chart,
+	// not the operator-managed Console CR.
 	ConvertConsoleToConsolePartialRenderValues func(*ConsoleValues) (*console.PartialRenderValues, error)
 
 	// goverter:context namespace

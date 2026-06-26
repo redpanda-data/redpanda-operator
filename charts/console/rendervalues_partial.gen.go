@@ -37,6 +37,7 @@ type PartialRenderValues struct {
 	SecurityContext              *applycorev1.SecurityContextApplyConfiguration    "json:\"securityContext,omitempty\""
 	Service                      *PartialServiceConfig                             "json:\"service,omitempty\""
 	Ingress                      *PartialIngressConfig                             "json:\"ingress,omitempty\""
+	HTTPRoute                    *PartialHTTPRouteConfig                           "json:\"httpRoute,omitempty\""
 	Resources                    *corev1.ResourceRequirements                      "json:\"resources,omitempty\""
 	Autoscaling                  *PartialAutoScaling                               "json:\"autoscaling,omitempty\""
 	NodeSelector                 map[string]string                                 "json:\"nodeSelector,omitempty\""
@@ -91,6 +92,15 @@ type PartialIngressConfig struct {
 	Annotations map[string]string         "json:\"annotations,omitempty\""
 	Hosts       []PartialIngressHost      "json:\"hosts,omitempty\""
 	TLS         []networkingv1.IngressTLS "json:\"tls,omitempty\""
+}
+
+type PartialHTTPRouteConfig struct {
+	Enabled     *bool                       "json:\"enabled,omitempty\""
+	Annotations map[string]string           "json:\"annotations,omitempty\""
+	Labels      map[string]string           "json:\"labels,omitempty\""
+	ParentRefs  []PartialHTTPRouteParentRef "json:\"parentRefs,omitempty\""
+	Hostnames   []string                    "json:\"hostnames,omitempty\""
+	Matches     []PartialHTTPRouteMatch     "json:\"matches,omitempty\""
 }
 
 type PartialAutoScaling struct {
@@ -174,6 +184,19 @@ type PartialIngressHost struct {
 	Paths []PartialIngressPath "json:\"paths,omitempty\""
 }
 
+type PartialHTTPRouteParentRef struct {
+	Group       *string "json:\"group,omitempty\""
+	Kind        *string "json:\"kind,omitempty\""
+	Name        *string "json:\"name,omitempty\""
+	Namespace   *string "json:\"namespace,omitempty\""
+	SectionName *string "json:\"sectionName,omitempty\""
+	Port        *int32  "json:\"port,omitempty\""
+}
+
+type PartialHTTPRouteMatch struct {
+	Path *PartialHTTPRoutePathMatch "json:\"path,omitempty\""
+}
+
 type PartialOIDCLoginSecrets struct {
 	ClientSecret *string "json:\"clientSecret,omitempty\""
 }
@@ -188,4 +211,9 @@ type PartialRedpandaAdminAPISecrets struct {
 type PartialIngressPath struct {
 	Path     *string                "json:\"path,omitempty\""
 	PathType *networkingv1.PathType "json:\"pathType,omitempty\""
+}
+
+type PartialHTTPRoutePathMatch struct {
+	Type  *string "json:\"type,omitempty\""
+	Value *string "json:\"value,omitempty\""
 }

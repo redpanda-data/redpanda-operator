@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -59,6 +60,7 @@ const (
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=consoles/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=configmaps;secrets;services;serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="monitoring.coreos.com",resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
@@ -113,6 +115,15 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 				continue
 			}
 		}
+		// Skip the watch for HTTPRoute when the Gateway API is not installed,
+		// mirroring the ServiceMonitor handling above. The console chart only
+		// renders an HTTPRoute when httpRoute.enabled is set, so a cluster
+		// without the Gateway API CRDs would otherwise fail to set up the watch.
+		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
+			if c.skipHTTPRouteWatchIfNotInstalled(ctx) {
+				continue
+			}
+		}
 		builder = builder.Owns(t, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 	}
 
@@ -162,6 +173,15 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 	for _, t := range console.Types() {
 		if _, ok := t.(*monitoringv1.ServiceMonitor); ok {
 			if c.skipServiceMonitorWatchIfNotInstalled(ctx) {
+				continue
+			}
+		}
+		// Skip the watch for HTTPRoute when the Gateway API is not installed,
+		// mirroring the ServiceMonitor handling above. The console chart only
+		// renders an HTTPRoute when httpRoute.enabled is set, so a cluster
+		// without the Gateway API CRDs would otherwise fail to set up the watch.
+		if _, ok := t.(*gatewayv1.HTTPRoute); ok {
+			if c.skipHTTPRouteWatchIfNotInstalled(ctx) {
 				continue
 			}
 		}
@@ -444,6 +464,18 @@ func (c *Controller) skipServiceMonitorWatchIfNotInstalled(ctx context.Context) 
 		return true
 	} else if err != nil {
 		log.Error(ctx, err, "could not list ServiceMonitors")
+		return true
+	}
+	return false
+}
+
+func (c *Controller) skipHTTPRouteWatchIfNotInstalled(ctx context.Context) (skip bool) {
+	var httpRouteList gatewayv1.HTTPRouteList
+	err := c.Ctl.List(ctx, "default", &httpRouteList)
+	if errors.Is(err, &meta.NoKindMatchError{}) {
+		return true
+	} else if err != nil {
+		log.Error(ctx, err, "could not list HTTPRoutes")
 		return true
 	}
 	return false

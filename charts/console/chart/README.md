@@ -117,6 +117,30 @@ Override `console.fullname` template.
 
 **Default:** `""`
 
+### [httpRoute.annotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=httpRoute.annotations)
+
+**Default:** `{}`
+
+### [httpRoute.enabled](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=httpRoute.enabled)
+
+**Default:** `false`
+
+### [httpRoute.hostnames](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=httpRoute.hostnames)
+
+**Default:** `[]`
+
+### [httpRoute.labels](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=httpRoute.labels)
+
+**Default:** `{}`
+
+### [httpRoute.matches](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=httpRoute.matches)
+
+**Default:** `[]`
+
+### [httpRoute.parentRefs](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=httpRoute.parentRefs)
+
+**Default:** `[]`
+
 ### [image](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=image)
 
 Redpanda Console Docker image settings.

@@ -33,6 +33,7 @@ type RenderValues struct {
 	SecurityContext              corev1.SecurityContext            `json:"securityContext" partial:"builtin"`
 	Service                      ServiceConfig                     `json:"service"`
 	Ingress                      IngressConfig                     `json:"ingress"`
+	HTTPRoute                    HTTPRouteConfig                   `json:"httpRoute"`
 	Resources                    corev1.ResourceRequirements       `json:"resources"`
 	Autoscaling                  AutoScaling                       `json:"autoscaling"`
 	NodeSelector                 map[string]string                 `json:"nodeSelector"`
@@ -101,6 +102,20 @@ type IngressHost struct {
 type IngressPath struct {
 	Path     string                 `json:"path"`
 	PathType *networkingv1.PathType `json:"pathType"`
+}
+
+// HTTPRouteConfig is the values surface for the Gateway API HTTPRoute that
+// exposes Console. It is an alternative to Ingress; the rendered object types
+// live in httproute.go.
+type HTTPRouteConfig struct {
+	Enabled     bool                 `json:"enabled"`
+	Annotations map[string]string    `json:"annotations"`
+	Labels      map[string]string    `json:"labels"`
+	ParentRefs  []HTTPRouteParentRef `json:"parentRefs"`
+	Hostnames   []string             `json:"hostnames"`
+	// Matches optionally overrides the default match-all rule. When empty, the
+	// rendered rule omits matches, which Gateway API treats as path prefix "/".
+	Matches []HTTPRouteMatch `json:"matches"`
 }
 
 type AutoScaling struct {

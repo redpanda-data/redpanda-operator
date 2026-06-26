@@ -30,6 +30,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
@@ -276,6 +277,10 @@ func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, console *redpandav1alp
 	for _, objType := range consolechart.Types() {
 		// skip ServiceMonitor here as it is optional and created only when monitoring.enabled is true
 		if _, ok := objType.(*monitoringv1.ServiceMonitor); ok {
+			continue
+		}
+		// skip HTTPRoute here as it is optional (Gateway API) and created only when httpRoute.enabled is true
+		if _, ok := objType.(*gatewayv1.HTTPRoute); ok {
 			continue
 		}
 		list, err := kube.ListFor(ctl.Scheme(), objType)

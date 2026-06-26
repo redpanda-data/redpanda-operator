@@ -1,0 +1,14 @@
+project: charts/console
+kind: Added
+body: |-
+    Added Gateway API HTTPRoute support for Console (**Beta**) as an
+    alternative to the existing Ingress. When enabled via `httpRoute.enabled`,
+    the chart renders an HTTPRoute that routes HTTP traffic to the Console
+    Service through a user-managed Gateway, with configurable `parentRefs`,
+    `hostnames`, and path matches.
+
+    Beta status: the API surface (chart values under `httpRoute`) may still
+    change in backwards-incompatible ways before GA. Production use is not
+    recommended; please file issues with feedback on the values shape and
+    rendered HTTPRoute objects.
+time: 2026-06-26T12:00:00.000000-04:00

@@ -246,6 +246,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - httproutes
   - tlsroutes
   verbs:
   - create

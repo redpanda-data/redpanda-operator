@@ -25,6 +25,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -47,6 +48,10 @@ const (
 func init() {
 	must(scheme.AddToScheme(Scheme))
 	must(monitoringv1.AddToScheme(Scheme))
+	// Register the upstream Gateway API v1 types (HTTPRoute + HTTPRouteList) so
+	// controller-runtime can List/Watch the HTTPRoutes this chart renders via
+	// the lightweight struct in httproute.go.
+	must(gatewayv1.Install(Scheme))
 }
 
 // +gotohelm:ignore=true
@@ -188,6 +193,10 @@ func Render(state *RenderState) []kube.Object {
 		ServiceMonitor(state),
 	}
 
+	for _, obj := range HTTPRoutes(state) {
+		manifests = append(manifests, obj)
+	}
+
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.
@@ -201,6 +210,11 @@ func Types() []kube.Object {
 		&corev1.ConfigMap{},
 		&corev1.Service{},
 		&networkingv1.Ingress{},
+		// Use the upstream Gateway API v1 HTTPRoute (not the chart's lightweight
+		// HTTPRoute struct) so controller-runtime can List/Watch it via the
+		// registered v1 scheme. The chart renders the same wire bytes; the
+		// lightweight struct exists only to keep the gotohelm transpiler happy.
+		&gatewayv1.HTTPRoute{},
 		&appsv1.Deployment{},
 		&autoscalingv2.HorizontalPodAutoscaler{},
 		&monitoringv1.ServiceMonitor{},

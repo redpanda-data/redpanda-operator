@@ -66,6 +66,25 @@ ingress:
    hosts:
    - '{{ "blah" | quote }}'
 
+-- httproute-templating --
+# Gateway API HTTPRoute with templated hostname, parentRefs and a custom match
+httpRoute:
+ enabled: true
+ annotations:
+   httproute: test
+ labels:
+   team: console
+ parentRefs:
+ - name: my-gateway
+   namespace: gateway-system
+   sectionName: https
+ hostnames:
+ - '{{ "console.example.com" | quote }}'
+ matches:
+ - path:
+     type: PathPrefix
+     value: /console
+
 -- no-registry --
 image:
   registry: ""

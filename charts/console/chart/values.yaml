@@ -107,6 +107,27 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# httpRoute exposes Console through a Gateway API HTTPRoute as an alternative to
+# ingress (Beta). The route attaches to a user-managed Gateway via parentRefs
+# and forwards matching traffic to the Console Service.
+httpRoute:
+  enabled: false
+  annotations: {}
+  labels: {}
+  # parentRefs reference the Gateway(s) this route attaches to. At least one is
+  # required when httpRoute is enabled.
+  parentRefs: []
+    # - name: my-gateway
+    #   namespace: gateway-system
+    #   sectionName: https
+  hostnames: []
+    # - console.chart-example.local
+  # matches defaults to a single match-all rule (path prefix "/") when empty.
+  matches: []
+    # - path:
+    #     type: PathPrefix
+    #     value: /
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
