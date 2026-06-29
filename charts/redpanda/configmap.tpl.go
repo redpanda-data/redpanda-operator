@@ -89,7 +89,17 @@ func BootstrapContents(state *RenderState, pool Pool) (map[string]string, []clus
 	bootstrap = helmette.Merge(bootstrap, state.Values.Config.Cluster.Translate())
 	bootstrap = helmette.Merge(bootstrap, state.Values.Auth.Translate(state.Values.Auth.IsSASLEnabled()))
 	attrs, fixes := state.Values.Storage.GetTieredStorageConfig().Translate(&state.Values.Storage.Tiered.CredentialsSecretRef)
-	bootstrap = helmette.Merge(bootstrap, attrs)
+	// Tiered storage settings act as defaults and must not clobber values that
+	// were explicitly set via config.cluster. We can't use helmette.Merge here
+	// because it relies on mergo, which treats a boolean false (and other zero
+	// values) as "empty" and would let the tiered storage default (e.g.
+	// cloud_storage_enable_remote_read: true) overwrite an explicit false. See
+	// K8S-882. Only fold in tiered storage keys that haven't already been set.
+	for k, v := range attrs {
+		if _, ok := bootstrap[k]; !ok {
+			bootstrap[k] = v
+		}
+	}
 	fixups = append(fixups, fixes...)
 
 	// If default_topic_replications is not set and we have at least 3 Brokers,
@@ -113,7 +123,7 @@ func BootstrapContents(state *RenderState, pool Pool) (map[string]string, []clus
 
 	// Fold in any extraClusterConfiguration values
 	extra, fixes, _ := state.Values.Config.ExtraClusterConfiguration.Translate()
-	template = helmette.Merge(template, extra)
+	template = helmette.Merge(extra, template)
 	fixups = append(fixups, fixes...)
 
 	return template, fixups
