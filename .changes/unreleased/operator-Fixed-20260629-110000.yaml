@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: "Multicluster `StretchCluster`: when SASL authentication is disabled, the `BootstrapUserSynced` condition is now set to a final `True` state (reason `Synced`) instead of being left at its default `Unknown`. Previously the bootstrap-user sync returned early without setting the condition, leaving it non-final, which blocked the `Quiesced` aggregate — and therefore `Stable` — from ever reaching `True` on an otherwise healthy cluster."
+time: 2026-06-29T11:00:00.000000-07:00
