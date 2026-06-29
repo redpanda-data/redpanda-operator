@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
@@ -629,4 +631,47 @@ func execJSONPath(t *testing.T, obj any, jsonPath string, fn func(any)) {
 			fn(unwrapped[0])
 		}
 	}
+}
+
+// TestRenderBootstrapConfigMap renders the chart via [redpanda.Chart.Render]
+// and asserts that the ConfigMap carrying the bootstrap cluster configuration
+// (the `.bootstrap.json.in` template file) is emitted with non-empty content.
+func TestRenderBootstrapConfigMap(t *testing.T) {
+	objs, err := redpanda.Chart.Render(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "default",
+		Service:   "Helm",
+	}, redpanda.PartialValues{
+		Config: &redpanda.PartialConfig{
+			Cluster: redpanda.PartialClusterConfig{
+				"cloud_storage_enable_remote_read": false,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	var bootstrap string
+	found := false
+	for _, obj := range objs {
+		cm, ok := obj.(*corev1.ConfigMap)
+		if !ok {
+			continue
+		}
+		if content, ok := cm.Data[clusterconfiguration.BootstrapTemplateFile]; ok {
+			found = true
+			bootstrap = content
+			break
+		}
+	}
+
+	require.True(t, found, "no ConfigMap contained the %q key", clusterconfiguration.BootstrapTemplateFile)
+
+	var bootstrapMap map[string]any
+	require.NoError(t, json.Unmarshal([]byte(bootstrap), &bootstrapMap))
+
+	// The bootstrap template stringifies every value, so the explicit
+	// config.cluster override of false is rendered as the string "false". The
+	// point of the assertion is that it is NOT the tiered storage default of
+	// "true" (see K8S-882).
+	require.Equal(t, "false", bootstrapMap["cloud_storage_enable_remote_read"], "cloud_storage_enable_remote_read should be overwritten to false")
 }

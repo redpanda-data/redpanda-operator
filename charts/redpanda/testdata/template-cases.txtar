@@ -1380,3 +1380,11 @@ listeners:
       default:
         type: tlsroute
         host: schema.example.com
+
+-- bug-cloud-storage --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-VALID-RPK-CONFIGURATION
+config:
+  cluster:
+    cloud_storage_enable_remote_read: false
