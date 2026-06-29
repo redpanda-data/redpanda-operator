@@ -347,9 +347,13 @@ func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpa
 // checkSpecConsistency fetches the StretchCluster from every reachable cluster
 // and verifies that .Spec is identical. Unreachable clusters are skipped with a
 // logged warning — reconciliation continues on the clusters that are available
-// rather than being blocked by a transient outage. If drift is detected on a
-// reachable cluster it sets SpecSynced=False and returns drifted=true so the
-// caller can abort. When all reachable specs are aligned it sets SpecSynced=True.
+// rather than being blocked by a transient outage. A peer that is reachable but
+// has no StretchCluster CR (NotFound) is treated as not participating: it is
+// recorded separately and does not block, so the cluster can still reach Stable
+// when the only outlier is an intentionally-absent peer (K8S-883). If drift is
+// detected on a reachable cluster it sets SpecSynced=False and returns
+// drifted=true so the caller can abort. When all participating reachable specs
+// are aligned it sets SpecSynced=True.
 //
 // Records observability gauges as a side effect — `member_reachable` for every
 // member cluster, and `spec_drift` for reachable members (left untouched for
@@ -360,6 +364,12 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 	localSpec := sc.Spec
 	var driftDetails []string
 	var unreachable []string
+	// Peers that are reachable but have no StretchCluster CR. These are NOT
+	// unreachable — the peer is simply not participating in this stretch
+	// (intentionally removed, or not yet created). Tracked separately so the
+	// status can report them distinctly from a genuine connectivity failure
+	// (K8S-883).
+	var missingStretchCluster []string
 
 	// The local cluster is always reachable from this operator and is
 	// (by definition) aligned with itself. Record both gauges so the
@@ -404,6 +414,20 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 
 		remoteSC := &redpandav1alpha2.StretchCluster{}
 		if err := remote.GetClient().Get(ctx, client.ObjectKeyFromObject(sc), remoteSC); err != nil {
+			// A NotFound on a reachable peer is fundamentally different from an
+			// unreachable cluster: the peer answered, it just has no
+			// StretchCluster CR. Conflating the two reports "cluster
+			// unreachable" for a perfectly reachable peer (misleading) and, by
+			// keeping SpecSynced non-True, blocks the cluster from ever
+			// reaching Stable even when the data plane is healthy (K8S-883).
+			// Treat such a peer as not participating: record it as reachable,
+			// track it separately, and do not block on it.
+			if apierrors.IsNotFound(err) {
+				l.Info("peer has no StretchCluster, treating as not participating", "cluster", clusterName)
+				missingStretchCluster = append(missingStretchCluster, clusterName)
+				observability.RecordStretchClusterMemberReachable(sc.Name, canonical, true)
+				continue
+			}
 			l.Info("could not fetch StretchCluster from cluster, skipping", "cluster", clusterName, "error", err)
 			unreachable = append(unreachable, clusterName)
 			observability.RecordStretchClusterMemberReachable(sc.Name, canonical, false)
@@ -422,15 +446,29 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 	}
 
 	if len(driftDetails) == 0 {
-		if len(unreachable) > 0 {
+		switch {
+		case len(unreachable) > 0:
 			msg := fmt.Sprintf("clusters unreachable, spec consistency could not be verified: %s", strings.Join(unreachable, ", "))
+			if len(missingStretchCluster) > 0 {
+				msg += fmt.Sprintf("; peers reachable but without a StretchCluster (not participating): %s", strings.Join(missingStretchCluster, ", "))
+			}
 			l.Info(msg)
 			// Reachable specs are aligned but some clusters are down. Use the
 			// ClusterUnreachable reason so operators can distinguish a partial
 			// check from a genuine drift or error. Reconciliation continues on
 			// live clusters — we do NOT block on an unreachable peer.
 			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonClusterUnreachable, msg)
-		} else {
+		case len(missingStretchCluster) > 0:
+			// Every reachable, participating peer agrees. The only outliers are
+			// peers that are reachable but have no StretchCluster CR — they are
+			// not participating, so they must not block stability. Resolve to
+			// Synced=True while clearly naming the absent peers so operators can
+			// tell "peer missing StretchCluster" apart from drift or an
+			// unreachable cluster (K8S-883).
+			msg := fmt.Sprintf("spec consistent across all participating clusters; peers reachable but without a StretchCluster (not participating): %s", strings.Join(missingStretchCluster, ", "))
+			l.Info(msg)
+			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced, msg)
+		default:
 			state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonSynced)
 		}
 		return false, ctrl.Result{}

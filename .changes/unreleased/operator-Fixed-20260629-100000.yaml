@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: "Multicluster `StretchCluster`: a peer that is registered with the manager but whose `StretchCluster` CR has been removed is no longer reported as `SpecSynced=ClusterUnreachable`. Such a peer is reachable — its CR is simply absent — so it is now treated as not participating: it is named distinctly in the condition message and no longer blocks the cluster from reaching `Stable` when the data plane is otherwise healthy."
+time: 2026-06-29T10:00:00.000000-07:00
