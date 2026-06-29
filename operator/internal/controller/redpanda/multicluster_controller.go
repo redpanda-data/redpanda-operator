@@ -109,6 +109,12 @@ type MulticlusterReconciler struct {
 	// applies defaultClearMaintenanceModeAfter (30m); set via the
 	// --clear-maintenance-mode-after flag.
 	MaintenanceModeClearThreshold time.Duration
+
+	// PVCUnbindNotReadyThreshold is how long a broker pod must remain
+	// not-Ready before reconcilePVCUnbinder is allowed to destroy its data
+	// disk to recover a decommissioned-broker bad_rejoin (K8S-843). Zero
+	// applies defaultPVCUnbindNotReadyThreshold.
+	PVCUnbindNotReadyThreshold time.Duration
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -318,9 +324,9 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 }
 
 // clusterReconcilers returns the ordered cluster-level reconcile steps
-// (admin API, maintenance mode, decommission, config, license). Order
-// matters: any step returning a non-zero RequeueAfter or an error aborts the
-// rest of the chain for this pass, so a step whose completion is a
+// (admin API, maintenance mode, decommission, PVC unbinder, config, license).
+// Order matters: any step returning a non-zero RequeueAfter or an error aborts
+// the rest of the chain for this pass, so a step whose completion is a
 // precondition for another must come first.
 //
 // reconcileMaintenanceMode must precede reconcileDecommission specifically:
@@ -328,11 +334,16 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // not yet Finished, which is exactly the state a broker stuck in maintenance
 // mode sits in forever (the partition balancer refuses to move data off a
 // maintenance-mode node), so the clear would never run if ordered after it.
+//
+// reconcilePVCUnbinder runs after reconcileDecommission: it recovers a
+// decommissioned-broker bad_rejoin (K8S-843) by destroying the stale data disk,
+// which only applies once the broker has been removed from the cluster.
 func (r *MulticlusterReconciler) clusterReconcilers() []stretchClusterReconciliationFn {
 	return []stretchClusterReconciliationFn{
 		r.initAdminClient,
 		r.reconcileMaintenanceMode,
 		r.reconcileDecommission,
+		r.reconcilePVCUnbinder,
 		r.reconcileLicense,
 		r.reconcileClusterConfig,
 	}
