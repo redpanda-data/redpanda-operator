@@ -624,3 +624,125 @@
           description: >
             This reason is used with the "Stable" condition when it evaluates to True because
             at least one dependent condition evaluates to False.
+- kind: Broker
+  appliesTo:
+    - redpanda/v1alpha2/Broker
+  description:
+    Defines the observed status conditions of a single broker.
+  errors:
+    - name: Error
+      transient: true
+      description: >
+        This reason is used when a broker has only been partially reconciled and we have early returned
+        due to a retryable error occurring prior to applying the desired broker state.
+    - name: TerminalError
+      description: >
+        This reason is used when a broker has encountered a terminal error
+        and will not be reconciled further.
+  conditions:
+    - name: Ready
+      printerColumns:
+        - name: Ready
+      description: >
+        This condition indicates whether the broker pod is running and the broker has
+        registered with the Redpanda cluster (brokerID discovered via admin API).
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Ready
+          message: Broker is ready
+          description: >
+            This reason is used with the "Ready" condition when it evaluates to True because
+            the broker is running and registered with the cluster.
+        - name: NotReady
+          description: >
+            This reason is used with the "Ready" condition when it evaluates to False because
+            the broker is not yet ready to serve traffic.
+    - name: PodScheduled
+      description: >
+        This condition indicates whether the broker's pod has been scheduled to a node.
+        False when the pod is stuck due to node affinity or resource constraints.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Scheduled
+          message: Pod scheduled to node
+          description: >
+            This reason is used with the "PodScheduled" condition when it evaluates to True because
+            the broker's pod has been scheduled to a Kubernetes node.
+        - name: Unschedulable
+          description: >
+            This reason is used with the "PodScheduled" condition when it evaluates to False because
+            the broker's pod cannot be scheduled (e.g. node affinity, insufficient resources).
+    - name: StorageBound
+      description: >
+        This condition indicates whether all PVCs for this broker are bound to PVs.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Bound
+          message: All PVCs bound
+          description: >
+            This reason is used with the "StorageBound" condition when it evaluates to True because
+            all PVCs for this broker are bound to PVs.
+        - name: Pending
+          description: >
+            This reason is used with the "StorageBound" condition when it evaluates to False because
+            one or more PVCs for this broker are not yet bound.
+    - name: BrokerRegistered
+      description: >
+        This condition indicates whether the broker's node_id has been discovered via the
+        admin API, confirming it has joined the Raft group.
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Registered
+          message: Broker registered with cluster
+          description: >
+            This reason is used with the "BrokerRegistered" condition when it evaluates to True because
+            the broker has registered its node_id with the cluster.
+        - name: NotRegistered
+          description: >
+            This reason is used with the "BrokerRegistered" condition when it evaluates to False because
+            the broker has not yet registered with the cluster.
+    - name: Quiesced
+      final: true
+      description: >
+        This condition indicates the broker is no longer reconciling for its current generation.
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Quiesced
+          message: Broker reconciliation finished
+          description: >
+            This reason is used with the "Quiesced" condition when it evaluates to True because
+            the operator has finished reconciling the broker at its current generation.
+        - name: StillReconciling
+          message: Broker still reconciling
+          description: >
+            This reason is used with the "Quiesced" condition when it evaluates to False because
+            the operator has not finished reconciling the broker at its current generation.
+    - name: Stable
+      rollup: [ Ready, StorageBound, BrokerRegistered, Quiesced ]
+      description: >
+        This condition is a roll-up status for automation (e.g. parent controller checking
+        all brokers are stable before proceeding).
+
+        This condition defaults to "False" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Stable
+          message: Broker stable
+          description: >
+            This reason is used with the "Stable" condition when it evaluates to True because
+            all dependent conditions also evaluate to True.
+        - name: Unstable
+          message: Broker unstable
+          description: >
+            This reason is used with the "Stable" condition when it evaluates to False because
+            at least one dependent condition evaluates to False.

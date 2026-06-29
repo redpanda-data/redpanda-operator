@@ -1517,3 +1517,332 @@ func TestRedpandaBrokerPool(t *testing.T) {
 		})
 	}
 }
+
+type setBrokerFunc func(status *BrokerStatus)
+
+func TestBroker(t *testing.T) {
+	// regular condition tests
+	for name, tt := range map[string]struct {
+		condition string
+		reason    string
+		expected  metav1.ConditionStatus
+		setFn     setBrokerFunc
+	}{
+		"Ready/Ready": {
+			condition: BrokerReady,
+			reason:    string(BrokerReadyReasonReady),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+		},
+		"Ready/NotReady": {
+			condition: BrokerReady,
+			reason:    string(BrokerReadyReasonNotReady),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonNotReady, "reason") },
+		},
+		"Ready/Error": {
+			condition: BrokerReady,
+			reason:    string(BrokerReadyReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonError, "reason") },
+		},
+		"Ready/TerminalError": {
+			condition: BrokerReady,
+			reason:    string(BrokerReadyReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonTerminalError, "reason") },
+		},
+		"PodScheduled/Scheduled": {
+			condition: BrokerPodScheduled,
+			reason:    string(BrokerPodScheduledReasonScheduled),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+		},
+		"PodScheduled/Unschedulable": {
+			condition: BrokerPodScheduled,
+			reason:    string(BrokerPodScheduledReasonUnschedulable),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonUnschedulable, "reason") },
+		},
+		"PodScheduled/Error": {
+			condition: BrokerPodScheduled,
+			reason:    string(BrokerPodScheduledReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonError, "reason") },
+		},
+		"PodScheduled/TerminalError": {
+			condition: BrokerPodScheduled,
+			reason:    string(BrokerPodScheduledReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonTerminalError, "reason") },
+		},
+		"StorageBound/Bound": {
+			condition: BrokerStorageBound,
+			reason:    string(BrokerStorageBoundReasonBound),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+		},
+		"StorageBound/Pending": {
+			condition: BrokerStorageBound,
+			reason:    string(BrokerStorageBoundReasonPending),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonPending, "reason") },
+		},
+		"StorageBound/Error": {
+			condition: BrokerStorageBound,
+			reason:    string(BrokerStorageBoundReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonError, "reason") },
+		},
+		"StorageBound/TerminalError": {
+			condition: BrokerStorageBound,
+			reason:    string(BrokerStorageBoundReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonTerminalError, "reason") },
+		},
+		"BrokerRegistered/Registered": {
+			condition: BrokerBrokerRegistered,
+			reason:    string(BrokerBrokerRegisteredReasonRegistered),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *BrokerStatus) {
+				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+			},
+		},
+		"BrokerRegistered/NotRegistered": {
+			condition: BrokerBrokerRegistered,
+			reason:    string(BrokerBrokerRegisteredReasonNotRegistered),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *BrokerStatus) {
+				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonNotRegistered, "reason")
+			},
+		},
+		"BrokerRegistered/Error": {
+			condition: BrokerBrokerRegistered,
+			reason:    string(BrokerBrokerRegisteredReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetBrokerRegistered(BrokerBrokerRegisteredReasonError, "reason") },
+		},
+		"BrokerRegistered/TerminalError": {
+			condition: BrokerBrokerRegistered,
+			reason:    string(BrokerBrokerRegisteredReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *BrokerStatus) {
+				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonTerminalError, "reason")
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewBroker()
+
+			assertNoCondition(t, tt.condition, status.getConditions(0))
+			tt.setFn(status)
+			assertConditionStatusReason(t, tt.condition, tt.expected, tt.reason, status.getConditions(0))
+		})
+	}
+
+	// final conditions tests
+	for name, conditionReason := range map[string]struct {
+		condition   string
+		trueReason  string
+		falseReason string
+	}{
+		"Quiesced": {
+			condition:   BrokerQuiesced,
+			trueReason:  string(BrokerQuiescedReasonQuiesced),
+			falseReason: string(BrokerQuiescedReasonStillReconciling),
+		},
+	} {
+		conditionReason := conditionReason
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewBroker()
+
+			// attempt to set all conditions one by one until they are all set
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetReady(BrokerReadyReasonReady, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetStorageBound(BrokerStorageBoundReasonBound, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
+		})
+	}
+
+	// transient error tests
+	for name, tt := range map[string]struct {
+		setTransientErrFn   setBrokerFunc
+		setConditionReasons []setBrokerFunc
+	}{
+		"Transient Error: Error, Condition: Ready": {
+			setTransientErrFn: func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonError, "reason") },
+			setConditionReasons: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: PodScheduled": {
+			setTransientErrFn: func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonError, "reason") },
+			setConditionReasons: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: StorageBound": {
+			setTransientErrFn: func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonError, "reason") },
+			setConditionReasons: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: BrokerRegistered": {
+			setTransientErrFn: func(status *BrokerStatus) { status.SetBrokerRegistered(BrokerBrokerRegisteredReasonError, "reason") },
+			setConditionReasons: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewBroker()
+
+			assertConditionStatusReason(t, BrokerQuiesced, metav1.ConditionFalse, string(BrokerQuiescedReasonStillReconciling), status.getConditions(0))
+
+			tt.setTransientErrFn(status)
+			for _, setFn := range tt.setConditionReasons {
+				setFn(status)
+			}
+
+			assertConditionStatusReason(t, BrokerQuiesced, metav1.ConditionFalse, string(BrokerQuiescedReasonStillReconciling), status.getConditions(0))
+		})
+	}
+
+	// terminal error tests
+	for name, setFn := range map[string]setBrokerFunc{
+		"Terminal Error: TerminalError, Condition: Ready":        func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: PodScheduled": func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: StorageBound": func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonTerminalError, "reason") },
+		"Terminal Error: TerminalError, Condition: BrokerRegistered": func(status *BrokerStatus) {
+			status.SetBrokerRegistered(BrokerBrokerRegisteredReasonTerminalError, "reason")
+		},
+	} {
+		setFn := setFn
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewBroker()
+
+			assertConditionStatusReason(t, BrokerQuiesced, metav1.ConditionFalse, string(BrokerQuiescedReasonStillReconciling), status.getConditions(0))
+
+			setFn(status)
+
+			assertConditionStatusReason(t, BrokerQuiesced, metav1.ConditionTrue, string(BrokerQuiescedReasonQuiesced), status.getConditions(0))
+		})
+	}
+
+	// rollup conditions tests
+	for name, tt := range map[string]struct {
+		condition      string
+		trueReason     string
+		falseReason    string
+		falseCondition setBrokerFunc
+		trueConditions []setBrokerFunc
+	}{
+		"Rollup Conditions: Stable, All True": {
+			condition:   BrokerStable,
+			trueReason:  string(BrokerStableReasonStable),
+			falseReason: string(BrokerStableReasonUnstable),
+			trueConditions: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: Ready": {
+			condition:      BrokerStable,
+			trueReason:     string(BrokerStableReasonStable),
+			falseReason:    string(BrokerStableReasonUnstable),
+			falseCondition: func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonTerminalError, "reason") },
+			trueConditions: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: StorageBound": {
+			condition:      BrokerStable,
+			trueReason:     string(BrokerStableReasonStable),
+			falseReason:    string(BrokerStableReasonUnstable),
+			falseCondition: func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonTerminalError, "reason") },
+			trueConditions: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: BrokerRegistered": {
+			condition:   BrokerStable,
+			trueReason:  string(BrokerStableReasonStable),
+			falseReason: string(BrokerStableReasonUnstable),
+			falseCondition: func(status *BrokerStatus) {
+				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonTerminalError, "reason")
+			},
+			trueConditions: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+			},
+		},
+	} {
+		tt := tt
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			status := NewBroker()
+
+			assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+
+			if tt.falseCondition != nil {
+				tt.falseCondition(status)
+			}
+			for _, setFn := range tt.trueConditions {
+				setFn(status)
+			}
+
+			if tt.falseCondition != nil {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionFalse, tt.falseReason, status.getConditions(0))
+			} else {
+				assertConditionStatusReason(t, tt.condition, metav1.ConditionTrue, tt.trueReason, status.getConditions(0))
+			}
+		})
+	}
+}
