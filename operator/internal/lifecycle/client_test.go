@@ -22,6 +22,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -239,6 +240,63 @@ func (tt *clientTest) Run(ctx context.Context, t *testing.T, name string, fn fun
 			require.Nil(t, resource.GetDeletionTimestamp())
 		}
 	})
+}
+
+func TestClientDeletePVCsForPod(t *testing.T) {
+	ctx, cancel := setupContext()
+	defer cancel()
+
+	tt := &clientTest{}
+	i, cancelClient := tt.setupClient(ctx, t)
+	defer cancelClient()
+
+	ns := metav1.NamespaceDefault
+
+	dataPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{Name: "datadir-redpanda-rp-east-0", Namespace: ns},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceStorage: resource.MustParse("1Gi")},
+			},
+		},
+	}
+	require.NoError(t, i.k8sClient.Create(ctx, dataPVC))
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "redpanda-rp-east-0", Namespace: ns},
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: "datadir",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir-redpanda-rp-east-0"},
+					},
+				},
+				{
+					Name:         "config",
+					VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{}},
+				},
+			},
+		},
+	}
+
+	mcPod := &MulticlusterPod{Pod: pod, clusterName: mcmanager.LocalCluster}
+
+	require.NoError(t, i.resourceClient.DeletePVCsForPod(ctx, mcPod))
+
+	// envtest runs the apiserver's StorageObjectInUseProtection admission
+	// plugin (which stamps the pvc-protection finalizer) but no
+	// kube-controller-manager to remove it, so the Delete is recorded as a
+	// deletionTimestamp rather than an immediate removal. Either outcome proves
+	// the operator issued the delete for the pod's PVC.
+	got := &corev1.PersistentVolumeClaim{}
+	err := i.k8sClient.Get(ctx, client.ObjectKeyFromObject(dataPVC), got)
+	if k8sapierrors.IsNotFound(err) {
+		return
+	}
+	require.NoError(t, err)
+	require.NotNil(t, got.GetDeletionTimestamp(), "PVC referenced by the pod should have been deleted (or marked for deletion)")
 }
 
 func TestClientDeleteAll(t *testing.T) {

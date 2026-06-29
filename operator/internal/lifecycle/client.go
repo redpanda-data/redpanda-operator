@@ -186,6 +186,49 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 	return ctl.Delete(ctx, pod.Pod)
 }
 
+// DeletePVCsForPod deletes the PersistentVolumeClaims referenced by the pod's
+// volumes, routing to the pod's cluster. It is used to wipe a broker's stale
+// data disk (K8S-843) so it reschedules with a clean volume and a fresh
+// identity. PVCs already gone are ignored.
+//
+// For remote peer clusters that are unreachable the operation is skipped — the
+// cluster's own operator will perform the unbind when it reconnects.
+func (r *ResourceClient[T, U]) DeletePVCsForPod(ctx context.Context, pod *MulticlusterPod) error {
+	logger := log.FromContext(ctx)
+	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
+		logger.Info("remote cluster unreachable (probe) in DeletePVCsForPod, skipping", "cluster", pod.GetCanonicalClusterName())
+		return nil
+	}
+	ctl, err := r.ctl(ctx, pod.clusterName)
+	if err != nil {
+		if pod.clusterName != mcmanager.LocalCluster {
+			logger.Info("remote cluster unreachable in DeletePVCsForPod, skipping", "cluster", pod.GetCanonicalClusterName(), "error", err)
+			return nil
+		}
+		return err
+	}
+
+	for _, vol := range pod.Spec.Volumes {
+		if vol.PersistentVolumeClaim == nil {
+			continue
+		}
+		pvc := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      vol.PersistentVolumeClaim.ClaimName,
+				Namespace: pod.GetNamespace(),
+			},
+		}
+		if err := ctl.Delete(ctx, pvc); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return errors.Wrapf(err, "deleting PVC %s/%s for pod %s", pod.GetNamespace(), pvc.Name, pod.GetName())
+		}
+		logger.Info("deleted PVC for broker pod", "pvc", pvc.Name, "pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName())
+	}
+	return nil
+}
+
 // PatchBrokerPoolSet updates a StatefulSet for a specific node pool.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will apply the patch when it reconnects.

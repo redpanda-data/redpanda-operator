@@ -566,6 +566,21 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 	return pods
 }
 
+// ExistingPods returns every existing pod across all pools as MulticlusterPods,
+// regardless of StatefulSet revision. Unlike PodsToRoll it does not filter on
+// revision — the PVC unbinder must inspect pods that are persistently not-ready
+// for reasons unrelated to a pending roll (e.g. a decommissioned broker stuck
+// in a bad_rejoin crashloop).
+func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
+	pods := []*MulticlusterPod{}
+	for _, existing := range p.existingPools {
+		for _, withOrdinals := range existing.pods {
+			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
+		}
+	}
+	return pods
+}
+
 // PodEndpoint holds the information needed to create an EndpointSlice
 // for a pod in a multicluster stretch cluster.
 type PodEndpoint struct {
