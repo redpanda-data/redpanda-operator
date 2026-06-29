@@ -617,6 +617,15 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 
 	if !sc.Spec.Auth.IsSASLEnabled() {
 		logger.V(log.TraceLevel).Info("SASL is not enabled, skipping bootstrap user sync")
+		// There is no bootstrap user to manage when SASL is disabled, so the
+		// condition is trivially reconciled. We must still set it to a final
+		// state: leaving it at its CRD default (Unknown/NotReconciled) keeps it
+		// non-final, which blocks the Quiesced aggregate — and therefore Stable
+		// — from ever reaching True on an otherwise healthy cluster (K8S-884).
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(
+			statuses.StretchClusterBootstrapUserSyncedReasonSynced,
+			"SASL is disabled; no bootstrap user secret is required",
+		)
 		return ctrl.Result{}, nil
 	}
 	clusterNames := r.Manager.GetClusterNames()
