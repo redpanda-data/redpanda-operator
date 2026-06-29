@@ -1,4 +1,8 @@
 project: operator
 kind: Fixed
-body: Fixed User deletion getting stuck on clusters without an enterprise license. Schema Registry ACL cleanup no longer issues a DeleteACLs request when there are no ACLs to delete, which previously failed with "Invalid license: not present" and prevented the finalizer from being removed.
+body: |-
+  Fixed User deletion getting stuck on clusters without an enterprise license.
+  Schema Registry ACL cleanup no longer issues a DeleteACLs request when there
+  are no ACLs to delete, which previously failed with "Invalid license: not
+  present" and prevented the finalizer from being removed.
 time: 2026-06-24T14:14:54+02:00
