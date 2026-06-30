@@ -89,6 +89,11 @@ type ClientFactory interface {
 	// RedpandaAdminClientForMulticluster initialized a rpadmin.AdminAPI client based on the passed list of admin endpoints.
 	// endpoint has to be in format address:port (without scheme)
 	RedpandaAdminClientForMulticluster(adminAPIEndpoints []string, username, password string) (*rpadmin.AdminAPI, error)
+	// RedpandaAdminClientForStretchPod initializes a rpadmin.AdminAPI client targeting a SINGLE
+	// StretchCluster broker pod's admin endpoint (address:port, no scheme), reusing the
+	// StretchCluster's discovered TLS config and auth. Used to read a not-ready
+	// (decommissioned-rejoin) broker's self identity directly. Callers should Close the client.
+	RedpandaAdminClientForStretchPod(ctx context.Context, sc *redpandav1alpha2.StretchCluster, endpoint string) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface

@@ -103,7 +103,6 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 		return nil, noRepresentativePoolError(sc)
 	}
 	poolSpec := defaultedPoolSpec(pool)
-	poolFullname := poolFullnameFor(sc, pool)
 
 	endpoints, err := c.stretchClusterEndpoints(ctx, sc, poolSpec.AdminPort())
 	if err != nil {
@@ -112,6 +111,39 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 	if len(endpoints) == 0 {
 		return nil, fmt.Errorf("no admin API endpoints found for StretchCluster %s/%s", sc.Namespace, sc.Name)
 	}
+
+	return c.stretchAdminClientForEndpoints(ctx, sc, k8sClient, pool, endpoints)
+}
+
+// RedpandaAdminClientForStretchPod builds an admin client targeting a single
+// broker pod's admin endpoint (address:port, no scheme), reusing the
+// StretchCluster's discovered TLS config + auth. The PVC unbinder uses this to
+// read a not-ready (decommissioned-rejoin) broker's self identity directly — a
+// cluster-wide client can't be pinned to one broker. Uses the local cluster's
+// k8s client; the operator-issued CA is shared across all peer clusters so the
+// resulting client validates any broker's server cert.
+func (c *Factory) RedpandaAdminClientForStretchPod(ctx context.Context, sc *redpandav1alpha2.StretchCluster, endpoint string) (*rpadmin.AdminAPI, error) {
+	clusterName := mcmanager.LocalCluster
+	k8sClient, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting k8s client")
+	}
+	pool, err := c.representativeBrokerPool(ctx, sc, k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding representative broker pool")
+	}
+	if pool == nil {
+		return nil, noRepresentativePoolError(sc)
+	}
+	return c.stretchAdminClientForEndpoints(ctx, sc, k8sClient, pool, []string{endpoint})
+}
+
+// stretchAdminClientForEndpoints builds the TLS + auth and constructs an admin
+// client over the given endpoints. Shared by the cluster-wide and single-pod
+// stretch admin client paths.
+func (c *Factory) stretchAdminClientForEndpoints(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client, pool *redpandav1alpha2.RedpandaBrokerPool, endpoints []string) (*rpadmin.AdminAPI, error) {
+	poolSpec := defaultedPoolSpec(pool)
+	poolFullname := poolFullnameFor(sc, pool)
 
 	var listener *redpandav1alpha2.StretchAPIListener
 	if poolSpec.Listeners != nil {
