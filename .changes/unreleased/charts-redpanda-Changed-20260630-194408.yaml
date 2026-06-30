@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Changed
-body: Bump default Redpanda version to v26.1.12 release
-time: 2026-06-30T19:44:08.437451+02:00
