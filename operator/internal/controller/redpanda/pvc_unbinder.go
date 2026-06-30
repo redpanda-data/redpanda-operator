@@ -46,7 +46,7 @@ const defaultPVCUnbindNotReadyThreshold = 5 * time.Minute
 // evidence is never treated as evidence of a collision.
 func identityCollision(clusterUUIDs map[int]string, selfNodeID int, selfUUID string) (bool, string) {
 	if len(clusterUUIDs) == 0 {
-		return false, "cluster broker_uuids unavailable; cannot confirm collision"
+		return false, "cluster member list unavailable; cannot confirm collision"
 	}
 	if selfUUID == "" {
 		return false, "sick broker self uuid unavailable; cannot confirm collision"
@@ -106,11 +106,11 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "fetching cluster health")
 	}
-	clusterUUIDs, err := clusterBrokerUUIDs(ctx, state.admin)
+	clusterUUIDs, err := clusterMemberUUIDs(ctx, state.admin)
 	if err != nil {
-		// Without the authoritative map we cannot confirm any collision; skip
-		// this pass rather than risk a wrong wipe. Next reconcile retries.
-		logger.V(log.DebugLevel).Info("cluster broker_uuids unavailable, skipping PVC unbinder this pass", "error", err)
+		// Without the authoritative member map we cannot confirm any collision;
+		// skip this pass rather than risk a wrong wipe. Next reconcile retries.
+		logger.V(log.DebugLevel).Info("cluster member uuids unavailable, skipping PVC unbinder this pass", "error", err)
 		return ctrl.Result{}, nil
 	}
 	downNodes := len(health.NodesDown)
@@ -182,16 +182,35 @@ func (r *MulticlusterReconciler) pvcUnbindThreshold() time.Duration {
 	return defaultPVCUnbindNotReadyThreshold
 }
 
-// clusterBrokerUUIDs fetches the cluster-authoritative node_id->uuid map from a
-// healthy admin client (the "full cluster" request in Andrew's mechanism).
-func clusterBrokerUUIDs(ctx context.Context, admin *rpadmin.AdminAPI) (map[int]string, error) {
+// clusterMemberUUIDs returns the node_id->uuid map of the cluster's CURRENT
+// members (the "full cluster" request in Andrew's mechanism).
+//
+// Membership comes from Brokers() (/v1/brokers), NOT GetBrokerUuids()
+// (/v1/broker_uuids): observed live in K8S-843, /v1/broker_uuids retains a
+// decommissioned node's node_id->uuid entry indefinitely. Trusting it for
+// presence would mask exactly the decommissioned-broker bad_rejoin this feature
+// must catch — the disk's node_id would still appear "present" with a matching
+// uuid. So we take the set of node_ids that are real members from Brokers() and
+// attach each one's uuid from GetBrokerUuids(); decommissioned nodes that linger
+// in broker_uuids are excluded because they are absent from Brokers().
+func clusterMemberUUIDs(ctx context.Context, admin *rpadmin.AdminAPI) (map[int]string, error) {
+	brokers, err := admin.Brokers(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching cluster brokers")
+	}
 	uuids, err := admin.GetBrokerUuids(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching cluster broker uuids")
 	}
-	out := make(map[int]string, len(uuids))
+	uuidByNode := make(map[int]string, len(uuids))
 	for _, u := range uuids {
-		out[u.NodeID] = u.UUID
+		uuidByNode[u.NodeID] = u.UUID
+	}
+	out := make(map[int]string, len(brokers))
+	for _, b := range brokers {
+		// Only current members; a member with no uuid entry maps to "" which
+		// identityCollision treats conservatively (no false positive).
+		out[b.NodeID] = uuidByNode[b.NodeID]
 	}
 	return out, nil
 }

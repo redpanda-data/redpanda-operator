@@ -231,15 +231,28 @@ func TestBrokerSelfIdentity(t *testing.T) {
 	})
 }
 
-// TestClusterBrokerUUIDs converts the cluster's /v1/broker_uuids list into the
-// node_id->uuid map the collision check consumes.
-func TestClusterBrokerUUIDs(t *testing.T) {
+// TestClusterMemberUUIDs builds the node_id->uuid map of CURRENT members. This
+// must be driven by /v1/brokers (membership), not /v1/broker_uuids alone:
+// observed live (K8S-843), /v1/broker_uuids RETAINS a decommissioned node's
+// node_id->uuid entry indefinitely, so a decommissioned-broker bad_rejoin would
+// be missed if we trusted broker_uuids for presence. A node present in
+// broker_uuids but absent from the broker list has been decommissioned and must
+// be excluded.
+func TestClusterMemberUUIDs(t *testing.T) {
 	ctx := t.Context()
 	mux := http.NewServeMux()
+	// Membership: nodes 0 and 2 (node 1 was decommissioned and is gone).
+	mux.HandleFunc("/v1/brokers", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode([]rpadmin.Broker{
+			{NodeID: 0}, {NodeID: 2},
+		})
+	})
+	// broker_uuids still lists the decommissioned node 1.
 	mux.HandleFunc("/v1/broker_uuids", func(w http.ResponseWriter, _ *http.Request) {
 		_ = json.NewEncoder(w).Encode([]rpadmin.BrokerUuids{
 			{NodeID: 0, UUID: "uuid-aaa"},
 			{NodeID: 1, UUID: "uuid-bbb"},
+			{NodeID: 2, UUID: "uuid-ccc"},
 		})
 	})
 	srv := httptest.NewServer(mux)
@@ -248,9 +261,10 @@ func TestClusterBrokerUUIDs(t *testing.T) {
 	require.NoError(t, err)
 	defer client.Close()
 
-	got, err := clusterBrokerUUIDs(ctx, client)
+	got, err := clusterMemberUUIDs(ctx, client)
 	require.NoError(t, err)
-	assert.Equal(t, map[int]string{0: "uuid-aaa", 1: "uuid-bbb"}, got)
+	// node 1 (decommissioned) must be excluded even though broker_uuids lists it.
+	assert.Equal(t, map[int]string{0: "uuid-aaa", 2: "uuid-ccc"}, got)
 }
 
 // TestPodAdminEndpoint pins how a pod is matched to its admin-API endpoint. The
