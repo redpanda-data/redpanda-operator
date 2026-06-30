@@ -107,6 +107,23 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# -- Gateway API `HTTPRoute` settings.
+gateway:
+  enabled: false
+  annotations: {}
+  # -- Gateway parent references for this route.
+  # If no parentRefs are specified, the HTTPRoute is still rendered but will
+  # not attach to any Gateway until configured.
+  parentRefs: []
+  #  - name: public-gateway
+  #    namespace: default
+  #    sectionName: http
+  hostnames:
+    - chart-example.local
+  path: /
+  # -- One of Exact, PathPrefix, or RegularExpression.
+  pathType: PathPrefix
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little

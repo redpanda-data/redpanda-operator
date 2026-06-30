@@ -193,8 +193,13 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	if err := c.count(ctx, redpandav1alpha2.SchemeGroupVersion.WithKind("ShadowLinkList"), &payload.Resources.ShadowLinks); err != nil {
 		return nil, err
 	}
-	if err := c.count(ctx, redpandav1alpha2.SchemeGroupVersion.WithKind("ConsoleList"), &payload.Resources.Consoles); err != nil {
+	// Consoles need a spec-aware list (not a metadata-only count) so we can
+	// report how each Console exposes its UI — Gateway API HTTPRoute vs Ingress.
+	var consoles redpandav1alpha2.ConsoleList
+	if ok, err := c.list(ctx, &consoles); err != nil {
 		return nil, err
+	} else if ok {
+		c.aggregateConsoles(payload, consoles.Items)
 	}
 
 	// CSI drivers come from a PVC *annotation*, so a metadata-only list
@@ -301,6 +306,24 @@ func (c *Collector) aggregateRedpandas(payload *Payload, items []redpandav1alpha
 		payload.Redpanda.Versions = append(payload.Redpanda.Versions, v)
 	}
 	sort.Strings(payload.Redpanda.Versions)
+}
+
+// aggregateConsoles folds the Console CR fleet into the payload: the total count
+// plus how each Console exposes its UI. The Console chart/CRD renders an
+// HTTPRoute whenever spec.gateway.enabled is set (parentRefs are optional), so
+// gateway.Enabled is the right signal for HTTPRoute adoption — unlike the
+// Redpanda TLSRoute path, which additionally requires parentRefs to render.
+func (c *Collector) aggregateConsoles(payload *Payload, items []redpandav1alpha2.Console) {
+	payload.Resources.Consoles = len(items)
+	for i := range items {
+		spec := items[i].Spec
+		if spec.Gateway != nil && ptrBool(spec.Gateway.Enabled) {
+			payload.Console.HTTPRoute++
+		}
+		if spec.Ingress != nil && ptrBool(spec.Ingress.Enabled) {
+			payload.Console.Ingress++
+		}
+	}
 }
 
 // sizing accumulates aggregate provisioned capacity (Σ per-broker × replicas)

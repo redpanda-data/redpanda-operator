@@ -102,6 +102,19 @@ type Payload struct {
 		Consoles    int `json:"consoles"`
 	} `json:"resources"`
 
+	// Console reports how Console CRs expose their UI, to track adoption of
+	// Gateway API HTTPRoute vs classic Ingress. Counts are over the Console CR
+	// fleet (total is resources.consoles).
+	Console struct {
+		// HTTPRoute counts Console CRs exposing the UI via a Gateway API
+		// HTTPRoute (spec.gateway.enabled).
+		HTTPRoute int `json:"httpRouteEnabled"`
+		// Ingress counts Console CRs exposing the UI via a classic Ingress
+		// (spec.ingress.enabled). Reported alongside HTTPRoute for migration
+		// context — both may be set at once during a migration.
+		Ingress int `json:"ingressEnabled"`
+	} `json:"console"`
+
 	CRDCount int `json:"crdCount"`
 	// Features reports enabled operator-shape flags (controllers, webhook, leader
 	// election, cloud-secrets provider, PVC Unbinder, etc.). PVC Unbinder usage

@@ -89,7 +89,17 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 		&redpandav1alpha2.Schema{ObjectMeta: metav1.ObjectMeta{Name: "schema-1", Namespace: "default"}},
 		&redpandav1alpha2.RedpandaRole{ObjectMeta: metav1.ObjectMeta{Name: "role-1", Namespace: "default"}},
 		&redpandav1alpha2.ShadowLink{ObjectMeta: metav1.ObjectMeta{Name: "sl-1", Namespace: "default"}},
-		&redpandav1alpha2.Console{ObjectMeta: metav1.ObjectMeta{Name: "console-1", Namespace: "default"}},
+		&redpandav1alpha2.Console{
+			ObjectMeta: metav1.ObjectMeta{Name: "console-1", Namespace: "default"},
+			// Exercise both UI-exposure counters at once (the supported migration
+			// case where ingress and gateway are enabled together).
+			Spec: redpandav1alpha2.ConsoleSpec{
+				ConsoleValues: redpandav1alpha2.ConsoleValues{
+					Gateway: &redpandav1alpha2.GatewayConfig{Enabled: ptr.To(true)},
+					Ingress: &redpandav1alpha2.IngressConfig{Enabled: ptr.To(true)},
+				},
+			},
+		},
 		&vectorizedv1alpha1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "v1-1", Namespace: "default"},
 			Spec: vectorizedv1alpha1.ClusterSpec{
@@ -220,6 +230,10 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Resources.Roles)
 	require.Equal(t, 1, payload.Resources.ShadowLinks)
 	require.Equal(t, 1, payload.Resources.Consoles)
+
+	// Console UI exposure: console-1 has both gateway (HTTPRoute) and ingress set.
+	require.Equal(t, 1, payload.Console.HTTPRoute)
+	require.Equal(t, 1, payload.Console.Ingress)
 
 	require.Equal(t, 1, payload.CRDCount)
 	// PVC Unbinder usage is reported via the features map, not a dedicated field.
