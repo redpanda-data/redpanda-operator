@@ -133,7 +133,7 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 		// Request against that broker: read its self (node_id, uuid). A
 		// crashlooping broker may not answer — defer rather than guess.
 		nodeID, uuid, err := func() (int, string, error) {
-			selfAdmin, err := r.ClientFactory.RedpandaAdminClientForMulticluster([]string{endpoint}, state.bootstrapUser, state.bootstrapPassword)
+			selfAdmin, err := r.ClientFactory.RedpandaAdminClientForStretchPod(ctx, state.cluster.StretchCluster, endpoint)
 			if err != nil {
 				return 0, "", err
 			}
