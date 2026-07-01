@@ -66,4 +66,15 @@ var (
 		Default: "additive",
 		Parse:   syncclusterconfig.StringToMode,
 	})
+
+	// RollGrant is set by the cluster controller on a Broker CR to permit
+	// the Broker controller to act on its pod (create, adopt, rotate).
+	// Value format: <config-checksum>/<deadline-timestamp>.
+	// Not registered in any bundle — has no default and is never auto-set.
+	RollGrant = &AnnotationFeatureFlag[string]{
+		Key: "operator.redpanda.com/roll-grant",
+		Parse: func(s string) (string, error) {
+			return s, nil
+		},
+	}
 )

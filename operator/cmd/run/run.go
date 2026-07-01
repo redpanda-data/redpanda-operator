@@ -568,7 +568,7 @@ func Run(
 	}
 
 	if opts.enableBrokerController {
-		if err := redpandacontrollers.SetupBrokerController(ctx, mcmanager, opts.namespace); err != nil {
+		if err := redpandacontrollers.SetupBrokerController(ctx, mcmanager, factory, opts.namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Broker")
 			return err
 		}
