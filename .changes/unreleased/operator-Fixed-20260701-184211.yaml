@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Multicluster `StretchCluster`: `PoolTracker` no longer drops the canonical cluster name from the pods it selects for a rolling restart or from the StatefulSets it creates, scales, or updates. These previously carried an empty canonical cluster name, so the operator logged a blank cluster identifier for those operations in stretch/multicluster deployments. Construction now goes through helpers that require the canonical cluster name, preventing the omission from recurring.'
+time: 2026-07-01T18:42:11.514785+02:00

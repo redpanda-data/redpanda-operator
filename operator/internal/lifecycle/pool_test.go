@@ -689,10 +689,11 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 	}{
 		"no-op": {},
 		"deleted-set": {
-			expectedSetsToScaleDown: []string{"pool-1(2): pod-3"},
+			expectedSetsToScaleDown: []string{"canonical-1/pool-1(2): pod-3"},
 			existingPools: []*poolWithOrdinals{{
 				set: &MulticlusterStatefulSet{
-					clusterName: mcmanager.LocalCluster,
+					clusterName:          mcmanager.LocalCluster,
+					canonicalClusterName: "canonical-1",
 					StatefulSet: &appsv1.StatefulSet{
 						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
 						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
@@ -745,10 +746,11 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 			}},
 		},
 		"scaling-down-set": {
-			expectedSetsToScaleDown: []string{"pool-1(2): pod-3", "pool-3(0): pod-1"},
+			expectedSetsToScaleDown: []string{"canonical-1/pool-1(2): pod-3", "canonical-3/pool-3(0): pod-1"},
 			existingPools: []*poolWithOrdinals{{
 				set: &MulticlusterStatefulSet{
-					clusterName: mcmanager.LocalCluster,
+					clusterName:          mcmanager.LocalCluster,
+					canonicalClusterName: "canonical-1",
 					StatefulSet: &appsv1.StatefulSet{
 						ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
 						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(3))},
@@ -769,7 +771,8 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 				}},
 			}, {
 				set: &MulticlusterStatefulSet{
-					clusterName: mcmanager.LocalCluster,
+					clusterName:          mcmanager.LocalCluster,
+					canonicalClusterName: "canonical-2",
 					StatefulSet: &appsv1.StatefulSet{
 						ObjectMeta: metav1.ObjectMeta{Name: "pool-2"},
 						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
@@ -782,7 +785,8 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 				}},
 			}, {
 				set: &MulticlusterStatefulSet{
-					clusterName: mcmanager.LocalCluster,
+					clusterName:          mcmanager.LocalCluster,
+					canonicalClusterName: "canonical-3",
 					StatefulSet: &appsv1.StatefulSet{
 						ObjectMeta: metav1.ObjectMeta{Name: "pool-3"},
 						Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
@@ -795,13 +799,15 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 				}},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "pool-1"},
 					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "pool-2"},
 					Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
@@ -820,7 +826,10 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 			toIDs := func(list []*ScaleDownSet) []string {
 				ids := []string{}
 				for _, o := range list {
-					ids = append(ids, fmt.Sprintf("%s(%d): %s", o.StatefulSet.Name, ptr.Deref(o.StatefulSet.Spec.Replicas, 0), o.LastPod.Name))
+					// prefix the canonical cluster name so a dropped canonical in
+					// ToScaleDown's ScaleDownSet construction is caught, the same
+					// way the sibling tests assert clusterObjectNamespaceNames.
+					ids = append(ids, fmt.Sprintf("%s/%s(%d): %s", o.GetCanonicalClusterName(), o.StatefulSet.Name, ptr.Deref(o.StatefulSet.Spec.Replicas, 0), o.LastPod.Name))
 				}
 				return ids
 			}
