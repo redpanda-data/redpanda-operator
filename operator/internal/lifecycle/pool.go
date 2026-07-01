@@ -500,6 +500,20 @@ func (p *PoolTracker) HasRecentlyReplacedPods() bool {
 	return false
 }
 
+// ExistingPods returns every existing pod across all pools as MulticlusterPods,
+// regardless of StatefulSet revision. Unlike PodsToRoll it does not filter on
+// revision — the maintenance-mode cleaner must inspect pods that are not in the
+// roll set (e.g. a persistently-down broker whose pod is Pending/not-Ready).
+func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
+	pods := []*MulticlusterPod{}
+	for _, existing := range p.existingPools {
+		for _, withOrdinals := range existing.pods {
+			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
+		}
+	}
+	return pods
+}
+
 // PodsToRoll returns a list of pods that need to be rolled
 // because their association ControllerRevision does not match
 // the latest applied to the StatefulSet.
