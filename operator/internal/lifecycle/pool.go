@@ -48,6 +48,28 @@ func (p *MulticlusterPod) GetCanonicalClusterName() string {
 	return p.canonicalClusterName
 }
 
+// newMulticlusterStatefulSet builds a MulticlusterStatefulSet, setting its
+// cluster name and canonical cluster name together so callers can't
+// accidentally set one without the other.
+func newMulticlusterStatefulSet(set *appsv1.StatefulSet, clusterName, canonicalClusterName string) *MulticlusterStatefulSet {
+	return &MulticlusterStatefulSet{
+		StatefulSet:          set,
+		clusterName:          clusterName,
+		canonicalClusterName: canonicalClusterName,
+	}
+}
+
+// newMulticlusterPod builds a MulticlusterPod, setting its cluster name and
+// canonical cluster name together so callers can't accidentally set one
+// without the other.
+func newMulticlusterPod(pod *corev1.Pod, clusterName, canonicalClusterName string) *MulticlusterPod {
+	return &MulticlusterPod{
+		Pod:                  pod,
+		clusterName:          clusterName,
+		canonicalClusterName: canonicalClusterName,
+	}
+}
+
 // podWithOrdinals is a container for sorting pods
 // by their ordinals
 type podsWithOrdinals struct {
@@ -87,6 +109,12 @@ func (s *ScaleDownSet) GetCanonicalClusterName() string {
 	return s.StatefulSet.canonicalClusterName
 }
 
+// ClusterNamespacedName is used as the map key correlating a pool's existing
+// and desired state (see PoolTracker.existingPools/desiredPools). The existing
+// and desired MulticlusterStatefulSet for the same real pool must therefore
+// report the same CanonicalClusterName — if one side drops or mis-derives it,
+// the two are treated as unrelated pools (spurious create + orphaned delete)
+// instead of being correlated.
 type ClusterNamespacedName struct {
 	Cluster              string
 	Namespace            string
@@ -277,7 +305,7 @@ func (p *PoolTracker) ToCreate() []*MulticlusterStatefulSet {
 				set.Labels = map[string]string{}
 			}
 			set.Labels[generationLabel] = generation
-			sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
+			sets = append(sets, newMulticlusterStatefulSet(set, mcset.clusterName, mcset.canonicalClusterName))
 		}
 	}
 
@@ -303,7 +331,7 @@ func (p *PoolTracker) ToScaleUp() []*MulticlusterStatefulSet {
 					set.Labels = map[string]string{}
 				}
 				set.Labels[generationLabel] = generation
-				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
+				sets = append(sets, newMulticlusterStatefulSet(set, mcset.clusterName, mcset.canonicalClusterName))
 			}
 		}
 	}
@@ -346,7 +374,7 @@ func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
 					set.Labels = map[string]string{}
 				}
 				set.Labels[generationLabel] = generation
-				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
+				sets = append(sets, newMulticlusterStatefulSet(set, mcset.clusterName, mcset.canonicalClusterName))
 			}
 		}
 	}
@@ -393,7 +421,7 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, &ScaleDownSet{
-					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName},
+					StatefulSet: newMulticlusterStatefulSet(set, mcset.clusterName, mcset.canonicalClusterName),
 					LastPod:     lastPod.pod.DeepCopy(),
 				})
 			}
@@ -413,7 +441,7 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 
 				set.Spec.Replicas = ptr.To(existingReplicas - 1)
 				sets = append(sets, &ScaleDownSet{
-					StatefulSet: &MulticlusterStatefulSet{StatefulSet: set, clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName},
+					StatefulSet: newMulticlusterStatefulSet(set, mcset.clusterName, mcset.canonicalClusterName),
 					LastPod:     lastPod.pod.DeepCopy(),
 				})
 			}
@@ -446,7 +474,7 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 				// })
 
 				mcset := p.existingPools[nn].set
-				sets = append(sets, &MulticlusterStatefulSet{StatefulSet: mcset.DeepCopy(), clusterName: mcset.clusterName, canonicalClusterName: mcset.canonicalClusterName})
+				sets = append(sets, newMulticlusterStatefulSet(mcset.DeepCopy(), mcset.clusterName, mcset.canonicalClusterName))
 			}
 		}
 	}
@@ -511,11 +539,11 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
 			if len(existing.revisions) == 0 {
 				// we have no revisions, just assume this needs to be rolled
-				pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
+				pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
 			} else {
 				lastRevision := existing.revisions[len(existing.revisions)-1]
 				if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] != lastRevision.Name {
-					pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
+					pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
 				}
 			}
 		}
@@ -601,6 +629,6 @@ func (p *PoolTracker) addExisting(pools ...*poolWithOrdinals) {
 // addDesired statefulsets to the tracker
 func (p *PoolTracker) addDesired(sets ...*MulticlusterStatefulSet) {
 	for _, set := range sets {
-		p.desiredPools[objectKeyFromObject(set)] = &poolWithOrdinals{set: &MulticlusterStatefulSet{StatefulSet: set.DeepCopy(), clusterName: set.clusterName}}
+		p.desiredPools[objectKeyFromObject(set)] = &poolWithOrdinals{set: newMulticlusterStatefulSet(set.DeepCopy(), set.clusterName, set.canonicalClusterName)}
 	}
 }

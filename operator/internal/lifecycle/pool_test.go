@@ -205,16 +205,18 @@ func TestPoolTrackerToCreate(t *testing.T) {
 			}},
 		},
 		"no-existing": {
-			expectedSetsToCreate: []string{"pool-1", "pool-2"},
+			expectedSetsToCreate: []string{"canonical-1//pool-1", "canonical-2//pool-2"},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
 					},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
@@ -223,9 +225,10 @@ func TestPoolTrackerToCreate(t *testing.T) {
 			}},
 		},
 		"some-existing": {
-			expectedSetsToCreate: []string{"pool-2"},
+			expectedSetsToCreate: []string{"canonical-2//pool-2"},
 			existingPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -233,14 +236,16 @@ func TestPoolTrackerToCreate(t *testing.T) {
 				},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
 					},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
@@ -257,17 +262,14 @@ func TestPoolTrackerToCreate(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: &MulticlusterStatefulSet{
-						StatefulSet: set.DeepCopy(),
-						clusterName: set.clusterName,
-					},
+					set: newMulticlusterStatefulSet(set.DeepCopy(), set.clusterName, set.canonicalClusterName),
 				})
 			}
 
 			tracker.addExisting(pools...)
 			tracker.addDesired(tt.desiredPools...)
 
-			actual := objectNames(tracker.ToCreate())
+			actual := clusterObjectNamespaceNames(tracker.ToCreate())
 			require.ElementsMatch(t, tt.expectedSetsToCreate, actual)
 		})
 	}
@@ -317,9 +319,10 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 			}},
 		},
 		"all-scale-ups": {
-			expectedSetsToScaleUp: []string{"pool-1"},
+			expectedSetsToScaleUp: []string{"canonical-1//pool-1"},
 			existingPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -328,7 +331,8 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 				},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -338,9 +342,10 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 			}},
 		},
 		"some-scale-ups": {
-			expectedSetsToScaleUp: []string{"pool-1"},
+			expectedSetsToScaleUp: []string{"canonical-1//pool-1"},
 			existingPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -348,7 +353,8 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
@@ -357,7 +363,8 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 				},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -365,7 +372,8 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(2))},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
@@ -403,17 +411,14 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: &MulticlusterStatefulSet{
-						clusterName: mcmanager.LocalCluster,
-						StatefulSet: set.DeepCopy(),
-					},
+					set: newMulticlusterStatefulSet(set.DeepCopy(), set.clusterName, set.canonicalClusterName),
 				})
 			}
 
 			tracker.addExisting(pools...)
 			tracker.addDesired(tt.desiredPools...)
 
-			actual := objectNames(tracker.ToScaleUp())
+			actual := clusterObjectNamespaceNames(tracker.ToScaleUp())
 			require.ElementsMatch(t, tt.expectedSetsToScaleUp, actual)
 		})
 	}
@@ -512,9 +517,10 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 		},
 		"updates": {
 			generation:           1,
-			expectedSetsToUpdate: []string{"pool-1"},
+			expectedSetsToUpdate: []string{"canonical-1//pool-1"},
 			existingPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "pool-1",
@@ -524,7 +530,8 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 				},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -537,9 +544,10 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 			// StretchCluster generation unchanged, but NodePool generation bumped
 			// (e.g. user changed spec.image.tag on the NodePool).
 			generation:           1,
-			expectedSetsToUpdate: []string{"pool-1"},
+			expectedSetsToUpdate: []string{"canonical-1//pool-1"},
 			existingPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -552,7 +560,8 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 				},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -596,9 +605,10 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 		"only-one-pool-nodepool-generation-changed": {
 			// Two pools, only pool-2 has a NodePool generation bump.
 			generation:           1,
-			expectedSetsToUpdate: []string{"pool-2"},
+			expectedSetsToUpdate: []string{"canonical-2//pool-2"},
 			existingPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -610,7 +620,8 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
@@ -623,7 +634,8 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 				},
 			}},
 			desiredPools: []*MulticlusterStatefulSet{{
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-1",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-1",
@@ -634,7 +646,8 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 					Spec: appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
@@ -655,14 +668,14 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: &MulticlusterStatefulSet{StatefulSet: set.DeepCopy(), clusterName: set.clusterName},
+					set: newMulticlusterStatefulSet(set.DeepCopy(), set.clusterName, set.canonicalClusterName),
 				})
 			}
 
 			tracker.addExisting(pools...)
 			tracker.addDesired(tt.desiredPools...)
 
-			actual := objectNames(tracker.RequiresUpdate())
+			actual := clusterObjectNamespaceNames(tracker.RequiresUpdate())
 			require.ElementsMatch(t, tt.expectedSetsToUpdate, actual)
 		})
 	}
@@ -899,7 +912,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 			}},
 		},
 		"can-delete": {
-			expectedSetsToDelete: []string{"pool-2", "pool-3"},
+			expectedSetsToDelete: []string{"canonical-2//pool-2", "canonical-3//pool-3"},
 			existingPools: []*MulticlusterStatefulSet{{
 				clusterName: mcmanager.LocalCluster,
 				StatefulSet: &appsv1.StatefulSet{
@@ -908,14 +921,16 @@ func TestPoolTrackerToDelete(t *testing.T) {
 					},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-2",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-2",
 					},
 				},
 			}, {
-				clusterName: mcmanager.LocalCluster,
+				clusterName:          mcmanager.LocalCluster,
+				canonicalClusterName: "canonical-3",
 				StatefulSet: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "pool-3",
@@ -940,7 +955,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
 				pools = append(pools, &poolWithOrdinals{
-					set: &MulticlusterStatefulSet{StatefulSet: set.DeepCopy(), clusterName: set.clusterName},
+					set: newMulticlusterStatefulSet(set.DeepCopy(), set.clusterName, set.canonicalClusterName),
 				})
 			}
 
@@ -948,7 +963,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 			tracker.addDesired(tt.desiredPools...)
 			tracker.MarkClusterObserved(mcmanager.LocalCluster)
 
-			actual := objectNames(tracker.ToDelete())
+			actual := clusterObjectNamespaceNames(tracker.ToDelete())
 			require.ElementsMatch(t, tt.expectedSetsToDelete, actual)
 		})
 	}
@@ -956,7 +971,8 @@ func TestPoolTrackerToDelete(t *testing.T) {
 
 func TestPoolTrackerPodsToRoll(t *testing.T) {
 	pool1 := &MulticlusterStatefulSet{
-		clusterName: mcmanager.LocalCluster,
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "canonical-1",
 		StatefulSet: &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "pool-1",
@@ -973,7 +989,8 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 		},
 	}}
 	pool2 := &MulticlusterStatefulSet{
-		clusterName: mcmanager.LocalCluster,
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "canonical-2",
 		StatefulSet: &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "pool-2",
@@ -1021,7 +1038,7 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 			}},
 		},
 		"all-out-of-date": {
-			expectedPodsToRoll: []string{"pod-1", "pod-2"},
+			expectedPodsToRoll: []string{"canonical-1//pod-1", "canonical-1//pod-2"},
 			existingPools: []*poolWithOrdinals{{
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -1047,7 +1064,7 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 			}},
 		},
 		"no-revisions": {
-			expectedPodsToRoll: []string{"pod-1", "pod-2"},
+			expectedPodsToRoll: []string{"canonical-1//pod-1", "canonical-1//pod-2"},
 			existingPools: []*poolWithOrdinals{{
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -1072,7 +1089,7 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 			}},
 		},
 		"mixed": {
-			expectedPodsToRoll: []string{"pod-1", "pod-3"},
+			expectedPodsToRoll: []string{"canonical-1//pod-1", "canonical-2//pod-3"},
 			existingPools: []*poolWithOrdinals{{
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{
@@ -1126,7 +1143,7 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 			tracker := NewPoolTracker(0, false)
 			tracker.addExisting(tt.existingPools...)
 
-			actual := objectNames(tracker.PodsToRoll())
+			actual := clusterObjectNamespaceNames(tracker.PodsToRoll())
 			require.ElementsMatch(t, tt.expectedPodsToRoll, actual)
 		})
 	}
