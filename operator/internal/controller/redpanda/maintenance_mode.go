@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 )
 
 // defaultClearMaintenanceModeAfter is how long a broker must be down (its pod
@@ -149,6 +150,7 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 		if err := admin.DisableMaintenanceMode(ctx, b.NodeID, true); err != nil {
 			return errors.Wrapf(err, "disabling maintenance mode for broker %d", b.NodeID)
 		}
+		observability.MaintenanceModeCleared.WithLabelValues(pod.GetCanonicalClusterName()).Inc()
 	}
 	return nil
 }

@@ -89,6 +89,19 @@ var (
 		Name:      "pvc_unbinder_gate_deferred_total",
 		Help:      "PVCUnbinder reconciles that returned early because a safety gate deferred remediation, labeled by which gate fired.",
 	}, []string{"gate"})
+
+	// MaintenanceModeCleared counts brokers whose stuck maintenance-mode flag
+	// the operator cleared because the broker had been down (pod not-Ready)
+	// past the configured threshold. A broker left in maintenance mode is
+	// excluded from the partition balancer's auto-decommission, so this
+	// remediation unblocks recovery. Labeled by the broker's cluster (member)
+	// name (empty for the single-cluster Redpanda reconciler).
+	MaintenanceModeCleared = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "maintenance_mode_cleared_total",
+		Help:      "Brokers whose stuck maintenance-mode flag was cleared by the operator after being down past the threshold, labeled by cluster.",
+	}, []string{"cluster"})
 )
 
 // ====================================================================
@@ -192,6 +205,7 @@ func init() {
 		ReconcileSteadyStateTotal,
 		ReconcileLastSuccessTimestampSeconds,
 		PVCUnbinderGateDeferred,
+		MaintenanceModeCleared,
 
 		// Group 2 — StretchCluster member status.
 		StretchClusterMemberReachable,
