@@ -121,8 +121,8 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 		Agents:              1,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.31.2",
-			"registry.k8s.io/kube-controller-manager:v1.32.13",
-			"registry.k8s.io/kube-apiserver:v1.32.13",
+			"registry.k8s.io/kube-controller-manager:v1.33.12",
+			"registry.k8s.io/kube-apiserver:v1.33.12",
 			"quay.io/jetstack/cert-manager-controller:v1.17.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.17.2",
 			"quay.io/jetstack/cert-manager-webhook:v1.17.2",
@@ -292,8 +292,8 @@ func TestIntegrationClientFactory(t *testing.T) {
 		// Logger: log,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.31.2",
-			"registry.k8s.io/kube-controller-manager:v1.32.13",
-			"registry.k8s.io/kube-apiserver:v1.32.13",
+			"registry.k8s.io/kube-controller-manager:v1.33.12",
+			"registry.k8s.io/kube-apiserver:v1.33.12",
 			"quay.io/jetstack/cert-manager-controller:v1.17.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.17.2",
 			"quay.io/jetstack/cert-manager-webhook:v1.17.2",
@@ -475,8 +475,8 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 		// Logger: log,
 		ImportImages: []string{
 			"ghcr.io/loft-sh/vcluster-pro:0.31.2",
-			"registry.k8s.io/kube-controller-manager:v1.32.13",
-			"registry.k8s.io/kube-apiserver:v1.32.13",
+			"registry.k8s.io/kube-controller-manager:v1.33.12",
+			"registry.k8s.io/kube-apiserver:v1.33.12",
 			"quay.io/jetstack/cert-manager-controller:v1.17.2",
 			"quay.io/jetstack/cert-manager-cainjector:v1.17.2",
 			"quay.io/jetstack/cert-manager-webhook:v1.17.2",

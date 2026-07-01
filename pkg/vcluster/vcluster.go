@@ -56,7 +56,7 @@ controlPlane:
   distro:
     k8s:
       image:
-        tag: "v1.33.4"
+        tag: "v1.36.1"
       imagePullPolicy: IfNotPresent
 experimental:
   deploy:

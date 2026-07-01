@@ -44,7 +44,7 @@
             env = [
               { name = "CGO_ENABLED"; value = "0"; }
               { name = "GOROOT"; value = "${pkgs.go_1_26}/share/go"; }
-              { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
+              { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.33.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
               { name = "TEST_REDPANDA_REPO"; eval = "redpandadata/redpanda"; }
@@ -52,9 +52,9 @@
               { name = "CGO_ENABLED"; eval = "0"; }
               # K3S_IMAGE controls the Kubernetes version used by k3d-based tests.
               # Do NOT set K3S_IMAGE here — per-PR tests must use the Go default
-              # from pkg/k3d/k3d.go (minimum supported version: v1.32.13-k3s1).
+              # from pkg/k3d/k3d.go (minimum supported version: v1.33.12-k3s1).
               # Nightly tests override to max version via Buildkite schedule env:
-              #   K3S_IMAGE=rancher/k3s:v1.35.2-k3s1
+              #   K3S_IMAGE=rancher/k3s:v1.36.1-k3s1
               # For local forward-compat testing, export K3S_IMAGE in your shell.
               # This is a workaround for rpk packages using buf-built grpc-gateway protobuf options, whereas the kubernetes ecosystem
               # uses the google provided libraries, which conflict due to them being the same library. We put this here primarily for
