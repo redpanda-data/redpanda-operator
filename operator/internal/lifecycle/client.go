@@ -529,7 +529,7 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 
 		wrapped := []*MulticlusterStatefulSet{}
 		for _, set := range desired {
-			wrapped = append(wrapped, &MulticlusterStatefulSet{StatefulSet: set, clusterName: clusterName, canonicalClusterName: CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)})
+			wrapped = append(wrapped, newMulticlusterStatefulSet(set, clusterName, canonical))
 		}
 
 		// ensure we have and OnDelete type for our statefulset
@@ -892,11 +892,7 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 		}
 
 		existing = append(existing, &poolWithOrdinals{
-			set: &MulticlusterStatefulSet{
-				StatefulSet:          &statefulSet,
-				clusterName:          clusterName,
-				canonicalClusterName: CanonicalClusterName(clusterName, r.manager.GetLocalClusterName),
-			},
+			set:       newMulticlusterStatefulSet(&statefulSet, clusterName, canonical),
 			revisions: sortRevisions(ownedRevisions),
 			pods:      withOrdinals,
 		})
