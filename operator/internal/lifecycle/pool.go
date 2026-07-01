@@ -536,15 +536,15 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 
 	for _, existing := range p.existingPools {
 		for _, withOrdinals := range existing.pods {
-			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
-			if len(existing.revisions) == 0 {
-				// we have no revisions, just assume this needs to be rolled
-				pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
-			} else {
+			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete.
+			// No revisions at all means we have nothing to compare against, so just assume it needs to be rolled.
+			shouldRoll := len(existing.revisions) == 0
+			if !shouldRoll {
 				lastRevision := existing.revisions[len(existing.revisions)-1]
-				if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] != lastRevision.Name {
-					pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
-				}
+				shouldRoll = withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] != lastRevision.Name
+			}
+			if shouldRoll {
+				pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
 			}
 		}
 	}

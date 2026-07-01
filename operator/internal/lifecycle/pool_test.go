@@ -1149,6 +1149,65 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 	}
 }
 
+// TestPoolTrackerPodsToRollCanonicalClusterName pins that PodsToRoll populates
+// canonicalClusterName on the returned MulticlusterPods — previously left empty,
+// which silently dropped the cluster identity from DeletePod's logging
+// (client.go) and from any clusterObjectKey built off these pods.
+func TestPoolTrackerPodsToRollCanonicalClusterName(t *testing.T) {
+	pool1 := &MulticlusterStatefulSet{
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "cluster-a",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-1"}},
+	}
+	pool2 := &MulticlusterStatefulSet{
+		clusterName:          "peer-cluster",
+		canonicalClusterName: "cluster-b",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-2"}},
+	}
+
+	tracker := NewPoolTracker(0, false)
+	tracker.addExisting(
+		&poolWithOrdinals{
+			// no revisions: pod-1 is always considered out-of-date, exercising
+			// the len(existing.revisions) == 0 branch of PodsToRoll.
+			pods: []*podsWithOrdinals{{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1"}}}},
+			set:  pool1,
+		},
+		&poolWithOrdinals{
+			pods: []*podsWithOrdinals{{pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "pod-2",
+					Labels: map[string]string{appsv1.StatefulSetRevisionLabel: "old"},
+				},
+			}}},
+			set: pool2,
+			revisions: []*appsv1.ControllerRevision{{
+				ObjectMeta: metav1.ObjectMeta{Name: "new"},
+			}},
+		},
+	)
+
+	// keys are canonicalClusterName/namespace/name (see clusterObjectKey) — a
+	// non-empty canonical name here is exactly what was missing before the fix.
+	require.ElementsMatch(t, []string{"cluster-a//pod-1", "cluster-b//pod-2"}, clusterObjectNamespaceNames(tracker.PodsToRoll()))
+}
+
+// TestPoolTrackerAddDesiredCanonicalClusterName pins that addDesired preserves
+// canonicalClusterName on the *MulticlusterStatefulSet it stores, since ToCreate,
+// ToScaleUp, and RequiresUpdate all read it back off the stored desired pool.
+func TestPoolTrackerAddDesiredCanonicalClusterName(t *testing.T) {
+	tracker := NewPoolTracker(0, false)
+	tracker.addDesired(&MulticlusterStatefulSet{
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "cluster-a",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-1"}},
+	})
+
+	created := tracker.ToCreate()
+	require.Len(t, created, 1)
+	require.Equal(t, "cluster-a", created[0].GetCanonicalClusterName())
+}
+
 // TestHasRecentlyReplacedPods pins the gate semantics that prevent the rolling
 // restart loop from deleting a second pod while a just-replaced peer is still
 // coming up — the window where Redpanda's cluster health view lags behind pod

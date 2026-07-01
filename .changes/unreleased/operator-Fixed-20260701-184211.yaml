@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Multicluster `StretchCluster`: `PoolTracker` no longer loses a pod or node pool''s canonical cluster name. Pods returned for a rolling restart, and StatefulSets created, scaled, or updated via the desired-pool tracker, previously always reported an empty canonical cluster — losing cluster identity in cross-cluster object keys and log output for stretch/multicluster deployments.'
+time: 2026-07-01T18:42:11.514785+02:00
