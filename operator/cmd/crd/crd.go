@@ -31,7 +31,6 @@ import (
 
 var (
 	stableCRDs = []*apiextensionsv1.CustomResourceDefinition{
-		crds.Broker(),
 		crds.Console(),
 		crds.Redpanda(),
 		crds.Group(),
@@ -46,6 +45,7 @@ var (
 		crds.VectorizedConsole(),
 	}
 	experimentalCRDs = []*apiextensionsv1.CustomResourceDefinition{
+		crds.Broker(),
 		crds.NodePool(),
 	}
 	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{

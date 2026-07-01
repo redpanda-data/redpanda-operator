@@ -50,8 +50,13 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 	l := log.FromContext(ctx).WithName("BrokerReconciler.Reconcile")
 	l.Info("Reconciling", "object", req.NamespacedName.String(), "cluster", req.ClusterName)
 
+	k8sCluster, err := r.Manager.GetCluster(ctx, req.ClusterName)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	broker := &redpandav1alpha2.Broker{}
-	if err := r.Manager.GetLocalManager().GetClient().Get(ctx, req.NamespacedName, broker); err != nil {
+	if err := k8sCluster.GetClient().Get(ctx, req.NamespacedName, broker); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
