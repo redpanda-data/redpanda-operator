@@ -10,14 +10,24 @@
 package redpanda
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
 // TestPodNotReadyFor pins the "down duration" derived from the pod's Ready
@@ -88,4 +98,89 @@ func TestBrokersByPodName(t *testing.T) {
 	assert.Equal(t, 5, m["10.140.1.15"].NodeID)
 	_, ok := m["nonexistent"]
 	assert.False(t, ok)
+}
+
+// TestClearStuckMaintenanceModeIntegration drives clearStuckMaintenanceMode
+// end-to-end against a real rpadmin client backed by an httptest server that
+// emulates the cluster admin API. It asserts that exactly the broker which is
+// (a) in maintenance, (b) not-alive, and (c) whose pod has been not-Ready past
+// the threshold has its maintenance mode cleared via
+// DELETE /v1/brokers/{id}/maintenance — and that brokers failing any single
+// gate are left untouched.
+func TestClearStuckMaintenanceModeIntegration(t *testing.T) {
+	ctx := t.Context()
+	const threshold = 5 * time.Minute
+
+	// Cluster brokers: node 0 is the only one that should be cleared.
+	brokers := []rpadmin.Broker{
+		{NodeID: 0, InternalRPCAddress: "redpanda-rp-east-0.redpanda", IsAlive: ptr.To(false), Maintenance: &rpadmin.MaintenanceStatus{Draining: true}},    // clear
+		{NodeID: 2, InternalRPCAddress: "redpanda-rp-west-0.redpanda", IsAlive: ptr.To(true), Maintenance: &rpadmin.MaintenanceStatus{Draining: true}},     // alive -> skip
+		{NodeID: 3, InternalRPCAddress: "redpanda-rp-eu-0.redpanda", IsAlive: ptr.To(false)},                                                               // not in maintenance -> skip
+		{NodeID: 4, InternalRPCAddress: "redpanda-rp-central-0.redpanda", IsAlive: ptr.To(false), Maintenance: &rpadmin.MaintenanceStatus{Draining: true}}, // under threshold -> skip
+	}
+
+	var mu sync.Mutex
+	var disabled []int
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/brokers", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(brokers)
+	})
+	// Leader resolution for DisableMaintenanceMode(useLeaderNode=true): the
+	// single test host is node 2 and is the controller leader, so sendToLeader
+	// routes the DELETE here.
+	mux.HandleFunc("/v1/partitions/redpanda/controller/0", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"leader_id": 2})
+	})
+	mux.HandleFunc("/v1/node_config", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"node_id": 2})
+	})
+	// DELETE /v1/brokers/{id}/maintenance — record the cleared node id.
+	mux.HandleFunc("/v1/brokers/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/maintenance") {
+			var id int
+			if n, err := fmtSscanBrokerID(r.URL.Path); err == nil {
+				id = n
+			}
+			mu.Lock()
+			disabled = append(disabled, id)
+			mu.Unlock()
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	client, err := rpadmin.NewAdminAPI([]string{srv.URL}, new(rpadmin.NopAuth), nil)
+	require.NoError(t, err)
+	defer client.Close()
+
+	now := time.Now()
+	notReady := func(name string, dur time.Duration) *lifecycle.MulticlusterPod {
+		return &lifecycle.MulticlusterPod{Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{
+				Type: corev1.PodReady, Status: corev1.ConditionFalse, LastTransitionTime: metav1.NewTime(now.Add(-dur)),
+			}}},
+		}}
+	}
+	pods := []*lifecycle.MulticlusterPod{
+		notReady("redpanda-rp-east-0", 10*time.Minute),   // node 0: clear
+		notReady("redpanda-rp-west-0", 10*time.Minute),   // node 2: alive -> skip
+		notReady("redpanda-rp-eu-0", 10*time.Minute),     // node 3: not in maintenance -> skip
+		notReady("redpanda-rp-central-0", 2*time.Minute), // node 4: under threshold -> skip
+	}
+
+	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, testr.New(t)))
+
+	mu.Lock()
+	defer mu.Unlock()
+	assert.Equal(t, []int{0}, disabled, "only the in-maintenance, not-alive, long-down broker should be cleared")
+}
+
+// fmtSscanBrokerID extracts the broker id from a "/v1/brokers/{id}/maintenance"
+// path.
+func fmtSscanBrokerID(path string) (int, error) {
+	var id int
+	_, err := fmt.Sscanf(path, "/v1/brokers/%d/maintenance", &id)
+	return id, err
 }
