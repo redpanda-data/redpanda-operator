@@ -137,6 +137,7 @@ type RunOptions struct {
 	enableGhostBrokerDecommissioner     bool
 	ghostBrokerDecommissionerSyncPeriod time.Duration
 	postRestartCaughtUpPercent          int
+	clearMaintenanceModeAfter           time.Duration
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
@@ -207,6 +208,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 	cmd.Flags().IntVar(&o.postRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
+	cmd.Flags().DurationVar(&o.clearMaintenanceModeAfter, "clear-maintenance-mode-after", 5*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the partition balancer can auto-decommission it. A broker left in maintenance mode is excluded from auto-decommission; the pod's preStop hook can enable maintenance without the postStart hook ever clearing it when the pod cannot reschedule. Default 5m.")
 
 	// Telemetry related flags.
 	cmd.Flags().BoolVar(&o.disableTelemetry, "disable-telemetry", false, "Disable anonymous cluster-shape telemetry.")
@@ -477,12 +479,13 @@ func Run(
 	if v2Controllers {
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
-			Manager:                    mcmanager,
-			LifecycleClient:            lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
-			ClientFactory:              factory,
-			CloudSecretsExpander:       cloudExpander,
-			UseNodePools:               opts.enableV2NodepoolController,
-			PostRestartCaughtUpPercent: opts.postRestartCaughtUpPercent,
+			Manager:                       mcmanager,
+			LifecycleClient:               lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
+			ClientFactory:                 factory,
+			CloudSecretsExpander:          cloudExpander,
+			UseNodePools:                  opts.enableV2NodepoolController,
+			PostRestartCaughtUpPercent:    opts.postRestartCaughtUpPercent,
+			MaintenanceModeClearThreshold: opts.clearMaintenanceModeAfter,
 		}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err

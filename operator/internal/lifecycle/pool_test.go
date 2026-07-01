@@ -1208,6 +1208,42 @@ func TestPoolTrackerAddDesiredCanonicalClusterName(t *testing.T) {
 	require.Equal(t, "cluster-a", created[0].GetCanonicalClusterName())
 }
 
+// TestPoolTrackerExistingPods pins that ExistingPods returns every existing pod
+// across all pools regardless of revision — the maintenance-mode cleaner must
+// inspect pods that are NOT in the roll set (a persistently-down broker's pod).
+func TestPoolTrackerExistingPods(t *testing.T) {
+	pool1 := &MulticlusterStatefulSet{
+		clusterName: mcmanager.LocalCluster,
+		StatefulSet: &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-1"}},
+	}
+	pool2 := &MulticlusterStatefulSet{
+		clusterName: "peer-cluster",
+		StatefulSet: &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-2"}},
+	}
+	tracker := NewPoolTracker(0, false)
+	tracker.addExisting(
+		&poolWithOrdinals{
+			pods: []*podsWithOrdinals{
+				{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1"}}},
+				{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-2"}}},
+			},
+			set: pool1,
+		},
+		&poolWithOrdinals{
+			pods: []*podsWithOrdinals{{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-3"}}}},
+			set:  pool2,
+		},
+	)
+	pods := tracker.ExistingPods()
+	require.ElementsMatch(t, []string{"pod-1", "pod-2", "pod-3"}, objectNames(pods))
+	byName := map[string]string{}
+	for _, p := range pods {
+		byName[p.GetName()] = p.GetCluster()
+	}
+	require.Equal(t, mcmanager.LocalCluster, byName["pod-1"])
+	require.Equal(t, "peer-cluster", byName["pod-3"])
+}
+
 // TestHasRecentlyReplacedPods pins the gate semantics that prevent the rolling
 // restart loop from deleting a second pod while a just-replaced peer is still
 // coming up — the window where Redpanda's cluster health view lags behind pod
