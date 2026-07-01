@@ -100,7 +100,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		WatchAllNamespaces: true,
 		InstallCertManager: true,
 		SetupFn: func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil, 0, 0, 100 /* post-restart caught-up % */)
+			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil, 0, 0, 100 /* post-restart caught-up % */, 5*time.Minute /* clear-maintenance-mode-after */)
 		},
 	})
 }

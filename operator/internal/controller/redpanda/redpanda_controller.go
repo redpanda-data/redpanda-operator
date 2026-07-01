@@ -108,6 +108,12 @@ type RedpandaReconciler struct {
 	// probes.DefaultPostRestartCaughtUpPercent (100); set lower to accept
 	// partial recovery at the gate.
 	PostRestartCaughtUpPercent int
+	// MaintenanceModeClearThreshold is how long a broker must be down (pod
+	// not-Ready) while stuck in maintenance mode before the operator clears the
+	// maintenance flag so the partition balancer can auto-decommission it. Zero
+	// applies defaultClearMaintenanceModeAfter (5m); set via the
+	// --clear-maintenance-mode-after flag.
+	MaintenanceModeClearThreshold time.Duration
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -290,6 +296,9 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
 		r.reconcileDecommission,
+		// clear maintenance mode on brokers that have been down long enough
+		// that their stuck maintenance flag is blocking auto-decommission.
+		r.reconcileMaintenanceMode,
 		// finally reconcile all of our license information
 		r.reconcileLicense,
 		// now reconcile cluster configuration

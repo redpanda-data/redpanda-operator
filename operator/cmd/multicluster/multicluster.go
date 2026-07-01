@@ -106,6 +106,12 @@ type MulticlusterOptions struct {
 	// post-restart probe; mirrors the `run` command's flag of the same name.
 	PostRestartCaughtUpPercent int
 
+	// ClearMaintenanceModeAfter is how long a broker may stay down (pod
+	// not-Ready) while stuck in maintenance mode before the operator clears the
+	// flag so the partition balancer can auto-decommission it. Mirrors the
+	// `run` command's --clear-maintenance-mode-after.
+	ClearMaintenanceModeAfter time.Duration
+
 	// Per-controller default reconcile (sync) intervals. A per-CR spec.interval
 	// always takes precedence. Mirror the `run` command's flags.
 	TopicSyncInterval      time.Duration
@@ -223,6 +229,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
 	cmd.Flags().IntVar(&o.PostRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
+	cmd.Flags().DurationVar(&o.ClearMaintenanceModeAfter, "clear-maintenance-mode-after", 5*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the partition balancer can auto-decommission it. Default 5m.")
 	cmd.Flags().BoolVar(&o.EnableConsoleController, "enable-console", true, "Specifies whether or not to enable the Redpanda Console controller")
 	// Per-controller default reconcile (sync) intervals. Same flags/defaults as
 	// the `run` command; a per-CR spec.interval takes precedence.
@@ -407,7 +414,7 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent); err != nil {
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.ClearMaintenanceModeAfter); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}

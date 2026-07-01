@@ -102,6 +102,13 @@ type MulticlusterReconciler struct {
 	// loop proceeds to the next broker. Mirrors RedpandaReconciler; defaults
 	// to probes.DefaultPostRestartCaughtUpPercent (100).
 	PostRestartCaughtUpPercent int
+
+	// MaintenanceModeClearThreshold is how long a broker must be down (pod
+	// not-Ready) while stuck in maintenance mode before the operator clears the
+	// maintenance flag so the partition balancer can auto-decommission it. Zero
+	// applies defaultClearMaintenanceModeAfter (5m); set via the
+	// --clear-maintenance-mode-after flag.
+	MaintenanceModeClearThreshold time.Duration
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -300,6 +307,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	clusterReconcilers := []stretchClusterReconciliationFn{
 		r.initAdminClient,
 		r.reconcileDecommission,
+		r.reconcileMaintenanceMode,
 		r.reconcileLicense,
 		r.reconcileClusterConfig,
 	}
@@ -1613,7 +1621,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -1647,11 +1655,12 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		}).
 		Complete(
 			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
-				Manager:                    mgr,
-				LifecycleClient:            lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
-				ClientFactory:              factory,
-				ReconcileTimeout:           reconcileTimeout,
-				PostRestartCaughtUpPercent: postRestartCaughtUpPercent,
+				Manager:                       mgr,
+				LifecycleClient:               lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
+				ClientFactory:                 factory,
+				ReconcileTimeout:              reconcileTimeout,
+				PostRestartCaughtUpPercent:    postRestartCaughtUpPercent,
+				MaintenanceModeClearThreshold: clearMaintenanceModeAfter,
 			}, "StretchCluster", periodicRequeue),
 		)
 }
