@@ -536,7 +536,7 @@ func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
 	pods := []*MulticlusterPod{}
 	for _, existing := range p.existingPools {
 		for _, withOrdinals := range existing.pods {
-			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
+			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName, canonicalClusterName: existing.set.canonicalClusterName})
 		}
 	}
 	return pods

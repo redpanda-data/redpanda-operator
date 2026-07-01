@@ -28,6 +28,11 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
 // TestIntegrationBrokerSafeToRestart exercises the operator's
@@ -426,9 +431,9 @@ func TestBrokersStillRecovering(t *testing.T) {
 		require.NoError(t, err)
 		defer client.Close()
 
-		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
-			"broker-1": 1,
-			"broker-2": 2,
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string][]int{
+			"broker-1": {1},
+			"broker-2": {2},
 		}, 100, logger)
 		require.NoError(t, err)
 		assert.True(t, stillRecovering, "broker-2 at 50% should block")
@@ -443,9 +448,9 @@ func TestBrokersStillRecovering(t *testing.T) {
 		require.NoError(t, err)
 		defer client.Close()
 
-		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
-			"broker-1": 11,
-			"broker-2": 12,
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string][]int{
+			"broker-1": {11},
+			"broker-2": {12},
 		}, 100, logger)
 		require.NoError(t, err)
 		assert.False(t, stillRecovering)
@@ -460,9 +465,9 @@ func TestBrokersStillRecovering(t *testing.T) {
 		require.NoError(t, err)
 		defer client.Close()
 
-		_, err = brokersStillRecovering(ctx, client, map[string]int{
-			"broker-1":                           21,
-			"broker-1.svc.namespace.svc.cluster": 21,
+		_, err = brokersStillRecovering(ctx, client, map[string][]int{
+			"broker-1":                           {21},
+			"broker-1.svc.namespace.svc.cluster": {21},
 		}, 100, logger)
 		require.NoError(t, err)
 		assert.Equal(t, 1, one.hits, "broker should be queried exactly once despite two map entries")
@@ -483,9 +488,9 @@ func TestBrokersStillRecovering(t *testing.T) {
 		require.NoError(t, err)
 		defer client.Close()
 
-		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
-			"broker-1": 31,
-			"broker-2": 32,
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string][]int{
+			"broker-1": {31},
+			"broker-2": {32},
 		}, 100, logger)
 		require.NoError(t, err)
 		assert.False(t, stillRecovering, "404 → caught-up fallback, no broker blocks")
@@ -512,9 +517,9 @@ func TestBrokersStillRecovering(t *testing.T) {
 		require.NoError(t, err)
 		defer client.Close()
 
-		stillRecovering, err := brokersStillRecovering(ctx, client, map[string]int{
-			"broker-1": 41,
-			"broker-2": 42,
+		stillRecovering, err := brokersStillRecovering(ctx, client, map[string][]int{
+			"broker-1": {41},
+			"broker-2": {42},
 		}, 100, logger)
 		require.NoError(t, err, "a confirmed recovering broker must win over a probe error on another broker")
 		assert.True(t, stillRecovering, "broker-2 at 50% must block even though broker-1's probe errored")
@@ -626,40 +631,83 @@ func TestDecideRollAction(t *testing.T) {
 // TestBrokerIDForPod covers review item #4: a pod is resolved to its broker ID
 // by name first, then by IP. The IP fallback is what keeps a bare-IP
 // InternalRPCAddress broker (whose brokerMap key is the raw IP, not the pod
-// name) from being misclassified as an orphan and deleted without a pre-restart
-// probe.
+// name) from being misclassified as an orphan and deleted without a
+// pre-restart probe. It also covers the StretchCluster case where a pod name
+// ambiguously matches more than one broker (identically-named BrokerPools
+// across member clusters): that case must be reported as ambiguous, distinct
+// from "no broker mapped at all" — callers treat the two very differently
+// (see brokerIDForPod's doc comment).
 func TestBrokerIDForPod(t *testing.T) {
 	// brokerMap is dual-keyed: first DNS label (pod name) AND raw host.
-	byName := map[string]int{"redpanda-0": 0, "redpanda-0.redpanda.ns.svc.cluster.local": 0}
-	byIP := map[string]int{"10": 2, "10.1.2.3": 2} // bare-IP InternalRPCAddress
+	byName := map[string][]int{"redpanda-0": {0}, "redpanda-0.redpanda.ns.svc.cluster.local": {0}}
+	byIP := map[string][]int{"10": {2}, "10.1.2.3": {2}} // bare-IP InternalRPCAddress
+	ambiguousByName := map[string][]int{"redpanda-default-0": {0, 7}}
 
 	for name, tc := range map[string]struct {
-		brokerMap map[string]int
-		podName   string
-		podIP     string
-		wantID    int
-		wantOK    bool
+		brokerMap     map[string][]int
+		podName       string
+		podIP         string
+		wantID        int
+		wantResolved  bool
+		wantAmbiguous bool
 	}{
 		"name match": {
-			brokerMap: byName, podName: "redpanda-0", podIP: "10.1.2.3", wantID: 0, wantOK: true,
+			brokerMap: byName, podName: "redpanda-0", podIP: "10.1.2.3", wantID: 0, wantResolved: true,
 		},
 		"name miss, IP match (bare-IP InternalRPCAddress)": {
-			brokerMap: byIP, podName: "redpanda-1", podIP: "10.1.2.3", wantID: 2, wantOK: true,
+			brokerMap: byIP, podName: "redpanda-1", podIP: "10.1.2.3", wantID: 2, wantResolved: true,
 		},
 		"name miss, IP miss → orphan": {
-			brokerMap: byName, podName: "ghost-9", podIP: "10.9.9.9", wantID: 0, wantOK: false,
+			brokerMap: byName, podName: "ghost-9", podIP: "10.9.9.9", wantResolved: false,
 		},
 		"name miss, empty IP → orphan (no false match)": {
-			brokerMap: byIP, podName: "ghost-9", podIP: "", wantID: 0, wantOK: false,
+			brokerMap: byIP, podName: "ghost-9", podIP: "", wantResolved: false,
+		},
+		"name ambiguously matches two brokers → ambiguous, not resolved": {
+			brokerMap: ambiguousByName, podName: "redpanda-default-0", podIP: "", wantResolved: false, wantAmbiguous: true,
 		},
 	} {
 		name, tc := name, tc
 		t.Run(name, func(t *testing.T) {
-			id, ok := brokerIDForPod(tc.brokerMap, tc.podName, tc.podIP)
-			assert.Equal(t, tc.wantOK, ok)
-			if tc.wantOK {
+			id, resolved, ambiguous := brokerIDForPod(tc.brokerMap, tc.podName, tc.podIP)
+			assert.Equal(t, tc.wantResolved, resolved)
+			assert.Equal(t, tc.wantAmbiguous, ambiguous)
+			if tc.wantResolved {
 				assert.Equal(t, tc.wantID, id)
 			}
 		})
 	}
+}
+
+// TestScaleDownDefersOnAmbiguousBrokerMatch pins that scaleDown never falls
+// through to the "not in brokerMap" path when a pod name ambiguously matches
+// multiple brokers. That path assumes the broker was already fully removed
+// from the cluster and proceeds straight to patching the StatefulSet — which,
+// for a StretchCluster with identically-named BrokerPools across member
+// clusters (a StatefulSet/pod name has no member-cluster component), would
+// either decommission the wrong broker or orphan a live one instead of
+// deferring to a future reconcile. Both reconcilers share the same
+// brokerIDForPod-based decision, so both are pinned here without needing a
+// real admin API or Kubernetes client — the ambiguous branch returns before
+// either is touched.
+func TestScaleDownDefersOnAmbiguousBrokerMatch(t *testing.T) {
+	ambiguousMap := map[string][]int{"redpanda-default-0": {0, 7}}
+	set := &lifecycle.ScaleDownSet{
+		LastPod:     &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "redpanda-default-0"}},
+		StatefulSet: &lifecycle.MulticlusterStatefulSet{StatefulSet: &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "redpanda-default"}}},
+	}
+
+	t.Run("single-cluster RedpandaReconciler", func(t *testing.T) {
+		r := &RedpandaReconciler{}
+		requeue, err := r.scaleDown(t.Context(), nil, &lifecycle.ClusterWithPools{}, set, ambiguousMap)
+		require.NoError(t, err)
+		assert.True(t, requeue, "an ambiguous match must requeue rather than proceed")
+	})
+
+	t.Run("StretchCluster MulticlusterReconciler", func(t *testing.T) {
+		r := &MulticlusterReconciler{}
+		requeue, err := r.scaleDown(t.Context(), nil, &lifecycle.StretchClusterWithPools{}, set, ambiguousMap, map[int]bool{})
+		require.NoError(t, err)
+		assert.True(t, requeue, "an ambiguous match must requeue rather than proceed")
+	})
 }

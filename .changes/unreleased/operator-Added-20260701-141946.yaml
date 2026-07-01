@@ -1,0 +1,18 @@
+project: operator
+kind: Added
+body: |
+  Added automatic recovery for brokers stuck in maintenance mode. A broker's
+  preStop hook enables maintenance mode before pod termination, but if the pod
+  cannot reschedule (e.g. its node is cordoned or lost), the postStart hook
+  that clears maintenance mode never runs, leaving the broker in maintenance
+  indefinitely. Because the Redpanda partition balancer excludes
+  maintenance-mode brokers from auto-decommission, this permanently blocked
+  recovery. The Redpanda (single-cluster) and StretchCluster (multicluster)
+  reconcilers now clear maintenance mode on any broker that has been in
+  maintenance, reported not-alive by the cluster, and whose pod has been
+  not-Ready for at least a configurable threshold (default 30m), unblocking
+  auto-decommission. The threshold is configurable via the new
+  --clear-maintenance-mode-after flag on both the `run` and `multicluster`
+  commands. A new maintenance_mode_cleared_total counter metric (labeled by
+  cluster) records each clear.
+time: 2026-07-01T14:19:46.000000+02:00

@@ -36,9 +36,16 @@ import (
 // partition_balancer_planner: maintenance-mode nodes are filtered out), so a
 // broker whose maintenance flag was never cleared (e.g. the pod's preStop hook
 // enabled it but the postStart hook never ran because the pod can't schedule)
-// will never be auto-decommissioned. Default 5m — comfortably longer than a
-// normal rolling-restart maintenance window.
-const defaultClearMaintenanceModeAfter = 5 * time.Minute
+// will never be auto-decommissioned. Nothing distinguishes that stuck state
+// from a broker an operator intentionally put into a longer planned
+// maintenance window (there's no "who/why set this flag" signal available
+// from the admin API — see rpadmin.MaintenanceStatus), so this default trades
+// off responsiveness against the risk of clearing a broker that's still
+// expected to come back. Default 30m — well past a normal rolling-restart
+// window and most routine planned-maintenance reboots (e.g. an OS patch
+// cycle); tune via --clear-maintenance-mode-after if your maintenance windows
+// commonly run longer.
+const defaultClearMaintenanceModeAfter = 30 * time.Minute
 
 // podNotReadyFor returns how long the pod's Ready condition has been False and
 // whether it is currently not-Ready. The transition time lives on the pod, so
@@ -78,25 +85,45 @@ func decideClearMaintenance(inMaintenance, isAlive bool, notReadyFor, threshold 
 }
 
 // brokersByPodName indexes the cluster broker list by pod name — the first DNS
-// label of each broker's advertised internal RPC address. This lets us locate a
+// label of each broker's advertised internal RPC address — bucketing every
+// broker that shares a key rather than picking one. StatefulSet/pod names are
+// not guaranteed globally unique across a StretchCluster's member clusters (a
+// BrokerPool name collision across two member clusters yields the identical
+// pod name in both), so a key can legitimately bucket more than one broker;
+// callers must treat a multi-broker bucket as ambiguous rather than acting on
+// whichever broker happened to be indexed last. Collision detection is
+// key-relative, not broker-relative: it only catches brokers that land in the
+// same bucket, not two brokers whose identities happen to collide across
+// different keys (e.g. one broker's short pod-name key equalling a different
+// broker's raw-IP key) — a currently unhandled, considerably rarer case. This
+// lets us locate a
 // persistently-down broker's pod (which is absent from the live-only brokerMap
 // built during decommission) so the pod's not-Ready duration can gate the
 // maintenance clear. Handles both "host" and "host:port" address forms; a bare
 // IP address is keyed as-is.
-func brokersByPodName(brokers []rpadmin.Broker) map[string]rpadmin.Broker {
-	out := make(map[string]rpadmin.Broker, len(brokers))
+func brokersByPodName(brokers []rpadmin.Broker) map[string][]rpadmin.Broker {
+	out := make(map[string][]rpadmin.Broker, len(brokers))
 	for _, b := range brokers {
 		host := b.InternalRPCAddress
 		if h, _, err := net.SplitHostPort(host); err == nil {
 			host = h
 		}
+		// An empty address (malformed/unexpected admin API response) is not an
+		// identity — indexing it would let it collide with the empty-string
+		// lookup key clearStuckMaintenanceMode's PodIP fallback can produce for
+		// an unscheduled pod (empty pod.Status.PodIP), mismatching an unrelated
+		// broker to an unrelated pod.
+		if host == "" {
+			continue
+		}
 		// Full host covers a bare pod IP (flat-network mode, matched against
 		// pod.Status.PodIP) and the FQDN.
-		out[host] = b
+		out[host] = append(out[host], b)
 		// For a hostname (non-IP), also key by the first DNS label, which is
 		// the pod name (single-cluster / stretch DNS mode).
 		if net.ParseIP(host) == nil {
-			out[strings.SplitN(host, ".", 2)[0]] = b
+			podName := strings.SplitN(host, ".", 2)[0]
+			out[podName] = append(out[podName], b)
 		}
 	}
 	return out
@@ -120,7 +147,10 @@ func brokerIsAlive(b rpadmin.Broker) bool {
 // StretchCluster reconcilers. It queries the full broker list (which includes
 // down brokers, unlike the live-only brokerMap built during decommission) so a
 // stuck-down broker can be matched to its pod by name (DNS mode) or IP
-// (flat-network mode).
+// (flat-network mode). A pod name that ambiguously matches more than one
+// broker (see brokersByPodName) is skipped rather than guessed, since acting on
+// the wrong broker would incorrectly clear maintenance mode on a broker that
+// never satisfied the threshold.
 func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pods []*lifecycle.MulticlusterPod, threshold time.Duration, logger logr.Logger) error {
 	brokers, err := admin.Brokers(ctx)
 	if err != nil {
@@ -133,16 +163,27 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 		if !notReady || notReadyFor < threshold {
 			continue
 		}
-		b, ok := byPod[pod.GetName()]
-		if !ok {
-			b, ok = byPod[pod.Status.PodIP]
+		candidates, ok := byPod[pod.GetName()]
+		if !ok && pod.Status.PodIP != "" {
+			// Only fall back to the PodIP key when the pod actually has one —
+			// an unscheduled/Pending pod's PodIP is empty, and brokersByPodName
+			// never indexes an empty key, but guarding here too keeps the two
+			// lookups independently correct rather than relying on that.
+			candidates, ok = byPod[pod.Status.PodIP]
 		}
 		if !ok {
 			continue
 		}
-		clear, reason := decideClearMaintenance(brokerInMaintenance(b), brokerIsAlive(b), notReadyFor, threshold)
-		if !clear {
-			logger.V(log.TraceLevel).Info("not clearing maintenance mode", "pod", pod.GetName(), "nodeID", b.NodeID, "reason", reason)
+		if len(candidates) > 1 {
+			logger.Info("not clearing maintenance mode: pod name matches multiple brokers, refusing to guess which one it is",
+				"pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName(), "matchingBrokers", len(candidates))
+			observability.MaintenanceModeClearSkippedAmbiguous.WithLabelValues(pod.GetCanonicalClusterName()).Inc()
+			continue
+		}
+		b := candidates[0]
+		clearBroker, reason := decideClearMaintenance(brokerInMaintenance(b), brokerIsAlive(b), notReadyFor, threshold)
+		if !clearBroker {
+			logger.Info("not clearing maintenance mode", "pod", pod.GetName(), "nodeID", b.NodeID, "reason", reason)
 			continue
 		}
 		logger.Info("clearing stuck maintenance mode for long-down broker to unblock auto-decommission",
