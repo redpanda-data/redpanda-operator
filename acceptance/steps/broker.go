@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -185,6 +186,51 @@ func brokerShouldReachPhase(ctx context.Context, t framework.TestingT, brokerNam
 		t.Logf("Broker %q phase=%s (want %s)", brokerName, broker.Status.Phase, phase)
 		return string(broker.Status.Phase) == phase
 	}, 5*time.Minute, 5*time.Second, "Broker %q never reached phase %q", brokerName, phase)
+}
+
+func updateBrokerPodTemplateEnv(ctx context.Context, t framework.TestingT, brokerName, envKeyValue, _ string) {
+	key := t.ResourceKey(brokerName)
+	var broker redpandav1alpha2.Broker
+	require.NoError(t, t.Get(ctx, key, &broker))
+
+	parts := strings.SplitN(envKeyValue, "=", 2)
+	require.Len(t, parts, 2, "env must be KEY=VALUE, got %q", envKeyValue)
+
+	broker.Spec.PodTemplate.Spec.Containers[0].Env = append(
+		broker.Spec.PodTemplate.Spec.Containers[0].Env,
+		corev1.EnvVar{Name: parts[0], Value: parts[1]},
+	)
+
+	specBytes, err := yaml.Marshal(broker.Spec.PodTemplate.Spec)
+	require.NoError(t, err)
+	checksum := fmt.Sprintf("%x", sha256.Sum256(specBytes))
+	broker.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"] = checksum
+
+	require.NoError(t, t.Update(ctx, &broker))
+	t.Logf("Updated Broker %q pod template: added env %s, new checksum %s", brokerName, envKeyValue, checksum[:12])
+}
+
+func brokerPodShouldHaveEnv(ctx context.Context, t framework.TestingT, brokerName, envName, envValue string) {
+	key := t.ResourceKey(brokerName)
+	require.Eventually(t, func() bool {
+		var broker redpandav1alpha2.Broker
+		if err := t.Get(ctx, key, &broker); err != nil {
+			return false
+		}
+		var pod corev1.Pod
+		if err := t.Get(ctx, runtimeclient.ObjectKey{Name: broker.PodName(), Namespace: key.Namespace}, &pod); err != nil {
+			return false
+		}
+		for _, c := range pod.Spec.Containers {
+			for _, e := range c.Env {
+				if e.Name == envName && e.Value == envValue {
+					return true
+				}
+			}
+		}
+		t.Logf("Broker %q pod %q does not yet have env %s=%s", brokerName, pod.Name, envName, envValue)
+		return false
+	}, 5*time.Minute, 5*time.Second, "Broker %q pod never got env %s=%s", brokerName, envName, envValue)
 }
 
 func clusterAdminAPIShouldShowBrokers(ctx context.Context, t framework.TestingT, clusterName string, count int) {

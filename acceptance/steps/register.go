@@ -185,6 +185,8 @@ func init() {
 	framework.RegisterStep(`^I set decommission on Broker "([^"]*)" for cluster "([^"]*)"$`, setDecommissionOnBroker)
 	framework.RegisterStep(`^Broker "([^"]*)" should reach phase "([^"]*)"$`, brokerShouldReachPhase)
 	framework.RegisterStep(`^cluster "([^"]*)" admin API should show (\d+) brokers$`, clusterAdminAPIShouldShowBrokers)
+	framework.RegisterStep(`^I update Broker "([^"]*)" pod template with env "([^"]*)" for cluster "([^"]*)"$`, updateBrokerPodTemplateEnv)
+	framework.RegisterStep(`^Broker "([^"]*)" pod should have env "([^"]*)" = "([^"]*)"$`, brokerPodShouldHaveEnv)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

@@ -177,12 +177,41 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 				return r.updateStatus(ctx, k8sClient, &broker, &pod, redpandav1alpha2.BrokerPhasePending)
 			}
 			l.Info("adopting orphaned pod", "name", podName)
+			if pod.Annotations == nil {
+				pod.Annotations = map[string]string{}
+			}
+			if cs := broker.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]; cs != "" {
+				pod.Annotations["config.redpanda.com/checksum"] = cs
+			}
 			if err := controllerutil.SetControllerReference(&broker, &pod, scheme); err != nil {
 				return ctrl.Result{}, err
 			}
 			if err := k8sClient.Update(ctx, &pod); err != nil {
 				return ctrl.Result{}, err
 			}
+			return ctrl.Result{Requeue: true}, nil
+		}
+
+		// Pod rotation: if the pod's checksum doesn't match the desired one, delete it.
+		// The next reconcile will create the pod from the updated spec.
+		desiredChecksum := broker.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
+		podChecksum := pod.Annotations["config.redpanda.com/checksum"]
+		if desiredChecksum != "" && podChecksum != desiredChecksum {
+			if !granted {
+				l.Info("pod needs rotation but no roll-grant", "name", podName)
+				return r.updateStatus(ctx, k8sClient, &broker, &pod, redpandav1alpha2.BrokerPhaseProvisioning)
+			}
+			// Put broker in maintenance mode before deleting.
+			if broker.Status.BrokerID != nil {
+				if err := r.enableMaintenanceMode(ctx, &broker); err != nil {
+					return ctrl.Result{}, fmt.Errorf("enabling maintenance mode for broker %d: %w", *broker.Status.BrokerID, err)
+				}
+			}
+			l.Info("rotating pod", "name", podName, "oldChecksum", podChecksum, "newChecksum", desiredChecksum)
+			if err := k8sClient.Delete(ctx, &pod); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{Requeue: true}, nil
 		}
 	}
 
@@ -293,6 +322,15 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, broker *redp
 
 	l.Info("decommission finished", "brokerID", brokerID)
 	return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioned}, nil
+}
+
+func (r *BrokerReconciler) enableMaintenanceMode(ctx context.Context, broker *redpandav1alpha2.Broker) error {
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+	if err != nil {
+		return err
+	}
+	defer admin.Close()
+	return admin.EnableMaintenanceMode(ctx, int(*broker.Status.BrokerID))
 }
 
 func (r *BrokerReconciler) resolveBrokerID(ctx context.Context, broker *redpandav1alpha2.Broker, podName string) (*int32, error) {

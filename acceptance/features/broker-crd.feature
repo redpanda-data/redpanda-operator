@@ -10,6 +10,10 @@ Feature: Broker CRD lifecycle
     And I grant roll-grants to all Broker CRs for cluster "broker-test"
     Then all Broker CRs for cluster "broker-test" should be Running
     And cluster "broker-test" admin API should show 3 brokers
+    When I update Broker "broker-test-0" pod template with env "ROTATION_TEST=applied" for cluster "broker-test"
+    And I grant roll-grants to all Broker CRs for cluster "broker-test"
+    Then Broker "broker-test-0" pod should have env "ROTATION_TEST" = "applied"
+    And all Broker CRs for cluster "broker-test" should be Running
     When I set decommission on Broker "broker-test-2" for cluster "broker-test"
     Then Broker "broker-test-2" should reach phase "Decommissioned"
     And cluster "broker-test" admin API should show 2 brokers
