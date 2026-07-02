@@ -200,9 +200,12 @@ type RedpandaBrokerPoolQuiescedCondition string
 // be set by a controller when it subsequently reconciles a broker pool.
 type RedpandaBrokerPoolStableCondition string
 
-// BrokerReadyCondition - This condition indicates whether the broker pod is
-// running and the broker has registered with the Redpanda cluster (brokerID
-// discovered via admin API).
+// BrokerReadyCondition - This condition indicates whether the broker's pod is
+// running and healthy (containers started, liveness probe passing). It does not
+// imply cluster membership — see BrokerRegistered for that. It is also
+// independent of the pod's Kubernetes readiness probe, which reflects overall
+// cluster health via rpk cluster health and may be false even when this
+// specific broker is serving data.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a broker.
@@ -210,7 +213,7 @@ type BrokerReadyCondition string
 
 // BrokerPodScheduledCondition - This condition indicates whether the broker's
 // pod has been scheduled to a node. False when the pod is stuck due to node
-// affinity or resource constraints.
+// affinity, resource constraints, or PV affinity.
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a broker.
@@ -225,7 +228,10 @@ type BrokerStorageBoundCondition string
 
 // BrokerBrokerRegisteredCondition - This condition indicates whether the
 // broker's node_id has been discovered via the admin API, confirming it has
-// joined the Raft group.
+// joined the Raft group. This is orthogonal to the Ready condition, which
+// tracks pod health only. A broker can be Ready (pod running) but not yet
+// BrokerRegistered (still joining the cluster), or BrokerRegistered but not
+// Ready (pod crashed after initial registration).
 //
 // This condition defaults to "Unknown" with a reason of "NotReconciled" and
 // must be set by a controller when it subsequently reconciles a broker.
@@ -240,6 +246,10 @@ type BrokerQuiescedCondition string
 
 // BrokerStableCondition - This condition is a roll-up status for automation
 // (e.g. parent controller checking all brokers are stable before proceeding).
+// It is True when Ready, StorageBound, BrokerRegistered, and Quiesced all
+// evaluate to True. Each tracks one dimension: Ready = pod health, StorageBound
+// = PVC binding, BrokerRegistered = cluster membership, Quiesced =
+// reconciliation complete.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a broker.
@@ -808,20 +818,22 @@ const (
 	// "Stable" condition when it evaluates to True because at least one dependent
 	// condition evaluates to False.
 	RedpandaBrokerPoolStableReasonUnstable RedpandaBrokerPoolStableCondition = "Unstable"
-	// BrokerReady - This condition indicates whether the broker pod is running and
-	// the broker has registered with the Redpanda cluster (brokerID discovered via
-	// admin API).
+	// BrokerReady - This condition indicates whether the broker's pod is running
+	// and healthy (containers started, liveness probe passing). It does not imply
+	// cluster membership — see BrokerRegistered for that. It is also independent
+	// of the pod's Kubernetes readiness probe, which reflects overall cluster
+	// health via rpk cluster health and may be false even when this specific broker
+	// is serving data.
 	//
 	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
 	// must be set by a controller when it subsequently reconciles a broker.
 	BrokerReady = "Ready"
 	// BrokerReadyReasonReady - This reason is used with the "Ready" condition when
-	// it evaluates to True because the broker is running and registered with the
-	// cluster.
+	// it evaluates to True because the broker's pod is running and healthy.
 	BrokerReadyReasonReady BrokerReadyCondition = "Ready"
 	// BrokerReadyReasonNotReady - This reason is used with the "Ready" condition
-	// when it evaluates to False because the broker is not yet ready to serve
-	// traffic.
+	// when it evaluates to False because the broker's pod is not yet running or
+	// healthy (e.g. crash loop, liveness failure).
 	BrokerReadyReasonNotReady BrokerReadyCondition = "NotReady"
 	// BrokerReadyReasonError - This reason is used when a broker has only been
 	// partially reconciled and we have early returned due to a retryable error
@@ -832,8 +844,8 @@ const (
 	BrokerReadyReasonTerminalError BrokerReadyCondition = "TerminalError"
 
 	// BrokerPodScheduled - This condition indicates whether the broker's pod has
-	// been scheduled to a node. False when the pod is stuck due to node affinity or
-	// resource constraints.
+	// been scheduled to a node. False when the pod is stuck due to node affinity,
+	// resource constraints, or PV affinity.
 	//
 	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
 	// must be set by a controller when it subsequently reconciles a broker.
@@ -878,7 +890,10 @@ const (
 
 	// BrokerBrokerRegistered - This condition indicates whether the broker's
 	// node_id has been discovered via the admin API, confirming it has joined the
-	// Raft group.
+	// Raft group. This is orthogonal to the Ready condition, which tracks pod
+	// health only. A broker can be Ready (pod running) but not yet BrokerRegistered
+	// (still joining the cluster), or BrokerRegistered but not Ready (pod crashed
+	// after initial registration).
 	//
 	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
 	// must be set by a controller when it subsequently reconciles a broker.
@@ -915,18 +930,22 @@ const (
 	BrokerQuiescedReasonStillReconciling BrokerQuiescedCondition = "StillReconciling"
 
 	// BrokerStable - This condition is a roll-up status for automation (e.g. parent
-	// controller checking all brokers are stable before proceeding).
+	// controller checking all brokers are stable before proceeding). It is True
+	// when Ready, StorageBound, BrokerRegistered, and Quiesced all evaluate to
+	// True. Each tracks one dimension: Ready = pod health, StorageBound = PVC
+	// binding, BrokerRegistered = cluster membership, Quiesced = reconciliation
+	// complete.
 	//
 	// This condition defaults to "False" with a reason of "NotReconciled" and must
 	// be set by a controller when it subsequently reconciles a broker.
 	BrokerStable = "Stable"
 	// BrokerStableReasonStable - This reason is used with the "Stable" condition
-	// when it evaluates to True because all dependent conditions also evaluate to
-	// True.
+	// when it evaluates to True because Ready, StorageBound, BrokerRegistered, and
+	// Quiesced all evaluate to True.
 	BrokerStableReasonStable BrokerStableCondition = "Stable"
 	// BrokerStableReasonUnstable - This reason is used with the "Stable" condition
-	// when it evaluates to False because at least one dependent condition evaluates
-	// to False.
+	// when it evaluates to False because at least one of Ready, StorageBound,
+	// BrokerRegistered, or Quiesced evaluates to False.
 	BrokerStableReasonUnstable BrokerStableCondition = "Unstable"
 )
 
@@ -2478,7 +2497,7 @@ func (s *BrokerStatus) SetReady(reason BrokerReadyCondition, messages ...string)
 	switch reason {
 	case BrokerReadyReasonReady:
 		if message == "" {
-			message = "Broker is ready"
+			message = "Broker pod is running and healthy"
 		}
 		status = metav1.ConditionTrue
 	case BrokerReadyReasonNotReady:
