@@ -19,13 +19,16 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1apply "k8s.io/client-go/applyconfigurations/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -157,8 +160,7 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 	// able to clean ourselves up anyway.
 	if internalclient.IsTerminalClientError(err) ||
 		internalclient.IsConfigurationError(err) ||
-		internalclient.IsInvalidClusterError(err) ||
-		isNotFoundInChain(err) ||
+		isClusterGone(err) ||
 		isNetworkDialError(err) {
 		// We use Info rather than Error here because we don't want
 		// to ignore the verbosity settings. This is really only for
@@ -167,6 +169,65 @@ func ignoreAllConnectionErrors(logger logr.Logger, err error) error {
 		return nil
 	}
 	return err
+}
+
+// isClusterGone reports whether err means the referenced cluster can no longer
+// be resolved, so finalizer cleanup has nothing to act on and should proceed.
+// This covers the cluster CR being deleted (NotFound / ErrInvalidClusterRef) as
+// well as the whole kind being torn down: when the v1 (vectorized) operator is
+// uninstalled the CRD is removed and the lookup returns a *meta.NoKindMatchError
+// rather than NotFound, and a stripped RBAC for the type returns Forbidden.
+// Treating these as "cluster gone" keeps a RedpandaRole (or any layered CR)
+// from hanging in Terminating after its cluster is fully removed.
+func isClusterGone(err error) bool {
+	return internalclient.IsInvalidClusterError(err) ||
+		isNotFoundInChain(err) ||
+		meta.IsNoMatchError(err) ||
+		apierrors.IsForbidden(err)
+}
+
+// DeleteWithClusterAnnotation opts a layered CR into garbage collection when its
+// referenced cluster is deleted. When set to "true", the reconciler stamps an
+// owner reference pointing at the resolved cluster so Kubernetes deletes the CR
+// along with the cluster. Absent (the default), the CR survives cluster deletion
+// and can be deleted on its own schedule.
+const DeleteWithClusterAnnotation = "operator.redpanda.com/delete-with-cluster"
+
+// ownerReferenceForCluster builds a garbage-collection owner reference linking a
+// layered CR to its referenced cluster, or nil when one must not be set.
+//
+// It returns nil when the cluster is unresolved or lives in a different
+// namespace than the object: Kubernetes garbage collection ignores
+// cross-namespace owner references. The reference is deliberately non-controller
+// and non-blocking (controller=false, blockOwnerDeletion=false) so it acts only
+// as a GC edge and never blocks the cluster's own deletion.
+func ownerReferenceForCluster(ref *redpandav1alpha2.ClusterRef, cluster client.Object, objectNamespace string) *metav1apply.OwnerReferenceApplyConfiguration {
+	if ref == nil || cluster == nil {
+		return nil
+	}
+	if cluster.GetNamespace() != objectNamespace {
+		return nil
+	}
+
+	var apiVersion, kind string
+	switch {
+	case ref.IsV1():
+		apiVersion, kind = vectorizedv1alpha1.GroupVersion.String(), "Cluster"
+	case ref.IsStretchCluster():
+		apiVersion, kind = redpandav1alpha2.GroupVersion.String(), "StretchCluster"
+	case ref.IsV2():
+		apiVersion, kind = redpandav1alpha2.GroupVersion.String(), "Redpanda"
+	default:
+		return nil
+	}
+
+	return metav1apply.OwnerReference().
+		WithAPIVersion(apiVersion).
+		WithKind(kind).
+		WithName(cluster.GetName()).
+		WithUID(cluster.GetUID()).
+		WithController(false).
+		WithBlockOwnerDeletion(false)
 }
 
 // isNotFoundInChain walks the error chain to check if a "not found" error

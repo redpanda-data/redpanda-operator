@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
@@ -33,8 +34,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -607,6 +611,76 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 
 	require.Equal(t, int32(size/2), reconciler.deletes.Load())
 	require.Equal(t, int32(size), reconciler.syncs.Load())
+}
+
+// TestIgnoreAllConnectionErrorsClusterGone reproduces the v1 teardown block:
+// when a referenced cluster's entire kind/CRD is no longer served (e.g. the
+// vectorized operator was `helm uninstall`ed), the clusterRef lookup returns a
+// *meta.NoKindMatchError (cold RESTMapper) or a Forbidden error rather than a
+// plain NotFound. The resource finalizer cleanup runs everything through
+// ignoreAllConnectionErrors; if these aren't treated as "cluster is gone", the
+// error propagates, the finalizer is never removed, and the RedpandaRole hangs
+// in Terminating forever.
+//
+// RED until isClusterGone() recognizes NoKindMatch/Forbidden. The NotFound and
+// ErrInvalidClusterRef rows assert the already-working CR-deleted path so the
+// boundary is explicit.
+func TestIgnoreAllConnectionErrorsClusterGone(t *testing.T) {
+	v1ClusterGK := schema.GroupKind{Group: "redpanda.vectorized.io", Kind: "Cluster"}
+	v1ClusterGR := schema.GroupResource{Group: "redpanda.vectorized.io", Resource: "clusters"}
+
+	tests := []struct {
+		name      string
+		err       error
+		swallowed bool // true => ignoreAllConnectionErrors should return nil (delete proceeds)
+	}{
+		{
+			name:      "nil error",
+			err:       nil,
+			swallowed: true,
+		},
+		{
+			name:      "plain error is not swallowed",
+			err:       errors.New("some unexpected error"),
+			swallowed: false,
+		},
+		{
+			name:      "cluster CR deleted, CRD present (NotFound) is swallowed",
+			err:       apierrors.NewNotFound(v1ClusterGR, "gone"),
+			swallowed: true,
+		},
+		{
+			name:      "ErrInvalidClusterRef is swallowed",
+			err:       internalclient.ErrInvalidClusterRef,
+			swallowed: true,
+		},
+		{
+			name:      "v1 CRD uninstalled (NoKindMatch) is swallowed",
+			err:       &meta.NoKindMatchError{GroupKind: v1ClusterGK, SearchedVersions: []string{"v1alpha1"}},
+			swallowed: true,
+		},
+		{
+			name:      "v1 CRD uninstalled, wrapped (NoKindMatch) is swallowed",
+			err:       fmt.Errorf("building admin client: %w", &meta.NoKindMatchError{GroupKind: v1ClusterGK, SearchedVersions: []string{"v1alpha1"}}),
+			swallowed: true,
+		},
+		{
+			name:      "type RBAC removed (Forbidden) is swallowed",
+			err:       apierrors.NewForbidden(v1ClusterGR, "gone", errors.New("forbidden")),
+			swallowed: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ignoreAllConnectionErrors(logr.Discard(), tt.err)
+			if tt.swallowed {
+				require.NoError(t, got, "expected error to be treated as cluster-gone and swallowed so the finalizer can be removed")
+			} else {
+				require.Error(t, got, "expected error to propagate (not a cluster-gone error)")
+			}
+		})
+	}
 }
 
 func TestIsNetworkDialError(t *testing.T) {

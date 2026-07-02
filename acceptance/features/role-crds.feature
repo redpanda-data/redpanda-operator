@@ -298,6 +298,37 @@ Feature: Role CRDs
     And RedpandaRole "swap-role" should have status field "managedPrincipals" set to "true"
 
   @skip:gke @skip:aks @skip:eks
+  Scenario: Opt into garbage collection with the cluster via owner reference
+    Given there is no role "gc-role" in cluster "sasl"
+    And there are the following pre-existing users in cluster "sasl"
+      | name   | password | mechanism     |
+      | gcuser | password | SCRAM-SHA-256 |
+    When I apply Kubernetes manifest:
+    """
+    # The delete-with-cluster annotation opts the role into garbage collection:
+    # the operator stamps an owner reference pointing at the referenced cluster
+    # so Kubernetes deletes the role when the cluster is deleted (which also lets
+    # the namespace terminate cleanly). Without the annotation the role survives
+    # cluster deletion and can be removed on its own schedule.
+    ---
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: RedpandaRole
+    metadata:
+      name: gc-role
+      annotations:
+        operator.redpanda.com/delete-with-cluster: "true"
+    spec:
+      cluster:
+        clusterRef:
+          name: sasl
+      principals:
+        - User:gcuser
+    """
+    And role "gc-role" is successfully synced
+    Then role "gc-role" should exist in cluster "sasl"
+    And the Kubernetes object of type "RedpandaRole.v1alpha2.cluster.redpanda.com" with name "gc-role" has an OwnerReference pointing to the cluster "sasl"
+
+  @skip:gke @skip:aks @skip:eks
   Scenario: Manage roles with internal flag
     Given there is no role "__admin-role-k8s" in cluster "sasl"
     And there are the following pre-existing users in cluster "sasl"

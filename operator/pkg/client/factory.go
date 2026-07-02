@@ -129,6 +129,17 @@ type ClientFactory interface {
 	RemoteClusterSettings(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error)
 	// RemoteClusterSettingsForCluster is the same as RemoteClusterSettings but it takes a kubernetes cluster name
 	RemoteClusterSettingsForCluster(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error)
+
+	// ClusterForObject resolves the cluster CR referenced by object's clusterRef,
+	// returning it as a client.Object (a *Redpanda, *vectorizedv1alpha1.Cluster, or
+	// *StretchCluster). Returns (nil, nil) when object uses a static configuration
+	// rather than a clusterRef, and ErrInvalidClusterRef when the referenced
+	// cluster does not exist. clusterName selects the peer Kubernetes API.
+	ClusterForObject(ctx context.Context, object client.Object, clusterName string) (client.Object, error)
+
+	// GetClient returns the controller-runtime client for the named peer
+	// Kubernetes cluster.
+	GetClient(ctx context.Context, clusterName string) (client.Client, error)
 }
 
 type Factory struct {
@@ -540,6 +551,33 @@ func (c *Factory) RemoteClusterSettingsForCluster(ctx context.Context, obj redpa
 
 func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error) {
 	return c.RemoteClusterSettingsForCluster(ctx, obj, mcmanager.LocalCluster)
+}
+
+// ClusterForObject resolves the cluster CR referenced by obj's clusterRef as a
+// client.Object. It probes each supported cluster kind in turn; the helpers
+// return (nil, nil) for a ref that isn't their kind (or for static config), so
+// only the matching kind performs a lookup. A genuinely missing cluster surfaces
+// as ErrInvalidClusterRef.
+func (c *Factory) ClusterForObject(ctx context.Context, obj client.Object, clusterName string) (client.Object, error) {
+	if v2, err := c.getV2Cluster(ctx, obj, clusterName); err != nil {
+		return nil, err
+	} else if v2 != nil {
+		return v2, nil
+	}
+
+	if stretch, err := c.getStretchCluster(ctx, obj, clusterName); err != nil {
+		return nil, err
+	} else if stretch != nil {
+		return stretch, nil
+	}
+
+	if v1, err := c.getV1Cluster(ctx, obj, clusterName); err != nil {
+		return nil, err
+	} else if v1 != nil {
+		return v1, nil
+	}
+
+	return nil, nil
 }
 
 func (c *Factory) getV1Cluster(ctx context.Context, obj client.Object, clusterName string) (*vectorizedv1alpha1.Cluster, error) {
