@@ -99,6 +99,7 @@ type RunOptions struct {
 	enableRedpandaControllers bool
 
 	enableV2NodepoolController  bool
+	enableBrokerController      bool
 	enableConsoleController     bool
 	managerOptions              ctrl.Options
 	clusterDomain               string
@@ -172,6 +173,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
+	cmd.Flags().BoolVar(&o.enableBrokerController, "enable-broker", false, "Specifies whether or not to enable the Broker controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
 	cmd.Flags().BoolVar(&o.enableRedpandaControllers, "enable-redpanda-controllers", true, "Specifies whether or not to enabled the Redpanda cluster controllers")
 	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
@@ -563,6 +565,13 @@ func Run(
 	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.schemaSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
+	}
+
+	if opts.enableBrokerController {
+		if err := redpandacontrollers.SetupBrokerController(ctx, mcmanager, opts.namespace); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Broker")
+			return err
+		}
 	}
 
 	// Next configure and setup optional controllers.

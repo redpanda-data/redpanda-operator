@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Add Broker CRD and minimal controller behind --enable-broker flag
+time: 2026-06-29T14:49:52.739206433+02:00

@@ -200,6 +200,61 @@ type RedpandaBrokerPoolQuiescedCondition string
 // be set by a controller when it subsequently reconciles a broker pool.
 type RedpandaBrokerPoolStableCondition string
 
+// BrokerReadyCondition - This condition indicates whether the broker's pod is
+// running and healthy (containers started, liveness probe passing). It does not
+// imply cluster membership — see BrokerRegistered for that. It is also
+// independent of the pod's Kubernetes readiness probe, which reflects overall
+// cluster health via rpk cluster health and may be false even when this
+// specific broker is serving data.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a broker.
+type BrokerReadyCondition string
+
+// BrokerPodScheduledCondition - This condition indicates whether the broker's
+// pod has been scheduled to a node. False when the pod is stuck due to node
+// affinity, resource constraints, or PV affinity.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a broker.
+type BrokerPodScheduledCondition string
+
+// BrokerStorageBoundCondition - This condition indicates whether all PVCs for
+// this broker are bound to PVs.
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a broker.
+type BrokerStorageBoundCondition string
+
+// BrokerBrokerRegisteredCondition - This condition indicates whether the
+// broker's node_id has been discovered via the admin API, confirming it has
+// joined the Raft group. This is orthogonal to the Ready condition, which
+// tracks pod health only. A broker can be Ready (pod running) but not yet
+// BrokerRegistered (still joining the cluster), or BrokerRegistered but not
+// Ready (pod crashed after initial registration).
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a broker.
+type BrokerBrokerRegisteredCondition string
+
+// BrokerQuiescedCondition - This condition indicates the broker is no longer
+// reconciling for its current generation.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a broker.
+type BrokerQuiescedCondition string
+
+// BrokerStableCondition - This condition is a roll-up status for automation
+// (e.g. parent controller checking all brokers are stable before proceeding).
+// It is True when Ready, StorageBound, BrokerRegistered, and Quiesced all
+// evaluate to True. Each tracks one dimension: Ready = pod health, StorageBound
+// = PVC binding, BrokerRegistered = cluster membership, Quiesced =
+// reconciliation complete.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a broker.
+type BrokerStableCondition string
+
 const (
 	// ClusterReady - This condition indicates whether a cluster is ready to serve
 	// any traffic. This can happen, for example if a cluster is partially degraded
@@ -763,6 +818,135 @@ const (
 	// "Stable" condition when it evaluates to True because at least one dependent
 	// condition evaluates to False.
 	RedpandaBrokerPoolStableReasonUnstable RedpandaBrokerPoolStableCondition = "Unstable"
+	// BrokerReady - This condition indicates whether the broker's pod is running
+	// and healthy (containers started, liveness probe passing). It does not imply
+	// cluster membership — see BrokerRegistered for that. It is also independent
+	// of the pod's Kubernetes readiness probe, which reflects overall cluster
+	// health via rpk cluster health and may be false even when this specific broker
+	// is serving data.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a broker.
+	BrokerReady = "Ready"
+	// BrokerReadyReasonReady - This reason is used with the "Ready" condition when
+	// it evaluates to True because the broker's pod is running and healthy.
+	BrokerReadyReasonReady BrokerReadyCondition = "Ready"
+	// BrokerReadyReasonNotReady - This reason is used with the "Ready" condition
+	// when it evaluates to False because the broker's pod is not yet running or
+	// healthy (e.g. crash loop, liveness failure).
+	BrokerReadyReasonNotReady BrokerReadyCondition = "NotReady"
+	// BrokerReadyReasonError - This reason is used when a broker has only been
+	// partially reconciled and we have early returned due to a retryable error
+	// occurring prior to applying the desired broker state.
+	BrokerReadyReasonError BrokerReadyCondition = "Error"
+	// BrokerReadyReasonTerminalError - This reason is used when a broker has
+	// encountered a terminal error and will not be reconciled further.
+	BrokerReadyReasonTerminalError BrokerReadyCondition = "TerminalError"
+
+	// BrokerPodScheduled - This condition indicates whether the broker's pod has
+	// been scheduled to a node. False when the pod is stuck due to node affinity,
+	// resource constraints, or PV affinity.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a broker.
+	BrokerPodScheduled = "PodScheduled"
+	// BrokerPodScheduledReasonScheduled - This reason is used with the
+	// "PodScheduled" condition when it evaluates to True because the broker's pod
+	// has been scheduled to a Kubernetes node.
+	BrokerPodScheduledReasonScheduled BrokerPodScheduledCondition = "Scheduled"
+	// BrokerPodScheduledReasonUnschedulable - This reason is used with the
+	// "PodScheduled" condition when it evaluates to False because the broker's pod
+	// cannot be scheduled (e.g. node affinity, insufficient resources).
+	BrokerPodScheduledReasonUnschedulable BrokerPodScheduledCondition = "Unschedulable"
+	// BrokerPodScheduledReasonError - This reason is used when a broker has only
+	// been partially reconciled and we have early returned due to a retryable error
+	// occurring prior to applying the desired broker state.
+	BrokerPodScheduledReasonError BrokerPodScheduledCondition = "Error"
+	// BrokerPodScheduledReasonTerminalError - This reason is used when a broker has
+	// encountered a terminal error and will not be reconciled further.
+	BrokerPodScheduledReasonTerminalError BrokerPodScheduledCondition = "TerminalError"
+
+	// BrokerStorageBound - This condition indicates whether all PVCs for this
+	// broker are bound to PVs.
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a broker.
+	BrokerStorageBound = "StorageBound"
+	// BrokerStorageBoundReasonBound - This reason is used with the "StorageBound"
+	// condition when it evaluates to True because all PVCs for this broker are
+	// bound to PVs.
+	BrokerStorageBoundReasonBound BrokerStorageBoundCondition = "Bound"
+	// BrokerStorageBoundReasonPending - This reason is used with the "StorageBound"
+	// condition when it evaluates to False because one or more PVCs for this broker
+	// are not yet bound.
+	BrokerStorageBoundReasonPending BrokerStorageBoundCondition = "Pending"
+	// BrokerStorageBoundReasonError - This reason is used when a broker has only
+	// been partially reconciled and we have early returned due to a retryable error
+	// occurring prior to applying the desired broker state.
+	BrokerStorageBoundReasonError BrokerStorageBoundCondition = "Error"
+	// BrokerStorageBoundReasonTerminalError - This reason is used when a broker has
+	// encountered a terminal error and will not be reconciled further.
+	BrokerStorageBoundReasonTerminalError BrokerStorageBoundCondition = "TerminalError"
+
+	// BrokerBrokerRegistered - This condition indicates whether the broker's
+	// node_id has been discovered via the admin API, confirming it has joined the
+	// Raft group. This is orthogonal to the Ready condition, which tracks pod
+	// health only. A broker can be Ready (pod running) but not yet BrokerRegistered
+	// (still joining the cluster), or BrokerRegistered but not Ready (pod crashed
+	// after initial registration).
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a broker.
+	BrokerBrokerRegistered = "BrokerRegistered"
+	// BrokerBrokerRegisteredReasonRegistered - This reason is used with the
+	// "BrokerRegistered" condition when it evaluates to True because the broker has
+	// registered its node_id with the cluster.
+	BrokerBrokerRegisteredReasonRegistered BrokerBrokerRegisteredCondition = "Registered"
+	// BrokerBrokerRegisteredReasonNotRegistered - This reason is used with the
+	// "BrokerRegistered" condition when it evaluates to False because the broker
+	// has not yet registered with the cluster.
+	BrokerBrokerRegisteredReasonNotRegistered BrokerBrokerRegisteredCondition = "NotRegistered"
+	// BrokerBrokerRegisteredReasonError - This reason is used when a broker has
+	// only been partially reconciled and we have early returned due to a retryable
+	// error occurring prior to applying the desired broker state.
+	BrokerBrokerRegisteredReasonError BrokerBrokerRegisteredCondition = "Error"
+	// BrokerBrokerRegisteredReasonTerminalError - This reason is used when a broker
+	// has encountered a terminal error and will not be reconciled further.
+	BrokerBrokerRegisteredReasonTerminalError BrokerBrokerRegisteredCondition = "TerminalError"
+
+	// BrokerQuiesced - This condition indicates the broker is no longer reconciling
+	// for its current generation.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a broker.
+	BrokerQuiesced = "Quiesced"
+	// BrokerQuiescedReasonQuiesced - This reason is used with the "Quiesced"
+	// condition when it evaluates to True because the operator has finished
+	// reconciling the broker at its current generation.
+	BrokerQuiescedReasonQuiesced BrokerQuiescedCondition = "Quiesced"
+	// BrokerQuiescedReasonStillReconciling - This reason is used with the
+	// "Quiesced" condition when it evaluates to False because the operator has not
+	// finished reconciling the broker at its current generation.
+	BrokerQuiescedReasonStillReconciling BrokerQuiescedCondition = "StillReconciling"
+
+	// BrokerStable - This condition is a roll-up status for automation (e.g. parent
+	// controller checking all brokers are stable before proceeding). It is True
+	// when Ready, StorageBound, BrokerRegistered, and Quiesced all evaluate to
+	// True. Each tracks one dimension: Ready = pod health, StorageBound = PVC
+	// binding, BrokerRegistered = cluster membership, Quiesced = reconciliation
+	// complete.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a broker.
+	BrokerStable = "Stable"
+	// BrokerStableReasonStable - This reason is used with the "Stable" condition
+	// when it evaluates to True because Ready, StorageBound, BrokerRegistered, and
+	// Quiesced all evaluate to True.
+	BrokerStableReasonStable BrokerStableCondition = "Stable"
+	// BrokerStableReasonUnstable - This reason is used with the "Stable" condition
+	// when it evaluates to False because at least one of Ready, StorageBound,
+	// BrokerRegistered, or Quiesced evaluates to False.
+	BrokerStableReasonUnstable BrokerStableCondition = "Unstable"
 )
 
 // ClusterStatus - Defines the observed status conditions of a cluster.
@@ -2202,6 +2386,351 @@ func (s *RedpandaBrokerPoolStatus) getStable(conditions []metav1.Condition) meta
 	}
 }
 
+// BrokerStatus - Defines the observed status conditions of a single broker.
+type BrokerStatus struct {
+	conditions                       []metav1.Condition
+	hasTerminalError                 bool
+	isReadySet                       bool
+	isReadyTransientError            bool
+	isPodScheduledSet                bool
+	isPodScheduledTransientError     bool
+	isStorageBoundSet                bool
+	isStorageBoundTransientError     bool
+	isBrokerRegisteredSet            bool
+	isBrokerRegisteredTransientError bool
+}
+
+// NewBroker() returns a new BrokerStatus
+func NewBroker() *BrokerStatus {
+	return &BrokerStatus{}
+}
+
+// UpdateConditions updates any conditions for the passed in object that need to be updated.
+func (s *BrokerStatus) UpdateConditions(o client.Object) bool {
+	var conditions *[]metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.Broker:
+		conditions = &kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	updated := false
+	for _, condition := range s.getRateLimitedConditions(o.GetGeneration()) {
+		if setStatusCondition(conditions, condition) {
+			updated = true
+		}
+	}
+
+	return updated
+}
+
+// StatusConditionConfigs returns a set of configurations that can be used with Server Side Apply.
+func (s *BrokerStatus) StatusConditionConfigs(o client.Object) []*applymetav1.ConditionApplyConfiguration {
+	var conditions []metav1.Condition
+	switch kind := o.(type) {
+	case *redpandav1alpha2.Broker:
+		conditions = kind.Status.Conditions
+	default:
+		panic("unsupported kind")
+	}
+
+	return status.ConditionApplyConfigs(conditions, o.GetGeneration(), s.getConditions(o.GetGeneration()))
+}
+
+// getRateLimit returns the rate limiting configuration for a given condition
+func (s *BrokerStatus) getRateLimit(conditionType string) time.Duration {
+	switch conditionType {
+	}
+	return 0
+}
+
+// getRateLimitedConditions returns the rate limited aggregated status conditions of the BrokerStatus.
+func (s *BrokerStatus) getRateLimitedConditions(generation int64) []ratelimitedCondition {
+	conditions := []ratelimitedCondition{}
+
+	for _, condition := range s.getConditions(generation) {
+		conditions = append(conditions, ratelimitedCondition{
+			condition: condition,
+			rate:      s.getRateLimit(condition.Type),
+		})
+	}
+
+	return conditions
+}
+
+// conditions returns the aggregated status conditions of the BrokerStatus.
+func (s *BrokerStatus) getConditions(generation int64) []metav1.Condition {
+	conditions := append([]metav1.Condition{}, s.conditions...)
+	conditions = append(conditions, s.getQuiesced())
+	conditions = append(conditions, s.getStable(conditions))
+
+	for i, condition := range conditions {
+		condition.ObservedGeneration = generation
+		conditions[i] = condition
+	}
+
+	return conditions
+}
+
+// SetReadyFromCurrent sets the underlying condition based on an existing object.
+func (s *BrokerStatus) SetReadyFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), BrokerReady)
+	if condition == nil {
+		return
+	}
+
+	s.SetReady(BrokerReadyCondition(condition.Reason), condition.Message)
+}
+
+// SetReady sets the underlying condition to the given reason.
+func (s *BrokerStatus) SetReady(reason BrokerReadyCondition, messages ...string) {
+	if s.isReadySet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isReadySet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case BrokerReadyReasonReady:
+		if message == "" {
+			message = "Broker pod is running and healthy"
+		}
+		status = metav1.ConditionTrue
+	case BrokerReadyReasonNotReady:
+		status = metav1.ConditionFalse
+	case BrokerReadyReasonError:
+		s.isReadyTransientError = true
+		status = metav1.ConditionFalse
+	case BrokerReadyReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    BrokerReady,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetPodScheduledFromCurrent sets the underlying condition based on an existing object.
+func (s *BrokerStatus) SetPodScheduledFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), BrokerPodScheduled)
+	if condition == nil {
+		return
+	}
+
+	s.SetPodScheduled(BrokerPodScheduledCondition(condition.Reason), condition.Message)
+}
+
+// SetPodScheduled sets the underlying condition to the given reason.
+func (s *BrokerStatus) SetPodScheduled(reason BrokerPodScheduledCondition, messages ...string) {
+	if s.isPodScheduledSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isPodScheduledSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case BrokerPodScheduledReasonScheduled:
+		if message == "" {
+			message = "Pod scheduled to node"
+		}
+		status = metav1.ConditionTrue
+	case BrokerPodScheduledReasonUnschedulable:
+		status = metav1.ConditionFalse
+	case BrokerPodScheduledReasonError:
+		s.isPodScheduledTransientError = true
+		status = metav1.ConditionFalse
+	case BrokerPodScheduledReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    BrokerPodScheduled,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetStorageBoundFromCurrent sets the underlying condition based on an existing object.
+func (s *BrokerStatus) SetStorageBoundFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), BrokerStorageBound)
+	if condition == nil {
+		return
+	}
+
+	s.SetStorageBound(BrokerStorageBoundCondition(condition.Reason), condition.Message)
+}
+
+// SetStorageBound sets the underlying condition to the given reason.
+func (s *BrokerStatus) SetStorageBound(reason BrokerStorageBoundCondition, messages ...string) {
+	if s.isStorageBoundSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isStorageBoundSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case BrokerStorageBoundReasonBound:
+		if message == "" {
+			message = "All PVCs bound"
+		}
+		status = metav1.ConditionTrue
+	case BrokerStorageBoundReasonPending:
+		status = metav1.ConditionFalse
+	case BrokerStorageBoundReasonError:
+		s.isStorageBoundTransientError = true
+		status = metav1.ConditionFalse
+	case BrokerStorageBoundReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    BrokerStorageBound,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+// SetBrokerRegisteredFromCurrent sets the underlying condition based on an existing object.
+func (s *BrokerStatus) SetBrokerRegisteredFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), BrokerBrokerRegistered)
+	if condition == nil {
+		return
+	}
+
+	s.SetBrokerRegistered(BrokerBrokerRegisteredCondition(condition.Reason), condition.Message)
+}
+
+// SetBrokerRegistered sets the underlying condition to the given reason.
+func (s *BrokerStatus) SetBrokerRegistered(reason BrokerBrokerRegisteredCondition, messages ...string) {
+	if s.isBrokerRegisteredSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isBrokerRegisteredSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case BrokerBrokerRegisteredReasonRegistered:
+		if message == "" {
+			message = "Broker registered with cluster"
+		}
+		status = metav1.ConditionTrue
+	case BrokerBrokerRegisteredReasonNotRegistered:
+		status = metav1.ConditionFalse
+	case BrokerBrokerRegisteredReasonError:
+		s.isBrokerRegisteredTransientError = true
+		status = metav1.ConditionFalse
+	case BrokerBrokerRegisteredReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    BrokerBrokerRegistered,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
+func (s *BrokerStatus) getQuiesced() metav1.Condition {
+	transientErrorConditionsSet := s.isReadyTransientError || s.isPodScheduledTransientError || s.isStorageBoundTransientError || s.isBrokerRegisteredTransientError
+	allConditionsSet := s.isReadySet && s.isPodScheduledSet && s.isStorageBoundSet && s.isBrokerRegisteredSet
+
+	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
+		return metav1.Condition{
+			Type:    BrokerQuiesced,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(BrokerQuiescedReasonQuiesced),
+			Message: "Broker reconciliation finished",
+		}
+	}
+
+	return metav1.Condition{
+		Type:    BrokerQuiesced,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(BrokerQuiescedReasonStillReconciling),
+		Message: "Broker still reconciling",
+	}
+}
+
+func (s *BrokerStatus) getStable(conditions []metav1.Condition) metav1.Condition {
+	allConditionsFoundAndTrue := true
+	for _, condition := range []string{BrokerReady, BrokerStorageBound, BrokerBrokerRegistered, BrokerQuiesced} {
+		conditionFoundAndTrue := false
+		for _, setCondition := range conditions {
+			if setCondition.Type == condition {
+				conditionFoundAndTrue = setCondition.Status == metav1.ConditionTrue
+				break
+			}
+		}
+		if !conditionFoundAndTrue {
+			allConditionsFoundAndTrue = false
+			break
+		}
+	}
+
+	if allConditionsFoundAndTrue {
+		return metav1.Condition{
+			Type:    BrokerStable,
+			Status:  metav1.ConditionTrue,
+			Reason:  string(BrokerStableReasonStable),
+			Message: "Broker stable",
+		}
+	}
+
+	return metav1.Condition{
+		Type:    BrokerStable,
+		Status:  metav1.ConditionFalse,
+		Reason:  string(BrokerStableReasonUnstable),
+		Message: "Broker unstable",
+	}
+}
+
 // HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
 // within the given time period.
 func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
@@ -2227,6 +2756,8 @@ func GetConditions(o client.Object) []metav1.Condition {
 	case *redpandav1alpha2.NodePool:
 		return kind.Status.Conditions
 	case *redpandav1alpha2.RedpandaBrokerPool:
+		return kind.Status.Conditions
+	case *redpandav1alpha2.Broker:
 		return kind.Status.Conditions
 	default:
 		panic("unsupported kind")

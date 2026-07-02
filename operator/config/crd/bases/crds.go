@@ -138,6 +138,11 @@ func RedpandaBrokerPool() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("redpandabrokerpools.cluster.redpanda.com"))
 }
 
+// Broker returns the Broker CustomResourceDefinition.
+func Broker() *apiextensionsv1.CustomResourceDefinition {
+	return mustT(ByName("brokers.cluster.redpanda.com"))
+}
+
 // VectorizedCluster returns the Cluster CustomResourceDefinition.
 func VectorizedCluster() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("clusters.redpanda.vectorized.io"))

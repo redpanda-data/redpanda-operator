@@ -337,7 +337,13 @@ const (
 	v1ClusterRefKind      = "Cluster"
 	v2ClusterRefGroup     = "cluster.redpanda.com"
 	v2ClusterRefKind      = "Redpanda"
+	NodePoolRefKind       = "NodePool"
 	StretchClusterRefKind = "StretchCluster"
+
+	// AnnotationMigrateToBrokerCR triggers Broker CR migration when set to
+	// "true" on a Cluster (V1) or Redpanda (V2) resource. Not exposed in
+	// public docs — intended for internal/cloud use only.
+	AnnotationMigrateToBrokerCR = "operator.redpanda.com/migrate-to-broker-cr"
 )
 
 func (c *ClusterRef) GetGroup() string {
@@ -361,6 +367,10 @@ func (c *ClusterRef) IsV1() bool {
 
 func (c *ClusterRef) IsV2() bool {
 	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == v2ClusterRefKind
+}
+
+func (c *ClusterRef) IsNodePool() bool {
+	return c.GetGroup() == v2ClusterRefGroup && c.GetKind() == NodePoolRefKind
 }
 
 func (c *ClusterRef) IsStretchCluster() bool {

@@ -13,6 +13,7 @@
 
 
 .Resource Types
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker[$$Broker$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpanda[$$Redpanda$$]
@@ -447,6 +448,83 @@ password will be read from. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker"]
+==== Broker
+
+
+
+
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `Broker` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]__ |  |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstatus[$$BrokerStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Ready] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:PodScheduled] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:StorageBound] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:BrokerRegistered] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerphase"]
+==== BrokerPhase
+
+_Underlying type:_ _string_
+
+BrokerPhase describes the lifecycle phase of a Broker.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstatus[$$BrokerStatus$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpodtemplate"]
+==== BrokerPodTemplate
+
+
+
+BrokerPodTemplate defines the pod metadata and spec for a broker.
+Uses flattened labels/annotations instead of nested ObjectMeta to avoid
+strict decoding issues with controller-gen's bare `metadata: type: object`.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`labels`* __object (keys:string, values:string)__ | Labels to apply to the pod. + |  | Optional: \{} +
+
+| *`annotations`* __object (keys:string, values:string)__ | Annotations to apply to the pod. + |  | Optional: \{} +
+
+| *`spec`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podspec-v1-core[$$PodSpec$$]__ | Spec is the pod spec. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec"]
 ==== BrokerPoolSpec
 
@@ -569,6 +647,124 @@ state. + |  |
 deployed as a StatefulSet + |  | 
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | Optional: \{} +
 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec"]
+==== BrokerSpec
+
+
+
+BrokerSpec defines the desired state of a single Redpanda broker.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker[$$Broker$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ | ClusterRef references the parent resource that owns this Broker. +
+Supported targets: +
+- V1 Cluster: group=redpanda.vectorized.io, kind=Cluster +
+- V2 Redpanda: group=cluster.redpanda.com (default), kind=Redpanda (default) +
+- NodePool: group=cluster.redpanda.com (default), kind=NodePool +
+When pointing to a NodePool, the controller resolves the underlying +
+cluster through the NodePool's own ClusterRef. + |  | Required: \{} +
+
+| *`decommission`* __boolean__ | Decommission, when set to true, triggers the Broker controller to +
+decommission this broker via the Redpanda admin API. Decommission is +
+never triggered on raw CR deletion alone — only when this field is +
+explicitly set. + |  | Optional: \{} +
+
+| *`networkIndex`* __integer__ | NetworkIndex is the stable external-addressing slot for this broker. +
+For ordinal-named pods this is the pod ordinal; the V2 chart uses it +
+to select external.addresses[networkIndex]. The value is captured from +
+the parsed ordinal at migration time and preserved across pod rotation. + |  | Optional: \{} +
+
+| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpodtemplate[$$BrokerPodTemplate$$]__ | PodTemplate is the fully resolved pod spec for this broker. + |  | 
+| *`storage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]__ | Storage defines PVC templates or references to existing claims. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstatus"]
+==== BrokerStatus
+
+
+
+BrokerStatus defines the observed state of a single Redpanda broker.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker[$$Broker$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`phase`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerphase[$$BrokerPhase$$]__ | Phase is the high-level lifecycle state of the broker. + |  | Optional: \{} +
+
+| *`brokerID`* __integer__ | BrokerID is the Redpanda node_id, discovered via the admin API after +
+the broker registers with the cluster. Nil until discovered. + |  | Optional: \{} +
+
+| *`podName`* __string__ | PodName is the name of the pod managed by this Broker CR. + |  | Optional: \{} +
+
+| *`podIP`* __string__ | PodIP is the IP address of the pod managed by this Broker CR. + |  | Optional: \{} +
+
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Broker. + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage"]
+==== BrokerStorage
+
+
+
+BrokerStorage configures persistent storage for the broker.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`volumeClaimTemplates`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokervolumeclaim[$$BrokerVolumeClaim$$] array__ | VolumeClaimTemplates for new brokers (fresh PVC creation). + |  | Optional: \{} +
+
+| *`existingClaims`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-existingclaim[$$ExistingClaim$$] array__ | ExistingClaims for migrated brokers (references to StatefulSet-created PVCs). + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokervolumeclaim"]
+==== BrokerVolumeClaim
+
+
+
+BrokerVolumeClaim defines a PVC template with an explicit name field,
+avoiding the embedded ObjectMeta strict-decoding issue.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name of the PVC to create. + |  | 
+| *`spec`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#persistentvolumeclaimspec-v1-core[$$PersistentVolumeClaimSpec$$]__ | Spec defines the desired characteristics of the volume. + |  | 
 |===
 
 
@@ -716,6 +912,7 @@ ClusterRef represents a reference to a cluster that is being targeted.
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
 ****
 
@@ -1412,6 +1609,28 @@ EnterpriseLicenseSecretRef configures a reference to a Secret resource that cont
 | Field | Description | Default | Validation
 | *`key`* __string__ | Specifies the key that is contains the Enterprise license in the Secret. + |  | 
 | *`name`* __string__ | Specifies the name of the Secret resource to use. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-existingclaim"]
+==== ExistingClaim
+
+
+
+ExistingClaim references a pre-existing PVC by name.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`name`* __string__ | Name of the existing PVC. + |  | 
+| *`mountPath`* __string__ | MountPath inside the container. + |  | 
 |===
 
 
