@@ -704,6 +704,12 @@ spec:
               tuning:
                 description: Defines settings for the autotuner tool in Redpanda.
                 properties:
+                  apply_host_tuners:
+                    description: |-
+                      ApplyHostTuners enables a chroot-based tuning init container that
+                      gives `rpk redpanda tune all` access to the host's /sys, /proc,
+                      NICs and block devices. See `Tuning.ApplyHostTuners`.
+                    type: boolean
                   ballast_file_path:
                     description: Specifies the file path for ballast file.
                     type: string

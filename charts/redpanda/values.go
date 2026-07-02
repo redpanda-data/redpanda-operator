@@ -908,6 +908,52 @@ type Tuning struct {
 	BallastFilePath string `json:"ballast_file_path,omitempty"`
 	BallastFileSize string `json:"ballast_file_size,omitempty"`
 	WellKnownIO     string `json:"well_known_io,omitempty"`
+	// ApplyHostTuners enables the chroot-based tuning path. When true, the
+	// tuning init container builds a chroot to the host filesystem and runs
+	// `rpk redpanda tune all` in the host's network namespace, so tuners
+	// that need /sys, /proc, host NICs, or host block devices can actually
+	// apply (disk_irq, disk_scheduler, disk_nomerges, net, ...). When false
+	// (the default), only the small set of tuners that can run inside a
+	// container are applied (aio_events, swappiness, THP, etc.).
+	//
+	// To save users from a two-step config (set ApplyHostTuners AND remember
+	// to flip each of the host-mode tune flags via config.rpk.tune_*),
+	// turning this on default-enables the tuners the chroot path exists
+	// to fix:
+	//   - tune_disk_irq
+	//   - tune_disk_scheduler
+	//   - tune_disk_nomerges
+	//   - tune_network
+	//   - tune_fstrim: rpk starts (or installs) a weekly fstrim systemd
+	//     timer via the host's systemd. In-pod this fails ("dial unix
+	//     /run/systemd/private"); in the chroot the host's /run and /etc
+	//     are bind-mounted, so the D-Bus call reaches the host's PID 1 and
+	//     unit files land in the host's real /etc/systemd/system.
+	//   - tune_disk_write_cache: GCP-only (write-through cache on
+	//     /sys/class/block). In-pod /sys is read-only; the chroot makes it
+	//     writable. rpk explicitly exempts this tuner from its
+	//     enabled-but-unsupported exit(1) on non-GCP clouds, so leaving it
+	//     on everywhere is safe (it reports SUPPORTED=false and is skipped).
+	//   - tune_cpu: sets cpufreq governor to performance. A no-op reported
+	//     as applied on VMs without cpufreq sysfs (most cloud instance
+	//     types); does real work on metal instance types.
+	// The set is unconditional — the chart's RPK config merge is first-arg-
+	// wins, so a user setting `config.rpk.tune_disk_irq: false` alongside
+	// `apply_host_tuners: true` will see the chart's `true` win. Users who
+	// want apply_host_tuners off for any of those tuners should leave
+	// ApplyHostTuners false and wire host tuning via their own DaemonSet.
+	//
+	// Enabling this requires the same security posture as TuneAIOEvents
+	// (privileged container, hostPath volumes). On OpenShift, the pod's
+	// ServiceAccount must be bound to a SCC that allows `hostPath` volumes
+	// and `privileged: true` (the built-in `privileged` SCC works). On
+	// Pod Security Admission clusters, the namespace must be labeled
+	// `privileged`.
+	//
+	// This setting must NOT be combined with running multiple Redpanda
+	// pods per node — concurrent tuners will race on the same kernel
+	// parameters. Use a pod anti-affinity rule that disallows co-location.
+	ApplyHostTuners bool `json:"apply_host_tuners,omitempty"`
 }
 
 func (t *Tuning) Translate() map[string]any {
@@ -922,6 +968,31 @@ func (t *Tuning) Translate() map[string]any {
 
 	for k, v := range m {
 		result[k] = v
+	}
+
+	// Whole point of ApplyHostTuners is to make the rpk tuners that need
+	// host /sys, /proc, NICs and block devices actually fire. Those tuners
+	// are gated by per-tuner flags in the rpk section of redpanda.yaml, not
+	// by ApplyHostTuners itself — so flipping just ApplyHostTuners renders
+	// the chroot init container but `rpk redpanda tune all` runs it against
+	// a config where only tune_aio_events is true (the only host-mode-
+	// relevant flag exposed at the top level). Default-enable the tuners
+	// that motivate this feature. See the ApplyHostTuners doc comment for
+	// per-tuner rationale; the invariant for membership in this list is
+	// "only works (or only does real work) via the chroot path, and cannot
+	// crashloop the init container on hosts that lack the feature".
+	if t.ApplyHostTuners {
+		for _, k := range []string{
+			"tune_disk_irq",
+			"tune_disk_scheduler",
+			"tune_disk_nomerges",
+			"tune_network",
+			"tune_fstrim",
+			"tune_disk_write_cache",
+			"tune_cpu",
+		} {
+			result[k] = true
+		}
 	}
 
 	return result
