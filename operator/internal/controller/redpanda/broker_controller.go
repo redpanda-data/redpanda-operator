@@ -186,13 +186,19 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		}
 	}
 
-	// 3. Determine phase from pod status.
+	// 3. Resolve broker ID from admin API when pod is ready.
+	if isPodReady(&pod) && broker.Status.BrokerID == nil {
+		if brokerID, err := r.resolveBrokerID(ctx, &broker, podName); err != nil {
+			l.Info("could not resolve broker ID", "error", err)
+		} else if brokerID != nil {
+			broker.Status.BrokerID = brokerID
+		}
+	}
+
+	// 4. Determine phase from pod status.
 	phase := redpandav1alpha2.BrokerPhaseProvisioning
 	if isPodReady(&pod) {
 		phase = redpandav1alpha2.BrokerPhaseRunning
-	}
-	if broker.Spec.Decommission {
-		phase = redpandav1alpha2.BrokerPhaseDecommissioning
 	}
 	for _, cond := range pod.Status.Conditions {
 		if cond.Type == corev1.PodScheduled && cond.Status == corev1.ConditionFalse && cond.Reason == "Unschedulable" {
@@ -200,13 +206,18 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		}
 	}
 
-	// 4. Resolve broker ID from admin API when pod is ready.
-	if isPodReady(&pod) && broker.Status.BrokerID == nil {
-		if brokerID, err := r.resolveBrokerID(ctx, &broker, podName); err != nil {
-			l.Info("could not resolve broker ID", "error", err)
-		} else if brokerID != nil {
-			broker.Status.BrokerID = brokerID
+	// 5. Execute decommission when spec.decommission is true and broker ID is known.
+	if broker.Spec.Decommission && broker.Status.BrokerID != nil {
+		decommResult, err := r.executeDecommission(ctx, &broker)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
+		phase = decommResult.phase
+		if decommResult.requeue {
+			return r.updateStatus(ctx, k8sClient, &broker, &pod, phase)
+		}
+	} else if broker.Spec.Decommission {
+		phase = redpandav1alpha2.BrokerPhaseDecommissioning
 	}
 
 	return r.updateStatus(ctx, k8sClient, &broker, &pod, phase)
@@ -236,6 +247,52 @@ func (r *BrokerReconciler) updateStatus(ctx context.Context, k8sClient client.Cl
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+}
+
+type decommissionResult struct {
+	phase   redpandav1alpha2.BrokerPhase
+	requeue bool
+}
+
+func (r *BrokerReconciler) executeDecommission(ctx context.Context, broker *redpandav1alpha2.Broker) (decommissionResult, error) {
+	l := log.FromContext(ctx)
+	brokerID := int(*broker.Status.BrokerID)
+
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+	if err != nil {
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
+	}
+	defer admin.Close()
+
+	// Last-broker guard (RFC Q2).
+	brokers, err := admin.Brokers(ctx)
+	if err != nil {
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
+	}
+	if len(brokers) <= 1 {
+		l.Info("blocking decommission: last broker in cluster", "brokerID", brokerID)
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseStuck}, nil
+	}
+
+	status, err := admin.DecommissionBrokerStatus(ctx, brokerID)
+	if err != nil {
+		if strings.Contains(err.Error(), "is not decommissioning") {
+			l.Info("initiating decommission", "brokerID", brokerID)
+			if err := admin.DecommissionBroker(ctx, brokerID); err != nil {
+				return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
+			}
+			return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning, requeue: true}, nil
+		}
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
+	}
+
+	if !status.Finished {
+		l.Info("decommission in progress", "brokerID", brokerID)
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning, requeue: true}, nil
+	}
+
+	l.Info("decommission finished", "brokerID", brokerID)
+	return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioned}, nil
 }
 
 func (r *BrokerReconciler) resolveBrokerID(ctx context.Context, broker *redpandav1alpha2.Broker, podName string) (*int32, error) {

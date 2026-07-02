@@ -176,6 +176,16 @@ func init() {
 	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
 	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
 
+	// Broker CRD scenario steps
+	framework.RegisterStep(`^I pause reconciliation on cluster "([^"]*)"$`, pauseReconciliation)
+	framework.RegisterStep(`^I orphan-delete the StatefulSet for cluster "([^"]*)"$`, orphanDeleteStatefulSet)
+	framework.RegisterStep(`^I create Broker CRs for cluster "([^"]*)"$`, createBrokerCRsForCluster)
+	framework.RegisterStep(`^I grant roll-grants to all Broker CRs for cluster "([^"]*)"$`, grantRollGrants)
+	framework.RegisterStep(`^all Broker CRs for cluster "([^"]*)" should be Running$`, allBrokerCRsRunning)
+	framework.RegisterStep(`^I set decommission on Broker "([^"]*)" for cluster "([^"]*)"$`, setDecommissionOnBroker)
+	framework.RegisterStep(`^Broker "([^"]*)" should reach phase "([^"]*)"$`, brokerShouldReachPhase)
+	framework.RegisterStep(`^cluster "([^"]*)" admin API should show (\d+) brokers$`, clusterAdminAPIShouldShowBrokers)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }

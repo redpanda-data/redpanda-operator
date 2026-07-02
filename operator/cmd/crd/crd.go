@@ -79,7 +79,7 @@ func Command() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&experimental, "experimental", false, "Install experimental CRDs")
+	cmd.Flags().BoolVar(&experimental, "experimental", true, "Install experimental CRDs")
 	cmd.Flags().BoolVar(&vectorized, "vectorized", false, "Install vectorized group (Cluster, Console) AKA the V1 Operator CRDs")
 	cmd.Flags().BoolVar(&multicluster, "multicluster", false, "Install multicluster CRDs")
 
