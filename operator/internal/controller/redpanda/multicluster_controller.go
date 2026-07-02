@@ -102,6 +102,13 @@ type MulticlusterReconciler struct {
 	// loop proceeds to the next broker. Mirrors RedpandaReconciler; defaults
 	// to probes.DefaultPostRestartCaughtUpPercent (100).
 	PostRestartCaughtUpPercent int
+
+	// MaintenanceModeClearThreshold is how long a broker must be down (pod
+	// not-Ready) while stuck in maintenance mode before the operator clears the
+	// maintenance flag so the partition balancer can auto-decommission it. Zero
+	// applies defaultClearMaintenanceModeAfter (30m); set via the
+	// --clear-maintenance-mode-after flag.
+	MaintenanceModeClearThreshold time.Duration
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -297,13 +304,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 
 	// Phase 3: cluster-level reconciliation (admin API, decommission, config, license).
-	clusterReconcilers := []stretchClusterReconciliationFn{
-		r.initAdminClient,
-		r.reconcileDecommission,
-		r.reconcileLicense,
-		r.reconcileClusterConfig,
-	}
-	for _, reconciler := range clusterReconcilers {
+	for _, reconciler := range r.clusterReconcilers() {
 		result, err := reconciler(ctx, state, cluster)
 		if err != nil || result.RequeueAfter > 0 {
 			l.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
@@ -314,6 +315,27 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// we're at the end of reconciliation, so sync back our status
 	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+}
+
+// clusterReconcilers returns the ordered cluster-level reconcile steps
+// (admin API, maintenance mode, decommission, config, license). Order
+// matters: any step returning a non-zero RequeueAfter or an error aborts the
+// rest of the chain for this pass, so a step whose completion is a
+// precondition for another must come first.
+//
+// reconcileMaintenanceMode must precede reconcileDecommission specifically:
+// reconcileDecommission requeues for as long as a decommission it started is
+// not yet Finished, which is exactly the state a broker stuck in maintenance
+// mode sits in forever (the partition balancer refuses to move data off a
+// maintenance-mode node), so the clear would never run if ordered after it.
+func (r *MulticlusterReconciler) clusterReconcilers() []stretchClusterReconciliationFn {
+	return []stretchClusterReconciliationFn{
+		r.initAdminClient,
+		r.reconcileMaintenanceMode,
+		r.reconcileDecommission,
+		r.reconcileLicense,
+		r.reconcileClusterConfig,
+	}
 }
 
 // findAliveCluster checks whether the StretchCluster exists and is NOT being
@@ -1084,7 +1106,14 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// brokerMap keys brokers by the first DNS label of their internal RPC
 	// address (pod name for single-cluster) and also by the raw host (pod IP
 	// for stretch-cluster flat-network mode where InternalRPCAddress is an IP).
-	brokerMap := map[string]int{}
+	// Values are buckets, not a single broker ID: a StretchCluster with
+	// identically-named BrokerPools across member clusters can legitimately
+	// produce the same pod name in more than one member cluster (a
+	// StatefulSet/pod name has no member-cluster component), so
+	// brokerIDForPod treats a bucket with more than one entry as ambiguous
+	// rather than guessing (see its doc comment) instead of the operator
+	// decommissioning, or skipping the pre-restart probe for, the wrong broker.
+	brokerMap := map[string][]int{}
 	downNodes := map[int]bool{}
 	for _, brokerID := range health.AllNodes {
 		brokerCtx, brokerCancel := context.WithTimeout(ctx, brokerFetchTimeout)
@@ -1101,10 +1130,13 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		if h, _, err := net.SplitHostPort(broker.InternalRPCAddress); err == nil {
 			host = h
 		}
+		if host == "" {
+			continue
+		}
 		// Key by first DNS label (pod name for single-cluster FQDN).
-		brokerMap[strings.SplitN(host, ".", 2)[0]] = brokerID
+		brokerMap[strings.SplitN(host, ".", 2)[0]] = append(brokerMap[strings.SplitN(host, ".", 2)[0]], brokerID)
 		// Also key by the full host (pod IP for stretch-cluster flat-network).
-		brokerMap[host] = brokerID
+		brokerMap[host] = append(brokerMap[host], brokerID)
 	}
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
@@ -1182,7 +1214,16 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		// pre-restart-probe it when mapped, then apply decideRollAction. These
 		// are live admin-API checks, not informer reads, so they don't add the
 		// cache-staleness concern stretch's multiple informers otherwise carry.
-		brokerID, inBrokerMap := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
+		brokerID, inBrokerMap, ambiguous := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
+		if ambiguous {
+			// Do NOT treat this as "not in brokerMap" — decideRollAction
+			// deletes an unmapped pod outright when the cluster is healthy,
+			// which would bypass the pre-restart safety probe for a pod that
+			// in fact maps to more than one live broker across member
+			// clusters.
+			logger.Info("skipping roll decision: pod name matches multiple brokers, refusing to guess which one it is", "pod", pod.GetName(), "cluster", pod.GetCluster())
+			continue
+		}
 		var brokerSafe bool
 		var probeErr error
 		if inBrokerMap {
@@ -1489,14 +1530,25 @@ func (r *MulticlusterReconciler) fetchClusterHealth(ctx context.Context, admin *
 // scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
 // decommissioning the broker with the last pod ordinal and then patching the statefulset with
 // a single less replica.
-func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int, downNodes map[int]bool) (bool, error) {
+func (r *MulticlusterReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.StretchClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string][]int, downNodes map[int]bool) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("MulticlusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// Resolve by pod name, then pod IP (stretch flat-network advertises brokers
 	// by bare IP) so a live broker is decommissioned before its pod is removed
 	// rather than being misclassified as already-removed.
-	brokerID, ok := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
+	brokerID, ok, ambiguous := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
+	if ambiguous {
+		// Do NOT fall through to the !ok branch below: that path assumes the
+		// broker was already fully removed from the cluster and proceeds to
+		// patch the StatefulSet directly. Here the pod maps to more than one
+		// real broker (identically-named BrokerPools across member
+		// clusters), so guessing could decommission — or silently orphan —
+		// the wrong one.
+		logger.Info("deferring scale-down: pod name matches multiple brokers, refusing to guess which one to decommission",
+			"pod", client.ObjectKeyFromObject(set.LastPod).String())
+		return true, nil
+	}
 	if ok {
 		// decommission if we have a brokerID, if not
 		// then the node has already been fully removed from
@@ -1613,7 +1665,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -1647,11 +1699,12 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		}).
 		Complete(
 			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
-				Manager:                    mgr,
-				LifecycleClient:            lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
-				ClientFactory:              factory,
-				ReconcileTimeout:           reconcileTimeout,
-				PostRestartCaughtUpPercent: postRestartCaughtUpPercent,
+				Manager:                       mgr,
+				LifecycleClient:               lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
+				ClientFactory:                 factory,
+				ReconcileTimeout:              reconcileTimeout,
+				PostRestartCaughtUpPercent:    postRestartCaughtUpPercent,
+				MaintenanceModeClearThreshold: clearMaintenanceModeAfter,
 			}, "StretchCluster", periodicRequeue),
 		)
 }

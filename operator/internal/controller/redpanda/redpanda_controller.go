@@ -108,6 +108,12 @@ type RedpandaReconciler struct {
 	// probes.DefaultPostRestartCaughtUpPercent (100); set lower to accept
 	// partial recovery at the gate.
 	PostRestartCaughtUpPercent int
+	// MaintenanceModeClearThreshold is how long a broker must be down (pod
+	// not-Ready) while stuck in maintenance mode before the operator clears the
+	// maintenance flag so the partition balancer can auto-decommission it. Zero
+	// applies defaultClearMaintenanceModeAfter (30m); set via the
+	// --clear-maintenance-mode-after flag.
+	MaintenanceModeClearThreshold time.Duration
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -277,26 +283,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
 	}
 
-	reconcilers := []clusterReconciliationFn{
-		r.reconcileParameterValidation,
-		// we sync all our non pool resources first so that they're in-place
-		// prior to us scaling up our node pools
-		r.reconcileResources,
-		// next we sync up all of our pools themselves
-		r.reconcilePools,
-		// now we memoize the admin client onto the state
-		r.initAdminClient,
-		// now we ensure that we reconcile all of our decommissioning nodes
-		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
-		// My thought is no since we want to be snappy with decommissioning.
-		r.reconcileDecommission,
-		// finally reconcile all of our license information
-		r.reconcileLicense,
-		// now reconcile cluster configuration
-		r.reconcileClusterConfig,
-	}
-
-	for _, reconciler := range reconcilers {
+	for _, reconciler := range r.clusterReconcilers() {
 		result, err := reconciler(ctx, state, cluster)
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
@@ -309,6 +296,41 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// we're at the end of reconciliation, so sync back our status
 	log.FromContext(ctx).V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+}
+
+// clusterReconcilers returns the ordered cluster-level reconcile steps run
+// once per-pool resources are in sync. Order matters: any step returning a
+// non-zero RequeueAfter or an error aborts the rest of the chain for this
+// pass (see the loop in Reconcile), so a step whose completion is a
+// precondition for another must come first.
+//
+// reconcileMaintenanceMode must precede reconcileDecommission specifically:
+// reconcileDecommission requeues for as long as a decommission it started is
+// not yet Finished, which is exactly the state a broker stuck in maintenance
+// mode sits in forever (the partition balancer refuses to move data off a
+// maintenance-mode node), so the clear would never run if ordered after it.
+func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
+	return []clusterReconciliationFn{
+		r.reconcileParameterValidation,
+		// we sync all our non pool resources first so that they're in-place
+		// prior to us scaling up our node pools
+		r.reconcileResources,
+		// next we sync up all of our pools themselves
+		r.reconcilePools,
+		// now we memoize the admin client onto the state
+		r.initAdminClient,
+		// clear maintenance mode on brokers that have been down long enough
+		// that their stuck maintenance flag is blocking auto-decommission
+		r.reconcileMaintenanceMode,
+		// now we ensure that we reconcile all of our decommissioning nodes
+		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
+		// My thought is no since we want to be snappy with decommissioning.
+		r.reconcileDecommission,
+		// finally reconcile all of our license information
+		r.reconcileLicense,
+		// now reconcile cluster configuration
+		r.reconcileClusterConfig,
+	}
 }
 
 func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpandav1alpha2.Redpanda, cluster cluster.Cluster) (*clusterReconciliationState, error) {
@@ -530,8 +552,10 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	// port suffix) or — in rarer misconfigurations — as a bare IP. Strip
 	// the port if present, then key by both the first label (pod-name
 	// lookup) and the raw host, so the roll loop below doesn't silently
-	// misclassify a registered broker as orphan.
-	brokerMap := map[string]int{}
+	// misclassify a registered broker as orphan. Values are buckets, not a
+	// single broker ID: brokerIDForPod treats a bucket with more than one
+	// entry as ambiguous rather than guessing (see its doc comment).
+	brokerMap := map[string][]int{}
 	for _, brokerID := range health.AllNodes {
 		broker, err := state.admin.Broker(ctx, brokerID)
 		if err != nil {
@@ -542,8 +566,11 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		if h, _, splitErr := net.SplitHostPort(broker.InternalRPCAddress); splitErr == nil {
 			host = h
 		}
-		brokerMap[strings.SplitN(host, ".", 2)[0]] = brokerID
-		brokerMap[host] = brokerID
+		if host == "" {
+			continue
+		}
+		brokerMap[strings.SplitN(host, ".", 2)[0]] = append(brokerMap[strings.SplitN(host, ".", 2)[0]], brokerID)
+		brokerMap[host] = append(brokerMap[host], brokerID)
 	}
 
 	// next scale down any over-provisioned pools, patching them to use the new spec
@@ -615,7 +642,15 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 		// Resolve the pod to a broker (pod name, then pod IP for a bare-IP
 		// InternalRPCAddress), pre-restart-probe it when mapped, then apply the
 		// shared roll-safety decision (see decideRollAction for the rationale).
-		brokerID, inBrokerMap := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
+		brokerID, inBrokerMap, ambiguous := brokerIDForPod(brokerMap, pod.GetName(), pod.Status.PodIP)
+		if ambiguous {
+			// Do NOT treat this as "not in brokerMap" — decideRollAction deletes
+			// an unmapped pod outright when the cluster is healthy, which would
+			// bypass the pre-restart safety probe for a pod that in fact maps to
+			// more than one live broker.
+			logger.Info("skipping roll decision: pod name matches multiple brokers, refusing to guess which one it is", "pod", pod.GetName())
+			continue
+		}
 		var brokerSafe bool
 		var probeErr error
 		if inBrokerMap {
@@ -995,16 +1030,31 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, cluster cluster.Clu
 // only as a raw-host key, which a pod-name lookup can't match — without the
 // fallback a live, in-sync broker would be misclassified as an orphan and
 // deleted without first running its pre-restart probe.
-func brokerIDForPod(brokerMap map[string]int, podName, podIP string) (int, bool) {
-	if id, ok := brokerMap[podName]; ok {
-		return id, true
+//
+// A bucket with more than one broker ID — a StretchCluster with
+// identically-named BrokerPools across member clusters can produce this,
+// since a StatefulSet/pod name has no member-cluster component — is reported
+// as ambiguous rather than resolved to either candidate. Callers MUST NOT
+// treat ambiguous the same as unresolved: unresolved means "no broker known
+// for this pod" (the roll loop's and scaleDown's orphan-pod paths), whereas
+// ambiguous means "this pod maps to more than one real broker and guessing
+// could apply a safety check or a decommission to the wrong one."
+func brokerIDForPod(brokerMap map[string][]int, podName, podIP string) (brokerID int, resolved bool, ambiguous bool) {
+	if ids, ok := brokerMap[podName]; ok {
+		if len(ids) > 1 {
+			return 0, false, true
+		}
+		return ids[0], true, false
 	}
 	if podIP != "" {
-		if id, ok := brokerMap[podIP]; ok {
-			return id, true
+		if ids, ok := brokerMap[podIP]; ok {
+			if len(ids) > 1 {
+				return 0, false, true
+			}
+			return ids[0], true, false
 		}
 	}
-	return 0, false
+	return 0, false, false
 }
 
 // decideRollAction encodes the per-pod rolling-restart safety decision shared
@@ -1149,35 +1199,39 @@ func brokerCaughtUp(ctx context.Context, admin *rpadmin.AdminAPI, brokerID, thre
 // running for hours and is fully caught up returns 100 every time. The
 // extra cost is one admin call per broker per reconcile, gated on
 // len(rollSet) > 0 so steady-state clusters don't pay it.
-func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, brokerMap map[string]int, threshold int, logger logr.Logger) (bool, error) {
+func brokersStillRecovering(ctx context.Context, admin *rpadmin.AdminAPI, brokerMap map[string][]int, threshold int, logger logr.Logger) (bool, error) {
 	// Deduplicate broker IDs — brokerMap intentionally double-keys (by
 	// first DNS label and raw host) so iterating values directly would
-	// query each broker twice.
+	// query each broker twice. Ambiguity (a bucket with more than one broker
+	// ID) doesn't matter here: this scan wants every broker currently known
+	// to the map, not a specific pod-to-broker resolution.
 	seen := map[int]struct{}{}
 	var firstErr error
-	for podName, brokerID := range brokerMap {
-		if _, dup := seen[brokerID]; dup {
-			continue
-		}
-		seen[brokerID] = struct{}{}
-
-		caughtUp, err := brokerCaughtUp(ctx, admin, brokerID, threshold, logger, podName)
-		if err != nil {
-			// A probe error on one broker must not short-circuit the scan.
-			// brokerMap iteration order is random, and the caller treats a
-			// returned error as non-fatal and proceeds with the roll — so
-			// bailing on the first error could let us roll the next pod while
-			// a *different* broker is still recovering, reopening the
-			// under-replication window this gate exists to close (RFC
-			// cases 2/4). Record the first error and keep scanning; a
-			// confirmed still-recovering broker below takes precedence.
-			if firstErr == nil {
-				firstErr = err
+	for podName, brokerIDs := range brokerMap {
+		for _, brokerID := range brokerIDs {
+			if _, dup := seen[brokerID]; dup {
+				continue
 			}
-			continue
-		}
-		if !caughtUp {
-			return true, nil
+			seen[brokerID] = struct{}{}
+
+			caughtUp, err := brokerCaughtUp(ctx, admin, brokerID, threshold, logger, podName)
+			if err != nil {
+				// A probe error on one broker must not short-circuit the scan.
+				// brokerMap iteration order is random, and the caller treats a
+				// returned error as non-fatal and proceeds with the roll — so
+				// bailing on the first error could let us roll the next pod while
+				// a *different* broker is still recovering, reopening the
+				// under-replication window this gate exists to close (RFC
+				// cases 2/4). Record the first error and keep scanning; a
+				// confirmed still-recovering broker below takes precedence.
+				if firstErr == nil {
+					firstErr = err
+				}
+				continue
+			}
+			if !caughtUp {
+				return true, nil
+			}
 		}
 	}
 	return false, firstErr
@@ -1200,14 +1254,24 @@ func (r *RedpandaReconciler) fetchClusterHealth(ctx context.Context, admin *rpad
 // scaleDown contains the majority of the logic for scaling down a statefulset incrementally, first
 // decommissioning the broker with the last pod ordinal and then patching the statefulset with
 // a single less replica.
-func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.ClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string]int) (bool, error) {
+func (r *RedpandaReconciler) scaleDown(ctx context.Context, admin *rpadmin.AdminAPI, cluster *lifecycle.ClusterWithPools, set *lifecycle.ScaleDownSet, brokerMap map[string][]int) (bool, error) {
 	logger := log.FromContext(ctx).WithName(fmt.Sprintf("ClusterReconciler[%T].scaleDown", *cluster))
 	logger.V(log.TraceLevel).Info("starting StatefulSet scale down", "StatefulSet", client.ObjectKeyFromObject(set.StatefulSet).String())
 
 	// Resolve by pod name, then pod IP — same as the roll loop — so a broker
 	// advertising a bare-IP InternalRPCAddress is decommissioned rather than
 	// having its pod deleted as if it were already removed from the cluster.
-	brokerID, ok := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
+	brokerID, ok, ambiguous := brokerIDForPod(brokerMap, set.LastPod.GetName(), set.LastPod.Status.PodIP)
+	if ambiguous {
+		// Do NOT treat this as "not in brokerMap": that path skips
+		// decommissioning entirely and patches the StatefulSet to remove the
+		// pod directly, on the assumption the broker was already removed from
+		// the cluster. Here the pod maps to more than one real broker, so
+		// guessing could decommission (or silently orphan) the wrong one.
+		logger.Info("deferring scale-down: pod name matches multiple brokers, refusing to guess which one to decommission",
+			"pod", client.ObjectKeyFromObject(set.LastPod).String())
+		return true, nil
+	}
 	if ok {
 		// decommission if we have a brokerID, if not
 		// then the node has already been fully removed from

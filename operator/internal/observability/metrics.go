@@ -89,6 +89,34 @@ var (
 		Name:      "pvc_unbinder_gate_deferred_total",
 		Help:      "PVCUnbinder reconciles that returned early because a safety gate deferred remediation, labeled by which gate fired.",
 	}, []string{"gate"})
+
+	// MaintenanceModeCleared counts brokers whose stuck maintenance-mode flag
+	// the operator cleared because the broker had been down (pod not-Ready)
+	// past the configured threshold. A broker left in maintenance mode is
+	// excluded from the partition balancer's auto-decommission, so this
+	// remediation unblocks recovery. Labeled by the broker's cluster (member)
+	// name (empty for the single-cluster Redpanda reconciler).
+	MaintenanceModeCleared = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "maintenance_mode_cleared_total",
+		Help:      "Brokers whose stuck maintenance-mode flag was cleared by the operator after being down past the threshold, labeled by cluster.",
+	}, []string{"cluster"})
+
+	// MaintenanceModeClearSkippedAmbiguous counts pods whose long-down state
+	// would otherwise gate a maintenance-mode clear, but whose pod name matched
+	// more than one broker (e.g. a StretchCluster with identically-named
+	// BrokerPools in two member clusters) and was therefore skipped rather than
+	// guessed. A sustained non-zero rate means a broker may be permanently stuck
+	// in maintenance mode because its pod name is ambiguous; the BrokerPool name
+	// collision must be resolved to unblock it. Labeled by the pod's cluster
+	// (member) name (empty for the single-cluster Redpanda reconciler).
+	MaintenanceModeClearSkippedAmbiguous = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "maintenance_mode_clear_skipped_ambiguous_total",
+		Help:      "Pods that satisfied the maintenance-mode clear threshold but whose pod name ambiguously matched more than one broker, so no clear was attempted, labeled by cluster.",
+	}, []string{"cluster"})
 )
 
 // ====================================================================
@@ -192,6 +220,8 @@ func init() {
 		ReconcileSteadyStateTotal,
 		ReconcileLastSuccessTimestampSeconds,
 		PVCUnbinderGateDeferred,
+		MaintenanceModeCleared,
+		MaintenanceModeClearSkippedAmbiguous,
 
 		// Group 2 — StretchCluster member status.
 		StretchClusterMemberReachable,

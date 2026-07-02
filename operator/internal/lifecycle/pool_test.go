@@ -1132,6 +1132,53 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 	}
 }
 
+// TestPoolTrackerExistingPods pins that ExistingPods returns every existing pod
+// across all pools regardless of revision — the maintenance-mode cleaner must
+// inspect pods that are NOT in the roll set (a persistently-down broker's pod).
+// It also pins that canonicalClusterName is carried through to the resulting
+// MulticlusterPod: the maintenance-mode cleaner's log line and its
+// MaintenanceModeCleared metric label both key off GetCanonicalClusterName(),
+// so silently dropping it would blank both out.
+func TestPoolTrackerExistingPods(t *testing.T) {
+	pool1 := &MulticlusterStatefulSet{
+		clusterName:          mcmanager.LocalCluster,
+		canonicalClusterName: "local-canonical",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-1"}},
+	}
+	pool2 := &MulticlusterStatefulSet{
+		clusterName:          "peer-cluster",
+		canonicalClusterName: "peer-canonical",
+		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-2"}},
+	}
+	tracker := NewPoolTracker(0, false)
+	tracker.addExisting(
+		&poolWithOrdinals{
+			pods: []*podsWithOrdinals{
+				{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-1"}}},
+				{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-2"}}},
+			},
+			set: pool1,
+		},
+		&poolWithOrdinals{
+			pods: []*podsWithOrdinals{{pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "pod-3"}}}},
+			set:  pool2,
+		},
+	)
+	pods := tracker.ExistingPods()
+	require.ElementsMatch(t, []string{"pod-1", "pod-2", "pod-3"}, objectNames(pods))
+	byName := map[string]string{}
+	canonicalByName := map[string]string{}
+	for _, p := range pods {
+		byName[p.GetName()] = p.GetCluster()
+		canonicalByName[p.GetName()] = p.GetCanonicalClusterName()
+	}
+	require.Equal(t, mcmanager.LocalCluster, byName["pod-1"])
+	require.Equal(t, "peer-cluster", byName["pod-3"])
+	require.Equal(t, "local-canonical", canonicalByName["pod-1"])
+	require.Equal(t, "local-canonical", canonicalByName["pod-2"])
+	require.Equal(t, "peer-canonical", canonicalByName["pod-3"])
+}
+
 // TestHasRecentlyReplacedPods pins the gate semantics that prevent the rolling
 // restart loop from deleting a second pod while a just-replaced peer is still
 // coming up — the window where Redpanda's cluster health view lags behind pod
