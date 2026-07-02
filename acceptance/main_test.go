@@ -94,7 +94,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			"quay.io/jetstack/cert-manager-cainjector:" + testutil.CertManagerVersion,
 			"quay.io/jetstack/cert-manager-startupapicheck:" + testutil.CertManagerVersion,
 			"quay.io/jetstack/cert-manager-webhook:" + testutil.CertManagerVersion,
-			"ghcr.io/loft-sh/kubernetes:v1.33.4",
+			"ghcr.io/loft-sh/kubernetes:v1.36.1",
 			"ghcr.io/loft-sh/vcluster-pro:" + testutil.GetVClusterImageTag(),
 		}...).
 		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)

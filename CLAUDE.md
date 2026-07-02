@@ -105,17 +105,25 @@ Update the `K3S_IMAGE` default in `flake.nix` devshell env to the maximum suppor
 { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.XX.x)"; }
 ```
 
-#### 9. vcluster version (`pkg/vcluster/vcluster.go` + `Taskfile.yml`)
+#### 9. vcluster version (`pkg/testutil/testutil.go` + `Taskfile.yml`)
 vcluster is used by acceptance and integration tests to create isolated K8s environments. The vcluster version must support the host K8s version.
-- `pkg/vcluster/vcluster.go`: `vClusterChartVersion` constant
+- `pkg/testutil/testutil.go`: `VClusterVersion` constant
 - `Taskfile.yml`: `DEFAULT_TEST_VCLUSTER_VERSION`
 - Integration test files: `ghcr.io/loft-sh/vcluster-pro:<version>` image refs in `factory_test.go`, `redpanda_controller_test.go`, `broker_test.go`
 
 Known compatibility: v0.28.0 fails on K8s 1.32+ (vcluster pod never initializes). Use v0.31.2+ for K8s 1.32.
 
-#### 10. cert-manager version in vcluster (`pkg/vcluster/vcluster.go` + `Taskfile.yml`)
+#### 9b. vcluster distro image tag
+The K8s distro image used inside vclusters (`ghcr.io/loft-sh/kubernetes:<tag>`) is set in **three** places — all must match:
+- `pkg/vcluster/vcluster.go`: `DefaultValues` distro tag
+- `Taskfile.yml`: pre-pull image list
+- `acceptance/main_test.go`: `WithImportedImages` list (hardcoded literal)
+
+The distro version must be supported by the vcluster chart version from step 9.
+
+#### 10. cert-manager version in vcluster (`pkg/testutil/testutil.go` + `Taskfile.yml`)
 cert-manager is deployed inside vclusters for webhook TLS certificates. The version must support the K8s version running inside the vcluster.
-- `pkg/vcluster/vcluster.go`: `certManagerChartversion` constant
+- `pkg/testutil/testutil.go`: `CertManagerVersion` constant
 - `Taskfile.yml`: `DEFAULT_SECOND_TEST_CERTMANAGER_VERSION`
 - Integration test files: `quay.io/jetstack/cert-manager-*:<version>` image refs
 
