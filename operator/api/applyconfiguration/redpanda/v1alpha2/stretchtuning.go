@@ -20,6 +20,7 @@ type StretchTuningApplyConfiguration struct {
 	TuneBallastFile *bool   `json:"tune_ballast_file,omitempty"`
 	TuneClockSource *bool   `json:"tune_clocksource,omitempty"`
 	WellKnownIo     *string `json:"well_known_io,omitempty"`
+	ApplyHostTuners *bool   `json:"apply_host_tuners,omitempty"`
 }
 
 // StretchTuningApplyConfiguration constructs a declarative configuration of the StretchTuning type for use with
@@ -73,5 +74,13 @@ func (b *StretchTuningApplyConfiguration) WithTuneClockSource(value bool) *Stret
 // If called multiple times, the WellKnownIo field is set to the value of the last call.
 func (b *StretchTuningApplyConfiguration) WithWellKnownIo(value string) *StretchTuningApplyConfiguration {
 	b.WellKnownIo = &value
+	return b
+}
+
+// WithApplyHostTuners sets the ApplyHostTuners field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ApplyHostTuners field is set to the value of the last call.
+func (b *StretchTuningApplyConfiguration) WithApplyHostTuners(value bool) *StretchTuningApplyConfiguration {
+	b.ApplyHostTuners = &value
 	return b
 }

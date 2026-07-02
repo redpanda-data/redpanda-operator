@@ -22946,6 +22946,16 @@ spec:
                               in the container and optimizes the Linux kernel to give
                               you the best performance.
                             properties:
+                              apply_host_tuners:
+                                description: |-
+                                  ApplyHostTuners enables a chroot-based tuning init container that
+                                  gives `rpk redpanda tune all` access to the host's /sys, /proc,
+                                  NICs and block devices so tuners like disk_irq, disk_scheduler,
+                                  disk_nomerges and net actually apply. Requires `tune_aio_events`.
+                                  Opt-in: defaults to false. Enabling requires a privileged SCC/PSA
+                                  on the namespace and MUST be combined with one-pod-per-node
+                                  anti-affinity to avoid kernel-parameter races.
+                                type: boolean
                               ballast_file_path:
                                 description: Specifies the file path for ballast file.
                                   A ballast file is an empty file that takes up disk
@@ -33587,6 +33597,16 @@ spec:
                       The autotuner identifies the hardware configuration in the container
                       and optimizes the Linux kernel to give you the best performance.
                     properties:
+                      apply_host_tuners:
+                        description: |-
+                          ApplyHostTuners enables a chroot-based tuning init container that
+                          gives `rpk redpanda tune all` access to the host's /sys, /proc,
+                          NICs and block devices so tuners like disk_irq, disk_scheduler,
+                          disk_nomerges and net actually apply. Requires `tune_aio_events`.
+                          Opt-in: defaults to false. Enabling requires a privileged SCC/PSA
+                          on the namespace and MUST be combined with one-pod-per-node
+                          anti-affinity to avoid kernel-parameter races.
+                        type: boolean
                       ballast_file_path:
                         description: Specifies the file path for ballast file. A ballast
                           file is an empty file that takes up disk space. If Redpanda
@@ -56897,6 +56917,16 @@ spec:
                               in the container and optimizes the Linux kernel to give
                               you the best performance.
                             properties:
+                              apply_host_tuners:
+                                description: |-
+                                  ApplyHostTuners enables a chroot-based tuning init container that
+                                  gives `rpk redpanda tune all` access to the host's /sys, /proc,
+                                  NICs and block devices so tuners like disk_irq, disk_scheduler,
+                                  disk_nomerges and net actually apply. Requires `tune_aio_events`.
+                                  Opt-in: defaults to false. Enabling requires a privileged SCC/PSA
+                                  on the namespace and MUST be combined with one-pod-per-node
+                                  anti-affinity to avoid kernel-parameter races.
+                                type: boolean
                               ballast_file_path:
                                 description: Specifies the file path for ballast file.
                                   A ballast file is an empty file that takes up disk
@@ -67538,6 +67568,16 @@ spec:
                       The autotuner identifies the hardware configuration in the container
                       and optimizes the Linux kernel to give you the best performance.
                     properties:
+                      apply_host_tuners:
+                        description: |-
+                          ApplyHostTuners enables a chroot-based tuning init container that
+                          gives `rpk redpanda tune all` access to the host's /sys, /proc,
+                          NICs and block devices so tuners like disk_irq, disk_scheduler,
+                          disk_nomerges and net actually apply. Requires `tune_aio_events`.
+                          Opt-in: defaults to false. Enabling requires a privileged SCC/PSA
+                          on the namespace and MUST be combined with one-pod-per-node
+                          anti-affinity to avoid kernel-parameter races.
+                        type: boolean
                       ballast_file_path:
                         description: Specifies the file path for ballast file. A ballast
                           file is an empty file that takes up disk space. If Redpanda

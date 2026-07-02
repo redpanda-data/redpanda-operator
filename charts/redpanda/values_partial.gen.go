@@ -226,6 +226,7 @@ type PartialTuning struct {
 	BallastFilePath *string "json:\"ballast_file_path,omitempty\""
 	BallastFileSize *string "json:\"ballast_file_size,omitempty\""
 	WellKnownIO     *string "json:\"well_known_io,omitempty\""
+	ApplyHostTuners *bool   "json:\"apply_host_tuners,omitempty\""
 }
 
 type PartialListeners struct {
