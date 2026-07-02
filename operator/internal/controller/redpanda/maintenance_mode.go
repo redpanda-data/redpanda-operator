@@ -49,9 +49,15 @@ const defaultClearMaintenanceModeAfter = 30 * time.Minute
 
 // podNotReadyFor returns how long the pod's Ready condition has been False and
 // whether it is currently not-Ready. The transition time lives on the pod, so
-// this survives operator restarts. A pod with no Ready condition (e.g. just
-// created / never scheduled) is treated as not-Ready for zero duration, so the
-// threshold gate in decideClearMaintenance still protects it.
+// this survives operator restarts. A pod with no Ready condition at all (e.g.
+// stuck Pending before the scheduler/kubelet ever gets to report Ready — the
+// exact state of a pod whose node is cordoned or lost) is not-Ready since the
+// pod was created, not for a fixed zero duration: a pod that's been Pending
+// for the full threshold is precisely the stuck case decideClearMaintenance
+// and decidePVCUnbind exist to unblock, and pinning the duration at 0 would
+// mean their threshold gates could never fire for it. A freshly-created pod
+// (CreationTimestamp ~= now) still comes out to ~zero duration, so it's no
+// less protected than before.
 func podNotReadyFor(pod *corev1.Pod, now time.Time) (time.Duration, bool) {
 	for _, cond := range pod.Status.Conditions {
 		if cond.Type != corev1.PodReady {
@@ -62,7 +68,7 @@ func podNotReadyFor(pod *corev1.Pod, now time.Time) (time.Duration, bool) {
 		}
 		return now.Sub(cond.LastTransitionTime.Time), true
 	}
-	return 0, true
+	return now.Sub(pod.CreationTimestamp.Time), true
 }
 
 // decideClearMaintenance is the guard for clearing a broker's maintenance mode.

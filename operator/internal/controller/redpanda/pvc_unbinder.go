@@ -18,7 +18,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
-	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
@@ -236,23 +235,6 @@ func brokerSelfIdentity(ctx context.Context, admin *rpadmin.AdminAPI) (int, stri
 		}
 	}
 	return cfg.NodeID, "", nil
-}
-
-// podNotReadyFor returns how long the pod's Ready condition has been False and
-// whether the pod is currently not-ready. A pod missing the Ready condition
-// entirely (e.g. just created) is treated as not-ready for zero duration, so
-// the threshold gate in decidePVCUnbind still protects it.
-func podNotReadyFor(pod *corev1.Pod, now time.Time) (time.Duration, bool) {
-	for _, cond := range pod.Status.Conditions {
-		if cond.Type != corev1.PodReady {
-			continue
-		}
-		if cond.Status == corev1.ConditionTrue {
-			return 0, false
-		}
-		return now.Sub(cond.LastTransitionTime.Time), true
-	}
-	return 0, true
 }
 
 // decidePVCUnbind is the guarded decision for whether to destroy a broker's

@@ -530,13 +530,14 @@ func (p *PoolTracker) HasRecentlyReplacedPods() bool {
 
 // ExistingPods returns every existing pod across all pools as MulticlusterPods,
 // regardless of StatefulSet revision. Unlike PodsToRoll it does not filter on
-// revision — the maintenance-mode cleaner must inspect pods that are not in the
-// roll set (e.g. a persistently-down broker whose pod is Pending/not-Ready).
+// revision — both the maintenance-mode cleaner and the PVC unbinder must inspect
+// pods that are not in the roll set (e.g. a persistently-down broker whose pod is
+// Pending/not-Ready, or a decommissioned broker stuck in a bad_rejoin crashloop).
 func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
 	pods := []*MulticlusterPod{}
 	for _, existing := range p.existingPools {
 		for _, withOrdinals := range existing.pods {
-			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName, canonicalClusterName: existing.set.canonicalClusterName})
+			pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
 		}
 	}
 	return pods
@@ -563,21 +564,6 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 		}
 	}
 
-	return pods
-}
-
-// ExistingPods returns every existing pod across all pools as MulticlusterPods,
-// regardless of StatefulSet revision. Unlike PodsToRoll it does not filter on
-// revision — the PVC unbinder must inspect pods that are persistently not-ready
-// for reasons unrelated to a pending roll (e.g. a decommissioned broker stuck
-// in a bad_rejoin crashloop).
-func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
-	pods := []*MulticlusterPod{}
-	for _, existing := range p.existingPools {
-		for _, withOrdinals := range existing.pods {
-			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName})
-		}
-	}
 	return pods
 }
 

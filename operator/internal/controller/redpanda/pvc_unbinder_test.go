@@ -19,8 +19,6 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TestIdentityCollision pins Andrew's two-request collision check: compare a
@@ -90,38 +88,6 @@ func TestIdentityCollision(t *testing.T) {
 // TestPodNotReadyFor checks the not-ready duration derived from the pod's Ready
 // condition transition time, used to gate the destructive PVC unbind behind a
 // sustained-unreadiness threshold.
-func TestPodNotReadyFor(t *testing.T) {
-	now := time.Date(2026, 6, 29, 12, 0, 0, 0, time.UTC)
-
-	readyPod := func(status corev1.ConditionStatus, since time.Time) *corev1.Pod {
-		return &corev1.Pod{
-			Status: corev1.PodStatus{
-				Conditions: []corev1.PodCondition{{
-					Type:               corev1.PodReady,
-					Status:             status,
-					LastTransitionTime: metav1.NewTime(since),
-				}},
-			},
-		}
-	}
-
-	t.Run("ready pod is not counted", func(t *testing.T) {
-		_, notReady := podNotReadyFor(readyPod(corev1.ConditionTrue, now.Add(-10*time.Minute)), now)
-		assert.False(t, notReady)
-	})
-
-	t.Run("not-ready pod returns duration since transition", func(t *testing.T) {
-		dur, notReady := podNotReadyFor(readyPod(corev1.ConditionFalse, now.Add(-7*time.Minute)), now)
-		assert.True(t, notReady)
-		assert.Equal(t, 7*time.Minute, dur)
-	})
-
-	t.Run("pod with no Ready condition is treated as not-ready for zero duration", func(t *testing.T) {
-		_, notReady := podNotReadyFor(&corev1.Pod{}, now)
-		assert.True(t, notReady)
-	})
-}
-
 // TestDecidePVCUnbind pins the guarded decision: only destroy a disk when a
 // collision is confirmed, the pod has been not-ready past the threshold, and
 // the cluster is otherwise healthy with no down nodes.
