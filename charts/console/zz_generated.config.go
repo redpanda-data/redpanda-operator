@@ -25,6 +25,7 @@ type PartialConfig struct {
 	Kafka                  *PartialKafka        "yaml:\"kafka\" json:\"kafka,omitempty\""
 	Serde                  *PartialSerde        "yaml:\"serde\" json:\"serde,omitempty\""
 	SchemaRegistry         *PartialSchema       "yaml:\"schemaRegistry\" json:\"schemaRegistry,omitempty\""
+	SQL                    *PartialSQL          "yaml:\"sql\" json:\"sql,omitempty\""
 	Logger                 *PartialLogging      "yaml:\"logger\" json:\"logger,omitempty\""
 	Analytics              *PartialAnalytics    "yaml:\"analytics\" json:\"analytics,omitempty\""
 }
@@ -73,6 +74,14 @@ type PartialSchema struct {
 	URLs           []string                   "yaml:\"urls\" json:\"urls,omitempty\""
 	Authentication *PartialHTTPAuthentication "yaml:\"authentication\" json:\"authentication,omitempty\""
 	TLS            *PartialTLS                "yaml:\"tls\" json:\"tls,omitempty\""
+}
+
+type PartialSQL struct {
+	Enabled        *bool                      "yaml:\"enabled\" json:\"enabled,omitempty\""
+	URL            *string                    "yaml:\"url\" json:\"url,omitempty\""
+	Authentication *PartialHTTPAuthentication "yaml:\"authentication\" json:\"authentication,omitempty\""
+	TLS            *PartialTLS                "yaml:\"tls\" json:\"tls,omitempty\""
+	MaxConnections *int                       "yaml:\"maxConnections\" json:\"maxConnections,omitempty\""
 }
 
 type PartialLogging struct {
