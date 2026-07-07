@@ -49,7 +49,7 @@ func Notes(dot *helmette.Dot) []string {
 			fmt.Sprintf(`  export NODE_IP=$(kubectl get nodes --namespace %s -o jsonpath="{.items[0].status.addresses[0].address}")`, dot.Release.Namespace),
 			"  echo http://$NODE_IP:$NODE_PORT",
 		)
-	} else if helmette.Contains("NodePort", string(values.Service.Type)) {
+	} else if helmette.Contains("LoadBalancer", string(values.Service.Type)) {
 		commands = append(
 			commands,
 			`    NOTE: It may take a few minutes for the LoadBalancer IP to be available.`,
