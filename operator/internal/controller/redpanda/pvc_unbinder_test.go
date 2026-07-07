@@ -19,6 +19,8 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TestIdentityCollision pins Andrew's two-request collision check: compare a
@@ -249,5 +251,77 @@ func TestPodAdminEndpoint(t *testing.T) {
 
 	t.Run("no match returns empty", func(t *testing.T) {
 		assert.Equal(t, "", podAdminEndpoint(endpoints, "redpanda-rp-eu-0"))
+	})
+}
+
+// TestPVCUnbindForPendingPodWithNoReadyCondition is the PVC-unbinder counterpart
+// of TestClearStuckMaintenanceModeClearsPendingPodWithNoReadyCondition. It drives
+// the exact decision pipeline reconcilePVCUnbinder runs per pod — podNotReadyFor
+// -> identityCollision -> decidePVCUnbind — on a REAL broker pod that is stuck
+// Pending (its node was cordoned/lost) and therefore carries only a
+// PodScheduled=False condition, no PodReady condition at all. This is the
+// bad_rejoin recovery scenario: the on-disk node_id was decommissioned (absent
+// from the cluster's member-uuid map) so the broker crashloops and its pod never
+// becomes Ready.
+//
+// It pins that the podNotReadyFor fix (fall back to now-CreationTimestamp for a
+// pod with no PodReady condition) makes decidePVCUnbind's not-ready-duration gate
+// satisfiable for such a pod: before the fix podNotReadyFor pinned the duration at
+// 0, so 0 < threshold held forever and the disk was never unbound — the unbinder
+// could never recover the very bad_rejoin it exists for. The guard sub-cases pin
+// that the real fallback duration still interacts correctly with decidePVCUnbind's
+// other guards (collision, cluster health, down-nodes), so a long-Pending pod is
+// NOT unbound unless every guard holds.
+func TestPVCUnbindForPendingPodWithNoReadyCondition(t *testing.T) {
+	const threshold = 5 * time.Minute
+	now := time.Now()
+
+	// A real never-scheduled Pending pod: only PodScheduled=False, no PodReady
+	// condition, stuck for 2h (well past the threshold).
+	pendingPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "redpanda-rp-east-0",
+			CreationTimestamp: metav1.NewTime(now.Add(-2 * time.Hour)),
+		},
+		Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{
+			Type: corev1.PodScheduled, Status: corev1.ConditionFalse, LastTransitionTime: metav1.NewTime(now.Add(-2 * time.Hour)),
+		}}},
+	}
+
+	// The pod's on-disk node_id 0 was decommissioned: it is absent from the
+	// cluster's authoritative member-uuid map, so identityCollision confirms a
+	// collision (disk identity retired). Nodes 2,3,4 are the surviving members.
+	clusterUUIDs := map[int]string{2: "uuid-2", 3: "uuid-3", 4: "uuid-4"}
+	const selfNodeID = 0
+	const selfUUID = "uuid-0-retired"
+
+	notReadyFor, notReady := podNotReadyFor(pendingPod, now)
+	require.True(t, notReady, "a Pending pod with no PodReady condition must be reported not-ready")
+	require.GreaterOrEqual(t, notReadyFor, threshold,
+		"podNotReadyFor must measure a never-scheduled Pending pod's not-ready duration from its CreationTimestamp, not pin it at 0")
+
+	collision, collisionReason := identityCollision(clusterUUIDs, selfNodeID, selfUUID)
+	require.True(t, collision, "decommissioned node_id absent from the cluster must be a collision: %s", collisionReason)
+
+	t.Run("collision + past threshold + healthy + no down nodes -> unbind", func(t *testing.T) {
+		unbind, reason := decidePVCUnbind(collision, notReadyFor, threshold, true, 0)
+		assert.True(t, unbind, "a bad_rejoin broker stuck 2h in a never-scheduled Pending pod must be unbound: %s", reason)
+	})
+
+	t.Run("no collision -> no unbind", func(t *testing.T) {
+		noCollision, _ := identityCollision(map[int]string{0: selfUUID, 2: "uuid-2"}, selfNodeID, selfUUID)
+		require.False(t, noCollision)
+		unbind, _ := decidePVCUnbind(noCollision, notReadyFor, threshold, true, 0)
+		assert.False(t, unbind, "a legitimate member's disk must never be unbound even when its pod is long not-ready")
+	})
+
+	t.Run("cluster unhealthy -> no unbind", func(t *testing.T) {
+		unbind, _ := decidePVCUnbind(collision, notReadyFor, threshold, false, 0)
+		assert.False(t, unbind, "must defer the destructive unbind while the cluster is unhealthy")
+	})
+
+	t.Run("nodes down -> no unbind", func(t *testing.T) {
+		unbind, _ := decidePVCUnbind(collision, notReadyFor, threshold, true, 1)
+		assert.False(t, unbind, "must defer the destructive unbind while any node is down (possible partition)")
 	})
 }

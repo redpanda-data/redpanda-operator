@@ -309,7 +309,8 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// All Kubernetes resources are in sync.
 	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 
-	// Phase 3: cluster-level reconciliation (admin API, decommission, config, license).
+	// Phase 3: cluster-level reconciliation (admin API, maintenance mode, PVC
+	// unbinder, decommission, config, license) — see clusterReconcilers for ordering.
 	for _, reconciler := range r.clusterReconcilers() {
 		result, err := reconciler(ctx, state, cluster)
 		if err != nil || result.RequeueAfter > 0 {
@@ -318,13 +319,24 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		}
 	}
 
-	// we're at the end of reconciliation, so sync back our status
+	// we're at the end of reconciliation, so sync back our status.
+	// Poll again quickly (faster than the periodic requeue) while the cluster is
+	// not yet settled: either scaled up with no broker Ready yet, or a scale/roll
+	// is still in flight (reconcilePools skipped mutations this pass). This is
+	// applied here — after the Phase-3 cluster reconcilers — rather than aborting
+	// inside reconcilePools, so outage-recovery steps still run while brokers are
+	// unready or churning. See PoolTracker.ScaledUpButNoneReady / CheckScale.
+	pollResult := ctrl.Result{}
+	if state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx) {
+		l.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
+		pollResult.RequeueAfter = requeueTimeout
+	}
 	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
-	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+	return r.syncStatus(ctx, cluster, state, pollResult, nil)
 }
 
 // clusterReconcilers returns the ordered cluster-level reconcile steps
-// (admin API, maintenance mode, decommission, PVC unbinder, config, license).
+// (admin API, maintenance mode, PVC unbinder, decommission, config, license).
 // Order matters: any step returning a non-zero RequeueAfter or an error aborts
 // the rest of the chain for this pass, so a step whose completion is a
 // precondition for another must come first.
@@ -335,15 +347,20 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // mode sits in forever (the partition balancer refuses to move data off a
 // maintenance-mode node), so the clear would never run if ordered after it.
 //
-// reconcilePVCUnbinder runs after reconcileDecommission: it recovers a
-// decommissioned-broker bad_rejoin (K8S-843) by destroying the stale data disk,
-// which only applies once the broker has been removed from the cluster.
+// reconcilePVCUnbinder must precede reconcileDecommission: reconcileDecommission
+// runs the rolling-restart pre-check and requeues (aborting the rest of the
+// chain) whenever HasRecentlyReplacedPods() is true — i.e. while any recently
+// replaced pod is still not-Ready. A decommissioned-broker bad_rejoin (K8S-843)
+// is exactly that state (its pod is stuck not-Ready), so if the unbinder were
+// ordered after reconcileDecommission it would never run to recover the very
+// bad_rejoin it exists for. Running it first lets it destroy the stale disk and
+// unblock the pod before the roll-loop deferral aborts the pass.
 func (r *MulticlusterReconciler) clusterReconcilers() []stretchClusterReconciliationFn {
 	return []stretchClusterReconciliationFn{
 		r.initAdminClient,
 		r.reconcileMaintenanceMode,
-		r.reconcileDecommission,
 		r.reconcilePVCUnbinder,
+		r.reconcileDecommission,
 		r.reconcileLicense,
 		r.reconcileClusterConfig,
 	}
@@ -579,6 +596,9 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	} else if pools.AllZero() {
 		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, messageNoBrokers)
 	} else {
+		// This branch is exactly pools.ScaledUpButNoneReady() — the same state
+		// that drives the end-of-Reconcile fast readiness poll. Keep the two in
+		// lockstep: a broker exists/desired but none is Ready yet.
 		status.StretchClusterStatus.SetReady(statuses.StretchClusterReadyReasonNotReady, "No pods are ready")
 	}
 
@@ -992,9 +1012,15 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	}()
 
 	if !state.pools.CheckScale(ctx) {
-		logger.V(log.TraceLevel).Info("scale operation currently underway")
-		// we're not yet ready to scale, so just requeue
-		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		// A scale/roll is underway — skip pool mutations this pass so we don't
+		// stack changes mid-scale. Do NOT abort: returning a RequeueAfter here
+		// would skip the Phase-3 cluster reconcilers (maintenance-mode clear, PVC
+		// unbind, decommission), which must still run while a pod is churning
+		// (e.g. a bad_rejoin pod being replaced flips len(pods)!=spec.Replicas).
+		// The fast requeue for the still-scaling state is applied at the end of
+		// Reconcile.
+		logger.V(log.TraceLevel).Info("scale operation currently underway; skipping pool mutations this pass")
+		return ctrl.Result{}, nil
 	}
 
 	logger.V(log.TraceLevel).Info("ready to scale and apply broker pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
@@ -1026,14 +1052,18 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 		}
 	}
 
-	result := ctrl.Result{}
-	requeue := !(state.pools.AnyReady() || state.pools.AllZero())
-
-	if requeue {
-		logger.V(log.DebugLevel).Info("reconcilePools requeueAfter")
-		result.RequeueAfter = requeueTimeout
-	}
-	return result, nil
+	// NOTE: the "no pod is Ready yet" fast requeue is intentionally NOT returned
+	// here. reconcilePools runs in the Phase-2 resource loop; a RequeueAfter from
+	// it aborts that loop, so the reconcile returns before Phase 3 ever runs the
+	// cluster reconcilers (maintenance-mode clear, PVC unbind, decommission) —
+	// which must run precisely while brokers are unready during an outage. The
+	// readiness poll is applied at the end of Reconcile instead — see
+	// PoolTracker.ScaledUpButNoneReady and the tail of Reconcile.
+	//
+	// The CheckScale early-return above is a separate, deliberate gate (don't
+	// stack pool mutations mid-scale); it can still defer Phase 3 during an active
+	// scale/roll, and recovery there relies on eventual consistency across passes.
+	return ctrl.Result{}, nil
 }
 
 func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
