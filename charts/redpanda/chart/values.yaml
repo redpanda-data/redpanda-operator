@@ -811,7 +811,8 @@ tuning:
   # Some valid values are "gcp:c2-standard-16:nvme", "aws:i3.xlarge:default"
   # well_known_io: ""
   #
-  # The following tuning parameters must be false in container environments and will be ignored:
+  # Unless `apply_host_tuners` is enabled (see below), the following tuning parameters
+  # must be false in container environments and will be ignored:
   #   tune_network
   #   tune_disk_scheduler
   #   tune_disk_nomerges
@@ -820,6 +821,29 @@ tuning:
   #   tune_cpu
   #   tune_swappiness
   #   tune_transparent_hugepages
+  #
+  # Opt-in host tuning. When true, the tuning init container (still gated on
+  # `tune_aio_events`, which must remain true) chroots into the host filesystem and runs
+  # `rpk redpanda tune all` in the host's network namespace, so tuners that need the
+  # host's /sys, /proc, NICs, and block devices actually apply. Enabling it
+  # default-enables tune_disk_irq, tune_disk_scheduler, tune_disk_nomerges, tune_network,
+  # tune_fstrim, tune_disk_write_cache (GCP-only; skipped elsewhere), and tune_cpu — an
+  # explicit `config.rpk.tune_*: false` overrides any of these defaults.
+  #
+  # Security requirements: the tuning init container runs privileged (as with
+  # `tune_aio_events`) and additionally mounts twelve hostPath volumes (/bin, /sbin,
+  # /usr, /lib, /lib64 read-only; /sys, /proc, /etc, /dev, /var, /run writable; plus the
+  # tuner state file under /var/run). On Pod Security Admission clusters the namespace
+  # needs the `privileged` level; on OpenShift the pod's ServiceAccount needs an SCC
+  # allowing hostPath volumes and privileged containers (the built-in `privileged` SCC
+  # works).
+  #
+  # Constraints: run at most one Redpanda pod per node (the chart's default
+  # anti-affinity) — concurrent tuners race on the same kernel parameters. Disabling
+  # this flag or uninstalling the chart does not revert tuning already applied to a
+  # node: sysctl/IRQ/block-device settings persist until reboot, and the fstrim systemd
+  # timer rpk installs on the host keeps firing until removed.
+  # apply_host_tuners: false
   #   tune_coredump
 
 

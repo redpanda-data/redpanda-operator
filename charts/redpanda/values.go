@@ -937,18 +937,33 @@ type Tuning struct {
 	//   - tune_cpu: sets cpufreq governor to performance. A no-op reported
 	//     as applied on VMs without cpufreq sysfs (most cloud instance
 	//     types); does real work on metal instance types.
-	// The set is unconditional — the chart's RPK config merge is first-arg-
-	// wins, so a user setting `config.rpk.tune_disk_irq: false` alongside
-	// `apply_host_tuners: true` will see the chart's `true` win. Users who
-	// want apply_host_tuners off for any of those tuners should leave
-	// ApplyHostTuners false and wire host tuning via their own DaemonSet.
+	// These are defaults, not overrides: an explicit `config.rpk.tune_*`
+	// value always wins, so `config.rpk.tune_fstrim: false` alongside
+	// `apply_host_tuners: true` keeps fstrim off (see HostTunerDefaults
+	// and its merge site in rpkNodeConfig).
 	//
-	// Enabling this requires the same security posture as TuneAIOEvents
-	// (privileged container, hostPath volumes). On OpenShift, the pod's
-	// ServiceAccount must be bound to a SCC that allows `hostPath` volumes
-	// and `privileged: true` (the built-in `privileged` SCC works). On
-	// Pod Security Admission clusters, the namespace must be labeled
-	// `privileged`.
+	// Requires TuneAIOEvents (the flag that gates the tuning init
+	// container as a whole). Setting ApplyHostTuners while explicitly
+	// disabling TuneAIOEvents fails rendering: the alternative is a
+	// redpanda.yaml that enables host tuners no init container ever runs.
+	//
+	// Enabling this requires a strictly broader security posture than
+	// TuneAIOEvents alone: in addition to the privileged container that
+	// TuneAIOEvents already implies, the pod mounts twelve hostPath
+	// volumes (/bin, /sbin, /usr, /lib and /lib64 read-only; /sys, /proc,
+	// /etc, /dev, /var and /run writable; plus the tuner state file).
+	// On OpenShift, the pod's ServiceAccount must be bound to an SCC that
+	// allows `hostPath` volumes and `privileged: true` (the built-in
+	// `privileged` SCC works — an SCC tailored to plain TuneAIOEvents may
+	// not). On Pod Security Admission clusters, the namespace must be
+	// labeled `privileged`.
+	//
+	// Rollback semantics: disabling this flag (or uninstalling the chart)
+	// stops future tuning runs but does not revert tuning already applied
+	// to a node. sysctl, IRQ-affinity, and block-device settings persist
+	// until the node reboots; the fstrim systemd timer that rpk installs
+	// into the host's /etc/systemd/system keeps firing until removed or
+	// reimaged; the tuner state file under /var/run clears on reboot.
 	//
 	// This setting must NOT be combined with running multiple Redpanda
 	// pods per node — concurrent tuners will race on the same kernel
@@ -957,6 +972,17 @@ type Tuning struct {
 }
 
 func (t *Tuning) Translate() map[string]any {
+	// ApplyHostTuners without the tuning init container is a
+	// self-contradiction: HostTunerDefaults would enable host tuners in
+	// redpanda.yaml, but the container that applies them is gated on
+	// TuneAIOEvents and would never render. Refuse the combination
+	// instead of shipping config that silently does nothing. Translate
+	// runs on every render (via rpkNodeConfig), so this is the render's
+	// choke point for the check.
+	if t.ApplyHostTuners && !t.TuneAIOEvents {
+		panic("tuning.apply_host_tuners requires tuning.tune_aio_events=true: the host-mode tuning init container is gated on tune_aio_events, so this combination would render tuner config that nothing ever applies")
+	}
+
 	result := map[string]any{}
 
 	s := helmette.ToJSON(t)
@@ -970,32 +996,41 @@ func (t *Tuning) Translate() map[string]any {
 		result[k] = v
 	}
 
-	// Whole point of ApplyHostTuners is to make the rpk tuners that need
-	// host /sys, /proc, NICs and block devices actually fire. Those tuners
-	// are gated by per-tuner flags in the rpk section of redpanda.yaml, not
-	// by ApplyHostTuners itself — so flipping just ApplyHostTuners renders
-	// the chroot init container but `rpk redpanda tune all` runs it against
-	// a config where only tune_aio_events is true (the only host-mode-
-	// relevant flag exposed at the top level). Default-enable the tuners
-	// that motivate this feature. See the ApplyHostTuners doc comment for
-	// per-tuner rationale; the invariant for membership in this list is
-	// "only works (or only does real work) via the chroot path, and cannot
-	// crashloop the init container on hosts that lack the feature".
-	if t.ApplyHostTuners {
-		for _, k := range []string{
-			"tune_disk_irq",
-			"tune_disk_scheduler",
-			"tune_disk_nomerges",
-			"tune_network",
-			"tune_fstrim",
-			"tune_disk_write_cache",
-			"tune_cpu",
-		} {
-			result[k] = true
-		}
-	}
+	// Every other Tuning field IS an rpk config key, but apply_host_tuners
+	// is chart-level plumbing (it selects which init container renders).
+	// Keep it out of redpanda.yaml's rpk section.
+	helmette.Unset(result, "apply_host_tuners")
 
 	return result
+}
+
+// HostTunerDefaults returns the per-tuner rpk flags that ApplyHostTuners
+// default-enables. The whole point of ApplyHostTuners is to make the rpk
+// tuners that need host /sys, /proc, NICs and block devices actually
+// fire, and those tuners are gated by per-tuner flags in the rpk section
+// of redpanda.yaml, not by ApplyHostTuners itself — so flipping just
+// ApplyHostTuners would render the chroot init container running against
+// a config where only tune_aio_events is true. See the ApplyHostTuners
+// doc comment for per-tuner rationale; the invariant for membership in
+// this list is "only works (or only does real work) via the chroot path,
+// and cannot crashloop the init container on hosts that lack the
+// feature".
+//
+// These are merged at LOWEST precedence in rpkNodeConfig — after both
+// Tuning.Translate() and the user's config.rpk — so an explicit
+// `config.rpk.tune_*: false` opt-out always wins over these defaults.
+// The multicluster (StretchCluster) renderer applies the same map with
+// the same precedence.
+func HostTunerDefaults() map[string]any {
+	return map[string]any{
+		"tune_disk_irq":         true,
+		"tune_disk_scheduler":   true,
+		"tune_disk_nomerges":    true,
+		"tune_network":          true,
+		"tune_fstrim":           true,
+		"tune_disk_write_cache": true,
+		"tune_cpu":              true,
+	}
 }
 
 type Sidecars struct {

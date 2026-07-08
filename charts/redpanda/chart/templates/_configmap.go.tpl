@@ -404,6 +404,9 @@
 {{- $result := (dict "additional_start_flags" $flags "enable_memory_locking" $lockMemory "overprovisioned" $overprovisioned "kafka_api" (dict "brokers" $brokerList "tls" $brokerTLS) "admin_api" (dict "addresses" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.admin.port | int))))) "r") "tls" $adminTLS) "schema_registry" (dict "addresses" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.schemaRegistry.port | int))))) "r") "tls" $schemaRegistryTLS)) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Tuning.Translate" (dict "a" (list $state.Values.tuning)))) "r")) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Config.CreateRPKConfiguration" (dict "a" (list $state.Values.config)))) "r")) -}}
+{{- if $state.Values.tuning.apply_host_tuners -}}
+{{- $result = (merge (dict) $result (get (fromJson (include "redpanda.HostTunerDefaults" (dict "a" (list)))) "r")) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
 {{- break -}}
@@ -481,9 +484,9 @@
 {{- $brokerList := (list) -}}
 {{- $useLocalhostKey := (printf "%s_client.use_localhost" $clientType) -}}
 {{- $useLocalhost := false -}}
-{{- $_517_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
-{{- $val := (index $_517_val_ok 0) -}}
-{{- $ok := (index $_517_val_ok 1) -}}
+{{- $_526_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
+{{- $val := (index $_526_val_ok 0) -}}
+{{- $ok := (index $_526_val_ok 1) -}}
 {{- if $ok -}}
 {{- if (kindIs "bool" $val) -}}
 {{- $useLocalhost = (eq $val true) -}}
@@ -652,17 +655,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_703_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_15 := (index $_703_value_15_ok_16 0) -}}
-{{- $ok_16 := (index $_703_value_15_ok_16 1) -}}
+{{- $_712_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_15 := (index $_712_value_15_ok_16 0) -}}
+{{- $ok_16 := (index $_712_value_15_ok_16 1) -}}
 {{- if $ok_16 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_15) false (hasKey $enabledOptions $value_15)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_710_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_17 := (index $_710_value_17_ok_18 0) -}}
-{{- $ok_18 := (index $_710_value_17_ok_18 1) -}}
+{{- $_719_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_17 := (index $_719_value_17_ok_18 0) -}}
+{{- $ok_18 := (index $_719_value_17_ok_18 1) -}}
 {{- if $ok_18 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_17) false (hasKey $enabledOptions $value_17)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}

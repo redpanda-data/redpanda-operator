@@ -1392,8 +1392,40 @@ config:
 -- tuning-host-mode --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+# ASSERT-VALID-RPK-CONFIGURATION
 # Verifies that tuning.apply_host_tuners=true produces the chroot-based
-# tuning init container with host bind mounts. See K8S-101 / CORE-13685.
+# tuning init container with host bind mounts, that every hostPath volume
+# is paired with a mount (tuner or broker), and that the rendered rpk
+# section stays schema-valid (apply_host_tuners itself must not leak into
+# it). See K8S-101 / CORE-13685.
 tuning:
   tune_aio_events: true
   apply_host_tuners: true
+
+-- tuning-host-mode-requires-aio-events --
+# tuning.apply_host_tuners with tune_aio_events explicitly disabled must
+# fail render: the init container that applies host tuners is gated on
+# tune_aio_events, so the combination would ship tuner config that
+# nothing ever runs.
+# ASSERT-ERROR-CONTAINS ["tuning.apply_host_tuners requires tuning.tune_aio_events=true"]
+tuning:
+  tune_aio_events: false
+  apply_host_tuners: true
+
+-- tuning-host-mode-user-override --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+# ASSERT-VALID-RPK-CONFIGURATION
+# The tuners apply_host_tuners default-enables are defaults, not
+# overrides: an explicit config.rpk opt-out (tune_fstrim: false here)
+# must survive into the rendered rpk config.
+tuning:
+  tune_aio_events: true
+  apply_host_tuners: true
+config:
+  rpk:
+    tune_fstrim: false

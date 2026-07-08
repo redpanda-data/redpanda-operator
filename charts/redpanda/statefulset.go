@@ -206,28 +206,57 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 	volumes = append(volumes, kubeTokenAPIVolume(ServiceAccountVolumeName))
 
 	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
-		volumes = append(volumes, hostTunerVolumes()...)
+		volumes = append(volumes, HostTunerVolumes()...)
 	}
 
 	return volumes
 }
 
-// hostTunerVolumes returns the hostPath volumes used by the host-mode
-// tuning init container. Bound only when Tuning.ApplyHostTuners is true.
+// HostTunerVolumes returns the hostPath volumes used by the host-mode
+// tuning init container (and, for the tuner state file, the broker
+// container). Bound only when Tuning.ApplyHostTuners is true. Exported
+// so the multicluster (StretchCluster) renderer can reuse it.
+//
+// Volume types are deliberately strict:
+//   - Every directory except /lib64 uses HostPathDirectory: a node
+//     missing one of these has a filesystem layout this feature cannot
+//     work on, and the pod must fail admission with an explicit
+//     FailedMount event instead of kubelet silently mkdir'ing paths
+//     like /etc or /usr on the host root filesystem (OrCreate would
+//     mutate the host at pod-admission time, and on read-only-root
+//     distros wedge the pod in ContainerCreating with a less obvious
+//     error).
+//   - /lib64 keeps HostPathDirectoryOrCreate: it is the ELF interpreter
+//     directory on amd64 (required, and a real directory on
+//     non-usr-merged hosts such as COS, so it cannot be synthesized
+//     from /usr), but it legitimately does not exist on arm64 hosts.
+//     A StatefulSet has one pod spec for all nodes, so per-arch
+//     conditional volumes are impossible; OrCreate is the only
+//     mechanism that tolerates both. The cost is bounded and known: on
+//     arm64 nodes kubelet creates an empty /lib64 directory, which no
+//     arm64 binary ever consults.
+//   - The tuner state file uses HostPathFileOrCreate. rpk explicitly
+//     supports this: its state reader treats the empty file kubelet
+//     creates as "no state" (see readTunerConfigCpuset in rpk). The
+//     file lives in /var/run (tmpfs) so it never survives a reboot.
 //
 // Operators using OpenShift SCCs need to allow `hostPath` in the SCC's
 // volumes list and add these paths to `allowedHostPaths` (or use the
 // built-in `privileged` SCC). On PSA clusters, the namespace must be
 // labeled `privileged`.
-func hostTunerVolumes() []corev1.Volume {
+func HostTunerVolumes() []corev1.Volume {
 	vols := []corev1.Volume{}
-	for _, dir := range hostTunerDirs() {
+	for _, dir := range HostTunerDirs() {
+		hostPathType := corev1.HostPathDirectory
+		if dir == "lib64" {
+			hostPathType = corev1.HostPathDirectoryOrCreate
+		}
 		vols = append(vols, corev1.Volume{
 			Name: fmt.Sprintf("host-%s", dir),
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: fmt.Sprintf("/%s", dir),
-					Type: ptr.To(corev1.HostPathDirectoryOrCreate),
+					Type: ptr.To(hostPathType),
 				},
 			},
 		})
@@ -236,7 +265,7 @@ func hostTunerVolumes() []corev1.Volume {
 		Name: "host-tuner-state",
 		VolumeSource: corev1.VolumeSource{
 			HostPath: &corev1.HostPathVolumeSource{
-				Path: hostTunerStateFilePath,
+				Path: HostTunerStateFilePath,
 				Type: ptr.To(corev1.HostPathFileOrCreate),
 			},
 		},
@@ -368,6 +397,10 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 		)
 	}
 
+	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
+		mounts = append(mounts, HostTunerStateVolumeMount())
+	}
+
 	return mounts
 }
 
@@ -390,7 +423,7 @@ func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container
 	return containers
 }
 
-// hostTunerDirs returns the host filesystem directories bind-mounted
+// HostTunerDirs returns the host filesystem directories bind-mounted
 // into the tuning container so that `rpk redpanda tune all` can chroot
 // in and see the host's /sys, /proc, NIC devices, block devices, and
 // rpk binary. Kept as a list (not whole-/) on purpose: bind-mounting /
@@ -402,13 +435,20 @@ func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container
 // all and tuning silently no-ops. On usr-merged hosts (Ubuntu,
 // AL2023) /bin and /sbin are symlinks into /usr, and the bind mount
 // just resolves to the same content.
-func hostTunerDirs() []string {
+//
+// Exported so the multicluster (StretchCluster) renderer can reuse it.
+func HostTunerDirs() []string {
 	return []string{"bin", "sbin", "sys", "proc", "etc", "usr", "lib", "lib64", "dev", "var", "run"}
 }
 
-// hostTunerStateFilePath is where rpk persists its tuner state on the
-// host so subsequent pod restarts skip already-applied tuners.
-const hostTunerStateFilePath = "/var/run/redpanda_node_tuner_state.yaml"
+// HostTunerStateFilePath is where rpk persists the net tuner's cpuset
+// state on the host (rpk's own default path; see
+// DefaultNodeTunerStateFile in rpk). The tuning init container writes
+// it through the /host/var and /host/run bind mounts, and the broker
+// container mounts it read-only at the same path so `rpk redpanda
+// start` picks the cpuset up without any extra flag. /var/run is tmpfs,
+// so state never outlives a node reboot.
+const HostTunerStateFilePath = "/var/run/redpanda_node_tuner_state.yaml"
 
 func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 	if !state.Values.Tuning.TuneAIOEvents {
@@ -461,17 +501,18 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 // `nsenter -t 1 -n` to enter the host network namespace, rpk sees the
 // real host and the tuners apply for real.
 //
-// Three workarounds layered in by this function:
-//   - cp+sed the rendered redpanda.yaml into /var/tmp and inject
-//     `redpanda.data_directory` so the disk tuners have a path to
-//     resolve. The base chart deliberately omits data_directory (the
-//     broker doesn't need it) but rpk's tuner refuses to combine
-//     `--dirs` with `--config`, so the value must live in the file.
-//   - busctl call into the host's systemd to restart irqbalance after
-//     rpk rewrites IRQ affinity (systemctl can't traverse a chroot).
-//     Falls back to `pkill irqbalance` if systemd isn't present.
-//   - `|| true ; exit 0` so a single failing tuner (e.g. AWS lacks
-//     disk_write_cache) doesn't crashloop the init container.
+// Workarounds layered in by this function (see HostTunerScript for the
+// script-side ones):
+//   - cp (under umask 077) + sed the rendered redpanda.yaml into
+//     /var/tmp and inject `redpanda.data_directory` so the disk tuners
+//     have a path to resolve. The base chart deliberately omits
+//     data_directory (the broker doesn't need it) but rpk's tuner
+//     refuses to combine `--dirs` with `--config`, so the value must
+//     live in the file.
+//   - busctl call into the host's systemd to try-restart irqbalance
+//     after rpk rewrites IRQ affinity (systemctl can't traverse a
+//     chroot). Falls back to `nsenter -t 1 -p -m pkill` for non-systemd
+//     hosts.
 //   - a `which` shim written into /opt/redpanda/bin (bind-mounted into
 //     the chroot, first on PATH): rpk's fstrim tuner shells out to
 //     `which`, and some minimal node images (AKS Ubuntu) ship a broken
@@ -483,27 +524,62 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 //   - the pod's ServiceAccount is bound to an SCC / PSA level that
 //     allows hostPath volumes and privileged: true.
 func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container {
-	// HostToContainer, NOT Bidirectional: the chroot'd rpk runs in this
-	// container's mount namespace, so it already sees every mount made
-	// here (the /opt/redpanda bind, the datadir PVC) without any
-	// propagation. Bidirectional would additionally propagate the
-	// datadir PVC mount (which lives under the host-var subtree at
-	// /host/var/lib/redpanda/data) back onto the host's real
-	// /var/lib/redpanda/data — and that host-side mount outlives the
-	// pod, stacking one leaked mount per pod incarnation.
+	return &corev1.Container{
+		Name:    RedpandaTuningContainerName,
+		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
+		Command: []string{`/bin/bash`, `-c`, HostTunerScript()},
+		SecurityContext: &corev1.SecurityContext{
+			// privileged: true already grants every capability;
+			// explicit Add entries would be redundant noise.
+			Privileged:   ptr.To(true),
+			RunAsNonRoot: ptr.To(false),
+			RunAsUser:    ptr.To(int64(0)),
+			RunAsGroup:   ptr.To(int64(0)),
+		},
+		VolumeMounts: HostTunerVolumeMounts(),
+	}
+}
+
+// HostTunerVolumeMounts returns the volume mounts for the host-mode
+// tuning init container. Exported so the multicluster (StretchCluster)
+// renderer can reuse it; the "base-config" and "datadir" volume names
+// are identical in both renderers.
+//
+// Mount decisions:
+//   - HostToContainer, NOT Bidirectional: the chroot'd rpk runs in this
+//     container's mount namespace, so it already sees every mount made
+//     here (the /opt/redpanda bind, the datadir PVC) without any
+//     propagation. Bidirectional would additionally propagate the
+//     datadir PVC mount (which lives under the host-var subtree at
+//     /host/var/lib/redpanda/data) back onto the host's real
+//     /var/lib/redpanda/data — and that host-side mount outlives the
+//     pod, stacking one leaked mount per pod incarnation.
+//   - /bin, /sbin, /usr, /lib and /lib64 are mounted read-only: they
+//     exist purely to give the chroot a shell, coreutils and shared
+//     libraries. Everything the tuners write lives under /sys, /proc,
+//     /etc (fstrim systemd units), /dev, /var and /run, which stay
+//     writable.
+//   - The tuner state file needs no dedicated mount here: rpk writes
+//     its default state path (HostTunerStateFilePath, under /var/run)
+//     straight through the /host/var and /host/run binds.
+func HostTunerVolumeMounts() []corev1.VolumeMount {
+	readOnlyDirs := map[string]bool{
+		"bin":   true,
+		"sbin":  true,
+		"usr":   true,
+		"lib":   true,
+		"lib64": true,
+	}
 	mounts := []corev1.VolumeMount{}
-	for _, dir := range hostTunerDirs() {
+	for _, dir := range HostTunerDirs() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:             fmt.Sprintf("host-%s", dir),
 			MountPath:        fmt.Sprintf("/host/%s", dir),
+			ReadOnly:         readOnlyDirs[dir],
 			MountPropagation: ptr.To(corev1.MountPropagationHostToContainer),
 		})
 	}
 	mounts = append(mounts,
-		corev1.VolumeMount{
-			Name:      "host-tuner-state",
-			MountPath: "/host/tuner_state.yaml",
-		},
 		corev1.VolumeMount{
 			Name:      "base-config",
 			MountPath: "/host/redpanda_etc",
@@ -513,65 +589,103 @@ func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container 
 			MountPath: "/host/var/lib/redpanda/data",
 		},
 	)
+	return mounts
+}
 
-	return &corev1.Container{
-		Name:    RedpandaTuningContainerName,
-		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
-		Command: []string{`/bin/bash`, `-c`, hostTunerScript()},
-		SecurityContext: &corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Add: []corev1.Capability{`SYS_RESOURCE`, `SYS_ADMIN`},
-			},
-			Privileged:   ptr.To(true),
-			RunAsNonRoot: ptr.To(false),
-			RunAsUser:    ptr.To(int64(0)),
-			RunAsGroup:   ptr.To(int64(0)),
-		},
-		VolumeMounts: mounts,
+// HostTunerStateVolumeMount is the broker container's read-only view of
+// the tuner state file, mounted at rpk's default state path so `rpk
+// redpanda start` reads the net tuner's cpuset (written by the tuning
+// init container, which runs first) without any extra flag. In
+// dedicated-IRQ modes (sq/sq_split) this keeps reactor shards off the
+// CPUs pinned to NIC IRQs; in mq mode (typical cloud VMs) rpk writes an
+// empty file, which its state reader documents as "no cpuset". Because
+// no flag is involved, broker images whose rpk predates tuner-state
+// support simply ignore the file. Exported for the multicluster
+// (StretchCluster) renderer.
+func HostTunerStateVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      "host-tuner-state",
+		MountPath: HostTunerStateFilePath,
+		ReadOnly:  true,
 	}
 }
 
-// hostTunerScript returns the bash script run by the host-mode tuning
+// HostTunerScript returns the bash script run by the host-mode tuning
 // init container. It builds a chroot to the host filesystem and invokes
 // `rpk redpanda tune all` inside the host's network namespace so the
 // tuners that need /sys, /proc, host NICs and host block devices can
-// actually apply.
+// actually apply. Exported so the multicluster (StretchCluster)
+// renderer can reuse it.
 //
-// Three workarounds layered in:
+// Failure policy (deliberately two-tier):
+//   - Everything up to and including `rpk redpanda tune list` is
+//     fail-fast (set -euo pipefail): a broken bind mount, an unusable
+//     chroot, a config copy that failed, or a config rpk cannot parse
+//     means ZERO tuners would run, and the init container must
+//     crashloop loudly instead of letting the pod go Ready with the
+//     opt-in feature silently doing nothing.
+//   - The `rpk redpanda tune all` exit code alone is tolerated (with a
+//     loud warning): rpk exits non-zero when any single enabled tuner
+//     fails, and individual tuners legitimately fail on specific
+//     hosts (e.g. disk_irq on AL2023 arm64 metal, which lacks a
+//     writable smp_affinity for IRQ 0) while every other tuner applied
+//     fine. Crashlooping the broker over one degraded tuner would be
+//     worse than running with it untuned.
+//
+// Workarounds layered in:
 //   - The chart-rendered redpanda.yaml omits `redpanda.data_directory`
 //     (the broker doesn't need it). rpk's disk tuners do need it, and
-//     rpk refuses to combine `--dirs` with `--config`. So we cp+sed a
+//     rpk refuses to combine `--dirs` with `--config`. So we cp a
 //     working copy into /var/tmp (because /tmp is not bind-mounted from
-//     the host).
-//   - busctl call into systemd to restart irqbalance after rpk rewrites
-//     IRQ affinity. systemctl can't traverse a chroot. Falls back to
-//     `pkill irqbalance` for non-systemd hosts.
-//   - `|| true ; exit 0` so a single unsupported tuner (e.g. AWS does
-//     not support disk_write_cache) does not crashloop the init.
+//     the host) and inject the key — guarded by a grep so a config that
+//     already sets data_directory (e.g. via config.node) doesn't end up
+//     with a duplicate YAML key that rpk would reject.
+//   - The copy is made under umask 077 and removed on exit: the
+//     rendered config can carry rpk SASL credentials, and /var/tmp on
+//     the host outlives both the pod and chart uninstall.
+//   - busctl TryRestartUnit into the host's systemd so a running
+//     irqbalance doesn't undo rpk's IRQ affinity work (systemctl can't
+//     traverse a chroot; TryRestartUnit, unlike RestartUnit, won't
+//     start an intentionally-stopped unit). Falls back to pkill inside
+//     the host's PID namespace via `nsenter -t 1 -p -m` — a bare pkill
+//     would read host PIDs from the bind-mounted /proc but issue
+//     kill(2) in the container's PID namespace, and always ESRCH.
 //   - a `which` shim in /opt/redpanda/bin for rpk's fstrim tuner, which
 //     shells out to `which` (missing/broken on minimal node images).
+//   - No --node-tuner-state-path: rpk's default state path
+//     (HostTunerStateFilePath, under /var/run) already resolves to the
+//     host's tmpfs through the /host/var and /host/run binds, and
+//     passing only long-stable flags means an older rpk in a pinned
+//     image can never fail with `unknown flag` (which would previously
+//     have been swallowed and left zero tuners applied).
 //
 // The chroot shell is /bin/bash (not /usr/bin/bash): COS is not
 // usr-merged and only has /bin/bash; usr-merged hosts resolve
 // /bin/bash to the same binary via the /bin symlink.
-func hostTunerScript() string {
-	return `set -x
+func HostTunerScript() string {
+	return `set -xeuo pipefail
+umask 077
 mkdir -p /host/opt/redpanda
 mount --bind /opt/redpanda /host/opt/redpanda
+printf '#!/bin/sh\ncommand -v "$@"\n' > /opt/redpanda/bin/which
+chmod +x /opt/redpanda/bin/which
+chroot /host /bin/bash -c 'true' || { echo "FATAL: cannot exec /bin/bash inside the /host chroot; this node's filesystem layout is not supported by tuning.apply_host_tuners" >&2; exit 1; }
+trap 'rm -f /host/var/tmp/redpanda-tune.yaml' EXIT
 cp /host/redpanda_etc/redpanda.yaml /host/var/tmp/redpanda-tune.yaml
-sed -i 's|^redpanda:|redpanda:\n  data_directory: /var/lib/redpanda/data|' /host/var/tmp/redpanda-tune.yaml
-printf '#!/bin/sh\ncommand -v "$@"\n' > /opt/redpanda/bin/which && chmod +x /opt/redpanda/bin/which || true
+grep -q 'data_directory:' /host/var/tmp/redpanda-tune.yaml || sed -i 's|^redpanda:|redpanda:\n  data_directory: /var/lib/redpanda/data|' /host/var/tmp/redpanda-tune.yaml
 chroot /host /bin/bash -c '
+  set -xeuo pipefail
   export PATH="/opt/redpanda/bin:$PATH"
-  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune all \
-    --config /var/tmp/redpanda-tune.yaml \
-    --node-tuner-state-path /tuner_state.yaml \
-    -v
-  /usr/bin/busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
-    org.freedesktop.systemd1.Manager RestartUnit ss "irqbalance.service" "replace" \
-    || pkill -f irqbalance || true
-' || true
-exit 0
+  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune list --config /var/tmp/redpanda-tune.yaml
+  rc=0
+  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune all --config /var/tmp/redpanda-tune.yaml -v || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "WARNING: rpk redpanda tune all exited $rc; at least one enabled tuner failed to apply (see output above). Not blocking broker startup over a single degraded tuner." >&2
+  fi
+  busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
+    org.freedesktop.systemd1.Manager TryRestartUnit ss "irqbalance.service" "replace" \
+    || nsenter -t 1 -p -m pkill -x irqbalance || true
+'
 `
 }
 
