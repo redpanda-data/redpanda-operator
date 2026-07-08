@@ -7,9 +7,24 @@ body: |-
     that previously failed inside the pod sandbox — `disk_irq`,
     `disk_scheduler`, `disk_nomerges`, `net`, `fstrim`, and (on GCP)
     `disk_write_cache` — are default-enabled and actually apply, along
-    with `cpu` (a no-op on VMs without cpufreq, real work on metal).
+    with `cpu` (a no-op on VMs without cpufreq, real work on metal). An
+    explicit `config.rpk.tune_*: false` overrides any of these defaults.
+    The broker reads the net tuner's cpuset state file, so dedicated-IRQ
+    (sq/sq_split) modes keep reactor shards off IRQ-pinned CPUs.
 
-    Opt-in only; the default tuning container is unchanged. Enabling
-    `apply_host_tuners` requires the same security posture as
-    `tune_aio_events` (privileged container, hostPath volumes).
+    Opt-in only; the default tuning container is unchanged, and
+    `tune_aio_events` must remain enabled. Requirements and caveats:
+
+    - Broader security posture than `tune_aio_events` alone: in addition
+      to the privileged init container, the pod mounts twelve hostPath
+      volumes (`/bin`, `/sbin`, `/usr`, `/lib`, `/lib64` read-only;
+      `/sys`, `/proc`, `/etc`, `/dev`, `/var`, `/run` writable; plus the
+      tuner state file). PSA `privileged` namespaces, or an OpenShift SCC
+      permitting hostPath and privileged containers, are required.
+    - Run at most one Redpanda pod per node (the chart's default
+      anti-affinity): concurrent tuners race on kernel parameters.
+    - Rollback is not automatic: disabling the flag or uninstalling stops
+      future runs but already-applied sysctl/IRQ/block-device tuning
+      persists until node reboot, and the fstrim systemd timer rpk
+      installs on the host keeps firing until removed.
 time: 2026-05-12T20:00:00.000000-07:00
