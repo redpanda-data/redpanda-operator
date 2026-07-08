@@ -302,7 +302,7 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// or churning. See PoolTracker.ScaledUpButNoneReady / CheckScale.
 	pollResult := ctrl.Result{}
 	if state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx) {
-		l.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
+		logger.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
 		pollResult.RequeueAfter = requeueTimeout
 	}
 	logger.V(log.TraceLevel).Info("finished normal reconciliation loop")

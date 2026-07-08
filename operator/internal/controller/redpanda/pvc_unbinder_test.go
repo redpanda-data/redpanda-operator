@@ -77,6 +77,18 @@ func TestIdentityCollision(t *testing.T) {
 			selfUUID:      "",
 			wantCollision: false,
 		},
+		{
+			// A current member whose cluster-side uuid is unknown (no
+			// /v1/broker_uuids entry) must NOT be treated as a collision:
+			// otherwise a live broker's disk could be wiped. Regression guard
+			// for the false-positive where clusterUUID=="" fell into the
+			// "superseded" branch.
+			name:          "member present but cluster uuid unknown - cannot confirm, no collision",
+			clusterUUIDs:  map[int]string{0: "uuid-aaa", 1: ""},
+			selfNodeID:    1,
+			selfUUID:      "uuid-bbb",
+			wantCollision: false,
+		},
 	}
 
 	for _, tc := range cases {
@@ -87,9 +99,6 @@ func TestIdentityCollision(t *testing.T) {
 	}
 }
 
-// TestPodNotReadyFor checks the not-ready duration derived from the pod's Ready
-// condition transition time, used to gate the destructive PVC unbind behind a
-// sustained-unreadiness threshold.
 // TestDecidePVCUnbind pins the guarded decision: only destroy a disk when a
 // collision is confirmed, the pod has been not-ready past the threshold, and
 // the cluster is otherwise healthy with no down nodes.
@@ -255,8 +264,8 @@ func TestPodAdminEndpoint(t *testing.T) {
 }
 
 // TestPVCUnbindForPendingPodWithNoReadyCondition is the PVC-unbinder counterpart
-// of TestClearStuckMaintenanceModeClearsPendingPodWithNoReadyCondition. It drives
-// the exact decision pipeline reconcilePVCUnbinder runs per pod — podNotReadyFor
+// of TestClearStuckMaintenanceModeClearsPendingPodWithNoReadyCondition. It runs
+// the same sequence of per-pod helpers reconcilePVCUnbinder uses — podNotReadyFor
 // -> identityCollision -> decidePVCUnbind — on a REAL broker pod that is stuck
 // Pending (its node was cordoned/lost) and therefore carries only a
 // PodScheduled=False condition, no PodReady condition at all. This is the

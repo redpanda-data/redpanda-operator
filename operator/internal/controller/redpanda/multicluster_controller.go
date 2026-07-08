@@ -113,7 +113,8 @@ type MulticlusterReconciler struct {
 	// PVCUnbindNotReadyThreshold is how long a broker pod must remain
 	// not-Ready before reconcilePVCUnbinder is allowed to destroy its data
 	// disk to recover a decommissioned-broker bad_rejoin (K8S-843). Zero
-	// applies defaultPVCUnbindNotReadyThreshold.
+	// applies defaultPVCUnbindNotReadyThreshold; a negative value disables the
+	// PVC unbinder entirely. Set via the --pvc-unbind-not-ready-threshold flag.
 	PVCUnbindNotReadyThreshold time.Duration
 }
 
@@ -1706,7 +1707,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, pvcUnbindNotReadyThreshold time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -1746,6 +1747,7 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 				ReconcileTimeout:              reconcileTimeout,
 				PostRestartCaughtUpPercent:    postRestartCaughtUpPercent,
 				MaintenanceModeClearThreshold: clearMaintenanceModeAfter,
+				PVCUnbindNotReadyThreshold:    pvcUnbindNotReadyThreshold,
 			}, "StretchCluster", periodicRequeue),
 		)
 }
