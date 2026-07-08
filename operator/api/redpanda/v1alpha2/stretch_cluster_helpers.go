@@ -309,6 +309,11 @@ func (t *StretchTuning) IsTuneAioEventsEnabled() bool {
 	return t != nil && ptr.Deref(t.TuneAioEvents, false)
 }
 
+// IsApplyHostTunersEnabled returns whether chroot-based host tuning is enabled. Safe to call on nil receiver.
+func (t *StretchTuning) IsApplyHostTunersEnabled() bool {
+	return t != nil && ptr.Deref(t.ApplyHostTuners, false)
+}
+
 // --- External ---
 
 // IsEnabled returns whether external access is enabled. Safe to call on nil receiver.

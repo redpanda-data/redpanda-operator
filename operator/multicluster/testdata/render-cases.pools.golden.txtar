@@ -5785,6 +5785,485 @@
   status:
     availableReplicas: 0
     replicas: 0
+-- host-tuners --
+- apiVersion: apps/v1
+  kind: StatefulSet
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda-pool-a
+      app.kubernetes.io/instance: host-tuners
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/brokerpool-generation: "0"
+      cluster.redpanda.com/brokerpool-name: pool-a
+    name: host-tuners-pool-a
+    namespace: host-tuners
+  spec:
+    podManagementPolicy: Parallel
+    replicas: 3
+    selector:
+      matchLabels:
+        app.kubernetes.io/cluster-name: test
+        app.kubernetes.io/component: redpanda-pool-a-statefulset
+        app.kubernetes.io/instance: host-tuners
+        app.kubernetes.io/name: redpanda
+    serviceName: host-tuners
+    template:
+      metadata:
+        annotations:
+          config.redpanda.com/checksum: a90b21628d89546d234075143f437a7118e87dca2eb009f7ffb653e7b8f09eca
+        labels:
+          app.kubernetes.io/cluster-name: test
+          app.kubernetes.io/component: redpanda-pool-a-statefulset
+          app.kubernetes.io/instance: host-tuners
+          app.kubernetes.io/managed-by: redpanda-operator
+          app.kubernetes.io/name: redpanda
+          cluster.redpanda.com/broker: "true"
+          redpanda.com/poddisruptionbudget: host-tuners
+      spec:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/cluster-name: test
+                  app.kubernetes.io/component: redpanda-pool-a-statefulset
+                  app.kubernetes.io/instance: host-tuners
+                  app.kubernetes.io/name: redpanda
+              topologyKey: kubernetes.io/hostname
+        automountServiceAccountToken: false
+        containers:
+        - command:
+          - rpk
+          - redpanda
+          - start
+          - --advertise-rpc-addr=host-tuners-pool-a-$(ORDINAL_NUMBER).host-tuners:33145
+          env:
+          - name: SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+            value: v99.9.9
+          - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+            value: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                - bash
+                - -c
+                - 'timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook
+                  post-start $(date): /" | tee /proc/1/fd/1; true'
+            preStop:
+              exec:
+                command:
+                - bash
+                - -c
+                - 'timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook
+                  pre-stop $(date): /" | tee /proc/1/fd/1; true'
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt
+                "https://${SERVICE_NAME}.host-tuners.host-tuners.svc.cluster.local.:9644/v1/status/ready"
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          name: redpanda
+          ports:
+          - containerPort: 9644
+            name: admin
+          - containerPort: 9645
+            name: admin-default
+          - containerPort: 8082
+            name: http
+          - containerPort: 8083
+            name: http-default
+          - containerPort: 9093
+            name: kafka
+          - containerPort: 9094
+            name: kafka-default
+          - containerPort: 33145
+            name: rpc
+          - containerPort: 8081
+            name: schemaregistry
+          - containerPort: 8084
+            name: schema-default
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2560Mi
+          startupProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                set -e
+                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.host-tuners.host-tuners.svc.cluster.local.:9644/v1/status/ready")
+                echo $RESULT
+                echo $RESULT | grep ready
+            failureThreshold: 120
+            initialDelaySeconds: 1
+            periodSeconds: 10
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+          - mountPath: /var/lifecycle
+            name: lifecycle-scripts
+          - mountPath: /var/lib/redpanda/data
+            name: datadir
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access
+            readOnly: true
+          - mountPath: /var/run/redpanda_node_tuner_state.yaml
+            name: host-tuner-state
+            readOnly: true
+        - args:
+          - supervisor
+          - --
+          - /redpanda-operator
+          - sidecar
+          - --redpanda-yaml
+          - /etc/redpanda/redpanda.yaml
+          - --redpanda-cluster-namespace
+          - host-tuners
+          - --redpanda-cluster-name
+          - host-tuners
+          - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=host-tuners
+          - --run-broker-probe
+          - --broker-probe-broker-url
+          - $(SERVICE_NAME).host-tuners.host-tuners.svc.cluster.local.:9644
+          command:
+          - /redpanda-operator
+          env:
+          - name: SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: HOST_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: ORDINAL_NUMBER
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          name: sidecar
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 8093
+            initialDelaySeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: config
+          - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access
+            readOnly: true
+        initContainers:
+        - command:
+          - /bin/bash
+          - -c
+          - |
+            set -xeuo pipefail
+            umask 077
+            mkdir -p /host/opt/redpanda
+            mount --bind /opt/redpanda /host/opt/redpanda
+            printf '#!/bin/sh\ncommand -v "$@"\n' > /opt/redpanda/bin/which
+            chmod +x /opt/redpanda/bin/which
+            chroot /host /bin/bash -c 'true' || { echo "FATAL: cannot exec /bin/bash inside the /host chroot; this node's filesystem layout is not supported by tuning.apply_host_tuners" >&2; exit 1; }
+            trap 'rm -f /host/var/tmp/redpanda-tune.yaml' EXIT
+            cp /host/redpanda_etc/redpanda.yaml /host/var/tmp/redpanda-tune.yaml
+            grep -q 'data_directory:' /host/var/tmp/redpanda-tune.yaml || sed -i 's|^redpanda:|redpanda:\n  data_directory: /var/lib/redpanda/data|' /host/var/tmp/redpanda-tune.yaml
+            chroot /host /bin/bash -c '
+              set -xeuo pipefail
+              export PATH="/opt/redpanda/bin:$PATH"
+              nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune list --config /var/tmp/redpanda-tune.yaml
+              rc=0
+              nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune all --config /var/tmp/redpanda-tune.yaml -v || rc=$?
+              if [ "$rc" -ne 0 ]; then
+                echo "WARNING: rpk redpanda tune all exited $rc; at least one enabled tuner failed to apply (see output above). Not blocking broker startup over a single degraded tuner." >&2
+              fi
+              busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
+                org.freedesktop.systemd1.Manager TryRestartUnit ss "irqbalance.service" "replace" \
+                || nsenter -t 1 -p -m pkill -x irqbalance || true
+            '
+          image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
+          name: tuning
+          resources: {}
+          securityContext:
+            privileged: true
+            runAsGroup: 0
+            runAsNonRoot: false
+            runAsUser: 0
+          volumeMounts:
+          - mountPath: /host/bin
+            mountPropagation: HostToContainer
+            name: host-bin
+            readOnly: true
+          - mountPath: /host/sbin
+            mountPropagation: HostToContainer
+            name: host-sbin
+            readOnly: true
+          - mountPath: /host/sys
+            mountPropagation: HostToContainer
+            name: host-sys
+          - mountPath: /host/proc
+            mountPropagation: HostToContainer
+            name: host-proc
+          - mountPath: /host/etc
+            mountPropagation: HostToContainer
+            name: host-etc
+          - mountPath: /host/usr
+            mountPropagation: HostToContainer
+            name: host-usr
+            readOnly: true
+          - mountPath: /host/lib
+            mountPropagation: HostToContainer
+            name: host-lib
+            readOnly: true
+          - mountPath: /host/lib64
+            mountPropagation: HostToContainer
+            name: host-lib64
+            readOnly: true
+          - mountPath: /host/dev
+            mountPropagation: HostToContainer
+            name: host-dev
+          - mountPath: /host/var
+            mountPropagation: HostToContainer
+            name: host-var
+          - mountPath: /host/run
+            mountPropagation: HostToContainer
+            name: host-run
+          - mountPath: /host/redpanda_etc
+            name: base-config
+          - mountPath: /host/var/lib/redpanda/data
+            name: datadir
+        - command:
+          - /bin/bash
+          - -c
+          - trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}"
+            & wait $!
+          env:
+          - name: CONFIGURATOR_SCRIPT
+            value: /etc/secrets/configurator/scripts/configurator.sh
+          - name: SERVICE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: KUBERNETES_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: HOST_IP_ADDRESS
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.hostIP
+          image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
+          name: redpanda-configurator
+          resources: {}
+          volumeMounts:
+          - mountPath: /etc/tls/certs/default
+            name: redpanda-default-cert
+          - mountPath: /etc/tls/certs/external
+            name: redpanda-external-cert
+          - mountPath: /etc/redpanda
+            name: config
+          - mountPath: /tmp/base-config
+            name: base-config
+          - mountPath: /etc/secrets/configurator/scripts/
+            name: host-tuners-pool-a-configurator
+        - command:
+          - /redpanda-operator
+          - bootstrap
+          - --in-dir
+          - /tmp/base-config
+          - --out-dir
+          - /tmp/config
+          image: docker.redpanda.com/redpandadata/redpanda-operator:v99.9.9
+          name: bootstrap-yaml-envsubst
+          resources:
+            limits:
+              cpu: 100m
+              memory: 125Mi
+            requests:
+              cpu: 100m
+              memory: 125Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+          volumeMounts:
+          - mountPath: /tmp/config/
+            name: config
+          - mountPath: /tmp/base-config/
+            name: base-config
+        securityContext:
+          fsGroup: 101
+          fsGroupChangePolicy: OnRootMismatch
+          runAsUser: 101
+        serviceAccountName: host-tuners-pool-a
+        terminationGracePeriodSeconds: 90
+        topologySpreadConstraints:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/cluster-name: test
+              app.kubernetes.io/component: redpanda-pool-a-statefulset
+              app.kubernetes.io/instance: host-tuners
+              app.kubernetes.io/name: redpanda
+          maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+        volumes:
+        - name: redpanda-default-cert
+          secret:
+            defaultMode: 288
+            secretName: host-tuners-pool-a-default-cert
+        - name: redpanda-external-cert
+          secret:
+            defaultMode: 288
+            secretName: host-tuners-pool-a-external-cert
+        - name: lifecycle-scripts
+          secret:
+            defaultMode: 509
+            secretName: host-tuners-pool-a-sts-lifecycle
+        - configMap:
+            name: host-tuners-pool-a
+          name: base-config
+        - emptyDir: {}
+          name: config
+        - name: host-tuners-pool-a-configurator
+          secret:
+            defaultMode: 509
+            secretName: host-tuners-pool-a-configurator
+        - name: datadir
+          persistentVolumeClaim:
+            claimName: datadir
+        - hostPath:
+            path: /bin
+            type: Directory
+          name: host-bin
+        - hostPath:
+            path: /sbin
+            type: Directory
+          name: host-sbin
+        - hostPath:
+            path: /sys
+            type: Directory
+          name: host-sys
+        - hostPath:
+            path: /proc
+            type: Directory
+          name: host-proc
+        - hostPath:
+            path: /etc
+            type: Directory
+          name: host-etc
+        - hostPath:
+            path: /usr
+            type: Directory
+          name: host-usr
+        - hostPath:
+            path: /lib
+            type: Directory
+          name: host-lib
+        - hostPath:
+            path: /lib64
+            type: DirectoryOrCreate
+          name: host-lib64
+        - hostPath:
+            path: /dev
+            type: Directory
+          name: host-dev
+        - hostPath:
+            path: /var
+            type: Directory
+          name: host-var
+        - hostPath:
+            path: /run
+            type: Directory
+          name: host-run
+        - hostPath:
+            path: /var/run/redpanda_node_tuner_state.yaml
+            type: FileOrCreate
+          name: host-tuner-state
+        - name: kube-api-access
+          projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                expirationSeconds: 3607
+                path: token
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace
+    updateStrategy:
+      type: OnDelete
+    volumeClaimTemplates:
+    - metadata:
+        labels:
+          app.kubernetes.io/component: redpanda
+          app.kubernetes.io/instance: host-tuners
+          app.kubernetes.io/name: redpanda
+        name: datadir
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+      status: {}
+  status:
+    availableReplicas: 0
+    replicas: 0
 -- init-containers --
 - apiVersion: apps/v1
   kind: StatefulSet

@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -49,6 +50,10 @@ func statefulSetInitContainers(state *RenderState, pool *redpandav1alpha2.Redpan
 }
 
 func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
+	if state.Spec().Tuning.IsApplyHostTunersEnabled() {
+		return statefulSetInitContainerTuningOnHost(pool)
+	}
+
 	return corev1.Container{
 		Name:    redpandaTuningContainerName,
 		Image:   pool.RedpandaImage(),
@@ -67,6 +72,31 @@ func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.R
 			corev1.VolumeMount{Name: baseConfigVolumeName, MountPath: redpandaConfigMountPath},
 			corev1.VolumeMount{Name: datadirVolumeName, MountPath: datadirMountPath},
 		),
+	}
+}
+
+// statefulSetInitContainerTuningOnHost returns the chroot-based tuning init
+// container for spec.tuning.apply_host_tuners. The script, mounts, and
+// rationale are shared verbatim with the Helm chart (see HostTunerScript,
+// HostTunerVolumeMounts, and statefulSetInitContainerTuningOnHost in
+// charts/redpanda): the chart's "base-config" and "datadir" volume names
+// match this renderer's constants, so the mounts line up as-is. The
+// corresponding hostPath volumes are added in statefulSetVolumes, and the
+// broker's read-only tuner-state mount in statefulSetVolumeMounts.
+func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
+	return corev1.Container{
+		Name:    redpandaTuningContainerName,
+		Image:   pool.RedpandaImage(),
+		Command: []string{`/bin/bash`, `-c`, redpanda.HostTunerScript()},
+		SecurityContext: &corev1.SecurityContext{
+			// privileged: true already grants every capability;
+			// explicit Add entries would be redundant noise.
+			Privileged:   ptr.To(true),
+			RunAsNonRoot: ptr.To(false),
+			RunAsUser:    ptr.To(int64(0)),
+			RunAsGroup:   ptr.To(int64(0)),
+		},
+		VolumeMounts: redpanda.HostTunerVolumeMounts(),
 	}
 }
 
