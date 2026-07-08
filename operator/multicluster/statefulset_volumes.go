@@ -16,6 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -154,6 +155,12 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 		volumes = append(volumes, *vol)
 	}
 
+	// Host tuner volumes (chroot-based tuning init container plus the
+	// broker's read-only tuner-state file). Shared with the Helm chart.
+	if state.Spec().Tuning.IsTuneAioEventsEnabled() && state.Spec().Tuning.IsApplyHostTunersEnabled() {
+		volumes = append(volumes, redpanda.HostTunerVolumes()...)
+	}
+
 	// Truststore volume (projected from ConfigMaps/Secrets).
 	if vol := pool.Spec.Listeners.TrustStoreVolume(pool.Spec.TLS); vol != nil {
 		volumes = append(volumes, *vol)
@@ -269,6 +276,13 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 			Name:      pool.Spec.TieredStorageVolumeName(),
 			MountPath: pool.Spec.TieredCacheDirectory(),
 		})
+	}
+
+	// Read-only view of the host tuner state file at rpk's default state
+	// path, so `rpk redpanda start` picks up the net tuner's cpuset. See
+	// HostTunerStateVolumeMount in charts/redpanda for the full rationale.
+	if state.Spec().Tuning.IsTuneAioEventsEnabled() && state.Spec().Tuning.IsApplyHostTunersEnabled() {
+		mounts = append(mounts, redpanda.HostTunerStateVolumeMount())
 	}
 
 	return mounts

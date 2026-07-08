@@ -171,7 +171,24 @@ type StretchTuning struct {
 	WellKnownIo *string `json:"well_known_io,omitempty"`
 	// ApplyHostTuners enables a chroot-based tuning init container that
 	// gives `rpk redpanda tune all` access to the host's /sys, /proc,
-	// NICs and block devices. See `Tuning.ApplyHostTuners`.
+	// NICs and block devices, so tuners like disk_irq, disk_scheduler,
+	// disk_nomerges and net actually apply. Enabling it default-enables
+	// those tuners plus fstrim, disk_write_cache (GCP-only) and cpu; an
+	// explicit `config.rpk.tune_*: false` overrides any of the defaults.
+	// Requires `tune_aio_events: true` (rendering fails otherwise).
+	// Defaults to false.
+	//
+	// Security: the tuning init container runs privileged and the pod
+	// mounts twelve hostPath volumes (/bin, /sbin, /usr, /lib, /lib64
+	// read-only; /sys, /proc, /etc, /dev, /var, /run writable; plus the
+	// tuner state file). The namespace needs the PSA `privileged` level,
+	// or on OpenShift an SCC allowing hostPath and privileged containers.
+	//
+	// Constraints: run at most one Redpanda pod per node (the default
+	// anti-affinity) — concurrent tuners race on kernel parameters.
+	// Disabling the flag does not revert tuning already applied to a
+	// node: sysctl/IRQ/block-device settings persist until reboot and
+	// the fstrim systemd timer rpk installs keeps firing until removed.
 	ApplyHostTuners *bool `json:"apply_host_tuners,omitempty"`
 }
 

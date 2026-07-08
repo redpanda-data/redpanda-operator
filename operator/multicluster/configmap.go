@@ -18,6 +18,10 @@ import (
 
 // configMaps returns all ConfigMaps for the given RenderState.
 func configMaps(state *RenderState) ([]*corev1.ConfigMap, error) {
+	if err := validateTuning(state.Spec().Tuning); err != nil {
+		return nil, err
+	}
+
 	var cms []*corev1.ConfigMap
 	for _, pool := range state.inClusterPools {
 		cm, err := redpandaConfigMap(state, pool)

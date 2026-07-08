@@ -27,6 +27,10 @@ import (
 
 // statefulSets returns all StatefulSets for the given RenderState.
 func statefulSets(state *RenderState) ([]*appsv1.StatefulSet, error) {
+	if err := validateTuning(state.Spec().Tuning); err != nil {
+		return nil, err
+	}
+
 	var sets []*appsv1.StatefulSet
 	for _, pool := range state.inClusterPools {
 		ss, err := statefulSet(state, pool)

@@ -956,10 +956,16 @@ type Tuning struct {
 	// ApplyHostTuners enables a chroot-based tuning init container that
 	// gives `rpk redpanda tune all` access to the host's /sys, /proc,
 	// NICs and block devices so tuners like disk_irq, disk_scheduler,
-	// disk_nomerges and net actually apply. Requires `tune_aio_events`.
+	// disk_nomerges and net actually apply. Enabling it default-enables
+	// those tuners plus fstrim, disk_write_cache (GCP-only) and cpu; an
+	// explicit `config.rpk.tune_*: false` overrides any of the defaults.
+	// Requires `tune_aio_events: true` (rendering fails otherwise).
 	// Opt-in: defaults to false. Enabling requires a privileged SCC/PSA
-	// on the namespace and MUST be combined with one-pod-per-node
-	// anti-affinity to avoid kernel-parameter races.
+	// on the namespace (the pod adds twelve hostPath mounts) and MUST be
+	// combined with one-pod-per-node anti-affinity to avoid
+	// kernel-parameter races. Disabling does not revert tuning already
+	// applied: settings persist until node reboot and the fstrim systemd
+	// timer keeps firing until removed.
 	ApplyHostTuners *bool `json:"apply_host_tuners,omitempty"`
 }
 

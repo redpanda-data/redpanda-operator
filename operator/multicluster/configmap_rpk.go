@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
@@ -50,6 +51,17 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool
 	// Merge tuning configuration (tune_aio_events, tune_clocksource, etc.).
 	for k, v := range tuningToConfiguration(state.Spec().Tuning) {
 		result[k] = v
+	}
+
+	// Host tuner defaults (tune_disk_irq, tune_network, ...) sit between
+	// tuning fields and user config: mergeRawExtension below overwrites,
+	// so an explicit `config.rpk.tune_*: false` opt-out always wins over
+	// these defaults. Mirrors the Helm chart's precedence in its
+	// rpkNodeConfig.
+	if state.Spec().Tuning.IsApplyHostTunersEnabled() {
+		for k, v := range redpanda.HostTunerDefaults() {
+			result[k] = v
+		}
 	}
 
 	// Merge user-provided RPK configuration overrides.
