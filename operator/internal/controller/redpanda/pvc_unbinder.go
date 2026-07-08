@@ -40,9 +40,11 @@ const defaultPVCUnbindNotReadyThreshold = 5 * time.Minute
 // the cluster now maps it to a different uuid.
 //
 // It deliberately reports NO collision when it cannot confirm one — an empty
-// cluster map (admin call returned nothing) or an empty self uuid (could not
-// read the broker's identity). Destroying a disk is irreversible, so absence of
-// evidence is never treated as evidence of a collision.
+// cluster map (admin call returned nothing), an empty self uuid (could not read
+// the broker's identity), or a member that is present in the cluster but whose
+// cluster-side uuid is unknown (no /v1/broker_uuids entry). Destroying a disk is
+// irreversible, so absence of evidence is never treated as evidence of a
+// collision.
 func identityCollision(clusterUUIDs map[int]string, selfNodeID int, selfUUID string) (bool, string) {
 	if len(clusterUUIDs) == 0 {
 		return false, "cluster member list unavailable; cannot confirm collision"
@@ -55,6 +57,12 @@ func identityCollision(clusterUUIDs map[int]string, selfNodeID int, selfUUID str
 	switch {
 	case !present:
 		return true, fmt.Sprintf("node_id %d not present in cluster (decommissioned/removed); disk identity %s is retired", selfNodeID, selfUUID)
+	case clusterUUID == "":
+		// The node_id is a current cluster member but we have no
+		// authoritative uuid for it (missing /v1/broker_uuids entry). We
+		// cannot tell whether the disk identity is stale, so treat this as
+		// "cannot confirm" rather than wiping a live member's disk.
+		return false, fmt.Sprintf("node_id %d is a member but its cluster uuid is unknown; cannot confirm collision", selfNodeID)
 	case clusterUUID != selfUUID:
 		return true, fmt.Sprintf("node_id %d maps to uuid %s in cluster but disk holds %s (superseded)", selfNodeID, clusterUUID, selfUUID)
 	default:
@@ -91,8 +99,23 @@ func podAdminEndpoint(endpoints []string, podName string) string {
 // It is guarded (see decidePVCUnbind): a confirmed collision, sustained
 // unreadiness, a healthy cluster, and no nodes reported down. At most one disk
 // is wiped per reconcile pass.
+//
+// These guards also make wiping the last live broker's disk impossible: a
+// confirmed collision means the on-disk identity is NOT a current cluster
+// member (its node_id is absent from, or superseded in, the authoritative
+// member-uuid map), so the cluster's health and replication are provided by the
+// OTHER, current members. Requiring IsHealthy=true and zero nodes down means
+// those current members already form a healthy quorum without this disk — so
+// its data is redundant and safe to discard. A genuinely last-broker/last-replica
+// situation cannot satisfy both "this identity is not a member" and "the cluster
+// is healthy without it".
 func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithName("reconcilePVCUnbinder")
+
+	if r.pvcUnbindDisabled() {
+		logger.V(log.TraceLevel).Info("PVC unbinder disabled via negative threshold; skipping")
+		return ctrl.Result{}, nil
+	}
 
 	if state.pools.AllZero() || state.admin == nil {
 		return ctrl.Result{}, nil
@@ -179,6 +202,14 @@ func (r *MulticlusterReconciler) pvcUnbindThreshold() time.Duration {
 		return r.PVCUnbindNotReadyThreshold
 	}
 	return defaultPVCUnbindNotReadyThreshold
+}
+
+// pvcUnbindDisabled reports whether the destructive PVC-unbind behavior is
+// turned off entirely. A negative threshold is the kill switch (set via
+// --pvc-unbind-not-ready-threshold); 0 means "use the built-in default", any
+// positive value tunes the not-ready threshold.
+func (r *MulticlusterReconciler) pvcUnbindDisabled() bool {
+	return r.PVCUnbindNotReadyThreshold < 0
 }
 
 // clusterMemberUUIDs returns the node_id->uuid map of the cluster's CURRENT
