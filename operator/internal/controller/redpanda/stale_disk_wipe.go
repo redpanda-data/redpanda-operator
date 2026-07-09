@@ -112,10 +112,15 @@ func podAdminEndpoint(endpoints []string, podName string) (endpoint string, ambi
 // and rejoins with a new identity.
 //
 // This is distinct from the PVCUnbinder controller
-// (internal/controller/pvcunbinder, --unbind-pvcs-after), which frees the PVCs
-// of Pods stuck Pending on lost NODES so they can reschedule elsewhere. The
-// stale-disk wipe instead targets booted-but-rejected brokers whose DISK
-// content is the problem, and only ever acts on a confirmed retired identity.
+// (internal/controller/pvcunbinder, --unbind-pvcs-after), which
+// non-destructively frees the PVCs of Pods stuck Pending (typically on lost
+// nodes) so they can reschedule elsewhere. The distinction is the ACTION and
+// its PRECONDITION, not the pod state: the stale-disk wipe destructively
+// deletes the PVC + pod, and only ever fires on a retired-identity collision
+// confirmed by reading the broker itself. The two may consider the same
+// long-Pending pod when both are enabled — the wipe defers whenever the
+// broker's self-identity is unreadable (a never-booted Pending pod usually
+// can't answer), leaving such pods to the non-destructive PVCUnbinder.
 //
 // It is guarded (see decideStaleDiskWipe): a confirmed collision, sustained
 // unreadiness, a healthy cluster, and no nodes reported down. At most one disk
