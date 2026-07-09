@@ -109,7 +109,7 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 					return mc.DialContext(ctx, network, address)
 				},
 			)
-			return redpandacontrollers.SetupMulticlusterController(ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, factory, 0, 0, 100 /* post-restart caught-up % */, 5*time.Minute)
+			return redpandacontrollers.SetupMulticlusterController(ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, factory, 0, 0, 100 /* post-restart caught-up % */, 5*time.Minute /* clear-maintenance-mode-after */, 0 /* pvc-unbind-not-ready-threshold (default) */)
 		},
 	})
 	mc = s.mc
