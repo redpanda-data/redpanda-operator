@@ -511,8 +511,8 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 //     live in the file.
 //   - busctl call into the host's systemd to try-restart irqbalance
 //     after rpk rewrites IRQ affinity (systemctl can't traverse a
-//     chroot). Falls back to `nsenter -t 1 -p -m pkill` for non-systemd
-//     hosts.
+//     chroot). No non-systemd fallback — see HostTunerScript for why
+//     none can work without hostPID.
 //   - a `which` shim written into /opt/redpanda/bin (bind-mounted into
 //     the chroot, first on PATH): rpk's fstrim tuner shells out to
 //     `which`, and some minimal node images (AKS Ubuntu) ship a broken
@@ -646,10 +646,18 @@ func HostTunerStateVolumeMount() corev1.VolumeMount {
 //   - busctl TryRestartUnit into the host's systemd so a running
 //     irqbalance doesn't undo rpk's IRQ affinity work (systemctl can't
 //     traverse a chroot; TryRestartUnit, unlike RestartUnit, won't
-//     start an intentionally-stopped unit). Falls back to pkill inside
-//     the host's PID namespace via `nsenter -t 1 -p -m` — a bare pkill
-//     would read host PIDs from the bind-mounted /proc but issue
-//     kill(2) in the container's PID namespace, and always ESRCH.
+//     start an intentionally-stopped unit). This is deliberately the
+//     ONLY mechanism: there is no process-kill fallback for
+//     non-systemd hosts because none can work from here — kill(2)
+//     resolves PIDs in the caller's PID namespace (host PIDs read from
+//     the bind-mounted /proc always ESRCH), and setns(2) into the
+//     host's PID namespace is an ancestor of the container's, which
+//     the kernel rejects with EINVAL (setns(2): the target PID
+//     namespace must be a descendant of the caller's). Reaching host
+//     irqbalance on a non-systemd node would require hostPID on the
+//     whole pod, which is not worth it: every mainstream node image
+//     (COS, AL2023, Ubuntu, Bottlerocket) runs systemd, and on hosts
+//     without an irqbalance unit TryRestartUnit is a clean no-op.
 //   - a `which` shim in /opt/redpanda/bin for rpk's fstrim tuner, which
 //     shells out to `which` (missing/broken on minimal node images).
 //   - No --node-tuner-state-path: rpk's default state path
@@ -684,7 +692,7 @@ chroot /host /bin/bash -c '
   fi
   busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
     org.freedesktop.systemd1.Manager TryRestartUnit ss "irqbalance.service" "replace" \
-    || nsenter -t 1 -p -m pkill -x irqbalance || true
+    || true
 '
 `
 }
