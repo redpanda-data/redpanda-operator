@@ -9,6 +9,7 @@ rules:
   resources:
   - configmaps
   - endpoints
+  - persistentvolumeclaims
   - pods
   - secrets
   - serviceaccounts
@@ -42,17 +43,6 @@ rules:
   - nodes
   verbs:
   - get
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -312,6 +302,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
   - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1

@@ -41,7 +41,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-var schedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|(volume node affinity)`)
+// SchedulingFailureRE matches scheduler messages that indicate a Pod
+// cannot be placed because of volume node-affinity constraints. Used by
+// both the PVCUnbinder and the Broker controller to detect dead-node
+// scenarios.
+var SchedulingFailureRE = regexp.MustCompile(`(^0/[1-9]\d* nodes are available)|(volume node affinity)`)
 
 // PauseAnnotation - when present and set to "true" on the parent
 // Redpanda or Cluster CR, instructs the PVCUnbinder to skip all
@@ -871,7 +875,7 @@ func (r *Controller) freedPVBlocking(ctx context.Context, pv *corev1.PersistentV
 		return false, nil
 	}
 
-	hostname := nodeFromPVAffinity(pv)
+	hostname := NodeFromPVAffinity(pv)
 	if hostname == "" {
 		// Can't resolve the pinned node; be conservative — an
 		// Available freed PV we can't classify is treated as a live
@@ -920,7 +924,7 @@ func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool
 	// As of Kubernetes >1.21.x <=1.28.x (Didn't track down an exact version),
 	// volume node affinity conflicts no longer seem to appear in the message,
 	// hence the need to check for a much weaker case.
-	if !schedulingFailureRE.MatchString(cond.Message) {
+	if !SchedulingFailureRE.MatchString(cond.Message) {
 		log.FromContext(ctx).Info("scheduling failure does not appear to indicate volume affinity issues; skipping", "name", pod.Name, "condition", cond)
 		return false, 0
 	}
@@ -1064,7 +1068,7 @@ func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error)
 		if pv.Spec.ClaimRef == nil {
 			continue
 		}
-		hostname := nodeFromPVAffinity(pv)
+		hostname := NodeFromPVAffinity(pv)
 		if hostname == "" {
 			continue
 		}
@@ -1118,7 +1122,7 @@ func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error)
 		if !pvcUnbinderPredicate(other) {
 			continue
 		}
-		if !podHasVolumeAffinityUnschedulable(other) {
+		if !PodHasVolumeAffinityUnschedulable(other) {
 			continue
 		}
 		for _, pvcKey := range StsPVCs(other) {
@@ -1133,7 +1137,7 @@ func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error)
 	return false, nil
 }
 
-// nodeFromPVAffinity extracts the hostname value pinned by a PV's
+// NodeFromPVAffinity extracts the hostname value pinned by a PV's
 // NodeAffinity, used by Gate 2 to bucket stuck pods by their pinned
 // node. Only `kubernetes.io/hostname` `In` selectors with a single
 // value are recognized — that's the shape Local / HostPath volumes
@@ -1147,7 +1151,9 @@ func (r *Controller) multiNodeEventInProgress(ctx context.Context) (bool, error)
 // Gate 2 is best-effort regardless: any PV we can't classify just
 // doesn't contribute to the count. The binding safety invariant rests
 // on Gates 0/3/4, not on this function's coverage.
-func nodeFromPVAffinity(pv *corev1.PersistentVolume) string {
+// NodeFromPVAffinity extracts the hostname from a PV's NodeAffinity.
+// Returns "" if no single-hostname affinity is found.
+func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 	if pv.Spec.NodeAffinity == nil || pv.Spec.NodeAffinity.Required == nil {
 		return ""
 	}
@@ -1165,6 +1171,64 @@ func nodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 		}
 	}
 	return ""
+}
+
+// DeadNodePVCs returns the PVCs attached to the pod whose bound PVs are
+// pinned (HostPath or Local volume with NodeAffinity) to nodes that no
+// longer exist. As a side effect, each affected PV's reclaim policy is
+// patched to Retain so the storage survives PVC deletion.
+//
+// apiReader must be an uncached client for accurate Node existence checks.
+func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod) ([]corev1.PersistentVolumeClaim, error) {
+	l := log.FromContext(ctx)
+	var affected []corev1.PersistentVolumeClaim
+	for i := range pod.Spec.Volumes {
+		if pod.Spec.Volumes[i].PersistentVolumeClaim == nil {
+			continue
+		}
+		var pvc corev1.PersistentVolumeClaim
+		if err := c.Get(ctx, client.ObjectKey{
+			Name:      pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName,
+			Namespace: pod.Namespace,
+		}, &pvc); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return nil, err
+		}
+		if pvc.Spec.VolumeName == "" {
+			continue
+		}
+		var pv corev1.PersistentVolume
+		if err := c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
+			return nil, err
+		}
+		if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
+			continue
+		}
+		nodeName := NodeFromPVAffinity(&pv)
+		if nodeName == "" {
+			continue
+		}
+		var node corev1.Node
+		if err := apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return nil, err
+			}
+		} else {
+			continue
+		}
+		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimRetain {
+			patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
+			pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
+			if err := c.Patch(ctx, &pv, patch); err != nil {
+				return nil, fmt.Errorf("patching PV %s to Retain: %w", pv.Name, err)
+			}
+			l.Info("patched PV to Retain", "pv", pv.Name, "deadNode", nodeName)
+		}
+		affected = append(affected, pvc)
+	}
+	return affected, nil
 }
 
 // listClusterPVCsByName returns a name→PVC snapshot for the PVCs that
@@ -1194,16 +1258,16 @@ func (r *Controller) listClusterPVCsByName(ctx context.Context, pod *corev1.Pod)
 	return out, nil
 }
 
-// podHasVolumeAffinityUnschedulable reports whether a Pod is Pending
-// for the same reason that would cause the unbinder to act on it: the
-// scheduler couldn't satisfy volume node affinity. Used by
-// [Controller.multiNodeEventInProgress] to detect K8s-wide events.
-func podHasVolumeAffinityUnschedulable(pod *corev1.Pod) bool {
+// PodHasVolumeAffinityUnschedulable reports whether a Pod is Pending
+// because the scheduler couldn't satisfy volume node affinity. Used by
+// [Controller.multiNodeEventInProgress] and by the Broker controller to
+// detect dead-node scenarios.
+func PodHasVolumeAffinityUnschedulable(pod *corev1.Pod) bool {
 	for _, cond := range pod.Status.Conditions {
 		if cond.Type != corev1.PodScheduled || cond.Status != corev1.ConditionFalse || cond.Reason != "Unschedulable" {
 			continue
 		}
-		return schedulingFailureRE.MatchString(cond.Message)
+		return SchedulingFailureRE.MatchString(cond.Message)
 	}
 	return false
 }

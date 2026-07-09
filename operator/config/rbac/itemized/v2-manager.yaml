@@ -9,6 +9,7 @@ rules:
   resources:
   - configmaps
   - endpoints
+  - persistentvolumeclaims
   - pods
   - secrets
   - serviceaccounts
@@ -36,6 +37,20 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - get
+  - list
+  - patch
 - apiGroups:
   - apps
   resources:
@@ -260,4 +275,12 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - redpanda.vectorized.io
+  resources:
+  - clusters
+  verbs:
+  - get
+  - list
   - watch
