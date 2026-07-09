@@ -222,12 +222,12 @@ func (p *PoolTracker) AllZero() bool {
 //
 // It must only be consulted to decide the reconcile's REQUEUE cadence, applied
 // at the very end of the reconcile — never to abort the reconcile before the
-// cluster-level recovery steps (maintenance-mode clear, PVC unbind,
+// cluster-level recovery steps (maintenance-mode clear, stale-disk wipe,
 // decommission). Those steps exist precisely to run while brokers are unready:
 // during a full region outage every surviving broker's sidecar readiness probe
 // fails (under-replicated partitions), so no pool has a Ready replica and this
 // returns true for the entire outage. Gating the recovery steps on it would
-// deadlock — the operator could never clear stuck maintenance, unbind a
+// deadlock — the operator could never clear stuck maintenance, wipe a
 // bad_rejoin disk, or decommission a lost broker while it mattered most.
 //
 // Note this only removes the READINESS gate on those steps. Other, narrower
@@ -553,9 +553,10 @@ func (p *PoolTracker) HasRecentlyReplacedPods() bool {
 
 // ExistingPods returns every existing pod across all pools as MulticlusterPods,
 // regardless of StatefulSet revision. Unlike PodsToRoll it does not filter on
-// revision — both the maintenance-mode cleaner and the PVC unbinder must inspect
-// pods that are not in the roll set (e.g. a persistently-down broker whose pod is
-// Pending/not-Ready, or a decommissioned broker stuck in a bad_rejoin crashloop).
+// revision — both the maintenance-mode cleaner and the stale-disk wipe step must
+// inspect pods that are not in the roll set (e.g. a persistently-down broker whose
+// pod is Pending/not-Ready, or a decommissioned broker stuck in a bad_rejoin
+// crashloop).
 func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
 	pods := []*MulticlusterPod{}
 	for _, existing := range p.existingPools {

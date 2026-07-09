@@ -117,9 +117,10 @@ func (c *Factory) redpandaAdminForStretchCluster(ctx context.Context, sc *redpan
 
 // RedpandaAdminClientForStretchPod builds an admin client targeting a single
 // broker pod's admin endpoint (address:port, no scheme), reusing the
-// StretchCluster's discovered TLS config + auth. The PVC unbinder uses this to
-// read a not-ready (decommissioned-rejoin) broker's self identity directly — a
-// cluster-wide client can't be pinned to one broker. Uses the local cluster's
+// StretchCluster's discovered TLS config + auth. The stale-disk wipe step
+// (reconcileStaleDiskWipe) uses this to read a not-ready (decommissioned-rejoin)
+// broker's self identity directly — a cluster-wide client can't be pinned to
+// one broker. Uses the local cluster's
 // k8s client; the operator-issued CA is shared across all peer clusters so the
 // resulting client validates any broker's server cert.
 func (c *Factory) RedpandaAdminClientForStretchPod(ctx context.Context, sc *redpandav1alpha2.StretchCluster, endpoint string) (*rpadmin.AdminAPI, error) {

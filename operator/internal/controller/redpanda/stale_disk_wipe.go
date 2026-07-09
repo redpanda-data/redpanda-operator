@@ -22,11 +22,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 )
 
-// defaultPVCUnbindNotReadyThreshold is how long a broker pod must stay
-// not-Ready before the PVC unbinder is allowed to destroy its disk. It must
-// comfortably exceed normal startup and post-restart recovery so a transiently
-// unready (but healthy) broker is never wiped.
-const defaultPVCUnbindNotReadyThreshold = 5 * time.Minute
+// defaultStaleDiskWipeNotReadyThreshold is how long a broker pod must stay
+// not-Ready before the stale-disk wipe step is allowed to destroy its disk. It
+// must comfortably exceed normal startup and post-restart recovery so a
+// transiently unready (but healthy) broker is never wiped.
+const defaultStaleDiskWipeNotReadyThreshold = 5 * time.Minute
 
 // identityCollision implements Andrew's two-request check (K8S-843): given the
 // cluster-authoritative node_id->uuid map (request against the full cluster)
@@ -102,15 +102,22 @@ func podAdminEndpoint(endpoints []string, podName string) (endpoint string, ambi
 	return endpoint, false
 }
 
-// reconcilePVCUnbinder implements Andrew's recovery for K8S-843: a broker that
-// was decommissioned (e.g. by the autobalancer after a region outage) but whose
-// PVC survived will boot from the stale disk, claim a retired identity, be
-// rejected by the controller, and crashloop ("bad_rejoin"). This step finds
+// reconcileStaleDiskWipe implements Andrew's recovery for K8S-843: a broker
+// that was decommissioned (e.g. by the autobalancer after a region outage) but
+// whose PVC survived will boot from the stale disk, claim a retired identity,
+// be rejected by the controller, and crashloop ("bad_rejoin"). This step finds
 // such a pod — persistently not-Ready, with an on-disk identity that collides
-// with the cluster's authoritative broker-uuid view — and wipes its PVC + pod
-// so it reschedules clean.
+// with the cluster's authoritative broker-uuid view — and wipes the stale disk
+// by deleting the pod's PVC + pod so the broker reschedules onto a fresh disk
+// and rejoins with a new identity.
 //
-// It is guarded (see decidePVCUnbind): a confirmed collision, sustained
+// This is distinct from the PVCUnbinder controller
+// (internal/controller/pvcunbinder, --unbind-pvcs-after), which frees the PVCs
+// of Pods stuck Pending on lost NODES so they can reschedule elsewhere. The
+// stale-disk wipe instead targets booted-but-rejected brokers whose DISK
+// content is the problem, and only ever acts on a confirmed retired identity.
+//
+// It is guarded (see decideStaleDiskWipe): a confirmed collision, sustained
 // unreadiness, a healthy cluster, and no nodes reported down. At most one disk
 // is wiped per reconcile pass.
 //
@@ -123,11 +130,11 @@ func podAdminEndpoint(endpoints []string, podName string) (endpoint string, ambi
 // its data is redundant and safe to discard. A genuinely last-broker/last-replica
 // situation cannot satisfy both "this identity is not a member" and "the cluster
 // is healthy without it".
-func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithName("reconcilePVCUnbinder")
+func (r *MulticlusterReconciler) reconcileStaleDiskWipe(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithName("reconcileStaleDiskWipe")
 
-	if r.pvcUnbindDisabled() {
-		logger.V(log.TraceLevel).Info("PVC unbinder disabled via negative threshold; skipping")
+	if r.staleDiskWipeDisabled() {
+		logger.V(log.TraceLevel).Info("stale-disk wipe disabled via negative threshold; skipping")
 		return ctrl.Result{}, nil
 	}
 
@@ -135,7 +142,7 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 		return ctrl.Result{}, nil
 	}
 
-	threshold := r.pvcUnbindThreshold()
+	threshold := r.staleDiskWipeThreshold()
 
 	// Request against the full cluster: health + authoritative node_id->uuid map.
 	health, err := r.fetchClusterHealth(ctx, state.admin)
@@ -146,7 +153,7 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 	if err != nil {
 		// Without the authoritative member map we cannot confirm any collision;
 		// skip this pass rather than risk a wrong wipe. Next reconcile retries.
-		logger.V(log.DebugLevel).Info("cluster member uuids unavailable, skipping PVC unbinder this pass", "error", err)
+		logger.V(log.DebugLevel).Info("cluster member uuids unavailable, skipping stale-disk wipe this pass", "error", err)
 		return ctrl.Result{}, nil
 	}
 	downNodes := len(health.NodesDown)
@@ -166,7 +173,7 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 			// pod name resolve to more than one admin endpoint. Reading one
 			// broker's identity and wiping another's disk would be a data-loss
 			// bug, so defer rather than guess (mirrors brokerIDForPod).
-			logger.Info("pod name maps to more than one admin endpoint across member clusters; skipping PVC unbind to avoid acting on the wrong broker", "pod", pod.GetName())
+			logger.Info("pod name maps to more than one admin endpoint across member clusters; skipping stale-disk wipe to avoid acting on the wrong broker", "pod", pod.GetName())
 			continue
 		}
 		if endpoint == "" {
@@ -187,31 +194,31 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 			return brokerSelfIdentity(sctx, selfAdmin)
 		}()
 		if err != nil {
-			logger.Info("could not read self identity of not-ready broker, deferring PVC unbind", "pod", pod.GetName(), "error", err)
+			logger.Info("could not read self identity of not-ready broker, deferring stale-disk wipe", "pod", pod.GetName(), "error", err)
 			continue
 		}
 
 		collision, collisionReason := identityCollision(clusterUUIDs, nodeID, uuid)
-		unbind, decision := decidePVCUnbind(collision, notReadyFor, threshold, health.IsHealthy, downNodes)
-		logger.V(log.DebugLevel).Info("PVC unbind decision",
+		wipe, decision := decideStaleDiskWipe(collision, notReadyFor, threshold, health.IsHealthy, downNodes)
+		logger.V(log.DebugLevel).Info("stale-disk wipe decision",
 			"pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName(),
 			"nodeID", nodeID, "uuid", uuid, "collision", collision, "collisionReason", collisionReason,
-			"notReadyFor", notReadyFor.String(), "unbind", unbind, "decision", decision)
-		if !unbind {
+			"notReadyFor", notReadyFor.String(), "wipe", wipe, "decision", decision)
+		if !wipe {
 			continue
 		}
 
-		logger.Info("unbinding PVC for decommissioned broker stuck in bad_rejoin; deleting PVC + pod for clean reschedule",
+		logger.Info("wiping stale disk of decommissioned broker stuck in bad_rejoin; deleting PVC + pod for clean reschedule",
 			"pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName(), "nodeID", nodeID, "uuid", uuid, "reason", decision)
 
 		if err := r.LifecycleClient.DeletePVCsForPod(ctx, pod); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting PVCs for broker pod")
 		}
 		if err := r.LifecycleClient.DeletePod(ctx, pod); err != nil {
-			return ctrl.Result{}, errors.Wrap(err, "deleting broker pod after PVC unbind")
+			return ctrl.Result{}, errors.Wrap(err, "deleting broker pod after stale-disk wipe")
 		}
 
-		// One unbind per pass; requeue to let the replacement come up before
+		// One wipe per pass; requeue to let the replacement come up before
 		// considering any other candidate.
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 	}
@@ -219,19 +226,19 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 	return ctrl.Result{}, nil
 }
 
-func (r *MulticlusterReconciler) pvcUnbindThreshold() time.Duration {
-	if r.PVCUnbindNotReadyThreshold > 0 {
-		return r.PVCUnbindNotReadyThreshold
+func (r *MulticlusterReconciler) staleDiskWipeThreshold() time.Duration {
+	if r.StaleDiskWipeNotReadyThreshold > 0 {
+		return r.StaleDiskWipeNotReadyThreshold
 	}
-	return defaultPVCUnbindNotReadyThreshold
+	return defaultStaleDiskWipeNotReadyThreshold
 }
 
-// pvcUnbindDisabled reports whether the destructive PVC-unbind behavior is
+// staleDiskWipeDisabled reports whether the destructive stale-disk wipe is
 // turned off entirely. A negative threshold is the kill switch (set via
-// --pvc-unbind-not-ready-threshold); 0 means "use the built-in default", any
-// positive value tunes the not-ready threshold.
-func (r *MulticlusterReconciler) pvcUnbindDisabled() bool {
-	return r.PVCUnbindNotReadyThreshold < 0
+// --wipe-stale-disk-after); 0 means "use the built-in default", any positive
+// value tunes the not-ready threshold.
+func (r *MulticlusterReconciler) staleDiskWipeDisabled() bool {
+	return r.StaleDiskWipeNotReadyThreshold < 0
 }
 
 // clusterMemberUUIDs returns the node_id->uuid map of the cluster's CURRENT
@@ -290,21 +297,21 @@ func brokerSelfIdentity(ctx context.Context, admin *rpadmin.AdminAPI) (int, stri
 	return cfg.NodeID, "", nil
 }
 
-// decidePVCUnbind is the guarded decision for whether to destroy a broker's
+// decideStaleDiskWipe is the guarded decision for whether to destroy a broker's
 // data disk. All guards must hold: a confirmed identity collision, the pod
 // not-ready for at least threshold, the cluster otherwise healthy, and no nodes
 // reported down (so we never wipe during a live partition where the
 // "authoritative" view may itself be transiently wrong).
-func decidePVCUnbind(collision bool, notReadyFor, threshold time.Duration, clusterHealthy bool, downNodes int) (bool, string) {
+func decideStaleDiskWipe(collision bool, notReadyFor, threshold time.Duration, clusterHealthy bool, downNodes int) (bool, string) {
 	switch {
 	case !collision:
 		return false, "no identity collision"
 	case notReadyFor < threshold:
 		return false, fmt.Sprintf("not-ready for %s < threshold %s", notReadyFor, threshold)
 	case !clusterHealthy:
-		return false, "cluster not healthy; deferring destructive unbind"
+		return false, "cluster not healthy; deferring destructive wipe"
 	case downNodes > 0:
-		return false, fmt.Sprintf("%d node(s) down; deferring destructive unbind until partition heals", downNodes)
+		return false, fmt.Sprintf("%d node(s) down; deferring destructive wipe until partition heals", downNodes)
 	default:
 		return true, "confirmed decommissioned-broker identity collision on a persistently not-ready pod"
 	}

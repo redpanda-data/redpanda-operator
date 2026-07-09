@@ -1321,7 +1321,7 @@ func TestHasRecentlyReplacedPods(t *testing.T) {
 // steps. The critical case is a scaled-up cluster whose pods are all not-Ready
 // (e.g. a region outage where every surviving broker's sidecar readiness probe
 // fails on under-replicated partitions): it must report true (poll again) while
-// still allowing the caller to run maintenance-clear / PVC-unbind / decommission.
+// still allowing the caller to run maintenance-clear / stale-disk-wipe / decommission.
 func TestPoolTrackerScaledUpButNoneReady(t *testing.T) {
 	set := func(name string, specReplicas, readyReplicas int32) *MulticlusterStatefulSet {
 		return &MulticlusterStatefulSet{
