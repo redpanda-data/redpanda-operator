@@ -134,6 +134,11 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	} else if ok {
 		payload.StretchCluster.Count = len(stretchClusters.Items)
 		payload.StretchCluster.Enabled = payload.StretchCluster.Count > 0
+		for i := range stretchClusters.Items {
+			if tuning := stretchClusters.Items[i].Spec.Tuning; tuning != nil && ptrBool(tuning.ApplyHostTuners) {
+				payload.StretchCluster.HostTuners++
+			}
+		}
 	}
 
 	// Stretch/multicluster broker sizing lives on RedpandaBrokerPool CRs.
@@ -285,6 +290,13 @@ func (c *Collector) aggregateRedpandas(payload *Payload, items []redpandav1alpha
 			spec.External.Gateway != nil && ptrBool(spec.External.Gateway.Enabled) &&
 			len(spec.External.Gateway.ParentRefs) > 0 {
 			payload.Redpanda.GatewayAPIExternalAccess++
+		}
+		// Host tuners are a pure opt-in (the chart defaults apply_host_tuners to
+		// false), so the raw spec is the effective state — no need to consult the
+		// rendered values. The always-on tune_aio_events tuner is deliberately not
+		// counted; this tracks adoption of the chroot host-tuner mode only.
+		if spec.Tuning != nil && ptrBool(spec.Tuning.ApplyHostTuners) {
+			payload.Redpanda.HostTuners++
 		}
 
 		// Broker count + sizing: chart-rendered. Fall back to raw replicas for the
