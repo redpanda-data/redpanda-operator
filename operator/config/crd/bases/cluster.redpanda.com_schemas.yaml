@@ -63,7 +63,14 @@ spec:
                         description: |-
                           Group is used to override the object group that this reference points to.
                           If unspecified, defaults to "cluster.redpanda.com".
+                          A bare API group only — controllers match it by string comparison, so a
+                          "group/version" value (e.g. "cluster.redpanda.com/v1alpha2") would
+                          silently match nothing and the referencing object would never bind.
                         type: string
+                        x-kubernetes-validations:
+                        - message: group must be a bare API group without a version
+                            suffix (e.g. cluster.redpanda.com, not cluster.redpanda.com/v1alpha2)
+                          rule: '!self.contains(''/'')'
                       kind:
                         description: |-
                           Kind is used to override the object kind that this reference points to.
