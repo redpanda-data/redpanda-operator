@@ -6025,7 +6025,7 @@
               fi
               busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
                 org.freedesktop.systemd1.Manager TryRestartUnit ss "irqbalance.service" "replace" \
-                || nsenter -t 1 -p -m pkill -x irqbalance || true
+                || true
             '
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: tuning
