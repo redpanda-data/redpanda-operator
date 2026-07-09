@@ -22,12 +22,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
@@ -301,4 +303,60 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 			require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, user)))
 		})
 	}
+}
+
+// TestUserPasswordSchemaValidation verifies the CRD-level contract of
+// spec.authentication.password: providing only `value` must be admitted, and
+// providing neither `value` nor `valueFrom` must be rejected by the type's
+// validation rule. The schema used to mark valueFrom as unconditionally
+// required, which made the documented value-only form impossible to apply
+// (the structural check fired before the either/or rule could run).
+// Regression test for
+// https://github.com/redpanda-data/redpanda-operator/issues/1290.
+func TestUserPasswordSchemaValidation(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+	c, err := client.New(cfg, client.Options{Scheme: scheme})
+	require.NoError(t, err)
+
+	user := func(name string, password redpandav1alpha2.Password) *redpandav1alpha2.User {
+		return &redpandav1alpha2.User{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
+			Spec: redpandav1alpha2.UserSpec{
+				ClusterSource: &redpandav1alpha2.ClusterSource{
+					ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
+				},
+				Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+					Password: password,
+				},
+			},
+		}
+	}
+
+	// The documented value-only form is admitted.
+	require.NoError(t, c.Create(ctx, user("value-only", redpandav1alpha2.Password{
+		Value: "value-only-password",
+	})))
+
+	// valueFrom-only (the common production form) still works.
+	require.NoError(t, c.Create(ctx, user("valuefrom-only", redpandav1alpha2.Password{
+		ValueFrom: &redpandav1alpha2.PasswordSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "some-secret"},
+			},
+		},
+	})))
+
+	// Neither is rejected by the either/or rule with its message, not a
+	// structural-schema error.
+	err = c.Create(ctx, user("neither", redpandav1alpha2.Password{}))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "valueFrom must not be empty if no value supplied")
 }

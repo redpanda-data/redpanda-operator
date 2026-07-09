@@ -70,8 +70,12 @@ spec:
                           In production, use ValueFrom.
                         type: string
                       valueFrom:
-                        description: ValueFrom specifies a source for a password to
-                          be fetched from when specifying or generating user credentials.
+                        description: |-
+                          ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
+                          Optional when value is set: the type-level validation rule enforces
+                          that at least one of the two is present. (This field being marked
+                          required in the schema used to make the documented value-only form
+                          impossible to apply — https://github.com/redpanda-data/redpanda-operator/issues/1290.)
                         properties:
                           secretKeyRef:
                             description: |-
@@ -104,12 +108,22 @@ spec:
                         required:
                         - secretKeyRef
                         type: object
-                    required:
-                    - valueFrom
                     type: object
                     x-kubernetes-validations:
                     - message: valueFrom must not be empty if no value supplied
+<<<<<<< HEAD
                       rule: self.value != "" || has(self.valueFrom)
+=======
+                      rule: (has(self.value) && self.value != "") || has(self.valueFrom)
+                  syncCredentials:
+                    description: |-
+                      SyncCredentials when set to true causes the operator to re-read the
+                      password from the referenced Secret on every reconciliation cycle
+                      (default: every 5 minutes) and upsert the credentials to Redpanda.
+                      This enables password rotation via external systems like the External
+                      Secrets Operator (ESO) without requiring user recreation.
+                    type: boolean
+>>>>>>> ab8d4143 (operator: make User password.valueFrom optional so value-only works)
                   type:
                     default: scram-sha-512
                     description: |-
