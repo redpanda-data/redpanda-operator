@@ -67,6 +67,9 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 		},
 		&redpandav1alpha2.StretchCluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "sc-1", Namespace: "default"},
+			Spec: redpandav1alpha2.StretchClusterSpec{
+				Tuning: &redpandav1alpha2.StretchTuning{ApplyHostTuners: ptr.To(true)},
+			},
 		},
 		&redpandav1alpha2.RedpandaBrokerPool{
 			ObjectMeta: metav1.ObjectMeta{Name: "bp-1", Namespace: "default"},
@@ -142,6 +145,10 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 							},
 						},
 					},
+					Tuning: &redpandav1alpha2.Tuning{
+						TuneAioEvents:   ptr.To(true),
+						ApplyHostTuners: ptr.To(true),
+					},
 				},
 			},
 		},
@@ -203,6 +210,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Redpanda.Console)
 	require.Equal(t, 1, payload.Redpanda.ManagedConnectors)
 	require.Equal(t, 1, payload.Redpanda.GatewayAPIExternalAccess)
+	require.Equal(t, 1, payload.Redpanda.HostTuners)
 	// Sizing: 4c/16Gi per broker × 5 brokers (rp-1 default pool + correlated np-1).
 	require.Equal(t, 20, payload.Redpanda.TotalCPUCores)
 	require.Equal(t, 80, payload.Redpanda.TotalMemoryGiB)
@@ -213,6 +221,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 24, payload.StretchCluster.TotalCPUCores)
 	require.Equal(t, 96, payload.StretchCluster.TotalMemoryGiB)
 	require.Equal(t, []string{"8c/32Gi"}, payload.StretchCluster.BrokerSizes)
+	require.Equal(t, 1, payload.StretchCluster.HostTuners)
 
 	// Vectorized sizing: 2c/8Gi × 1.
 	require.Equal(t, 1, payload.VectorizedClusters.Count)
@@ -285,6 +294,8 @@ func TestCollect_EmptyCluster(t *testing.T) {
 	require.Empty(t, payload.Redpanda.Versions)
 	require.Equal(t, 0, payload.Redpanda.ManagedConnectors)
 	require.Equal(t, 0, payload.Redpanda.GatewayAPIExternalAccess)
+	require.Equal(t, 0, payload.Redpanda.HostTuners)
+	require.Equal(t, 0, payload.StretchCluster.HostTuners)
 	require.Equal(t, 0, payload.VectorizedClusters.Count)
 	require.Empty(t, payload.Storage.CSIDrivers)
 	require.Equal(t, 0, payload.Resources.Topics)
@@ -332,6 +343,47 @@ func TestAggregateRedpandas_GatewayCountRequiresParentRefs(t *testing.T) {
 
 	require.Equal(t, 0, payload.Redpanda.GatewayAPIExternalAccess,
 		"half-configured gateway clusters (no parentRefs / external disabled) must not be counted")
+}
+
+// TestAggregateRedpandas_HostTunersRequiresOptIn locks the hostTunersEnabled
+// counter to spec.tuning.apply_host_tuners only: the long-standing
+// tune_aio_events tuner (a chart default) must not count as host-tuner
+// adoption, and an explicit apply_host_tuners=false must not count either.
+func TestAggregateRedpandas_HostTunersRequiresOptIn(t *testing.T) {
+	c := &Collector{}
+	items := []redpandav1alpha2.Redpanda{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "aio-only", Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+					Tuning: &redpandav1alpha2.Tuning{TuneAioEvents: ptr.To(true)},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "explicitly-off", Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+					Tuning: &redpandav1alpha2.Tuning{ApplyHostTuners: ptr.To(false)},
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "opted-in", Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{
+				ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+					Tuning: &redpandav1alpha2.Tuning{ApplyHostTuners: ptr.To(true)},
+				},
+			},
+		},
+	}
+
+	payload := &Payload{}
+	var rp sizing
+	c.aggregateRedpandas(payload, items, &rp, map[string]corev1.ResourceRequirements{})
+
+	require.Equal(t, 1, payload.Redpanda.HostTuners,
+		"only clusters with apply_host_tuners=true count as host-tuner adoption")
 }
 
 func TestCollect_CSIDriversSortedAndDistinct(t *testing.T) {
