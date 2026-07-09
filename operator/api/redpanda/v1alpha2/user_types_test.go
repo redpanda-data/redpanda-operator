@@ -225,7 +225,7 @@ func TestUserValidation(t *testing.T) {
 			mutate: func(user *User) {
 				user.Spec.Authentication = &UserAuthenticationSpec{}
 			},
-			errors: []string{`spec.authentication.password.valueFrom: Required value`},
+			errors: []string{`spec.authentication.password: Invalid value`, `valueFrom must not be empty if no value supplied`},
 		},
 		"authentication - no secret key ref": {
 			mutate: func(user *User) {
