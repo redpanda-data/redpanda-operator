@@ -2029,7 +2029,12 @@ Password specifies a password for the user.
 | Field | Description | Default | Validation
 | *`value`* __string__ | Value is a hardcoded value to use for the given password. It should only be used for testing purposes. +
 In production, use ValueFrom. + |  | 
-| *`valueFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource[$$PasswordSource$$]__ | ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials. + |  | 
+| *`valueFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource[$$PasswordSource$$]__ | ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials. +
+Optional when value is set: the type-level validation rule enforces +
+that at least one of the two is present. (This field being marked +
+required in the schema used to make the documented value-only form +
+impossible to apply — https://github.com/redpanda-data/redpanda-operator/issues/1290.) + |  | Optional: \{} +
+
 | *`noGenerate`* __boolean__ | NoGenerate when set to true does not create kubernetes secret when ValueFrom points to none-existent secret. + |  | 
 |===
 
