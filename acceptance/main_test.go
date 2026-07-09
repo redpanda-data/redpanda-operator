@@ -384,6 +384,7 @@ func operatorCmdFlags() []string {
 		"--unbind-pvcs-after=5s",
 		"--cluster-connection-timeout=500ms",
 		"--enable-shadowlinks",
+		"--enable-broker",
 	}
 	if testutil.AcceptanceSetupNodePools() > 0 {
 		flags = append(flags, "--enable-v2-nodepools=true")

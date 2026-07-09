@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Broker custom resource and reconciler (experimental, behind --enable-broker) — per-broker pod/PVC lifecycle with grant-gated serialized rotation, leadership drain, node_id continuity verification, explicit-intent decommission with recommission and last-broker guard, dead-node PV remediation, and full status conditions
+time: 2026-07-09T12:00:00.000000000+02:00

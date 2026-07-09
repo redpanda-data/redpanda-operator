@@ -29,10 +29,15 @@ require (
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1 // indirect
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.10-20221127060915-a1ecdc58eccd.1 // indirect
+	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.18.1-20250616170632-3de895655308.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.11-20260316210807-5d899910f714.1 // indirect
 	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260506141738-8dfb14358799.1 // indirect
 	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260506141738-8dfb14358799.1 // indirect
+	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.18.1-20250404200318-65f29ddd7b29.1 // indirect
+	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.36.5-20250404200318-65f29ddd7b29.1 // indirect
+	buf.build/gen/go/redpandadata/gatekeeper/connectrpc/go v1.18.1-20241209180130-05cf059c71c1.1 // indirect
+	buf.build/gen/go/redpandadata/gatekeeper/protocolbuffers/go v1.36.6-20241209180130-05cf059c71c1.1 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.18.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
@@ -96,6 +101,7 @@ require (
 	github.com/cucumber/messages/go/v21 v21.0.1 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch v5.9.11+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
@@ -128,6 +134,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
@@ -185,6 +192,12 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
+	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/httprc v1.0.6 // indirect
+	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/jwx/v2 v2.1.5-0.20250226052408-de7d95fda31a // indirect
+	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -237,6 +250,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/scalalang2/golang-fifo v1.2.0 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/sethgrid/pester v1.2.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
