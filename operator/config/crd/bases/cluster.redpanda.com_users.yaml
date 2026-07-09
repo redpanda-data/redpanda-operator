@@ -111,19 +111,7 @@ spec:
                     type: object
                     x-kubernetes-validations:
                     - message: valueFrom must not be empty if no value supplied
-<<<<<<< HEAD
-                      rule: self.value != "" || has(self.valueFrom)
-=======
                       rule: (has(self.value) && self.value != "") || has(self.valueFrom)
-                  syncCredentials:
-                    description: |-
-                      SyncCredentials when set to true causes the operator to re-read the
-                      password from the referenced Secret on every reconciliation cycle
-                      (default: every 5 minutes) and upsert the credentials to Redpanda.
-                      This enables password rotation via external systems like the External
-                      Secrets Operator (ESO) without requiring user recreation.
-                    type: boolean
->>>>>>> ab8d4143 (operator: make User password.valueFrom optional so value-only works)
                   type:
                     default: scram-sha-512
                     description: |-
