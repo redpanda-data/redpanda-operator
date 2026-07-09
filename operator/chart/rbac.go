@@ -59,6 +59,12 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 				"files/rbac/old-decommission.Role.yaml":        true, // Deprecated but not yet removed.
 				"files/rbac/pvcunbinder.ClusterRole.yaml":      true,
 				"files/rbac/pvcunbinder.Role.yaml":             true,
+				// The StretchCluster renderer grants each broker pool a
+				// rack-awareness ClusterRole with nodes get/list/watch;
+				// RBAC escalation prevention requires the operator to
+				// hold those verbs itself (the always-on
+				// rack-awareness.ClusterRole.yaml carries `get` only).
+				"files/rbac/stretch-rack-awareness.ClusterRole.yaml": true,
 			},
 		},
 		// ClusterRole for the CRD installation Job.
