@@ -8850,6 +8850,11 @@ spec:
                 message: Waiting for controller
                 reason: NotReconciled
                 status: Unknown
+                type: ConfigSynced
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
                 type: Quiesced
               - lastTransitionTime: "1970-01-01T00:00:00Z"
                 message: Waiting for controller

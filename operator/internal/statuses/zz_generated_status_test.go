@@ -1564,6 +1564,12 @@ func TestBroker(t *testing.T) {
 			expected:  metav1.ConditionFalse,
 			setFn:     func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonUnschedulable, "reason") },
 		},
+		"PodScheduled/PodMissing": {
+			condition: BrokerPodScheduled,
+			reason:    string(BrokerPodScheduledReasonPodMissing),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonPodMissing, "reason") },
+		},
 		"PodScheduled/Error": {
 			condition: BrokerPodScheduled,
 			reason:    string(BrokerPodScheduledReasonError),
@@ -1616,6 +1622,14 @@ func TestBroker(t *testing.T) {
 				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonNotRegistered, "reason")
 			},
 		},
+		"BrokerRegistered/IdentityChanged": {
+			condition: BrokerBrokerRegistered,
+			reason:    string(BrokerBrokerRegisteredReasonIdentityChanged),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *BrokerStatus) {
+				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonIdentityChanged, "reason")
+			},
+		},
 		"BrokerRegistered/Error": {
 			condition: BrokerBrokerRegistered,
 			reason:    string(BrokerBrokerRegisteredReasonError),
@@ -1629,6 +1643,30 @@ func TestBroker(t *testing.T) {
 			setFn: func(status *BrokerStatus) {
 				status.SetBrokerRegistered(BrokerBrokerRegisteredReasonTerminalError, "reason")
 			},
+		},
+		"ConfigSynced/Synced": {
+			condition: BrokerConfigSynced,
+			reason:    string(BrokerConfigSyncedReasonSynced),
+			expected:  metav1.ConditionTrue,
+			setFn:     func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
+		},
+		"ConfigSynced/Outdated": {
+			condition: BrokerConfigSynced,
+			reason:    string(BrokerConfigSyncedReasonOutdated),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonOutdated, "reason") },
+		},
+		"ConfigSynced/Error": {
+			condition: BrokerConfigSynced,
+			reason:    string(BrokerConfigSyncedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonError, "reason") },
+		},
+		"ConfigSynced/TerminalError": {
+			condition: BrokerConfigSynced,
+			reason:    string(BrokerConfigSyncedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn:     func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonTerminalError, "reason") },
 		},
 	} {
 		tt := tt
@@ -1674,6 +1712,9 @@ func TestBroker(t *testing.T) {
 			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason")
 			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
 		})
 	}
@@ -1691,6 +1732,7 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) {
 					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
 				},
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
 			},
 		},
 		"Transient Error: Error, Condition: PodScheduled": {
@@ -1701,6 +1743,7 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) {
 					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
 				},
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
 			},
 		},
 		"Transient Error: Error, Condition: StorageBound": {
@@ -1711,6 +1754,7 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) {
 					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
 				},
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
 			},
 		},
 		"Transient Error: Error, Condition: BrokerRegistered": {
@@ -1719,6 +1763,18 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
 				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
 				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
+			},
+		},
+		"Transient Error: Error, Condition: ConfigSynced": {
+			setTransientErrFn: func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonError, "reason") },
+			setConditionReasons: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
 			},
 		},
 	} {
@@ -1747,6 +1803,7 @@ func TestBroker(t *testing.T) {
 		"Terminal Error: TerminalError, Condition: BrokerRegistered": func(status *BrokerStatus) {
 			status.SetBrokerRegistered(BrokerBrokerRegisteredReasonTerminalError, "reason")
 		},
+		"Terminal Error: TerminalError, Condition: ConfigSynced": func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonTerminalError, "reason") },
 	} {
 		setFn := setFn
 		t.Run(name, func(t *testing.T) {
@@ -1781,6 +1838,7 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) {
 					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
 				},
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: Ready": {
@@ -1794,6 +1852,7 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) {
 					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
 				},
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: StorageBound": {
@@ -1807,6 +1866,7 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) {
 					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
 				},
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: BrokerRegistered": {
@@ -1820,6 +1880,21 @@ func TestBroker(t *testing.T) {
 				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
 				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
 				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonSynced, "reason") },
+			},
+		},
+		"Rollup Conditions: Stable, False Condition: ConfigSynced": {
+			condition:      BrokerStable,
+			trueReason:     string(BrokerStableReasonStable),
+			falseReason:    string(BrokerStableReasonUnstable),
+			falseCondition: func(status *BrokerStatus) { status.SetConfigSynced(BrokerConfigSyncedReasonTerminalError, "reason") },
+			trueConditions: []setBrokerFunc{
+				func(status *BrokerStatus) { status.SetReady(BrokerReadyReasonReady, "reason") },
+				func(status *BrokerStatus) { status.SetPodScheduled(BrokerPodScheduledReasonScheduled, "reason") },
+				func(status *BrokerStatus) { status.SetStorageBound(BrokerStorageBoundReasonBound, "reason") },
+				func(status *BrokerStatus) {
+					status.SetBrokerRegistered(BrokerBrokerRegisteredReasonRegistered, "reason")
+				},
 			},
 		},
 	} {

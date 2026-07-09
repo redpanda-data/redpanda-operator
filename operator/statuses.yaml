@@ -680,6 +680,10 @@
           description: >
             This reason is used with the "PodScheduled" condition when it evaluates to False because
             the broker's pod cannot be scheduled (e.g. node affinity, insufficient resources).
+        - name: PodMissing
+          description: >
+            This reason is used with the "PodScheduled" condition when it evaluates to False because
+            the broker's pod does not exist (initial bootstrap, mid-rotation, or after decommission).
     - name: StorageBound
       description: >
         This condition indicates whether all PVCs for this broker are bound to PVs.
@@ -716,6 +720,31 @@
           description: >
             This reason is used with the "BrokerRegistered" condition when it evaluates to False because
             the broker has not yet registered with the cluster.
+        - name: IdentityChanged
+          description: >
+            This reason is used with the "BrokerRegistered" condition when it evaluates to False because
+            the broker's pod re-registered under a different node_id than previously recorded — its
+            data directory did not survive. This requires an operator decision (replace the broker)
+            rather than silent adoption of the new identity.
+    - name: ConfigSynced
+      description: >
+        This condition indicates whether the broker's pod matches the desired pod template:
+        both the config checksum and the restart-requiring cluster-config version. False means
+        a rotation is pending (the pod will be recreated once the broker holds a valid roll-grant).
+
+        This condition defaults to "Unknown" with a reason of "NotReconciled"
+        and must be set by a controller when it subsequently reconciles a broker.
+      reasons:
+        - name: Synced
+          message: Pod config matches desired
+          description: >
+            This reason is used with the "ConfigSynced" condition when it evaluates to True because
+            the pod's config checksum and cluster-config version match the desired pod template.
+        - name: Outdated
+          description: >
+            This reason is used with the "ConfigSynced" condition when it evaluates to False because
+            the pod's config checksum or cluster-config version differs from the desired pod
+            template and the pod awaits rotation.
     - name: Quiesced
       final: true
       description: >
@@ -735,13 +764,13 @@
             This reason is used with the "Quiesced" condition when it evaluates to False because
             the operator has not finished reconciling the broker at its current generation.
     - name: Stable
-      rollup: [ Ready, StorageBound, BrokerRegistered, Quiesced ]
+      rollup: [ Ready, StorageBound, BrokerRegistered, ConfigSynced, Quiesced ]
       description: >
         This condition is a roll-up status for automation (e.g. parent controller checking
         all brokers are stable before proceeding). It is True when Ready, StorageBound,
-        BrokerRegistered, and Quiesced all evaluate to True. Each tracks one dimension:
-        Ready = pod health, StorageBound = PVC binding, BrokerRegistered = cluster
-        membership, Quiesced = reconciliation complete.
+        BrokerRegistered, ConfigSynced, and Quiesced all evaluate to True. Each tracks one
+        dimension: Ready = pod health, StorageBound = PVC binding, BrokerRegistered = cluster
+        membership, ConfigSynced = no rotation pending, Quiesced = reconciliation complete.
 
         This condition defaults to "False" with a reason of "NotReconciled"
         and must be set by a controller when it subsequently reconciles a broker.
@@ -750,9 +779,10 @@
           message: Broker stable
           description: >
             This reason is used with the "Stable" condition when it evaluates to True because
-            Ready, StorageBound, BrokerRegistered, and Quiesced all evaluate to True.
+            Ready, StorageBound, BrokerRegistered, ConfigSynced, and Quiesced all evaluate to True.
         - name: Unstable
           message: Broker unstable
           description: >
             This reason is used with the "Stable" condition when it evaluates to False because
-            at least one of Ready, StorageBound, BrokerRegistered, or Quiesced evaluates to False.
+            at least one of Ready, StorageBound, BrokerRegistered, ConfigSynced, or Quiesced
+            evaluates to False.
