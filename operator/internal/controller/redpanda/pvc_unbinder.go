@@ -72,9 +72,19 @@ func identityCollision(clusterUUIDs map[int]string, selfNodeID int, selfUUID str
 
 // podAdminEndpoint returns the admin-API endpoint for the named pod from the
 // cluster's full endpoint list. The per-pod Service name equals the pod name,
-// so the endpoint's first DNS label identifies the pod. Returns "" if none
-// match.
-func podAdminEndpoint(endpoints []string, podName string) string {
+// so the endpoint's first DNS label identifies the pod.
+//
+// It reports ambiguous=true when MORE THAN ONE endpoint matches the pod name. A
+// StretchCluster with identically-named BrokerPools across member clusters
+// yields cluster-unqualified endpoints (see GetAdminAPIEndpoints: the name is
+// derived from the StretchCluster name + pool suffix, with no member-cluster
+// component) that collide on the same first DNS label. Reading one broker's
+// self-identity and then wiping a different broker's disk would be catastrophic,
+// so the caller must defer rather than guess — the same conservative rule
+// brokerIDForPod applies to identically-named cross-cluster pods.
+//
+// Returns ("", false) if no endpoint matches.
+func podAdminEndpoint(endpoints []string, podName string) (endpoint string, ambiguous bool) {
 	for _, ep := range endpoints {
 		// ep looks like "<podName>.<namespace>:<port>".
 		host := ep
@@ -82,10 +92,14 @@ func podAdminEndpoint(endpoints []string, podName string) string {
 			host = host[:i]
 		}
 		if strings.SplitN(host, ".", 2)[0] == podName {
-			return ep
+			if endpoint != "" {
+				// A second endpoint matches the same pod name: ambiguous.
+				return "", true
+			}
+			endpoint = ep
 		}
 	}
-	return ""
+	return endpoint, false
 }
 
 // reconcilePVCUnbinder implements Andrew's recovery for K8S-843: a broker that
@@ -146,7 +160,15 @@ func (r *MulticlusterReconciler) reconcilePVCUnbinder(ctx context.Context, state
 			continue
 		}
 
-		endpoint := podAdminEndpoint(endpoints, pod.GetName())
+		endpoint, ambiguous := podAdminEndpoint(endpoints, pod.GetName())
+		if ambiguous {
+			// Identically-named BrokerPools across member clusters make this
+			// pod name resolve to more than one admin endpoint. Reading one
+			// broker's identity and wiping another's disk would be a data-loss
+			// bug, so defer rather than guess (mirrors brokerIDForPod).
+			logger.Info("pod name maps to more than one admin endpoint across member clusters; skipping PVC unbind to avoid acting on the wrong broker", "pod", pod.GetName())
+			continue
+		}
 		if endpoint == "" {
 			logger.V(log.TraceLevel).Info("no admin endpoint resolved for not-ready pod, skipping", "pod", pod.GetName())
 			continue

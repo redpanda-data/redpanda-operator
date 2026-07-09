@@ -255,12 +255,62 @@ func TestPodAdminEndpoint(t *testing.T) {
 	}
 
 	t.Run("matches by pod name", func(t *testing.T) {
-		assert.Equal(t, "redpanda-rp-west-0.redpanda:9644", podAdminEndpoint(endpoints, "redpanda-rp-west-0"))
+		endpoint, ambiguous := podAdminEndpoint(endpoints, "redpanda-rp-west-0")
+		assert.False(t, ambiguous)
+		assert.Equal(t, "redpanda-rp-west-0.redpanda:9644", endpoint)
 	})
 
 	t.Run("no match returns empty", func(t *testing.T) {
-		assert.Equal(t, "", podAdminEndpoint(endpoints, "redpanda-rp-eu-0"))
+		endpoint, ambiguous := podAdminEndpoint(endpoints, "redpanda-rp-eu-0")
+		assert.False(t, ambiguous)
+		assert.Equal(t, "", endpoint)
 	})
+
+	// Data-loss guard: a StretchCluster with identically-named BrokerPools
+	// across member clusters yields cluster-unqualified endpoints that collide
+	// on the same pod name. The endpoint must be reported ambiguous so the
+	// unbinder defers instead of reading one broker's identity and wiping
+	// another broker's disk.
+	t.Run("duplicate pod name across clusters is ambiguous", func(t *testing.T) {
+		dup := []string{
+			"redpanda-0.redpanda:9644", // member cluster A
+			"redpanda-0.redpanda:9644", // member cluster B, identical pool name
+		}
+		endpoint, ambiguous := podAdminEndpoint(dup, "redpanda-0")
+		assert.True(t, ambiguous)
+		assert.Equal(t, "", endpoint)
+	})
+}
+
+// TestPVCUnbindThresholdAndDisable pins the threshold-tuning and kill-switch
+// semantics behind the --pvc-unbind-not-ready-threshold flag: 0 uses the
+// built-in default, a positive value tunes the not-ready threshold, and any
+// negative value disables the destructive PVC unbinder entirely. The disable is
+// the operator-facing off switch advertised in the flag help and changelog, so
+// a regression flipping the comparison (e.g. to <= 0, silently disabling the
+// default) must fail a test.
+func TestPVCUnbindThresholdAndDisable(t *testing.T) {
+	cases := []struct {
+		name          string
+		threshold     time.Duration
+		wantDisabled  bool
+		wantThreshold time.Duration // only checked when not disabled
+	}{
+		{name: "zero uses built-in default", threshold: 0, wantDisabled: false, wantThreshold: defaultPVCUnbindNotReadyThreshold},
+		{name: "positive tunes the threshold", threshold: 12 * time.Minute, wantDisabled: false, wantThreshold: 12 * time.Minute},
+		{name: "negative disables entirely", threshold: -1 * time.Second, wantDisabled: true},
+		{name: "any negative disables (parsed -1ns)", threshold: -1, wantDisabled: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := &MulticlusterReconciler{PVCUnbindNotReadyThreshold: tc.threshold}
+			assert.Equal(t, tc.wantDisabled, r.pvcUnbindDisabled())
+			if !tc.wantDisabled {
+				assert.Equal(t, tc.wantThreshold, r.pvcUnbindThreshold())
+			}
+		})
+	}
 }
 
 // TestPVCUnbindForPendingPodWithNoReadyCondition is the PVC-unbinder counterpart
