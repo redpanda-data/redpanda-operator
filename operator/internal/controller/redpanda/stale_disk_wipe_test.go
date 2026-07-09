@@ -99,10 +99,10 @@ func TestIdentityCollision(t *testing.T) {
 	}
 }
 
-// TestDecidePVCUnbind pins the guarded decision: only destroy a disk when a
+// TestDecideStaleDiskWipe pins the guarded decision: only destroy a disk when a
 // collision is confirmed, the pod has been not-ready past the threshold, and
 // the cluster is otherwise healthy with no down nodes.
-func TestDecidePVCUnbind(t *testing.T) {
+func TestDecideStaleDiskWipe(t *testing.T) {
 	const threshold = 5 * time.Minute
 
 	cases := []struct {
@@ -111,54 +111,54 @@ func TestDecidePVCUnbind(t *testing.T) {
 		notReadyFor    time.Duration
 		clusterHealthy bool
 		downNodes      int
-		wantUnbind     bool
+		wantWipe       bool
 	}{
 		{
-			name:           "collision + past threshold + healthy + no down nodes -> unbind",
+			name:           "collision + past threshold + healthy + no down nodes -> wipe",
 			collision:      true,
 			notReadyFor:    6 * time.Minute,
 			clusterHealthy: true,
 			downNodes:      0,
-			wantUnbind:     true,
+			wantWipe:       true,
 		},
 		{
-			name:           "no collision -> no unbind",
+			name:           "no collision -> no wipe",
 			collision:      false,
 			notReadyFor:    30 * time.Minute,
 			clusterHealthy: true,
 			downNodes:      0,
-			wantUnbind:     false,
+			wantWipe:       false,
 		},
 		{
-			name:           "collision but under threshold -> no unbind",
+			name:           "collision but under threshold -> no wipe",
 			collision:      true,
 			notReadyFor:    2 * time.Minute,
 			clusterHealthy: true,
 			downNodes:      0,
-			wantUnbind:     false,
+			wantWipe:       false,
 		},
 		{
-			name:           "collision but cluster unhealthy -> no unbind",
+			name:           "collision but cluster unhealthy -> no wipe",
 			collision:      true,
 			notReadyFor:    6 * time.Minute,
 			clusterHealthy: false,
 			downNodes:      0,
-			wantUnbind:     false,
+			wantWipe:       false,
 		},
 		{
-			name:           "collision but down nodes present -> no unbind",
+			name:           "collision but down nodes present -> no wipe",
 			collision:      true,
 			notReadyFor:    6 * time.Minute,
 			clusterHealthy: true,
 			downNodes:      1,
-			wantUnbind:     false,
+			wantWipe:       false,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, reason := decidePVCUnbind(tc.collision, tc.notReadyFor, threshold, tc.clusterHealthy, tc.downNodes)
-			assert.Equal(t, tc.wantUnbind, got, "reason: %s", reason)
+			got, reason := decideStaleDiskWipe(tc.collision, tc.notReadyFor, threshold, tc.clusterHealthy, tc.downNodes)
+			assert.Equal(t, tc.wantWipe, got, "reason: %s", reason)
 		})
 	}
 }
@@ -269,8 +269,8 @@ func TestPodAdminEndpoint(t *testing.T) {
 	// Data-loss guard: a StretchCluster with identically-named BrokerPools
 	// across member clusters yields cluster-unqualified endpoints that collide
 	// on the same pod name. The endpoint must be reported ambiguous so the
-	// unbinder defers instead of reading one broker's identity and wiping
-	// another broker's disk.
+	// stale-disk wipe defers instead of reading one broker's identity and
+	// wiping another broker's disk.
 	t.Run("duplicate pod name across clusters is ambiguous", func(t *testing.T) {
 		dup := []string{
 			"redpanda-0.redpanda:9644", // member cluster A
@@ -282,21 +282,21 @@ func TestPodAdminEndpoint(t *testing.T) {
 	})
 }
 
-// TestPVCUnbindThresholdAndDisable pins the threshold-tuning and kill-switch
-// semantics behind the --pvc-unbind-not-ready-threshold flag: 0 uses the
-// built-in default, a positive value tunes the not-ready threshold, and any
-// negative value disables the destructive PVC unbinder entirely. The disable is
-// the operator-facing off switch advertised in the flag help and changelog, so
-// a regression flipping the comparison (e.g. to <= 0, silently disabling the
+// TestStaleDiskWipeThresholdAndDisable pins the threshold-tuning and kill-switch
+// semantics behind the --wipe-stale-disk-after flag: 0 uses the built-in
+// default, a positive value tunes the not-ready threshold, and any negative
+// value disables the destructive stale-disk wipe entirely. The disable is the
+// operator-facing off switch advertised in the flag help and changelog, so a
+// regression flipping the comparison (e.g. to <= 0, silently disabling the
 // default) must fail a test.
-func TestPVCUnbindThresholdAndDisable(t *testing.T) {
+func TestStaleDiskWipeThresholdAndDisable(t *testing.T) {
 	cases := []struct {
 		name          string
 		threshold     time.Duration
 		wantDisabled  bool
 		wantThreshold time.Duration // only checked when not disabled
 	}{
-		{name: "zero uses built-in default", threshold: 0, wantDisabled: false, wantThreshold: defaultPVCUnbindNotReadyThreshold},
+		{name: "zero uses built-in default", threshold: 0, wantDisabled: false, wantThreshold: defaultStaleDiskWipeNotReadyThreshold},
 		{name: "positive tunes the threshold", threshold: 12 * time.Minute, wantDisabled: false, wantThreshold: 12 * time.Minute},
 		{name: "negative disables entirely", threshold: -1 * time.Second, wantDisabled: true},
 		{name: "any negative disables (parsed -1ns)", threshold: -1, wantDisabled: true},
@@ -304,34 +304,34 @@ func TestPVCUnbindThresholdAndDisable(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := &MulticlusterReconciler{PVCUnbindNotReadyThreshold: tc.threshold}
-			assert.Equal(t, tc.wantDisabled, r.pvcUnbindDisabled())
+			r := &MulticlusterReconciler{StaleDiskWipeNotReadyThreshold: tc.threshold}
+			assert.Equal(t, tc.wantDisabled, r.staleDiskWipeDisabled())
 			if !tc.wantDisabled {
-				assert.Equal(t, tc.wantThreshold, r.pvcUnbindThreshold())
+				assert.Equal(t, tc.wantThreshold, r.staleDiskWipeThreshold())
 			}
 		})
 	}
 }
 
-// TestPVCUnbindForPendingPodWithNoReadyCondition is the PVC-unbinder counterpart
-// of TestClearStuckMaintenanceModeClearsPendingPodWithNoReadyCondition. It runs
-// the same sequence of per-pod helpers reconcilePVCUnbinder uses — podNotReadyFor
-// -> identityCollision -> decidePVCUnbind — on a REAL broker pod that is stuck
-// Pending (its node was cordoned/lost) and therefore carries only a
-// PodScheduled=False condition, no PodReady condition at all. This is the
+// TestStaleDiskWipeForPendingPodWithNoReadyCondition is the stale-disk-wipe
+// counterpart of TestClearStuckMaintenanceModeClearsPendingPodWithNoReadyCondition.
+// It runs the same sequence of per-pod helpers reconcileStaleDiskWipe uses —
+// podNotReadyFor -> identityCollision -> decideStaleDiskWipe — on a REAL broker
+// pod that is stuck Pending (its node was cordoned/lost) and therefore carries
+// only a PodScheduled=False condition, no PodReady condition at all. This is the
 // bad_rejoin recovery scenario: the on-disk node_id was decommissioned (absent
 // from the cluster's member-uuid map) so the broker crashloops and its pod never
 // becomes Ready.
 //
 // It pins that the podNotReadyFor fix (fall back to now-CreationTimestamp for a
-// pod with no PodReady condition) makes decidePVCUnbind's not-ready-duration gate
-// satisfiable for such a pod: before the fix podNotReadyFor pinned the duration at
-// 0, so 0 < threshold held forever and the disk was never unbound — the unbinder
-// could never recover the very bad_rejoin it exists for. The guard sub-cases pin
-// that the real fallback duration still interacts correctly with decidePVCUnbind's
-// other guards (collision, cluster health, down-nodes), so a long-Pending pod is
-// NOT unbound unless every guard holds.
-func TestPVCUnbindForPendingPodWithNoReadyCondition(t *testing.T) {
+// pod with no PodReady condition) makes decideStaleDiskWipe's not-ready-duration
+// gate satisfiable for such a pod: before the fix podNotReadyFor pinned the
+// duration at 0, so 0 < threshold held forever and the disk was never wiped —
+// the stale-disk wipe could never recover the very bad_rejoin it exists for. The
+// guard sub-cases pin that the real fallback duration still interacts correctly
+// with decideStaleDiskWipe's other guards (collision, cluster health,
+// down-nodes), so a long-Pending pod is NOT wiped unless every guard holds.
+func TestStaleDiskWipeForPendingPodWithNoReadyCondition(t *testing.T) {
 	const threshold = 5 * time.Minute
 	now := time.Now()
 
@@ -362,25 +362,25 @@ func TestPVCUnbindForPendingPodWithNoReadyCondition(t *testing.T) {
 	collision, collisionReason := identityCollision(clusterUUIDs, selfNodeID, selfUUID)
 	require.True(t, collision, "decommissioned node_id absent from the cluster must be a collision: %s", collisionReason)
 
-	t.Run("collision + past threshold + healthy + no down nodes -> unbind", func(t *testing.T) {
-		unbind, reason := decidePVCUnbind(collision, notReadyFor, threshold, true, 0)
-		assert.True(t, unbind, "a bad_rejoin broker stuck 2h in a never-scheduled Pending pod must be unbound: %s", reason)
+	t.Run("collision + past threshold + healthy + no down nodes -> wipe", func(t *testing.T) {
+		wipe, reason := decideStaleDiskWipe(collision, notReadyFor, threshold, true, 0)
+		assert.True(t, wipe, "a bad_rejoin broker stuck 2h in a never-scheduled Pending pod must have its stale disk wiped: %s", reason)
 	})
 
-	t.Run("no collision -> no unbind", func(t *testing.T) {
+	t.Run("no collision -> no wipe", func(t *testing.T) {
 		noCollision, _ := identityCollision(map[int]string{0: selfUUID, 2: "uuid-2"}, selfNodeID, selfUUID)
 		require.False(t, noCollision)
-		unbind, _ := decidePVCUnbind(noCollision, notReadyFor, threshold, true, 0)
-		assert.False(t, unbind, "a legitimate member's disk must never be unbound even when its pod is long not-ready")
+		wipe, _ := decideStaleDiskWipe(noCollision, notReadyFor, threshold, true, 0)
+		assert.False(t, wipe, "a legitimate member's disk must never be wiped even when its pod is long not-ready")
 	})
 
-	t.Run("cluster unhealthy -> no unbind", func(t *testing.T) {
-		unbind, _ := decidePVCUnbind(collision, notReadyFor, threshold, false, 0)
-		assert.False(t, unbind, "must defer the destructive unbind while the cluster is unhealthy")
+	t.Run("cluster unhealthy -> no wipe", func(t *testing.T) {
+		wipe, _ := decideStaleDiskWipe(collision, notReadyFor, threshold, false, 0)
+		assert.False(t, wipe, "must defer the destructive wipe while the cluster is unhealthy")
 	})
 
-	t.Run("nodes down -> no unbind", func(t *testing.T) {
-		unbind, _ := decidePVCUnbind(collision, notReadyFor, threshold, true, 1)
-		assert.False(t, unbind, "must defer the destructive unbind while any node is down (possible partition)")
+	t.Run("nodes down -> no wipe", func(t *testing.T) {
+		wipe, _ := decideStaleDiskWipe(collision, notReadyFor, threshold, true, 1)
+		assert.False(t, wipe, "must defer the destructive wipe while any node is down (possible partition)")
 	})
 }

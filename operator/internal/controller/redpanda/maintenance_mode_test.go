@@ -519,25 +519,25 @@ func TestMulticlusterReconcilerRunsMaintenanceModeBeforeDecommission(t *testing.
 		"reconcileMaintenanceMode must run before reconcileDecommission, or a broker stuck in maintenance mode can never be unblocked")
 }
 
-// TestMulticlusterReconcilerRunsPVCUnbinderBeforeDecommission pins the fix for a
+// TestMulticlusterReconcilerRunsStaleDiskWipeBeforeDecommission pins the fix for a
 // second reconciler-ordering defect found during live testing: reconcileDecommission
 // runs the rolling-restart pre-check and requeues — aborting the rest of the chain —
 // whenever HasRecentlyReplacedPods() is true (a recently replaced pod is still
 // not-Ready). A decommissioned-broker bad_rejoin (K8S-843) is exactly that state
-// (its pod is stuck not-Ready), so if reconcilePVCUnbinder were ordered after
+// (its pod is stuck not-Ready), so if reconcileStaleDiskWipe were ordered after
 // reconcileDecommission it would never run to recover the very bad_rejoin it exists
 // for. It must therefore precede reconcileDecommission.
-func TestMulticlusterReconcilerRunsPVCUnbinderBeforeDecommission(t *testing.T) {
+func TestMulticlusterReconcilerRunsStaleDiskWipeBeforeDecommission(t *testing.T) {
 	r := &MulticlusterReconciler{}
 	chain := r.clusterReconcilers()
 	names := make([]string, len(chain))
 	for i, fn := range chain {
 		names[i] = reconcilerStepName(fn)
 	}
-	pvcUnbinderIdx := indexOfReconcilerStep(names, "reconcilePVCUnbinder")
+	staleDiskWipeIdx := indexOfReconcilerStep(names, "reconcileStaleDiskWipe")
 	decommissionIdx := indexOfReconcilerStep(names, "reconcileDecommission")
-	require.GreaterOrEqual(t, pvcUnbinderIdx, 0, "reconcilePVCUnbinder not found in chain: %v", names)
+	require.GreaterOrEqual(t, staleDiskWipeIdx, 0, "reconcileStaleDiskWipe not found in chain: %v", names)
 	require.GreaterOrEqual(t, decommissionIdx, 0, "reconcileDecommission not found in chain: %v", names)
-	assert.Less(t, pvcUnbinderIdx, decommissionIdx,
-		"reconcilePVCUnbinder must run before reconcileDecommission, or a bad_rejoin broker can never be unbound (reconcileDecommission requeues on not-ready recently-replaced pods and aborts the chain)")
+	assert.Less(t, staleDiskWipeIdx, decommissionIdx,
+		"reconcileStaleDiskWipe must run before reconcileDecommission, or a bad_rejoin broker's stale disk can never be wiped (reconcileDecommission requeues on not-ready recently-replaced pods and aborts the chain)")
 }

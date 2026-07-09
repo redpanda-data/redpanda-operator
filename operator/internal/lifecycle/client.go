@@ -192,7 +192,7 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 // identity. PVCs already gone are ignored.
 //
 // For remote peer clusters that are unreachable the operation is skipped — the
-// cluster's own operator will perform the unbind when it reconnects.
+// cluster's own operator will perform the wipe when it reconnects.
 func (r *ResourceClient[T, U]) DeletePVCsForPod(ctx context.Context, pod *MulticlusterPod) error {
 	logger := log.FromContext(ctx)
 	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {

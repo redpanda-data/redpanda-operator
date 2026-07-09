@@ -110,12 +110,12 @@ type MulticlusterReconciler struct {
 	// --clear-maintenance-mode-after flag.
 	MaintenanceModeClearThreshold time.Duration
 
-	// PVCUnbindNotReadyThreshold is how long a broker pod must remain
-	// not-Ready before reconcilePVCUnbinder is allowed to destroy its data
+	// StaleDiskWipeNotReadyThreshold is how long a broker pod must remain
+	// not-Ready before reconcileStaleDiskWipe is allowed to destroy its data
 	// disk to recover a decommissioned-broker bad_rejoin (K8S-843). Zero
-	// applies defaultPVCUnbindNotReadyThreshold; a negative value disables the
-	// PVC unbinder entirely. Set via the --pvc-unbind-not-ready-threshold flag.
-	PVCUnbindNotReadyThreshold time.Duration
+	// applies defaultStaleDiskWipeNotReadyThreshold; a negative value disables
+	// the stale-disk wipe entirely. Set via the --wipe-stale-disk-after flag.
+	StaleDiskWipeNotReadyThreshold time.Duration
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -310,8 +310,9 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// All Kubernetes resources are in sync.
 	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 
-	// Phase 3: cluster-level reconciliation (admin API, maintenance mode, PVC
-	// unbinder, decommission, config, license) — see clusterReconcilers for ordering.
+	// Phase 3: cluster-level reconciliation (admin API, maintenance mode,
+	// stale-disk wipe, decommission, config, license) — see clusterReconcilers
+	// for ordering.
 	for _, reconciler := range r.clusterReconcilers() {
 		result, err := reconciler(ctx, state, cluster)
 		if err != nil || result.RequeueAfter > 0 {
@@ -337,7 +338,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 }
 
 // clusterReconcilers returns the ordered cluster-level reconcile steps
-// (admin API, maintenance mode, PVC unbinder, decommission, config, license).
+// (admin API, maintenance mode, stale-disk wipe, decommission, config, license).
 // Order matters: any step returning a non-zero RequeueAfter or an error aborts
 // the rest of the chain for this pass, so a step whose completion is a
 // precondition for another must come first.
@@ -348,11 +349,11 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 // mode sits in forever (the partition balancer refuses to move data off a
 // maintenance-mode node), so the clear would never run if ordered after it.
 //
-// reconcilePVCUnbinder must precede reconcileDecommission: reconcileDecommission
+// reconcileStaleDiskWipe must precede reconcileDecommission: reconcileDecommission
 // runs the rolling-restart pre-check and requeues (aborting the rest of the
 // chain) whenever HasRecentlyReplacedPods() is true — i.e. while any recently
 // replaced pod is still not-Ready. A decommissioned-broker bad_rejoin (K8S-843)
-// is exactly that state (its pod is stuck not-Ready), so if the unbinder were
+// is exactly that state (its pod is stuck not-Ready), so if the wipe step were
 // ordered after reconcileDecommission it would never run to recover the very
 // bad_rejoin it exists for. Running it first lets it destroy the stale disk and
 // unblock the pod before the roll-loop deferral aborts the pass.
@@ -360,7 +361,7 @@ func (r *MulticlusterReconciler) clusterReconcilers() []stretchClusterReconcilia
 	return []stretchClusterReconciliationFn{
 		r.initAdminClient,
 		r.reconcileMaintenanceMode,
-		r.reconcilePVCUnbinder,
+		r.reconcileStaleDiskWipe,
 		r.reconcileDecommission,
 		r.reconcileLicense,
 		r.reconcileClusterConfig,
@@ -1015,8 +1016,8 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	if !state.pools.CheckScale(ctx) {
 		// A scale/roll is underway — skip pool mutations this pass so we don't
 		// stack changes mid-scale. Do NOT abort: returning a RequeueAfter here
-		// would skip the Phase-3 cluster reconcilers (maintenance-mode clear, PVC
-		// unbind, decommission), which must still run while a pod is churning
+		// would skip the Phase-3 cluster reconcilers (maintenance-mode clear,
+		// stale-disk wipe, decommission), which must still run while a pod is churning
 		// (e.g. a bad_rejoin pod being replaced flips len(pods)!=spec.Replicas).
 		// The fast requeue for the still-scaling state is applied at the end of
 		// Reconcile.
@@ -1056,7 +1057,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	// NOTE: the "no pod is Ready yet" fast requeue is intentionally NOT returned
 	// here. reconcilePools runs in the Phase-2 resource loop; a RequeueAfter from
 	// it aborts that loop, so the reconcile returns before Phase 3 ever runs the
-	// cluster reconcilers (maintenance-mode clear, PVC unbind, decommission) —
+	// cluster reconcilers (maintenance-mode clear, stale-disk wipe, decommission) —
 	// which must run precisely while brokers are unready during an outage. The
 	// readiness poll is applied at the end of Reconcile instead — see
 	// PoolTracker.ScaledUpButNoneReady and the tail of Reconcile.
@@ -1707,7 +1708,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, pvcUnbindNotReadyThreshold time.Duration) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -1741,13 +1742,13 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 		}).
 		Complete(
 			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
-				Manager:                       mgr,
-				LifecycleClient:               lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
-				ClientFactory:                 factory,
-				ReconcileTimeout:              reconcileTimeout,
-				PostRestartCaughtUpPercent:    postRestartCaughtUpPercent,
-				MaintenanceModeClearThreshold: clearMaintenanceModeAfter,
-				PVCUnbindNotReadyThreshold:    pvcUnbindNotReadyThreshold,
+				Manager:                        mgr,
+				LifecycleClient:                lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
+				ClientFactory:                  factory,
+				ReconcileTimeout:               reconcileTimeout,
+				PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
+				MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
+				StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
 			}, "StretchCluster", periodicRequeue),
 		)
 }
