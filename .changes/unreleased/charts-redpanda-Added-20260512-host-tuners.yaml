@@ -7,7 +7,7 @@ body: |-
     that previously failed inside the pod sandbox — `disk_irq`,
     `disk_scheduler`, `disk_nomerges`, `net`, `fstrim`, and (on GCP)
     `disk_write_cache` — are default-enabled and actually apply, along
-    with `cpu` (a no-op on VMs without cpufreq, real work on metal). An
+    with `cpu` (a no-op on VMs without cpufreq). An
     explicit `config.rpk.tune_*: false` overrides any of these defaults.
     The broker reads the net tuner's cpuset state file, so dedicated-IRQ
     (sq/sq_split) modes keep reactor shards off IRQ-pinned CPUs.
