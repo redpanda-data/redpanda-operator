@@ -119,13 +119,18 @@ type UserAuthenticationSpec struct {
 }
 
 // Password specifies a password for the user.
-// +kubebuilder:validation:XValidation:message="valueFrom must not be empty if no value supplied",rule=`self.value != "" || has(self.valueFrom)`
+// +kubebuilder:validation:XValidation:message="valueFrom must not be empty if no value supplied",rule=`(has(self.value) && self.value != "") || has(self.valueFrom)`
 type Password struct {
 	// Value is a hardcoded value to use for the given password. It should only be used for testing purposes.
 	// In production, use ValueFrom.
 	Value string `json:"value,omitempty"`
 	// ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
-	ValueFrom *PasswordSource `json:"valueFrom"`
+	// Optional when value is set: the type-level validation rule enforces
+	// that at least one of the two is present. (This field being marked
+	// required in the schema used to make the documented value-only form
+	// impossible to apply — https://github.com/redpanda-data/redpanda-operator/issues/1290.)
+	// +optional
+	ValueFrom *PasswordSource `json:"valueFrom,omitempty"`
 	// NoGenerate when set to true does not create kubernetes secret when ValueFrom points to none-existent secret.
 	NoGenerate bool `json:"noGenerate,omitempty"`
 }
@@ -134,6 +139,13 @@ type Password struct {
 func (p *Password) Fetch(ctx context.Context, c client.Client, namespace string) (string, error) {
 	if p.Value != "" {
 		return p.Value, nil
+	}
+
+	// The CRD's validation rule guarantees value or valueFrom is set on
+	// admitted objects; guard anyway for hand-constructed values now that
+	// valueFrom is optional in the schema.
+	if p.ValueFrom == nil || p.ValueFrom.SecretKeyRef == nil {
+		return "", errors.New("password has neither a value nor a valueFrom.secretKeyRef")
 	}
 
 	name := p.ValueFrom.SecretKeyRef.LocalObjectReference.Name
