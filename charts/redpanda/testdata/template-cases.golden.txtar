@@ -845,7 +845,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -968,7 +968,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -1074,7 +1074,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -1395,7 +1395,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -1418,7 +1418,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -2191,7 +2191,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -2310,7 +2310,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -2404,7 +2404,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -2534,7 +2534,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -2553,7 +2553,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -3391,7 +3391,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -3514,7 +3514,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -3620,7 +3620,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -3941,7 +3941,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -3964,7 +3964,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -4788,7 +4788,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -4921,7 +4921,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -5033,7 +5033,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -5174,7 +5174,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -5196,7 +5196,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -6102,7 +6102,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -6239,7 +6239,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -6363,7 +6363,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -6698,7 +6698,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -6724,7 +6724,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -7661,7 +7661,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -7784,7 +7784,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -7893,7 +7893,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -8214,7 +8214,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -8237,7 +8237,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -9206,7 +9206,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -9343,7 +9343,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -9455,7 +9455,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -9873,7 +9873,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -9898,7 +9898,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -10789,7 +10789,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -10912,7 +10912,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -11018,7 +11018,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -11339,7 +11339,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -11362,7 +11362,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -12249,7 +12249,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -12372,7 +12372,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -12478,7 +12478,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -12803,7 +12803,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -12826,7 +12826,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -13782,7 +13782,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -13919,7 +13919,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -14043,7 +14043,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -14378,7 +14378,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -14404,7 +14404,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -15294,7 +15294,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -15417,7 +15417,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -15523,7 +15523,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -15753,7 +15753,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -15776,7 +15776,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -16758,7 +16758,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -16881,7 +16881,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -16987,7 +16987,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -17217,7 +17217,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -17240,7 +17240,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -18040,7 +18040,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -18159,7 +18159,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -18253,7 +18253,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -18406,7 +18406,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -18425,7 +18425,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -19304,7 +19304,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -19427,7 +19427,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -19533,7 +19533,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -19884,7 +19884,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -19907,7 +19907,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -20794,7 +20794,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -20917,7 +20917,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -21023,7 +21023,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -21344,7 +21344,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -21367,7 +21367,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -22254,7 +22254,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -22380,7 +22380,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -22486,7 +22486,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -22807,7 +22807,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -22830,7 +22830,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -23717,7 +23717,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -23840,7 +23840,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -23946,7 +23946,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -24271,7 +24271,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -24294,7 +24294,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -25230,7 +25230,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -25353,7 +25353,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -25477,7 +25477,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -25800,7 +25800,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -25823,7 +25823,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -26759,7 +26759,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -26882,7 +26882,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -27006,7 +27006,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -27329,7 +27329,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -27352,7 +27352,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -28288,7 +28288,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -28411,7 +28411,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -28535,7 +28535,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -28859,7 +28859,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -28882,7 +28882,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -29769,7 +29769,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -29892,7 +29892,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -30016,7 +30016,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -30338,7 +30338,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -30361,7 +30361,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -31297,7 +31297,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -31422,7 +31422,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -31548,7 +31548,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -31885,7 +31885,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -31908,7 +31908,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -32844,7 +32844,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -32969,7 +32969,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -33095,7 +33095,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -33432,7 +33432,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -33455,7 +33455,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -34391,7 +34391,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -34516,7 +34516,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -34642,7 +34642,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -34981,7 +34981,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -35004,7 +35004,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -35891,7 +35891,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -36016,7 +36016,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -36142,7 +36142,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -36479,7 +36479,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -36502,7 +36502,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -37438,7 +37438,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -37563,7 +37563,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -37689,7 +37689,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -38026,7 +38026,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -38049,7 +38049,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -38985,7 +38985,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -39110,7 +39110,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -39236,7 +39236,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -39573,7 +39573,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -39596,7 +39596,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -40532,7 +40532,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -40657,7 +40657,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -40783,7 +40783,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -41122,7 +41122,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -41145,7 +41145,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -42032,7 +42032,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -42157,7 +42157,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -42283,7 +42283,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -42620,7 +42620,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -42643,7 +42643,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -43530,7 +43530,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -43653,7 +43653,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -43759,7 +43759,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -44080,7 +44080,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -44103,7 +44103,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -44991,7 +44991,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -45114,7 +45114,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -45220,7 +45220,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -45541,7 +45541,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -45564,7 +45564,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -46449,7 +46449,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         - name: EXTRA_ENV_VAR
@@ -46574,7 +46574,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -46680,7 +46680,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -47001,7 +47001,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -47024,7 +47024,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -47991,7 +47991,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -48122,7 +48122,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -48228,7 +48228,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -48549,7 +48549,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -48572,7 +48572,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -49465,7 +49465,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -49588,7 +49588,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -49694,7 +49694,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -50015,7 +50015,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -50038,7 +50038,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -50979,7 +50979,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -51102,7 +51102,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -51245,7 +51245,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -51570,7 +51570,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -51593,7 +51593,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -52480,7 +52480,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -52603,7 +52603,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -52709,7 +52709,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -53034,7 +53034,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -53057,7 +53057,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -53947,7 +53947,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -54070,7 +54070,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -54176,7 +54176,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -54526,7 +54526,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -54549,7 +54549,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -55445,7 +55445,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -55568,7 +55568,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -55674,7 +55674,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -56012,7 +56012,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources:
           limits:
@@ -56038,7 +56038,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -56931,7 +56931,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -57054,7 +57054,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -57162,7 +57162,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -57483,7 +57483,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -57508,7 +57508,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -58315,7 +58315,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -58433,7 +58433,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -58880,7 +58880,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -58907,7 +58907,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -59802,7 +59802,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -59925,7 +59925,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -60031,7 +60031,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -60216,7 +60216,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -60239,7 +60239,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -61252,7 +61252,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -61389,7 +61389,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -61513,7 +61513,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -61850,7 +61850,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -61876,7 +61876,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -62815,7 +62815,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -62938,7 +62938,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -63044,7 +63044,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -63367,7 +63367,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -63390,7 +63390,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -64282,7 +64282,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -64405,7 +64405,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -64511,7 +64511,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -64837,7 +64837,7 @@ spec:
             secretKeyRef:
               key: license-key
               name: redpanda-license
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -64860,7 +64860,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -65774,7 +65774,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -65897,7 +65897,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -66003,7 +66003,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -66352,7 +66352,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -66375,7 +66375,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -67262,7 +67262,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -67385,7 +67385,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -67491,7 +67491,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -67812,7 +67812,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -67835,7 +67835,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -68622,7 +68622,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.io/redpandadata/redpanda:v24.2.12
@@ -68774,7 +68774,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -68910,7 +68910,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -69210,7 +69210,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources:
           requests:
@@ -69239,7 +69239,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -70133,7 +70133,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -70256,7 +70256,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -70362,7 +70362,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -70683,7 +70683,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -70706,7 +70706,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -71600,7 +71600,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -71723,7 +71723,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -71829,7 +71829,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -72150,7 +72150,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -72173,7 +72173,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -73128,7 +73128,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -73265,7 +73265,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -73389,7 +73389,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -73724,7 +73724,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -73750,7 +73750,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -74664,7 +74664,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v22.3.14
@@ -74787,7 +74787,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -74893,7 +74893,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -75214,7 +75214,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -75237,7 +75237,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -76173,7 +76173,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v22.3.14
@@ -76296,7 +76296,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -76402,7 +76402,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -76725,7 +76725,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -76748,7 +76748,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -77682,7 +77682,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v22.3.14
@@ -77805,7 +77805,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -77914,7 +77914,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -78235,7 +78235,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -78258,7 +78258,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -79157,7 +79157,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.1.2
@@ -79280,7 +79280,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -79386,7 +79386,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -79707,7 +79707,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -79730,7 +79730,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -80666,7 +80666,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.1.2
@@ -80789,7 +80789,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -80895,7 +80895,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -81218,7 +81218,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -81241,7 +81241,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -82175,7 +82175,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.1.2
@@ -82298,7 +82298,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -82407,7 +82407,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -82728,7 +82728,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -82751,7 +82751,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -83638,7 +83638,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.1.3
@@ -83761,7 +83761,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -83867,7 +83867,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -84188,7 +84188,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -84211,7 +84211,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -85147,7 +85147,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.1.3
@@ -85270,7 +85270,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -85376,7 +85376,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -85699,7 +85699,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -85722,7 +85722,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -86656,7 +86656,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.1.3
@@ -86779,7 +86779,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -86888,7 +86888,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -87209,7 +87209,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -87232,7 +87232,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -88119,7 +88119,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.2.1
@@ -88242,7 +88242,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -88348,7 +88348,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -88669,7 +88669,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -88692,7 +88692,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -89628,7 +89628,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.2.1
@@ -89751,7 +89751,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -89857,7 +89857,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -90180,7 +90180,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -90203,7 +90203,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -91137,7 +91137,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.2.1
@@ -91260,7 +91260,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -91369,7 +91369,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -91690,7 +91690,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -91713,7 +91713,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -92600,7 +92600,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.3.0
@@ -92723,7 +92723,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -92829,7 +92829,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -93150,7 +93150,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -93173,7 +93173,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -94109,7 +94109,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.3.0
@@ -94232,7 +94232,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -94338,7 +94338,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -94661,7 +94661,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -94684,7 +94684,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -95618,7 +95618,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v23.3.0
@@ -95741,7 +95741,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -95850,7 +95850,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -96171,7 +96171,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -96194,7 +96194,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -97081,7 +97081,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v24.1.0
@@ -97204,7 +97204,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -97310,7 +97310,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -97631,7 +97631,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -97654,7 +97654,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -98590,7 +98590,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v24.1.0
@@ -98713,7 +98713,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -98819,7 +98819,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -99142,7 +99142,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -99165,7 +99165,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -100099,7 +100099,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v24.1.0
@@ -100222,7 +100222,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -100331,7 +100331,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -100652,7 +100652,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -100675,7 +100675,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -101562,7 +101562,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -101685,7 +101685,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -101791,7 +101791,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -101926,7 +101926,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -101949,7 +101949,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -102836,7 +102836,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -102959,7 +102959,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -103065,7 +103065,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -103200,7 +103200,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -103223,7 +103223,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -104111,7 +104111,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -104234,7 +104234,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -104362,7 +104362,7 @@ spec:
             secretKeyRef:
               key: my-key
               name: my-secret
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -104683,7 +104683,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -104728,7 +104728,7 @@ spec:
             secretKeyRef:
               key: my-key
               name: my-secret
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -105669,7 +105669,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -105794,7 +105794,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -105947,7 +105947,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -106285,7 +106285,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -106308,7 +106308,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -107293,7 +107293,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -107416,7 +107416,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -107522,7 +107522,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -107847,7 +107847,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -107870,7 +107870,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -108855,7 +108855,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -108978,7 +108978,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -109084,7 +109084,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -109409,7 +109409,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -109432,7 +109432,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -110427,7 +110427,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -110550,7 +110550,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -110656,7 +110656,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -111138,7 +111138,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -111161,7 +111161,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -112173,7 +112173,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -112298,7 +112298,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -112404,7 +112404,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -112821,7 +112821,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -112844,7 +112844,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -113829,7 +113829,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -113952,7 +113952,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -114058,7 +114058,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -114475,7 +114475,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -114498,7 +114498,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -115477,7 +115477,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -115611,7 +115611,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -115717,7 +115717,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -116072,7 +116072,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -116095,7 +116095,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -117005,7 +117005,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -117132,7 +117132,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -117250,7 +117250,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -117697,7 +117697,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -117724,7 +117724,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -118619,7 +118619,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -118742,7 +118742,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -118848,7 +118848,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -119169,7 +119169,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -119192,7 +119192,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -120079,7 +120079,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -120202,7 +120202,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -120308,7 +120308,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -120629,7 +120629,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -120652,7 +120652,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -121539,7 +121539,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -121660,7 +121660,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -121766,7 +121766,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -122087,7 +122087,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -122110,7 +122110,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -122997,7 +122997,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -123120,7 +123120,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -123226,7 +123226,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -123574,7 +123574,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -123597,7 +123597,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -124484,7 +124484,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -124607,7 +124607,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -124713,7 +124713,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -125063,7 +125063,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -125086,7 +125086,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -125956,7 +125956,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -126079,7 +126079,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -126185,7 +126185,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -126531,7 +126531,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -126554,7 +126554,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -127526,7 +127526,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -127660,7 +127660,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -127805,7 +127805,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -128144,7 +128144,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -128170,7 +128170,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -129060,7 +129060,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: somecustomrepo:v23.2.8
@@ -129183,7 +129183,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -129289,7 +129289,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -129610,7 +129610,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -129633,7 +129633,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -130569,7 +130569,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: somecustomrepo:v23.2.8
@@ -130692,7 +130692,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -130798,7 +130798,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -131121,7 +131121,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -131144,7 +131144,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -132078,7 +132078,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: somecustomrepo:v23.2.8
@@ -132201,7 +132201,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -132310,7 +132310,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -132631,7 +132631,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -132654,7 +132654,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -133541,7 +133541,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: somecustomrepo:v24.1.0
@@ -133664,7 +133664,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -133770,7 +133770,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -134091,7 +134091,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -134114,7 +134114,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -135050,7 +135050,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: somecustomrepo:v24.1.0
@@ -135173,7 +135173,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -135279,7 +135279,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -135602,7 +135602,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -135625,7 +135625,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -136559,7 +136559,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: somecustomrepo:v24.1.0
@@ -136682,7 +136682,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -136791,7 +136791,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -137112,7 +137112,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -137135,7 +137135,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -138029,7 +138029,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -138152,7 +138152,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -138258,7 +138258,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -138607,7 +138607,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -138630,7 +138630,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -139644,7 +139644,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -139770,7 +139770,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -139876,7 +139876,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -140019,7 +140019,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -140042,7 +140042,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -140929,7 +140929,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -141052,7 +141052,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -141158,7 +141158,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -141479,7 +141479,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -141502,7 +141502,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -142396,7 +142396,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -142522,7 +142522,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -142688,7 +142688,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -143057,7 +143057,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -143080,7 +143080,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -143974,7 +143974,7 @@ spec:
         - name: REDPANDA_METRICS_K8S_CHART_VERSION
           value: 26.1.1
         - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
-          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
         image: docker.redpanda.com/redpandadata/redpanda:v26.1.1
@@ -144100,7 +144100,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -144266,7 +144266,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -144635,7 +144635,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: post-install
         resources: {}
         securityContext: {}
@@ -144658,7 +144658,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.2
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1-beta.3
         name: bootstrap-yaml-envsubst
         resources:
           limits:
