@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: The PVCUnbinder sidecar's ClusterRole (rendered when both `rbac.enabled` and `statefulset.sideCars.pvcUnbinder.enabled` are set; with `rbac.enabled: false` the new verbs must be added to your out-of-band role, or the unbinder falls back to its conservative deferral) additionally grants cluster-scoped `nodes list` and `storageclasses get`. Both are read-only and consumed by the unbinder's new pvc-rebinding-gate exemption, which resolves a PV's pinned nodes by their `kubernetes.io/hostname` label and checks the unbound claim's StorageClass binding mode before acting. A new `statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption` value renders the sidecar's `--disable-pvc-rebinding-gate-exemption` escape hatch, turning just that exemption off while keeping the PVCUnbinder running.
+time: 2026-07-12T15:23:55.000000+02:00

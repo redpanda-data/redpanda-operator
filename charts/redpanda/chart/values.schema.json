@@ -21893,6 +21893,9 @@
             "pvcUnbinder": {
               "additionalProperties": false,
               "properties": {
+                "disableStuckClaimExemption": {
+                  "type": "boolean"
+                },
                 "enabled": {
                   "type": "boolean"
                 },

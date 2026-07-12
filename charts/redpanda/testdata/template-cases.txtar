@@ -1185,6 +1185,15 @@ statefulset:
     pvcUnbinder:
       enabled: false
 
+-- pvc-unbinder-disable-stuck-claim-exemption --
+# ASSERT-NO-ERROR
+# ASSERT-FIELD-CONTAINS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.containers[?(@.name == \"sidecar\")].args}", "--disable-pvc-rebinding-gate-exemption"]
+statefulset:
+  sideCars:
+    pvcUnbinder:
+      enabled: true
+      disableStuckClaimExemption: true
+
 -- jit-certificates --
 # ASSERT-NO-ERROR
 # ASSERT-FIELD-EQUALS ["apps/v1/StatefulSet", "default/redpanda", "{.spec.template.spec.volumes[?(@.name == \"redpanda-external-cert\")]}", {"name": "redpanda-external-cert", "emptyDir": {}}]

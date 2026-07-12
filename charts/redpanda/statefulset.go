@@ -1191,6 +1191,10 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 			`--run-pvc-unbinder`,
 			fmt.Sprintf("--pvc-unbinder-timeout=%s", pool.Statefulset.SideCars.PVCUnbinder.UnbindAfter),
 		}...)
+
+		if pool.Statefulset.SideCars.PVCUnbinder.DisableStuckClaimExemption {
+			args = append(args, `--disable-pvc-rebinding-gate-exemption`)
+		}
 	}
 
 	args = append(args, pool.Statefulset.SideCars.Args...)

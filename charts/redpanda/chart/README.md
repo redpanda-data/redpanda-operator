@@ -893,7 +893,15 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 **Default:** `"v26.2.1-beta.3"`
 
+### [statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption)
+
+Renders `--disable-pvc-rebinding-gate-exemption`: turns off the pvc-rebinding gate's stuck-claim exemption (an escape hatch if its proof chain misfires in your environment) while keeping the rest of the PVCUnbinder running.
+
+**Default:** `false`
+
 ### [statefulset.sideCars.pvcUnbinder.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.enabled)
+
+Enables the PVCUnbinder sidecar controller. Note: with `rbac.enabled`, this renders a ClusterRole that grants the Pod's ServiceAccount cluster-wide read access to Nodes, regardless of the other pvcUnbinder settings.
 
 **Default:** `false`
 

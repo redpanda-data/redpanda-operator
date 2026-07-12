@@ -1039,6 +1039,11 @@ type Sidecars struct {
 	PVCUnbinder struct {
 		Enabled     bool   `json:"enabled"`
 		UnbindAfter string `json:"unbindAfter"`
+		// DisableStuckClaimExemption renders the sidecar flag
+		// --disable-pvc-rebinding-gate-exemption, turning off the
+		// pvc-rebinding gate's stuck-claim exemption while keeping the
+		// rest of the PVCUnbinder running.
+		DisableStuckClaimExemption bool `json:"disableStuckClaimExemption"`
 	} `json:"pvcUnbinder"`
 	BrokerDecommissioner struct {
 		Enabled                    bool   `json:"enabled"`
