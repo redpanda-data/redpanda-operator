@@ -787,7 +787,19 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
 	switch {
 	case apierrors.IsNotFound(err):
-		l.Info("pod already gone, removing finalizer")
+		// The pod is already gone (e.g. deleted out of band), but the PVCs
+		// may still exist and carry this CR's controller ownerRef. Apply the
+		// same policy decision as the pod-present path — otherwise the CR
+		// deletion cascades and the GC deletes the data regardless of
+		// intent.
+		if r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade {
+			l.Info("pod already gone, cascade policy, removing finalizer")
+		} else {
+			if err := r.releaseBrokerResources(ctx, l, k8sClient, broker, nil); err != nil {
+				return ctrl.Result{}, err
+			}
+			l.Info("pod already gone, PVCs released, removing finalizer")
+		}
 
 	case err != nil:
 		return ctrl.Result{}, err
@@ -904,9 +916,10 @@ func (r *BrokerReconciler) deletionPolicy(ctx context.Context, l logr.Logger, k8
 }
 
 // releaseBrokerResources strips this Broker's ownerRefs from its pod and PVCs
-// so they survive the CR deletion.
+// so they survive the CR deletion. pod may be nil when it is already gone —
+// the PVCs are still released.
 func (r *BrokerReconciler) releaseBrokerResources(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker, pod *corev1.Pod) error {
-	if removeOwnerRefByUID(pod, broker.UID) {
+	if pod != nil && removeOwnerRefByUID(pod, broker.UID) {
 		l.Info("releasing pod from deleted Broker CR", "pod", pod.Name)
 		if err := k8sClient.Update(ctx, pod); err != nil {
 			return fmt.Errorf("releasing pod %s: %w", pod.Name, err)
