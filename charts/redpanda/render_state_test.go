@@ -213,6 +213,12 @@ func TestFetchBootstrapUser(t *testing.T) {
 			require.Equal(t, tc.wantPassword, state.BootstrapUserPassword)
 			if tc.wantSecret {
 				require.NotNil(t, state.BootstrapUserSecret)
+				// The secret is re-rendered into the chart's output, so
+				// server populated metadata must not survive the lookup or
+				// Helm 4's server-side apply will reject the manifest.
+				require.Nil(t, state.BootstrapUserSecret.ManagedFields)
+				require.Empty(t, state.BootstrapUserSecret.ResourceVersion)
+				require.Empty(t, state.BootstrapUserSecret.UID)
 			} else {
 				require.Nil(t, state.BootstrapUserSecret)
 			}

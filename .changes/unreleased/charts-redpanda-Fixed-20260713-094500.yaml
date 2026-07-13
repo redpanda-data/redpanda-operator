@@ -1,0 +1,15 @@
+project: charts/redpanda
+kind: Fixed
+body: |
+  `helm upgrade` no longer fails under Helm 4's default server-side apply when
+  SASL is enabled. To keep the generated bootstrap-user password stable, the
+  chart looks up the existing `*-bootstrap-user` Secret on upgrade and
+  re-renders it — previously verbatim, including the server-set
+  `metadata.managedFields`, which the API server rejects with
+  `metadata.managedFields must be nil` when Helm 4 applies manifests
+  server-side. The rejected apply also polluted release history: manifests
+  stored by any successful client-side upgrade carried `managedFields`, so
+  later server-side rollbacks failed the same way. The lookup now strips
+  `managedFields`, `resourceVersion`, and `uid` before the Secret is
+  re-rendered.
+time: 2026-07-13T09:45:00.000000-07:00
