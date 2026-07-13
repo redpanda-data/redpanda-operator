@@ -180,6 +180,8 @@ func init() {
 	framework.RegisterStep(`^I pause reconciliation on cluster "([^"]*)"$`, pauseReconciliation)
 	framework.RegisterStep(`^I orphan-delete the StatefulSet for cluster "([^"]*)"$`, orphanDeleteStatefulSet)
 	framework.RegisterStep(`^I create Broker CRs for cluster "([^"]*)"$`, createBrokerCRsForCluster)
+	framework.RegisterStep(`^I snapshot pod UIDs for cluster "([^"]*)"$`, snapshotPodUIDs)
+	framework.RegisterStep(`^pods for cluster "([^"]*)" should have the same UIDs as the snapshot$`, podUIDsShouldBeUnchanged)
 	framework.RegisterStep(`^I grant a roll-grant to Broker "([^"]*)"$`, grantRollGrantToBroker)
 	framework.RegisterStep(`^all Broker CRs for cluster "([^"]*)" should be Running$`, allBrokerCRsRunning)
 	framework.RegisterStep(`^I set decommission on Broker "([^"]*)"$`, setDecommissionOnBroker)

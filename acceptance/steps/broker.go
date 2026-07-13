@@ -138,11 +138,51 @@ func createBrokerCRsForCluster(ctx context.Context, t framework.TestingT, cluste
 	t.Cleanup(func(ctx context.Context) {
 		t := framework.T(ctx)
 		var brokers redpandav1alpha2.BrokerList
-		_ = t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace))
+		_ = t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			redpandav1alpha2.ClusterNameLabel: clusterName,
+		})
 		for i := range brokers.Items {
 			_ = t.Delete(ctx, &brokers.Items[i])
 		}
 	})
+}
+
+type podUIDSnapshotKey struct{ cluster string }
+
+// snapshotPodUIDs records the UID of every redpanda pod of the cluster so a
+// later step can assert none of them was deleted/recreated.
+func snapshotPodUIDs(ctx context.Context, t framework.TestingT, clusterName string) context.Context {
+	key := t.ResourceKey(clusterName)
+	var pods corev1.PodList
+	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+		"app.kubernetes.io/name":     "redpanda",
+	}))
+	require.NotEmpty(t, pods.Items, "no pods to snapshot for cluster %q", clusterName)
+	uids := map[string]string{}
+	for _, p := range pods.Items {
+		uids[p.Name] = string(p.UID)
+	}
+	t.Logf("Snapshot %d pod UIDs for cluster %q: %v", len(uids), clusterName, uids)
+	return context.WithValue(ctx, podUIDSnapshotKey{clusterName}, uids)
+}
+
+func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, clusterName string) {
+	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
+	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
+
+	key := t.ResourceKey(clusterName)
+	var pods corev1.PodList
+	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+		"app.kubernetes.io/name":     "redpanda",
+	}))
+	current := map[string]string{}
+	for _, p := range pods.Items {
+		current[p.Name] = string(p.UID)
+	}
+	require.Equal(t, snap, current, "pod UIDs changed for cluster %q — pods were restarted", clusterName)
+	t.Logf("All %d pod UIDs for cluster %q are unchanged", len(current), clusterName)
 }
 
 func grantRollGrantToBroker(ctx context.Context, t framework.TestingT, brokerName string) {
@@ -166,7 +206,9 @@ func allBrokerCRsRunning(ctx context.Context, t framework.TestingT, clusterName 
 	key := t.ResourceKey(clusterName)
 	require.Eventually(t, func() bool {
 		var brokers redpandav1alpha2.BrokerList
-		if err := t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace)); err != nil {
+		if err := t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			redpandav1alpha2.ClusterNameLabel: clusterName,
+		}); err != nil {
 			return false
 		}
 		if len(brokers.Items) == 0 {
@@ -283,6 +325,7 @@ func clusterAdminAPIShouldShowBrokers(ctx context.Context, t framework.TestingT,
 			t.Logf("Failed to create admin client: %v", err)
 			return false
 		}
+		defer admin.Close()
 		brokers, err := admin.Brokers(ctx)
 		if err != nil {
 			t.Logf("Failed to get brokers: %v", err)
