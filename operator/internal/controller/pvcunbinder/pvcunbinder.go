@@ -1178,12 +1178,25 @@ func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 // longer exist. As a side effect, each affected PV's reclaim policy is
 // patched to Retain so the storage survives PVC deletion.
 //
+// PVC names listed in exclude are skipped entirely — they are neither
+// returned nor Retain-patched. Callers that will not remediate a claim
+// (e.g. externally-managed ExistingClaims) must exclude it here: flipping
+// the reclaim policy of a PV the caller then declines to touch would
+// silently override an admin's `Delete` policy and strand Released volumes.
+//
 // apiReader must be an uncached client for accurate Node existence checks.
-func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod) ([]corev1.PersistentVolumeClaim, error) {
+func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
 	l := log.FromContext(ctx)
+	excluded := make(map[string]bool, len(exclude))
+	for _, name := range exclude {
+		excluded[name] = true
+	}
 	var affected []corev1.PersistentVolumeClaim
 	for i := range pod.Spec.Volumes {
 		if pod.Spec.Volumes[i].PersistentVolumeClaim == nil {
+			continue
+		}
+		if excluded[pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName] {
 			continue
 		}
 		var pvc corev1.PersistentVolumeClaim

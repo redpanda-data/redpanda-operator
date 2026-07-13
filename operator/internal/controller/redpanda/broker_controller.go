@@ -46,7 +46,7 @@ import (
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers/finalizers,verbs=update
-// +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch
+// +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=persistentvolumes,verbs=get;list;patch
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get
@@ -72,6 +72,8 @@ type BrokerReconciler struct {
 
 func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFactory internalclient.ClientFactory, namespace string, unbindPVCsAfter time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+		// Tests register several reconcilers against one manager under the
+		// same default controller names; production registers each once.
 		SkipNameValidation: ptr.To(true),
 	}).For(
 		&redpandav1alpha2.Broker{},
@@ -323,6 +325,11 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 
 func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
 	if state.pod == nil {
+		return ctrl.Result{}, nil
+	}
+	// Don't re-adopt claims on a decommissioning broker: the completion
+	// branch is about to delete them anyway.
+	if state.broker.Spec.Decommission {
 		return ctrl.Result{}, nil
 	}
 	l := log.FromContext(ctx)
@@ -809,9 +816,10 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 //     deletion alone — and a Stuck result (e.g. last-broker guard) blocks
 //     deletion instead of falling through to pod removal.
 //   - Raw deletion while the owning cluster is alive RELEASES the pod and
-//     PVCs (ownerRefs stripped): the broker keeps running, data survives, and
-//     the cluster controller recreates a Broker CR that re-adopts the pod —
-//     accidental deletion self-heals without a restart.
+//     PVCs (ownerRefs stripped): the broker keeps running and data survives.
+//     Once an owning cluster controller manages Broker CRs (none is wired up
+//     yet), it will recreate a Broker CR that re-adopts the pod — accidental
+//     deletion then self-heals without a restart.
 //   - When the owning cluster itself is being deleted, the propagated
 //     deletion policy decides: "cascade" (default) lets the GC delete pod and
 //     PVCs with the CR — whole-cluster teardown, decommission is pointless —
@@ -1073,26 +1081,17 @@ func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logge
 		}
 	}
 
-	affectedPVCs, err := pvcunbinder.DeadNodePVCs(ctx, k8sClient, apiReader, pod)
+	// ExistingClaims are excluded up front: the controller doesn't own
+	// their spec, so they are neither remediated NOR Retain-patched —
+	// flipping the reclaim policy of a PV we then decline to touch would
+	// override the admin's own policy.
+	var existingClaimNames []string
+	for _, ec := range broker.Spec.Storage.ExistingClaims {
+		existingClaimNames = append(existingClaimNames, ec.Name)
+	}
+	remediable, err := pvcunbinder.DeadNodePVCs(ctx, k8sClient, apiReader, pod, existingClaimNames...)
 	if err != nil {
 		return false, err
-	}
-	if len(affectedPVCs) == 0 {
-		return false, nil
-	}
-
-	// Skip ExistingClaims — the controller doesn't own their spec.
-	existingClaimNames := map[string]bool{}
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		existingClaimNames[ec.Name] = true
-	}
-	var remediable []corev1.PersistentVolumeClaim
-	for _, pvc := range affectedPVCs {
-		if existingClaimNames[pvc.Name] {
-			l.Info("ExistingClaim PVC stuck on dead node, skipping (admin must handle)", "pvc", pvc.Name)
-			continue
-		}
-		remediable = append(remediable, pvc)
 	}
 	if len(remediable) == 0 {
 		return false, nil
