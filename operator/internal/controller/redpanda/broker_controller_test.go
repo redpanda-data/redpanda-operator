@@ -69,13 +69,6 @@ func (s *BrokerControllerSuite) setup() (*testing.T, context.Context, context.Ca
 	return s.setupNamespace(t)
 }
 
-// setupSerial is setup without t.Parallel, for tests that disrupt shared
-// cluster infrastructure (e.g. deleting k3d nodes): running those alongside
-// parallel tests strands the other tests' pods and PVCs on the dead node.
-func (s *BrokerControllerSuite) setupSerial() (*testing.T, context.Context, context.CancelFunc, client.Client) {
-	return s.setupNamespace(s.T())
-}
-
 func (s *BrokerControllerSuite) setupNamespace(t *testing.T) (*testing.T, context.Context, context.CancelFunc, client.Client) {
 	ctx, cancel := context.WithTimeout(trace.Test(t), 15*time.Minute)
 	ns := s.env.CreateTestNamespace(t)
@@ -84,6 +77,15 @@ func (s *BrokerControllerSuite) setupNamespace(t *testing.T) (*testing.T, contex
 
 func (s *BrokerControllerSuite) SetupSuite() {
 	t := s.T()
+	s.env, s.clientFactory = s.newEnv(t, "")
+}
+
+// newEnv builds a testenv (shared k3d cluster when clusterName is empty, a
+// dedicated one otherwise) with the Broker/Redpanda/NodePool controllers and
+// RBAC set up. Tests that disrupt cluster infrastructure (node deletion) use
+// a dedicated cluster so concurrently-running test PACKAGES sharing the
+// default cluster don't lose pods and node-pinned PVCs.
+func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*testenv.Env, internalclient.ClientFactory) {
 	ctx := trace.Test(t)
 
 	importImages := []string{
@@ -102,7 +104,8 @@ func (s *BrokerControllerSuite) SetupSuite() {
 		}
 	}
 
-	s.env = testenv.New(t, testenv.Options{
+	env := testenv.New(t, testenv.Options{
+		Name:               clusterName,
 		Scheme:             controller.V2Scheme,
 		CRDs:               crds.All(),
 		Logger:             log.FromContext(ctx),
@@ -111,11 +114,11 @@ func (s *BrokerControllerSuite) SetupSuite() {
 		ImportImages:       importImages,
 	})
 
-	suiteClient := s.env.Client()
+	var clientFactory internalclient.ClientFactory
 
-	s.env.SetupManager(s.setupRBAC(ctx, suiteClient), func(mgr multicluster.Manager) error {
+	env.SetupManager(s.setupRBAC(ctx, env), func(mgr multicluster.Manager) error {
 		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
-		s.clientFactory = internalclient.NewFactory(mgr, nil).WithDialer(dialer.DialContext)
+		clientFactory = internalclient.NewFactory(mgr, nil).WithDialer(dialer.DialContext)
 
 		require.NoError(t, (&redpanda.NodePoolReconciler{
 			Manager: mgr,
@@ -123,7 +126,7 @@ func (s *BrokerControllerSuite) SetupSuite() {
 
 		require.NoError(t, (&redpanda.RedpandaReconciler{
 			Manager:       mgr,
-			ClientFactory: s.clientFactory,
+			ClientFactory: clientFactory,
 			LifecycleClient: lifecycle.NewResourceClient(mgr, lifecycle.V2ResourceManagers(
 				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
 				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
@@ -132,12 +135,15 @@ func (s *BrokerControllerSuite) SetupSuite() {
 			UseNodePools: true,
 		}).SetupWithManager(ctx, mgr, ""))
 
-		return redpanda.SetupBrokerController(ctx, mgr, s.clientFactory, "", 60*time.Second)
+		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)
 	})
+
+	return env, clientFactory
 }
 
-func (s *BrokerControllerSuite) setupRBAC(ctx context.Context, c client.Client) string {
+func (s *BrokerControllerSuite) setupRBAC(ctx context.Context, env *testenv.Env) string {
 	t := s.T()
+	c := env.Client()
 
 	roles, err := kube.DecodeYAML(operatorRBAC, c.Scheme())
 	require.NoError(t, err)
@@ -171,7 +177,7 @@ func (s *BrokerControllerSuite) setupRBAC(ctx context.Context, c client.Client) 
 				Name: name,
 			},
 			Subjects: []rbacv1.Subject{
-				{Kind: "ServiceAccount", Namespace: s.env.Namespace(), Name: name},
+				{Kind: "ServiceAccount", Namespace: env.Namespace(), Name: name},
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
@@ -551,10 +557,18 @@ func (s *BrokerControllerSuite) TestLastBrokerDecommissionGuard() {
 // force-delete the stuck pod, and assert the Broker controller reports
 // Stuck then — once granted a roll — remediates and recovers.
 func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
-	// Serial: this test deletes a shared k3d node; parallel neighbors would
-	// lose pods and node-pinned PVCs with it.
-	t, ctx, cancel, c := s.setupSerial()
+	t := s.T()
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(trace.Test(t), 20*time.Minute)
 	defer cancel()
+
+	// Dedicated k3d cluster: this test deletes a node. Serializing within
+	// this suite is not enough — test PACKAGES run concurrently and other
+	// packages' testenvs share the default cluster; their pods and
+	// node-pinned PVCs would be stranded by the deletion.
+	env, _ := s.newEnv(t, "broker-pv-"+strings.ToLower(testenv.RandString(4)))
+	ns := env.CreateTestNamespace(t)
+	c := ns.Client
 
 	// No setup grant: the Stuck wait below must prove the ungranted broker
 	// REFUSES to remediate; the explicit grant later is what unlocks it.
@@ -598,50 +612,10 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 		originalPVNames[name] = pvc.Spec.VolumeName
 	}
 
-	// Delete the k3d node. Ensure a replacement is always created, even on
-	// test failure, so other tests sharing this k3d cluster are not impacted.
-	var nodesBefore corev1.NodeList
-	require.NoError(t, s.env.Client().List(ctx, &nodesBefore))
-	expectedNodeCount := len(nodesBefore.Items)
-
+	// Delete the k3d node. No restoration cleanup is needed: the dedicated
+	// cluster is torn down with the env at test end.
 	t.Logf("deleting k3d node %q", targetNode)
-	require.NoError(t, s.env.Host().DeleteNode(targetNode))
-	t.Cleanup(func() {
-		ctx := context.Background()
-		// Remove the stale Node object if the test failed before doing so
-		// itself: a dead node lingering in the API would both skew the count
-		// below and confuse later tests.
-		var staleNode corev1.Node
-		if err := s.env.Client().Get(ctx, client.ObjectKey{Name: targetNode}, &staleNode); err == nil {
-			if err := s.env.Client().Delete(ctx, &staleNode); err != nil {
-				t.Logf("WARNING: failed to delete stale Node object %q during cleanup: %v", targetNode, err)
-			}
-		}
-		var nodes corev1.NodeList
-		if err := s.env.Client().List(ctx, &nodes); err != nil {
-			t.Logf("WARNING: failed to list nodes during cleanup: %v", err)
-			return
-		}
-		ready := 0
-		for _, node := range nodes.Items {
-			if node.Name == targetNode {
-				continue
-			}
-			for _, cond := range node.Status.Conditions {
-				if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
-					ready++
-					break
-				}
-			}
-		}
-		if ready >= expectedNodeCount {
-			return
-		}
-		t.Logf("cluster has %d ready nodes (expected %d), creating replacement", ready, expectedNodeCount)
-		if err := s.env.Host().CreateNode(); err != nil {
-			t.Logf("WARNING: failed to create replacement k3d node during cleanup: %v", err)
-		}
-	})
+	require.NoError(t, env.Host().DeleteNode(targetNode))
 
 	// Delete the Kubernetes Node object so the Broker controller sees it as gone.
 	var nodeObj corev1.Node
@@ -679,9 +653,19 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	target.Annotations["operator.redpanda.com/roll-grant"] = checksum + "/" + strconv.FormatInt(time.Now().Add(30*time.Minute).Unix(), 10)
 	require.NoError(t, c.Patch(ctx, target, p))
 
-	// Create a replacement k3d node so the pod has somewhere to schedule.
+	// Create a replacement k3d node so the pod has somewhere to schedule,
+	// and re-import the suite's images: `k3d node create` starts an empty
+	// node, and soft anti-affinity prefers it — without the operator image
+	// present the sidecar would sit in ImagePullBackOff and the recovery
+	// wait below would time out.
 	t.Log("creating replacement k3d node")
-	require.NoError(t, s.env.Host().CreateNode())
+	require.NoError(t, env.Host().CreateNode())
+	require.NoError(t, env.Host().ImportImage("localhost/redpanda-operator:dev"))
+	if repo := os.Getenv("TEST_REDPANDA_REPO"); repo != "" {
+		if version := os.Getenv("TEST_REDPANDA_VERSION"); version != "" {
+			require.NoError(t, env.Host().ImportImage(fmt.Sprintf("%s:%s", repo, version)))
+		}
+	}
 
 	// Wait for the broker to recover to Running.
 	t.Log("waiting for Broker to recover to Running")
