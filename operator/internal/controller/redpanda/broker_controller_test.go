@@ -461,27 +461,33 @@ func (s *BrokerControllerSuite) TestPodCreatedWithoutGrant() {
 	}, 2*time.Minute, time.Second, "pod should be created without a roll-grant")
 }
 
-// TestPodRotationWithoutGrant verifies that when a broker's pod needs rotation
-// (checksum mismatch) but no roll-grant is present, the broker stays in Running
-// phase and sets ConfigSynced=False.
+// TestPodRotationWithoutGrant verifies the roll-grant gate NEGATIVELY: an
+// outdated pod with NO grant at all must not rotate — the pod's UID and live
+// checksum stay put while ConfigSynced=False reports the pending rotation.
+// Only after a matching grant is issued may the pod be recreated. Without
+// the negative half, a gate that always allowed rotation would be
+// observationally identical to a working one (ConfigSynced=False is set as
+// soon as drift is detected, BEFORE the rotation completes, so an Eventually
+// on it alone can pass mid-rotation).
 func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
 
-	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{
-		grantDuration: 10 * time.Minute,
-	})
+	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
 
 	target := brokers[0]
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
 
-	// Change the desired checksum so it no longer matches the pod's checksum
-	// (and no longer matches the existing roll-grant's checksum).
+	var podBefore corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &podBefore))
+
+	// Change the desired checksum so the pod is outdated; no grant exists.
+	newChecksum := "deliberately-changed-checksum"
 	p := client.MergeFrom(target.DeepCopy())
-	target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"] = "deliberately-wrong-checksum"
+	target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"] = newChecksum
 	require.NoError(t, c.Patch(ctx, target, p))
 
-	// The broker should stay Running (not rotated) with ConfigSynced=False.
+	// Drift is reported...
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
 		assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(target), target))
 		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, target.Status.Phase)
@@ -490,6 +496,33 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 			assert.Equal(ct, metav1.ConditionFalse, cond.Status)
 		}
 	}, 2*time.Minute, 5*time.Second)
+
+	// ...but the pod must NOT be rotated: same UID, same live checksum.
+	require.Never(t, func() bool {
+		var pod corev1.Pod
+		if err := c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod); err != nil {
+			return true // pod deleted = rotation started
+		}
+		return pod.UID != podBefore.UID
+	}, 30*time.Second, 2*time.Second, "pod was rotated without a roll-grant")
+
+	// Issue a grant matching the new checksum: the rotation may now proceed.
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	p = client.MergeFrom(target.DeepCopy())
+	if target.Annotations == nil {
+		target.Annotations = map[string]string{}
+	}
+	target.Annotations["operator.redpanda.com/roll-grant"] = newChecksum + "/" + strconv.FormatInt(time.Now().Add(10*time.Minute).Unix(), 10)
+	require.NoError(t, c.Patch(ctx, target, p))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var pod corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod)) {
+			return
+		}
+		assert.NotEqual(ct, podBefore.UID, pod.UID, "pod should be recreated once granted")
+		assert.Equal(ct, newChecksum, pod.Annotations["config.redpanda.com/checksum"])
+	}, 4*time.Minute, 5*time.Second, "granted rotation never completed")
 }
 
 // TestLastBrokerDecommissionGuard verifies that attempting to decommission the
@@ -523,9 +556,10 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	t, ctx, cancel, c := s.setupSerial()
 	defer cancel()
 
+	// No setup grant: the Stuck wait below must prove the ungranted broker
+	// REFUSES to remediate; the explicit grant later is what unlocks it.
 	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{
 		useVolumeClaimTemplates: true,
-		grantDuration:           30 * time.Minute,
 	})
 
 	// Pick a target broker whose pod runs on an AGENT node: k3d server nodes
@@ -779,16 +813,23 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 		brokers = append(brokers, broker)
 	}
 
-	deadline := strconv.FormatInt(time.Now().Add(opts.grantDuration).Unix(), 10)
-	for _, b := range brokers {
-		require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(b), b))
-		p := client.MergeFrom(b.DeepCopy())
-		if b.Annotations == nil {
-			b.Annotations = map[string]string{}
+	// Grants are opt-in: pod creation and adoption are deliberately NOT
+	// grant-gated (RFC Q5), so the steady state needs none. Tests that
+	// exercise disruptive actions grant explicitly — a blanket grant here
+	// would make it impossible to assert that ungranted brokers refuse to
+	// rotate or remediate.
+	if opts.grantDuration > 0 {
+		deadline := strconv.FormatInt(time.Now().Add(opts.grantDuration).Unix(), 10)
+		for _, b := range brokers {
+			require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(b), b))
+			p := client.MergeFrom(b.DeepCopy())
+			if b.Annotations == nil {
+				b.Annotations = map[string]string{}
+			}
+			checksum := b.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
+			b.Annotations["operator.redpanda.com/roll-grant"] = checksum + "/" + deadline
+			require.NoError(t, c.Patch(ctx, b, p))
 		}
-		checksum := b.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-		b.Annotations["operator.redpanda.com/roll-grant"] = checksum + "/" + deadline
-		require.NoError(t, c.Patch(ctx, b, p))
 	}
 
 	for _, b := range brokers {
