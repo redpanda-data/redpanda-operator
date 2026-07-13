@@ -12,11 +12,13 @@ package redpanda
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
+	"github.com/redpanda-data/common-go/rpadmin"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -436,12 +438,12 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 	l := log.FromContext(ctx)
 	podName := broker.PodName()
 
-	currentID, err := r.resolveBrokerID(ctx, state.clusterName, broker, podName)
+	resolved, err := r.resolveBroker(ctx, state.clusterName, broker, state.pod, podName)
 	if err != nil {
 		l.Info("could not resolve broker ID, will retry", "error", err)
 		return ctrl.Result{RequeueAfter: requeueShort}, nil
 	}
-	if currentID == nil {
+	if resolved == nil {
 		if broker.Status.BrokerID != nil {
 			// Was registered, no longer a member (e.g. removed out of
 			// band): report unverified but let the chain continue.
@@ -451,8 +453,18 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 		// Pod is up but not yet a cluster member.
 		return ctrl.Result{RequeueAfter: requeueShort}, nil
 	}
+	currentID := ptr.To(int32(resolved.NodeID))
 
 	if broker.Status.BrokerID == nil {
+		// Adopt only an active, alive member. Right after a decommission the
+		// membership list can briefly retain the dead predecessor's entry
+		// under this very pod name — adopting its id would poison the
+		// continuity check below for the rest of this Broker's life.
+		if !brokerActiveAndAlive(resolved) {
+			l.Info("matched membership entry not active/alive yet, deferring identity adoption",
+				"nodeID", resolved.NodeID, "membership", resolved.MembershipStatus)
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
 		broker.Status.BrokerID = currentID
 	}
 	if *currentID != *broker.Status.BrokerID {
@@ -499,15 +511,15 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		// or an intent set before the first registration (or right after a
 		// status-update race) never actually starts the decommission and the
 		// broker stays a full cluster member while reporting Decommissioning.
-		currentID, err := r.resolveBrokerID(ctx, state.clusterName, broker, broker.PodName())
-		if err != nil || currentID == nil {
+		resolved, err := r.resolveBroker(ctx, state.clusterName, broker, state.pod, broker.PodName())
+		if err != nil || resolved == nil || resolved.MembershipStatus != rpadmin.MembershipStatusActive {
 			if err != nil {
 				log.FromContext(ctx).Info("could not resolve broker ID before decommission, will retry", "error", err)
 			}
 			state.phase = redpandav1alpha2.BrokerPhaseDecommissioning
 			return ctrl.Result{RequeueAfter: requeueShort}, nil
 		}
-		broker.Status.BrokerID = currentID
+		broker.Status.BrokerID = ptr.To(int32(resolved.NodeID))
 	}
 
 	decommResult, err := r.executeDecommission(ctx, state.clusterName, broker)
@@ -824,12 +836,14 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 		// it live rather than skipping the decommission and leaving a dead
 		// membership entry behind.
 		if broker.Status.BrokerID == nil {
-			brokerID, err := r.resolveBrokerID(ctx, clusterName, broker, podName)
+			resolved, err := r.resolveBroker(ctx, clusterName, broker, &pod, podName)
 			if err != nil {
 				l.Info("could not resolve broker ID before decommission, will retry", "error", err)
 				return ctrl.Result{RequeueAfter: requeueShort}, nil
 			}
-			broker.Status.BrokerID = brokerID
+			if resolved != nil && resolved.MembershipStatus == rpadmin.MembershipStatusActive {
+				broker.Status.BrokerID = ptr.To(int32(resolved.NodeID))
+			}
 		}
 		if broker.Status.BrokerID != nil {
 			result, err := r.executeDecommission(ctx, clusterName, broker)
@@ -1089,7 +1103,16 @@ func (r *BrokerReconciler) disableMaintenanceMode(ctx context.Context, clusterNa
 	return admin.DisableMaintenanceMode(ctx, int(*broker.Status.BrokerID), false)
 }
 
-func (r *BrokerReconciler) resolveBrokerID(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker, podName string) (*int32, error) {
+// resolveBroker finds the cluster-membership entry backing this Broker's
+// pod. Matching handles every advertised-address form seen in the wild:
+// per-pod FQDN (matched by first DNS label), "host:port", bare host, and —
+// when the pod is known — a bare pod IP. More than one distinct match is
+// ambiguous and reported as no match rather than guessed at: right after a
+// decommission the membership list can briefly retain the dead
+// predecessor's entry under the SAME pod name (a replacement reuses it).
+// Callers that ADOPT the resolved id must additionally check the entry is
+// an active, alive member — see reconcileBrokerRegistration.
+func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker, pod *corev1.Pod, podName string) (*rpadmin.Broker, error) {
 	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
 		return nil, err
@@ -1100,12 +1123,39 @@ func (r *BrokerReconciler) resolveBrokerID(ctx context.Context, clusterName stri
 	if err != nil {
 		return nil, err
 	}
+
+	var matches []rpadmin.Broker
 	for _, b := range brokers {
-		if strings.Split(b.InternalRPCAddress, ".")[0] == podName {
-			return ptr.To(int32(b.NodeID)), nil
+		host := b.InternalRPCAddress
+		if h, _, splitErr := net.SplitHostPort(host); splitErr == nil {
+			host = h
+		}
+		if host == "" {
+			continue
+		}
+		if strings.SplitN(host, ".", 2)[0] == podName || host == podName ||
+			(pod != nil && pod.Status.PodIP != "" && host == pod.Status.PodIP) {
+			matches = append(matches, b)
 		}
 	}
-	return nil, nil
+	switch len(matches) {
+	case 0:
+		return nil, nil
+	case 1:
+		return &matches[0], nil
+	default:
+		log.FromContext(ctx).Info("ambiguous cluster-membership match for pod, refusing to guess",
+			"pod", podName, "matches", len(matches))
+		return nil, nil
+	}
+}
+
+// brokerActiveAndAlive reports whether a membership entry is safe to adopt
+// as this Broker's identity: an entry that is draining, removed, or not
+// alive is either a leftover of a decommissioned predecessor or a node that
+// has not finished joining.
+func brokerActiveAndAlive(b *rpadmin.Broker) bool {
+	return b != nil && b.MembershipStatus == rpadmin.MembershipStatusActive && b.IsAlive != nil && *b.IsAlive
 }
 
 // hasValidRollGrant returns true if the Broker CR carries a roll-grant
