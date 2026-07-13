@@ -211,6 +211,31 @@ func updateBrokerPodTemplateEnv(ctx context.Context, t framework.TestingT, broke
 	t.Logf("Updated Broker %q pod template: added env %s, new checksum %s", brokerName, envKeyValue, checksum[:12])
 }
 
+// brokerPodShouldNotBeRotated asserts for a fixed window that the Broker's
+// pod is neither deleted nor recreated — the negative half of the roll-grant
+// gate: an outdated pod WITHOUT a grant must stay put. Without this check, a
+// gate that always allowed rotation would be observationally identical to a
+// working one.
+func brokerPodShouldNotBeRotated(ctx context.Context, t framework.TestingT, brokerName string) {
+	key := t.ResourceKey(brokerName)
+	var broker redpandav1alpha2.Broker
+	require.NoError(t, t.Get(ctx, key, &broker))
+
+	podKey := runtimeclient.ObjectKey{Name: broker.PodName(), Namespace: key.Namespace}
+	var pod corev1.Pod
+	require.NoError(t, t.Get(ctx, podKey, &pod))
+	originalUID := pod.UID
+
+	require.Never(t, func() bool {
+		var current corev1.Pod
+		if err := t.Get(ctx, podKey, &current); err != nil {
+			return true // pod deleted = rotation started
+		}
+		return current.UID != originalUID
+	}, 30*time.Second, 2*time.Second, "pod %q was rotated without a roll-grant", broker.PodName())
+	t.Logf("Pod %q kept UID %s without a roll-grant", broker.PodName(), originalUID)
+}
+
 func brokerPodShouldHaveEnv(ctx context.Context, t framework.TestingT, brokerName, envName, envValue string) {
 	key := t.ResourceKey(brokerName)
 	require.Eventually(t, func() bool {

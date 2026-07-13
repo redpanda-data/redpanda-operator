@@ -187,6 +187,7 @@ func init() {
 	framework.RegisterStep(`^cluster "([^"]*)" admin API should show (\d+) brokers$`, clusterAdminAPIShouldShowBrokers)
 	framework.RegisterStep(`^I update Broker "([^"]*)" pod template with env "([^"]*)" for cluster "([^"]*)"$`, updateBrokerPodTemplateEnv)
 	framework.RegisterStep(`^Broker "([^"]*)" pod should have env "([^"]*)" = "([^"]*)"$`, brokerPodShouldHaveEnv)
+	framework.RegisterStep(`^Broker "([^"]*)" pod should not be rotated$`, brokerPodShouldNotBeRotated)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

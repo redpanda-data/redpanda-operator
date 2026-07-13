@@ -11,8 +11,10 @@ Feature: Broker CRD pod adoption
     Then all Broker CRs for cluster "broker-test" should be Running
     And cluster "broker-test" admin API should show 3 brokers
     When I update Broker "broker-test-0" pod template with env "ROTATION_TEST=applied" for cluster "broker-test"
-    # Rotation IS gated: only the targeted broker gets a grant.
-    And I grant a roll-grant to Broker "broker-test-0"
+    # Rotation IS gated: an outdated pod without a grant must stay put...
+    Then Broker "broker-test-0" pod should not be rotated
+    # ...and only once granted may the rotation proceed.
+    When I grant a roll-grant to Broker "broker-test-0"
     Then Broker "broker-test-0" pod should have env "ROTATION_TEST" = "applied"
     And all Broker CRs for cluster "broker-test" should be Running
     When I set decommission on Broker "broker-test-2"
