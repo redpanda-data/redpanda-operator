@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,6 +50,15 @@ func orphanDeleteStatefulSet(ctx context.Context, t framework.TestingT, clusterN
 	var sts appsv1.StatefulSet
 	require.NoError(t, t.Get(ctx, key, &sts))
 	require.NoError(t, t.Delete(ctx, &sts, runtimeclient.PropagationPolicy(metav1.DeletePropagationOrphan)))
+
+	// The Redpanda controller recreates a deleted StatefulSet if a racing
+	// pre-pause reconcile is still in flight; a recreated STS would re-adopt
+	// the orphaned pods and corrupt the broker-count assertions. Fail fast
+	// with a clear message instead (mirrors the integration-test guard).
+	require.Eventually(t, func() bool {
+		var recreated appsv1.StatefulSet
+		return apierrors.IsNotFound(t.Get(ctx, key, &recreated))
+	}, time.Minute, 2*time.Second, "StatefulSet %q still exists after orphan-delete (recreated by a racing reconcile?)", clusterName)
 	t.Logf("Orphan-deleted StatefulSet %q", clusterName)
 }
 
@@ -76,7 +86,13 @@ func createBrokerCRsForCluster(ctx context.Context, t framework.TestingT, cluste
 	for i, pod := range pods.Items {
 		brokerName := fmt.Sprintf("%s-%d", key.Name, i)
 
-		specBytes, err := yaml.Marshal(pod.Spec)
+		// The live pod spec carries instance-specific scheduling state.
+		// NodeName in particular would pin every replacement pod to the
+		// original node — if that node is gone, scheduling times out.
+		podSpec := pod.Spec
+		podSpec.NodeName = ""
+
+		specBytes, err := yaml.Marshal(podSpec)
 		require.NoError(t, err)
 		checksum := fmt.Sprintf("%x", sha256.Sum256(specBytes))
 
@@ -108,7 +124,7 @@ func createBrokerCRsForCluster(ctx context.Context, t framework.TestingT, cluste
 				PodTemplate: redpandav1alpha2.BrokerPodTemplate{
 					Labels:      pod.Labels,
 					Annotations: map[string]string{redpandav1alpha2.BrokerConfigChecksumAnnotation: checksum},
-					Spec:        pod.Spec,
+					Spec:        podSpec,
 				},
 				Storage: redpandav1alpha2.BrokerStorage{
 					ExistingClaims: existingClaims,
