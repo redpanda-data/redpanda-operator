@@ -278,8 +278,17 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		if pod.Annotations == nil {
 			pod.Annotations = map[string]string{}
 		}
-		if cs := broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]; cs != "" {
-			pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = cs
+		// Stamp the desired checksum ONLY when the pod carries none — the
+		// STS→Broker migration case, where preconditions verified the pod
+		// already runs the desired config and adoption must not queue a
+		// pointless rotation. A pod that already carries a checksum
+		// (self-heal re-adoption after a raw CR deletion) keeps its live
+		// value: overwriting it with the desired one would mark a stale pod
+		// current and silently skip its rotation.
+		if _, ok := pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]; !ok {
+			if cs := broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]; cs != "" {
+				pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = cs
+			}
 		}
 		if err := controllerutil.SetControllerReference(broker, pod, scheme); err != nil {
 			return ctrl.Result{}, err
