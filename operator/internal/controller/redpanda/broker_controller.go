@@ -473,8 +473,20 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 			state.phase = redpandav1alpha2.BrokerPhaseDecommissioned
 			return ctrl.Result{}, nil
 		}
-		state.phase = redpandav1alpha2.BrokerPhaseDecommissioning
-		return ctrl.Result{}, nil
+		// reconcileBrokerRegistration skips decommissioning brokers, so the
+		// ID must be resolved live here — mirroring the deletion path —
+		// or an intent set before the first registration (or right after a
+		// status-update race) never actually starts the decommission and the
+		// broker stays a full cluster member while reporting Decommissioning.
+		currentID, err := r.resolveBrokerID(ctx, state.clusterName, broker, broker.PodName())
+		if err != nil || currentID == nil {
+			if err != nil {
+				log.FromContext(ctx).Info("could not resolve broker ID before decommission, will retry", "error", err)
+			}
+			state.phase = redpandav1alpha2.BrokerPhaseDecommissioning
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
+		broker.Status.BrokerID = currentID
 	}
 
 	decommResult, err := r.executeDecommission(ctx, state.clusterName, broker)
