@@ -462,12 +462,12 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 	l := log.FromContext(ctx)
 	podName := broker.PodName()
 
-	resolved, err := r.resolveBroker(ctx, state.clusterName, broker, state.pod, podName)
+	resolved, found, err := r.resolveBroker(ctx, state.clusterName, broker, state.pod, podName)
 	if err != nil {
 		l.Info("could not resolve broker ID, will retry", "error", err)
 		return ctrl.Result{RequeueAfter: requeueShort}, nil
 	}
-	if resolved == nil {
+	if !found {
 		if broker.Status.BrokerID != nil {
 			// Was registered, no longer a member (e.g. removed out of
 			// band): report unverified but let the chain continue.
@@ -535,8 +535,8 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		// or an intent set before the first registration (or right after a
 		// status-update race) never actually starts the decommission and the
 		// broker stays a full cluster member while reporting Decommissioning.
-		resolved, err := r.resolveBroker(ctx, state.clusterName, broker, state.pod, broker.PodName())
-		if err != nil || resolved == nil || resolved.MembershipStatus != rpadmin.MembershipStatusActive {
+		resolved, found, err := r.resolveBroker(ctx, state.clusterName, broker, state.pod, broker.PodName())
+		if err != nil || !found || resolved.MembershipStatus != rpadmin.MembershipStatusActive {
 			if err != nil {
 				log.FromContext(ctx).Info("could not resolve broker ID before decommission, will retry", "error", err)
 			}
@@ -861,12 +861,12 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 		// it live rather than skipping the decommission and leaving a dead
 		// membership entry behind.
 		if broker.Status.BrokerID == nil {
-			resolved, err := r.resolveBroker(ctx, clusterName, broker, &pod, podName)
+			resolved, found, err := r.resolveBroker(ctx, clusterName, broker, &pod, podName)
 			if err != nil {
 				l.Info("could not resolve broker ID before decommission, will retry", "error", err)
 				return ctrl.Result{RequeueAfter: requeueShort}, nil
 			}
-			if resolved != nil && resolved.MembershipStatus == rpadmin.MembershipStatusActive {
+			if found && resolved.MembershipStatus == rpadmin.MembershipStatusActive {
 				broker.Status.BrokerID = ptr.To(int32(resolved.NodeID))
 			}
 		}
@@ -1122,24 +1122,28 @@ func (r *BrokerReconciler) disableMaintenanceMode(ctx context.Context, clusterNa
 }
 
 // resolveBroker finds the cluster-membership entry backing this Broker's
-// pod. Matching handles every advertised-address form seen in the wild:
-// per-pod FQDN (matched by first DNS label), "host:port", bare host, and —
-// when the pod is known — a bare pod IP. More than one distinct match is
-// ambiguous and reported as no match rather than guessed at: right after a
+// pod. found reports whether an authoritative entry exists — false is the
+// COMMON case while a broker is still joining, so callers must branch on it
+// explicitly rather than relying on error or nilness.
+//
+// Matching handles every advertised-address form seen in the wild: per-pod
+// FQDN (matched by first DNS label), "host:port", bare host, and — when the
+// pod is known — a bare pod IP. More than one distinct match is ambiguous
+// and reported as not found rather than guessed at: right after a
 // decommission the membership list can briefly retain the dead
 // predecessor's entry under the SAME pod name (a replacement reuses it).
 // Callers that ADOPT the resolved id must additionally check the entry is
 // an active, alive member — see reconcileBrokerRegistration.
-func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker, pod *corev1.Pod, podName string) (*rpadmin.Broker, error) {
+func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker, pod *corev1.Pod, podName string) (resolved *rpadmin.Broker, found bool, err error) {
 	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer admin.Close()
 
 	brokers, err := admin.Brokers(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	var matches []rpadmin.Broker
@@ -1158,9 +1162,9 @@ func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string
 	}
 	switch len(matches) {
 	case 0:
-		return nil, nil
+		return nil, false, nil
 	case 1:
-		return &matches[0], nil
+		return &matches[0], true, nil
 	default:
 		// A dead predecessor's entry (PV remediation, broker replacement)
 		// lingers under the SAME reused pod name until it is ghost-
@@ -1174,11 +1178,11 @@ func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string
 			}
 		}
 		if len(live) == 1 {
-			return &live[0], nil
+			return &live[0], true, nil
 		}
 		log.FromContext(ctx).Info("ambiguous cluster-membership match for pod, refusing to guess",
 			"pod", podName, "matches", len(matches), "alive", len(live))
-		return nil, nil
+		return nil, false, nil
 	}
 }
 
