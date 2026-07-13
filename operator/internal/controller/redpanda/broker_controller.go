@@ -1056,7 +1056,9 @@ func (r *BrokerReconciler) ensureDrained(ctx context.Context, clusterName string
 // Returns false if the timeout hasn't elapsed or the node still exists.
 func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, broker *redpandav1alpha2.Broker, pod *corev1.Pod) (bool, error) {
 	if r.UnbindPVCsAfter <= 0 {
-		l.Info("PV affinity remediation disabled (unbind-pvcs-after=0)")
+		l.Info("broker pod is stuck on PV node affinity but remediation is disabled; " +
+			"set --unbind-pvcs-after to a non-zero duration to enable dead-node PV remediation " +
+			"(the broker will otherwise stay Stuck until the node returns or the PVC is removed manually)")
 		return false, nil
 	}
 
