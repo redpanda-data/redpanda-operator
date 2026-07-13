@@ -100,8 +100,18 @@ var (
 	BrokerDeletionPolicy = &AnnotationFeatureFlag[string]{
 		Key:     "operator.redpanda.com/broker-deletion-policy",
 		Default: "cascade",
+		// Only the two known policies are accepted (case-insensitively).
+		// Anything else errors so Get falls back to the documented default
+		// with a logged complaint — a typo like "orphaned" must not be
+		// silently interpreted as the destructive cascade branch without
+		// leaving a trace.
 		Parse: func(s string) (string, error) {
-			return s, nil
+			switch normalized := strings.ToLower(strings.TrimSpace(s)); normalized {
+			case "cascade", "orphan":
+				return normalized, nil
+			default:
+				return "", fmt.Errorf("invalid broker deletion policy %q: must be %q or %q", s, "cascade", "orphan")
+			}
 		},
 	}
 )

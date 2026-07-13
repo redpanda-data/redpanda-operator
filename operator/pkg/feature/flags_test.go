@@ -54,3 +54,21 @@ func TestParseRollGrantChecksumWithSlash(t *testing.T) {
 	_, _, ok := ParseRollGrant("abc/def/1234")
 	assert.False(t, ok)
 }
+
+func TestBrokerDeletionPolicyParse(t *testing.T) {
+	t.Parallel()
+
+	for _, valid := range []string{"cascade", "orphan", "Orphan", " CASCADE "} {
+		parsed, err := BrokerDeletionPolicy.Parse(valid)
+		require.NoError(t, err, "value %q must parse", valid)
+		assert.Contains(t, []string{"cascade", "orphan"}, parsed)
+	}
+
+	// A typo must NOT silently fall through to the destructive cascade
+	// branch: Parse errors and Get degrades to the default with a logged
+	// complaint.
+	for _, invalid := range []string{"orphaned", "retain", "delete", ""} {
+		_, err := BrokerDeletionPolicy.Parse(invalid)
+		assert.Error(t, err, "value %q must be rejected", invalid)
+	}
+}
