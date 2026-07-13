@@ -93,6 +93,11 @@ type brokerReconciliationState struct {
 	pod     *corev1.Pod                  // nil when pod does not exist yet
 	phase   redpandav1alpha2.BrokerPhase // empty = compute from pod status
 	granted bool
+	// clusterName is the multicluster-runtime cluster this request came
+	// from. Admin-API clients must be built for it: the Broker's pods live
+	// there, and targeting the local cluster's Redpanda instead would
+	// register/decommission/drain against the wrong cluster.
+	clusterName string
 	// initialStatus snapshots Status as fetched, so syncBrokerStatus can
 	// skip the API write when nothing changed (RFC Q11: rate-limit status
 	// updates).
@@ -154,13 +159,14 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 			}
 		}
 	} else {
-		return r.reconcileDelete(ctx, l, k8sClient, &broker, broker.PodName())
+		return r.reconcileDelete(ctx, l, k8sClient, req.ClusterName, &broker, broker.PodName())
 	}
 
 	state, err := r.fetchState(ctx, k8sClient, &broker)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+	state.clusterName = req.ClusterName
 
 	reconcilers := []brokerReconcilerFn{
 		r.reconcilePVCs,
@@ -364,7 +370,7 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 	}
 	if broker.Status.BrokerID != nil {
-		drained, err := r.ensureDrained(ctx, broker)
+		drained, err := r.ensureDrained(ctx, state.clusterName, broker)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("draining broker %d: %w", *broker.Status.BrokerID, err)
 		}
@@ -409,7 +415,7 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 	l := log.FromContext(ctx)
 	podName := broker.PodName()
 
-	currentID, err := r.resolveBrokerID(ctx, broker, podName)
+	currentID, err := r.resolveBrokerID(ctx, state.clusterName, broker, podName)
 	if err != nil {
 		l.Info("could not resolve broker ID, will retry", "error", err)
 		return ctrl.Result{RequeueAfter: requeueShort}, nil
@@ -442,7 +448,7 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 	}
 
 	state.registrationVerified = true
-	if err := r.disableMaintenanceMode(ctx, broker); err != nil {
+	if err := r.disableMaintenanceMode(ctx, state.clusterName, broker); err != nil {
 		l.Info("could not disable maintenance mode", "error", err)
 	}
 
@@ -471,7 +477,7 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		return ctrl.Result{}, nil
 	}
 
-	decommResult, err := r.executeDecommission(ctx, broker)
+	decommResult, err := r.executeDecommission(ctx, state.clusterName, broker)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -669,7 +675,7 @@ func (r *BrokerReconciler) executeRecommission(ctx context.Context, state *broke
 	broker := state.broker
 	brokerID := int(*broker.Status.BrokerID)
 
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, state.clusterName)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -694,11 +700,11 @@ type decommissionResult struct {
 	requeue bool
 }
 
-func (r *BrokerReconciler) executeDecommission(ctx context.Context, broker *redpandav1alpha2.Broker) (decommissionResult, error) {
+func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker) (decommissionResult, error) {
 	l := log.FromContext(ctx)
 	brokerID := int(*broker.Status.BrokerID)
 
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
 		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
 	}
@@ -748,7 +754,7 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, broker *redp
 //     deletion policy decides: "cascade" (default) lets the GC delete pod and
 //     PVCs with the CR — whole-cluster teardown, decommission is pointless —
 //     while "orphan" releases them.
-func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
+func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
 	if !controllerutil.ContainsFinalizer(broker, brokerFinalizerName) {
 		return ctrl.Result{}, nil
 	}
@@ -773,7 +779,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 		// it live rather than skipping the decommission and leaving a dead
 		// membership entry behind.
 		if broker.Status.BrokerID == nil {
-			brokerID, err := r.resolveBrokerID(ctx, broker, podName)
+			brokerID, err := r.resolveBrokerID(ctx, clusterName, broker, podName)
 			if err != nil {
 				l.Info("could not resolve broker ID before decommission, will retry", "error", err)
 				return ctrl.Result{RequeueAfter: requeueShort}, nil
@@ -781,7 +787,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 			broker.Status.BrokerID = brokerID
 		}
 		if broker.Status.BrokerID != nil {
-			result, err := r.executeDecommission(ctx, broker)
+			result, err := r.executeDecommission(ctx, clusterName, broker)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -921,11 +927,11 @@ func removeOwnerRefByUID(obj client.Object, uid types.UID) bool {
 
 // ensureDrained enables maintenance mode and returns true when leadership drain
 // is complete. Callers should requeue until this returns true.
-func (r *BrokerReconciler) ensureDrained(ctx context.Context, broker *redpandav1alpha2.Broker) (bool, error) {
+func (r *BrokerReconciler) ensureDrained(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker) (bool, error) {
 	l := log.FromContext(ctx)
 	brokerID := int(*broker.Status.BrokerID)
 
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
 		return false, err
 	}
@@ -1028,8 +1034,8 @@ func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logge
 	return true, nil
 }
 
-func (r *BrokerReconciler) disableMaintenanceMode(ctx context.Context, broker *redpandav1alpha2.Broker) error {
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+func (r *BrokerReconciler) disableMaintenanceMode(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker) error {
+	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
 		return err
 	}
@@ -1037,8 +1043,8 @@ func (r *BrokerReconciler) disableMaintenanceMode(ctx context.Context, broker *r
 	return admin.DisableMaintenanceMode(ctx, int(*broker.Status.BrokerID), false)
 }
 
-func (r *BrokerReconciler) resolveBrokerID(ctx context.Context, broker *redpandav1alpha2.Broker, podName string) (*int32, error) {
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, broker)
+func (r *BrokerReconciler) resolveBrokerID(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker, podName string) (*int32, error) {
+	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
 		return nil, err
 	}
