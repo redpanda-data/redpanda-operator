@@ -53,6 +53,17 @@ import (
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 
+// defaultUnbindPVCsAfter is the Broker controller's own dead-node PV
+// remediation timeout, used when --unbind-pvcs-after is not set. Remediation
+// must not silently stay disabled just because the (PVCUnbinder-oriented)
+// flag was left at its zero default: it only fires for pods stuck Pending on
+// PV node affinity whose Node OBJECT has been deleted from the API — a
+// strong dead-node signal — and it is additionally roll-grant-gated, so the
+// cluster controller serializes and health-gates it.
+// TODO: give the Broker controller its own flag (e.g.
+// --broker-unbind-pvcs-after) when the feature grows its GA config surface.
+const defaultUnbindPVCsAfter = 5 * time.Minute
+
 const requeueShort = 2 * time.Second
 
 // requeueDrain paces the leadership-drain poll during a granted rotation.
@@ -71,6 +82,11 @@ type BrokerReconciler struct {
 }
 
 func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFactory internalclient.ClientFactory, namespace string, unbindPVCsAfter time.Duration) error {
+	// --unbind-pvcs-after is honored when set; otherwise fall back to the
+	// controller's own default instead of disabling remediation.
+	if unbindPVCsAfter <= 0 {
+		unbindPVCsAfter = defaultUnbindPVCsAfter
+	}
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// Tests register several reconcilers against one manager under the
 		// same default controller names; production registers each once.
@@ -1063,10 +1079,10 @@ func (r *BrokerReconciler) ensureDrained(ctx context.Context, clusterName string
 // Returns true if remediation was performed (caller should requeue).
 // Returns false if the timeout hasn't elapsed or the node still exists.
 func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, broker *redpandav1alpha2.Broker, pod *corev1.Pod) (bool, error) {
+	// Unreachable through SetupBrokerController (which defaults the value);
+	// guards direct construction only.
 	if r.UnbindPVCsAfter <= 0 {
-		l.Info("broker pod is stuck on PV node affinity but remediation is disabled; " +
-			"set --unbind-pvcs-after to a non-zero duration to enable dead-node PV remediation " +
-			"(the broker will otherwise stay Stuck until the node returns or the PVC is removed manually)")
+		l.Info("PV affinity remediation disabled (UnbindPVCsAfter=0); broker will stay Stuck until the node returns or the PVC is removed manually")
 		return false, nil
 	}
 
