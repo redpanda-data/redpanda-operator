@@ -84,6 +84,10 @@ func init() {
 	// I can helm upgrade "release-name" "chart/path" with values:
 	// I helm upgrade "release-name" "chart/path" --version v1.2.3 with values:
 	framework.RegisterStep(`I(?: can)? helm upgrade "([^"]+)" "([^"]+)"(?: --version (\S+))? with values:`, iHelmUpgrade)
+	// the stored manifest for release "release-name" re-renders Secret "secret-name" without server-set metadata
+	framework.RegisterStep(`^the stored manifest for release "([^"]+)" re-renders Secret "([^"]+)" without server-set metadata$`, helmRerendersSecretWithoutServerSetMetadata)
+	// the stored manifest for release "release-name" re-renders Secret "secret-name" with the password in use
+	framework.RegisterStep(`^the stored manifest for release "([^"]+)" re-renders Secret "([^"]+)" with the password in use$`, helmRerendersSecretWithLivePassword)
 
 	// Helm migration scenario steps
 	framework.RegisterStep(`^the Kubernetes object of type "([^"]*)" with name "([^"]*)" has an OwnerReference pointing to the cluster "([^"]*)"$`, kubernetesObjectHasClusterOwner)
