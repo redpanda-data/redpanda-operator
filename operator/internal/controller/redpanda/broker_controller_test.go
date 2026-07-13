@@ -31,6 +31,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -197,6 +198,10 @@ func (s *BrokerControllerSuite) TestFinalizerPodGone() {
 	defer cancel()
 
 	broker := s.minimalBroker("no-such-cluster")
+	// Make pod creation impossible (invalid container name): pod-ensure is
+	// unconditional, so an ordinary Broker would have a pod by the time the
+	// deletion reconcile runs and the pod-gone branch would never be hit.
+	broker.Spec.PodTemplate.Spec.Containers[0].Name = "Invalid_Container_Name"
 	require.NoError(t, c.Create(ctx, broker))
 
 	s.waitForFinalizer(t, ctx, c, broker)
@@ -204,6 +209,12 @@ func (s *BrokerControllerSuite) TestFinalizerPodGone() {
 	require.NoError(t, c.Delete(ctx, broker))
 
 	s.waitForDeletion(t, ctx, c, broker)
+
+	var pods corev1.PodList
+	require.NoError(t, c.List(ctx, &pods, client.InNamespace(broker.Namespace)))
+	for _, p := range pods.Items {
+		assert.NotEqual(t, broker.PodName(), p.Name, "no pod should ever have existed for the deleted Broker")
+	}
 }
 
 // TestFinalizerPodNotOwned verifies the rollback case: if the pod exists but is
@@ -217,9 +228,19 @@ func (s *BrokerControllerSuite) TestFinalizerPodNotOwned() {
 	clusterName := "rollback-" + testenv.RandString(4)
 	podName := clusterName + "-0"
 
+	// The pod carries a FOREIGN controller ownerRef: an ownerless pod would
+	// be adopted by the reconciler before the deletion below, silently
+	// turning this into a release-path test instead of the rollback branch.
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
+			OwnerReferences: []metav1.OwnerReference{{
+				APIVersion: "apps/v1",
+				Kind:       "StatefulSet",
+				Name:       clusterName,
+				UID:        types.UID("foreign-owner-uid"),
+				Controller: ptr.To(true),
+			}},
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
@@ -374,6 +395,19 @@ func (s *BrokerControllerSuite) TestFinalizerRawDeletionReleases() {
 	var pod corev1.Pod
 	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: targetPodName, Namespace: rp.Namespace}, &pod))
 	assert.Nil(t, metav1.GetControllerOf(&pod), "pod should have been released from the deleted Broker CR")
+
+	// The PVCs survive too, with the CR's ownerRefs stripped — this is the
+	// data-preservation half of the release contract.
+	for _, vol := range pod.Spec.Volumes {
+		if vol.PersistentVolumeClaim == nil {
+			continue
+		}
+		var pvc corev1.PersistentVolumeClaim
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: vol.PersistentVolumeClaim.ClaimName, Namespace: rp.Namespace}, &pvc))
+		for _, ref := range pvc.OwnerReferences {
+			assert.NotEqual(t, target.UID, ref.UID, "PVC %s still owned by the deleted Broker CR", pvc.Name)
+		}
+	}
 
 	// Membership is untouched: still 3 brokers.
 	bs, err := admin.Brokers(ctx)
