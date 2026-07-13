@@ -31,7 +31,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -231,14 +230,20 @@ func (s *BrokerControllerSuite) TestFinalizerPodNotOwned() {
 	// The pod carries a FOREIGN controller ownerRef: an ownerless pod would
 	// be adopted by the reconciler before the deletion below, silently
 	// turning this into a release-path test instead of the rollback branch.
+	// The owner must be a REAL object — the GC deletes orphans of
+	// non-existent owners, which would race the whole test.
+	foreignOwner := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: clusterName + "-owner"},
+	}
+	require.NoError(t, c.Create(ctx, foreignOwner))
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: podName,
 			OwnerReferences: []metav1.OwnerReference{{
-				APIVersion: "apps/v1",
-				Kind:       "StatefulSet",
-				Name:       clusterName,
-				UID:        types.UID("foreign-owner-uid"),
+				APIVersion: "v1",
+				Kind:       "ConfigMap",
+				Name:       foreignOwner.Name,
+				UID:        foreignOwner.UID,
 				Controller: ptr.To(true),
 			}},
 		},
