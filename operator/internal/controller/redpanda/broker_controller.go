@@ -323,6 +323,13 @@ func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brok
 }
 
 func (r *BrokerReconciler) reconcilePVAffinity(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+	// A decommissioning broker is draining: deleting its pod or discarding
+	// its storage mid-drain would interrupt partition movement (and clear
+	// the identity the decommission needs). reconcileDecommission owns the
+	// pod's fate from here on.
+	if state.broker.Spec.Decommission {
+		return ctrl.Result{}, nil
+	}
 	if state.pod == nil || !pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
 		return ctrl.Result{}, nil
 	}
@@ -355,6 +362,11 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 		return ctrl.Result{}, nil
 	}
 	broker := state.broker
+	// Never rotate a decommissioning broker: the pod must keep running
+	// (draining) until the decommission completes and deletes it.
+	if broker.Spec.Decommission {
+		return ctrl.Result{}, nil
+	}
 	// PodOutdated covers both the config checksum and the restart-requiring
 	// cluster-config version (see resources.MarkBrokersForRestart); the
 	// recreated pod inherits both from the desired template, clearing the
