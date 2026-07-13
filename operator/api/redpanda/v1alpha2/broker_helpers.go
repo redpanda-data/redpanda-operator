@@ -50,13 +50,17 @@ func (b *Broker) PodOutdated(pod *corev1.Pod) bool {
 }
 
 func (b *Broker) BuildPod(podName string) *corev1.Pod {
+	// Deep-copy the template: its PodSpec, labels and annotations otherwise
+	// share memory with the Broker object (often an informer-cache copy) —
+	// any caller mutating the returned pod would corrupt the CR.
+	tpl := b.Spec.PodTemplate.DeepCopy()
 	pod := &corev1.Pod{
-		Spec: b.Spec.PodTemplate.Spec,
+		Spec: tpl.Spec,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        podName,
 			Namespace:   b.Namespace,
-			Annotations: b.Spec.PodTemplate.Annotations,
-			Labels:      b.Spec.PodTemplate.Labels,
+			Annotations: tpl.Annotations,
+			Labels:      tpl.Labels,
 		},
 	}
 	return pod

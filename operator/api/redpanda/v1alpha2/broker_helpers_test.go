@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -60,4 +61,78 @@ func TestBrokerPodName(t *testing.T) {
 		},
 	}
 	assert.Equal(t, "rp-high-mem-1", nodePoolBroker.PodName())
+}
+
+func TestPodOutdated(t *testing.T) {
+	broker := &Broker{
+		Spec: BrokerSpec{
+			PodTemplate: BrokerPodTemplate{
+				Annotations: map[string]string{
+					BrokerConfigChecksumAnnotation:       "checksum-a",
+					BrokerClusterConfigVersionAnnotation: "7",
+				},
+			},
+		},
+	}
+	pod := func(annotations map[string]string) *corev1.Pod {
+		return &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Annotations: annotations}}
+	}
+
+	// In-sync pod: both rotation keys match.
+	assert.False(t, broker.PodOutdated(pod(map[string]string{
+		BrokerConfigChecksumAnnotation:       "checksum-a",
+		BrokerClusterConfigVersionAnnotation: "7",
+	})))
+
+	// Checksum drift demands rotation.
+	assert.True(t, broker.PodOutdated(pod(map[string]string{
+		BrokerConfigChecksumAnnotation:       "checksum-b",
+		BrokerClusterConfigVersionAnnotation: "7",
+	})))
+
+	// Restart-marker drift demands rotation.
+	assert.True(t, broker.PodOutdated(pod(map[string]string{
+		BrokerConfigChecksumAnnotation:       "checksum-a",
+		BrokerClusterConfigVersionAnnotation: "6",
+	})))
+
+	// A missing pod annotation counts as drift when the template sets one.
+	assert.True(t, broker.PodOutdated(pod(map[string]string{
+		BrokerConfigChecksumAnnotation: "checksum-a",
+	})))
+
+	// An UNSET desired key never demands rotation, whatever the pod has.
+	broker.Spec.PodTemplate.Annotations = map[string]string{}
+	assert.False(t, broker.PodOutdated(pod(map[string]string{
+		BrokerConfigChecksumAnnotation: "anything",
+	})))
+}
+
+func TestBuildPodDeepCopies(t *testing.T) {
+	broker := &Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp-0", Namespace: "ns"},
+		Spec: BrokerSpec{
+			ClusterRef:   ClusterRef{Name: "rp"},
+			NetworkIndex: ptr.To(int32(0)),
+			PodTemplate: BrokerPodTemplate{
+				Labels:      map[string]string{"a": "1"},
+				Annotations: map[string]string{BrokerConfigChecksumAnnotation: "checksum-a"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda:v1"}},
+				},
+			},
+		},
+	}
+
+	pod := broker.BuildPod(broker.PodName())
+	assert.Equal(t, "rp-0", pod.Name)
+	assert.Equal(t, "checksum-a", pod.Annotations[BrokerConfigChecksumAnnotation])
+
+	// Mutating the built pod must not corrupt the Broker's template.
+	pod.Annotations[BrokerConfigChecksumAnnotation] = "mutated"
+	pod.Labels["a"] = "mutated"
+	pod.Spec.Containers[0].Image = "mutated"
+	assert.Equal(t, "checksum-a", broker.Spec.PodTemplate.Annotations[BrokerConfigChecksumAnnotation])
+	assert.Equal(t, "1", broker.Spec.PodTemplate.Labels["a"])
+	assert.Equal(t, "redpanda:v1", broker.Spec.PodTemplate.Spec.Containers[0].Image)
 }

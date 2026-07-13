@@ -92,8 +92,9 @@ var (
 	// when its owning cluster is deleted: "cascade" (default) lets the GC
 	// delete them with the Broker CR — whole-cluster teardown — while
 	// "orphan" releases them (ownerRefs stripped, data survives). Users set
-	// it on the Cluster; the cluster controller propagates it onto each
-	// Broker CR so it stays readable after the Cluster object is gone.
+	// it on the Cluster; the owning cluster controller (once wired up) will
+	// propagate it onto each Broker CR so it stays readable after the
+	// Cluster object is gone.
 	// Deletion of a single Broker CR while its cluster is alive always
 	// releases the pod and PVCs, regardless of this policy.
 	// Not registered in any bundle — never auto-set.
