@@ -120,8 +120,11 @@ type BrokerSpec struct {
 	// For ordinal-named pods this is the pod ordinal; the V2 chart uses it
 	// to select external.addresses[networkIndex]. The value is captured from
 	// the parsed ordinal at migration time and preserved across pod rotation.
-	// +optional
-	NetworkIndex *int32 `json:"networkIndex,omitempty"`
+	// Required: the index is also the pod-name suffix, so an omitted value
+	// would collide with an explicit networkIndex: 0.
+	// +required
+	// +kubebuilder:validation:Minimum=0
+	NetworkIndex *int32 `json:"networkIndex"`
 
 	// PodTemplate is the fully resolved pod spec for this broker.
 	PodTemplate BrokerPodTemplate `json:"podTemplate"`

@@ -683,7 +683,10 @@ explicitly set. + |  | Optional: \{} +
 | *`networkIndex`* __integer__ | NetworkIndex is the stable external-addressing slot for this broker. +
 For ordinal-named pods this is the pod ordinal; the V2 chart uses it +
 to select external.addresses[networkIndex]. The value is captured from +
-the parsed ordinal at migration time and preserved across pod rotation. + |  | Optional: \{} +
+the parsed ordinal at migration time and preserved across pod rotation. +
+Required: the index is also the pod-name suffix, so an omitted value +
+would collide with an explicit networkIndex: 0. + |  | Minimum: 0 +
+Required: \{} +
 
 | *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpodtemplate[$$BrokerPodTemplate$$]__ | PodTemplate is the fully resolved pod spec for this broker. + |  | 
 | *`storage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]__ | Storage defines PVC templates or references to existing claims. + |  | 

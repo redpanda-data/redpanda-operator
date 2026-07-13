@@ -164,6 +164,23 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		return r.reconcileDelete(ctx, l, k8sClient, req.ClusterName, &broker, broker.PodName())
 	}
 
+	// A NodePool-referenced Broker without the cluster-name label cannot
+	// derive its pod name — it would come out as "-<pool>-<index>", an
+	// invalid DNS name rejected on every pod create. Surface Stuck instead
+	// of error-looping. (The label is convention until CEL/webhook
+	// validation exists.)
+	if broker.Spec.ClusterRef.IsNodePool() && broker.Labels[redpandav1alpha2.ClusterNameLabel] == "" {
+		l.Info("NodePool-referenced Broker is missing the cluster-name label; cannot derive its pod name",
+			"label", redpandav1alpha2.ClusterNameLabel)
+		state := &brokerReconciliationState{
+			broker:        &broker,
+			phase:         redpandav1alpha2.BrokerPhaseStuck,
+			clusterName:   req.ClusterName,
+			initialStatus: broker.Status.DeepCopy(),
+		}
+		return r.syncBrokerStatus(ctx, state, k8sCluster, ctrl.Result{RequeueAfter: periodicRequeue})
+	}
+
 	state, err := r.fetchState(ctx, k8sClient, &broker)
 	if err != nil {
 		return ctrl.Result{}, err
