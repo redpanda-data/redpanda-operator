@@ -1162,8 +1162,22 @@ func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string
 	case 1:
 		return &matches[0], nil
 	default:
+		// A dead predecessor's entry (PV remediation, broker replacement)
+		// lingers under the SAME reused pod name until it is ghost-
+		// decommissioned, so plain ambiguity-refusal would wedge recovery
+		// forever. At most one LIVE process can advertise the address at a
+		// time — a unique active+alive match is authoritative.
+		var live []rpadmin.Broker
+		for _, b := range matches {
+			if brokerActiveAndAlive(&b) {
+				live = append(live, b)
+			}
+		}
+		if len(live) == 1 {
+			return &live[0], nil
+		}
 		log.FromContext(ctx).Info("ambiguous cluster-membership match for pod, refusing to guess",
-			"pod", podName, "matches", len(matches))
+			"pod", podName, "matches", len(matches), "alive", len(live))
 		return nil, nil
 	}
 }
