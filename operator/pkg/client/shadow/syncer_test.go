@@ -118,6 +118,15 @@ func TestSyncer(t *testing.T) {
 					},
 				}},
 			},
+			ClientOptions: &redpandav1alpha2.ShadowLinkClientOptions{
+				FetchMinBytes:          1,
+				FetchWaitMaxMs:         50,
+				FetchMaxBytes:          1048576,
+				FetchPartitionMaxBytes: 524288,
+				MetadataMaxAgeMs:       5000,
+				ConnectionTimeoutMs:    2000,
+				RetryBackoffMs:         250,
+			},
 		},
 	}
 
@@ -149,6 +158,21 @@ func TestSyncer(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return clusterTwo.hasACL(t, ctx, user)
 	}, syncRetryPeriod, 1*time.Second, "cluster two never had ACL synchronized")
+
+	// Every clientOptions field set on the CR is applied on the broker
+	// (effective_* reflects the resolved value). Per-field CR->API mapping and
+	// the zero-passthrough default behavior are covered by TestConvertClientOptions.
+	require.Eventually(t, func() bool {
+		return clusterTwo.shadowLinkClientOptions(t, ctx, linkName).GetEffectiveFetchMinBytes() == 1
+	}, syncRetryPeriod, 1*time.Second, "client options never applied on the broker")
+	clientOptions := clusterTwo.shadowLinkClientOptions(t, ctx, linkName)
+	require.Equal(t, int32(1), clientOptions.GetEffectiveFetchMinBytes())
+	require.Equal(t, int32(50), clientOptions.GetEffectiveFetchWaitMaxMs())
+	require.Equal(t, int32(1048576), clientOptions.GetEffectiveFetchMaxBytes())
+	require.Equal(t, int32(524288), clientOptions.GetEffectiveFetchPartitionMaxBytes())
+	require.Equal(t, int32(5000), clientOptions.GetEffectiveMetadataMaxAgeMs())
+	require.Equal(t, int32(2000), clientOptions.GetEffectiveConnectionTimeoutMs())
+	require.Equal(t, int32(250), clientOptions.GetEffectiveRetryBackoffMs())
 
 	var clusterOneOffset int64
 	var clusterTwoOffset int64
@@ -290,6 +314,17 @@ func (c *cluster) hasActiveMirroredTopics(t *testing.T, ctx context.Context, lin
 		}
 	}
 	return true
+}
+
+func (c *cluster) shadowLinkClientOptions(t *testing.T, ctx context.Context, linkName string) *adminv2api.ShadowLinkClientOptions {
+	t.Helper()
+
+	response, err := c.client.ShadowLinkService().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
+		Name: linkName,
+	}))
+	require.NoError(t, err)
+
+	return response.Msg.ShadowLink.GetConfigurations().GetClientOptions()
 }
 
 func (c *cluster) createACL(t *testing.T, ctx context.Context, user string) {

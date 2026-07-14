@@ -44,6 +44,61 @@ spec:
             type: object
           spec:
             properties:
+              clientOptions:
+                description: |-
+                  Tuning knobs for the Kafka client the shadow cluster uses to fetch data
+                  from the source cluster. Connection details (bootstrap servers, TLS) are
+                  derived from sourceCluster and are not configurable here; only the mutable
+                  performance/latency knobs are exposed.
+                properties:
+                  connectionTimeoutMs:
+                    description: Connection timeout to the source cluster in milliseconds.
+                      If 0, defaults to 1000ms.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  fetchMaxBytes:
+                    description: Maximum bytes returned by a single fetch request.
+                      If 0, defaults to 20 MiB (20971520).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  fetchMinBytes:
+                    description: |-
+                      Minimum bytes the source broker accumulates before answering a fetch
+                      request. Lowering this reduces replication latency at low throughput, at
+                      the cost of more, smaller fetches. If 0, defaults to 5 MiB (5242880).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  fetchPartitionMaxBytes:
+                    description: Maximum bytes returned per partition in a fetch request.
+                      If 0, defaults to 5 MiB (5242880).
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  fetchWaitMaxMs:
+                    description: |-
+                      Maximum time in milliseconds the source broker waits to satisfy
+                      fetchMinBytes before answering a fetch request. Lowering this caps the
+                      worst-case replication latency when fetchMinBytes is not met. If 0,
+                      defaults to 500ms.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  metadataMaxAgeMs:
+                    description: How often in milliseconds the client refreshes source
+                      cluster metadata. If 0, defaults to 10000ms.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                  retryBackoffMs:
+                    description: Base backoff between connection retries in milliseconds.
+                      If 0, defaults to 100ms.
+                    format: int32
+                    minimum: 0
+                    type: integer
+                type: object
               consumerOffsetSyncOptions:
                 description: Consumer offset sync options
                 properties:
