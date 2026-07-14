@@ -455,7 +455,7 @@ type ShadowLinkSchemaRegistryAPIOptions struct {
 	// registry.
 	Authentication *ShadowLinkSchemaRegistryAuthentication `json:"authentication,omitempty"`
 	// TLS settings used to connect to the source schema registry.
-	TLS *CommonTLS `json:"tls,omitempty"`
+	TLS *ShadowLinkSchemaRegistryTLS `json:"tls,omitempty"`
 	// How often to poll the source registry for incremental changes.
 	// If not provided, the cluster default (10s) is used.
 	TailInterval *metav1.Duration `json:"tailInterval,omitempty"`
@@ -493,6 +493,30 @@ type ShadowLinkSchemaRegistryBasicAuthentication struct {
 	// Password used for basic authentication, for example a Confluent
 	// Schema Registry API secret. May reference a Kubernetes Secret.
 	Password ValueSource `json:"password"`
+}
+
+// TLS settings used to connect to a source schema registry over its REST
+// API. Only the fields below are honored for schema registry connections;
+// unlike the Kafka API TLS configuration there is no insecureSkipTlsVerify
+// escape hatch.
+type ShadowLinkSchemaRegistryTLS struct {
+	// Enabled turns on TLS for the connection to the source schema registry.
+	// Set this to true when the registry is served by publicly issued
+	// certificates (for example Confluent Cloud) and no caCert, cert, or key
+	// needs to be supplied. Providing any of caCert, cert, or key implies TLS
+	// regardless of this field.
+	Enabled bool `json:"enabled,omitempty"`
+	// CaCert references the certificate authority used to verify the source
+	// schema registry's TLS certificate. May reference a Kubernetes Secret.
+	CaCert *ValueSource `json:"caCert,omitempty"`
+	// Cert references the client public certificate used to establish an mTLS
+	// connection to the source schema registry. May reference a Kubernetes
+	// Secret.
+	Cert *ValueSource `json:"cert,omitempty"`
+	// Key references the client private key used to establish an mTLS
+	// connection to the source schema registry. If cert is provided, key must
+	// be provided as well. May reference a Kubernetes Secret.
+	Key *ValueSource `json:"key,omitempty"`
 }
 
 // Selects which contexts and subjects are replicated from a source schema

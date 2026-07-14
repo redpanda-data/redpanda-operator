@@ -299,9 +299,10 @@ func remoteClusterSettingsFromV1(
 			return settings, fmt.Errorf("could not create tls configuration for internal kafka API: %w", err)
 		}
 		settings.TLSSettings = &shadow.TLSSettings{
-			CA:   tlsConfig.CA,
-			Cert: tlsConfig.Cert,
-			Key:  tlsConfig.Key,
+			Enabled: true,
+			CA:      tlsConfig.CA,
+			Cert:    tlsConfig.Cert,
+			Key:     tlsConfig.Key,
 		}
 	}
 

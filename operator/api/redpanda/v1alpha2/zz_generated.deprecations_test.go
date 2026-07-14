@@ -372,15 +372,6 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 			name: "ShadowLink",
 			obj: &ShadowLink{
 				Spec: ShadowLinkSpec{
-					SchemaRegistrySyncOptions: ptr.To(ShadowLinkSchemaRegistrySyncOptions{
-						ShadowSchemaRegistryAPI: ptr.To(ShadowLinkSchemaRegistryAPIOptions{
-							TLS: ptr.To(CommonTLS{
-								DeprecatedCaCert: ptr.To(SecretKeyRef{}),
-								DeprecatedCert:   ptr.To(SecretKeyRef{}),
-								DeprecatedKey:    ptr.To(SecretKeyRef{}),
-							}),
-						}),
-					}),
 					ShadowCluster: ptr.To(ClusterSource{
 						StaticConfiguration: ptr.To(StaticConfigurationSource{
 							Admin: ptr.To(AdminAPISpec{
@@ -512,9 +503,6 @@ func TestDeprecatedFieldWarnings(t *testing.T) {
 				"field 'spec.sourceCluster.staticConfiguration.schemaRegistry.tls.keySecretRef' is deprecated and set",
 				"field 'spec.sourceCluster.staticConfiguration.schemaRegistry.sasl.passwordSecretRef' is deprecated and set",
 				"field 'spec.sourceCluster.staticConfiguration.schemaRegistry.sasl.token' is deprecated and set",
-				"field 'spec.schemaRegistrySyncOptions.shadowSchemaRegistryAPI.tls.caCertSecretRef' is deprecated and set",
-				"field 'spec.schemaRegistrySyncOptions.shadowSchemaRegistryAPI.tls.certSecretRef' is deprecated and set",
-				"field 'spec.schemaRegistrySyncOptions.shadowSchemaRegistryAPI.tls.keySecretRef' is deprecated and set",
 			},
 		},
 		{
