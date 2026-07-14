@@ -600,8 +600,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -1515,8 +1513,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2209,8 +2205,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -3151,8 +3145,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -3865,8 +3857,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -4793,8 +4783,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -5651,8 +5639,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -6782,8 +6768,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -7581,8 +7565,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -8510,8 +8492,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -9208,8 +9188,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -10175,8 +10153,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -10961,8 +10937,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -11974,8 +11948,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -12793,8 +12765,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -13739,8 +13709,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -14440,8 +14408,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -15374,8 +15340,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -16077,8 +16041,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -17043,8 +17005,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -17744,8 +17704,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -18518,8 +18476,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -19233,8 +19189,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -20174,8 +20128,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -21051,8 +21003,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -22199,8 +22149,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -22909,8 +22857,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -23729,8 +23675,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -24418,8 +24362,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -25361,8 +25303,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -26070,8 +26010,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -27005,8 +26943,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -28081,8 +28017,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -29233,8 +29167,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -29943,8 +29875,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -30917,8 +30847,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -31776,8 +31704,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -32867,8 +32793,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -33947,8 +33871,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35037,8 +34959,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35898,8 +35818,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -37228,8 +37146,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -37937,8 +37853,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -38884,8 +38798,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -39760,8 +39672,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -41016,8 +40926,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -42078,8 +41986,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -43216,8 +43122,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -44345,8 +44249,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -45507,8 +45409,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -46227,8 +46127,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -47375,8 +47273,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -48244,8 +48140,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -49421,8 +49315,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -50820,8 +50712,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -52152,8 +52042,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -52972,8 +52860,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -53941,8 +53827,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -54804,8 +54688,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -56205,8 +56087,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -58645,8 +58525,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -60150,8 +60028,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -61823,8 +61699,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -63064,8 +62938,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -65471,8 +65343,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -66950,8 +66820,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -67769,8 +67637,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -69285,8 +69151,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -70776,8 +70640,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -72011,8 +71873,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -73586,8 +73446,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -75058,8 +74916,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -75898,8 +75754,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -77184,8 +77038,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -78192,8 +78044,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -79718,8 +79568,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -80537,8 +80385,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -81966,8 +81812,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -82788,8 +82632,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -83704,8 +83546,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -84398,8 +84238,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -85356,8 +85194,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86141,8 +85977,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -87099,8 +86933,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -87883,8 +87715,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -88797,8 +88627,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -89491,8 +89319,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -90422,8 +90248,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -91116,8 +90940,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -92030,8 +91852,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -92724,8 +92544,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -93638,8 +93456,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -94332,8 +94148,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -95246,8 +95060,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -95940,8 +95752,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -96862,8 +96672,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -97556,8 +97364,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -98478,8 +98284,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -99172,8 +98976,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -100120,8 +99922,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -100814,8 +100614,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -101852,8 +101650,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -102546,8 +102342,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -103496,8 +103290,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -104190,8 +103982,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -105140,8 +104930,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -105834,8 +105622,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -106783,8 +106569,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -107493,8 +107277,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -108512,8 +108294,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -109313,8 +109093,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -110387,8 +110165,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -111188,8 +110964,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -112256,8 +112030,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -113057,8 +112829,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -114058,8 +113828,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -114859,8 +114627,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -115852,8 +115618,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -116637,8 +116401,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -117682,8 +117444,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -118376,8 +118136,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -119297,8 +119055,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -119991,8 +119747,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -120906,8 +120660,6 @@ rules:
   - clusters
   verbs:
   - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
