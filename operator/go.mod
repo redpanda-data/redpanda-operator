@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/operator
 
-go 1.26.4
+go 1.26.5
 
 require (
 	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260624144219-f1d5d6c05e3a.1

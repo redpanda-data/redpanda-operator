@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/acceptance
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/cert-manager/cert-manager v1.19.3

@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/charts/console/v3
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/cloudhut/common v0.11.0

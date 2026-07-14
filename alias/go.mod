@@ -1,3 +1,3 @@
 module github.com/redpanda-data/redpanda-operator/alias
 
-go 1.26.4
+go 1.26.5
