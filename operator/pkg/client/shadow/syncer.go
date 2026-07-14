@@ -15,6 +15,7 @@ import (
 	"errors"
 	"strings"
 
+	"buf.build/gen/go/redpandadata/core/connectrpc/go/redpanda/core/admin/v2/adminv2connect"
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -27,18 +28,23 @@ import (
 // Syncer synchronizes Schemas for the given object to Redpanda.
 type Syncer struct {
 	client *rpadmin.AdminAPI
+	// shadowLinks is the service client used for all shadow link RPCs. It is
+	// held as an interface so tests can inject a fake to exercise wire-level
+	// behavior (e.g. the legacy-update-mask retry) deterministically.
+	shadowLinks adminv2connect.ShadowLinkServiceClient
 }
 
 // NewSyncer initializes a Syncer.
 func NewSyncer(client *rpadmin.AdminAPI) *Syncer {
 	return &Syncer{
-		client: client,
+		client:      client,
+		shadowLinks: client.ShadowLinkService(),
 	}
 }
 
 // Sync synchronizes the shadow link in Redpanda.
 func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) (*redpandav1alpha2.ShadowLinkStatus, error) {
-	response, err := s.client.ShadowLinkService().GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
+	response, err := s.shadowLinks.GetShadowLink(ctx, connect.NewRequest(&adminv2api.GetShadowLinkRequest{
 		Name: o.Name,
 	}))
 	var existing *adminv2api.GetShadowLinkResponse
@@ -66,7 +72,7 @@ func (s *Syncer) Sync(ctx context.Context, o *redpandav1alpha2.ShadowLink, remot
 
 	// creation
 	if existing == nil {
-		response, err := s.client.ShadowLinkService().CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
+		response, err := s.shadowLinks.CreateShadowLink(ctx, connect.NewRequest(&adminv2api.CreateShadowLinkRequest{
 			ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
 		}))
 		if err != nil {
@@ -105,7 +111,7 @@ var (
 )
 
 func (s *Syncer) updateShadowLink(ctx context.Context, o *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings, maskPaths []string) (*connect.Response[adminv2api.UpdateShadowLinkResponse], error) {
-	return s.client.ShadowLinkService().UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
+	return s.shadowLinks.UpdateShadowLink(ctx, connect.NewRequest(&adminv2api.UpdateShadowLinkRequest{
 		ShadowLink: convertCRDToAPIShadowLink(o, remoteClusterSettings),
 		UpdateMask: &fieldmaskpb.FieldMask{
 			Paths: maskPaths,
@@ -126,7 +132,7 @@ func isInvalidUpdateMaskError(err error) bool {
 
 // Delete deletes the shadow link in Redpanda.
 func (s *Syncer) Delete(ctx context.Context, o *redpandav1alpha2.ShadowLink) error {
-	_, err := s.client.ShadowLinkService().DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
+	_, err := s.shadowLinks.DeleteShadowLink(ctx, connect.NewRequest(&adminv2api.DeleteShadowLinkRequest{
 		Name:  o.Name,
 		Force: true,
 	}))
