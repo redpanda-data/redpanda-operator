@@ -14,7 +14,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -45,6 +44,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -59,6 +59,9 @@ type BrokerControllerSuite struct {
 
 	env           *testenv.Env
 	clientFactory internalclient.ClientFactory
+	// importImages is the image set newEnv loads into every cluster it
+	// builds; tests that add k3d nodes mid-run re-import it onto them.
+	importImages []string
 }
 
 var _ suite.SetupAllSuite = (*BrokerControllerSuite)(nil)
@@ -104,6 +107,7 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 		}
 	}
 
+	s.importImages = importImages
 	env := testenv.New(t, testenv.Options{
 		Name:               clusterName,
 		Scheme:             controller.V2Scheme,
@@ -209,11 +213,9 @@ func (s *BrokerControllerSuite) TestFinalizerPodGone() {
 
 	s.waitForDeletion(t, ctx, c, broker)
 
-	var pods corev1.PodList
-	require.NoError(t, c.List(ctx, &pods, client.InNamespace(broker.Namespace)))
-	for _, p := range pods.Items {
-		assert.NotEqual(t, broker.PodName(), p.Name, "no pod should ever have existed for the deleted Broker")
-	}
+	var pod corev1.Pod
+	err := c.Get(ctx, client.ObjectKey{Name: broker.PodName(), Namespace: broker.Namespace}, &pod)
+	assert.True(t, apierrors.IsNotFound(err), "no pod should ever have existed for the deleted Broker, got err=%v", err)
 }
 
 // TestFinalizerPodNotOwned verifies the rollback case: if the pod exists but is
@@ -557,7 +559,7 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	if target.Annotations == nil {
 		target.Annotations = map[string]string{}
 	}
-	target.Annotations["operator.redpanda.com/roll-grant"] = newChecksum + "/" + strconv.FormatInt(time.Now().Add(10*time.Minute).Unix(), 10)
+	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(newChecksum, time.Now().Add(10*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
@@ -689,7 +691,7 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 		target.Annotations = map[string]string{}
 	}
 	checksum := target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-	target.Annotations["operator.redpanda.com/roll-grant"] = checksum + "/" + strconv.FormatInt(time.Now().Add(30*time.Minute).Unix(), 10)
+	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(checksum, time.Now().Add(30*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	// Create a replacement k3d node so the pod has somewhere to schedule,
@@ -699,12 +701,7 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	// wait below would time out.
 	t.Log("creating replacement k3d node")
 	require.NoError(t, env.Host().CreateNode())
-	require.NoError(t, env.Host().ImportImage("localhost/redpanda-operator:dev"))
-	if repo := os.Getenv("TEST_REDPANDA_REPO"); repo != "" {
-		if version := os.Getenv("TEST_REDPANDA_VERSION"); version != "" {
-			require.NoError(t, env.Host().ImportImage(fmt.Sprintf("%s:%s", repo, version)))
-		}
-	}
+	require.NoError(t, env.Host().ImportImage(s.importImages...))
 
 	// Wait for the broker to recover to Running.
 	t.Log("waiting for Broker to recover to Running")
@@ -842,7 +839,7 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 	// would make it impossible to assert that ungranted brokers refuse to
 	// rotate or remediate.
 	if opts.grantDuration > 0 {
-		deadline := strconv.FormatInt(time.Now().Add(opts.grantDuration).Unix(), 10)
+		deadline := time.Now().Add(opts.grantDuration)
 		for _, b := range brokers {
 			require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(b), b))
 			p := client.MergeFrom(b.DeepCopy())
@@ -850,7 +847,7 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 				b.Annotations = map[string]string{}
 			}
 			checksum := b.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-			b.Annotations["operator.redpanda.com/roll-grant"] = checksum + "/" + deadline
+			b.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(checksum, deadline)
 			require.NoError(t, c.Patch(ctx, b, p))
 		}
 	}
