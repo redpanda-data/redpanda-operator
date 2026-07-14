@@ -237,6 +237,15 @@ type BrokerStorageBoundCondition string
 // must be set by a controller when it subsequently reconciles a broker.
 type BrokerBrokerRegisteredCondition string
 
+// BrokerConfigSyncedCondition - This condition indicates whether the broker's
+// pod matches the desired pod template: both the config checksum and the
+// restart-requiring cluster-config version. False means a rotation is pending
+// (the pod will be recreated once the broker holds a valid roll-grant).
+//
+// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+// must be set by a controller when it subsequently reconciles a broker.
+type BrokerConfigSyncedCondition string
+
 // BrokerQuiescedCondition - This condition indicates the broker is no longer
 // reconciling for its current generation.
 //
@@ -246,10 +255,10 @@ type BrokerQuiescedCondition string
 
 // BrokerStableCondition - This condition is a roll-up status for automation
 // (e.g. parent controller checking all brokers are stable before proceeding).
-// It is True when Ready, StorageBound, BrokerRegistered, and Quiesced all
-// evaluate to True. Each tracks one dimension: Ready = pod health, StorageBound
-// = PVC binding, BrokerRegistered = cluster membership, Quiesced =
-// reconciliation complete.
+// It is True when Ready, StorageBound, BrokerRegistered, ConfigSynced, and
+// Quiesced all evaluate to True. Each tracks one dimension: Ready = pod health,
+// StorageBound = PVC binding, BrokerRegistered = cluster membership,
+// ConfigSynced = no rotation pending, Quiesced = reconciliation complete.
 //
 // This condition defaults to "False" with a reason of "NotReconciled" and must
 // be set by a controller when it subsequently reconciles a broker.
@@ -858,6 +867,10 @@ const (
 	// "PodScheduled" condition when it evaluates to False because the broker's pod
 	// cannot be scheduled (e.g. node affinity, insufficient resources).
 	BrokerPodScheduledReasonUnschedulable BrokerPodScheduledCondition = "Unschedulable"
+	// BrokerPodScheduledReasonPodMissing - This reason is used with the
+	// "PodScheduled" condition when it evaluates to False because the broker's pod
+	// does not exist (initial bootstrap, mid-rotation, or after decommission).
+	BrokerPodScheduledReasonPodMissing BrokerPodScheduledCondition = "PodMissing"
 	// BrokerPodScheduledReasonError - This reason is used when a broker has only
 	// been partially reconciled and we have early returned due to a retryable error
 	// occurring prior to applying the desired broker state.
@@ -906,6 +919,12 @@ const (
 	// "BrokerRegistered" condition when it evaluates to False because the broker
 	// has not yet registered with the cluster.
 	BrokerBrokerRegisteredReasonNotRegistered BrokerBrokerRegisteredCondition = "NotRegistered"
+	// BrokerBrokerRegisteredReasonIdentityChanged - This reason is used with the
+	// "BrokerRegistered" condition when it evaluates to False because the broker's
+	// pod re-registered under a different node_id than previously recorded — its
+	// data directory did not survive. This requires an operator decision (replace
+	// the broker) rather than silent adoption of the new identity.
+	BrokerBrokerRegisteredReasonIdentityChanged BrokerBrokerRegisteredCondition = "IdentityChanged"
 	// BrokerBrokerRegisteredReasonError - This reason is used when a broker has
 	// only been partially reconciled and we have early returned due to a retryable
 	// error occurring prior to applying the desired broker state.
@@ -913,6 +932,31 @@ const (
 	// BrokerBrokerRegisteredReasonTerminalError - This reason is used when a broker
 	// has encountered a terminal error and will not be reconciled further.
 	BrokerBrokerRegisteredReasonTerminalError BrokerBrokerRegisteredCondition = "TerminalError"
+
+	// BrokerConfigSynced - This condition indicates whether the broker's pod
+	// matches the desired pod template: both the config checksum and the
+	// restart-requiring cluster-config version. False means a rotation is pending
+	// (the pod will be recreated once the broker holds a valid roll-grant).
+	//
+	// This condition defaults to "Unknown" with a reason of "NotReconciled" and
+	// must be set by a controller when it subsequently reconciles a broker.
+	BrokerConfigSynced = "ConfigSynced"
+	// BrokerConfigSyncedReasonSynced - This reason is used with the "ConfigSynced"
+	// condition when it evaluates to True because the pod's config checksum and
+	// cluster-config version match the desired pod template.
+	BrokerConfigSyncedReasonSynced BrokerConfigSyncedCondition = "Synced"
+	// BrokerConfigSyncedReasonOutdated - This reason is used with the
+	// "ConfigSynced" condition when it evaluates to False because the pod's config
+	// checksum or cluster-config version differs from the desired pod template and
+	// the pod awaits rotation.
+	BrokerConfigSyncedReasonOutdated BrokerConfigSyncedCondition = "Outdated"
+	// BrokerConfigSyncedReasonError - This reason is used when a broker has only
+	// been partially reconciled and we have early returned due to a retryable error
+	// occurring prior to applying the desired broker state.
+	BrokerConfigSyncedReasonError BrokerConfigSyncedCondition = "Error"
+	// BrokerConfigSyncedReasonTerminalError - This reason is used when a broker has
+	// encountered a terminal error and will not be reconciled further.
+	BrokerConfigSyncedReasonTerminalError BrokerConfigSyncedCondition = "TerminalError"
 
 	// BrokerQuiesced - This condition indicates the broker is no longer reconciling
 	// for its current generation.
@@ -931,21 +975,21 @@ const (
 
 	// BrokerStable - This condition is a roll-up status for automation (e.g. parent
 	// controller checking all brokers are stable before proceeding). It is True
-	// when Ready, StorageBound, BrokerRegistered, and Quiesced all evaluate to
-	// True. Each tracks one dimension: Ready = pod health, StorageBound = PVC
-	// binding, BrokerRegistered = cluster membership, Quiesced = reconciliation
-	// complete.
+	// when Ready, StorageBound, BrokerRegistered, ConfigSynced, and Quiesced all
+	// evaluate to True. Each tracks one dimension: Ready = pod health, StorageBound
+	// = PVC binding, BrokerRegistered = cluster membership, ConfigSynced = no
+	// rotation pending, Quiesced = reconciliation complete.
 	//
 	// This condition defaults to "False" with a reason of "NotReconciled" and must
 	// be set by a controller when it subsequently reconciles a broker.
 	BrokerStable = "Stable"
 	// BrokerStableReasonStable - This reason is used with the "Stable" condition
-	// when it evaluates to True because Ready, StorageBound, BrokerRegistered, and
-	// Quiesced all evaluate to True.
+	// when it evaluates to True because Ready, StorageBound, BrokerRegistered,
+	// ConfigSynced, and Quiesced all evaluate to True.
 	BrokerStableReasonStable BrokerStableCondition = "Stable"
 	// BrokerStableReasonUnstable - This reason is used with the "Stable" condition
 	// when it evaluates to False because at least one of Ready, StorageBound,
-	// BrokerRegistered, or Quiesced evaluates to False.
+	// BrokerRegistered, ConfigSynced, or Quiesced evaluates to False.
 	BrokerStableReasonUnstable BrokerStableCondition = "Unstable"
 )
 
@@ -2398,6 +2442,8 @@ type BrokerStatus struct {
 	isStorageBoundTransientError     bool
 	isBrokerRegisteredSet            bool
 	isBrokerRegisteredTransientError bool
+	isConfigSyncedSet                bool
+	isConfigSyncedTransientError     bool
 }
 
 // NewBroker() returns a new BrokerStatus
@@ -2553,6 +2599,8 @@ func (s *BrokerStatus) SetPodScheduled(reason BrokerPodScheduledCondition, messa
 		status = metav1.ConditionTrue
 	case BrokerPodScheduledReasonUnschedulable:
 		status = metav1.ConditionFalse
+	case BrokerPodScheduledReasonPodMissing:
+		status = metav1.ConditionFalse
 	case BrokerPodScheduledReasonError:
 		s.isPodScheduledTransientError = true
 		status = metav1.ConditionFalse
@@ -2655,6 +2703,8 @@ func (s *BrokerStatus) SetBrokerRegistered(reason BrokerBrokerRegisteredConditio
 		status = metav1.ConditionTrue
 	case BrokerBrokerRegisteredReasonNotRegistered:
 		status = metav1.ConditionFalse
+	case BrokerBrokerRegisteredReasonIdentityChanged:
+		status = metav1.ConditionFalse
 	case BrokerBrokerRegisteredReasonError:
 		s.isBrokerRegisteredTransientError = true
 		status = metav1.ConditionFalse
@@ -2677,9 +2727,60 @@ func (s *BrokerStatus) SetBrokerRegistered(reason BrokerBrokerRegisteredConditio
 	})
 }
 
+// SetConfigSyncedFromCurrent sets the underlying condition based on an existing object.
+func (s *BrokerStatus) SetConfigSyncedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), BrokerConfigSynced)
+	if condition == nil {
+		return
+	}
+
+	s.SetConfigSynced(BrokerConfigSyncedCondition(condition.Reason), condition.Message)
+}
+
+// SetConfigSynced sets the underlying condition to the given reason.
+func (s *BrokerStatus) SetConfigSynced(reason BrokerConfigSyncedCondition, messages ...string) {
+	if s.isConfigSyncedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isConfigSyncedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case BrokerConfigSyncedReasonSynced:
+		if message == "" {
+			message = "Pod config matches desired"
+		}
+		status = metav1.ConditionTrue
+	case BrokerConfigSyncedReasonOutdated:
+		status = metav1.ConditionFalse
+	case BrokerConfigSyncedReasonError:
+		s.isConfigSyncedTransientError = true
+		status = metav1.ConditionFalse
+	case BrokerConfigSyncedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    BrokerConfigSynced,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
 func (s *BrokerStatus) getQuiesced() metav1.Condition {
-	transientErrorConditionsSet := s.isReadyTransientError || s.isPodScheduledTransientError || s.isStorageBoundTransientError || s.isBrokerRegisteredTransientError
-	allConditionsSet := s.isReadySet && s.isPodScheduledSet && s.isStorageBoundSet && s.isBrokerRegisteredSet
+	transientErrorConditionsSet := s.isReadyTransientError || s.isPodScheduledTransientError || s.isStorageBoundTransientError || s.isBrokerRegisteredTransientError || s.isConfigSyncedTransientError
+	allConditionsSet := s.isReadySet && s.isPodScheduledSet && s.isStorageBoundSet && s.isBrokerRegisteredSet && s.isConfigSyncedSet
 
 	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
 		return metav1.Condition{
@@ -2700,7 +2801,7 @@ func (s *BrokerStatus) getQuiesced() metav1.Condition {
 
 func (s *BrokerStatus) getStable(conditions []metav1.Condition) metav1.Condition {
 	allConditionsFoundAndTrue := true
-	for _, condition := range []string{BrokerReady, BrokerStorageBound, BrokerBrokerRegistered, BrokerQuiesced} {
+	for _, condition := range []string{BrokerReady, BrokerStorageBound, BrokerBrokerRegistered, BrokerConfigSynced, BrokerQuiesced} {
 		conditionFoundAndTrue := false
 		for _, setCondition := range conditions {
 			if setCondition.Type == condition {

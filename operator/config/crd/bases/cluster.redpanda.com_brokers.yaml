@@ -108,7 +108,10 @@ spec:
                   For ordinal-named pods this is the pod ordinal; the V2 chart uses it
                   to select external.addresses[networkIndex]. The value is captured from
                   the parsed ordinal at migration time and preserved across pod rotation.
+                  Required: the index is also the pod-name suffix, so an omitted value
+                  would collide with an explicit networkIndex: 0.
                 format: int32
+                minimum: 0
                 type: integer
               podTemplate:
                 description: PodTemplate is the fully resolved pod spec for this broker.
@@ -8827,6 +8830,7 @@ spec:
                 type: object
             required:
             - clusterRef
+            - networkIndex
             - podTemplate
             - storage
             type: object
@@ -8853,6 +8857,11 @@ spec:
                 reason: NotReconciled
                 status: Unknown
                 type: BrokerRegistered
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: ConfigSynced
               - lastTransitionTime: "1970-01-01T00:00:00Z"
                 message: Waiting for controller
                 reason: NotReconciled

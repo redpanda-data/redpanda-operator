@@ -229,6 +229,10 @@ func (e *Env) RESTConfig() *rest.Config {
 	return e.config
 }
 
+func (e *Env) Host() *k3d.Cluster {
+	return e.host
+}
+
 func (e *Env) Namespace() string {
 	return e.namespace.Name
 }

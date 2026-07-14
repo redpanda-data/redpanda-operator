@@ -572,12 +572,12 @@ func TestPodHasVolumeAffinityUnschedulable(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			pod := &corev1.Pod{Status: corev1.PodStatus{Conditions: []corev1.PodCondition{tc.condition}}}
-			require.Equal(t, tc.want, podHasVolumeAffinityUnschedulable(pod))
+			require.Equal(t, tc.want, PodHasVolumeAffinityUnschedulable(pod))
 		})
 	}
 
 	t.Run("no PodScheduled condition", func(t *testing.T) {
-		require.False(t, podHasVolumeAffinityUnschedulable(&corev1.Pod{}))
+		require.False(t, PodHasVolumeAffinityUnschedulable(&corev1.Pod{}))
 	})
 }
 
@@ -969,7 +969,7 @@ func TestNodeFromPVAffinity(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.want, nodeFromPVAffinity(tc.pv))
+			require.Equal(t, tc.want, NodeFromPVAffinity(tc.pv))
 		})
 	}
 }

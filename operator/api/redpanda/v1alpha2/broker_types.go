@@ -29,6 +29,39 @@ const (
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
 )
 
+// BrokerConfigChecksumAnnotation carries the config checksum on both the
+// Broker's desired pod template annotations and the live pod's annotations.
+// A mismatch between the two marks the pod as needing rotation.
+const BrokerConfigChecksumAnnotation = "config.redpanda.com/checksum"
+
+// BrokerClusterConfigVersionAnnotation carries the cluster-config version
+// that last required a restart, stamped into the Broker's desired pod
+// template when a restart-requiring central-config change lands (the
+// `kubectl rollout restart` pattern: pods inherit it at creation, so a pod
+// whose value differs from the desired template needs a rotation). The
+// cluster controller only ever writes it to the Broker SPEC — never to pods.
+const BrokerClusterConfigVersionAnnotation = "operator.redpanda.com/cluster-config-version"
+
+const (
+	// NodePoolLabel carries the name of the node pool a Broker belongs to.
+	// It mirrors labels.NodePoolKey, redeclared here to keep the API package
+	// self-contained.
+	NodePoolLabel = "cluster.redpanda.com/nodepool"
+
+	// ClusterNameLabel carries the name of the Redpanda cluster a Broker
+	// belongs to. It is required on Brokers whose ClusterRef points at a
+	// NodePool: the ref names the pool, not the cluster, and pod names are
+	// `<cluster>-<pool>-<ordinal>` — the cluster half is only recoverable
+	// from this label without fetching the NodePool. Whoever creates Broker
+	// CRs must always set it.
+	ClusterNameLabel = "cluster.redpanda.com/cluster-name"
+
+	// DefaultNodePoolName mirrors vectorizedv1alpha1.DefaultNodePoolName:
+	// the implicit pool defined by a V1 Cluster's top-level replicas, whose
+	// StatefulSet (and pods) carry the bare cluster name.
+	DefaultNodePoolName = "default"
+)
+
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -43,7 +76,7 @@ type Broker struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec BrokerSpec `json:"spec,omitempty"`
-	// +kubebuilder:default={conditions: {{type: "Ready", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "PodScheduled", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "StorageBound", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "BrokerRegistered", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
+	// +kubebuilder:default={conditions: {{type: "Ready", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "PodScheduled", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "StorageBound", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "BrokerRegistered", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "ConfigSynced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Quiesced", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}, {type: "Stable", status: "Unknown", reason: "NotReconciled", message: "Waiting for controller", lastTransitionTime: "1970-01-01T00:00:00Z"}}}
 	Status BrokerStatus `json:"status,omitempty"`
 }
 
@@ -87,8 +120,11 @@ type BrokerSpec struct {
 	// For ordinal-named pods this is the pod ordinal; the V2 chart uses it
 	// to select external.addresses[networkIndex]. The value is captured from
 	// the parsed ordinal at migration time and preserved across pod rotation.
-	// +optional
-	NetworkIndex *int32 `json:"networkIndex,omitempty"`
+	// Required: the index is also the pod-name suffix, so an omitted value
+	// would collide with an explicit networkIndex: 0.
+	// +required
+	// +kubebuilder:validation:Minimum=0
+	NetworkIndex *int32 `json:"networkIndex"`
 
 	// PodTemplate is the fully resolved pod spec for this broker.
 	PodTemplate BrokerPodTemplate `json:"podTemplate"`

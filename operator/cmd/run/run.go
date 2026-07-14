@@ -201,7 +201,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.ghostbuster, "unsafe-decommission-failed-brokers", false, "Set to enable decommissioning a failed broker that is configured but does not exist in the StatefulSet (ghost broker). This may result in invalidating valid data")
 	_ = cmd.Flags().MarkHidden("unsafe-decommission-failed-brokers")
 	cmd.Flags().StringSliceVar(&o.additionalControllers, "additional-controllers", []string{""}, fmt.Sprintf("which controllers to run, available: all, %s", strings.Join(availableControllers, ", ")))
-	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
+	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration; the Broker controller's dead-node PV remediation (--enable-broker) also uses this timeout when set, and falls back to its own default (5m) when zero")
 	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "DEPRECATED. When the PVCUnbinder fires, also clear the freed PV's ClaimRef so the disk can be reused if the node returns. Risks cross-broker disk swap when multiple PVs are cleared concurrently. Leave at false (the default) — the unbinder's pause-annotation, multi-pod auto-detect, and per-cluster serialization gates make this flag unnecessary in practice and unsafe in the cases where it would have been useful.")
 	_ = cmd.Flags().MarkDeprecated("allow-pv-rebinding", "the gating checks added to the PVCUnbinder (pause annotation, multi-pod auto-detect, per-cluster serialization) supersede this flag; see the PVCUnbinder controller godoc")
 	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
@@ -571,7 +571,7 @@ func Run(
 	}
 
 	if opts.enableBrokerController {
-		if err := redpandacontrollers.SetupBrokerController(ctx, mcmanager, opts.namespace); err != nil {
+		if err := redpandacontrollers.SetupBrokerController(ctx, mcmanager, factory, opts.namespace, opts.unbindPVCsAfter); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Broker")
 			return err
 		}

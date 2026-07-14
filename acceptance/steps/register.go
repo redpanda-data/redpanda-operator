@@ -180,6 +180,21 @@ func init() {
 	framework.RegisterStep(`^service "([^"]*)" should not have field managers:$`, checkResourceNoFieldManagers)
 	framework.RegisterStep(`^cluster "([^"]*)" should have sync error:$`, checkClusterHasSyncError)
 
+	// Broker CRD scenario steps
+	framework.RegisterStep(`^I pause reconciliation on cluster "([^"]*)"$`, pauseReconciliation)
+	framework.RegisterStep(`^I orphan-delete the StatefulSet for cluster "([^"]*)"$`, orphanDeleteStatefulSet)
+	framework.RegisterStep(`^I create Broker CRs for cluster "([^"]*)"$`, createBrokerCRsForCluster)
+	framework.RegisterStep(`^I snapshot pod UIDs for cluster "([^"]*)"$`, snapshotPodUIDs)
+	framework.RegisterStep(`^pods for cluster "([^"]*)" should have the same UIDs as the snapshot$`, podUIDsShouldBeUnchanged)
+	framework.RegisterStep(`^I grant a roll-grant to Broker "([^"]*)"$`, grantRollGrantToBroker)
+	framework.RegisterStep(`^all Broker CRs for cluster "([^"]*)" should be Running$`, allBrokerCRsRunning)
+	framework.RegisterStep(`^I set decommission on Broker "([^"]*)"$`, setDecommissionOnBroker)
+	framework.RegisterStep(`^Broker "([^"]*)" should reach phase "([^"]*)"$`, brokerShouldReachPhase)
+	framework.RegisterStep(`^cluster "([^"]*)" admin API should show (\d+) brokers$`, clusterAdminAPIShouldShowBrokers)
+	framework.RegisterStep(`^I update Broker "([^"]*)" pod template with env "([^"]*)" for cluster "([^"]*)"$`, updateBrokerPodTemplateEnv)
+	framework.RegisterStep(`^Broker "([^"]*)" pod should have env "([^"]*)" = "([^"]*)"$`, brokerPodShouldHaveEnv)
+	framework.RegisterStep(`^Broker "([^"]*)" pod should not be rotated$`, brokerPodShouldNotBeRotated)
+
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)
 }
