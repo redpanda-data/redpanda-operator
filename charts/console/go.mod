@@ -25,8 +25,8 @@ require (
 )
 
 require (
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260506141738-8dfb14358799.1 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260506141738-8dfb14358799.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260624144219-f1d5d6c05e3a.1 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260624144219-f1d5d6c05e3a.1 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.18.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect

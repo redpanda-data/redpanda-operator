@@ -511,6 +511,23 @@ func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferen
 }
 
 func (c *Factory) RemoteClusterSettingsForCluster(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error) {
+	settings, err := c.remoteKafkaClusterSettingsForCluster(ctx, obj, clusterName)
+	if err != nil {
+		return settings, err
+	}
+
+	if link, ok := obj.(*redpandav1alpha2.ShadowLink); ok {
+		schemaRegistry, err := c.schemaRegistrySettingsForShadowLink(ctx, link, clusterName)
+		if err != nil {
+			return settings, err
+		}
+		settings.SchemaRegistry = schemaRegistry
+	}
+
+	return settings, nil
+}
+
+func (c *Factory) remoteKafkaClusterSettingsForCluster(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error) {
 	var settings shadow.RemoteClusterSettings
 
 	o, ok := obj.(client.Object)
@@ -541,6 +558,53 @@ func (c *Factory) RemoteClusterSettingsForCluster(ctx context.Context, obj redpa
 	}
 
 	return settings, ErrInvalidKafkaClientObject
+}
+
+// schemaRegistrySettingsForShadowLink resolves the secret references of a
+// link's schema registry API sync configuration into the credentials and TLS
+// material handed to the cluster.
+func (c *Factory) schemaRegistrySettingsForShadowLink(ctx context.Context, link *redpandav1alpha2.ShadowLink, clusterName string) (*shadow.SchemaRegistrySettings, error) {
+	options := link.Spec.SchemaRegistrySyncOptions
+	if options == nil || options.ShadowSchemaRegistryAPI == nil {
+		return nil, nil
+	}
+	api := options.ShadowSchemaRegistryAPI
+
+	k8sClient, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	settings := &shadow.SchemaRegistrySettings{}
+
+	if auth := api.Authentication; auth != nil && auth.Basic != nil {
+		username, err := redpandav1alpha2.ConvertValueSourceToIR(link.Namespace, &auth.Basic.Username).Load(ctx, k8sClient, c.secretExpander)
+		if err != nil {
+			return nil, err
+		}
+		password, err := redpandav1alpha2.ConvertValueSourceToIR(link.Namespace, &auth.Basic.Password).Load(ctx, k8sClient, c.secretExpander)
+		if err != nil {
+			return nil, err
+		}
+		settings.BasicAuthentication = &shadow.HTTPBasicAuthenticationSettings{
+			Username: username,
+			Password: password,
+		}
+	}
+
+	if api.TLS != nil {
+		tlsConfig, err := redpandav1alpha2.ConvertCommonTLSToIR(link.Namespace, api.TLS).Load(ctx, k8sClient, c.secretExpander)
+		if err != nil {
+			return nil, err
+		}
+		settings.TLSSettings = &shadow.TLSSettings{
+			CA:   tlsConfig.CA,
+			Cert: tlsConfig.Cert,
+			Key:  tlsConfig.Key,
+		}
+	}
+
+	return settings, nil
 }
 
 func (c *Factory) RemoteClusterSettings(ctx context.Context, obj redpandav1alpha2.RemoteClusterReferencingObject) (shadow.RemoteClusterSettings, error) {

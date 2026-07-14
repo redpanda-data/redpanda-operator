@@ -106,6 +106,18 @@ func convertConsoleLicenseSecretRef(src *RedpandaConsole) (*corev1.SecretKeySele
 	return enterprise.LicenseSecret, nil
 }
 
+// ConvertValueSourceToIR converts a ValueSource to its internal
+// representation, resolving object references against the given namespace.
+func ConvertValueSourceToIR(namespace string, src *ValueSource) *ir.ValueSource {
+	return autoconv_ValueSource_To_ir_ValueSource(src, namespace)
+}
+
+// ConvertCommonTLSToIR converts a CommonTLS to its internal representation,
+// resolving object references against the given namespace.
+func ConvertCommonTLSToIR(namespace string, src *CommonTLS) *ir.CommonTLS {
+	return conv_CommonTLS_To_ir_CommonTLS(src, namespace)
+}
+
 // Manually implemented conversion routines
 // Naming conversion: `conv_<Type>_To_<pkg>_<Type>`
 
