@@ -983,7 +983,6 @@ CommonTLS specifies TLS configuration settings for Redpanda clusters that have a
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-adminapispec[$$AdminAPISpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkaapispec[$$KafkaAPISpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistryspec[$$SchemaRegistrySpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -4640,7 +4639,7 @@ https://psrc-xxxxx.us-east-1.aws.confluent.cloud + |  | MinLength: 1 +
 
 | *`authentication`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryauthentication[$$ShadowLinkSchemaRegistryAuthentication$$]__ | Authentication options used to connect to the source schema +
 registry. + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-commontls[$$CommonTLS$$]__ | TLS settings used to connect to the source schema registry. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrytls[$$ShadowLinkSchemaRegistryTLS$$]__ | TLS settings used to connect to the source schema registry. + |  | 
 | *`tailInterval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | How often to poll the source registry for incremental changes. +
 If not provided, the cluster default (10s) is used. + |  | 
 | *`fullSyncInterval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | How often to run a full scan of the source registry. +
@@ -4799,6 +4798,42 @@ _Underlying type:_ _string_
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions[$$ShadowLinkSchemaRegistrySyncOptions$$]
 ****
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrytls"]
+==== ShadowLinkSchemaRegistryTLS
+
+
+
+TLS settings used to connect to a source schema registry over its REST
+API. Only the fields below are honored for schema registry connections;
+unlike the Kafka API TLS configuration there is no insecureSkipTlsVerify
+escape hatch.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled turns on TLS for the connection to the source schema registry. +
+Set this to true when the registry is served by publicly issued +
+certificates (for example Confluent Cloud) and no caCert, cert, or key +
+needs to be supplied. Providing any of caCert, cert, or key implies TLS +
+regardless of this field. + |  | 
+| *`caCert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | CaCert references the certificate authority used to verify the source +
+schema registry's TLS certificate. May reference a Kubernetes Secret. + |  | 
+| *`cert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Cert references the client public certificate used to establish an mTLS +
+connection to the source schema registry. May reference a Kubernetes +
+Secret. + |  | 
+| *`key`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Key references the client private key used to establish an mTLS +
+connection to the source schema registry. If cert is provided, key must +
+be provided as well. May reference a Kubernetes Secret. + |  | 
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions"]
@@ -5853,6 +5888,7 @@ ValueSource represents where a value can be pulled from
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrybasicauthentication[$$ShadowLinkSchemaRegistryBasicAuthentication$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrytls[$$ShadowLinkSchemaRegistryTLS$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]

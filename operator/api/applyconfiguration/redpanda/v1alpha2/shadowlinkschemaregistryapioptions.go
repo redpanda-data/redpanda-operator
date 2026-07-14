@@ -21,7 +21,7 @@ import (
 type ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration struct {
 	SourceURL                      *string                                                    `json:"sourceURL,omitempty"`
 	Authentication                 *ShadowLinkSchemaRegistryAuthenticationApplyConfiguration  `json:"authentication,omitempty"`
-	TLS                            *CommonTLSApplyConfiguration                               `json:"tls,omitempty"`
+	TLS                            *ShadowLinkSchemaRegistryTLSApplyConfiguration             `json:"tls,omitempty"`
 	TailInterval                   *v1.Duration                                               `json:"tailInterval,omitempty"`
 	FullSyncInterval               *v1.Duration                                               `json:"fullSyncInterval,omitempty"`
 	MaxSourceRequestsPerSecond     *int32                                                     `json:"maxSourceRequestsPerSecond,omitempty"`
@@ -55,7 +55,7 @@ func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithAuthenticatio
 // WithTLS sets the TLS field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the TLS field is set to the value of the last call.
-func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithTLS(value *CommonTLSApplyConfiguration) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
+func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithTLS(value *ShadowLinkSchemaRegistryTLSApplyConfiguration) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
 	b.TLS = value
 	return b
 }

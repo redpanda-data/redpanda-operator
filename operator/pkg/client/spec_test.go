@@ -19,6 +19,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
@@ -189,5 +190,30 @@ func TestShadowLinkClusterSettings_SchemaRegistryCredentials(t *testing.T) {
 			},
 		}))
 		require.Error(t, err)
+	})
+
+	t.Run("skips resolution when schema replication is disabled", func(t *testing.T) {
+		// A disabled schemaRegistrySyncOptions must not resolve (and must not
+		// fail on) a stale/missing Secret reference on the API block —
+		// otherwise a feature the user turned off would fail the whole link.
+		disabledLink := link(&redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions{
+			SourceURL: "https://registry.example.com",
+			Authentication: &redpandav1alpha2.ShadowLinkSchemaRegistryAuthentication{
+				Basic: &redpandav1alpha2.ShadowLinkSchemaRegistryBasicAuthentication{
+					Username: redpandav1alpha2.ValueSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "does-not-exist"},
+							Key:                  "api-key",
+						},
+					},
+					Password: secretRef("api-secret"),
+				},
+			},
+		})
+		disabledLink.Spec.SchemaRegistrySyncOptions.Enabled = ptr.To(false)
+
+		settings, err := factory.RemoteClusterSettings(ctx, disabledLink)
+		require.NoError(t, err)
+		require.Nil(t, settings.SchemaRegistry)
 	})
 }

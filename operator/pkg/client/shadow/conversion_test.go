@@ -217,6 +217,33 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 	})
 }
 
+func TestConvertTLSSettingsToAPITLSConfig(t *testing.T) {
+	t.Run("nil settings produce no TLS config", func(t *testing.T) {
+		require.Nil(t, convertTLSSettingsToAPITLSConfig(nil))
+	})
+
+	t.Run("enabled flag turns TLS on without any material", func(t *testing.T) {
+		// Covers endpoints served by publicly issued certificates (e.g.
+		// Confluent Cloud) where no CA/Cert/Key is supplied.
+		out := convertTLSSettingsToAPITLSConfig(&TLSSettings{Enabled: true})
+		require.NotNil(t, out)
+		require.True(t, out.Enabled)
+	})
+
+	t.Run("supplying material implies TLS even when the flag is unset", func(t *testing.T) {
+		out := convertTLSSettingsToAPITLSConfig(&TLSSettings{CA: "ca-pem"})
+		require.NotNil(t, out)
+		require.True(t, out.Enabled)
+		require.Equal(t, "ca-pem", out.GetTlsPemSettings().Ca)
+	})
+
+	t.Run("disabled with no material keeps TLS off", func(t *testing.T) {
+		out := convertTLSSettingsToAPITLSConfig(&TLSSettings{Enabled: false})
+		require.NotNil(t, out)
+		require.False(t, out.Enabled)
+	})
+}
+
 func TestConvertShadowLinkConfigurationDefaults(t *testing.T) {
 	link := &redpandav1alpha2.ShadowLink{
 		ObjectMeta: metav1.ObjectMeta{Name: "link", Namespace: metav1.NamespaceDefault},

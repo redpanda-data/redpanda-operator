@@ -27,6 +27,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
@@ -565,7 +566,12 @@ func (c *Factory) remoteKafkaClusterSettingsForCluster(ctx context.Context, obj 
 // material handed to the cluster.
 func (c *Factory) schemaRegistrySettingsForShadowLink(ctx context.Context, link *redpandav1alpha2.ShadowLink, clusterName string) (*shadow.SchemaRegistrySettings, error) {
 	options := link.Spec.SchemaRegistrySyncOptions
-	if options == nil || options.ShadowSchemaRegistryAPI == nil {
+	// Don't resolve (and don't fail on) schema registry API credentials when
+	// schema replication is turned off. The conversion layer drops the API
+	// options for a disabled block anyway, so resolving a stale or missing
+	// Secret reference here would only fail the entire reconcile for a
+	// feature the user explicitly disabled.
+	if options == nil || !ptr.Deref(options.Enabled, true) || options.ShadowSchemaRegistryAPI == nil {
 		return nil, nil
 	}
 	api := options.ShadowSchemaRegistryAPI
@@ -592,16 +598,24 @@ func (c *Factory) schemaRegistrySettingsForShadowLink(ctx context.Context, link 
 		}
 	}
 
-	if api.TLS != nil {
-		tlsConfig, err := redpandav1alpha2.ConvertCommonTLSToIR(link.Namespace, api.TLS).Load(ctx, k8sClient, c.secretExpander)
-		if err != nil {
+	if tls := api.TLS; tls != nil {
+		tlsSettings := &shadow.TLSSettings{Enabled: tls.Enabled}
+		load := func(src *redpandav1alpha2.ValueSource) (string, error) {
+			if src == nil {
+				return "", nil
+			}
+			return redpandav1alpha2.ConvertValueSourceToIR(link.Namespace, src).Load(ctx, k8sClient, c.secretExpander)
+		}
+		if tlsSettings.CA, err = load(tls.CaCert); err != nil {
 			return nil, err
 		}
-		settings.TLSSettings = &shadow.TLSSettings{
-			CA:   tlsConfig.CA,
-			Cert: tlsConfig.Cert,
-			Key:  tlsConfig.Key,
+		if tlsSettings.Cert, err = load(tls.Cert); err != nil {
+			return nil, err
 		}
+		if tlsSettings.Key, err = load(tls.Key); err != nil {
+			return nil, err
+		}
+		settings.TLSSettings = tlsSettings
 	}
 
 	return settings, nil

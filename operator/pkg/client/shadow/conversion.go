@@ -47,6 +47,11 @@ type HTTPBasicAuthenticationSettings struct {
 }
 
 type TLSSettings struct {
+	// Enabled turns TLS on even when no CA/Cert/Key material is supplied, for
+	// example when the endpoint is served by publicly issued certificates.
+	// Supplying any of CA/Cert/Key also enables TLS regardless of this flag.
+	Enabled bool
+
 	// all of the following fields are in PEM format
 	CA string
 	// Key and Cert are optional but if one is provided, then both must be
@@ -194,7 +199,11 @@ func convertTLSSettingsToAPITLSConfig(tlsSettings *TLSSettings) *commonv1.TLSSet
 		return nil
 	}
 	settings := &commonv1.TLSSettings{
-		Enabled: true,
+		// Supplying any CA/Cert/Key material implies TLS, matching the
+		// long-standing CommonTLS semantics; the explicit Enabled flag covers
+		// endpoints served by publicly issued certificates that need no
+		// material.
+		Enabled: tlsSettings.Enabled || tlsSettings.CA != "" || tlsSettings.Cert != "" || tlsSettings.Key != "",
 	}
 	settings.SetTlsPemSettings(&commonv1.TLSPEMSettings{
 		Ca:             tlsSettings.CA,

@@ -531,8 +531,9 @@ spec:
                           registry.
                         properties:
                           caCert:
-                            description: CaCert is the reference for certificate authority
-                              used to establish TLS connection to Redpanda
+                            description: |-
+                              CaCert references the certificate authority used to verify the source
+                              schema registry's TLS certificate. May reference a Kubernetes Secret.
                             properties:
                               configMapKeyRef:
                                 description: |-
@@ -625,23 +626,11 @@ spec:
                               rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
                                 && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                 || has(self.inline)))'
-                          caCertSecretRef:
-                            description: 'Deprecated: replaced by "caCert".'
-                            properties:
-                              key:
-                                description: Key in Secret data to get value from
-                                type: string
-                              name:
-                                description: |-
-                                  Name of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                type: string
-                            required:
-                            - name
-                            type: object
                           cert:
-                            description: Cert is the reference for client public certificate
-                              to establish mTLS connection to Redpanda
+                            description: |-
+                              Cert references the client public certificate used to establish an mTLS
+                              connection to the source schema registry. May reference a Kubernetes
+                              Secret.
                             properties:
                               configMapKeyRef:
                                 description: |-
@@ -734,38 +723,19 @@ spec:
                               rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
                                 && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                 || has(self.inline)))'
-                          certSecretRef:
-                            description: 'Deprecated: replaced by "cert".'
-                            properties:
-                              key:
-                                description: Key in Secret data to get value from
-                                type: string
-                              name:
-                                description: |-
-                                  Name of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                type: string
-                            required:
-                            - name
-                            type: object
                           enabled:
                             description: |-
-                              Enabled tells any connections derived from this configuration to leverage TLS even if no
-                              certificate configuration is specified. It *only* is relevant if no other field is specified
-                              in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
-                              results in attempting to create a connection using TLS - specifying "false" in such a case does
-                              *not* disable TLS from being used. Leveraging this option is to support the use-case where a
-                              connection is served by publically issued TLS certificates that don't require any additional certificate
-                              specification.
-                            type: boolean
-                          insecureSkipTlsVerify:
-                            description: InsecureSkipTLSVerify can skip verifying
-                              Redpanda self-signed certificate when establish TLS
-                              connection to Redpanda
+                              Enabled turns on TLS for the connection to the source schema registry.
+                              Set this to true when the registry is served by publicly issued
+                              certificates (for example Confluent Cloud) and no caCert, cert, or key
+                              needs to be supplied. Providing any of caCert, cert, or key implies TLS
+                              regardless of this field.
                             type: boolean
                           key:
-                            description: Key is the reference for client private certificate
-                              to establish mTLS connection to Redpanda
+                            description: |-
+                              Key references the client private key used to establish an mTLS
+                              connection to the source schema registry. If cert is provided, key must
+                              be provided as well. May reference a Kubernetes Secret.
                             properties:
                               configMapKeyRef:
                                 description: |-
@@ -858,20 +828,6 @@ spec:
                               rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
                                 && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                 || has(self.inline)))'
-                          keySecretRef:
-                            description: 'Deprecated: replaced by "key".'
-                            properties:
-                              key:
-                                description: Key in Secret data to get value from
-                                type: string
-                              name:
-                                description: |-
-                                  Name of the referent.
-                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                type: string
-                            required:
-                            - name
-                            type: object
                         type: object
                       unsupportedSchemaFeaturePolicy:
                         description: |-
