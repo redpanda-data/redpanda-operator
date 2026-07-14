@@ -54,7 +54,7 @@ func convertCRDToAPIShadowLink(link *redpandav1alpha2.ShadowLink, remoteClusterS
 
 func convertCRDToAPIShadowLinkConfiguration(link *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) *adminv2api.ShadowLinkConfigurations {
 	return &adminv2api.ShadowLinkConfigurations{
-		ClientOptions:             convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings),
+		ClientOptions:             convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings, link.Spec.ClientOptions),
 		TopicMetadataSyncOptions:  convertCRDToAPIShadowLinkTopicMetadataSyncOptions(link.Spec.TopicMetadataSyncOptions),
 		ConsumerOffsetSyncOptions: convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(link.Spec.ConsumerOffsetSyncOptions),
 		SecuritySyncOptions:       convertCRDToAPIShadowLinkSecuritySyncOptions(link.Spec.SecuritySyncOptions),
@@ -119,12 +119,24 @@ func convertAuthenticationSettingsToAPIAuthSettings(authSettings *Authentication
 	return settings
 }
 
-func convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings RemoteClusterSettings) *adminv2api.ShadowLinkClientOptions {
-	return &adminv2api.ShadowLinkClientOptions{
+func convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings RemoteClusterSettings, clientOptions *redpandav1alpha2.ShadowLinkClientOptions) *adminv2api.ShadowLinkClientOptions {
+	options := &adminv2api.ShadowLinkClientOptions{
 		BootstrapServers:            remoteClusterSettings.BootstrapServers,
 		TlsSettings:                 convertTLSSettingsToAPITLSConfig(remoteClusterSettings.TLSSettings),
 		AuthenticationConfiguration: convertAuthenticationSettingsToAPIAuthSettings(remoteClusterSettings.Authentication),
 	}
+	// A zero value on any of the tuning knobs means "use the server default", so
+	// unset CRD fields are forwarded as 0 and left to the broker to resolve.
+	if clientOptions != nil {
+		options.FetchMinBytes = clientOptions.FetchMinBytes
+		options.FetchWaitMaxMs = clientOptions.FetchWaitMaxMs
+		options.FetchMaxBytes = clientOptions.FetchMaxBytes
+		options.FetchPartitionMaxBytes = clientOptions.FetchPartitionMaxBytes
+		options.MetadataMaxAgeMs = clientOptions.MetadataMaxAgeMs
+		options.ConnectionTimeoutMs = clientOptions.ConnectionTimeoutMs
+		options.RetryBackoffMs = clientOptions.RetryBackoffMs
+	}
+	return options
 }
 
 func convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(options *redpandav1alpha2.ShadowLinkConsumerOffsetSyncOptions) *adminv2api.ConsumerOffsetSyncOptions {
