@@ -1187,16 +1187,12 @@ func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 // apiReader must be an uncached client for accurate Node existence checks.
 func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
 	l := log.FromContext(ctx)
-	excluded := make(map[string]bool, len(exclude))
-	for _, name := range exclude {
-		excluded[name] = true
-	}
 	var affected []corev1.PersistentVolumeClaim
 	for i := range pod.Spec.Volumes {
 		if pod.Spec.Volumes[i].PersistentVolumeClaim == nil {
 			continue
 		}
-		if excluded[pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName] {
+		if slices.Contains(exclude, pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName) {
 			continue
 		}
 		var pvc corev1.PersistentVolumeClaim
