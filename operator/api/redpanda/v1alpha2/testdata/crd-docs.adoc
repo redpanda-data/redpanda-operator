@@ -3682,6 +3682,56 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkclientoptions"]
+==== ShadowLinkClientOptions
+
+
+
+ShadowLinkClientOptions configures the source-cluster Kafka fetch/connection
+behavior of a shadow link. These knobs primarily control replication latency
+vs. batching efficiency. Every field defaults server-side when left at 0, so
+omitting a field (or setting it to 0) preserves the Redpanda default noted in
+its documentation.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`fetchMinBytes`* __integer__ | Minimum bytes the source broker accumulates before answering a fetch +
+request. Lowering this reduces replication latency at low throughput, at +
+the cost of more, smaller fetches. If 0, defaults to 5 MiB (5242880). + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`fetchWaitMaxMs`* __integer__ | Maximum time in milliseconds the source broker waits to satisfy +
+fetchMinBytes before answering a fetch request. Lowering this caps the +
+worst-case replication latency when fetchMinBytes is not met. If 0, +
+defaults to 500ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`fetchMaxBytes`* __integer__ | Maximum bytes returned by a single fetch request. If 0, defaults to 20 MiB (20971520). + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`fetchPartitionMaxBytes`* __integer__ | Maximum bytes returned per partition in a fetch request. If 0, defaults to 5 MiB (5242880). + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`metadataMaxAgeMs`* __integer__ | How often in milliseconds the client refreshes source cluster metadata. If 0, defaults to 10000ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`connectionTimeoutMs`* __integer__ | Connection timeout to the source cluster in milliseconds. If 0, defaults to 1000ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`retryBackoffMs`* __integer__ | Base backoff between connection retries in milliseconds. If 0, defaults to 100ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions"]
 ==== ShadowLinkConsumerOffsetSyncOptions
 
@@ -3794,6 +3844,10 @@ settings from the source cluster + |  |
 | *`consumerOffsetSyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions[$$ShadowLinkConsumerOffsetSyncOptions$$]__ | Consumer offset sync options + |  | 
 | *`securitySyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions[$$ShadowLinkSecuritySettingsSyncOptions$$]__ | Security settings sync options + |  | 
 | *`schemaRegistrySyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions[$$ShadowLinkSchemaRegistrySyncOptions$$]__ | options for schema registry + |  | 
+| *`clientOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkclientoptions[$$ShadowLinkClientOptions$$]__ | Tuning knobs for the Kafka client the shadow cluster uses to fetch data +
+from the source cluster. Connection details (bootstrap servers, TLS) are +
+derived from sourceCluster and are not configurable here; only the mutable +
+performance/latency knobs are exposed. + |  | 
 |===
 
 
