@@ -161,8 +161,16 @@ type ShadowLinkSpec struct {
 	ConsumerOffsetSyncOptions *ShadowLinkConsumerOffsetSyncOptions `json:"consumerOffsetSyncOptions,omitempty"`
 	// Security settings sync options
 	SecuritySyncOptions *ShadowLinkSecuritySettingsSyncOptions `json:"securitySyncOptions,omitempty"`
-	// options for schema registry
+	// Schema registry sync options. Schemas are replicated from the source
+	// cluster by default; set schemaRegistrySyncOptions.enabled to false to
+	// turn schema replication off.
+	// +kubebuilder:default={}
 	SchemaRegistrySyncOptions *ShadowLinkSchemaRegistrySyncOptions `json:"schemaRegistrySyncOptions,omitempty"`
+	// RBAC role sync options. Roles are replicated from the source cluster
+	// by default; set roleSyncOptions.enabled to false to turn role
+	// replication off.
+	// +kubebuilder:default={}
+	RoleSyncOptions *ShadowLinkRoleSyncOptions `json:"roleSyncOptions,omitempty"`
 	// Tuning knobs for the Kafka client the shadow cluster uses to fetch data
 	// from the source cluster. Connection details (bootstrap servers, TLS) are
 	// derived from sourceCluster and are not configurable here; only the mutable
@@ -373,6 +381,28 @@ type ShadowLinkSecuritySettingsSyncOptions struct {
 	ACLFilters []ACLFilter `json:"aclFilters,omitempty"`
 }
 
+// Options for syncing RBAC roles
+type ShadowLinkRoleSyncOptions struct {
+	// Enabled controls whether RBAC role definitions and role memberships
+	// are replicated from the source cluster. Defaults to true, which
+	// replicates every role (subject to roleNameFilters). Set to false to
+	// turn role replication off.
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+	// How often to sync roles
+	// If 0 provided, defaults to 30 seconds
+	// +kubebuilder:default="30s"
+	Interval *metav1.Duration `json:"interval,omitempty"`
+	// Allows user to pause the role sync task. If paused, then the task
+	// will enter the 'paused' state and not sync roles from the source
+	// cluster
+	Paused bool `json:"paused,omitempty"`
+	// List of filters that select which roles are replicated. Defaults to
+	// a single include-all filter so that every role is replicated.
+	// +kubebuilder:default={{name: "*", filterType: "include", patternType: "literal"}}
+	RoleNameFilters []NameFilter `json:"roleNameFilters,omitempty"`
+}
+
 type ShadowLinkSchemaRegistrySyncOptionsMode string
 
 const (
@@ -382,5 +412,105 @@ const (
 
 // Options for syncing schema registry settings
 type ShadowLinkSchemaRegistrySyncOptions struct {
+	// Enabled controls whether schemas are replicated from the source
+	// cluster. Defaults to true, which shadows the source Redpanda
+	// cluster's internal schemas topic or, when shadowSchemaRegistryAPI is
+	// configured, replicates from the source schema registry over its REST
+	// API. Set to false to turn schema replication off.
+	// +kubebuilder:default=true
+	Enabled *bool `json:"enabled,omitempty"`
+	// Deprecated: schemas now replicate in "topic" mode by default. Use
+	// enabled to turn replication off and shadowSchemaRegistryAPI to
+	// replicate from an external schema registry instead.
 	Mode ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
+	// Configuration for replicating schemas from the source cluster's
+	// schema registry REST API (for example a Confluent Schema Registry)
+	// instead of shadowing a source Redpanda cluster's internal schemas
+	// topic.
+	ShadowSchemaRegistryAPI *ShadowLinkSchemaRegistryAPIOptions `json:"shadowSchemaRegistryAPI,omitempty"`
+}
+
+// UnsupportedSchemaFeaturePolicy controls what happens when a source schema
+// uses features that the Redpanda schema registry does not support.
+// +kubebuilder:validation:Enum=fail;remove
+type UnsupportedSchemaFeaturePolicy string
+
+const (
+	// The schema is not replicated. The sync records an error, reports it
+	// in the link status, and continues with the remaining schemas.
+	UnsupportedSchemaFeaturePolicyFail UnsupportedSchemaFeaturePolicy = "fail"
+	// The unsupported feature is stripped and the rest of the schema is
+	// replicated.
+	UnsupportedSchemaFeaturePolicyRemove UnsupportedSchemaFeaturePolicy = "remove"
+)
+
+// Options for replicating schemas from a source schema registry over its
+// REST API.
+type ShadowLinkSchemaRegistryAPIOptions struct {
+	// URL of the source schema registry, for example
+	// https://psrc-xxxxx.us-east-1.aws.confluent.cloud
+	// +kubebuilder:validation:MinLength=1
+	SourceURL string `json:"sourceURL"`
+	// Authentication options used to connect to the source schema
+	// registry.
+	Authentication *ShadowLinkSchemaRegistryAuthentication `json:"authentication,omitempty"`
+	// TLS settings used to connect to the source schema registry.
+	TLS *CommonTLS `json:"tls,omitempty"`
+	// How often to poll the source registry for incremental changes.
+	// If not provided, the cluster default (10s) is used.
+	TailInterval *metav1.Duration `json:"tailInterval,omitempty"`
+	// How often to run a full scan of the source registry.
+	// If not provided, the cluster default (5m) is used.
+	FullSyncInterval *metav1.Duration `json:"fullSyncInterval,omitempty"`
+	// Rate limit for requests against the source registry.
+	// If not provided, the cluster default (30) is used.
+	// +kubebuilder:validation:Minimum=1
+	MaxSourceRequestsPerSecond *int32 `json:"maxSourceRequestsPerSecond,omitempty"`
+	// Selects which schema registry contexts and subjects are replicated.
+	// If not provided, the entire source registry is replicated.
+	SourceFilter *ShadowLinkSchemaRegistrySourceFilter `json:"sourceFilter,omitempty"`
+	// Maps source contexts to destination contexts on the shadow cluster.
+	// If empty, source context names are kept as-is.
+	ContextMappings []ShadowLinkSchemaRegistryContextMapping `json:"contextMappings,omitempty"`
+	// Policy applied when a source schema uses features that the Redpanda
+	// schema registry does not support. Defaults to fail.
+	UnsupportedSchemaFeaturePolicy *UnsupportedSchemaFeaturePolicy `json:"unsupportedSchemaFeaturePolicy,omitempty"`
+}
+
+// Authentication options for a source schema registry.
+type ShadowLinkSchemaRegistryAuthentication struct {
+	// HTTP basic authentication credentials. For a Confluent Schema
+	// Registry these are the schema registry API key (username) and API
+	// secret (password).
+	Basic *ShadowLinkSchemaRegistryBasicAuthentication `json:"basic,omitempty"`
+}
+
+// HTTP basic authentication credentials for a source schema registry.
+type ShadowLinkSchemaRegistryBasicAuthentication struct {
+	// Username used for basic authentication, for example a Confluent
+	// Schema Registry API key. May reference a Kubernetes Secret.
+	Username ValueSource `json:"username"`
+	// Password used for basic authentication, for example a Confluent
+	// Schema Registry API secret. May reference a Kubernetes Secret.
+	Password ValueSource `json:"password"`
+}
+
+// Selects which contexts and subjects are replicated from a source schema
+// registry.
+type ShadowLinkSchemaRegistrySourceFilter struct {
+	// Schema registry contexts to replicate, for example ".". If empty,
+	// all contexts are replicated.
+	Contexts []string `json:"contexts,omitempty"`
+	// Subjects to replicate within the selected contexts. If empty, all
+	// subjects are replicated.
+	Subjects []string `json:"subjects,omitempty"`
+}
+
+// Maps a source schema registry context to a destination context on the
+// shadow cluster.
+type ShadowLinkSchemaRegistryContextMapping struct {
+	// The source context name.
+	Source string `json:"source"`
+	// The destination context name on the shadow cluster.
+	Destination string `json:"destination"`
 }

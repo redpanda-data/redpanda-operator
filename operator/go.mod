@@ -3,7 +3,7 @@ module github.com/redpanda-data/redpanda-operator/operator
 go 1.26.4
 
 require (
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260506141738-8dfb14358799.1
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260624144219-f1d5d6c05e3a.1
 	connectrpc.com/connect v1.19.2
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -83,7 +83,7 @@ require (
 	buf.build/gen/go/redpandadata/cloud/connectrpc/go v1.18.1-20250616170632-3de895655308.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.11-20260316210807-5d899910f714.1 // indirect
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260506141738-8dfb14358799.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260624144219-f1d5d6c05e3a.1 // indirect
 	buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.18.1-20250404200318-65f29ddd7b29.1 // indirect
 	buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.36.5-20250404200318-65f29ddd7b29.1 // indirect
 	buf.build/gen/go/redpandadata/gatekeeper/connectrpc/go v1.18.1-20241209180130-05cf059c71c1.1 // indirect

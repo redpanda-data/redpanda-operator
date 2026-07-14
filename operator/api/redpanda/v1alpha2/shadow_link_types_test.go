@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -128,6 +129,65 @@ func TestShadowLinkValidation(t *testing.T) {
 			},
 			errors: []string{`static configuration must contain a kafka block`},
 		},
+		"error on schema registry api options without a source url": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{},
+				}
+			},
+			errors: []string{`spec.schemaRegistrySyncOptions.shadowSchemaRegistryAPI.sourceURL in body should be at least 1 chars long`},
+		},
+		"error on schema registry basic auth without a value source": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+						Authentication: &ShadowLinkSchemaRegistryAuthentication{
+							Basic: &ShadowLinkSchemaRegistryBasicAuthentication{
+								Username: ValueSource{},
+								Password: ValueSource{},
+							},
+						},
+					},
+				}
+			},
+			errors: []string{`one of inline, configmapkeyref, secretkeyref, or externalsecretref must be set`},
+		},
+		"no errors on schema registry api options with secret references": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://psrc-xxxxx.us-east-1.aws.confluent.cloud",
+						Authentication: &ShadowLinkSchemaRegistryAuthentication{
+							Basic: &ShadowLinkSchemaRegistryBasicAuthentication{
+								Username: ValueSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "sr-credentials"},
+										Key:                  "api-key",
+									},
+								},
+								Password: ValueSource{
+									SecretKeyRef: &corev1.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{Name: "sr-credentials"},
+										Key:                  "api-secret",
+									},
+								},
+							},
+						},
+					},
+				}
+			},
+		},
+		"no errors on disabling role and schema replication": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.RoleSyncOptions = &ShadowLinkRoleSyncOptions{
+					Enabled: ptr.To(false),
+				}
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Enabled: ptr.To(false),
+				}
+			},
+		},
 		"no errors on update when using SASL on static config": {
 			doUpdate: true,
 			rawManifest: `
@@ -206,4 +266,21 @@ func TestShadowLinkDefaults(t *testing.T) {
 	require.Equal(t, 30*time.Second, link.Spec.TopicMetadataSyncOptions.Interval.Duration)
 	require.NotNil(t, link.Spec.TopicMetadataSyncOptions.StartOffset)
 	require.Equal(t, TopicMetadataSyncOffsetEarliest, *link.Spec.TopicMetadataSyncOptions.StartOffset)
+
+	// RBAC roles replicate by default with an include-all filter.
+	require.NotNil(t, link.Spec.RoleSyncOptions)
+	require.NotNil(t, link.Spec.RoleSyncOptions.Enabled)
+	require.True(t, *link.Spec.RoleSyncOptions.Enabled)
+	require.Equal(t, 30*time.Second, link.Spec.RoleSyncOptions.Interval.Duration)
+	require.Equal(t, []NameFilter{{
+		Name:        "*",
+		FilterType:  FilterTypeInclude,
+		PatternType: PatternTypeLiteral,
+	}}, link.Spec.RoleSyncOptions.RoleNameFilters)
+
+	// Schemas replicate by default.
+	require.NotNil(t, link.Spec.SchemaRegistrySyncOptions)
+	require.NotNil(t, link.Spec.SchemaRegistrySyncOptions.Enabled)
+	require.True(t, *link.Spec.SchemaRegistrySyncOptions.Enabled)
+	require.Nil(t, link.Spec.SchemaRegistrySyncOptions.ShadowSchemaRegistryAPI)
 }
