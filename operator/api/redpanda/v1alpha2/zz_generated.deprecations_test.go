@@ -24,6 +24,8 @@ package v1alpha2
 //   - ClusterSpec.Listeners.HTTP.KafkaEndpoint
 //   - ClusterSpec.Listeners.RPC.TLS.SecretRef
 //   - ClusterSpec.Listeners.SchemaRegistry.KafkaEndpoint
+// - ShadowLink:
+//   - SchemaRegistrySyncOptions.Mode
 // - Topic:
 //   - KafkaAPISpec
 

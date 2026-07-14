@@ -923,7 +923,10 @@ ClusterRef represents a reference to a cluster that is being targeted.
 |===
 | Field | Description | Default | Validation
 | *`group`* __string__ | Group is used to override the object group that this reference points to. +
-If unspecified, defaults to "cluster.redpanda.com". + |  | 
+If unspecified, defaults to "cluster.redpanda.com". +
+A bare API group only — controllers match it by string comparison, so a +
+"group/version" value (e.g. "cluster.redpanda.com/v1alpha2") would +
+silently match nothing and the referencing object would never bind. + |  | 
 | *`kind`* __string__ | Kind is used to override the object kind that this reference points to. +
 If unspecified, defaults to "Redpanda". + |  | 
 | *`name`* __string__ | Name specifies the name of the cluster being referenced. + |  | Required: \{} +
@@ -2705,6 +2708,7 @@ A filter based on the name of a resource
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions[$$ShadowLinkConsumerOffsetSyncOptions$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkrolesyncoptions[$$ShadowLinkRoleSyncOptions$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktopicmetadatasyncoptions[$$ShadowLinkTopicMetadataSyncOptions$$]
 ****
 
@@ -2767,7 +2771,12 @@ Password specifies a password for the user.
 | Field | Description | Default | Validation
 | *`value`* __string__ | Value is a hardcoded value to use for the given password. It should only be used for testing purposes. +
 In production, use ValueFrom. + |  | 
-| *`valueFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource[$$PasswordSource$$]__ | ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials. + |  | 
+| *`valueFrom`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-passwordsource[$$PasswordSource$$]__ | ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials. +
+Optional when value is set: the type-level validation rule enforces +
+that at least one of the two is present. (This field being marked +
+required in the schema used to make the documented value-only form +
+impossible to apply — https://github.com/redpanda-data/redpanda-operator/issues/1290.) + |  | Optional: \{} +
+
 | *`noGenerate`* __boolean__ | NoGenerate when set to true does not create kubernetes secret when ValueFrom points to none-existent secret. + |  | 
 |===
 
@@ -4503,6 +4512,56 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkclientoptions"]
+==== ShadowLinkClientOptions
+
+
+
+ShadowLinkClientOptions configures the source-cluster Kafka fetch/connection
+behavior of a shadow link. These knobs primarily control replication latency
+vs. batching efficiency. Every field defaults server-side when left at 0, so
+omitting a field (or setting it to 0) preserves the Redpanda default noted in
+its documentation.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`fetchMinBytes`* __integer__ | Minimum bytes the source broker accumulates before answering a fetch +
+request. Lowering this reduces replication latency at low throughput, at +
+the cost of more, smaller fetches. If 0, defaults to 5 MiB (5242880). + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`fetchWaitMaxMs`* __integer__ | Maximum time in milliseconds the source broker waits to satisfy +
+fetchMinBytes before answering a fetch request. Lowering this caps the +
+worst-case replication latency when fetchMinBytes is not met. If 0, +
+defaults to 500ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`fetchMaxBytes`* __integer__ | Maximum bytes returned by a single fetch request. If 0, defaults to 20 MiB (20971520). + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`fetchPartitionMaxBytes`* __integer__ | Maximum bytes returned per partition in a fetch request. If 0, defaults to 5 MiB (5242880). + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`metadataMaxAgeMs`* __integer__ | How often in milliseconds the client refreshes source cluster metadata. If 0, defaults to 10000ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`connectionTimeoutMs`* __integer__ | Connection timeout to the source cluster in milliseconds. If 0, defaults to 1000ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+| *`retryBackoffMs`* __integer__ | Base backoff between connection retries in milliseconds. If 0, defaults to 100ms. + |  | Minimum: 0 +
+Optional: \{} +
+
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions"]
 ==== ShadowLinkConsumerOffsetSyncOptions
 
@@ -4529,6 +4588,173 @@ the source cluster + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkrolesyncoptions"]
+==== ShadowLinkRoleSyncOptions
+
+
+
+Options for syncing RBAC roles
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled controls whether RBAC role definitions and role memberships +
+are replicated from the source cluster. Defaults to true, which +
+replicates every role (subject to roleNameFilters). Set to false to +
+turn role replication off. + | true | 
+| *`interval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | How often to sync roles +
+If 0 provided, defaults to 30 seconds + | 30s | 
+| *`paused`* __boolean__ | Allows user to pause the role sync task. If paused, then the task +
+will enter the 'paused' state and not sync roles from the source +
+cluster + |  | 
+| *`roleNameFilters`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namefilter[$$NameFilter$$] array__ | List of filters that select which roles are replicated. Defaults to +
+a single include-all filter so that every role is replicated. + | [map[filterType:include name:* patternType:literal]] | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions"]
+==== ShadowLinkSchemaRegistryAPIOptions
+
+
+
+Options for replicating schemas from a source schema registry over its
+REST API.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions[$$ShadowLinkSchemaRegistrySyncOptions$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`sourceURL`* __string__ | URL of the source schema registry, for example +
+https://psrc-xxxxx.us-east-1.aws.confluent.cloud + |  | MinLength: 1 +
+
+| *`authentication`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryauthentication[$$ShadowLinkSchemaRegistryAuthentication$$]__ | Authentication options used to connect to the source schema +
+registry. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrytls[$$ShadowLinkSchemaRegistryTLS$$]__ | TLS settings used to connect to the source schema registry. + |  | 
+| *`tailInterval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | How often to poll the source registry for incremental changes. +
+If not provided, the cluster default (10s) is used. + |  | 
+| *`fullSyncInterval`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#duration-v1-meta[$$Duration$$]__ | How often to run a full scan of the source registry. +
+If not provided, the cluster default (5m) is used. + |  | 
+| *`maxSourceRequestsPerSecond`* __integer__ | Rate limit for requests against the source registry. +
+If not provided, the cluster default (30) is used. + |  | Minimum: 1 +
+
+| *`sourceFilter`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysourcefilter[$$ShadowLinkSchemaRegistrySourceFilter$$]__ | Selects which schema registry contexts and subjects are replicated. +
+If not provided, the entire source registry is replicated. + |  | 
+| *`contextMappings`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrycontextmapping[$$ShadowLinkSchemaRegistryContextMapping$$] array__ | Maps source contexts to destination contexts on the shadow cluster. +
+If empty, source context names are kept as-is. + |  | 
+| *`unsupportedSchemaFeaturePolicy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-unsupportedschemafeaturepolicy[$$UnsupportedSchemaFeaturePolicy$$]__ | Policy applied when a source schema uses features that the Redpanda +
+schema registry does not support. Defaults to fail. + |  | Enum: [fail remove] +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryauthentication"]
+==== ShadowLinkSchemaRegistryAuthentication
+
+
+
+Authentication options for a source schema registry.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`basic`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrybasicauthentication[$$ShadowLinkSchemaRegistryBasicAuthentication$$]__ | HTTP basic authentication credentials. For a Confluent Schema +
+Registry these are the schema registry API key (username) and API +
+secret (password). + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrybasicauthentication"]
+==== ShadowLinkSchemaRegistryBasicAuthentication
+
+
+
+HTTP basic authentication credentials for a source schema registry.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryauthentication[$$ShadowLinkSchemaRegistryAuthentication$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`username`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Username used for basic authentication, for example a Confluent +
+Schema Registry API key. May reference a Kubernetes Secret. + |  | 
+| *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Password used for basic authentication, for example a Confluent +
+Schema Registry API secret. May reference a Kubernetes Secret. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrycontextmapping"]
+==== ShadowLinkSchemaRegistryContextMapping
+
+
+
+Maps a source schema registry context to a destination context on the
+shadow cluster.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`source`* __string__ | The source context name. + |  | 
+| *`destination`* __string__ | The destination context name on the shadow cluster. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysourcefilter"]
+==== ShadowLinkSchemaRegistrySourceFilter
+
+
+
+Selects which contexts and subjects are replicated from a source schema
+registry.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`contexts`* __string array__ | Schema registry contexts to replicate, for example ".". If empty, +
+all contexts are replicated. + |  | 
+| *`subjects`* __string array__ | Subjects to replicate within the selected contexts. If empty, all +
+subjects are replicated. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions"]
 ==== ShadowLinkSchemaRegistrySyncOptions
 
@@ -4546,7 +4772,18 @@ Options for syncing schema registry settings
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`schema_registry_shadowing_mode`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptionsmode[$$ShadowLinkSchemaRegistrySyncOptionsMode$$]__ |  |  | 
+| *`enabled`* __boolean__ | Enabled controls whether schemas are replicated from the source +
+cluster. Defaults to true, which shadows the source Redpanda +
+cluster's internal schemas topic or, when shadowSchemaRegistryAPI is +
+configured, replicates from the source schema registry over its REST +
+API. Set to false to turn schema replication off. + | true | 
+| *`schema_registry_shadowing_mode`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptionsmode[$$ShadowLinkSchemaRegistrySyncOptionsMode$$]__ | Deprecated: schemas now replicate in "topic" mode by default. Use +
+enabled to turn replication off and shadowSchemaRegistryAPI to +
+replicate from an external schema registry instead. + |  | 
+| *`shadowSchemaRegistryAPI`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]__ | Configuration for replicating schemas from the source cluster's +
+schema registry REST API (for example a Confluent Schema Registry) +
+instead of shadowing a source Redpanda cluster's internal schemas +
+topic. + |  | 
 |===
 
 
@@ -4564,6 +4801,42 @@ _Underlying type:_ _string_
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions[$$ShadowLinkSchemaRegistrySyncOptions$$]
 ****
 
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrytls"]
+==== ShadowLinkSchemaRegistryTLS
+
+
+
+TLS settings used to connect to a source schema registry over its REST
+API. Only the fields below are honored for schema registry connections;
+unlike the Kafka API TLS configuration there is no insecureSkipTlsVerify
+escape hatch.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enabled turns on TLS for the connection to the source schema registry. +
+Set this to true when the registry is served by publicly issued +
+certificates (for example Confluent Cloud) and no caCert, cert, or key +
+needs to be supplied. Providing any of caCert, cert, or key implies TLS +
+regardless of this field. + |  | 
+| *`caCert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | CaCert references the certificate authority used to verify the source +
+schema registry's TLS certificate. May reference a Kubernetes Secret. + |  | 
+| *`cert`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Cert references the client public certificate used to establish an mTLS +
+connection to the source schema registry. May reference a Kubernetes +
+Secret. + |  | 
+| *`key`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-valuesource[$$ValueSource$$]__ | Key references the client private key used to establish an mTLS +
+connection to the source schema registry. If cert is provided, key must +
+be provided as well. May reference a Kubernetes Secret. + |  | 
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions"]
@@ -4614,7 +4887,16 @@ settings from the source cluster + |  |
 | *`topicMetadataSyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinktopicmetadatasyncoptions[$$ShadowLinkTopicMetadataSyncOptions$$]__ | Topic metadata sync options + |  | 
 | *`consumerOffsetSyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkconsumeroffsetsyncoptions[$$ShadowLinkConsumerOffsetSyncOptions$$]__ | Consumer offset sync options + |  | 
 | *`securitySyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinksecuritysettingssyncoptions[$$ShadowLinkSecuritySettingsSyncOptions$$]__ | Security settings sync options + |  | 
-| *`schemaRegistrySyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions[$$ShadowLinkSchemaRegistrySyncOptions$$]__ | options for schema registry + |  | 
+| *`schemaRegistrySyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptions[$$ShadowLinkSchemaRegistrySyncOptions$$]__ | Schema registry sync options. Schemas are replicated from the source +
+cluster by default; set schemaRegistrySyncOptions.enabled to false to +
+turn schema replication off. + | {  } | 
+| *`roleSyncOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkrolesyncoptions[$$ShadowLinkRoleSyncOptions$$]__ | RBAC role sync options. Roles are replicated from the source cluster +
+by default; set roleSyncOptions.enabled to false to turn role +
+replication off. + | {  } | 
+| *`clientOptions`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkclientoptions[$$ShadowLinkClientOptions$$]__ | Tuning knobs for the Kafka client the shadow cluster uses to fetch data +
+from the source cluster. Connection details (bootstrap servers, TLS) are +
+derived from sourceCluster and are not configurable here; only the mutable +
+performance/latency knobs are exposed. + |  | 
 |===
 
 
@@ -5338,6 +5620,24 @@ timer keeps firing until removed. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-unsupportedschemafeaturepolicy"]
+==== UnsupportedSchemaFeaturePolicy
+
+_Underlying type:_ _string_
+
+UnsupportedSchemaFeaturePolicy controls what happens when a source schema
+uses features that the Redpanda schema registry does not support.
+
+.Validation:
+- Enum: [fail remove]
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]
+****
+
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-updatestrategy"]
 ==== UpdateStrategy
 
@@ -5590,6 +5890,8 @@ ValueSource represents where a value can be pulled from
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasaslgssapi[$$KafkaSASLGSSAPI$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-kafkasasloauthbearer[$$KafkaSASLOAuthBearer$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaregistrysasl[$$SchemaRegistrySASL$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrybasicauthentication[$$ShadowLinkSchemaRegistryBasicAuthentication$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrytls[$$ShadowLinkSchemaRegistryTLS$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]

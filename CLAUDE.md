@@ -42,7 +42,7 @@ Multiple test suites use golden file comparison. To regenerate expected output i
 nix develop -c go test ./path/to/... -update-golden
 ```
 
-Note: Chart template tests (`TestTemplate`) use `-update` instead of `-update-golden`.
+This includes chart template tests (`TestTemplate`) — their goldens go through `github.com/redpanda-data/common-go/goldenfile`, which registers only `-update-golden`. A legacy `-update` flag still exists in `pkg/testutil` but nothing consumes it: running with `-update` silently regenerates nothing.
 
 ### Lifecycle golden tests
 
@@ -194,12 +194,12 @@ Each releasable project has a changie key used in commands:
 6. **Update golden test files** to reflect version changes:
    ```bash
    # Operator chart golden files
-   nix develop -c go test github.com/redpanda-data/redpanda-operator/operator/chart -run TestTemplate -update
+   nix develop -c go test github.com/redpanda-data/redpanda-operator/operator/chart -run TestTemplate -update-golden
 
    # Redpanda chart golden files
-   nix develop -c go test github.com/redpanda-data/redpanda-operator/charts/redpanda/... -run TestTemplate -update
+   nix develop -c go test github.com/redpanda-data/redpanda-operator/charts/redpanda/... -run TestTemplate -update-golden
    ```
-   Note: The flag is `-update`, not `-update-golden`, for chart template tests.
+   Note: The flag is `-update-golden` (the legacy `-update` flag is a no-op for chart template tests).
 
 7. **Run unit tests and lint** to verify:
    ```bash
@@ -254,6 +254,6 @@ nix develop -c task generate
 # Run golangci-lint (v2 format)
 nix develop -c task lint
 
-# Update golden files (prefer -update-golden)
+# Update golden files
 nix develop -c go test ./path/to/... -update-golden
 ```

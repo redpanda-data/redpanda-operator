@@ -291,14 +291,25 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		// if we have an error or an explicit requeue from one of our
 		// sub reconcilers, then just early return
 		if err != nil || result.RequeueAfter > 0 {
-			log.FromContext(ctx).V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
+			logger.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
 			return r.syncStatus(ctx, cluster, state, result, err)
 		}
 	}
 
-	// we're at the end of reconciliation, so sync back our status
-	log.FromContext(ctx).V(log.TraceLevel).Info("finished normal reconciliation loop")
-	return r.syncStatus(ctx, cluster, state, ctrl.Result{}, nil)
+	// we're at the end of reconciliation, so sync back our status.
+	// Poll again quickly (faster than the periodic requeue) while the cluster is
+	// not yet settled: either scaled up with no broker Ready yet, or a scale/roll
+	// is still in flight (reconcilePools skipped mutations this pass). Applied
+	// here — after the cluster reconcilers — rather than aborting inside
+	// reconcilePools, so outage-recovery steps still run while brokers are unready
+	// or churning. See PoolTracker.ScaledUpButNoneReady / CheckScale.
+	pollResult := ctrl.Result{}
+	if state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx) {
+		logger.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
+		pollResult.RequeueAfter = requeueTimeout
+	}
+	logger.V(log.TraceLevel).Info("finished normal reconciliation loop")
+	return r.syncStatus(ctx, cluster, state, pollResult, nil)
 }
 
 // clusterReconcilers returns the ordered cluster-level reconcile steps run
@@ -378,6 +389,9 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 	} else if pools.AllZero() {
 		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, messageNoBrokers)
 	} else {
+		// This branch is exactly pools.ScaledUpButNoneReady() — the same state
+		// that drives the end-of-Reconcile fast readiness poll. Keep the two in
+		// lockstep: a broker exists/desired but none is Ready yet.
 		status.Status.SetReady(statuses.ClusterReadyReasonNotReady, "No pods are ready")
 	}
 
@@ -447,9 +461,15 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	}()
 
 	if !state.pools.CheckScale(ctx) {
-		logger.V(log.TraceLevel).Info("scale operation currently underway")
-		// we're not yet ready to scale, so just requeue
-		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		// A scale/roll is underway — skip pool mutations this pass so we don't
+		// stack changes mid-scale. Do NOT abort: reconcilePools runs in the same
+		// chain as the cluster-level recovery steps (initAdminClient, maintenance-
+		// mode clear, decommission), and returning a RequeueAfter here would skip
+		// them, yet they must still run while a pod is churning (e.g. a down broker
+		// whose pod is being replaced). The fast requeue for the still-scaling
+		// state is applied at the end of Reconcile.
+		logger.V(log.TraceLevel).Info("scale operation currently underway; skipping pool mutations this pass")
+		return ctrl.Result{}, nil
 	}
 
 	logger.V(log.TraceLevel).Info("ready to scale and apply node pools", "existing", state.pools.ExistingStatefulSets(), "desired", state.pools.DesiredStatefulSets())
@@ -481,13 +501,13 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 		}
 	}
 
-	result := ctrl.Result{}
-	requeue := !(state.pools.AnyReady() || state.pools.AllZero())
-
-	if requeue {
-		result.RequeueAfter = requeueTimeout
-	}
-	return result, nil
+	// NOTE: the "no pod is Ready yet" fast requeue is intentionally NOT returned
+	// here. reconcilePools runs in the same chain as the cluster-level recovery
+	// steps (initAdminClient, maintenance-mode clear, decommission); returning a
+	// RequeueAfter would abort that chain before them, and those steps must run
+	// precisely while brokers are unready during an outage. The readiness poll is
+	// applied at the end of Reconcile instead — see PoolTracker.ScaledUpButNoneReady.
+	return ctrl.Result{}, nil
 }
 
 func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {

@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'The Redpanda and `StretchCluster` reconcilers no longer stall cluster-level recovery when no broker is Ready. Previously the pool reconciler aborted the reconcile pass whenever the cluster had no Ready broker, so during a full-region outage — where every surviving broker''s readiness probe fails on under-replicated partitions — the operator could never run the very recovery steps needed to heal the cluster: clearing stuck maintenance mode and decommissioning (both reconcilers), plus the stale-disk wipe (StretchCluster only). The "no broker Ready yet" fast requeue is now applied at the end of the reconcile instead of aborting it.'
+time: 2026-07-02T14:09:44+02:00

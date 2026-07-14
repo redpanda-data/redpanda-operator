@@ -112,6 +112,13 @@ type MulticlusterOptions struct {
 	// `run` command's --clear-maintenance-mode-after.
 	ClearMaintenanceModeAfter time.Duration
 
+	// StaleDiskWipeNotReadyThreshold is how long a broker pod must stay
+	// not-Ready with an on-disk identity that collides with the cluster's view
+	// before the operator wipes the stale disk (deletes its PVC + pod) to
+	// recover a bad_rejoin (K8S-843). Zero uses the built-in default; a
+	// negative value disables the behavior.
+	StaleDiskWipeNotReadyThreshold time.Duration
+
 	// Per-controller default reconcile (sync) intervals. A per-CR spec.interval
 	// always takes precedence. Mirror the `run` command's flags.
 	TopicSyncInterval      time.Duration
@@ -230,6 +237,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
 	cmd.Flags().IntVar(&o.PostRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
 	cmd.Flags().DurationVar(&o.ClearMaintenanceModeAfter, "clear-maintenance-mode-after", 30*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the Redpanda partition balancer can auto-decommission it. There's no signal distinguishing a stuck broker from one intentionally in a longer planned maintenance window, so raise this if your maintenance windows commonly run longer. Default 30m.")
+	cmd.Flags().DurationVar(&o.StaleDiskWipeNotReadyThreshold, "wipe-stale-disk-after", 0, "How long a broker pod must stay not-Ready with an on-disk identity that collides with the cluster's authoritative broker-uuid view before the operator wipes the stale disk — deleting the pod's PVC + pod so it reschedules onto a fresh disk — recovering a decommissioned-broker bad_rejoin crashloop (K8S-843). This is a destructive, guarded recovery (confirmed collision + sustained not-Ready + healthy cluster + zero nodes down). 0 uses the built-in default (5m); set a negative duration (e.g. -1s) to disable the stale-disk wipe entirely. Distinct from --unbind-pvcs-after (the non-destructive PVCUnbinder): the wipe destroys the disk and fires only on a retired-identity collision confirmed by reading the broker itself; when that identity cannot be read (e.g. a never-booted Pending pod) it defers, leaving the pod to the PVCUnbinder.")
 	cmd.Flags().BoolVar(&o.EnableConsoleController, "enable-console", true, "Specifies whether or not to enable the Redpanda Console controller")
 	// Per-controller default reconcile (sync) intervals. Same flags/defaults as
 	// the `run` command; a per-CR spec.interval takes precedence.
@@ -414,7 +422,7 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.ClearMaintenanceModeAfter); err != nil {
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.ClearMaintenanceModeAfter, opts.StaleDiskWipeNotReadyThreshold); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}

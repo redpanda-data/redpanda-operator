@@ -215,6 +215,29 @@ func (p *PoolTracker) AllZero() bool {
 	return true
 }
 
+// ScaledUpButNoneReady reports that the cluster is expected to be running (at
+// least one desired pool is scaled above zero) but no existing pool has a Ready
+// replica yet. Reconcilers use it to poll again quickly while the cluster comes
+// up.
+//
+// It must only be consulted to decide the reconcile's REQUEUE cadence, applied
+// at the very end of the reconcile — never to abort the reconcile before the
+// cluster-level recovery steps (maintenance-mode clear, stale-disk wipe,
+// decommission). Those steps exist precisely to run while brokers are unready:
+// during a full region outage every surviving broker's sidecar readiness probe
+// fails (under-replicated partitions), so no pool has a Ready replica and this
+// returns true for the entire outage. Gating the recovery steps on it would
+// deadlock — the operator could never clear stuck maintenance, wipe a
+// bad_rejoin disk, or decommission a lost broker while it mattered most.
+//
+// Note this only removes the READINESS gate on those steps. Other, narrower
+// gates in the reconcile can still defer them for a pass — notably CheckScale
+// (an active scale/roll) and initAdminClient (no reachable broker admin API);
+// recovery in those windows relies on eventual consistency across reconciles.
+func (p *PoolTracker) ScaledUpButNoneReady() bool {
+	return !(p.AnyReady() || p.AllZero())
+}
+
 // PoolStatuses returns a list of the pool statuses of the existing StatefulSets tracked by the PoolTracker.
 // It also includes desired pools that don't yet exist so the status reflects intent to create them.
 func (p *PoolTracker) PoolStatuses() []PoolStatus {
@@ -530,13 +553,15 @@ func (p *PoolTracker) HasRecentlyReplacedPods() bool {
 
 // ExistingPods returns every existing pod across all pools as MulticlusterPods,
 // regardless of StatefulSet revision. Unlike PodsToRoll it does not filter on
-// revision — the maintenance-mode cleaner must inspect pods that are not in the
-// roll set (e.g. a persistently-down broker whose pod is Pending/not-Ready).
+// revision — both the maintenance-mode cleaner and the stale-disk wipe step must
+// inspect pods that are not in the roll set (e.g. a persistently-down broker whose
+// pod is Pending/not-Ready, or a decommissioned broker stuck in a bad_rejoin
+// crashloop).
 func (p *PoolTracker) ExistingPods() []*MulticlusterPod {
 	pods := []*MulticlusterPod{}
 	for _, existing := range p.existingPools {
 		for _, withOrdinals := range existing.pods {
-			pods = append(pods, &MulticlusterPod{Pod: withOrdinals.pod.DeepCopy(), clusterName: existing.set.clusterName, canonicalClusterName: existing.set.canonicalClusterName})
+			pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
 		}
 	}
 	return pods

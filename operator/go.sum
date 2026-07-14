@@ -8,10 +8,10 @@ buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-c
 buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1/go.mod h1:6hKTMhz7HwMsEPY0AyH4onySC7OBRNu9wOPFsxLv0kI=
 buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.11-20260316210807-5d899910f714.1 h1:0VqRxdW7k+vkdxdVKPmlpWFdnUJPDJwlW4h4Kqibjuw=
 buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.11-20260316210807-5d899910f714.1/go.mod h1:3w7EzexwlL6PIFGbbeKZ0yHfUlAmI0aBVzF/QoFb8Cg=
-buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260506141738-8dfb14358799.1 h1:0cW5zcBQS7rT4cNugDJkjEm2Vdr+af25WB/OqKLgelI=
-buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260506141738-8dfb14358799.1/go.mod h1:Q09oAkV+KV1qms/nPvk6kJ51myCmGKjHCo8dYQ9UNxE=
-buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260506141738-8dfb14358799.1 h1:v1BvRDJTStoHx54xuGcslo4EurUgVLCjq0oINARzNiQ=
-buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260506141738-8dfb14358799.1/go.mod h1:5sjUVquVwNxt3Q/EhE/UW0BBJ5sgPiaVTw8//wxRULI=
+buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260624144219-f1d5d6c05e3a.1 h1:OjCDBLRGFiDebd+3/oT4riDh/CAyaLzK5qRMre4NwSo=
+buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260624144219-f1d5d6c05e3a.1/go.mod h1:VsmSjEfKtbcZRK1Su8BEY3cPscAE4sQnaBFGBPgkfMA=
+buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260624144219-f1d5d6c05e3a.1 h1:E8EiX0xbOkE7PuWFLqdTuk8/YqT+QsQUOrroSJmybSo=
+buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260624144219-f1d5d6c05e3a.1/go.mod h1:5sjUVquVwNxt3Q/EhE/UW0BBJ5sgPiaVTw8//wxRULI=
 buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.18.1-20250404200318-65f29ddd7b29.1 h1:iIj2C/0IDTFR0JtIgKfFHRtkCIb7YqQEdNylVab2pz0=
 buf.build/gen/go/redpandadata/dataplane/connectrpc/go v1.18.1-20250404200318-65f29ddd7b29.1/go.mod h1:72CA7I2EBjkbygOtYfvNpyLwD14RqoMa9vL9SGlWkIk=
 buf.build/gen/go/redpandadata/dataplane/protocolbuffers/go v1.36.5-20250404200318-65f29ddd7b29.1 h1:/i5xh4Kk3Vvbvcqyunu9NOdxIU7Mu5EuiYzczjckbgE=

@@ -83,6 +83,15 @@ func (r *RenderState) FetchBootstrapUser() {
 	// that a password be explicitly set?
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
 	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, selector.Name); ok {
+		// This object is re-rendered into the chart's output, so server
+		// populated metadata must be stripped: Helm 4 server-side applies
+		// rendered manifests and the API server rejects any apply request
+		// carrying metadata.managedFields, while resourceVersion and uid act
+		// as update preconditions we must not re-assert.
+		// See: https://github.com/redpanda-data/redpanda-operator/issues/1648
+		existing.ObjectMeta.ManagedFields = nil
+		existing.ObjectMeta.ResourceVersion = ""
+		existing.ObjectMeta.UID = ""
 		// make any existing secret immutable
 		existing.Immutable = ptr.To(true)
 		r.BootstrapUserSecret = existing

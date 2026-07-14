@@ -70,8 +70,12 @@ spec:
                           In production, use ValueFrom.
                         type: string
                       valueFrom:
-                        description: ValueFrom specifies a source for a password to
-                          be fetched from when specifying or generating user credentials.
+                        description: |-
+                          ValueFrom specifies a source for a password to be fetched from when specifying or generating user credentials.
+                          Optional when value is set: the type-level validation rule enforces
+                          that at least one of the two is present. (This field being marked
+                          required in the schema used to make the documented value-only form
+                          impossible to apply — https://github.com/redpanda-data/redpanda-operator/issues/1290.)
                         properties:
                           secretKeyRef:
                             description: |-
@@ -104,12 +108,10 @@ spec:
                         required:
                         - secretKeyRef
                         type: object
-                    required:
-                    - valueFrom
                     type: object
                     x-kubernetes-validations:
                     - message: valueFrom must not be empty if no value supplied
-                      rule: self.value != "" || has(self.valueFrom)
+                      rule: (has(self.value) && self.value != "") || has(self.valueFrom)
                   syncCredentials:
                     description: |-
                       SyncCredentials when set to true causes the operator to re-read the
@@ -300,7 +302,14 @@ spec:
                         description: |-
                           Group is used to override the object group that this reference points to.
                           If unspecified, defaults to "cluster.redpanda.com".
+                          A bare API group only — controllers match it by string comparison, so a
+                          "group/version" value (e.g. "cluster.redpanda.com/v1alpha2") would
+                          silently match nothing and the referencing object would never bind.
                         type: string
+                        x-kubernetes-validations:
+                        - message: group must be a bare API group without a version
+                            suffix (e.g. cluster.redpanda.com, not cluster.redpanda.com/v1alpha2)
+                          rule: '!self.contains(''/'')'
                       kind:
                         description: |-
                           Kind is used to override the object kind that this reference points to.

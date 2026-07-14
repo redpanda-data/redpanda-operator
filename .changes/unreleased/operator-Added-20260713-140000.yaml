@@ -1,0 +1,19 @@
+project: operator
+kind: Added
+body: |
+  ShadowLink now replicates RBAC roles and schemas from the source cluster by
+  default. A new `spec.roleSyncOptions` section controls role replication
+  (`enabled`, `interval`, `paused`, and `roleNameFilters`, which default to a
+  single include-all filter), and `spec.schemaRegistrySyncOptions` gained an
+  `enabled` toggle that defaults to shadowing the source cluster's schemas
+  topic. Set `enabled: false` on either section to turn the replication off.
+
+  Schemas can also be replicated from an external schema registry (for
+  example a Confluent Schema Registry) over its REST API via the new
+  `spec.schemaRegistrySyncOptions.shadowSchemaRegistryAPI` section, which
+  supports the source URL, TLS settings, sync intervals, a source
+  context/subject filter, context mappings, and an unsupported schema feature
+  policy. The HTTP basic authentication credentials — the schema registry API
+  key (username) and API secret (password) — may reference Kubernetes
+  Secrets.
+time: 2026-07-13T14:00:00.000000-07:00

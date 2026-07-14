@@ -159,7 +159,14 @@ func configureAPIListener(
 				entry["authentication_method"] = authMethod
 			}
 			listeners = append(listeners, entry)
-			if ext.TLS.GetCert() != "" {
+			// Mirror the internal-listener guard above: without the
+			// IsTLSEnabled check, the defaulted external listeners (which
+			// always carry cert name "external") emit *_api_tls entries
+			// even when the pool disables TLS — and because the
+			// certificate/volume side IS pool-TLS-gated
+			// (InUseServerCerts), the broker then crashloops reading
+			// /etc/tls/certs/external/* files that nothing mounts.
+			if ext.TLS.IsTLSEnabled(pool.Spec.TLS) && ext.TLS.GetCert() != "" {
 				tlsEntries = append(tlsEntries, listenerTLSEntry(pool, name, ext.TLS))
 			}
 		})

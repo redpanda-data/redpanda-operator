@@ -1315,3 +1315,49 @@ func TestHasRecentlyReplacedPods(t *testing.T) {
 		})
 	}
 }
+
+// TestPoolTrackerScaledUpButNoneReady pins the readiness-poll predicate that
+// gates only the reconcile's requeue cadence — never the cluster-level recovery
+// steps. The critical case is a scaled-up cluster whose pods are all not-Ready
+// (e.g. a region outage where every surviving broker's sidecar readiness probe
+// fails on under-replicated partitions): it must report true (poll again) while
+// still allowing the caller to run maintenance-clear / stale-disk-wipe / decommission.
+func TestPoolTrackerScaledUpButNoneReady(t *testing.T) {
+	set := func(name string, specReplicas, readyReplicas int32) *MulticlusterStatefulSet {
+		return &MulticlusterStatefulSet{
+			clusterName: mcmanager.LocalCluster,
+			StatefulSet: &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: name},
+				Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(specReplicas)},
+				Status:     appsv1.StatefulSetStatus{ReadyReplicas: readyReplicas},
+			},
+		}
+	}
+
+	t.Run("no pools at all -> not awaiting", func(t *testing.T) {
+		tracker := NewPoolTracker(0, false)
+		require.False(t, tracker.ScaledUpButNoneReady())
+	})
+
+	t.Run("scaled up but no ready replica (outage) -> awaiting", func(t *testing.T) {
+		tracker := NewPoolTracker(0, false)
+		tracker.addExisting(&poolWithOrdinals{set: set("pool-1", 2, 0)})
+		tracker.addDesired(set("pool-1", 2, 0))
+		require.True(t, tracker.ScaledUpButNoneReady(),
+			"a scaled-up cluster with no Ready broker yet must poll again — but must NOT block cluster recovery")
+	})
+
+	t.Run("at least one ready replica -> not awaiting", func(t *testing.T) {
+		tracker := NewPoolTracker(0, false)
+		tracker.addExisting(&poolWithOrdinals{set: set("pool-1", 2, 1)})
+		tracker.addDesired(set("pool-1", 2, 1))
+		require.False(t, tracker.ScaledUpButNoneReady())
+	})
+
+	t.Run("all desired scaled to zero -> not awaiting", func(t *testing.T) {
+		tracker := NewPoolTracker(0, false)
+		tracker.addExisting(&poolWithOrdinals{set: set("pool-1", 0, 0)})
+		tracker.addDesired(set("pool-1", 0, 0))
+		require.False(t, tracker.ScaledUpButNoneReady())
+	})
+}

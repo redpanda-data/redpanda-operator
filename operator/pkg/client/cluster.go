@@ -205,9 +205,10 @@ func (c *Factory) remoteClusterSettingsForCluster(ctx context.Context, cluster *
 	settings.BootstrapServers = clusterConfig.Brokers
 	if clusterConfig.TLS != nil {
 		settings.TLSSettings = &shadow.TLSSettings{
-			CA:   clusterConfig.TLS.CA,
-			Cert: clusterConfig.TLS.Cert,
-			Key:  clusterConfig.TLS.Key,
+			Enabled: true,
+			CA:      clusterConfig.TLS.CA,
+			Cert:    clusterConfig.TLS.Cert,
+			Key:     clusterConfig.TLS.Key,
 		}
 	}
 

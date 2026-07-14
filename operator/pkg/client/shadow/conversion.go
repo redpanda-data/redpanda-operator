@@ -26,9 +26,32 @@ type RemoteClusterSettings struct {
 	BootstrapServers []string
 	TLSSettings      *TLSSettings
 	Authentication   *AuthenticationSettings
+	// SchemaRegistry holds the resolved connection material for the source
+	// schema registry when the link replicates schemas over the schema
+	// registry REST API.
+	SchemaRegistry *SchemaRegistrySettings
+}
+
+// SchemaRegistrySettings holds resolved (secrets already read) connection
+// material for a source schema registry.
+type SchemaRegistrySettings struct {
+	BasicAuthentication *HTTPBasicAuthenticationSettings
+	TLSSettings         *TLSSettings
+}
+
+// HTTPBasicAuthenticationSettings holds resolved HTTP basic authentication
+// credentials, e.g. a Confluent Schema Registry API key and secret.
+type HTTPBasicAuthenticationSettings struct {
+	Username string
+	Password string
 }
 
 type TLSSettings struct {
+	// Enabled turns TLS on even when no CA/Cert/Key material is supplied, for
+	// example when the endpoint is served by publicly issued certificates.
+	// Supplying any of CA/Cert/Key also enables TLS regardless of this flag.
+	Enabled bool
+
 	// all of the following fields are in PEM format
 	CA string
 	// Key and Cert are optional but if one is provided, then both must be
@@ -54,24 +77,121 @@ func convertCRDToAPIShadowLink(link *redpandav1alpha2.ShadowLink, remoteClusterS
 
 func convertCRDToAPIShadowLinkConfiguration(link *redpandav1alpha2.ShadowLink, remoteClusterSettings RemoteClusterSettings) *adminv2api.ShadowLinkConfigurations {
 	return &adminv2api.ShadowLinkConfigurations{
-		ClientOptions:             convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings),
+		ClientOptions:             convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings, link.Spec.ClientOptions),
 		TopicMetadataSyncOptions:  convertCRDToAPIShadowLinkTopicMetadataSyncOptions(link.Spec.TopicMetadataSyncOptions),
 		ConsumerOffsetSyncOptions: convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(link.Spec.ConsumerOffsetSyncOptions),
 		SecuritySyncOptions:       convertCRDToAPIShadowLinkSecuritySyncOptions(link.Spec.SecuritySyncOptions),
-		SchemaRegistrySyncOptions: convertCRDToAPISchemaRegistrySyncOptions(link.Spec.SchemaRegistrySyncOptions),
+		SchemaRegistrySyncOptions: convertCRDToAPISchemaRegistrySyncOptions(link.Spec.SchemaRegistrySyncOptions, remoteClusterSettings.SchemaRegistry),
+		RoleSyncOptions:           convertCRDToAPIShadowLinkRoleSyncOptions(link.Spec.RoleSyncOptions),
 	}
 }
 
-func convertCRDToAPISchemaRegistrySyncOptions(options *redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions) *adminv2api.SchemaRegistrySyncOptions {
+// defaultRoleNameFilters is the include-all filter applied when a link does
+// not specify roleNameFilters: without it the cluster replicates no roles at
+// all, while the CRD documents that roles replicate by default.
+var defaultRoleNameFilters = []redpandav1alpha2.NameFilter{{
+	Name:        "*",
+	FilterType:  redpandav1alpha2.FilterTypeInclude,
+	PatternType: redpandav1alpha2.PatternTypeLiteral,
+}}
+
+func convertCRDToAPIShadowLinkRoleSyncOptions(options *redpandav1alpha2.ShadowLinkRoleSyncOptions) *adminv2api.RoleSyncOptions {
 	if options == nil {
+		options = &redpandav1alpha2.ShadowLinkRoleSyncOptions{}
+	}
+	if !ptr.Deref(options.Enabled, true) {
+		return nil
+	}
+	filters := options.RoleNameFilters
+	if len(filters) == 0 {
+		filters = defaultRoleNameFilters
+	}
+	apiOptions := &adminv2api.RoleSyncOptions{
+		Paused:          options.Paused,
+		RoleNameFilters: functional.MapFn(convertCRDToAPINameFilter, filters),
+	}
+	if options.Interval != nil {
+		apiOptions.Interval = durationpb.New(options.Interval.Duration)
+	}
+	return apiOptions
+}
+
+func convertCRDToAPISchemaRegistrySyncOptions(options *redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions, settings *SchemaRegistrySettings) *adminv2api.SchemaRegistrySyncOptions {
+	if options == nil {
+		options = &redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{}
+	}
+	if !ptr.Deref(options.Enabled, true) {
 		return nil
 	}
 	apiOptions := &adminv2api.SchemaRegistrySyncOptions{}
-	switch options.Mode {
-	case redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeTopic:
-		apiOptions.SetShadowSchemaRegistryTopic(&adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryTopic{})
+	if options.ShadowSchemaRegistryAPI != nil {
+		apiOptions.SetShadowSchemaRegistryApi(convertCRDToAPIShadowSchemaRegistryAPI(options.ShadowSchemaRegistryAPI, settings))
+		return apiOptions
+	}
+	apiOptions.SetShadowSchemaRegistryTopic(&adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryTopic{})
+	return apiOptions
+}
+
+func convertCRDToAPIShadowSchemaRegistryAPI(options *redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions, settings *SchemaRegistrySettings) *adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryApi {
+	apiOptions := &adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryApi{
+		SourceUrl:   options.SourceURL,
+		Destination: convertCRDToAPISchemaRegistryDestination(options.ContextMappings),
+	}
+	if options.TailInterval != nil {
+		apiOptions.TailInterval = durationpb.New(options.TailInterval.Duration)
+	}
+	if options.FullSyncInterval != nil {
+		apiOptions.FullSyncInterval = durationpb.New(options.FullSyncInterval.Duration)
+	}
+	if options.MaxSourceRequestsPerSecond != nil {
+		apiOptions.MaxSourceRequestsPerSecond = *options.MaxSourceRequestsPerSecond
+	}
+	if options.SourceFilter != nil {
+		apiOptions.SourceFilter = &adminv2api.SchemaRegistrySourceFilter{
+			Contexts: options.SourceFilter.Contexts,
+			Subjects: options.SourceFilter.Subjects,
+		}
+	}
+	if options.UnsupportedSchemaFeaturePolicy != nil {
+		apiOptions.UnsupportedSchemaFeaturePolicy = convertCRDToAPIUnsupportedSchemaFeaturePolicy(*options.UnsupportedSchemaFeaturePolicy)
+	}
+	if settings != nil {
+		if settings.BasicAuthentication != nil {
+			authOptions := &adminv2api.SchemaRegistryAuthOptions{}
+			authOptions.SetBasic(&adminv2api.HTTPBasicAuthOptions{
+				Username:    settings.BasicAuthentication.Username,
+				Password:    settings.BasicAuthentication.Password,
+				PasswordSet: true,
+			})
+			apiOptions.AuthOptions = authOptions
+		}
+		apiOptions.TlsSettings = convertTLSSettingsToAPITLSConfig(settings.TLSSettings)
 	}
 	return apiOptions
+}
+
+func convertCRDToAPISchemaRegistryDestination(mappings []redpandav1alpha2.ShadowLinkSchemaRegistryContextMapping) *adminv2api.SchemaRegistryContextDestination {
+	destination := &adminv2api.SchemaRegistryContextDestination{}
+	if len(mappings) == 0 {
+		destination.SetIdentity(&adminv2api.SchemaRegistryIdentityContextMapping{})
+		return destination
+	}
+	destination.SetExact(&adminv2api.SchemaRegistryExactContextMappings{
+		Mappings: functional.MapFn(func(mapping redpandav1alpha2.ShadowLinkSchemaRegistryContextMapping) *adminv2api.SchemaRegistryContextMap {
+			return &adminv2api.SchemaRegistryContextMap{
+				Source:      mapping.Source,
+				Destination: mapping.Destination,
+			}
+		}, mappings),
+	})
+	return destination
+}
+
+func convertCRDToAPIUnsupportedSchemaFeaturePolicy(policy redpandav1alpha2.UnsupportedSchemaFeaturePolicy) adminv2api.UnsupportedSchemaFeaturePolicy {
+	return map[redpandav1alpha2.UnsupportedSchemaFeaturePolicy]adminv2api.UnsupportedSchemaFeaturePolicy{
+		redpandav1alpha2.UnsupportedSchemaFeaturePolicyFail:   adminv2api.UnsupportedSchemaFeaturePolicy_UNSUPPORTED_SCHEMA_FEATURE_POLICY_FAIL,
+		redpandav1alpha2.UnsupportedSchemaFeaturePolicyRemove: adminv2api.UnsupportedSchemaFeaturePolicy_UNSUPPORTED_SCHEMA_FEATURE_POLICY_REMOVE,
+	}[policy]
 }
 
 func convertTLSSettingsToAPITLSConfig(tlsSettings *TLSSettings) *commonv1.TLSSettings {
@@ -79,7 +199,11 @@ func convertTLSSettingsToAPITLSConfig(tlsSettings *TLSSettings) *commonv1.TLSSet
 		return nil
 	}
 	settings := &commonv1.TLSSettings{
-		Enabled: true,
+		// Supplying any CA/Cert/Key material implies TLS, matching the
+		// long-standing CommonTLS semantics; the explicit Enabled flag covers
+		// endpoints served by publicly issued certificates that need no
+		// material.
+		Enabled: tlsSettings.Enabled || tlsSettings.CA != "" || tlsSettings.Cert != "" || tlsSettings.Key != "",
 	}
 	settings.SetTlsPemSettings(&commonv1.TLSPEMSettings{
 		Ca:             tlsSettings.CA,
@@ -119,12 +243,24 @@ func convertAuthenticationSettingsToAPIAuthSettings(authSettings *Authentication
 	return settings
 }
 
-func convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings RemoteClusterSettings) *adminv2api.ShadowLinkClientOptions {
-	return &adminv2api.ShadowLinkClientOptions{
+func convertRemoteClusterSettingsToAPIShadowLinkClientOptions(remoteClusterSettings RemoteClusterSettings, clientOptions *redpandav1alpha2.ShadowLinkClientOptions) *adminv2api.ShadowLinkClientOptions {
+	options := &adminv2api.ShadowLinkClientOptions{
 		BootstrapServers:            remoteClusterSettings.BootstrapServers,
 		TlsSettings:                 convertTLSSettingsToAPITLSConfig(remoteClusterSettings.TLSSettings),
 		AuthenticationConfiguration: convertAuthenticationSettingsToAPIAuthSettings(remoteClusterSettings.Authentication),
 	}
+	// A zero value on any of the tuning knobs means "use the server default", so
+	// unset CRD fields are forwarded as 0 and left to the broker to resolve.
+	if clientOptions != nil {
+		options.FetchMinBytes = clientOptions.FetchMinBytes
+		options.FetchWaitMaxMs = clientOptions.FetchWaitMaxMs
+		options.FetchMaxBytes = clientOptions.FetchMaxBytes
+		options.FetchPartitionMaxBytes = clientOptions.FetchPartitionMaxBytes
+		options.MetadataMaxAgeMs = clientOptions.MetadataMaxAgeMs
+		options.ConnectionTimeoutMs = clientOptions.ConnectionTimeoutMs
+		options.RetryBackoffMs = clientOptions.RetryBackoffMs
+	}
+	return options
 }
 
 func convertCRDToAPIShadowLinkConsumerOffsetSyncOptions(options *redpandav1alpha2.ShadowLinkConsumerOffsetSyncOptions) *adminv2api.ConsumerOffsetSyncOptions {

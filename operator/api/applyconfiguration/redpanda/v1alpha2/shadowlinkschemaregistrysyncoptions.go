@@ -18,7 +18,9 @@ import (
 // ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkSchemaRegistrySyncOptions type for use
 // with apply.
 type ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration struct {
-	Mode *redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
+	Enabled                 *bool                                                     `json:"enabled,omitempty"`
+	Mode                    *redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
+	ShadowSchemaRegistryAPI *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration     `json:"shadowSchemaRegistryAPI,omitempty"`
 }
 
 // ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkSchemaRegistrySyncOptions type for use with
@@ -27,10 +29,26 @@ func ShadowLinkSchemaRegistrySyncOptions() *ShadowLinkSchemaRegistrySyncOptionsA
 	return &ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration{}
 }
 
+// WithEnabled sets the Enabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Enabled field is set to the value of the last call.
+func (b *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration) WithEnabled(value bool) *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration {
+	b.Enabled = &value
+	return b
+}
+
 // WithMode sets the Mode field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Mode field is set to the value of the last call.
 func (b *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration) WithMode(value redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsMode) *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration {
 	b.Mode = &value
+	return b
+}
+
+// WithShadowSchemaRegistryAPI sets the ShadowSchemaRegistryAPI field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ShadowSchemaRegistryAPI field is set to the value of the last call.
+func (b *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration) WithShadowSchemaRegistryAPI(value *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration {
+	b.ShadowSchemaRegistryAPI = value
 	return b
 }

@@ -1381,3 +1381,23 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+-- tls-disabled --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  tls:
+    enabled: false

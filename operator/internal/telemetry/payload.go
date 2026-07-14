@@ -35,6 +35,10 @@ type Payload struct {
 		TotalCPUCores  int      `json:"totalCpuCores,omitempty"`
 		TotalMemoryGiB int      `json:"totalMemoryGiB,omitempty"`
 		BrokerSizes    []string `json:"brokerSizes,omitempty"`
+		// HostTuners counts StretchClusters with the chroot-based host tuning
+		// init container enabled (spec.tuning.apply_host_tuners); see
+		// redpanda.hostTunersEnabled.
+		HostTuners int `json:"hostTunersEnabled,omitempty"`
 	} `json:"stretchCluster"`
 
 	// Redpanda aggregates the fleet of v2 (chart-based) Redpanda CRs. The
@@ -76,6 +80,13 @@ type Payload struct {
 		// GatewayAPIExternalAccess counts clusters using Gateway API TLSRoute-based
 		// external access (spec.external.gateway.enabled).
 		GatewayAPIExternalAccess int `json:"gatewayAPIExternalAccessEnabled"`
+		// HostTuners counts clusters with the chroot-based host tuning init
+		// container enabled (spec.tuning.apply_host_tuners), which lets
+		// `rpk redpanda tune all` apply host-level tuners like disk_irq,
+		// disk_scheduler, disk_nomerges and net. The long-standing
+		// tune_aio_events tuner is not counted here — only the opt-in
+		// host-tuner mode.
+		HostTuners int `json:"hostTunersEnabled"`
 	} `json:"redpanda"`
 
 	// VectorizedClusters counts deprecated v1 (vectorized Cluster CR) installs

@@ -245,9 +245,10 @@ func (c *Factory) remoteClusterSettingsForSpec(ctx context.Context, spec *ir.Kaf
 
 	if configuration.TLS != nil {
 		settings.TLSSettings = &shadow.TLSSettings{
-			CA:   configuration.TLS.CA,
-			Cert: configuration.TLS.Cert,
-			Key:  configuration.TLS.Key,
+			Enabled: true,
+			CA:      configuration.TLS.CA,
+			Cert:    configuration.TLS.Cert,
+			Key:     configuration.TLS.Key,
 		}
 	}
 

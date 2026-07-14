@@ -36,6 +36,8 @@ tasks:
           PATH: ./internal/controller/rpkdebugbundle
         - NAME: rack-awareness
           PATH: ./internal/controller/rackawareness
+        - NAME: stretch-rack-awareness
+          PATH: ./internal/controller/stretchrackawareness
         - NAME: old-decommission
           PATH: ./internal/controller/olddecommission
         - NAME: pvcunbinder
@@ -86,6 +88,7 @@ tasks:
           ./config/rbac/itemized/old-decommission.yaml \
           ./config/rbac/itemized/pvcunbinder.yaml \
           ./config/rbac/itemized/rack-awareness.yaml \
+          ./config/rbac/itemized/stretch-rack-awareness.yaml \
           ./config/rbac/itemized/rpk-debug-bundle.yaml \
           ./config/rbac/itemized/sidecar.yaml \
           ./config/rbac/itemized/crd-installation.yaml \
