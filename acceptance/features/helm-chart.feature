@@ -37,3 +37,55 @@ Feature: Redpanda Helm Chart
     3 active
     2 -
     ```
+
+  Scenario: Bootstrap user Secret survives upgrades without server-set metadata
+    Given I helm install "sasl-upgrade" "../charts/redpanda/chart" with values:
+    ```yaml
+     fullnameOverride: saslupgrade
+
+     statefulset:
+       replicas: 1
+       sideCars:
+         image:
+           tag: dev
+           repository: localhost/redpanda-operator
+
+     external:
+       enabled: false
+
+     console:
+       enabled: false
+
+     auth:
+       sasl:
+         enabled: true
+         users:
+           - name: admin
+             password: sasl-password
+    ```
+    When I helm upgrade "sasl-upgrade" "../charts/redpanda/chart" with values:
+    ```yaml
+     fullnameOverride: saslupgrade
+
+     statefulset:
+       replicas: 1
+       sideCars:
+         image:
+           tag: dev
+           repository: localhost/redpanda-operator
+
+     external:
+       enabled: false
+
+     console:
+       enabled: false
+
+     auth:
+       sasl:
+         enabled: true
+         users:
+           - name: admin
+             password: sasl-password
+    ```
+    Then the stored manifest for release "sasl-upgrade" re-renders Secret "saslupgrade-bootstrap-user" without server-set metadata
+    And the stored manifest for release "sasl-upgrade" re-renders Secret "saslupgrade-bootstrap-user" with the password in use
