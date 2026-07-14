@@ -327,6 +327,37 @@ func TestRBACBindings(t *testing.T) {
 	}
 }
 
+// TestRBACStretchRackAwarenessScoped asserts that the operator only claims
+// the nodes list/watch grant needed for StretchCluster's per-pool rack
+// awareness ClusterRole (operator/multicluster/rbac.go) on multicluster
+// installs, and not on default single-cluster installs.
+func TestRBACStretchRackAwarenessScoped(t *testing.T) {
+	defaultObjs, err := Chart.Render(nil, helmette.Release{Name: "operator"}, PartialValues{})
+	require.NoError(t, err)
+
+	defaultClusterRoleRules, _ := ExtractRules(defaultObjs)
+	nodeVerbs := defaultClusterRoleRules["#nodes"]
+	require.NotContains(t, nodeVerbs, "list", "default single-cluster install should not hold nodes:list")
+	require.NotContains(t, nodeVerbs, "watch", "default single-cluster install should not hold nodes:watch")
+
+	multiclusterObjs, err := Chart.Render(nil, helmette.Release{Name: "operator"}, PartialValues{
+		Multicluster: &PartialMulticluster{
+			Enabled:                      ptr.To(true),
+			Name:                         ptr.To("cluster-1"),
+			KubernetesAPIExternalAddress: ptr.To("cluster-1.example.com"),
+			Peers: []PartialPeer{
+				{Name: ptr.To("cluster-2"), Address: ptr.To("cluster-2.example.com")},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	multiclusterClusterRoleRules, _ := ExtractRules(multiclusterObjs)
+	multiclusterNodeVerbs := multiclusterClusterRoleRules["#nodes"]
+	require.Contains(t, multiclusterNodeVerbs, "list", "multicluster install should hold nodes:list")
+	require.Contains(t, multiclusterNodeVerbs, "watch", "multicluster install should hold nodes:watch")
+}
+
 func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 	testCases := []struct {
 		Name           string

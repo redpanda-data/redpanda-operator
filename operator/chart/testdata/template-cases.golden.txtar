@@ -734,14 +734,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -2302,14 +2294,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -3920,14 +3904,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -5668,14 +5644,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -7563,14 +7531,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -9149,14 +9109,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -10864,14 +10816,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -12663,14 +12607,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -14270,14 +14206,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -15866,14 +15794,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -18942,14 +18862,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -20721,14 +20633,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -24005,14 +23909,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -25615,14 +25511,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -27594,14 +27482,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -29415,14 +29295,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -31207,14 +31079,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -33349,14 +33213,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35254,14 +35110,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -37254,14 +37102,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -43536,14 +43376,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -45378,14 +45210,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -49890,14 +49714,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -53787,14 +53603,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -64325,14 +64133,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -66582,14 +66382,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -76836,14 +76628,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -79144,14 +78928,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -81352,14 +81128,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -82921,14 +82689,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -84629,14 +84389,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86333,14 +86085,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -87900,14 +87644,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -89490,14 +89226,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -91057,14 +90785,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -92630,14 +92350,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -94197,14 +93909,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -95778,14 +95482,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -97353,14 +97049,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -98957,14 +98645,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -100654,14 +100334,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -102260,14 +101932,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -103863,14 +103527,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
@@ -114441,14 +114097,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -116142,14 +115790,6 @@ rules:
   - get
   - list
   - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -117716,14 +117356,6 @@ rules:
   - pods
   verbs:
   - delete
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
   - get
   - list
   - watch
