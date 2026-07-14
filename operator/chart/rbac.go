@@ -64,7 +64,10 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 				// RBAC escalation prevention requires the operator to
 				// hold those verbs itself (the always-on
 				// rack-awareness.ClusterRole.yaml carries `get` only).
-				"files/rbac/stretch-rack-awareness.ClusterRole.yaml": true,
+				// StretchCluster is multicluster-only, so scope this grant
+				// to multicluster installs rather than every default
+				// single-cluster ServiceAccount.
+				"files/rbac/stretch-rack-awareness.ClusterRole.yaml": values.Multicluster.Enabled,
 			},
 		},
 		// ClusterRole for the CRD installation Job.

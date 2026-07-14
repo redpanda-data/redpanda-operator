@@ -2,11 +2,13 @@ project: operator
 kind: Fixed
 body: |-
     The operator chart now grants the operator ServiceAccount `nodes:
-    get/list/watch` (in the `additional-controllers` ClusterRole, gated by
-    `rbac.createAdditionalControllerCRs`). Previously the operator held
-    `nodes: get` only, so Kubernetes RBAC escalation prevention rejected
-    the per-pool rack-awareness ClusterRole the StretchCluster renderer
-    creates (`is attempting to grant RBAC permissions not currently
-    held`), and a StretchCluster with `rackAwareness.enabled: true` could
-    not deploy from a default chart install.
+    get/list/watch` on multicluster installs (in the
+    `additional-controllers` ClusterRole, gated by
+    `rbac.createAdditionalControllerCRs` and `multicluster.enabled`).
+    Previously the operator held `nodes: get` only, so Kubernetes RBAC
+    escalation prevention rejected the per-pool rack-awareness
+    ClusterRole the StretchCluster renderer creates (`is attempting to
+    grant RBAC permissions not currently held`), and a StretchCluster
+    with `rackAwareness.enabled: true` could not deploy from a default
+    chart install.
 time: 2026-07-09T08:40:00.000000-07:00
