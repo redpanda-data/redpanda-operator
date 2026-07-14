@@ -142,9 +142,12 @@ type ShadowTopicStatus struct {
 
 type ShadowLinkSpec struct {
 	// From: https://github.com/redpanda-data/redpanda/blob/60c590be34d5b2bd2934ac2143105ee7e2442388/src/v/redpanda/admin/services/shadow_link/shadow_link.cc#L64C1-L66C57
-	// the following are immutable, since we derive those from our cluster sources anyway, which are already immutable, that should be fine
+	// The following client_options identity fields are immutable, since we
+	// derive them from our cluster sources anyway, which are already immutable:
 	// "configurations", "client_options", "bootstrap_servers"
 	// "configurations", "client_options", "tls_settings"
+	// The remaining client_options are mutable tuning knobs, surfaced via the
+	// ClientOptions field below.
 
 	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="ClusterSource is immutable"
 	ShadowCluster *ClusterSource `json:"shadowCluster"`
@@ -160,6 +163,52 @@ type ShadowLinkSpec struct {
 	SecuritySyncOptions *ShadowLinkSecuritySettingsSyncOptions `json:"securitySyncOptions,omitempty"`
 	// options for schema registry
 	SchemaRegistrySyncOptions *ShadowLinkSchemaRegistrySyncOptions `json:"schemaRegistrySyncOptions,omitempty"`
+	// Tuning knobs for the Kafka client the shadow cluster uses to fetch data
+	// from the source cluster. Connection details (bootstrap servers, TLS) are
+	// derived from sourceCluster and are not configurable here; only the mutable
+	// performance/latency knobs are exposed.
+	ClientOptions *ShadowLinkClientOptions `json:"clientOptions,omitempty"`
+}
+
+// ShadowLinkClientOptions configures the source-cluster Kafka fetch/connection
+// behavior of a shadow link. These knobs primarily control replication latency
+// vs. batching efficiency. Every field defaults server-side when left at 0, so
+// omitting a field (or setting it to 0) preserves the Redpanda default noted in
+// its documentation.
+type ShadowLinkClientOptions struct {
+	// Minimum bytes the source broker accumulates before answering a fetch
+	// request. Lowering this reduces replication latency at low throughput, at
+	// the cost of more, smaller fetches. If 0, defaults to 5 MiB (5242880).
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	FetchMinBytes int32 `json:"fetchMinBytes,omitempty"`
+	// Maximum time in milliseconds the source broker waits to satisfy
+	// fetchMinBytes before answering a fetch request. Lowering this caps the
+	// worst-case replication latency when fetchMinBytes is not met. If 0,
+	// defaults to 500ms.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	FetchWaitMaxMs int32 `json:"fetchWaitMaxMs,omitempty"`
+	// Maximum bytes returned by a single fetch request. If 0, defaults to 20 MiB (20971520).
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	FetchMaxBytes int32 `json:"fetchMaxBytes,omitempty"`
+	// Maximum bytes returned per partition in a fetch request. If 0, defaults to 5 MiB (5242880).
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	FetchPartitionMaxBytes int32 `json:"fetchPartitionMaxBytes,omitempty"`
+	// How often in milliseconds the client refreshes source cluster metadata. If 0, defaults to 10000ms.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	MetadataMaxAgeMs int32 `json:"metadataMaxAgeMs,omitempty"`
+	// Connection timeout to the source cluster in milliseconds. If 0, defaults to 1000ms.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	ConnectionTimeoutMs int32 `json:"connectionTimeoutMs,omitempty"`
+	// Base backoff between connection retries in milliseconds. If 0, defaults to 100ms.
+	// +optional
+	// +kubebuilder:validation:Minimum=0
+	RetryBackoffMs int32 `json:"retryBackoffMs,omitempty"`
 }
 
 // FilterType specifies the type, either include or exclude of a consumer group filter.
