@@ -685,6 +685,18 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	}
 	clusterNames := r.Manager.GetClusterNames()
 
+	// Resolve where the password lives. When the user pins a location via
+	// spec.auth.sasl.bootstrapUser.secretKeyRef we read/generate/replicate there
+	// instead of the operator-managed <name>-bootstrap-user Secret. This is the
+	// single writer for that Secret regardless of who named it, which is what
+	// keeps concurrent multi-cluster applies from diverging (K8S-900).
+	secretName, passwordKey := sc.BootstrapUserPasswordLocation()
+
+	// Whether the location above came from a user-provided secretKeyRef (as
+	// opposed to the operator-managed default). SASL is enabled here, so SASL is
+	// non-nil; only BootstrapUser/SecretKeyRef can be absent.
+	userPinnedSecret := sc.Spec.Auth.SASL.BootstrapUser != nil && sc.Spec.Auth.SASL.BootstrapUser.SecretKeyRef != nil
+
 	// Phase 1: scan all clusters for existing bootstrap user secrets.
 	// If multiple secrets exist, verify they all have the same password.
 	//
@@ -714,7 +726,6 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			return ctrl.Result{}, errors.Wrapf(err, "getting cluster %s", clusterName)
 		}
 
-		secretName := bootstrapSecretName(sc)
 		var existing corev1.Secret
 		getCtx, getCancel := context.WithTimeout(ctx, lifecycle.CallTimeoutFor(clusterName))
 		err = cl.GetClient().Get(getCtx, client.ObjectKey{
@@ -731,20 +742,82 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			// Phase 3 will recreate the secret if missing.
 			continue
 		}
-		if pw, ok := existing.Data[bootstrapUserPasswordKey]; ok && len(pw) > 0 {
-			password := string(pw)
-			if canonicalPassword == "" {
-				canonicalPassword = password
-				canonicalCluster = clusterName
-				logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
-			} else if canonicalPassword != password {
+		pw, ok := existing.Data[passwordKey]
+		if !ok || len(pw) == 0 {
+			// The Secret object exists but carries no password under the resolved
+			// key. For a user-pinned secretKeyRef this is a misconfiguration we must
+			// surface: silently falling through would generate a fresh password and
+			// write it only to the *other* clusters (Phase 3 skips this one because
+			// the object already exists), splitting credentials across the stretch —
+			// the exact K8S-900 failure mode. For the operator-managed Secret this
+			// cannot normally happen, so leave Phase 3 to (re)create it.
+			if userPinnedSecret {
+				pinnedCluster := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
 				msg := fmt.Sprintf(
-					"bootstrap user password mismatch: secret %q in cluster %q differs from cluster %q; "+
-						"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
-					secretName, clusterName, canonicalCluster,
+					"bootstrap user secret %q in cluster %q has no data under key %q; "+
+						"populate the referenced secret's key or remove spec.auth.sasl.bootstrapUser.secretKeyRef",
+					secretName, pinnedCluster, passwordKey,
 				)
-				state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch, msg)
+				state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonTerminalError, msg)
 				return ctrl.Result{}, errors.New(msg)
+			}
+			continue
+		}
+
+		password := string(pw)
+		if canonicalPassword == "" {
+			canonicalPassword = password
+			canonicalCluster = clusterName
+			logger.V(log.TraceLevel).Info("found existing bootstrap user secret", "cluster", clusterName, "secret", secretName)
+		} else if canonicalPassword != password {
+			// Canonicalise both names so a secret found on the local cluster —
+			// which GetClusterNames() reports as the empty-string sentinel
+			// (mcmanager.LocalCluster) — is surfaced by its human-readable peer
+			// name rather than an empty "" in the operator-facing error (K8S-900).
+			mismatchCluster := lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+			sourceCluster := lifecycle.CanonicalClusterName(canonicalCluster, r.Manager.GetLocalClusterName)
+			msg := fmt.Sprintf(
+				"bootstrap user password mismatch: secret %q in cluster %q differs from cluster %q; "+
+					"manual intervention required — delete the incorrect secret(s) and let the controller recreate them",
+				secretName, mismatchCluster, sourceCluster,
+			)
+			state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonPasswordMismatch, msg)
+			return ctrl.Result{}, errors.New(msg)
+		}
+	}
+
+	// Phase 1b — migration (K8S-900): a StretchCluster created before secretKeyRef
+	// was honored was bootstrapped from the operator-managed <name>-bootstrap-user
+	// Secret. If the user has since added a secretKeyRef pointing elsewhere, the
+	// password Redpanda actually knows is the one in that legacy Secret — switching
+	// to the referenced location would break authentication (the bootstrap password
+	// cannot be changed by editing a Secret). When the legacy Secret still exists we
+	// treat it as authoritative: seed the referenced location from it so every
+	// consumer keeps using the bootstrapped password. If the referenced location
+	// already holds a *different* password we refuse rather than write divergent
+	// copies, since we cannot silently honor a password the cluster was not
+	// bootstrapped with.
+	if userPinnedSecret {
+		legacyName := sc.BootstrapUserSecretName()
+		if secretName != legacyName {
+			if legacyPassword, legacyCluster := r.findExistingBootstrapPassword(ctx, sc, clusterNames, legacyName, bootstrapUserPasswordKey); legacyPassword != "" {
+				switch {
+				case canonicalPassword == "":
+					canonicalPassword = legacyPassword
+					canonicalCluster = legacyCluster
+					logger.Info("migrating bootstrap password from operator-managed secret to the referenced secretKeyRef location",
+						"legacySecret", legacyName, "referencedSecret", secretName)
+				case canonicalPassword != legacyPassword:
+					msg := fmt.Sprintf(
+						"StretchCluster was bootstrapped with the operator-managed secret %q, but the "+
+							"referenced secret %q holds a different password; the bootstrap password cannot be "+
+							"changed by editing the secret. Set %q to the existing password or remove "+
+							"spec.auth.sasl.bootstrapUser.secretKeyRef.",
+						legacyName, secretName, secretName,
+					)
+					state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonTerminalError, msg)
+					return ctrl.Result{}, errors.New(msg)
+				}
 			}
 		}
 	}
@@ -769,7 +842,6 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			continue
 		}
 
-		secretName := bootstrapSecretName(sc)
 		k8sClient := cl.GetClient()
 
 		var existing corev1.Secret
@@ -777,7 +849,12 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			Namespace: sc.Namespace,
 			Name:      secretName,
 		}, &existing); err == nil {
-			// Secret already exists — nothing to do for this cluster.
+			// Secret already exists — nothing to do for this cluster. We never
+			// overwrite: this bounds the blast radius of a user-supplied
+			// secretKeyRef.Name (a StretchCluster editor names the Secret the
+			// operator reads and replicates across member clusters) to creating a
+			// same-named Secret only where one is absent, never clobbering a
+			// colliding one. See the SecretKeyRef field doc for the trust boundary.
 			continue
 		}
 
@@ -812,7 +889,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 			Immutable: ptr.To(true),
 			Type:      corev1.SecretTypeOpaque,
 			Data: map[string][]byte{
-				bootstrapUserPasswordKey: []byte(canonicalPassword),
+				passwordKey: []byte(canonicalPassword),
 			},
 		}
 
@@ -826,13 +903,49 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	if generated {
 		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonSynced, fmt.Sprintf("Bootstrap user secret created and synced across %d cluster(s)", len(clusterNames)))
 	} else {
-		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonExistingReused, fmt.Sprintf("Using existing bootstrap user secret from cluster %q", canonicalCluster))
+		// Canonicalise for the same reason as the mismatch error above: the
+		// reused secret may have been found on the local cluster, which
+		// GetClusterNames() reports as the empty-string sentinel (K8S-900).
+		sourceCluster := lifecycle.CanonicalClusterName(canonicalCluster, r.Manager.GetLocalClusterName)
+		state.status.StretchClusterStatus.SetBootstrapUserSynced(statuses.StretchClusterBootstrapUserSyncedReasonExistingReused, fmt.Sprintf("Using existing bootstrap user secret from cluster %q", sourceCluster))
 	}
 
 	state.bootstrapUser = defaultBootstrapUsername
 	state.bootstrapPassword = canonicalPassword
 
 	return ctrl.Result{}, nil
+}
+
+// findExistingBootstrapPassword scans reachable clusters for a Secret named
+// `name` carrying a non-empty password under `key`, returning the first one found
+// and the cluster it came from (canonicalised for display), or ("", "") if none.
+// Used during secretKeyRef migration to locate the legacy operator-managed
+// bootstrap password a pre-existing cluster was actually bootstrapped with. Scan
+// order follows GetClusterNames, mirroring the Phase-1 reachability/timeout
+// handling so a partitioned peer cannot stall the reconcile.
+func (r *MulticlusterReconciler) findExistingBootstrapPassword(ctx context.Context, sc *redpandav1alpha2.StretchCluster, clusterNames []string, name, key string) (password, clusterCanonical string) {
+	logger := log.FromContext(ctx)
+	for _, clusterName := range clusterNames {
+		if clusterName != mcmanager.LocalCluster && !r.Manager.IsClusterReachable(clusterName) {
+			continue
+		}
+		cl, err := r.Manager.GetCluster(ctx, clusterName)
+		if err != nil {
+			continue
+		}
+		var existing corev1.Secret
+		getCtx, getCancel := context.WithTimeout(ctx, lifecycle.CallTimeoutFor(clusterName))
+		err = cl.GetClient().Get(getCtx, client.ObjectKey{Namespace: sc.Namespace, Name: name}, &existing)
+		getCancel()
+		if err != nil {
+			continue
+		}
+		if pw, ok := existing.Data[key]; ok && len(pw) > 0 {
+			logger.V(log.TraceLevel).Info("found legacy bootstrap user secret for migration", "cluster", clusterName, "secret", name)
+			return string(pw), lifecycle.CanonicalClusterName(clusterName, r.Manager.GetLocalClusterName)
+		}
+	}
+	return "", ""
 }
 
 // syncCA ensures that a shared root CA Secret exists for each operator-managed

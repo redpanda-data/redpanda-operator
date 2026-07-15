@@ -166,6 +166,30 @@ func TestConvertStretchClusterToStaticConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "SASL enabled with bootstrapUser.secretKeyRef",
+			mutate: func(sc *redpandav1alpha2.StretchCluster, _ *redpandav1alpha2.RedpandaBrokerPool) {
+				sc.Spec.Auth = &redpandav1alpha2.Auth{
+					SASL: &redpandav1alpha2.SASL{
+						Enabled: ptr.To(true),
+						BootstrapUser: &redpandav1alpha2.BootstrapUser{
+							SecretKeyRef: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "custom-bootstrap"},
+								Key:                  "custom-key",
+							},
+						},
+					},
+				}
+			},
+			assert: func(t *testing.T, cfg *ir.StaticConfigurationSource) {
+				// The generated static config must point Kafka and Admin auth at
+				// the user-pinned secret/key, not the operator-managed default.
+				require.Equal(t, "custom-bootstrap", cfg.Kafka.SASL.Password.SecretKeyRef.Name)
+				require.Equal(t, "custom-key", cfg.Kafka.SASL.Password.SecretKeyRef.Key)
+				require.Equal(t, "custom-bootstrap", cfg.Admin.Auth.Password.SecretKeyRef.Name)
+				require.Equal(t, "custom-key", cfg.Admin.Auth.Password.SecretKeyRef.Key)
+			},
+		},
+		{
 			name: "TLS + SASL together",
 			mutate: func(sc *redpandav1alpha2.StretchCluster, pool *redpandav1alpha2.RedpandaBrokerPool) {
 				pool.Spec.TLS = &redpandav1alpha2.TLS{Enabled: ptr.To(true)}

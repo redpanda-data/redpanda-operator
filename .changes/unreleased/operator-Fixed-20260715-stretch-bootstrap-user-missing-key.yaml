@@ -1,0 +1,11 @@
+project: operator
+kind: Fixed
+body: |
+  StretchCluster bootstrap-user sync now fails loudly instead of silently
+  diverging when a user-provided `bootstrapUser.secretKeyRef` points at a Secret
+  that exists but has no data under the referenced key. Previously the reconciler
+  ignored the empty key, generated a fresh password, and wrote it only to the
+  member clusters that lacked the Secret — splitting credentials across the
+  stretch. It now sets a terminal `BootstrapUserSynced` error condition asking
+  the operator to populate the referenced key.
+time: 2026-07-15T13:00:00.000000+00:00

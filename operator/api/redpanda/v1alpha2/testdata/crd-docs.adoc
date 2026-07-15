@@ -441,10 +441,28 @@ BootstrapUser configures the user used to bootstrap Redpanda when SASL is enable
 |===
 | Field | Description | Default | Validation
 | *`name`* __string__ | Name specifies the name of the bootstrap user created for the cluster, if unspecified +
-defaults to "kubernetes-controller". + |  | 
+defaults to "kubernetes-controller". +
+NOTE: for the StretchCluster kind this field is currently ignored; the bootstrap +
+username is fixed to "kubernetes-controller". Only secretKeyRef is honored there. + |  | 
 | *`secretKeyRef`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#secretkeyselector-v1-core[$$SecretKeySelector$$]__ | Specifies the location where the generated password will be written or a pre-existing +
-password will be read from. + |  | 
-| *`mechanism`* __string__ | Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
+password will be read from. For the StretchCluster kind the referenced key is required +
+(there is no default key at the CRD level). +
+
+For the StretchCluster kind the referenced Secret is read and replicated by the +
+operator to every member cluster in the same namespace, so whoever can set this field +
+is trusted to name a Secret whose contents may be copied across all member clusters of +
+the mesh. The operator never overwrites an existing Secret of that name on a member +
+cluster. +
+
+IMPORTANT: for the StretchCluster kind the bootstrap password is consumed only when the +
+cluster is first bootstrapped and cannot be rotated afterwards by editing this Secret, +
+changing secretKeyRef to a different location, or removing secretKeyRef. Redpanda keeps +
+the SCRAM credential it was bootstrapped with, so changing the source after bootstrap +
+makes the operator and brokers authenticate with a credential the cluster never learned. +
+Rotate the bootstrap user out of band (via the admin API) instead. + |  | 
+| *`mechanism`* __string__ | Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. +
+NOTE: for the StretchCluster kind this field is currently ignored; the mechanism is +
+taken from sasl.mechanism. + |  | 
 |===
 
 

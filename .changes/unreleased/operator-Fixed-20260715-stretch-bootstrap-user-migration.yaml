@@ -1,0 +1,13 @@
+project: operator
+kind: Fixed
+body: |
+  StretchClusters bootstrapped before `bootstrapUser.secretKeyRef` was honored no
+  longer break operator authentication when a secretKeyRef is added later. Such a
+  cluster was bootstrapped with the operator-managed `<name>-bootstrap-user`
+  Secret, and the bootstrap password cannot be changed by editing a Secret. The
+  reconciler now detects the legacy Secret, keeps using the password the cluster
+  was actually bootstrapped with, and seeds the referenced secretKeyRef location
+  from it. If the referenced location already holds a different password it
+  refuses with a terminal condition instead of writing divergent copies across
+  member clusters.
+time: 2026-07-15T13:30:00.000000+00:00
