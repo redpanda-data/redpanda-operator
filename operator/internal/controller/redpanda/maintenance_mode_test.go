@@ -446,6 +446,166 @@ func TestClearStuckMaintenanceModeIgnoresEmptyPodIP(t *testing.T) {
 	assert.Empty(t, disabled, "a Pending pod with no PodIP must not be paired with a broker reporting an empty address")
 }
 
+// TestGhostBrokersInMaintenance pins the ghost-broker detection rule: a broker
+// is a ghost when it is not-alive, in maintenance (draining), and its
+// advertised host:port is also advertised by a live broker under a different
+// node id — the state left behind when a pod loses its data directory and its
+// broker re-registers under a fresh id (redpanda-data/redpanda-operator#1674).
+func TestGhostBrokersInMaintenance(t *testing.T) {
+	const addr = "redpanda-1.redpanda.maint.svc.cluster.local."
+	dead := func(id int, address string, port int, draining bool) rpadmin.Broker {
+		b := rpadmin.Broker{NodeID: id, InternalRPCAddress: address, InternalRPCPort: port, IsAlive: ptr.To(false)}
+		if draining {
+			b.Maintenance = &rpadmin.MaintenanceStatus{Draining: true}
+		}
+		return b
+	}
+	alive := func(id int, address string, port int) rpadmin.Broker {
+		return rpadmin.Broker{NodeID: id, InternalRPCAddress: address, InternalRPCPort: port, IsAlive: ptr.To(true)}
+	}
+
+	ghostIDs := func(brokers []rpadmin.Broker) []int {
+		ids := []int{}
+		for _, g := range ghostBrokersInMaintenance(brokers) {
+			ids = append(ids, g.NodeID)
+		}
+		return ids
+	}
+
+	t.Run("dead draining broker superseded by a live broker at the same address is a ghost", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			alive(0, "redpanda-0.redpanda.maint.svc.cluster.local.", 33145),
+			dead(1, addr, 33145, true),
+			alive(3, addr, 33145),
+		}
+		assert.Equal(t, []int{1}, ghostIDs(brokers))
+	})
+	t.Run("multiple leaked ids on the same address are all ghosts, in node-id order", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			dead(4, addr, 33145, true),
+			dead(1, addr, 33145, true),
+			alive(5, addr, 33145),
+		}
+		assert.Equal(t, []int{1, 4}, ghostIDs(brokers))
+	})
+	t.Run("no live successor (pod mid-restart) means no ghost", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			alive(0, "redpanda-0.redpanda.maint.svc.cluster.local.", 33145),
+			dead(1, addr, 33145, true),
+		}
+		assert.Empty(t, ghostIDs(brokers))
+	})
+	t.Run("dead sharer not in maintenance is not cleared", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			dead(1, addr, 33145, false),
+			alive(3, addr, 33145),
+		}
+		assert.Empty(t, ghostIDs(brokers))
+	})
+	t.Run("same host but different RPC ports are distinct brokers, not ghosts", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			dead(1, "node-a.example.com", 33145, true),
+			alive(2, "node-a.example.com", 33146),
+		}
+		assert.Empty(t, ghostIDs(brokers))
+	})
+	t.Run("host:port address form is normalized against the port field", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			dead(1, addr+":33145", 33145, true),
+			alive(3, addr, 33145),
+		}
+		assert.Equal(t, []int{1}, ghostIDs(brokers))
+	})
+	t.Run("nil is_alive defaults to alive and is never a ghost", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			{NodeID: 1, InternalRPCAddress: addr, InternalRPCPort: 33145, Maintenance: &rpadmin.MaintenanceStatus{Draining: true}},
+			alive(3, addr, 33145),
+		}
+		assert.Empty(t, ghostIDs(brokers))
+	})
+	t.Run("empty addresses are never bucketed together", func(t *testing.T) {
+		brokers := []rpadmin.Broker{
+			dead(1, "", 33145, true),
+			alive(3, "", 33145),
+		}
+		assert.Empty(t, ghostIDs(brokers))
+	})
+}
+
+// TestClearStuckMaintenanceModeClearsGhostBroker drives the ghost path
+// end-to-end: the exact state reproduced on a k3d cluster for issue #1674 —
+// a broker (node 1) whose pod was deleted without persistent storage, whose
+// preStop hook left it draining, and whose replacement rejoined as node 3 at
+// the same advertised address. The pod is Ready again, so the stuck-broker
+// path (not-Ready threshold) can never fire; only the ghost rule clears it.
+func TestClearStuckMaintenanceModeClearsGhostBroker(t *testing.T) {
+	ctx := t.Context()
+	const threshold = 5 * time.Minute
+
+	brokers := []rpadmin.Broker{
+		{NodeID: 0, InternalRPCAddress: "redpanda-0.redpanda.maint.svc.cluster.local.", InternalRPCPort: 33145, IsAlive: ptr.To(true)},
+		{NodeID: 1, InternalRPCAddress: "redpanda-1.redpanda.maint.svc.cluster.local.", InternalRPCPort: 33145, IsAlive: ptr.To(false), Maintenance: &rpadmin.MaintenanceStatus{Draining: true}},
+		{NodeID: 2, InternalRPCAddress: "redpanda-2.redpanda.maint.svc.cluster.local.", InternalRPCPort: 33145, IsAlive: ptr.To(true)},
+		{NodeID: 3, InternalRPCAddress: "redpanda-1.redpanda.maint.svc.cluster.local.", InternalRPCPort: 33145, IsAlive: ptr.To(true)},
+	}
+
+	var mu sync.Mutex
+	var disabled []int
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/brokers", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(brokers)
+	})
+	mux.HandleFunc("/v1/partitions/redpanda/controller/0", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"leader_id": 0})
+	})
+	mux.HandleFunc("/v1/node_config", func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"node_id": 0})
+	})
+	mux.HandleFunc("/v1/brokers/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodDelete && strings.HasSuffix(r.URL.Path, "/maintenance") {
+			var id int
+			if n, err := fmtSscanBrokerID(r.URL.Path); err == nil {
+				id = n
+			}
+			mu.Lock()
+			disabled = append(disabled, id)
+			mu.Unlock()
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	client, err := rpadmin.NewAdminAPI([]string{srv.URL}, new(rpadmin.NopAuth), nil)
+	require.NoError(t, err)
+	defer client.Close()
+
+	now := time.Now()
+	ready := func(name string) *lifecycle.MulticlusterPod {
+		return &lifecycle.MulticlusterPod{Pod: &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{
+				Type: corev1.PodReady, Status: corev1.ConditionTrue, LastTransitionTime: metav1.NewTime(now.Add(-time.Minute)),
+			}}},
+		}}
+	}
+	pods := []*lifecycle.MulticlusterPod{
+		ready("redpanda-0"),
+		ready("redpanda-1"), // Ready again, running the successor broker (node 3)
+		ready("redpanda-2"),
+	}
+
+	clearedBefore := testutil.ToFloat64(observability.MaintenanceModeGhostCleared.WithLabelValues(""))
+
+	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, testr.New(t)))
+
+	mu.Lock()
+	defer mu.Unlock()
+	assert.Equal(t, []int{1}, disabled, "exactly the ghost broker id superseded by the live successor should have maintenance mode cleared")
+	clearedAfter := testutil.ToFloat64(observability.MaintenanceModeGhostCleared.WithLabelValues(""))
+	assert.Equal(t, float64(1), clearedAfter-clearedBefore, "the ghost-cleared metric should count the clear")
+}
+
 // fmtSscanBrokerID extracts the broker id from a "/v1/brokers/{id}/maintenance"
 // path.
 func fmtSscanBrokerID(path string) (int, error) {

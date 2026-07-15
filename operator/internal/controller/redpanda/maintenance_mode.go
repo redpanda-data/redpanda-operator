@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -141,16 +142,75 @@ func brokerInMaintenance(b rpadmin.Broker) bool {
 	return b.Maintenance != nil && b.Maintenance.Draining
 }
 
+// ghostBrokersInMaintenance returns brokers that are in maintenance mode,
+// reported not-alive, and whose advertised internal RPC host:port is also
+// advertised by a broker that IS alive under a different node id. That state
+// arises when a pod loses its data directory (e.g. no persistent storage) and
+// its broker re-registers under a fresh node id at the same stable address:
+// the pod's preStop hook put the old id into maintenance mode, and the
+// postStart hook of the replacement clears only the *new* id, leaking the old
+// one (redpanda-data/redpanda-operator#1674). Because the live broker owns the
+// address and node ids are never reused, the dead sharer can never rejoin —
+// clearing its maintenance flag is safe without any down-duration threshold.
+// Detection is keyed on the full advertised host (not the pod-name label, which
+// can collide across StretchCluster members) plus the RPC port, so distinct
+// brokers that merely share a hostname are never conflated. Ghosts in
+// flat-network (pod IP) mode are not caught here: the replacement pod gets a
+// new IP, so no address is shared.
+func ghostBrokersInMaintenance(brokers []rpadmin.Broker) []rpadmin.Broker {
+	byAddr := make(map[string][]rpadmin.Broker, len(brokers))
+	for _, b := range brokers {
+		host := b.InternalRPCAddress
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+		if host == "" {
+			continue
+		}
+		key := fmt.Sprintf("%s:%d", host, b.InternalRPCPort)
+		byAddr[key] = append(byAddr[key], b)
+	}
+	var ghosts []rpadmin.Broker
+	for _, bucket := range byAddr {
+		if len(bucket) < 2 {
+			continue
+		}
+		anyAlive := false
+		for _, b := range bucket {
+			if brokerIsAlive(b) {
+				anyAlive = true
+				break
+			}
+		}
+		if !anyAlive {
+			// Nobody owns this address right now (e.g. the pod is
+			// mid-restart); without a live successor we can't distinguish a
+			// ghost from a broker that will come back under its old id.
+			continue
+		}
+		for _, b := range bucket {
+			if !brokerIsAlive(b) && brokerInMaintenance(b) {
+				ghosts = append(ghosts, b)
+			}
+		}
+	}
+	sort.Slice(ghosts, func(i, j int) bool { return ghosts[i].NodeID < ghosts[j].NodeID })
+	return ghosts
+}
+
 // brokerIsAlive reports the cluster's liveness view of the broker, defaulting to
 // alive when the field is absent (so a missing value never triggers a clear).
 func brokerIsAlive(b rpadmin.Broker) bool {
 	return ptr.Deref(b.IsAlive, true)
 }
 
-// clearStuckMaintenanceMode clears maintenance mode on any broker that is in
-// maintenance, reported not-alive by the cluster, and whose pod has been
-// not-Ready for at least the threshold. Shared by the single-cluster and
-// StretchCluster reconcilers. It queries the full broker list (which includes
+// clearStuckMaintenanceMode clears maintenance mode on two classes of broker:
+// ghost brokers (dead ids superseded by a live broker at the same advertised
+// address — cleared immediately, see ghostBrokersInMaintenance) and stuck
+// brokers that are in maintenance, reported not-alive by the cluster, and
+// whose pod has been not-Ready for at least the threshold. Shared by the
+// single-cluster and StretchCluster reconcilers. It queries the full broker
+// list (which includes
 // down brokers, unlike the live-only brokerMap built during decommission) so a
 // stuck-down broker can be matched to its pod by name (DNS mode) or IP
 // (flat-network mode). A pod name that ambiguously matches more than one
@@ -162,6 +222,33 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 	if err != nil {
 		return errors.Wrap(err, "listing brokers for maintenance-mode reconcile")
 	}
+
+	// Ghost brokers — dead ids superseded by a live broker at the same
+	// advertised address — are cleared unconditionally: their pod is Ready
+	// again (running the successor broker), so the not-Ready threshold below
+	// would never fire for them, and the pod-name lookup would refuse the
+	// two-brokers-one-name bucket as ambiguous. See ghostBrokersInMaintenance.
+	podByName := make(map[string]*lifecycle.MulticlusterPod, len(pods))
+	for _, pod := range pods {
+		podByName[pod.GetName()] = pod
+	}
+	for _, ghost := range ghostBrokersInMaintenance(brokers) {
+		host := ghost.InternalRPCAddress
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+		clusterName := ""
+		if pod, ok := podByName[strings.SplitN(host, ".", 2)[0]]; ok {
+			clusterName = pod.GetCanonicalClusterName()
+		}
+		logger.Info("clearing maintenance mode on ghost broker superseded by a live broker at the same address",
+			"nodeID", ghost.NodeID, "address", ghost.InternalRPCAddress, "cluster", clusterName)
+		if err := admin.DisableMaintenanceMode(ctx, ghost.NodeID, true); err != nil {
+			return errors.Wrapf(err, "disabling maintenance mode for ghost broker %d", ghost.NodeID)
+		}
+		observability.MaintenanceModeGhostCleared.WithLabelValues(clusterName).Inc()
+	}
+
 	byPod := brokersByPodName(brokers)
 	now := time.Now()
 	for _, pod := range pods {
