@@ -34,9 +34,6 @@ func newRender(p *redpandav1alpha2.Pipeline) *render {
 	return &render{pipeline: p, labels: Labels(p)}
 }
 
-
-
-
 // TestRender_ExtraInitContainers verifies user-supplied init containers are
 // injected, in order, ahead of the built-in lint container.
 func TestRender_ExtraInitContainers(t *testing.T) {

@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	ossv1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 const (
@@ -95,7 +94,6 @@ type Controller struct {
 	// Connect cleanly, delete the Pipeline CRs first, then disable.
 	Disabled bool
 
-
 	// clusterConns memoizes the expensive clusterRef chart render per Redpanda
 	// cluster (keyed by spec generation) so many pipelines sharing one cluster
 	// don't each re-render it. Initialized in SetupWithManager.
@@ -132,7 +130,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 	// enterprise User type on the shared cluster.redpanda.com/v1alpha2 GVK).
 	mgr.GetScheme().AddKnownTypes(
 		schema.GroupVersion{Group: "cluster.redpanda.com", Version: "v1alpha2"},
-		&ossv1alpha2.Redpanda{}, &ossv1alpha2.RedpandaList{},
+		&redpandav1alpha2.Redpanda{}, &redpandav1alpha2.RedpandaList{},
 	)
 
 	// Index Pipelines by their clusterRef name so we can efficiently look up
@@ -169,7 +167,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 
 	// Watch Redpanda clusters and re-reconcile any Pipelines that reference
 	// them. This ensures Pipelines pick up broker/TLS changes promptly.
-	builder = builder.Watches(&ossv1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(
+	builder = builder.Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(
 		func(ctx context.Context, o client.Object) []reconcile.Request {
 			var pipelineList redpandav1alpha2.PipelineList
 			if err := mgr.GetClient().List(ctx, &pipelineList,
@@ -188,10 +186,8 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 		},
 	))
 
-
 	return builder.Complete(c)
 }
-
 
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	if c.namespace != "" && req.Namespace != c.namespace {

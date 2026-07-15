@@ -19,7 +19,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	ossv1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	ossconv "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 )
 
@@ -255,7 +254,7 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 	ref := pipeline.Spec.ClusterSource.ClusterRef
 
 	// Fetch the OSS Redpanda CR (cheap — served from the informer cache).
-	var rp ossv1alpha2.Redpanda
+	var rp redpandav1alpha2.Redpanda
 	if err := c.Ctl.Get(ctx, kube.ObjectKey{Name: ref.Name, Namespace: pipeline.Namespace}, &rp); err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve clusterRef %q", ref.Name)
 	}
@@ -272,8 +271,8 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 	// types leak into the enterprise surface. This is the expensive step the
 	// cache exists to avoid repeating.
 	state, err := ossconv.ConvertV2ToRenderState(nil, &ossconv.V2Defaulters{
-		RedpandaImage: func(ri *ossv1alpha2.RedpandaImage) *ossv1alpha2.RedpandaImage { return ri },
-		SidecarImage:  func(ri *ossv1alpha2.RedpandaImage) *ossv1alpha2.RedpandaImage { return ri },
+		RedpandaImage: func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
+		SidecarImage:  func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
 	}, &rp, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert Redpanda CR to render state")
