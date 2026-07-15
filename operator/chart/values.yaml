@@ -153,6 +153,9 @@ commonAnnotations: {}
 
 # -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
 # Pipelines still require an enterprise license with the CONNECT product on each CR.
+# Note: Pipeline CRs carry an operator finalizer — disabling this while Pipeline
+# CRs exist blocks their deletion until the controller is re-enabled (or the
+# finalizer is removed by hand). Delete Pipelines before disabling.
 connectController:
   enabled: false
   # -- Default Redpanda Connect image applied to every Pipeline CR that
