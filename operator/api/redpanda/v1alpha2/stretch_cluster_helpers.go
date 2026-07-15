@@ -130,6 +130,13 @@ func (s *SASL) IsEnabled() bool {
 }
 
 // GetMechanism returns the SASL mechanism, defaulting to SCRAM-SHA-512.
+//
+// New and updated objects are admission-validated against the canonical
+// upper-case SCRAM-SHA-256/SCRAM-SHA-512 enum. Objects persisted by an older
+// operator (before that enum existed) may still hold a non-canonical value;
+// the stretch Kafka client tolerates that via scramMechanismForStretch's
+// case-folding (operator/pkg/client/stretch_cluster.go), so this getter returns
+// the stored value unchanged.
 func (s *SASL) GetMechanism() string {
 	if s != nil && s.Mechanism != nil && *s.Mechanism != "" {
 		return *s.Mechanism
