@@ -3557,6 +3557,13 @@ func (in *PipelineSpec) DeepCopyInto(out *PipelineSpec) {
 		*out = new(corev1.ResourceRequirements)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ExtraInitContainers != nil {
+		in, out := &in.ExtraInitContainers, &out.ExtraInitContainers
+		*out = make([]corev1.Container, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.ValueSources != nil {
 		in, out := &in.ValueSources, &out.ValueSources
 		*out = make([]NamedValueSource, len(*in))
@@ -3584,6 +3591,11 @@ func (in *PipelineSpec) DeepCopyInto(out *PipelineSpec) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.Affinity != nil {
+		in, out := &in.Affinity, &out.Affinity
+		*out = new(corev1.Affinity)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.TopologySpreadConstraints != nil {
 		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints

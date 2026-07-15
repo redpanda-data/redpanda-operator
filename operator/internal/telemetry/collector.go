@@ -241,7 +241,77 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 		}
 	}
 
+	// Connect pipelines: is the Connect controller in use, at what scale.
+	var pipelines redpandav1alpha2.PipelineList
+	if ok, err := c.list(ctx, &pipelines); err != nil {
+		return nil, err
+	} else if ok {
+		c.aggregatePipelines(payload, pipelines.Items)
+	}
+
+	// Node spread: count the distinct nodes the Connect pods are scheduled
+	// across. Gated on having pipelines at all so installs with the CRD present
+	// but no pipelines don't pay for a pod list every cycle.
+	if payload.Connect.PipelineCount > 0 {
+		if err := c.countConnectNodes(ctx, payload); err != nil {
+			return nil, err
+		}
+	}
+
 	return payload, nil
+}
+
+// aggregatePipelines folds the Pipeline fleet into the payload: count, paused /
+// running counts, desired vs ready replicas, and the distinct images in use.
+func (c *Collector) aggregatePipelines(payload *Payload, items []redpandav1alpha2.Pipeline) {
+	payload.Connect.Enabled = true
+	payload.Connect.PipelineCount = len(items)
+
+	versions := map[string]struct{}{}
+	for i := range items {
+		p := &items[i]
+		if p.Spec.Paused {
+			payload.Connect.PausedPipelines++
+		}
+		if p.Status.Phase == redpandav1alpha2.PipelinePhaseRunning {
+			payload.Connect.RunningPipelines++
+		}
+		// GetReplicas already returns 0 for paused pipelines, matching the pods
+		// the operator is actually trying to run.
+		payload.Connect.DesiredReplicas += int(p.GetReplicas())
+		payload.Connect.ReadyReplicas += int(p.Status.ReadyReplicas)
+		versions[p.GetImage()] = struct{}{}
+	}
+	for v := range versions {
+		payload.Connect.Versions = append(payload.Connect.Versions, v)
+	}
+	sort.Strings(payload.Connect.Versions)
+}
+
+// countConnectNodes lists the Connect pods across all namespaces and records how
+// many distinct nodes they are scheduled on. Best-effort: a missing-RBAC or
+// NoMatch error leaves NodeCount at zero (per-field degradation).
+func (c *Collector) countConnectNodes(ctx context.Context, payload *Payload) error {
+	var pods corev1.PodList
+	ok, err := c.list(ctx, &pods, client.MatchingLabels{
+		"app.kubernetes.io/managed-by": "redpanda-operator",
+		"app.kubernetes.io/component":  "connect-pipeline",
+	})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	nodes := map[string]struct{}{}
+	for i := range pods.Items {
+		if node := pods.Items[i].Spec.NodeName; node != "" {
+			nodes[node] = struct{}{}
+		}
+	}
+	payload.Connect.NodeCount = len(nodes)
+	return nil
 }
 
 // aggregateRedpandas folds the Redpanda fleet into the payload: count, broker

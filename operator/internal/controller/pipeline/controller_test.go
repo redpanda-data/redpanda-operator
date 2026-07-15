@@ -151,7 +151,7 @@ func TestReconcile_InvalidLicenseFile(t *testing.T) {
 	assert.Contains(t, pipeline.Status.Conditions[0].Message, "failed to read license")
 }
 
-func TestReconcile_InvalidLicenseCleansUpManagedResources(t *testing.T) {
+func TestReconcile_InvalidLicenseKeepsManagedResources(t *testing.T) {
 	ctl := setupTestEnv(t)
 
 	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
@@ -194,10 +194,13 @@ func TestReconcile_InvalidLicenseCleansUpManagedResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, time.Minute, result.RequeueAfter)
-	require.Empty(t, scrapeControllerObjects(t, ctl, pipeline))
+	// Reconcile failures never tear down running workloads: the
+	// last-known-good children stay in place so data processing continues;
+	// only deleting the Pipeline CR removes them.
+	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
 }
 
-func TestReconcile_InvalidClusterRefCleansUpManagedResources(t *testing.T) {
+func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
 	ctl := setupTestEnv(t)
 
 	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
@@ -242,7 +245,9 @@ func TestReconcile_InvalidClusterRefCleansUpManagedResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 30*time.Second, result.RequeueAfter)
-	require.Empty(t, scrapeControllerObjects(t, ctl, pipeline))
+	// Resolution failures are surfaced on status but never tear down
+	// running workloads; the last-known-good children keep processing data.
+	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
 	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
 	assert.Equal(t, redpandav1alpha2.PipelineReasonClusterRefInvalid, pipeline.Status.Conditions[0].Reason)
 }
@@ -1247,9 +1252,9 @@ func TestRender_Deployment_ServiceAccountName(t *testing.T) {
 // render path: when a Pipeline is bound to a Redpanda cluster (via clusterRef
 // or staticConfiguration), the operator merges seed_brokers, tls, and sasl
 // into any output.redpanda and input.redpanda blocks in the user's configYaml.
-// The deprecated `redpanda_common` plugin is intentionally NOT
-// auto-configured — pushing users onto a deprecated path through the
-// operator is a foot-gun, so the operator only fills in the supported
+// The resolved connection is additionally rendered as the top-level
+// `redpanda:` shared-client block, which `redpanda_common` and other
+// shared-client plugins bind to, alongside the supported
 // `redpanda` plugin.
 func TestRender_InlineMergesRedpandaPlugins(t *testing.T) {
 	clusterConn := &clusterConnection{
@@ -1298,11 +1303,12 @@ func TestRender_InlineMergesRedpandaPlugins(t *testing.T) {
 		require.Len(t, sasl, 1)
 		assert.Equal(t, "SCRAM-SHA-512", sasl[0].(map[string]any)["mechanism"])
 
-		// No top-level `redpanda` block — that was the v1 shape; the
-		// v2 design pushes connection fields into the plugin blocks
-		// themselves.
-		_, hasTopLevel := rendered["redpanda"]
-		assert.False(t, hasTopLevel, "no top-level redpanda block in v2 render")
+		// The resolved connection is also exposed as the top-level
+		// `redpanda:` shared client so `redpanda_common` (and any
+		// shared-client plugin) works without inline credentials.
+		topLevel, hasTopLevel := rendered["redpanda"].(map[string]any)
+		require.True(t, hasTopLevel, "top-level redpanda shared client rendered")
+		assert.NotNil(t, topLevel["seed_brokers"])
 	})
 
 	t.Run("merges_into_input_redpanda", func(t *testing.T) {
@@ -1395,19 +1401,20 @@ func TestRender_InlineMergesRedpandaPlugins(t *testing.T) {
 		require.NoError(t, err)
 		cm := objs[0].(*corev1.ConfigMap)
 
-		// The rendered config still parses to the same structure;
-		// crucially, no top-level `redpanda` block is added.
+		// The rendered config still parses to the same structure. The
+		// top-level `redpanda:` shared client is always rendered from the
+		// resolved connection (redpanda_common support).
 		var rendered map[string]any
 		require.NoError(t, yaml.Unmarshal([]byte(cm.Data["connect.yaml"]), &rendered))
 		_, hasTopLevel := rendered["redpanda"]
-		assert.False(t, hasTopLevel)
+		assert.True(t, hasTopLevel)
 		// And output.aws_s3 is untouched.
 		out := rendered["output"].(map[string]any)
 		_, hasRedpanda := out["redpanda"]
 		assert.False(t, hasRedpanda, "operator must not synthesize an output.redpanda block")
 	})
 
-	t.Run("redpanda_common_is_not_auto_configured", func(t *testing.T) {
+	t.Run("redpanda_common_binds_to_the_shared_client", func(t *testing.T) {
 		// The deprecated redpanda_common plugin used to consume a
 		// top-level `redpanda:` block. The v2 design intentionally
 		// drops that injection — users staying on redpanda_common need
@@ -1434,8 +1441,9 @@ func TestRender_InlineMergesRedpandaPlugins(t *testing.T) {
 
 		var rendered map[string]any
 		require.NoError(t, yaml.Unmarshal([]byte(cm.Data["connect.yaml"]), &rendered))
-		_, hasTopLevel := rendered["redpanda"]
-		assert.False(t, hasTopLevel, "no top-level redpanda block; redpanda_common is not auto-configured")
+		topLevel, hasTopLevel := rendered["redpanda"].(map[string]any)
+		require.True(t, hasTopLevel, "top-level redpanda shared client rendered for redpanda_common")
+		assert.NotNil(t, topLevel["seed_brokers"])
 	})
 
 	t.Run("inline_only_pipeline_passes_through", func(t *testing.T) {

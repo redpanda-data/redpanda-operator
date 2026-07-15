@@ -11,7 +11,9 @@ package pipeline
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
+	"sort"
 
 	"github.com/cockroachdb/errors"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -96,6 +98,15 @@ func (r *render) Render(_ context.Context) ([]kube.Object, error) {
 	}
 
 	dp := r.deployment()
+
+	// Stamp the pod template with a checksum of the rendered config so a
+	// configYaml/configFiles change rolls the Deployment. Connect only reads
+	// its config at startup and the config is mounted from a ConfigMap, so
+	// without this a config change would not restart the pods.
+	if dp.Spec.Template.Annotations == nil {
+		dp.Spec.Template.Annotations = map[string]string{}
+	}
+	dp.Spec.Template.Annotations["cluster.redpanda.com/config-checksum"] = configChecksum(cm.Data)
 
 	objs := []kube.Object{cm, dp}
 
@@ -212,16 +223,16 @@ func (r *render) configMap() (*corev1.ConfigMap, error) {
 // renderConnectYAML returns the connect.yaml the pipeline pod will see. When
 // the Pipeline is bound to a Redpanda cluster via .cluster.clusterRef or
 // .cluster.staticConfiguration, the operator inline-merges the resolved
-// connection fields (seed_brokers, tls, sasl) into any `input.redpanda` and
-// `output.redpanda` blocks in the user's configYaml. The non-deprecated
-// `redpanda` plugins are targeted; the legacy `redpanda_common` family is
-// not auto-configured (it's been deprecated in Connect, and pushing users
-// onto the deprecated path via the operator is a foot-gun).
+// connection fields (seed_brokers, tls, sasl) into:
+//   - any `input.redpanda` / `output.redpanda` blocks the user wrote, and
+//   - a top-level `redpanda:` block, which is the shared client the
+//     `redpanda_common` input/output plugins (and any other shared-client
+//     consumer) bind to.
 //
 // User-side keys win on conflict: if the user already set seed_brokers, tls,
-// or sasl on their redpanda block, their values are left as-is. That's the
-// escape hatch for pipelines that need a different cluster, an override TLS
-// setting, etc.
+// or sasl on a redpanda block (nested or top-level), their values are left
+// as-is. That's the escape hatch for pipelines that need a different cluster,
+// an override TLS setting, etc.
 func (r *render) renderConnectYAML() (string, error) {
 	configYAML := r.pipeline.Spec.ConfigYAML
 
@@ -245,6 +256,12 @@ func (r *render) renderConnectYAML() (string, error) {
 	mergeRedpandaPlugin(userConfig, "input", overlay)
 	mergeRedpandaPlugin(userConfig, "output", overlay)
 
+	// Always expose the resolved connection as the top-level `redpanda:`
+	// shared client, so `redpanda_common` (and any plugin that relies on the
+	// shared client) is usable without inline credentials. User-set top-level
+	// keys win.
+	mergeTopLevelRedpanda(userConfig, overlay)
+
 	out, err := yaml.Marshal(userConfig)
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling rendered connect.yaml")
@@ -254,15 +271,17 @@ func (r *render) renderConnectYAML() (string, error) {
 
 // redpandaPluginOverlay returns the connection fields the operator will
 // merge into `input.redpanda` / `output.redpanda` blocks. Empty when the
-// pipeline has no cluster binding (the fully-inline configYaml case).
+// pipeline has no cluster binding (the fully-inline configYaml case). Both
+// cluster sources (clusterRef and staticConfiguration) arrive here as a
+// resolved clusterConnection.
 func (r *render) redpandaPluginOverlay() map[string]any {
-	if r.clusterConn == nil && (r.pipeline.Spec.ClusterSource == nil || r.pipeline.Spec.ClusterSource.StaticConfiguration == nil) {
+	if r.clusterConn == nil {
 		return nil
 	}
 
 	overlay := map[string]any{}
 
-	if r.clusterConn != nil && len(r.clusterConn.Brokers) > 0 {
+	if len(r.clusterConn.Brokers) > 0 {
 		seeds := make([]any, 0, len(r.clusterConn.Brokers))
 		for _, b := range r.clusterConn.Brokers {
 			seeds = append(seeds, b)
@@ -270,16 +289,35 @@ func (r *render) redpandaPluginOverlay() map[string]any {
 		overlay["seed_brokers"] = seeds
 	}
 
-	if r.clusterConn != nil && r.clusterConn.TLS != nil {
-		overlay["tls"] = map[string]any{
-			"enabled":       true,
-			"root_cas_file": clusterTLSMountPath + "/ca.crt",
+	if tls := r.clusterConn.TLS; tls != nil {
+		block := map[string]any{"enabled": true}
+		// The CA is projected into the pod under its source key (see
+		// buildClusterConnectionResources); the rendered path must use that
+		// same key. A TLS cluster without a custom CA (publicly-issued certs)
+		// gets enabled: true with no root_cas_file.
+		if key := tls.caCertKey(); key != "" {
+			block["root_cas_file"] = clusterTLSMountPath + "/" + key
 		}
+		if tls.InsecureSkipVerify {
+			block["skip_cert_verify"] = true
+		}
+		overlay["tls"] = block
 	}
 
-	if r.userCredentials != nil {
+	// The SASL identity: a userRef always wins; otherwise fall back to the
+	// credentials resolved from the cluster source (the bootstrap user for
+	// clusterRef, the inline sasl block for staticConfiguration). Both are
+	// projected as REDPANDA_SASL_* env vars, which this block references.
+	switch {
+	case r.userCredentials != nil:
 		overlay["sasl"] = []any{map[string]any{
 			"mechanism": r.userCredentials.Mechanism,
+			"username":  "${REDPANDA_SASL_USERNAME}",
+			"password":  "${REDPANDA_SASL_PASSWORD}",
+		}}
+	case r.clusterConn.SASL != nil:
+		overlay["sasl"] = []any{map[string]any{
+			"mechanism": r.clusterConn.SASL.Mechanism,
 			"username":  "${REDPANDA_SASL_USERNAME}",
 			"password":  "${REDPANDA_SASL_PASSWORD}",
 		}}
@@ -312,6 +350,44 @@ func mergeRedpandaPlugin(root map[string]any, section string, overlay map[string
 	}
 	sectionMap["redpanda"] = plugin
 	root[section] = sectionMap
+}
+
+// configChecksum returns a deterministic sha256 over the ConfigMap data so the
+// pod template changes (and the Deployment rolls) whenever the rendered
+// config changes. Keys are sorted for stability across reconciles.
+func configChecksum(data map[string]string) string {
+	keys := make([]string, 0, len(data))
+	for k := range data {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	h := sha256.New()
+	for _, k := range keys {
+		// sha256's Write never returns an error.
+		_, _ = fmt.Fprintf(h, "%s\x00%s\x00", k, data[k])
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// mergeTopLevelRedpanda overlays connection fields onto the top-level
+// `redpanda:` shared-client block (used by redpanda_common and other
+// shared-client plugins). It creates the block if absent; user-set keys are
+// preserved.
+func mergeTopLevelRedpanda(root map[string]any, overlay map[string]any) {
+	if len(overlay) == 0 {
+		return
+	}
+	plugin, ok := root["redpanda"].(map[string]any)
+	if !ok {
+		plugin = map[string]any{}
+	}
+	for k, v := range overlay {
+		if _, exists := plugin[k]; exists {
+			continue
+		}
+		plugin[k] = v
+	}
+	root["redpanda"] = plugin
 }
 
 const (
@@ -372,8 +448,14 @@ func (r *render) deployment() *appsv1.Deployment {
 	// reference these as ${REDPANDA_SASL_USERNAME} / ${REDPANDA_SASL_PASSWORD}
 	// / ${REDPANDA_SASL_MECHANISM}, or rely on the operator-generated
 	// `redpanda` block in connect.yaml (which references them internally).
-	if r.userCredentials != nil {
+	switch {
+	case r.userCredentials != nil:
 		env = append(env, r.userCredentials.envVars()...)
+	case r.clusterConn != nil && r.clusterConn.SASL != nil:
+		// No userRef: project the cluster-source credentials (bootstrap user
+		// for clusterRef, inline sasl for staticConfiguration) under the same
+		// REDPANDA_SASL_* names the generated `sasl:` block references.
+		env = append(env, r.clusterConn.SASL.envVars()...)
 	}
 	volumes := []corev1.Volume{
 		{
@@ -403,6 +485,20 @@ func (r *render) deployment() *appsv1.Deployment {
 		volumeMounts = append(volumeMounts, clusterMounts...)
 	}
 
+	// User-supplied init containers run to completion, in order, ahead of the
+	// built-in lint container — so anything they stage into a shared volume is
+	// visible to lint and to the connect runtime.
+	initContainers := make([]corev1.Container, 0, len(r.pipeline.Spec.ExtraInitContainers)+1)
+	initContainers = append(initContainers, r.pipeline.Spec.ExtraInitContainers...)
+	initContainers = append(initContainers, corev1.Container{
+		Name:                     "lint",
+		Image:                    image,
+		Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
+		Env:                      env,
+		TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
+		VolumeMounts:             volumeMounts,
+	})
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -429,16 +525,7 @@ func (r *render) deployment() *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName: r.pipeline.Spec.ServiceAccountName,
-					InitContainers: []corev1.Container{
-						{
-							Name:                     "lint",
-							Image:                    image,
-							Command:                  []string{"/redpanda-connect", "lint", "/config/connect.yaml"},
-							Env:                      env,
-							TerminationMessagePolicy: corev1.TerminationMessageFallbackToLogsOnError,
-							VolumeMounts:             volumeMounts,
-						},
-					},
+					InitContainers:     initContainers,
 					Containers: []corev1.Container{
 						{
 							Name:    "connect",
@@ -514,44 +601,66 @@ func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []
 	})
 
 	if cc.TLS != nil {
-		caCertPath := fmt.Sprintf("%s/%s", clusterTLSMountPath, cc.TLS.CACertSecretRef.Key)
-
 		env = append(env, corev1.EnvVar{
 			Name:  "RPK_TLS_ENABLED",
 			Value: "true",
-		}, corev1.EnvVar{
-			Name:  "RPK_TLS_ROOT_CAS_FILE",
-			Value: caCertPath,
 		})
 
-		volumes = append(volumes, corev1.Volume{
-			Name: clusterTLSVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Projected: &corev1.ProjectedVolumeSource{
-					Sources: []corev1.VolumeProjection{
+		// Project the custom CA (if any) under its source key. A TLS cluster
+		// without a custom CA (publicly-issued certs) mounts nothing.
+		var projection *corev1.VolumeProjection
+		switch {
+		case cc.TLS.CACertSecretRef != nil:
+			projection = &corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cc.TLS.CACertSecretRef.Name,
+					},
+					Items: []corev1.KeyToPath{
 						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: cc.TLS.CACertSecretRef.Name,
-								},
-								Items: []corev1.KeyToPath{
-									{
-										Key:  cc.TLS.CACertSecretRef.Key,
-										Path: cc.TLS.CACertSecretRef.Key,
-									},
-								},
-							},
+							Key:  cc.TLS.CACertSecretRef.Key,
+							Path: cc.TLS.CACertSecretRef.Key,
 						},
 					},
 				},
-			},
-		})
+			}
+		case cc.TLS.CACertConfigMapRef != nil:
+			projection = &corev1.VolumeProjection{
+				ConfigMap: &corev1.ConfigMapProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cc.TLS.CACertConfigMapRef.Name,
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  cc.TLS.CACertConfigMapRef.Key,
+							Path: cc.TLS.CACertConfigMapRef.Key,
+						},
+					},
+				},
+			}
+		}
 
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      clusterTLSVolumeName,
-			MountPath: clusterTLSMountPath,
-			ReadOnly:  true,
-		})
+		if projection != nil {
+			env = append(env, corev1.EnvVar{
+				Name:  "RPK_TLS_ROOT_CAS_FILE",
+				Value: fmt.Sprintf("%s/%s", clusterTLSMountPath, cc.TLS.caCertKey()),
+			})
+
+			volumes = append(volumes, corev1.Volume{
+				Name: clusterTLSVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{*projection},
+					},
+				},
+			})
+
+			mounts = append(mounts, corev1.VolumeMount{
+				Name:      clusterTLSVolumeName,
+				MountPath: clusterTLSMountPath,
+				ReadOnly:  true,
+			})
+		}
 	} else {
 		env = append(env, corev1.EnvVar{
 			Name:  "RPK_TLS_ENABLED",
@@ -568,12 +677,25 @@ func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []
 			Value: cc.SASL.Username,
 		})
 
-		if cc.SASL.PasswordRef != nil {
+		switch {
+		case cc.SASL.PasswordRef != nil:
 			env = append(env, corev1.EnvVar{
 				Name: "RPK_SASL_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: cc.SASL.PasswordRef,
 				},
+			})
+		case cc.SASL.PasswordConfigMapRef != nil:
+			env = append(env, corev1.EnvVar{
+				Name: "RPK_SASL_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: cc.SASL.PasswordConfigMapRef,
+				},
+			})
+		case cc.SASL.PasswordValue != "":
+			env = append(env, corev1.EnvVar{
+				Name:  "RPK_SASL_PASSWORD",
+				Value: cc.SASL.PasswordValue,
 			})
 		}
 	}
@@ -664,30 +786,52 @@ func buildValueSourceEnv(pipeline *redpandav1alpha2.Pipeline) []corev1.EnvVar {
 	return env
 }
 
-// buildAffinity constructs a node affinity that restricts pods to the specified
-// zones. Returns nil if no zones are configured.
+// buildAffinity returns the pod affinity for the pipeline: the user-supplied
+// spec.affinity (e.g. node affinity pinning a node pool), merged with an
+// auto-generated zone node-affinity when spec.zones is set. The zone
+// requirement is AND-ed into each node-affinity term so node-pool and zone
+// constraints both apply. Returns nil when neither is configured.
 func buildAffinity(connect *redpandav1alpha2.Pipeline) *corev1.Affinity {
-	if len(connect.Spec.Zones) == 0 {
-		return nil
+	var affinity *corev1.Affinity
+	if connect.Spec.Affinity != nil {
+		affinity = connect.Spec.Affinity.DeepCopy()
 	}
 
-	return &corev1.Affinity{
-		NodeAffinity: &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					{
-						MatchExpressions: []corev1.NodeSelectorRequirement{
-							{
-								Key:      zoneTopologyKey,
-								Operator: corev1.NodeSelectorOpIn,
-								Values:   connect.Spec.Zones,
-							},
-						},
-					},
-				},
-			},
-		},
+	if len(connect.Spec.Zones) == 0 {
+		return affinity // nil, or the user's affinity verbatim
 	}
+
+	if affinity == nil {
+		affinity = &corev1.Affinity{}
+	}
+	if affinity.NodeAffinity == nil {
+		affinity.NodeAffinity = &corev1.NodeAffinity{}
+	}
+
+	zoneReq := corev1.NodeSelectorRequirement{
+		Key:      zoneTopologyKey,
+		Operator: corev1.NodeSelectorOpIn,
+		Values:   connect.Spec.Zones,
+	}
+
+	req := affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+	if req == nil || len(req.NodeSelectorTerms) == 0 {
+		// No user-required node affinity — the zone requirement is the only term.
+		affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{
+				{MatchExpressions: []corev1.NodeSelectorRequirement{zoneReq}},
+			},
+		}
+		return affinity
+	}
+
+	// AND the zone requirement into every existing term (terms are OR-ed, so
+	// adding it to each keeps "must be in zones" true regardless of which term
+	// matches the node pool).
+	for i := range req.NodeSelectorTerms {
+		req.NodeSelectorTerms[i].MatchExpressions = append(req.NodeSelectorTerms[i].MatchExpressions, zoneReq)
+	}
+	return affinity
 }
 
 // buildTopologySpreadConstraints returns the topology spread constraints for

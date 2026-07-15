@@ -19,7 +19,7 @@ import (
 
 const (
 	// PipelineDefaultImage is the default Redpanda Connect container image.
-	PipelineDefaultImage = "docker.redpanda.com/redpandadata/connect:4.87.0"
+	PipelineDefaultImage = "docker.redpanda.com/redpandadata/connect:4.100.0"
 )
 
 // PipelinePhase describes the lifecycle phase of a Pipeline.
@@ -184,6 +184,30 @@ type PipelineSpec struct {
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 
+	// ExtraInitContainers are additional init containers run to completion,
+	// in order, before the pipeline's lint and connect containers start. Use
+	// them for setup steps the pipeline depends on — fetching certificate
+	// material, warming a cache, or waiting on an external dependency. They run
+	// ahead of the operator's built-in `lint` init container, so anything they
+	// write into a shared volume is visible to lint and to the connect runtime.
+	//
+	// This is a raw container passthrough with no operator-applied policy; the
+	// pod's service account and security posture apply. It is distinct from a
+	// long-lived plugin sidecar (which would be an init container with
+	// restartPolicy: Always and is not expressed here).
+	//
+	// Example:
+	//   spec:
+	//     extraInitContainers:
+	//       - name: fetch-certs
+	//         image: curlimages/curl:8.11.0
+	//         command: ["sh", "-c", "curl -fsSL $CERT_URL -o /shared/ca.pem"]
+	//         volumeMounts:
+	//           - name: shared
+	//             mountPath: /shared
+	// +optional
+	ExtraInitContainers []corev1.Container `json:"extraInitContainers,omitempty"`
+
 	// ValueSources is a list of named values the pipeline YAML can reference
 	// via ${NAME} interpolation. Each value is fetched at render time from
 	// inline / ConfigMap / Secret / ExternalSecret and projected into the
@@ -222,9 +246,21 @@ type PipelineSpec struct {
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
-	// NodeSelector constrains pipeline pods to nodes with matching labels.
+	// NodeSelector constrains pipeline pods to nodes with matching labels — the
+	// simplest way to pin a pipeline to a specific Kubernetes node pool (match
+	// the node pool's label, e.g. eks.amazonaws.com/nodegroup or a custom
+	// label). Combine with Tolerations if the node pool is tainted.
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Affinity sets pod affinity/anti-affinity for the pipeline pods. Use it for
+	// node-pool scheduling that NodeSelector can't express — required-OR-of-pools
+	// (multiple acceptable node pools), preferred (soft) node-pool placement, or
+	// pod anti-affinity to spread a pipeline across nodes. It is merged with any
+	// auto-generated zone affinity from Zones: the zone requirement is AND-ed
+	// into the node affinity so both constraints apply.
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 
 	// TopologySpreadConstraints controls how pipeline pods are spread across
 	// topology domains such as availability zones. When Zones is specified,

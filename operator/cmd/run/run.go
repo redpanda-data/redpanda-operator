@@ -790,6 +790,7 @@ func Run(
 			"namespaceScoped":  opts.namespace != "",
 			"leaderElection":   opts.managerOptions.LeaderElection,
 			// Cloud-secrets backend (provider only, never the secret values).
+			"connectController": opts.enableConnectController,
 			"cloudSecrets":      opts.cloudSecretsEnabled,
 			"cloudSecretsAWS":   opts.cloudSecretsEnabled && (opts.cloudSecretsConfig.AWSRegion != "" || opts.cloudSecretsConfig.AWSRoleARN != ""),
 			"cloudSecretsGCP":   opts.cloudSecretsEnabled && opts.cloudSecretsConfig.GCPProjectID != "",

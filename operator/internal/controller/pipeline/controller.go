@@ -26,14 +26,16 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
+	ossv1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
 const (
@@ -71,7 +73,39 @@ type Controller struct {
 	DefaultImage string
 	// Monitoring holds the operator-level monitoring configuration for Connect pipelines.
 	Monitoring MonitoringConfig
+	// MaxConcurrentReconciles bounds how many pipelines reconcile in parallel.
+	// 0 falls back to defaultMaxConcurrentReconciles. Higher values speed up
+	// convergence of large pipeline fleets (e.g. mass create / operator restart)
+	// at the cost of more concurrent API + render work.
+	MaxConcurrentReconciles int
+
+	// Disabled turns the Connect controller off entirely: SetupWithManager
+	// registers nothing (no Pipeline watches, no field index, no telemetry)
+	// and returns immediately. Intended for installs that no longer use
+	// Connect pipelines; a cmd/run entrypoint should plumb it from an
+	// --enable-connect-controller=false flag / connectController.enabled
+	// chart value.
+	//
+	// Disabling does NOT touch existing workloads: pipeline Deployments and
+	// their pods are owned by the Pipeline CRs, not by the operator, so they
+	// keep running (and keep processing data) unmanaged. Note that Pipeline
+	// CRs carry an operator finalizer, so deleting a Pipeline while the
+	// controller is disabled leaves it in Terminating until the controller
+	// is re-enabled (or the finalizer is removed by hand). To stop using
+	// Connect cleanly, delete the Pipeline CRs first, then disable.
+	Disabled bool
+
+
+	// clusterConns memoizes the expensive clusterRef chart render per Redpanda
+	// cluster (keyed by spec generation) so many pipelines sharing one cluster
+	// don't each re-render it. Initialized in SetupWithManager.
+	clusterConns *clusterConnCache
 }
+
+// defaultMaxConcurrentReconciles is the parallelism used when the Controller's
+// MaxConcurrentReconciles is unset. Pipelines are independent, so modest
+// parallelism converges large fleets quickly without overwhelming the API.
+const defaultMaxConcurrentReconciles = 5
 
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines,verbs=get;list;watch;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/status,verbs=get;update;patch
@@ -85,7 +119,21 @@ type Controller struct {
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=podmonitors,verbs=get;list;watch;create;update;patch;delete
 
 func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, namespace string) error {
+	if c.Disabled {
+		return nil
+	}
+
 	c.namespace = namespace
+	c.clusterConns = newClusterConnCache()
+
+	// Register the upstream Redpanda CR types on the manager scheme so we can
+	// watch them below. We register only Redpanda/RedpandaList (not the OSS
+	// AddToScheme, which would also register User and collide with the
+	// enterprise User type on the shared cluster.redpanda.com/v1alpha2 GVK).
+	mgr.GetScheme().AddKnownTypes(
+		schema.GroupVersion{Group: "cluster.redpanda.com", Version: "v1alpha2"},
+		&ossv1alpha2.Redpanda{}, &ossv1alpha2.RedpandaList{},
+	)
 
 	// Index Pipelines by their clusterRef name so we can efficiently look up
 	// which Pipelines reference a given Redpanda cluster.
@@ -99,7 +147,13 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 		return err
 	}
 
+	maxConcurrent := c.MaxConcurrentReconciles
+	if maxConcurrent <= 0 {
+		maxConcurrent = defaultMaxConcurrentReconciles
+	}
+
 	builder := ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrent}).
 		For(&redpandav1alpha2.Pipeline{})
 
 	for _, t := range Types() {
@@ -115,7 +169,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 
 	// Watch Redpanda clusters and re-reconcile any Pipelines that reference
 	// them. This ensures Pipelines pick up broker/TLS changes promptly.
-	builder = builder.Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(
+	builder = builder.Watches(&ossv1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(
 		func(ctx context.Context, o client.Object) []reconcile.Request {
 			var pipelineList redpandav1alpha2.PipelineList
 			if err := mgr.GetClient().List(ctx, &pipelineList,
@@ -134,8 +188,10 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 		},
 	))
 
+
 	return builder.Complete(c)
 }
+
 
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	if c.namespace != "" && req.Namespace != c.namespace {
@@ -182,7 +238,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	// Resolve cluster connection details if clusterRef is set.
-	clusterConn, err := resolveClusterSource(ctx, c.Ctl, pipeline)
+	clusterConn, err := c.resolveClusterSource(ctx, pipeline)
 	if err != nil {
 		log.Error(ctx, err, "failed to resolve clusterRef")
 		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, []metav1.Condition{
@@ -201,9 +257,12 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
-		if err := c.deleteManagedResources(ctx, pipeline); err != nil {
-			return ctrl.Result{}, err
-		}
+		// Deliberately leave any previously-synced children (Deployment,
+		// ConfigMap, ...) in place: a resolution failure here may be
+		// transient (an API hiccup, an operator restart racing informer
+		// warm-up), and tearing down a running pipeline would stop data
+		// processing. The last-known-good config keeps running until the
+		// ref resolves again or the Pipeline CR is deleted.
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -229,9 +288,8 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
-		if err := c.deleteManagedResources(ctx, pipeline); err != nil {
-			return ctrl.Result{}, err
-		}
+		// As with clusterRef above: keep existing children running on a
+		// userRef resolution failure rather than tearing down the workload.
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -246,10 +304,13 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}}); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
-		if err := c.deleteManagedResources(ctx, pipeline); err != nil {
-			return ctrl.Result{}, err
-		}
-		// Requeue to retry license check periodically.
+		// The license gate blocks syncing (a new Pipeline never gets children;
+		// an existing one stops receiving spec updates) but does NOT tear down
+		// already-running workloads: a license Secret that is briefly
+		// unreadable — or an expiry over a weekend — must not stop data
+		// processing. The Connect runtime enforces its own license gate for
+		// enterprise components whenever pods restart.
+		// Requeue to retry the license check periodically.
 		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
 	}
 
@@ -344,16 +405,6 @@ func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline, clusterConn 
 		Owner:           *metav1.NewControllerRef(pipeline, gvk),
 		OwnershipLabels: labels,
 	}, nil
-}
-
-func (c *Controller) deleteManagedResources(ctx context.Context, pipeline *redpandav1alpha2.Pipeline) error {
-	syncer, err := c.syncerFor(pipeline, nil, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	_, err = syncer.DeleteAll(ctx)
-	return err
 }
 
 func (c *Controller) validateLicense() error {
@@ -501,6 +552,16 @@ func (c *Controller) checkInitContainerStatus(ctx context.Context, dp *appsv1.De
 
 // applyStatus uses server-side apply to update the Pipeline status sub-resource.
 func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, phase redpandav1alpha2.PipelinePhase, conditions []metav1.Condition) error {
+	// Drop conditions whose spec fields are no longer set — otherwise a
+	// removed clusterRef/userRef leaves its last condition dangling on the
+	// status forever.
+	if pipeline.Spec.ClusterSource == nil {
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionClusterRef)
+	}
+	if pipeline.Spec.UserRef == nil {
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionUserRef)
+	}
+
 	pipeline.Status.ObservedGeneration = pipeline.Generation
 	pipeline.Status.Phase = phase
 	pipeline.Status.Conditions = conditionsForApply(pipeline, conditions)
@@ -511,20 +572,13 @@ func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2
 // conditionsForApply merges the desired conditions into the existing conditions
 // using the SSA-compatible helper from utils.
 func conditionsForApply(pipeline *redpandav1alpha2.Pipeline, conditions []metav1.Condition) []metav1.Condition {
-	configs := utils.StatusConditionConfigs(pipeline.Status.Conditions, pipeline.Generation, conditions)
-
-	out := make([]metav1.Condition, 0, len(configs))
-	for _, cfg := range configs {
-		out = append(out, metav1.Condition{
-			Type:               *cfg.Type,
-			Status:             *cfg.Status,
-			Reason:             *cfg.Reason,
-			Message:            *cfg.Message,
-			ObservedGeneration: *cfg.ObservedGeneration,
-			LastTransitionTime: *cfg.LastTransitionTime,
-		})
+	merged := append([]metav1.Condition(nil), pipeline.Status.Conditions...)
+	for i := range conditions {
+		cond := conditions[i]
+		cond.ObservedGeneration = pipeline.Generation
+		meta.SetStatusCondition(&merged, cond)
 	}
-	return out
+	return merged
 }
 
 func (c *Controller) skipPodMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {

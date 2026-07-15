@@ -167,6 +167,7 @@ rules:
   - brokers/finalizers
   - groups/finalizers
   - nodepools/finalizers
+  - pipelines/finalizers
   - redpandabrokerpools/finalizers
   - redpandaroles/finalizers
   - redpandas/finalizers
@@ -184,6 +185,7 @@ rules:
   - consoles/status
   - groups/status
   - nodepools/status
+  - pipelines/status
   - redpandabrokerpools/status
   - redpandaroles/status
   - redpandas/status
@@ -200,6 +202,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - groups
+  - pipelines
   - redpandaroles
   - schemas
   - shadowlinks
