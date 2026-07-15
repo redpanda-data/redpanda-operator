@@ -98,6 +98,12 @@ type RunOptions struct {
 	// a different set of cluster CRDs.
 	enableRedpandaControllers bool
 
+	// enableShadowLinks controls whether the ShadowLink controller is
+	// registered. It works in both operator modes: links may reference V1
+	// (vectorized Cluster) or V2 (Redpanda) clusters. Deployments must
+	// install the experimental ShadowLink CRD before enabling this.
+	enableShadowLinks bool
+
 	enableV2NodepoolController  bool
 	enableBrokerController      bool
 	enableConsoleController     bool
@@ -241,7 +247,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().Bool("force-defluxed-mode", false, "A deprecated and unused flag")
 	cmd.Flags().Bool("allow-pvc-deletion", false, "Deprecated: Ignored if specified")
 	cmd.Flags().Bool("operator-mode", true, "A deprecated and unused flag")
-	cmd.Flags().Bool("enable-shadowlinks", false, "Specifies whether or not to enabled the shadow links controller")
+	cmd.Flags().BoolVar(&o.enableShadowLinks, "enable-shadowlinks", false, "Specifies whether or not to enable the shadow links controller")
 }
 
 func (o *RunOptions) ControllerEnabled(controller Controller) bool {
@@ -540,9 +546,16 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
-		return err
+	// The ShadowLink controller is opt-in: it requires the experimental
+	// ShadowLink CRD, which not every deployment installs. It runs in both
+	// operator modes — cloud (V1 mode: --enable-vectorized-controllers with
+	// the Redpanda controllers off) uses it for links between BYOC clusters
+	// and for replicating from external sources such as Confluent.
+	if opts.enableShadowLinks {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
+			return err
+		}
 	}
 
 	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.topicSyncInterval); err != nil {

@@ -369,6 +369,19 @@ func operatorArguments(dot *helmette.Dot) []string {
 	addLicenseFilePathArg(defaults, values)
 	addControllerSyncIntervalArgs(defaults, values)
 
+	// The operator only registers the ShadowLink controller when
+	// --enable-shadowlinks is set, and that controller requires the
+	// ShadowLink CRD. When this chart manages the CRDs it installs that CRD
+	// (it is in the stable set), so enable the controller to match:
+	// otherwise upgrading a release holding live ShadowLink CRs would
+	// silently stop reconciling them, and deletion would hang on the
+	// controller-managed finalizer. Installs that manage CRDs out-of-band
+	// keep the operator's opt-in default; AdditionalCmdFlags overrides both
+	// directions (userProvided wins on merge).
+	if values.CRDs.Enabled {
+		defaults["--enable-shadowlinks"] = "true"
+	}
+
 	if values.Webhook.Enabled {
 		defaults["--webhook-cert-path"] = webhookCertificatePath
 	}
