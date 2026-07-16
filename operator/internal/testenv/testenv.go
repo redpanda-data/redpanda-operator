@@ -29,8 +29,10 @@ import (
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 	goclientscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -135,18 +137,29 @@ func New(t *testing.T, options Options) *Env {
 	}
 
 	if len(options.CRDs) > 0 {
-		crds, err := envtest.InstallCRDs(config, envtest.CRDInstallOptions{
-			CRDs:               dupCRDs(options.CRDs),
-			ErrorIfPathMissing: false,
-		})
-		// Tolerate "already exists" errors when running with -p=N, since
-		// multiple test packages may install CRDs into the same shared cluster.
-		if err != nil && !k8sapierrors.IsAlreadyExists(err) && !strings.Contains(err.Error(), "already exists") {
-			require.NoError(t, err)
-		}
-		if err == nil {
-			require.Equal(t, len(options.CRDs), len(crds))
-		}
+		// When running with -p=N, multiple test packages install CRDs into the
+		// same shared cluster concurrently. envtest.InstallCRDs aborts at the
+		// first create/update conflict without touching the CRDs later in the
+		// list, so a single tolerated failure can leave those CRDs missing for
+		// the rest of the run. Retry until a full pass installs and waits for
+		// every CRD.
+		var crds []*apiextensionsv1.CustomResourceDefinition
+		err := retry.OnError(
+			wait.Backoff{Steps: 10, Duration: 500 * time.Millisecond, Factor: 1.5, Cap: 5 * time.Second},
+			func(err error) bool {
+				return k8sapierrors.IsAlreadyExists(err) || k8sapierrors.IsConflict(err) || strings.Contains(err.Error(), "already exists")
+			},
+			func() error {
+				var err error
+				crds, err = envtest.InstallCRDs(config, envtest.CRDInstallOptions{
+					CRDs:               dupCRDs(options.CRDs),
+					ErrorIfPathMissing: false,
+				})
+				return err
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(t, len(options.CRDs), len(crds))
 	}
 
 	c, err := client.New(config, client.Options{Scheme: options.Scheme})
