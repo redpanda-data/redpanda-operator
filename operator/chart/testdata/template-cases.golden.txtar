@@ -5914,6 +5914,7 @@ spec:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1-beta.3
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -9463,6 +9464,7 @@ spec:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1-beta.3
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -11213,6 +11215,7 @@ spec:
         - --configurator-base-image=Fd0
         - --configurator-tag=cOgp6ac
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -48344,6 +48347,7 @@ spec:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1-beta.3
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -49707,6 +49711,7 @@ spec:
         - --configurator-base-image=h6rx
         - --configurator-tag=yXNMX
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -51236,6 +51241,7 @@ spec:
         - --configurator-base-image
         - --configurator-tag=vO
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -53023,6 +53029,7 @@ spec:
         - --configurator-base-image=HJ
         - --configurator-tag=0ORIQruw
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -55217,6 +55224,7 @@ spec:
         - --configurator-base-image=JoEOn0Quud0uJ
         - --configurator-tag=Jzj6fJDqK
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -57176,6 +57184,7 @@ spec:
         - --configurator-base-image
         - --configurator-tag=9dFbDt
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -65903,6 +65912,7 @@ spec:
         - --configurator-base-image=95JHcsXy
         - --configurator-tag=YVZ
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -68283,6 +68293,7 @@ spec:
         - --configurator-base-image=gkRs29P
         - --configurator-tag=kgK
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -72268,6 +72279,7 @@ spec:
         - --configurator-base-image=FlBYj
         - --configurator-tag=fS
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -73801,6 +73813,7 @@ spec:
         - --configurator-base-image=Iedc3BYXQ
         - --configurator-tag=UoBs
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -78536,6 +78549,7 @@ spec:
         - --configurator-base-image=mLw
         - --configurator-tag=5QaeLH
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=true
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -80884,6 +80898,7 @@ spec:
         - --configurator-base-image=ZuVTlT
         - --configurator-tag=J
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect
@@ -86252,6 +86267,7 @@ spec:
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1-beta.3
         - --enable-console=true
+        - --enable-shadowlinks=true
         - --enable-vectorized-controllers=false
         - --health-probe-bind-address=:8081
         - --leader-elect

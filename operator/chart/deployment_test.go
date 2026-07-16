@@ -112,6 +112,37 @@ func TestAddControllerSyncIntervalArgs(t *testing.T) {
 	})
 }
 
+// TestEnableShadowLinksFlag covers the crds.enabled -> --enable-shadowlinks
+// coupling: when this chart installs the (stable) ShadowLink CRD it must also
+// keep the ShadowLink controller registered, or upgrading a release holding
+// live ShadowLink CRs would silently stop their reconciliation and deletion
+// would hang on the controller-managed finalizer. Installs that manage CRDs
+// out-of-band keep the operator's opt-in default, and additionalCmdFlags wins
+// over the chart-rendered default in both directions.
+func TestEnableShadowLinksFlag(t *testing.T) {
+	t.Run("default render omits the flag", func(t *testing.T) {
+		spec := renderDeployment(t, nil).Spec.Template.Spec
+		for _, arg := range spec.Containers[0].Args {
+			assert.NotContains(t, arg, "--enable-shadowlinks")
+		}
+	})
+
+	t.Run("crds.enabled renders --enable-shadowlinks=true", func(t *testing.T) {
+		spec := renderDeployment(t, map[string]any{
+			"crds": map[string]any{"enabled": true},
+		}).Spec.Template.Spec
+		assert.Contains(t, spec.Containers[0].Args, "--enable-shadowlinks=true")
+	})
+
+	t.Run("additionalCmdFlags wins over the crds.enabled default", func(t *testing.T) {
+		spec := renderDeployment(t, map[string]any{
+			"crds":               map[string]any{"enabled": true},
+			"additionalCmdFlags": []string{"--enable-shadowlinks=false"},
+		}).Spec.Template.Spec
+		assert.Contains(t, spec.Containers[0].Args, "--enable-shadowlinks=false")
+	})
+}
+
 func TestChangeDefaultFlag(t *testing.T) {
 	t.Run("change default enable console flag", func(t *testing.T) {
 		spec := renderDeployment(t, map[string]any{
