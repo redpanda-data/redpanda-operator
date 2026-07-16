@@ -26,6 +26,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -145,7 +146,11 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = c.Create(context.Background(), &rbacv1.ClusterRoleBinding{
+	// The ClusterRoleBinding is cluster-scoped, so the testenv namespace
+	// cleanup can't remove it and its subject references a namespace unique to
+	// this run. Delete any instance leaked by a previous run and clean up on
+	// exit so gotestsum re-runs against the same cluster don't collide.
+	crb := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: env.Namespace(),
@@ -158,8 +163,17 @@ func TestIntegrationFactoryOperatorV1(t *testing.T) {
 			Kind:     "ClusterRole",
 			Name:     "cluster-admin",
 		},
-	})
+	}
+	if err := c.Delete(context.Background(), crb); err != nil && !k8sapierrors.IsNotFound(err) {
+		require.NoError(t, err)
+	}
+	err = c.Create(context.Background(), crb)
 	require.NoError(t, err)
+	t.Cleanup(func() {
+		if err := c.Delete(context.Background(), crb); err != nil && !k8sapierrors.IsNotFound(err) {
+			t.Logf("failed to clean up ClusterRoleBinding %q: %v", crb.Name, err)
+		}
+	})
 
 	env.SetupManager("test", func(mgr multicluster.Manager) error {
 		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
