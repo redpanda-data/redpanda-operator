@@ -64,6 +64,13 @@ type render struct {
 	// enterprise inputs (mysql_cdc, etc.) pass their own runtime license
 	// gate. Empty when no license is configured.
 	licenseContent []byte
+	// credentialsChecksum is a digest over the referenced Secrets/ConfigMaps
+	// (userRef password, SASL credentials, TLS material, valueSources) plus
+	// the license bytes, computed by the controller. Stamped onto the pod
+	// template so credential rotations roll the Deployment — env vars and
+	// startup-read cert files are only picked up by new pods. Empty when the
+	// pipeline references no rotatable material.
+	credentialsChecksum string
 }
 
 // licenseSecretSuffix is appended to the Pipeline name to derive the
@@ -73,6 +80,14 @@ const licenseSecretSuffix = "-license"
 // licenseSecretKey is the key inside the per-Pipeline license Secret that
 // holds the license bytes.
 const licenseSecretKey = "license"
+
+// saslSecretSuffix is appended to the Pipeline name to derive the
+// per-Pipeline Secret that mirrors an inline staticConfiguration SASL
+// password, keeping the literal value out of the pod spec.
+const saslSecretSuffix = "-sasl"
+
+// saslSecretKey is the key inside the per-Pipeline SASL Secret.
+const saslSecretKey = "password"
 
 // Types returns the set of Kubernetes resource types managed by the Pipeline
 // controller.
@@ -108,9 +123,20 @@ func (r *render) Render(_ context.Context) ([]kube.Object, error) {
 	}
 	dp.Spec.Template.Annotations["cluster.redpanda.com/config-checksum"] = configChecksum(cm.Data)
 
+	// Same idea for referenced credentials: secretKeyRef env vars and mounted
+	// cert files only change pod-side when the pod restarts, so rotating a
+	// password/CA/valueSource Secret must roll the Deployment too.
+	if r.credentialsChecksum != "" {
+		dp.Spec.Template.Annotations["cluster.redpanda.com/credentials-checksum"] = r.credentialsChecksum
+	}
+
 	objs := []kube.Object{cm, dp}
 
 	if sec := r.licenseSecret(); sec != nil {
+		objs = append(objs, sec)
+	}
+
+	if sec := r.saslSecret(); sec != nil {
 		objs = append(objs, sec)
 	}
 
@@ -123,6 +149,33 @@ func (r *render) Render(_ context.Context) ([]kube.Object, error) {
 	}
 
 	return objs, nil
+}
+
+// saslSecret mirrors an inline staticConfiguration SASL password into a
+// Pipeline-owned Secret. Rendering the literal value as an EnvVar would make
+// it readable to anyone with deployments/pods get (and land it in cluster
+// backups); a Secret keeps it behind secrets RBAC. Nil when the pipeline's
+// SASL password comes from a Secret/ConfigMap reference (or SASL is off).
+func (r *render) saslSecret() *corev1.Secret {
+	if r.clusterConn == nil || r.clusterConn.SASL == nil || r.clusterConn.SASL.PasswordValue == "" {
+		return nil
+	}
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        r.pipeline.Name + saslSecretSuffix,
+			Namespace:   r.pipeline.Namespace,
+			Labels:      r.labels,
+			Annotations: r.annotations(),
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: map[string][]byte{
+			saslSecretKey: []byte(r.clusterConn.SASL.PasswordValue),
+		},
+	}
 }
 
 // licenseSecret returns a Pipeline-owned Secret holding the operator's
@@ -298,6 +351,15 @@ func (r *render) redpandaPluginOverlay() map[string]any {
 		if key := tls.caCertKey(); key != "" {
 			block["root_cas_file"] = clusterTLSMountPath + "/" + key
 		}
+		// mTLS listeners (requireClientAuth / static cert+key): present the
+		// client keypair projected at fixed paths by
+		// buildClusterConnectionResources.
+		if tls.hasClientCert() {
+			block["client_certs"] = []any{map[string]any{
+				"cert_file": clusterTLSClientCertPath,
+				"key_file":  clusterTLSClientKeyPath,
+			}}
+		}
 		if tls.InsecureSkipVerify {
 			block["skip_cert_verify"] = true
 		}
@@ -395,6 +457,16 @@ const (
 	clusterTLSVolumeName = "cluster-tls-ca"
 	// clusterTLSMountPath is the mount path for the cluster CA certificate.
 	clusterTLSMountPath = "/etc/tls/certs/ca"
+
+	// clusterTLSClientVolumeName is the volume name for the client keypair
+	// presented to mTLS listeners.
+	clusterTLSClientVolumeName = "cluster-tls-client"
+	// clusterTLSClientMountPath is the mount path for the client keypair. The
+	// cert and key are projected under fixed names regardless of their source
+	// keys so the rendered config can reference stable paths.
+	clusterTLSClientMountPath = "/etc/tls/certs/client"
+	clusterTLSClientCertPath  = clusterTLSClientMountPath + "/tls.crt"
+	clusterTLSClientKeyPath   = clusterTLSClientMountPath + "/tls.key"
 )
 
 // resolveImage picks the Redpanda Connect image for the Pipeline pod using
@@ -455,7 +527,7 @@ func (r *render) deployment() *appsv1.Deployment {
 		// No userRef: project the cluster-source credentials (bootstrap user
 		// for clusterRef, inline sasl for staticConfiguration) under the same
 		// REDPANDA_SASL_* names the generated `sasl:` block references.
-		env = append(env, r.clusterConn.SASL.envVars()...)
+		env = append(env, r.clusterConn.SASL.envVars(r.pipeline.Name+saslSecretSuffix)...)
 	}
 	volumes := []corev1.Volume{
 		{
@@ -479,11 +551,19 @@ func (r *render) deployment() *appsv1.Deployment {
 
 	// Inject cluster connection env vars and TLS volumes when clusterRef is set.
 	if cc := r.clusterConn; cc != nil {
-		clusterEnv, clusterVolumes, clusterMounts := buildClusterConnectionResources(cc)
+		clusterEnv, clusterVolumes, clusterMounts := buildClusterConnectionResources(cc, r.pipeline.Name+saslSecretSuffix)
 		env = append(env, clusterEnv...)
 		volumes = append(volumes, clusterVolumes...)
 		volumeMounts = append(volumeMounts, clusterMounts...)
 	}
+
+	// User-supplied volumes and mounts. The volumes join the pod spec; the
+	// mounts are applied to the lint and connect containers (so staged
+	// material — certs, warmed caches — is visible to both). Volumes only
+	// referenced by extraInitContainers' own volumeMounts need no entry in
+	// extraVolumeMounts.
+	volumes = append(volumes, r.pipeline.Spec.ExtraVolumes...)
+	volumeMounts = append(volumeMounts, r.pipeline.Spec.ExtraVolumeMounts...)
 
 	// User-supplied init containers run to completion, in order, ahead of the
 	// built-in lint container — so anything they stage into a shared volume is
@@ -590,7 +670,9 @@ func (r *render) podDisruptionBudget() *policyv1.PodDisruptionBudget {
 
 // buildClusterConnectionResources returns the env vars, volumes, and volume
 // mounts needed to connect to a Redpanda cluster via clusterRef.
-func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
+// saslSecretName names the Pipeline-owned Secret mirroring an inline SASL
+// password (used only when the connection's password is an inline value).
+func buildClusterConnectionResources(cc *clusterConnection, saslSecretName string) ([]corev1.EnvVar, []corev1.Volume, []corev1.VolumeMount) {
 	var env []corev1.EnvVar
 	var volumes []corev1.Volume
 	var mounts []corev1.VolumeMount
@@ -661,6 +743,71 @@ func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []
 				ReadOnly:  true,
 			})
 		}
+
+		// mTLS: project the client keypair under fixed paths (tls.crt /
+		// tls.key) so the rendered `client_certs` block and the RPK_* env
+		// vars reference stable locations regardless of the source keys.
+		if cc.TLS.hasClientCert() {
+			var certProjection corev1.VolumeProjection
+			switch {
+			case cc.TLS.ClientCertSecretRef != nil:
+				certProjection = corev1.VolumeProjection{
+					Secret: &corev1.SecretProjection{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cc.TLS.ClientCertSecretRef.Name,
+						},
+						Items: []corev1.KeyToPath{
+							{Key: cc.TLS.ClientCertSecretRef.Key, Path: "tls.crt"},
+						},
+					},
+				}
+			case cc.TLS.ClientCertConfigMapRef != nil:
+				certProjection = corev1.VolumeProjection{
+					ConfigMap: &corev1.ConfigMapProjection{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: cc.TLS.ClientCertConfigMapRef.Name,
+						},
+						Items: []corev1.KeyToPath{
+							{Key: cc.TLS.ClientCertConfigMapRef.Key, Path: "tls.crt"},
+						},
+					},
+				}
+			}
+
+			keyProjection := corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cc.TLS.ClientKeySecretRef.Name,
+					},
+					Items: []corev1.KeyToPath{
+						{Key: cc.TLS.ClientKeySecretRef.Key, Path: "tls.key"},
+					},
+				},
+			}
+
+			env = append(env, corev1.EnvVar{
+				Name:  "RPK_TLS_CERT_FILE",
+				Value: clusterTLSClientCertPath,
+			}, corev1.EnvVar{
+				Name:  "RPK_TLS_KEY_FILE",
+				Value: clusterTLSClientKeyPath,
+			})
+
+			volumes = append(volumes, corev1.Volume{
+				Name: clusterTLSClientVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						Sources: []corev1.VolumeProjection{certProjection, keyProjection},
+					},
+				},
+			})
+
+			mounts = append(mounts, corev1.VolumeMount{
+				Name:      clusterTLSClientVolumeName,
+				MountPath: clusterTLSClientMountPath,
+				ReadOnly:  true,
+			})
+		}
 	} else {
 		env = append(env, corev1.EnvVar{
 			Name:  "RPK_TLS_ENABLED",
@@ -693,9 +840,16 @@ func buildClusterConnectionResources(cc *clusterConnection) ([]corev1.EnvVar, []
 				},
 			})
 		case cc.SASL.PasswordValue != "":
+			// Inline passwords are mirrored into the Pipeline-owned SASL
+			// Secret rather than embedded as a literal env value.
 			env = append(env, corev1.EnvVar{
-				Name:  "RPK_SASL_PASSWORD",
-				Value: cc.SASL.PasswordValue,
+				Name: "RPK_SASL_PASSWORD",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: saslSecretName},
+						Key:                  saslSecretKey,
+					},
+				},
 			})
 		}
 	}

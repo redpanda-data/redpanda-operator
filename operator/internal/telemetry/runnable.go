@@ -40,6 +40,10 @@ type Options struct {
 	// OSS/unlicensed installs, in which case it is omitted from the payload.
 	IDHash   string
 	Features map[string]bool
+	// ConnectDefaultImage is the operator-level Connect image override
+	// (--connect-default-image); used to resolve the effective image version
+	// of Pipelines that don't pin .spec.image.
+	ConnectDefaultImage string
 	// Delay is the wait before the first report; zero means the shared library default (5m).
 	Delay  time.Duration
 	Period time.Duration
@@ -76,12 +80,13 @@ func NewRunnable(reader client.Reader, disco discovery.ServerVersionInterface, l
 	}
 
 	collector := &Collector{
-		Reader:          reader,
-		ID:              opts.ID,
-		OperatorVersion: opts.OperatorVersion,
-		IDHash:          opts.IDHash,
-		Features:        opts.Features,
-		Discovery:       disco,
+		Reader:              reader,
+		ID:                  opts.ID,
+		OperatorVersion:     opts.OperatorVersion,
+		IDHash:              opts.IDHash,
+		Features:            opts.Features,
+		Discovery:           disco,
+		ConnectDefaultImage: opts.ConnectDefaultImage,
 	}
 
 	return &Runnable{reporter: &commontelemetry.Reporter{

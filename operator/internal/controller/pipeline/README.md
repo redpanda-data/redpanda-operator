@@ -17,9 +17,9 @@ credentials and secrets.
 - A Kubernetes cluster (1.25+) and `kubectl` pointed at it.
 - An **enterprise license** with the Connect product enabled. Connect is gated:
   without a valid license the controller reconciles Pipelines to
-  `Ready=False` with a license reason (see [Step 2](#step-2-run-the-pipeline-controller)).
-- The operator's container can pull the Connect image
-  (`docker.redpanda.com/redpandadata/connect:4.96.0` by default).
+  `License=False` with a license reason (see [Step 2](#step-2-run-the-pipeline-controller)).
+- The cluster can pull the Connect image
+  (`docker.redpanda.com/redpandadata/connect:4.100.0` by default).
 
 ---
 
@@ -38,30 +38,41 @@ informer needs that CRD present even before you create a cluster.
 
 ## Step 2 — Run the Pipeline controller
 
-The Pipeline controller is registered into a controller-runtime manager by the
-host operator binary. Two ways to run it:
-
-- **Shipped operator:** the operator binary registers the Pipeline controller
-  alongside the others; point it at the cluster and give it the license. The
-  steps below apply unchanged.
-- **This repo (library):** `operator-enterprise` is a library extraction and has
-  no `cmd/run` entrypoint yet. Use the standalone **runner harness** at
-  [`operator-connect-ent/runner`](https://github.com/david-yu/redpanda-setup/tree/main/operator-connect-ent)
-  in `david-yu/redpanda-setup`, which wires *only* the Pipeline controller into
-  a manager and runs out-of-cluster against your kubeconfig.
-
-The controller reads the license from the path in `REDPANDA_LICENSE_FILE`:
+The Pipeline controller ships inside the Redpanda operator binary and is
+**off by default**. Enable it through the operator Helm chart, which wires up
+both the controller and the license in one place:
 
 ```bash
-export REDPANDA_LICENSE_FILE=/path/to/redpanda.license
-# shipped operator: pass via its license flag/secret as documented for the operator
-# runner harness: REDPANDA_LICENSE_FILE=... ./runner
+kubectl create secret generic redpanda-license \
+  --from-file=license=/path/to/redpanda.license
+
+helm upgrade --install redpanda-operator redpanda/operator \
+  --set connectController.enabled=true \
+  --set enterprise.licenseSecretRef.name=redpanda-license \
+  --set enterprise.licenseSecretRef.key=license
 ```
 
-> **License gate behaviour.** With no license, a Pipeline reconciles but stays
-> `Ready=False` with a license reason — the CRD installs, the controller
-> reconciles, status flows, but the pipeline never reaches `Running`. This is
-> the intended enterprise gate, not a bug.
+`connectController.enabled: true` renders the `--enable-connect` flag onto the
+operator Deployment, and `enterprise.licenseSecretRef` mounts the license
+Secret and points `--license-file-path` at it. If you run the operator binary
+directly (e.g. out-of-cluster during development), pass the equivalent flags
+yourself:
+
+```bash
+redpanda-operator run \
+  --enable-connect \
+  --license-file-path=/path/to/redpanda.license
+```
+
+The Connect controller requires the Redpanda controllers to be running
+(`--enable-redpanda-controllers`, on by default); disabling those while
+requesting `--enable-connect` is rejected at startup.
+
+> **License gate behaviour.** With no (or an invalid) license, a Pipeline
+> reconciles but reports `License=False` with a license reason and gets no
+> workload — the CRD installs, the controller reconciles, status flows, but
+> the pipeline never reaches `Running`. This is the intended enterprise gate,
+> not a bug.
 
 ---
 
@@ -197,6 +208,11 @@ spec:
             secretKeyRef:
               name: external-ca
               key: ca.crt
+          # mTLS listeners: additionally present a client keypair.
+          # cert:                     # Secret or ConfigMap
+          #   secretKeyRef: { name: pipeline-client, key: tls.crt }
+          # key:                      # Secret only
+          #   secretKeyRef: { name: pipeline-client, key: tls.key }
         sasl:
           username: pipeline-svc
           mechanism: SCRAM-SHA-512    # PLAIN, SCRAM-SHA-256, or SCRAM-SHA-512
@@ -209,7 +225,13 @@ spec:
 ```
 
 The CA certificate may come from a `secretKeyRef` or `configMapKeyRef`; the
-SASL password additionally supports `inline` (not recommended outside dev).
+SASL password additionally supports `inline` (not recommended outside dev —
+the value is plaintext in the Pipeline spec; the operator mirrors it into a
+Pipeline-owned Secret `<pipeline>-sasl` so at least the pod spec doesn't
+repeat it). TLS follows the `CommonTLS` contract: setting any certificate
+material turns TLS on, `tls: {enabled: true}` alone requests TLS with
+publicly-issued certificates, and `tls: {enabled: false}` with no other
+fields connects without TLS.
 
 ---
 
@@ -244,10 +266,19 @@ Resolution is reported by the `ValueSourcesResolved` condition.
 Need certs fetched, a cache warmed, or a dependency waited on before the
 pipeline starts? `extraInitContainers` are run to completion, **in order, ahead
 of the built-in `lint` container**, so anything they stage into a shared volume
-is visible to lint and to the connect runtime.
+is visible to lint and to the connect runtime. Declare the backing volume in
+`extraVolumes`, and mount it into the lint + connect containers with
+`extraVolumeMounts`:
 
 ```yaml
 spec:
+  extraVolumes:
+    - name: shared
+      emptyDir: {}
+  extraVolumeMounts:            # mounted into lint + connect
+    - name: shared
+      mountPath: /shared
+      readOnly: true
   extraInitContainers:
     - name: fetch-certs
       image: curlimages/curl:8.11.0
@@ -258,6 +289,9 @@ spec:
   configYaml: |
     # ... pipeline that reads /shared/ca.pem ...
 ```
+
+The volume names `config`, `cluster-tls-ca`, and `cluster-tls-client` are
+reserved by the operator.
 
 This is an unconstrained container passthrough (the pod's service account and
 security posture apply). It is **not** the mechanism for a long-lived Connect
@@ -272,7 +306,7 @@ RPCN custom-plugins RFC.
 spec:
   replicas: 3                              # default 1; 0 to stop
   paused: true                             # scale to zero, keep the resource
-  image: docker.redpanda.com/redpandadata/connect:4.96.0   # override the default
+  image: docker.redpanda.com/redpandadata/connect:4.100.0  # override the default
   resources:                               # standard pod resource requirements
     requests: { cpu: 100m, memory: 256Mi }
     limits:   { cpu: "1",  memory: 1Gi }
@@ -282,8 +316,9 @@ spec:
   budget: { maxUnavailable: 1 }            # creates a PodDisruptionBudget
 ```
 
-Image precedence: `spec.image` > operator chart default > the binary-baked
-`connect:4.96.0`.
+Image precedence: `spec.image` > operator chart default
+(`connectController.image.{repository,tag}`) > the binary-baked
+`connect:4.100.0`.
 
 ### Pinning a pipeline to a Kubernetes node pool
 
@@ -333,23 +368,39 @@ keep processing data unmanaged until the controller comes back and resumes
 reconciling.
 
 **Failures never tear down a running workload.** If the referenced `Redpanda`
-CR, `User` CR, or enterprise license becomes unresolvable — transiently or
-otherwise — the controller reports it on `.status` and stops *syncing* the
-pipeline, but leaves the last-known-good Deployment running. The only thing
-that deletes a pipeline's Deployment is deleting the Pipeline CR itself.
+CR, `User` CR, a `valueSources` backing object, or the enterprise license
+becomes unresolvable — transiently or otherwise — the controller reports it on
+`.status` and stops *syncing* the pipeline, but leaves the last-known-good
+Deployment running. A pipeline that was `Running` stays `Running` (its phase
+and `Ready` reflect the live Deployment); only the specific failing condition
+(`ClusterRef`, `UserRef`, `ValueSourcesResolved`, `License`) flips `False`.
+The only thing that deletes a pipeline's Deployment is deleting the Pipeline
+CR itself.
 
 **License semantics.** A valid Connect-entitled enterprise license is required
 to *create or update* pipeline workloads. When the license is missing, expired,
-or unreadable, new Pipelines report `Ready=False` / `LicenseInvalid` and get no
-workload; existing workloads keep running (the Connect runtime enforces its own
-license gate for enterprise components whenever pods restart) but stop
+or unreadable, new Pipelines report `License=False` / `LicenseInvalid` and get
+no workload; existing workloads keep running (the Connect runtime enforces its
+own license gate for enterprise components whenever pods restart) but stop
 receiving spec updates until the license is fixed.
 
+**The license is mirrored into each pipeline's namespace.** The operator
+copies the license into a Pipeline-owned Secret named `<pipeline>-license` and
+injects it as `REDPANDA_LICENSE`, so the Connect runtime's own license gate
+passes without wiring the license up twice. Anyone with `secrets/get` in a
+namespace hosting Pipelines can therefore read the license — scope namespace
+RBAC accordingly.
+
+**Credential rotations roll pipelines.** Alongside the config checksum, the
+pod template carries `cluster.redpanda.com/credentials-checksum`, derived from
+the resourceVersions of every referenced Secret/ConfigMap (userRef password,
+SASL credentials, TLS material, valueSources) plus the license. Rotating any
+of them restarts the pipeline so the new values actually take effect.
+
 **Disabling the Connect controller.** If you no longer use Connect pipelines,
-disable the controller by setting `Disabled: true` on `pipeline.Controller`
-(exposed by the operator runner as `--enable-connect-controller=false` /
-`connectController.enabled: false` once the cmd wiring lands). Disabling
-registers no watches and no telemetry. Note:
+disable the controller with `connectController.enabled: false` in the operator
+chart (equivalently, drop the `--enable-connect` flag). A disabled controller
+registers no watches. Note:
 
 - Existing pipeline Deployments/pods keep running unmanaged (see above).
   Delete the Pipeline CRs *before* disabling if you want the workloads gone.
@@ -374,18 +425,19 @@ kubectl get pipeline <name> -o yaml | yq '.status'
 | `Pending` | accepted, not yet acted on |
 | `Provisioning` | Deployment created, pods not yet ready |
 | `Running` | desired replicas ready |
-| `Stopped` | `paused: true` (or `replicas: 0`) |
+| `Stopped` | `paused: true` or `replicas: 0` |
 | `Unknown` | state could not be determined |
 
 **Conditions** (`.status.conditions[]`):
 
 | Type | True means |
 |---|---|
-| `Ready` | the pipeline is healthy and running (the headline condition) |
+| `Ready` | the pipeline workload is healthy (the headline condition) |
 | `ConfigValid` | the Connect config passed lint |
-| `ClusterRef` | the referenced `Redpanda` cluster was resolved |
-| `UserRef` | the referenced `User`'s credentials were resolved |
-| `ValueSourcesResolved` | every `valueSources` entry was fetched |
+| `ClusterRef` | the cluster source (`clusterRef` / `staticConfiguration`) was resolved |
+| `UserRef` | the referenced `User`'s credentials (incl. its password Secret) were resolved |
+| `ValueSourcesResolved` | every `valueSources` entry resolved to an existing backing object + key |
+| `License` | the operator-level enterprise license is valid and includes Connect |
 
 ---
 
@@ -393,9 +445,10 @@ kubectl get pipeline <name> -o yaml | yq '.status'
 
 | Symptom | Cause / fix |
 |---|---|
-| `Ready=False`, reason mentions license | No / invalid Connect license. Set `REDPANDA_LICENSE_FILE` (Step 2). |
-| `ConfigValid=False` | The `lint` init container rejected the config. `kubectl logs <pod> -c lint` shows the lint error. |
+| `License=False` | No / invalid Connect license. Configure `enterprise.licenseSecretRef` + `connectController.enabled` in the operator chart (Step 2). |
+| `ConfigValid=False` | The `lint` init container rejected the config. `kubectl logs <pod> -c lint` shows the lint error (the condition message carries a truncated copy). |
 | Pod stuck `Init:` / `ImagePullBackOff` | Operator/pod can't pull the Connect image, or an `extraInitContainers` image. Check image ref + pull secrets. |
 | `redpanda_common` errors with `shared client not found` | Bind the pipeline to a cluster (`clusterRef` + `userRef`, Step 4) so the operator emits the top-level `redpanda:` shared-client block. |
-| Changed `configYaml` but pods didn't restart | They should — the operator stamps a `cluster.redpanda.com/config-checksum` annotation that rolls the Deployment. Confirm the new spec was applied (`kubectl get pipeline <name> -o yaml`). |
-| `ClusterRef=False` | The named `Redpanda` CR doesn't exist in the Pipeline's namespace, or its CRD isn't installed. |
+| Changed `configYaml` but pods didn't restart | They should — the operator stamps a `cluster.redpanda.com/config-checksum` annotation that rolls the Deployment (and `cluster.redpanda.com/credentials-checksum` for referenced Secrets/ConfigMaps). Confirm the new spec was applied (`kubectl get pipeline <name> -o yaml`). |
+| `ClusterRef=False` | The named `Redpanda` CR doesn't exist in the Pipeline's namespace, or its CRD isn't installed. Note `clusterRef` cannot point at another namespace. |
+| `Ready=False` / `NameConflict` | Another workload already owns an object with this Pipeline's name (ConfigMap, Deployment, Secret `<name>-license`, ...). Rename the Pipeline or remove the conflicting object — the operator refuses to adopt it. |

@@ -2915,7 +2915,7 @@ PersistentVolume configures configurations for a PersistentVolumeClaim to use to
 
 
 
-Connect defines a Redpanda Connect pipeline managed by the operator.
+Pipeline defines a Redpanda Connect pipeline managed by the operator.
 
 
 
@@ -2939,8 +2939,8 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]__ | Spec defines the desired state of the Connect pipeline. + |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus[$$PipelineStatus$$]__ | Status represents the current observed state of the Connect pipeline. + |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]__ | Spec defines the desired state of the Pipeline. + |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinestatus[$$PipelineStatus$$]__ | Status represents the current observed state of the Pipeline. + |  | 
 |===
 
 
@@ -3062,15 +3062,24 @@ in order, before the pipeline's lint and connect containers start. Use +
 them for setup steps the pipeline depends on — fetching certificate +
 material, warming a cache, or waiting on an external dependency. They run +
 ahead of the operator's built-in `lint` init container, so anything they +
-write into a shared volume is visible to lint and to the connect runtime. +
+write into a volume from .extraVolumes is visible to lint and to the +
+connect runtime (mount it into the pipeline via .extraVolumeMounts). +
 
 This is a raw container passthrough with no operator-applied policy; the +
 pod's service account and security posture apply. It is distinct from a +
 long-lived plugin sidecar (which would be an init container with +
 restartPolicy: Always and is not expressed here). +
 
-Example: +
+Example (with the backing volume and the mount that exposes the staged +
+file to the pipeline containers): +
 spec: +
+extraVolumes: +
+- name: shared +
+emptyDir: {} +
+extraVolumeMounts: +
+- name: shared +
+mountPath: /shared +
+readOnly: true +
 extraInitContainers: +
 - name: fetch-certs +
 image: curlimages/curl:8.11.0 +
@@ -3078,6 +3087,17 @@ command: ["sh", "-c", "curl -fsSL $CERT_URL -o /shared/ca.pem"] +
 volumeMounts: +
 - name: shared +
 mountPath: /shared + |  | Optional: \{} +
+
+| *`extraVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volume-v1-core[$$Volume$$] array__ | ExtraVolumes are additional volumes added to the pipeline pod, typically +
+backing an .extraInitContainers staging step or an .extraVolumeMounts +
+entry. Raw passthrough: any Kubernetes volume source is accepted. The +
+names "config", "cluster-tls-ca", and "cluster-tls-client" are reserved +
+by the operator. + |  | Optional: \{} +
+
+| *`extraVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#volumemount-v1-core[$$VolumeMount$$] array__ | ExtraVolumeMounts are additional volume mounts applied to the built-in +
+lint init container and the connect container (both, so the linted view +
+of the filesystem matches the runtime's). Mounts for +
+.extraInitContainers are declared on those containers directly. + |  | Optional: \{} +
 
 | *`valueSources`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-namedvaluesource[$$NamedValueSource$$] array__ | ValueSources is a list of named values the pipeline YAML can reference +
 via ${NAME} interpolation. Each value is fetched at render time from +
@@ -3141,9 +3161,16 @@ and cluster autoscaler evictions. When not set, no PDB is created. + |  | Option
 to a Redpanda cluster. Mirrors the ClusterSource pattern used by the +
 User/Topic CRDs: +
 
-- clusterRef: point at an existing Redpanda CR by name. The operator +
-resolves the internal broker addresses + TLS material automatically; +
-the SASL identity is taken from .userRef. +
+- clusterRef: point at an existing Redpanda CR by name, in the same +
+namespace as the Pipeline (cross-namespace references are rejected — +
+the resolved TLS/SASL Secrets must be mountable by the pipeline +
+pod). The operator resolves the internal broker addresses + TLS +
+material automatically; the SASL identity is taken from .userRef. +
+SECURITY: when .userRef is NOT set and the referenced cluster has +
+SASL enabled, the pipeline authenticates as the cluster's bootstrap +
+superuser — its credentials are projected into the pipeline pod's +
+environment. Set .userRef so each pipeline runs with an ACL-scoped +
+identity instead. +
 - staticConfiguration: hard-code brokers, TLS, and SASL. The password +
 is a ValueSource so it can come from inline / Secret / ConfigMap / +
 ExternalSecret. +
@@ -3182,7 +3209,7 @@ stays an explicit, auditable user-controlled action. + |  | Optional: \{} +
 
 
 
-PipelineStatus defines the observed state of a Connect resource.
+PipelineStatus defines the observed state of a Pipeline.
 
 
 
@@ -3194,9 +3221,9 @@ PipelineStatus defines the observed state of a Connect resource.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Connect resource. + |  | Optional: \{} +
+| *`observedGeneration`* __integer__ | ObservedGeneration is the last observed generation of the Pipeline. + |  | Optional: \{} +
 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Connect resource. + |  | Optional: \{} +
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Pipeline. + |  | Optional: \{} +
 
 | *`phase`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinephase[$$PipelinePhase$$]__ | Phase describes the current phase of the pipeline lifecycle. + |  | Enum: [Pending Provisioning Running Stopped Unknown] +
 Optional: \{} +

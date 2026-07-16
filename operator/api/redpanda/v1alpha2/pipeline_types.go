@@ -55,6 +55,11 @@ const (
 	// PipelineConditionClusterRef indicates whether the referenced
 	// Redpanda cluster was resolved successfully.
 	PipelineConditionClusterRef = "ClusterRef"
+	// PipelineConditionLicense indicates whether the operator-level
+	// enterprise license passed validation. A False status stops the
+	// controller from syncing spec changes but never tears down a running
+	// workload, so Ready can remain True while License is False.
+	PipelineConditionLicense = "License"
 )
 
 // Pipeline condition reasons.
@@ -68,8 +73,14 @@ const (
 	PipelineReasonPaused = "Paused"
 	// PipelineReasonLicenseInvalid means the enterprise license check failed.
 	PipelineReasonLicenseInvalid = "LicenseInvalid"
+	// PipelineReasonLicenseValid means the enterprise license check passed.
+	PipelineReasonLicenseValid = "LicenseValid"
 	// PipelineReasonFailed means a reconciliation step failed.
 	PipelineReasonFailed = "Failed"
+	// PipelineReasonNameConflict means a resource this Pipeline would create
+	// (ConfigMap, Deployment, Secret, ...) already exists and is not owned by
+	// this Pipeline. The controller refuses to adopt or overwrite it.
+	PipelineReasonNameConflict = "NameConflict"
 	// PipelineReasonConfigValid means the config passed lint validation.
 	PipelineReasonConfigValid = "ConfigValid"
 	// PipelineReasonConfigInvalid means the config failed lint validation.
@@ -106,6 +117,9 @@ const (
 //
 // +kubebuilder:validation:XValidation:message="userRef must be empty when cluster.staticConfiguration is set",rule="!has(self.cluster) || !has(self.cluster.staticConfiguration) || !has(self.userRef)"
 // +kubebuilder:validation:XValidation:message="userRef cannot be set without cluster.clusterRef",rule="!has(self.userRef) || (has(self.cluster) && has(self.cluster.clusterRef))"
+// +kubebuilder:validation:XValidation:message="cluster.clusterRef.namespace is not supported for pipelines; the referenced Redpanda must live in the Pipeline's namespace",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.namespace)"
+// +kubebuilder:validation:XValidation:message="cluster.clusterRef.group must be cluster.redpanda.com (or unset) for pipelines",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.group) || self.cluster.clusterRef.group == 'cluster.redpanda.com'"
+// +kubebuilder:validation:XValidation:message="cluster.clusterRef.kind must be Redpanda (or unset) for pipelines",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.kind) || self.cluster.clusterRef.kind == 'Redpanda'"
 type PipelineSpec struct {
 	// ConfigYAML is the user-supplied Redpanda Connect pipeline YAML.
 	// Reference cluster-bound or sensitive values from .valueSources via
@@ -189,15 +203,24 @@ type PipelineSpec struct {
 	// them for setup steps the pipeline depends on — fetching certificate
 	// material, warming a cache, or waiting on an external dependency. They run
 	// ahead of the operator's built-in `lint` init container, so anything they
-	// write into a shared volume is visible to lint and to the connect runtime.
+	// write into a volume from .extraVolumes is visible to lint and to the
+	// connect runtime (mount it into the pipeline via .extraVolumeMounts).
 	//
 	// This is a raw container passthrough with no operator-applied policy; the
 	// pod's service account and security posture apply. It is distinct from a
 	// long-lived plugin sidecar (which would be an init container with
 	// restartPolicy: Always and is not expressed here).
 	//
-	// Example:
+	// Example (with the backing volume and the mount that exposes the staged
+	// file to the pipeline containers):
 	//   spec:
+	//     extraVolumes:
+	//       - name: shared
+	//         emptyDir: {}
+	//     extraVolumeMounts:
+	//       - name: shared
+	//         mountPath: /shared
+	//         readOnly: true
 	//     extraInitContainers:
 	//       - name: fetch-certs
 	//         image: curlimages/curl:8.11.0
@@ -207,6 +230,21 @@ type PipelineSpec struct {
 	//             mountPath: /shared
 	// +optional
 	ExtraInitContainers []corev1.Container `json:"extraInitContainers,omitempty"`
+
+	// ExtraVolumes are additional volumes added to the pipeline pod, typically
+	// backing an .extraInitContainers staging step or an .extraVolumeMounts
+	// entry. Raw passthrough: any Kubernetes volume source is accepted. The
+	// names "config", "cluster-tls-ca", and "cluster-tls-client" are reserved
+	// by the operator.
+	// +optional
+	ExtraVolumes []corev1.Volume `json:"extraVolumes,omitempty"`
+
+	// ExtraVolumeMounts are additional volume mounts applied to the built-in
+	// lint init container and the connect container (both, so the linted view
+	// of the filesystem matches the runtime's). Mounts for
+	// .extraInitContainers are declared on those containers directly.
+	// +optional
+	ExtraVolumeMounts []corev1.VolumeMount `json:"extraVolumeMounts,omitempty"`
 
 	// ValueSources is a list of named values the pipeline YAML can reference
 	// via ${NAME} interpolation. Each value is fetched at render time from
@@ -288,9 +326,16 @@ type PipelineSpec struct {
 	// to a Redpanda cluster. Mirrors the ClusterSource pattern used by the
 	// User/Topic CRDs:
 	//
-	//   - clusterRef: point at an existing Redpanda CR by name. The operator
-	//     resolves the internal broker addresses + TLS material automatically;
-	//     the SASL identity is taken from .userRef.
+	//   - clusterRef: point at an existing Redpanda CR by name, in the same
+	//     namespace as the Pipeline (cross-namespace references are rejected —
+	//     the resolved TLS/SASL Secrets must be mountable by the pipeline
+	//     pod). The operator resolves the internal broker addresses + TLS
+	//     material automatically; the SASL identity is taken from .userRef.
+	//     SECURITY: when .userRef is NOT set and the referenced cluster has
+	//     SASL enabled, the pipeline authenticates as the cluster's bootstrap
+	//     superuser — its credentials are projected into the pipeline pod's
+	//     environment. Set .userRef so each pipeline runs with an ACL-scoped
+	//     identity instead.
 	//   - staticConfiguration: hard-code brokers, TLS, and SASL. The password
 	//     is a ValueSource so it can come from inline / Secret / ConfigMap /
 	//     ExternalSecret.
@@ -358,13 +403,13 @@ type PipelineBudget struct {
 	MaxUnavailable int `json:"maxUnavailable"`
 }
 
-// PipelineStatus defines the observed state of a Connect resource.
+// PipelineStatus defines the observed state of a Pipeline.
 type PipelineStatus struct {
-	// ObservedGeneration is the last observed generation of the Connect resource.
+	// ObservedGeneration is the last observed generation of the Pipeline.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	// Conditions holds the conditions for the Connect resource.
+	// Conditions holds the conditions for the Pipeline.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
@@ -381,7 +426,7 @@ type PipelineStatus struct {
 	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
 }
 
-// Connect defines a Redpanda Connect pipeline managed by the operator.
+// Pipeline defines a Redpanda Connect pipeline managed by the operator.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=pipelines,shortName=rpcn
@@ -395,16 +440,16 @@ type Pipeline struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	// Spec defines the desired state of the Connect pipeline.
+	// Spec defines the desired state of the Pipeline.
 	Spec PipelineSpec `json:"spec,omitempty"`
 
-	// Status represents the current observed state of the Connect pipeline.
+	// Status represents the current observed state of the Pipeline.
 	Status PipelineStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// PipelineList contains a list of Connect resources.
+// PipelineList contains a list of Pipeline resources.
 type PipelineList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -420,7 +465,12 @@ func (c *Pipeline) GetClusterSource() *ClusterSource {
 	return c.Spec.ClusterSource
 }
 
-// GetImage returns the configured image or the default.
+// GetImage returns the configured image, falling back to the binary-baked
+// default. NOTE: this cannot see the operator-level --connect-default-image
+// override, which takes precedence over PipelineDefaultImage at render time —
+// callers that need the effective image must resolve that tier themselves
+// (see the pipeline controller's resolveImage and the telemetry collector's
+// resolvePipelineImage).
 func (c *Pipeline) GetImage() string {
 	if c.Spec.Image != nil && *c.Spec.Image != "" {
 		return *c.Spec.Image

@@ -152,7 +152,10 @@ additionalCmdFlags: []
 commonAnnotations: {}
 
 # -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
-# Pipelines still require an enterprise license with the CONNECT product on each CR.
+# Requires an operator-level enterprise license that includes the Redpanda
+# Connect product, configured via `enterprise.licenseSecretRef`; without one,
+# every Pipeline reconciles to `License=False` / `LicenseInvalid` and gets no
+# workload.
 # Note: Pipeline CRs carry an operator finalizer — disabling this while Pipeline
 # CRs exist blocks their deletion until the controller is re-enabled (or the
 # finalizer is removed by hand). Delete Pipelines before disabling.
@@ -161,10 +164,11 @@ connectController:
   # -- Default Redpanda Connect image applied to every Pipeline CR that
   # does not pin its own `.spec.image`. Per-Pipeline `.spec.image` still
   # wins; if neither is set, the operator falls back to the
-  # PipelineDefaultImage constant baked into the binary.
+  # PipelineDefaultImage constant baked into the binary (currently
+  # docker.redpanda.com/redpandadata/connect:4.100.0).
   # image:
   #   repository: docker.redpanda.com/redpandadata/connect
-  #   tag: "4.92.0"
+  #   tag: "4.100.0"
   # -- Monitoring configuration for Connect pipeline pods.
   monitoring:
     # -- Enables PodMonitor creation for all Connect pipelines.
@@ -174,8 +178,6 @@ connectController:
     # scrapeInterval: "30s"
     # -- Additional labels to add to pipeline PodMonitors.
     # labels: {}
-
-# - --additional-controllers="<controller-name"
 
 # -- Additional labels to add to all Kubernetes objects.
 # For example, `my.k8s.service: redpanda-operator`.

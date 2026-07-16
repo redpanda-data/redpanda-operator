@@ -239,7 +239,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.telemetryEndpoint, "telemetry-endpoint", "", "Override the telemetry ingestion endpoint (testing).")
 	cmd.Flags().DurationVar(&o.telemetryPeriod, "telemetry-period", 0, "Interval between telemetry reports. 0 uses the library default (24h).")
 	cmd.Flags().StringToStringVar(&o.telemetryFeatures, "telemetry-features", nil, "Additional ad-hoc feature flags to include in every telemetry report, as name=bool pairs (e.g. redpanda-cloud=true). Repeatable or comma-separated; entries override the built-in feature flags.")
-	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file. When set and valid, its checksum (id_hash) is included in telemetry to correlate licensed clusters to an account.")
+	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file (populated from enterprise.licenseSecretRef in the operator Helm chart). Gates enterprise features: the Redpanda Connect controller (--enable-connect) requires it and reconciles every Pipeline to LicenseInvalid without it. When set and valid, its checksum (id_hash) is also included in telemetry to correlate licensed clusters to an account.")
 
 	// Secret store related flags.
 	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
@@ -347,8 +347,8 @@ func Run(
 	v1Controllers := opts.enableVectorizedControllers
 	v2Controllers := opts.enableRedpandaControllers
 
-	if (opts.enableV2NodepoolController || opts.enableConsoleController) && !v2Controllers {
-		return errors.New("running NodePool or Console controllers requires running the Redpanda controller")
+	if (opts.enableV2NodepoolController || opts.enableConsoleController || opts.enableConnectController) && !v2Controllers {
+		return errors.New("running NodePool, Console, or Connect controllers requires running the Redpanda controller")
 	}
 
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
@@ -560,7 +560,8 @@ func Run(
 			}
 		}
 
-		// Connect Reconciler (enterprise feature, gated by license on each CR or operator-level license).
+		// Connect Reconciler (enterprise feature, gated by the operator-level
+		// license from --license-file-path / enterprise.licenseSecretRef).
 		if opts.enableConnectController {
 			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
 				Options: client.Options{
@@ -805,12 +806,13 @@ func Run(
 		}
 
 		tele, err := telemetry.NewRunnable(mgr.GetAPIReader(), disco, setupLog, telemetry.Options{
-			Endpoint:        opts.telemetryEndpoint,
-			ID:              id,
-			OperatorVersion: version.Version,
-			IDHash:          idHash,
-			Features:        features,
-			Period:          opts.telemetryPeriod,
+			Endpoint:            opts.telemetryEndpoint,
+			ID:                  id,
+			OperatorVersion:     version.Version,
+			IDHash:              idHash,
+			Features:            features,
+			ConnectDefaultImage: opts.connectDefaultImage,
+			Period:              opts.telemetryPeriod,
 		})
 		if err != nil {
 			setupLog.Error(err, "unable to build telemetry runnable")

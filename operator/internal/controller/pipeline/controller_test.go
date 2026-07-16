@@ -30,11 +30,14 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -97,13 +100,21 @@ func TestReconcile_NoLicense(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, time.Minute, result.RequeueAfter, "should requeue for license retry")
 
-	// Verify status shows license invalid.
+	// Verify status shows license invalid: the dedicated License condition
+	// carries the failure, and — with no Deployment ever created — Ready
+	// mirrors it so a never-provisioned pipeline points straight at the cause.
 	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
 	assert.Equal(t, redpandav1alpha2.PipelinePhasePending, pipeline.Status.Phase)
-	require.Len(t, pipeline.Status.Conditions, 1)
-	assert.Equal(t, redpandav1alpha2.PipelineConditionReady, pipeline.Status.Conditions[0].Type)
-	assert.Equal(t, metav1.ConditionFalse, pipeline.Status.Conditions[0].Status)
-	assert.Equal(t, redpandav1alpha2.PipelineReasonLicenseInvalid, pipeline.Status.Conditions[0].Reason)
+
+	licenseCond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionLicense)
+	require.NotNil(t, licenseCond)
+	assert.Equal(t, metav1.ConditionFalse, licenseCond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLicenseInvalid, licenseCond.Reason)
+
+	readyCond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionReady)
+	require.NotNil(t, readyCond)
+	assert.Equal(t, metav1.ConditionFalse, readyCond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLicenseInvalid, readyCond.Reason)
 
 	// Verify no Deployment was created.
 	var deployments appsv1.DeploymentList
@@ -147,8 +158,10 @@ func TestReconcile_InvalidLicenseFile(t *testing.T) {
 	assert.Equal(t, time.Minute, result.RequeueAfter)
 
 	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
-	assert.Equal(t, redpandav1alpha2.PipelineReasonLicenseInvalid, pipeline.Status.Conditions[0].Reason)
-	assert.Contains(t, pipeline.Status.Conditions[0].Message, "failed to read license")
+	licenseCond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionLicense)
+	require.NotNil(t, licenseCond)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLicenseInvalid, licenseCond.Reason)
+	assert.Contains(t, licenseCond.Message, "failed to read license")
 }
 
 func TestReconcile_InvalidLicenseKeepsManagedResources(t *testing.T) {
@@ -198,6 +211,21 @@ func TestReconcile_InvalidLicenseKeepsManagedResources(t *testing.T) {
 	// last-known-good children stay in place so data processing continues;
 	// only deleting the Pipeline CR removes them.
 	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
+
+	// The license failure lands on the License condition; phase and Ready
+	// come from the live Deployment (Provisioning in envtest, where no
+	// deployment controller ever readies pods) — a license blip must not
+	// report a live workload as Pending.
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	assert.Equal(t, redpandav1alpha2.PipelinePhaseProvisioning, pipeline.Status.Phase)
+	licenseCond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionLicense)
+	require.NotNil(t, licenseCond)
+	assert.Equal(t, metav1.ConditionFalse, licenseCond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonLicenseInvalid, licenseCond.Reason)
+	readyCond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionReady)
+	require.NotNil(t, readyCond)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonProvisioning, readyCond.Reason,
+		"Ready must reflect the live workload, not the license failure")
 }
 
 func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
@@ -249,7 +277,431 @@ func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
 	// running workloads; the last-known-good children keep processing data.
 	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
 	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
-	assert.Equal(t, redpandav1alpha2.PipelineReasonClusterRefInvalid, pipeline.Status.Conditions[0].Reason)
+
+	// The failure lands on the ClusterRef condition; phase and Ready come
+	// from the live Deployment (Provisioning in envtest).
+	clusterRefCond := apimeta.FindStatusCondition(pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionClusterRef)
+	require.NotNil(t, clusterRefCond)
+	assert.Equal(t, metav1.ConditionFalse, clusterRefCond.Status)
+	assert.Equal(t, redpandav1alpha2.PipelineReasonClusterRefInvalid, clusterRefCond.Reason)
+	assert.Equal(t, redpandav1alpha2.PipelinePhaseProvisioning, pipeline.Status.Phase)
+}
+
+// TestSetupWithManager exercises the real registration path — scheme types,
+// field index, watches, and the PodMonitor CRD probe — which the reconcile
+// tests never touch (they drive Reconcile directly). The probe must give the
+// right answer BEFORE mgr.Start(): the previous implementation did a cached
+// List there, which always fails with ErrCacheNotStarted and silently skipped
+// the PodMonitor watch on every real deployment.
+func TestSetupWithManager(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	newManager := func() ctrl.Manager {
+		mgr, err := ctrl.NewManager(ctl.RestConfig(), ctrl.Options{
+			Scheme:  controller.UnifiedScheme,
+			Metrics: metricsserver.Options{BindAddress: "0"},
+			// Both managers register a controller named "pipeline";
+			// controller-runtime's global name-uniqueness check is only about
+			// metric labels, which don't matter here.
+			Controller: config.Controller{SkipNameValidation: ptr.To(true)},
+		})
+		require.NoError(t, err)
+		return mgr
+	}
+
+	// Without the PodMonitor CRD installed: setup succeeds (the watch is
+	// skipped) and the probe reports "not installed" — not a cache error.
+	mgr := newManager()
+	c := &Controller{Ctl: ctl}
+	require.NoError(t, c.SetupWithManager(t.Context(), mgr, ""))
+	assert.False(t, c.podMonitorCRDInstalled(t.Context(), mgr))
+
+	// Install a minimal PodMonitor CRD. A fresh manager (fresh RESTMapper —
+	// the lazy mapper caches negative lookups) must now detect it pre-start.
+	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
+		if err != nil {
+			return false, err
+		}
+		for _, cond := range crd.Status.Conditions {
+			if cond.Type == apiextensionsv1.Established {
+				return cond.Status == apiextensionsv1.ConditionTrue, nil
+			}
+		}
+		return false, nil
+	}, &apiextensionsv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{Name: "podmonitors.monitoring.coreos.com"},
+		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
+			Group: "monitoring.coreos.com",
+			Names: apiextensionsv1.CustomResourceDefinitionNames{
+				Plural:   "podmonitors",
+				Singular: "podmonitor",
+				Kind:     "PodMonitor",
+				ListKind: "PodMonitorList",
+			},
+			Scope: apiextensionsv1.NamespaceScoped,
+			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{{
+				Name:    "v1",
+				Served:  true,
+				Storage: true,
+				Schema: &apiextensionsv1.CustomResourceValidation{
+					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+						Type:                   "object",
+						XPreserveUnknownFields: ptr.To(true),
+					},
+				},
+			}},
+		},
+	}))
+
+	mgr2 := newManager()
+	c2 := &Controller{Ctl: ctl}
+	require.NoError(t, c2.SetupWithManager(t.Context(), mgr2, ""))
+	assert.True(t, c2.podMonitorCRDInstalled(t.Context(), mgr2),
+		"with the CRD installed, the pre-start probe must detect it (a cached List would ErrCacheNotStarted here)")
+}
+
+// TestResolveClusterSource_Success exercises the successful clusterRef path
+// end-to-end against a real Redpanda CR: the chart render resolves internal
+// brokers and TLS material (the chart's default listener is TLS with a
+// Secret-backed self-signed CA), the result is cached, and a delete +
+// recreate of the cluster under the same name does NOT serve the stale entry
+// (UID-keyed cache).
+func TestResolveClusterSource_Success(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-clusterref-success"},
+	})
+	require.NoError(t, err)
+
+	rp := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "basic", Namespace: ns.Name},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), rp))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "resolver", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: "basic"},
+			},
+		},
+	}
+
+	c := &Controller{Ctl: ctl, clusterConns: newClusterConnCache()}
+
+	conn, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	require.NotEmpty(t, conn.Brokers, "expected internal broker addresses from the chart render")
+	for _, b := range conn.Brokers {
+		assert.Contains(t, b, "basic", "brokers should reference the cluster's services")
+	}
+	require.NotNil(t, conn.TLS, "the chart's default Kafka listener is TLS-enabled")
+	require.NotNil(t, conn.TLS.CACertSecretRef, "default self-signed CA is Secret-backed")
+
+	// Second resolution is a cache hit (same pointer).
+	cached, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	assert.Same(t, conn, cached)
+
+	// Delete + recreate the cluster under the same name. The recreated CR
+	// restarts at generation 1 — exactly the shape that used to serve a
+	// stale entry when the cache was keyed by generation alone.
+	require.NoError(t, ctl.Delete(t.Context(), rp))
+	rp2 := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "basic", Namespace: ns.Name},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), rp2))
+
+	fresh, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	assert.NotSame(t, conn, fresh, "a recreated cluster (new UID) must be re-resolved, not served from the stale cache entry")
+}
+
+// TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds covers the
+// controller-side guard behind the CEL rules: clusterRef.namespace/group/kind
+// were previously accepted by the schema and silently ignored, binding the
+// pipeline to a same-named cluster in its own namespace instead.
+func TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-clusterref-guard"},
+	})
+	require.NoError(t, err)
+
+	c := &Controller{Ctl: ctl, clusterConns: newClusterConnCache()}
+	mk := func(ref *redpandav1alpha2.ClusterRef) *redpandav1alpha2.Pipeline {
+		return &redpandav1alpha2.Pipeline{
+			ObjectMeta: metav1.ObjectMeta{Name: "guard", Namespace: ns.Name},
+			Spec: redpandav1alpha2.PipelineSpec{
+				ConfigYAML:    "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+				ClusterSource: &redpandav1alpha2.ClusterSource{ClusterRef: ref},
+			},
+		}
+	}
+
+	_, err = c.resolveClusterSource(t.Context(), mk(&redpandav1alpha2.ClusterRef{
+		Name:      "prod",
+		Namespace: ptr.To("prod-namespace"),
+	}))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "clusterRef.namespace")
+
+	_, err = c.resolveClusterSource(t.Context(), mk(&redpandav1alpha2.ClusterRef{
+		Name: "prod",
+		Kind: ptr.To("NodePool"),
+	}))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "only cluster.redpanda.com/Redpanda references are supported")
+}
+
+// TestResolveUserRef_Validation covers userRef resolution incl. the password
+// Secret: previously a missing Secret still marked UserRef=True and the pod
+// later wedged in CreateContainerConfigError.
+func TestResolveUserRef_Validation(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-userref"},
+	})
+	require.NoError(t, err)
+
+	mechanism := redpandav1alpha2.SASLMechanism("scram-sha-256")
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{Name: "svc-user", Namespace: ns.Name},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: "basic"},
+			},
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Type: &mechanism,
+				Password: redpandav1alpha2.Password{
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "svc-user-password"},
+							Key:                  "password",
+						},
+					},
+				},
+			},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), user))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "userref", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			UserRef:    &redpandav1alpha2.PipelineUserRef{Name: "svc-user"},
+		},
+	}
+
+	// Password Secret doesn't exist yet: resolution must fail.
+	_, err = resolveUserRef(t.Context(), ctl, pipeline)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "password Secret")
+
+	// Secret exists but lacks the referenced key: still a failure.
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "svc-user-password", Namespace: ns.Name},
+		Data:       map[string][]byte{"wrong-key": []byte("hunter2")},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), secret))
+	_, err = resolveUserRef(t.Context(), ctl, pipeline)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "has no key")
+
+	// Correct key present: resolves with the User's identity.
+	secret.Data["password"] = []byte("hunter2")
+	require.NoError(t, ctl.Apply(t.Context(), secret))
+	creds, err := resolveUserRef(t.Context(), ctl, pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, "svc-user", creds.Username)
+	assert.Equal(t, "SCRAM-SHA-256", creds.Mechanism)
+	assert.Equal(t, "svc-user-password", creds.PasswordRef.Name)
+}
+
+// TestFindOwnershipConflict covers the SSA adoption guard: a pre-existing
+// object with the Pipeline's name that the Pipeline does not own must refuse
+// to sync (previously ForceOwnership hijacked it, and Pipeline deletion then
+// deleted it).
+func TestFindOwnershipConflict(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-name-conflict"},
+	})
+	require.NoError(t, err)
+
+	// A ConfigMap owned by "another team", name-colliding with the Pipeline.
+	foreign := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "victim", Namespace: ns.Name},
+		Data:       map[string]string{"precious": "data"},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), foreign))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "victim", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+
+	c := &Controller{Ctl: ctl}
+	renderer := c.rendererFor(pipeline, nil, nil, nil, "")
+
+	conflict, err := c.findOwnershipConflict(t.Context(), pipeline, renderer)
+	require.NoError(t, err)
+	require.NotEmpty(t, conflict, "a foreign same-named ConfigMap must be reported as a conflict")
+	assert.Contains(t, conflict, "ConfigMap")
+	assert.Contains(t, conflict, "not owned by this Pipeline")
+
+	// Once the object is owned by the Pipeline (the normal steady state),
+	// there is no conflict.
+	foreign.OwnerReferences = []metav1.OwnerReference{
+		*metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
+	}
+	require.NoError(t, ctl.Apply(t.Context(), foreign))
+	conflict, err = c.findOwnershipConflict(t.Context(), pipeline, renderer)
+	require.NoError(t, err)
+	assert.Empty(t, conflict)
+}
+
+// TestValidateValueSources covers reconcile-time resolution of valueSources
+// backing objects — previously a typo'd Secret name synced fine and only
+// surfaced as a wedged pod.
+func TestValidateValueSources(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-valuesources"},
+	})
+	require.NoError(t, err)
+
+	mk := func(sources ...redpandav1alpha2.NamedValueSource) *redpandav1alpha2.Pipeline {
+		return &redpandav1alpha2.Pipeline{
+			ObjectMeta: metav1.ObjectMeta{Name: "vs", Namespace: ns.Name},
+			Spec: redpandav1alpha2.PipelineSpec{
+				ConfigYAML:   "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+				ValueSources: sources,
+			},
+		}
+	}
+
+	secretSource := redpandav1alpha2.NamedValueSource{
+		Name: "S3_SECRET_KEY",
+		Source: redpandav1alpha2.ValueSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "s3-creds"},
+				Key:                  "secret_access_key",
+			},
+		},
+	}
+
+	// Missing Secret: rejected.
+	err = validateValueSources(t.Context(), ctl, mk(secretSource))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "S3_SECRET_KEY")
+
+	// Secret present but key missing: rejected.
+	require.NoError(t, ctl.Apply(t.Context(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "s3-creds", Namespace: ns.Name},
+		Data:       map[string][]byte{"other": []byte("x")},
+	}))
+	err = validateValueSources(t.Context(), ctl, mk(secretSource))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "has no key")
+
+	// Key present: accepted.
+	require.NoError(t, ctl.Apply(t.Context(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "s3-creds", Namespace: ns.Name},
+		Data:       map[string][]byte{"secret_access_key": []byte("x")},
+	}))
+	require.NoError(t, validateValueSources(t.Context(), ctl, mk(secretSource)))
+
+	// Inline values need no backing object.
+	require.NoError(t, validateValueSources(t.Context(), ctl, mk(redpandav1alpha2.NamedValueSource{
+		Name:   "REGION",
+		Source: redpandav1alpha2.ValueSource{Inline: ptr.To("us-east-2")},
+	})))
+
+	// Optional missing Secret is tolerated (kubelet env semantics).
+	require.NoError(t, validateValueSources(t.Context(), ctl, mk(redpandav1alpha2.NamedValueSource{
+		Name: "OPTIONAL_KEY",
+		Source: redpandav1alpha2.ValueSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "does-not-exist"},
+				Key:                  "k",
+				Optional:             ptr.To(true),
+			},
+		},
+	})))
+}
+
+// TestCredentialsChecksum covers the rotation-roll digest: it must be stable
+// across reconciles, change when a referenced Secret's content changes, and
+// be empty when the pipeline references nothing.
+func TestCredentialsChecksum(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-creds-checksum"},
+	})
+	require.NoError(t, err)
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "rotating", Namespace: ns.Name},
+		Data:       map[string][]byte{"password": []byte("v1")},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), secret))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "checksum", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ValueSources: []redpandav1alpha2.NamedValueSource{{
+				Name: "PASSWORD",
+				Source: redpandav1alpha2.ValueSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "rotating"},
+						Key:                  "password",
+					},
+				},
+			}},
+		},
+	}
+
+	c := &Controller{Ctl: ctl}
+
+	first, err := c.credentialsChecksum(t.Context(), pipeline, nil, nil, nil)
+	require.NoError(t, err)
+	require.NotEmpty(t, first)
+
+	// Stable while nothing changes.
+	again, err := c.credentialsChecksum(t.Context(), pipeline, nil, nil, nil)
+	require.NoError(t, err)
+	assert.Equal(t, first, again, "checksum must be deterministic across reconciles")
+
+	// Rotating the Secret changes the digest — this is what rolls the pods.
+	secret.Data["password"] = []byte("v2")
+	require.NoError(t, ctl.Apply(t.Context(), secret))
+	rotated, err := c.credentialsChecksum(t.Context(), pipeline, nil, nil, nil)
+	require.NoError(t, err)
+	assert.NotEqual(t, first, rotated, "a Secret rotation must change the checksum")
+
+	// No references, no license: nothing to digest.
+	bare := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "bare", Namespace: ns.Name},
+		Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n"},
+	}
+	empty, err := c.credentialsChecksum(t.Context(), bare, nil, nil, nil)
+	require.NoError(t, err)
+	assert.Empty(t, empty)
 }
 
 func TestReconcile_Deletion(t *testing.T) {

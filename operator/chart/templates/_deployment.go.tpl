@@ -186,7 +186,7 @@
 {{- if (ne $labelArg "") -}}
 {{- $labelArg = (printf "%s%s" $labelArg ",") -}}
 {{- end -}}
-{{- $labelArg = (printf "%s%s" $labelArg (printf "%s=%s" $key $value)) -}}
+{{- $labelArg = (printf "%s%s" $labelArg (get (fromJson (include "operator.quoteFlagMapPair" (dict "a" (list (printf "%s=%s" $key $value))))) "r")) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -195,13 +195,16 @@
 {{- end -}}
 {{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
 {{- $_ := (get (fromJson (include "operator.addControllerSyncIntervalArgs" (dict "a" (list $defaults $values)))) "r") -}}
+{{- if $values.crds.enabled -}}
+{{- $_ := (set $defaults "--enable-shadowlinks" "true") -}}
+{{- end -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.commonAnnotations)))) "r") | int) (0 | int)) -}}
 {{- $annotationArg := "" -}}
 {{- range $key, $value := $values.commonAnnotations -}}
 {{- if (ne $annotationArg "") -}}
 {{- $annotationArg = (printf "%s%s" $annotationArg ",") -}}
 {{- end -}}
-{{- $annotationArg = (printf "%s%s" $annotationArg (printf "%s=%s" $key $value)) -}}
+{{- $annotationArg = (printf "%s%s" $annotationArg (get (fromJson (include "operator.quoteFlagMapPair" (dict "a" (list (printf "%s=%s" $key $value))))) "r")) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -228,6 +231,21 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $flags) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.quoteFlagMapPair" -}}
+{{- $pair := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (and (not (contains "," $pair)) (not (contains "\"" $pair))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $pair) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "%s%s" (printf "%s%s" "\"" (replace "\"" "\"\"" $pair)) "\"")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

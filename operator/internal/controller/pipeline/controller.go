@@ -14,6 +14,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -27,10 +30,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -79,11 +84,13 @@ type Controller struct {
 	MaxConcurrentReconciles int
 
 	// Disabled turns the Connect controller off entirely: SetupWithManager
-	// registers nothing (no Pipeline watches, no field index, no telemetry)
-	// and returns immediately. Intended for installs that no longer use
-	// Connect pipelines; a cmd/run entrypoint should plumb it from an
-	// --enable-connect-controller=false flag / connectController.enabled
-	// chart value.
+	// registers nothing (no Pipeline watches, no field index) and returns
+	// immediately. It exists for library consumers that construct the
+	// Controller unconditionally; the operator's own cmd/run entrypoint
+	// instead skips SetupWithManager altogether when --enable-connect is
+	// false (the chart's connectController.enabled value) and never sets
+	// this field. Note the operator's central telemetry collector reports
+	// Pipeline CRs regardless of whether this controller runs.
 	//
 	// Disabling does NOT touch existing workloads: pipeline Deployments and
 	// their pods are owned by the Pipeline CRs, not by the operator, so they
@@ -109,6 +116,7 @@ const defaultMaxConcurrentReconciles = 5
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
@@ -155,10 +163,10 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 		For(&redpandav1alpha2.Pipeline{})
 
 	for _, t := range Types() {
-		// Skip PodMonitor watch if the CRD is not installed. If it gets
+		// Skip the PodMonitor watch if the CRD is not installed. If it gets
 		// installed during operator runtime, the operator must be restarted.
 		if _, ok := t.(*monitoringv1.PodMonitor); ok {
-			if c.skipPodMonitorWatchIfNotInstalled(ctx) {
+			if !c.podMonitorCRDInstalled(ctx, mgr) {
 				continue
 			}
 		}
@@ -166,27 +174,58 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 	}
 
 	// Watch Redpanda clusters and re-reconcile any Pipelines that reference
-	// them. This ensures Pipelines pick up broker/TLS changes promptly.
-	builder = builder.Watches(&redpandav1alpha2.Redpanda{}, handler.EnqueueRequestsFromMapFunc(
-		func(ctx context.Context, o client.Object) []reconcile.Request {
-			var pipelineList redpandav1alpha2.PipelineList
-			if err := mgr.GetClient().List(ctx, &pipelineList,
-				client.InNamespace(o.GetNamespace()),
-				client.MatchingFields{clusterRefIndexField: o.GetName()},
-			); err != nil {
-				return nil
-			}
-			var requests []reconcile.Request
-			for i := range pipelineList.Items {
-				requests = append(requests, reconcile.Request{
-					NamespacedName: client.ObjectKeyFromObject(&pipelineList.Items[i]),
-				})
-			}
-			return requests
+	// them. This ensures Pipelines pick up broker/TLS changes promptly. On
+	// cluster deletion, additionally evict the cluster's render-cache entry
+	// so the cache doesn't grow unboundedly (and a recreate under the same
+	// name starts clean).
+	enqueueForCluster := func(ctx context.Context, o client.Object, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+		var pipelineList redpandav1alpha2.PipelineList
+		if err := mgr.GetClient().List(ctx, &pipelineList,
+			client.InNamespace(o.GetNamespace()),
+			client.MatchingFields{clusterRefIndexField: o.GetName()},
+		); err != nil {
+			return
+		}
+		for i := range pipelineList.Items {
+			q.Add(reconcile.Request{
+				NamespacedName: client.ObjectKeyFromObject(&pipelineList.Items[i]),
+			})
+		}
+	}
+	builder = builder.Watches(&redpandav1alpha2.Redpanda{}, handler.Funcs{
+		CreateFunc: func(ctx context.Context, e event.CreateEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			enqueueForCluster(ctx, e.Object, q)
 		},
-	))
+		UpdateFunc: func(ctx context.Context, e event.UpdateEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			enqueueForCluster(ctx, e.ObjectNew, q)
+		},
+		DeleteFunc: func(ctx context.Context, e event.DeleteEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			c.clusterConns.evict(e.Object.GetNamespace(), e.Object.GetName())
+			enqueueForCluster(ctx, e.Object, q)
+		},
+		GenericFunc: func(ctx context.Context, e event.GenericEvent, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+			enqueueForCluster(ctx, e.Object, q)
+		},
+	})
 
 	return builder.Complete(c)
+}
+
+// podMonitorCRDInstalled reports whether the monitoring.coreos.com PodMonitor
+// CRD is registered with the API server. It consults the manager's RESTMapper
+// (backed by discovery) instead of the cached client: SetupWithManager runs
+// before mgr.Start(), where a cached List always fails with ErrCacheNotStarted
+// — which would make the probe skip the PodMonitor watch on every deployment
+// regardless of whether the CRD is present.
+func (c *Controller) podMonitorCRDInstalled(ctx context.Context, mgr ctrl.Manager) bool {
+	gvk := monitoringv1.SchemeGroupVersion.WithKind(monitoringv1.PodMonitorsKind)
+	if _, err := mgr.GetRESTMapper().RESTMapping(gvk.GroupKind(), gvk.Version); err != nil {
+		if !meta.IsNoMatchError(err) {
+			log.Error(ctx, err, "could not determine whether the PodMonitor CRD is installed; skipping the PodMonitor watch")
+		}
+		return false
+	}
+	return true
 }
 
 func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -205,7 +244,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Handle deletion: clean up owned resources and remove finalizer.
 	if !pipeline.DeletionTimestamp.IsZero() {
 		if controllerutil.RemoveFinalizer(pipeline, finalizerKey) {
-			syncer, err := c.syncerFor(pipeline, nil, nil, nil)
+			syncer, err := c.syncerFor(pipeline, c.rendererFor(pipeline, nil, nil, nil, ""))
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -237,20 +276,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	clusterConn, err := c.resolveClusterSource(ctx, pipeline)
 	if err != nil {
 		log.Error(ctx, err, "failed to resolve clusterRef")
-		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, []metav1.Condition{
-			{
-				Type:    redpandav1alpha2.PipelineConditionReady,
-				Status:  metav1.ConditionFalse,
-				Reason:  redpandav1alpha2.PipelineReasonClusterRefInvalid,
-				Message: err.Error(),
-			},
-			{
-				Type:    redpandav1alpha2.PipelineConditionClusterRef,
-				Status:  metav1.ConditionFalse,
-				Reason:  redpandav1alpha2.PipelineReasonClusterRefInvalid,
-				Message: err.Error(),
-			},
-		}); statusErr != nil {
+		if statusErr := c.failStatus(ctx, pipeline, redpandav1alpha2.PipelineConditionClusterRef, redpandav1alpha2.PipelineReasonClusterRefInvalid, err.Error()); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
 		// Deliberately leave any previously-synced children (Deployment,
@@ -268,20 +294,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	userCreds, err := resolveUserRef(ctx, c.Ctl, pipeline)
 	if err != nil {
 		log.Error(ctx, err, "failed to resolve userRef")
-		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, []metav1.Condition{
-			{
-				Type:    redpandav1alpha2.PipelineConditionReady,
-				Status:  metav1.ConditionFalse,
-				Reason:  redpandav1alpha2.PipelineReasonUserInvalid,
-				Message: err.Error(),
-			},
-			{
-				Type:    redpandav1alpha2.PipelineConditionUserRef,
-				Status:  metav1.ConditionFalse,
-				Reason:  redpandav1alpha2.PipelineReasonUserInvalid,
-				Message: err.Error(),
-			},
-		}); statusErr != nil {
+		if statusErr := c.failStatus(ctx, pipeline, redpandav1alpha2.PipelineConditionUserRef, redpandav1alpha2.PipelineReasonUserInvalid, err.Error()); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
 		// As with clusterRef above: keep existing children running on a
@@ -289,15 +302,25 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
+	// Validate that every spec.valueSources entry resolves to an existing
+	// backing object + key. Without this, a typo'd Secret name would sync
+	// fine and only surface later as a pod stuck in
+	// CreateContainerConfigError — and, with the Recreate strategy, take the
+	// previously-running pods down with it.
+	if err := validateValueSources(ctx, c.Ctl, pipeline); err != nil {
+		log.Error(ctx, err, "failed to resolve valueSources")
+		if statusErr := c.failStatus(ctx, pipeline, redpandav1alpha2.PipelineConditionValueSourcesResolved, redpandav1alpha2.PipelineReasonValueSourceInvalid, err.Error()); statusErr != nil {
+			return ctrl.Result{}, statusErr
+		}
+		// Keep existing children running; the referenced object may appear
+		// shortly (e.g. an external-secrets materialization in flight).
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
 	// Validate license before proceeding.
 	if err := c.validateLicense(); err != nil {
 		log.Error(ctx, err, "license validation failed")
-		if statusErr := c.applyStatus(ctx, pipeline, redpandav1alpha2.PipelinePhasePending, []metav1.Condition{{
-			Type:    redpandav1alpha2.PipelineConditionReady,
-			Status:  metav1.ConditionFalse,
-			Reason:  redpandav1alpha2.PipelineReasonLicenseInvalid,
-			Message: err.Error(),
-		}}); statusErr != nil {
+		if statusErr := c.failStatus(ctx, pipeline, redpandav1alpha2.PipelineConditionLicense, redpandav1alpha2.PipelineReasonLicenseInvalid, err.Error()); statusErr != nil {
 			return ctrl.Result{}, statusErr
 		}
 		// The license gate blocks syncing (a new Pipeline never gets children;
@@ -320,8 +343,39 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{}, errors.Wrap(err, "reading license file for pipeline pod")
 	}
 
+	// Digest the referenced credentials (Secret/ConfigMap resourceVersions +
+	// license bytes) so rotations roll the Deployment. Computed from object
+	// metadata, not secret contents, to avoid exposing content-derived
+	// digests on the pod template.
+	credsChecksum, err := c.credentialsChecksum(ctx, pipeline, clusterConn, userCreds, licenseContent)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	renderer := c.rendererFor(pipeline, clusterConn, userCreds, licenseContent, credsChecksum)
+
+	// Refuse to adopt pre-existing objects this Pipeline didn't create: the
+	// SSA sync below force-applies, so without this check a Pipeline named
+	// after another workload's ConfigMap/Secret/Deployment would hijack that
+	// object — and deleting the Pipeline would then delete it.
+	if conflict, err := c.findOwnershipConflict(ctx, pipeline, renderer); err != nil {
+		return ctrl.Result{}, err
+	} else if conflict != "" {
+		log.Info(ctx, "refusing to adopt conflicting resources", "conflict", conflict)
+		phase, _ := c.liveStatus(ctx, pipeline, redpandav1alpha2.PipelineReasonNameConflict, conflict)
+		if statusErr := c.applyStatus(ctx, pipeline, phase, []metav1.Condition{{
+			Type:    redpandav1alpha2.PipelineConditionReady,
+			Status:  metav1.ConditionFalse,
+			Reason:  redpandav1alpha2.PipelineReasonNameConflict,
+			Message: conflict,
+		}}); statusErr != nil {
+			return ctrl.Result{}, statusErr
+		}
+		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+	}
+
 	// Sync all child resources (ConfigMap, Deployment, license Secret) via SSA.
-	syncer, err := c.syncerFor(pipeline, clusterConn, userCreds, licenseContent)
+	syncer, err := c.syncerFor(pipeline, renderer)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -343,7 +397,7 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Derive status from the synced Deployment.
 	phase, conditions := c.deriveStatus(ctx, pipeline, objs)
 
-	// Add ClusterRef condition when a clusterRef is configured.
+	// Add ClusterRef condition when a cluster source is configured.
 	if clusterConn != nil {
 		conditions = append(conditions, metav1.Condition{
 			Type:    redpandav1alpha2.PipelineConditionClusterRef,
@@ -363,6 +417,24 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		})
 	}
 
+	// Add ValueSourcesResolved when the spec declares valueSources.
+	if len(pipeline.Spec.ValueSources) > 0 {
+		conditions = append(conditions, metav1.Condition{
+			Type:    redpandav1alpha2.PipelineConditionValueSourcesResolved,
+			Status:  metav1.ConditionTrue,
+			Reason:  redpandav1alpha2.PipelineReasonValueSourcesResolved,
+			Message: "All valueSources entries resolved",
+		})
+	}
+
+	// The license gate above passed for this reconcile.
+	conditions = append(conditions, metav1.Condition{
+		Type:    redpandav1alpha2.PipelineConditionLicense,
+		Status:  metav1.ConditionTrue,
+		Reason:  redpandav1alpha2.PipelineReasonLicenseValid,
+		Message: "Enterprise license is valid and includes Redpanda Connect",
+	})
+
 	if err := c.applyStatus(ctx, pipeline, phase, conditions); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -377,30 +449,75 @@ func (c *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
-func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline, clusterConn *clusterConnection, userCreds *userCredentials, licenseContent []byte) (*kube.Syncer, error) {
+func (c *Controller) rendererFor(pipeline *redpandav1alpha2.Pipeline, clusterConn *clusterConnection, userCreds *userCredentials, licenseContent []byte, credentialsChecksum string) *render {
+	return &render{
+		pipeline:            pipeline,
+		labels:              Labels(pipeline),
+		commonAnnotations:   c.CommonAnnotations,
+		defaultImage:        c.DefaultImage,
+		monitoring:          c.Monitoring,
+		clusterConn:         clusterConn,
+		userCredentials:     userCreds,
+		licenseContent:      licenseContent,
+		credentialsChecksum: credentialsChecksum,
+	}
+}
+
+func (c *Controller) syncerFor(pipeline *redpandav1alpha2.Pipeline, renderer *render) (*kube.Syncer, error) {
 	gvk, err := kube.GVKFor(c.Ctl.Scheme(), pipeline)
 	if err != nil {
 		return nil, err
 	}
 
-	labels := Labels(pipeline)
-
 	return &kube.Syncer{
-		Ctl:       c.Ctl,
-		Namespace: pipeline.Namespace,
-		Renderer: &render{
-			pipeline:          pipeline,
-			labels:            labels,
-			commonAnnotations: c.CommonAnnotations,
-			defaultImage:      c.DefaultImage,
-			monitoring:        c.Monitoring,
-			clusterConn:       clusterConn,
-			userCredentials:   userCreds,
-			licenseContent:    licenseContent,
-		},
+		Ctl:             c.Ctl,
+		Namespace:       pipeline.Namespace,
+		Renderer:        renderer,
 		Owner:           *metav1.NewControllerRef(pipeline, gvk),
-		OwnershipLabels: labels,
+		OwnershipLabels: renderer.labels,
 	}, nil
+}
+
+// findOwnershipConflict renders the objects this Pipeline would sync and
+// reports the first that already exists WITHOUT an owner reference to the
+// Pipeline. The SSA sync uses ForceOwnership, so applying over such an object
+// would adopt it (and Pipeline deletion would then delete it); refusing up
+// front turns a would-be hijack of an unrelated ConfigMap/Secret/Deployment
+// into a NameConflict status instead. Returns a human-readable description of
+// the conflict, or "" when every object is safe to apply.
+func (c *Controller) findOwnershipConflict(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, renderer *render) (string, error) {
+	objs, err := renderer.Render(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	for _, obj := range objs {
+		existing, ok := reflect.New(reflect.TypeOf(obj).Elem()).Interface().(kube.Object)
+		if !ok {
+			return "", errors.Newf("rendered object %T is not a kube.Object", obj)
+		}
+		if err := c.Ctl.Get(ctx, kube.AsKey(obj), existing); err != nil {
+			// Not existing yet is the common case; an uninstalled CRD
+			// (PodMonitor) is tolerated the same way the syncer tolerates it.
+			if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+				continue
+			}
+			return "", err
+		}
+
+		owned := slices.ContainsFunc(existing.GetOwnerReferences(), func(ref metav1.OwnerReference) bool {
+			return ref.UID == pipeline.UID
+		})
+		if !owned {
+			gvk, err := kube.GVKFor(c.Ctl.Scheme(), obj)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%s %q already exists and is not owned by this Pipeline; refusing to adopt it — rename the Pipeline or remove the conflicting object", gvk.Kind, kube.AsKey(obj).String()), nil
+		}
+	}
+
+	return "", nil
 }
 
 func (c *Controller) validateLicense() error {
@@ -433,62 +550,8 @@ func (c *Controller) validateLicense() error {
 // ConfigValid condition based on the lint init container status.
 func (c *Controller) deriveStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, objs []kube.Object) (redpandav1alpha2.PipelinePhase, []metav1.Condition) {
 	for _, obj := range objs {
-		dp, ok := obj.(*appsv1.Deployment)
-		if !ok {
-			continue
-		}
-
-		pipeline.Status.Replicas = dp.Status.Replicas
-		pipeline.Status.ReadyReplicas = dp.Status.ReadyReplicas
-
-		switch {
-		case pipeline.Spec.Paused:
-			return redpandav1alpha2.PipelinePhaseStopped, []metav1.Condition{{
-				Type:    redpandav1alpha2.PipelineConditionReady,
-				Status:  metav1.ConditionTrue,
-				Reason:  redpandav1alpha2.PipelineReasonPaused,
-				Message: "Pipeline is paused",
-			}}
-		case dp.Status.ReadyReplicas == dp.Status.Replicas && dp.Status.Replicas > 0:
-			return redpandav1alpha2.PipelinePhaseRunning, []metav1.Condition{
-				{
-					Type:    redpandav1alpha2.PipelineConditionReady,
-					Status:  metav1.ConditionTrue,
-					Reason:  redpandav1alpha2.PipelineReasonRunning,
-					Message: "Pipeline is running",
-				},
-				{
-					Type:    redpandav1alpha2.PipelineConditionConfigValid,
-					Status:  metav1.ConditionTrue,
-					Reason:  redpandav1alpha2.PipelineReasonConfigValid,
-					Message: "Configuration passed lint validation",
-				},
-			}
-		default:
-			conditions := []metav1.Condition{{
-				Type:    redpandav1alpha2.PipelineConditionReady,
-				Status:  metav1.ConditionFalse,
-				Reason:  redpandav1alpha2.PipelineReasonProvisioning,
-				Message: "Pipeline is starting up",
-			}}
-
-			healthy, msg := c.checkInitContainerStatus(ctx, dp)
-			if !healthy {
-				conditions = append(conditions, metav1.Condition{
-					Type:    redpandav1alpha2.PipelineConditionConfigValid,
-					Status:  metav1.ConditionFalse,
-					Reason:  redpandav1alpha2.PipelineReasonConfigInvalid,
-					Message: msg,
-				})
-			} else {
-				conditions = append(conditions, metav1.Condition{
-					Type:    redpandav1alpha2.PipelineConditionConfigValid,
-					Status:  metav1.ConditionTrue,
-					Reason:  redpandav1alpha2.PipelineReasonConfigValid,
-					Message: "Configuration passed lint validation",
-				})
-			}
-			return redpandav1alpha2.PipelinePhaseProvisioning, conditions
+		if dp, ok := obj.(*appsv1.Deployment); ok {
+			return c.statusFromDeployment(ctx, pipeline, dp)
 		}
 	}
 
@@ -501,6 +564,123 @@ func (c *Controller) deriveStatus(ctx context.Context, pipeline *redpandav1alpha
 		Reason:  redpandav1alpha2.PipelineReasonProvisioning,
 		Message: "Deployment not yet created",
 	}}
+}
+
+// statusFromDeployment maps a Deployment's observed state onto the Pipeline
+// phase and workload conditions (Ready and, when relevant, ConfigValid).
+func (c *Controller) statusFromDeployment(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, dp *appsv1.Deployment) (redpandav1alpha2.PipelinePhase, []metav1.Condition) {
+	pipeline.Status.Replicas = dp.Status.Replicas
+	pipeline.Status.ReadyReplicas = dp.Status.ReadyReplicas
+
+	switch {
+	case pipeline.GetReplicas() == 0:
+		// Both spec.paused and an explicit replicas: 0 park the pipeline in
+		// Stopped — the workload is intentionally scaled to zero either way.
+		msg := "Pipeline is scaled to zero"
+		if pipeline.Spec.Paused {
+			msg = "Pipeline is paused"
+		}
+		return redpandav1alpha2.PipelinePhaseStopped, []metav1.Condition{{
+			Type:    redpandav1alpha2.PipelineConditionReady,
+			Status:  metav1.ConditionTrue,
+			Reason:  redpandav1alpha2.PipelineReasonPaused,
+			Message: msg,
+		}}
+	case dp.Status.ReadyReplicas == dp.Status.Replicas && dp.Status.Replicas > 0:
+		return redpandav1alpha2.PipelinePhaseRunning, []metav1.Condition{
+			{
+				Type:    redpandav1alpha2.PipelineConditionReady,
+				Status:  metav1.ConditionTrue,
+				Reason:  redpandav1alpha2.PipelineReasonRunning,
+				Message: "Pipeline is running",
+			},
+			{
+				Type:    redpandav1alpha2.PipelineConditionConfigValid,
+				Status:  metav1.ConditionTrue,
+				Reason:  redpandav1alpha2.PipelineReasonConfigValid,
+				Message: "Configuration passed lint validation",
+			},
+		}
+	default:
+		conditions := []metav1.Condition{{
+			Type:    redpandav1alpha2.PipelineConditionReady,
+			Status:  metav1.ConditionFalse,
+			Reason:  redpandav1alpha2.PipelineReasonProvisioning,
+			Message: "Pipeline is starting up",
+		}}
+
+		healthy, msg := c.checkInitContainerStatus(ctx, dp)
+		if !healthy {
+			conditions = append(conditions, metav1.Condition{
+				Type:    redpandav1alpha2.PipelineConditionConfigValid,
+				Status:  metav1.ConditionFalse,
+				Reason:  redpandav1alpha2.PipelineReasonConfigInvalid,
+				Message: msg,
+			})
+		} else {
+			conditions = append(conditions, metav1.Condition{
+				Type:    redpandav1alpha2.PipelineConditionConfigValid,
+				Status:  metav1.ConditionTrue,
+				Reason:  redpandav1alpha2.PipelineReasonConfigValid,
+				Message: "Configuration passed lint validation",
+			})
+		}
+		return redpandav1alpha2.PipelinePhaseProvisioning, conditions
+	}
+}
+
+// liveStatus derives the Pipeline phase and workload conditions from the live
+// Deployment rather than from sync results. Used on paths that don't sync
+// (resolution failures, license failures, name conflicts) so a transient
+// failure never misreports a still-running workload as Pending: the workload
+// keeps processing data, and only the failing condition flips False. When the
+// Deployment doesn't exist yet, the failure itself is reported as the Ready
+// reason so a never-provisioned pipeline points straight at the cause.
+func (c *Controller) liveStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, fallbackReason, fallbackMessage string) (redpandav1alpha2.PipelinePhase, []metav1.Condition) {
+	var dp appsv1.Deployment
+	if err := c.Ctl.Get(ctx, kube.ObjectKey{Name: pipeline.Name, Namespace: pipeline.Namespace}, &dp); err != nil {
+		pipeline.Status.Replicas = 0
+		pipeline.Status.ReadyReplicas = 0
+		return redpandav1alpha2.PipelinePhasePending, []metav1.Condition{{
+			Type:    redpandav1alpha2.PipelineConditionReady,
+			Status:  metav1.ConditionFalse,
+			Reason:  fallbackReason,
+			Message: fallbackMessage,
+		}}
+	}
+	return c.statusFromDeployment(ctx, pipeline, &dp)
+}
+
+// failStatus reports a resolution/validation failure on the Pipeline status
+// without touching its children: phase and workload conditions come from the
+// live Deployment (a Running pipeline stays Running — its data flow is
+// unaffected), and the failing condition is overlaid on top.
+func (c *Controller) failStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, conditionType, reason, message string) error {
+	phase, conditions := c.liveStatus(ctx, pipeline, reason, message)
+	conditions = append(conditions, metav1.Condition{
+		Type:    conditionType,
+		Status:  metav1.ConditionFalse,
+		Reason:  reason,
+		Message: message,
+	})
+	return c.applyStatus(ctx, pipeline, phase, conditions)
+}
+
+// maxConditionMessageLength bounds messages copied into status conditions.
+// Lint failures inherit the init container's termination message, which (via
+// terminationMessagePolicy: FallbackToLogsOnError) is a tail of the container
+// log. Cap what gets copied into the API object — both for size and to limit
+// how much raw log content (which runs with credentials in its environment)
+// becomes readable to anyone with pipelines/get but no pod-log access.
+const maxConditionMessageLength = 1024
+
+// truncateConditionMessage caps msg at maxConditionMessageLength bytes,
+// trimming any partial trailing UTF-8 rune so the result stays API-legal.
+func truncateConditionMessage(msg string) string {
+	if len(msg) <= maxConditionMessageLength {
+		return msg
+	}
+	return strings.ToValidUTF8(msg[:maxConditionMessageLength], "") + "… (truncated; see the lint container logs for the full output)"
 }
 
 // checkInitContainerStatus lists pods for the given Deployment and checks
@@ -522,14 +702,14 @@ func (c *Controller) checkInitContainerStatus(ctx context.Context, dp *appsv1.De
 				if msg == "" {
 					msg = fmt.Sprintf("lint exited with code %d", initStatus.State.Terminated.ExitCode)
 				}
-				return false, msg
+				return false, truncateConditionMessage(msg)
 			}
 			if initStatus.State.Waiting != nil && initStatus.State.Waiting.Reason == "CrashLoopBackOff" {
 				msg := initStatus.State.Waiting.Message
 				if msg == "" {
 					msg = "lint init container is in CrashLoopBackOff — check pipeline configuration"
 				}
-				return false, msg
+				return false, truncateConditionMessage(msg)
 			}
 			// Also check LastTerminationState: between restarts the current
 			// State may be Running or Waiting (not yet CrashLoopBackOff),
@@ -539,7 +719,7 @@ func (c *Controller) checkInitContainerStatus(ctx context.Context, dp *appsv1.De
 				if msg == "" {
 					msg = fmt.Sprintf("lint exited with code %d", initStatus.LastTerminationState.Terminated.ExitCode)
 				}
-				return false, msg
+				return false, truncateConditionMessage(msg)
 			}
 		}
 	}
@@ -549,13 +729,16 @@ func (c *Controller) checkInitContainerStatus(ctx context.Context, dp *appsv1.De
 // applyStatus uses server-side apply to update the Pipeline status sub-resource.
 func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2.Pipeline, phase redpandav1alpha2.PipelinePhase, conditions []metav1.Condition) error {
 	// Drop conditions whose spec fields are no longer set — otherwise a
-	// removed clusterRef/userRef leaves its last condition dangling on the
-	// status forever.
+	// removed clusterRef/userRef/valueSources leaves its last condition
+	// dangling on the status forever.
 	if pipeline.Spec.ClusterSource == nil {
 		meta.RemoveStatusCondition(&pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionClusterRef)
 	}
 	if pipeline.Spec.UserRef == nil {
 		meta.RemoveStatusCondition(&pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionUserRef)
+	}
+	if len(pipeline.Spec.ValueSources) == 0 {
+		meta.RemoveStatusCondition(&pipeline.Status.Conditions, redpandav1alpha2.PipelineConditionValueSourcesResolved)
 	}
 
 	pipeline.Status.ObservedGeneration = pipeline.Generation
@@ -575,16 +758,4 @@ func conditionsForApply(pipeline *redpandav1alpha2.Pipeline, conditions []metav1
 		meta.SetStatusCondition(&merged, cond)
 	}
 	return merged
-}
-
-func (c *Controller) skipPodMonitorWatchIfNotInstalled(ctx context.Context) (skip bool) {
-	var podMonitorList monitoringv1.PodMonitorList
-	err := c.Ctl.List(ctx, "default", &podMonitorList)
-	if meta.IsNoMatchError(err) {
-		return true
-	} else if err != nil {
-		log.Error(ctx, err, "could not list PodMonitors")
-		return true
-	}
-	return false
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kgo"
+	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -22,9 +23,46 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
+// waitForPipelineGeneration waits for the controller to observe the
+// Pipeline's current generation. Without this gate, a scenario that updates a
+// Pipeline and then asserts "is running" can pass vacuously against the
+// stale status of the previous spec.
+func waitForPipelineGeneration(ctx context.Context, t framework.TestingT, pipeline *redpandav1alpha2.Pipeline) {
+	key := t.ResourceKey(pipeline.Name)
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, key, pipeline); err != nil {
+			return false
+		}
+		return pipeline.Status.ObservedGeneration >= pipeline.Generation
+	}, 5*time.Minute, 2*time.Second, "Pipeline %q observedGeneration never caught up to generation", pipeline.Name)
+}
+
+// waitForPipelineDeploymentSettled waits until the pipeline's Deployment has
+// observed its own latest generation and fully rolled (updated == ready ==
+// desired). A spec change rolls the Deployment via the config/credentials
+// checksum annotations; asserting on the Pipeline status alone could pass
+// while the old pods are still the ones running.
+func waitForPipelineDeploymentSettled(ctx context.Context, t framework.TestingT, name string) {
+	var dp appsv1.Deployment
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, t.ResourceKey(name), &dp); err != nil {
+			return false
+		}
+		desired := int32(1)
+		if dp.Spec.Replicas != nil {
+			desired = *dp.Spec.Replicas
+		}
+		return dp.Status.ObservedGeneration >= dp.Generation &&
+			dp.Status.UpdatedReplicas == desired &&
+			dp.Status.ReadyReplicas == desired
+	}, 5*time.Minute, 2*time.Second, "Deployment %q never settled on its latest generation", name)
+}
+
 func pipelineIsSuccessfullyRunning(ctx context.Context, t framework.TestingT, name string) {
 	var pipeline redpandav1alpha2.Pipeline
 	require.NoError(t, t.Get(ctx, t.ResourceKey(name), &pipeline))
+
+	waitForPipelineGeneration(ctx, t, &pipeline)
 
 	waitForCondition(ctx, t, &pipeline, metav1.Condition{
 		Type:   redpandav1alpha2.PipelineConditionReady,
@@ -34,12 +72,17 @@ func pipelineIsSuccessfullyRunning(ctx context.Context, t framework.TestingT, na
 		return pipeline.Status.Conditions
 	})
 
+	waitForPipelineDeploymentSettled(ctx, t, name)
+
+	require.NoError(t, t.Get(ctx, t.ResourceKey(name), &pipeline))
 	require.Equal(t, redpandav1alpha2.PipelinePhaseRunning, pipeline.Status.Phase)
 }
 
 func pipelineIsStopped(ctx context.Context, t framework.TestingT, name string) {
 	var pipeline redpandav1alpha2.Pipeline
 	require.NoError(t, t.Get(ctx, t.ResourceKey(name), &pipeline))
+
+	waitForPipelineGeneration(ctx, t, &pipeline)
 
 	waitForCondition(ctx, t, &pipeline, metav1.Condition{
 		Type:   redpandav1alpha2.PipelineConditionReady,
@@ -81,6 +124,8 @@ func pipelineDoesNotExist(ctx context.Context, t framework.TestingT, name string
 func pipelineHasInvalidConfig(ctx context.Context, t framework.TestingT, name string) {
 	var pipeline redpandav1alpha2.Pipeline
 	require.NoError(t, t.Get(ctx, t.ResourceKey(name), &pipeline))
+
+	waitForPipelineGeneration(ctx, t, &pipeline)
 
 	waitForCondition(ctx, t, &pipeline, metav1.Condition{
 		Type:   redpandav1alpha2.PipelineConditionConfigValid,

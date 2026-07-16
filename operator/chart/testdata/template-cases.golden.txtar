@@ -84048,6 +84048,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas
+  - users
   verbs:
   - get
   - list
@@ -85051,6 +85052,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas
+  - users
   verbs:
   - get
   - list
@@ -85832,6 +85834,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas
+  - users
   verbs:
   - get
   - list
@@ -86843,6 +86846,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas
+  - users
   verbs:
   - get
   - list
@@ -87624,6 +87628,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas
+  - users
   verbs:
   - get
   - list
@@ -88629,6 +88634,7 @@ rules:
   - cluster.redpanda.com
   resources:
   - redpandas
+  - users
   verbs:
   - get
   - list

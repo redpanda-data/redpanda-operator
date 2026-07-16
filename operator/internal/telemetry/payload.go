@@ -160,7 +160,9 @@ type ConnectStats struct {
 	// one node" from "many pipelines fanned out across the fleet". Best-effort:
 	// 0 when pods cannot be listed or none are scheduled yet.
 	NodeCount int `json:"nodeCount,omitempty"`
-	// Versions are the distinct Connect image references in use across the
-	// fleet (for support and EOL planning). Anonymous.
+	// Versions are the distinct Connect image versions in use across the
+	// fleet (for support and EOL planning). Only the tag (or a shortened
+	// digest) is reported — never the repository, which can carry internal
+	// registry hostnames or team names. Anonymous.
 	Versions []string `json:"versions,omitempty"`
 }

@@ -130,7 +130,7 @@ Sets the port for the webhook server to listen on.
 
 ### [connectController](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController)
 
-Enables the Redpanda Connect controller for managing Connect pipeline CRs. Pipelines still require an enterprise license with the CONNECT product on each CR. Note: Pipeline CRs carry an operator finalizer — disabling this while Pipeline CRs exist blocks their deletion until the controller is re-enabled (or the finalizer is removed by hand). Delete Pipelines before disabling.
+Enables the Redpanda Connect controller for managing Connect pipeline CRs. Requires an operator-level enterprise license that includes the Redpanda Connect product, configured via `enterprise.licenseSecretRef`; without one, every Pipeline reconciles to `License=False` / `LicenseInvalid` and gets no workload. Note: Pipeline CRs carry an operator finalizer — disabling this while Pipeline CRs exist blocks their deletion until the controller is re-enabled (or the finalizer is removed by hand). Delete Pipelines before disabling.
 
 **Default:**
 

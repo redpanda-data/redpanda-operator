@@ -12,6 +12,7 @@ package operator
 
 import (
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -388,7 +389,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 			if labelArg != "" {
 				labelArg = labelArg + ","
 			}
-			labelArg = labelArg + fmt.Sprintf("%s=%s", key, value)
+			labelArg = labelArg + quoteFlagMapPair(fmt.Sprintf("%s=%s", key, value))
 		}
 		defaults["--connect-monitoring-labels"] = labelArg
 	}
@@ -416,7 +417,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 			if annotationArg != "" {
 				annotationArg = annotationArg + ","
 			}
-			annotationArg = annotationArg + fmt.Sprintf("%s=%s", key, value)
+			annotationArg = annotationArg + quoteFlagMapPair(fmt.Sprintf("%s=%s", key, value))
 		}
 		defaults["--common-annotations"] = annotationArg
 	}
@@ -441,6 +442,20 @@ func operatorArguments(dot *helmette.Dot) []string {
 	}
 
 	return flags
+}
+
+// quoteFlagMapPair CSV-quotes a single key=value pair destined for a
+// comma-joined pflag StringToString flag (--common-annotations,
+// --connect-monitoring-labels). pflag parses multi-pair values with
+// encoding/csv, so an unquoted comma (or double quote) inside a value splits
+// mid-pair and fails flag parsing — a values-only change that would
+// crash-loop the operator at startup. Pairs without CSV-special characters
+// are returned unchanged.
+func quoteFlagMapPair(pair string) string {
+	if !strings.Contains(pair, ",") && !strings.Contains(pair, "\"") {
+		return pair
+	}
+	return "\"" + strings.ReplaceAll(pair, "\"", "\"\"") + "\""
 }
 
 // addControllerSyncIntervalArgs renders the controllers.<resource>.interval
