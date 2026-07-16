@@ -19,15 +19,16 @@ import (
 // ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkSchemaRegistryAPIOptions type for use
 // with apply.
 type ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration struct {
-	SourceURL                      *string                                                    `json:"sourceURL,omitempty"`
-	Authentication                 *ShadowLinkSchemaRegistryAuthenticationApplyConfiguration  `json:"authentication,omitempty"`
-	TLS                            *ShadowLinkSchemaRegistryTLSApplyConfiguration             `json:"tls,omitempty"`
-	TailInterval                   *v1.Duration                                               `json:"tailInterval,omitempty"`
-	FullSyncInterval               *v1.Duration                                               `json:"fullSyncInterval,omitempty"`
-	MaxSourceRequestsPerSecond     *int32                                                     `json:"maxSourceRequestsPerSecond,omitempty"`
-	SourceFilter                   *ShadowLinkSchemaRegistrySourceFilterApplyConfiguration    `json:"sourceFilter,omitempty"`
-	ContextMappings                []ShadowLinkSchemaRegistryContextMappingApplyConfiguration `json:"contextMappings,omitempty"`
-	UnsupportedSchemaFeaturePolicy *redpandav1alpha2.UnsupportedSchemaFeaturePolicy           `json:"unsupportedSchemaFeaturePolicy,omitempty"`
+	SourceURL                      *string                                                       `json:"sourceURL,omitempty"`
+	Authentication                 *ShadowLinkSchemaRegistryAuthenticationApplyConfiguration     `json:"authentication,omitempty"`
+	TLS                            *CommonTLSApplyConfiguration                                  `json:"tls,omitempty"`
+	TailInterval                   *v1.Duration                                                  `json:"tailInterval,omitempty"`
+	FullSyncInterval               *v1.Duration                                                  `json:"fullSyncInterval,omitempty"`
+	MaxSourceRequestsPerSecond     *int32                                                        `json:"maxSourceRequestsPerSecond,omitempty"`
+	SourceFilter                   *ShadowLinkSchemaRegistrySourceFilterApplyConfiguration       `json:"sourceFilter,omitempty"`
+	Destination                    *ShadowLinkSchemaRegistryContextDestinationApplyConfiguration `json:"destination,omitempty"`
+	UnsupportedSchemaFeaturePolicy *redpandav1alpha2.UnsupportedSchemaFeaturePolicy              `json:"unsupportedSchemaFeaturePolicy,omitempty"`
+	Paused                         *bool                                                         `json:"paused,omitempty"`
 }
 
 // ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration constructs a declarative configuration of the ShadowLinkSchemaRegistryAPIOptions type for use with
@@ -55,7 +56,7 @@ func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithAuthenticatio
 // WithTLS sets the TLS field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the TLS field is set to the value of the last call.
-func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithTLS(value *ShadowLinkSchemaRegistryTLSApplyConfiguration) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
+func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithTLS(value *CommonTLSApplyConfiguration) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
 	b.TLS = value
 	return b
 }
@@ -92,16 +93,11 @@ func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithSourceFilter(
 	return b
 }
 
-// WithContextMappings adds the given value to the ContextMappings field in the declarative configuration
-// and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the ContextMappings field.
-func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithContextMappings(values ...*ShadowLinkSchemaRegistryContextMappingApplyConfiguration) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
-	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithContextMappings")
-		}
-		b.ContextMappings = append(b.ContextMappings, *values[i])
-	}
+// WithDestination sets the Destination field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Destination field is set to the value of the last call.
+func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithDestination(value *ShadowLinkSchemaRegistryContextDestinationApplyConfiguration) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
+	b.Destination = value
 	return b
 }
 
@@ -110,5 +106,13 @@ func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithContextMappin
 // If called multiple times, the UnsupportedSchemaFeaturePolicy field is set to the value of the last call.
 func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithUnsupportedSchemaFeaturePolicy(value redpandav1alpha2.UnsupportedSchemaFeaturePolicy) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
 	b.UnsupportedSchemaFeaturePolicy = &value
+	return b
+}
+
+// WithPaused sets the Paused field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Paused field is set to the value of the last call.
+func (b *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration) WithPaused(value bool) *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration {
+	b.Paused = &value
 	return b
 }

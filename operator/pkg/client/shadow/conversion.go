@@ -120,22 +120,30 @@ func convertCRDToAPISchemaRegistrySyncOptions(options *redpandav1alpha2.ShadowLi
 	if options == nil {
 		options = &redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{}
 	}
-	if !ptr.Deref(options.Enabled, true) {
-		return nil
-	}
 	apiOptions := &adminv2api.SchemaRegistrySyncOptions{}
-	if options.ShadowSchemaRegistryAPI != nil {
+	switch options.Mode {
+	case redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled:
+		return nil
+	case redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI:
+		// CRD validation requires shadowSchemaRegistryAPI in api mode; the
+		// guard keeps hand-crafted objects from panicking the reconciler.
+		if options.ShadowSchemaRegistryAPI == nil {
+			return nil
+		}
 		apiOptions.SetShadowSchemaRegistryApi(convertCRDToAPIShadowSchemaRegistryAPI(options.ShadowSchemaRegistryAPI, settings))
-		return apiOptions
+	default:
+		// The CRD defaults the mode to "topic"; an unset mode on an object
+		// created before defaulting existed means the same thing.
+		apiOptions.SetShadowSchemaRegistryTopic(&adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryTopic{})
 	}
-	apiOptions.SetShadowSchemaRegistryTopic(&adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryTopic{})
 	return apiOptions
 }
 
 func convertCRDToAPIShadowSchemaRegistryAPI(options *redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions, settings *SchemaRegistrySettings) *adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryApi {
 	apiOptions := &adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryApi{
 		SourceUrl:   options.SourceURL,
-		Destination: convertCRDToAPISchemaRegistryDestination(options.ContextMappings),
+		Destination: convertCRDToAPISchemaRegistryDestination(options.Destination),
+		Paused:      options.Paused,
 	}
 	if options.TailInterval != nil {
 		apiOptions.TailInterval = durationpb.New(options.TailInterval.Duration)
@@ -170,9 +178,9 @@ func convertCRDToAPIShadowSchemaRegistryAPI(options *redpandav1alpha2.ShadowLink
 	return apiOptions
 }
 
-func convertCRDToAPISchemaRegistryDestination(mappings []redpandav1alpha2.ShadowLinkSchemaRegistryContextMapping) *adminv2api.SchemaRegistryContextDestination {
+func convertCRDToAPISchemaRegistryDestination(crdDestination *redpandav1alpha2.ShadowLinkSchemaRegistryContextDestination) *adminv2api.SchemaRegistryContextDestination {
 	destination := &adminv2api.SchemaRegistryContextDestination{}
-	if len(mappings) == 0 {
+	if crdDestination == nil || crdDestination.Identity != nil {
 		destination.SetIdentity(&adminv2api.SchemaRegistryIdentityContextMapping{})
 		return destination
 	}
@@ -182,7 +190,7 @@ func convertCRDToAPISchemaRegistryDestination(mappings []redpandav1alpha2.Shadow
 				Source:      mapping.Source,
 				Destination: mapping.Destination,
 			}
-		}, mappings),
+		}, crdDestination.Exact),
 	})
 	return destination
 }

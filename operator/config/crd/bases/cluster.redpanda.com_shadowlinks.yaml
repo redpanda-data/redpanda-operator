@@ -223,30 +223,29 @@ spec:
                 default: {}
                 description: |-
                   Schema registry sync options. Schemas are replicated from the source
-                  cluster by default; set schemaRegistrySyncOptions.enabled to false to
-                  turn schema replication off.
+                  cluster by default; set
+                  schemaRegistrySyncOptions.schema_registry_shadowing_mode to disabled
+                  to turn schema replication off.
                 properties:
-                  enabled:
-                    default: true
-                    description: |-
-                      Enabled controls whether schemas are replicated from the source
-                      cluster. Defaults to true, which shadows the source Redpanda
-                      cluster's internal schemas topic or, when shadowSchemaRegistryAPI is
-                      configured, replicates from the source schema registry over its REST
-                      API. Set to false to turn schema replication off.
-                    type: boolean
                   schema_registry_shadowing_mode:
+                    default: topic
                     description: |-
-                      Deprecated: schemas now replicate in "topic" mode by default. Use
-                      enabled to turn replication off and shadowSchemaRegistryAPI to
-                      replicate from an external schema registry instead.
+                      Mode selects how schemas are replicated from the source cluster.
+                      Defaults to topic, which shadows the source Redpanda cluster's
+                      internal schemas topic. Set to api to replicate from the source
+                      schema registry over its REST API (configured via
+                      shadowSchemaRegistryAPI), or disabled to turn schema replication off.
+                    enum:
+                    - disabled
+                    - topic
+                    - api
                     type: string
                   shadowSchemaRegistryAPI:
                     description: |-
                       Configuration for replicating schemas from the source cluster's
                       schema registry REST API (for example a Confluent Schema Registry)
                       instead of shadowing a source Redpanda cluster's internal schemas
-                      topic.
+                      topic. Required when mode is api and forbidden otherwise.
                     properties:
                       authentication:
                         description: |-
@@ -462,27 +461,43 @@ spec:
                             - username
                             type: object
                         type: object
-                      contextMappings:
+                      destination:
                         description: |-
-                          Maps source contexts to destination contexts on the shadow cluster.
-                          If empty, source context names are kept as-is.
-                        items:
-                          description: |-
-                            Maps a source schema registry context to a destination context on the
-                            shadow cluster.
-                          properties:
-                            destination:
-                              description: The destination context name on the shadow
-                                cluster.
-                              type: string
-                            source:
-                              description: The source context name.
-                              type: string
-                          required:
-                          - destination
-                          - source
-                          type: object
-                        type: array
+                          Destination context mapping for source schema registry data. If not
+                          provided, source context names are preserved on the shadow cluster.
+                        properties:
+                          exact:
+                            description: |-
+                              Map selected source contexts to explicit destination contexts. Every
+                              source context in the effective source scope must have exactly one
+                              mapping. Mutually exclusive with identity.
+                            items:
+                              description: |-
+                                Maps a source schema registry context to a destination context on the
+                                shadow cluster.
+                              properties:
+                                destination:
+                                  description: The destination context name on the
+                                    shadow cluster.
+                                  type: string
+                                source:
+                                  description: The source context name.
+                                  type: string
+                              required:
+                              - destination
+                              - source
+                              type: object
+                            minItems: 1
+                            type: array
+                          identity:
+                            description: |-
+                              Preserve source context names in the destination schema registry.
+                              Mutually exclusive with exact.
+                            type: object
+                        type: object
+                        x-kubernetes-validations:
+                        - message: exactly one of identity or exact must be set
+                          rule: has(self.identity) != has(self.exact)
                       fullSyncInterval:
                         description: |-
                           How often to run a full scan of the source registry.
@@ -495,6 +510,13 @@ spec:
                         format: int32
                         minimum: 1
                         type: integer
+                      paused:
+                        description: |-
+                          Allows the user to pause the schema registry sync task. If paused,
+                          the task enters the 'paused' state, stops replicating schemas from
+                          the source, and the per-context client write protection on the
+                          contexts this link owns is lifted.
+                        type: boolean
                       sourceFilter:
                         description: |-
                           Selects which schema registry contexts and subjects are replicated.
@@ -527,13 +549,15 @@ spec:
                           If not provided, the cluster default (10s) is used.
                         type: string
                       tls:
-                        description: TLS settings used to connect to the source schema
-                          registry.
+                        description: |-
+                          TLS settings used to connect to the source schema registry. Unlike
+                          Kafka API connections, schema registry connection material is passed
+                          to the cluster as PEM data, so insecureSkipTlsVerify and the
+                          deprecated secret-reference fields are not supported here.
                         properties:
                           caCert:
-                            description: |-
-                              CaCert references the certificate authority used to verify the source
-                              schema registry's TLS certificate. May reference a Kubernetes Secret.
+                            description: CaCert is the reference for certificate authority
+                              used to establish TLS connection to Redpanda
                             properties:
                               configMapKeyRef:
                                 description: |-
@@ -626,11 +650,23 @@ spec:
                               rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
                                 && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                 || has(self.inline)))'
+                          caCertSecretRef:
+                            description: 'Deprecated: replaced by "caCert".'
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
                           cert:
-                            description: |-
-                              Cert references the client public certificate used to establish an mTLS
-                              connection to the source schema registry. May reference a Kubernetes
-                              Secret.
+                            description: Cert is the reference for client public certificate
+                              to establish mTLS connection to Redpanda
                             properties:
                               configMapKeyRef:
                                 description: |-
@@ -723,19 +759,38 @@ spec:
                               rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
                                 && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                 || has(self.inline)))'
+                          certSecretRef:
+                            description: 'Deprecated: replaced by "cert".'
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
                           enabled:
                             description: |-
-                              Enabled turns on TLS for the connection to the source schema registry.
-                              Set this to true when the registry is served by publicly issued
-                              certificates (for example Confluent Cloud) and no caCert, cert, or key
-                              needs to be supplied. Providing any of caCert, cert, or key implies TLS
-                              regardless of this field.
+                              Enabled tells any connections derived from this configuration to leverage TLS even if no
+                              certificate configuration is specified. It *only* is relevant if no other field is specified
+                              in the TLS configuration block, as, for backwards compatibility reasons, any CA/Cert/Key-specification
+                              results in attempting to create a connection using TLS - specifying "false" in such a case does
+                              *not* disable TLS from being used. Leveraging this option is to support the use-case where a
+                              connection is served by publically issued TLS certificates that don't require any additional certificate
+                              specification.
+                            type: boolean
+                          insecureSkipTlsVerify:
+                            description: InsecureSkipTLSVerify can skip verifying
+                              Redpanda self-signed certificate when establish TLS
+                              connection to Redpanda
                             type: boolean
                           key:
-                            description: |-
-                              Key references the client private key used to establish an mTLS
-                              connection to the source schema registry. If cert is provided, key must
-                              be provided as well. May reference a Kubernetes Secret.
+                            description: Key is the reference for client private certificate
+                              to establish mTLS connection to Redpanda
                             properties:
                               configMapKeyRef:
                                 description: |-
@@ -828,7 +883,29 @@ spec:
                               rule: '!has(self.externalSecretRef) || (has(self.externalSecretRef)
                                 && !(has(self.configMapKeyRef) || has(self.secretKeyRef)
                                 || has(self.inline)))'
+                          keySecretRef:
+                            description: 'Deprecated: replaced by "key".'
+                            properties:
+                              key:
+                                description: Key in Secret data to get value from
+                                type: string
+                              name:
+                                description: |-
+                                  Name of the referent.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                            required:
+                            - name
+                            type: object
                         type: object
+                        x-kubernetes-validations:
+                        - message: insecureSkipTlsVerify is not supported for schema
+                            registry connections
+                          rule: '!has(self.insecureSkipTlsVerify) || !self.insecureSkipTlsVerify'
+                        - message: use caCert, cert, and key rather than the deprecated
+                            secret-reference fields
+                          rule: '!has(self.caCertSecretRef) && !has(self.certSecretRef)
+                            && !has(self.keySecretRef)'
                       unsupportedSchemaFeaturePolicy:
                         description: |-
                           Policy applied when a source schema uses features that the Redpanda
@@ -841,6 +918,15 @@ spec:
                     - sourceURL
                     type: object
                 type: object
+                x-kubernetes-validations:
+                - message: shadowSchemaRegistryAPI is required when schema_registry_shadowing_mode
+                    is api
+                  rule: '!has(self.schema_registry_shadowing_mode) || self.schema_registry_shadowing_mode
+                    != ''api'' || has(self.shadowSchemaRegistryAPI)'
+                - message: shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode
+                    is api
+                  rule: '!has(self.shadowSchemaRegistryAPI) || (has(self.schema_registry_shadowing_mode)
+                    && self.schema_registry_shadowing_mode == ''api'')'
               securitySyncOptions:
                 description: Security settings sync options
                 properties:

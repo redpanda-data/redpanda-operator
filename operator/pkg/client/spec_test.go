@@ -124,6 +124,13 @@ func TestShadowLinkClusterSettings_SchemaRegistryCredentials(t *testing.T) {
 		},
 	}))
 
+	mode := func(api *redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions) redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsMode {
+		if api != nil {
+			return redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI
+		}
+		return redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeTopic
+	}
+
 	link := func(api *redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions) *redpandav1alpha2.ShadowLink {
 		return &redpandav1alpha2.ShadowLink{
 			ObjectMeta: metav1.ObjectMeta{
@@ -139,6 +146,7 @@ func TestShadowLinkClusterSettings_SchemaRegistryCredentials(t *testing.T) {
 					},
 				},
 				SchemaRegistrySyncOptions: &redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+					Mode:                    mode(api),
 					ShadowSchemaRegistryAPI: api,
 				},
 			},
@@ -283,7 +291,7 @@ func TestShadowLinkClusterSettings_SchemaRegistryCredentials(t *testing.T) {
 				},
 			},
 		})
-		disabledLink.Spec.SchemaRegistrySyncOptions.Enabled = ptr.To(false)
+		disabledLink.Spec.SchemaRegistrySyncOptions.Mode = redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled
 
 		settings, err := factory.RemoteClusterSettings(ctx, disabledLink)
 		require.NoError(t, err)
