@@ -136,6 +136,17 @@ type stretchClusterReconciliationState struct {
 	admin                 *rpadmin.AdminAPI
 	bootstrapUser         string
 	bootstrapPassword     string
+
+	// unobservedBrokerPoolClusters lists the configured clusters whose
+	// RedpandaBrokerPool list could not be fetched this pass (unreachable
+	// probe, transient list error, etc.). When non-empty, cluster.BrokerPools
+	// (and therefore cluster.GetAllBrokerPools()) is a partial view of the
+	// StretchCluster's true broker membership, so rendering seed_servers or
+	// any other pool-derived resource from it risks producing an incomplete
+	// list — e.g. a self-only seed list for a freshly added pool, which makes
+	// that broker bootstrap its own standalone cluster instead of joining
+	// (K8S-891). Callers must defer pool-derived rendering while this is set.
+	unobservedBrokerPoolClusters []string
 }
 
 func (s *stretchClusterReconciliationState) cleanup() {
@@ -292,6 +303,15 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		}
 	}
 
+	// Both Phase 2 reconcilers below render seed_servers (and other
+	// pool-derived config) from state.cluster.GetAllBrokerPools(), the union
+	// of BrokerPools fetched across every configured cluster. If any cluster
+	// wasn't observed this pass, that union is incomplete — defer rendering
+	// rather than apply a partial view (K8S-891; see checkBrokerPoolViewComplete).
+	if incomplete, result := r.checkBrokerPoolViewComplete(ctx, state); incomplete {
+		return r.syncStatus(ctx, cluster, state, result, nil)
+	}
+
 	// Phase 2: sync Kubernetes resources (simple resources + broker pools).
 	// EndpointSlice sync runs between resource creation and pool readiness
 	// checks so that pods can discover each other before becoming ready.
@@ -400,6 +420,37 @@ func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpa
 		}
 	}
 	return ""
+}
+
+// checkBrokerPoolViewComplete reports whether fetchInitialState observed
+// every configured cluster's BrokerPool list this pass. When a cluster was
+// probe-skipped or its List call failed — most commonly a brief
+// post-leader-election window before the health probe's engage cycle
+// completes — state.cluster.GetAllBrokerPools() is a partial view of the
+// StretchCluster's true broker membership.
+//
+// Rendering seed_servers (or any other pool-derived resource) from a partial
+// view is unsafe: a freshly added pool can render with a self-only seed
+// list, and a broker that bootstraps from a self-only seed list forms its
+// own standalone cluster instead of joining the existing one — a split-brain
+// (K8S-891). Callers must skip Phase 2 rendering and requeue instead of
+// proceeding when this returns incomplete=true; the next pass retries once
+// the peer becomes reachable (health.go's unreachable→reachable transition
+// also wakes the engage loop directly, so this typically resolves within one
+// probe interval).
+func (r *MulticlusterReconciler) checkBrokerPoolViewComplete(ctx context.Context, state *stretchClusterReconciliationState) (incomplete bool, _ ctrl.Result) {
+	if len(state.unobservedBrokerPoolClusters) == 0 {
+		return false, ctrl.Result{}
+	}
+
+	l := log.FromContext(ctx).WithName("checkBrokerPoolViewComplete")
+	msg := fmt.Sprintf(
+		"broker pool view incomplete, clusters not yet observed: %s — deferring resource rendering to avoid an incomplete seed_servers list",
+		strings.Join(state.unobservedBrokerPoolClusters, ", "),
+	)
+	l.Info(msg)
+	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, msg)
+	return true, ctrl.Result{RequeueAfter: requeueTimeout}
 }
 
 // checkSpecConsistency fetches the StretchCluster from every reachable cluster
@@ -561,6 +612,22 @@ func specDiffFields(a, b redpandav1alpha2.StretchClusterSpec) []string {
 	return fields
 }
 
+// unobservedClusters returns the canonical names of every entry in
+// allClusters that observed does not mark true, preserving allClusters'
+// order. Used to detect when FetchExistingBrokerPoolsFromAllClusters'
+// observed set is missing a configured cluster — i.e. its BrokerPool list
+// was probe-skipped or failed to fetch, making the union of BrokerPools an
+// incomplete view of the StretchCluster (K8S-891).
+func unobservedClusters(allClusters []string, observed map[string]bool, getLocalClusterName func() string) []string {
+	var missing []string
+	for _, clusterName := range allClusters {
+		if !observed[clusterName] {
+			missing = append(missing, lifecycle.CanonicalClusterName(clusterName, getLocalClusterName))
+		}
+	}
+	return missing
+}
+
 func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*stretchClusterReconciliationState, error) {
 	logger := log.FromContext(ctx)
 	logger.V(log.DebugLevel).Info("fetchInitialState")
@@ -574,6 +641,13 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 		return nil, err
 	}
 	sccluster.BrokerPools = brokerPools
+
+	// Any configured cluster missing from brokerPoolsObserved means its
+	// BrokerPool list was probe-skipped or failed to fetch this pass, so
+	// sccluster.BrokerPools (and GetAllBrokerPools()) is an incomplete view.
+	// Recorded here so Reconcile can defer any pool-derived rendering until
+	// every cluster has been observed (K8S-891).
+	unobservedBrokerPoolClusters := unobservedClusters(sccluster.GetClusters(), brokerPoolsObserved, r.Manager.GetLocalClusterName)
 
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
@@ -609,10 +683,11 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	sccluster.PodEndpoints = pools.PodEndpoints(ctx)
 
 	return &stretchClusterReconciliationState{
-		cluster:               sccluster,
-		pools:                 pools,
-		status:                status,
-		restartOnConfigChange: restartOnConfigChange,
+		cluster:                      sccluster,
+		pools:                        pools,
+		status:                       status,
+		restartOnConfigChange:        restartOnConfigChange,
+		unobservedBrokerPoolClusters: unobservedBrokerPoolClusters,
 	}, nil
 }
 
