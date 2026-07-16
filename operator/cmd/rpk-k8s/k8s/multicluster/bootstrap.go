@@ -437,9 +437,10 @@ func bootstrapCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "bootstrap",
-		Short: "Bootstrap a multicluster Redpanda deployment",
-		Long: `Bootstrap TLS certificates and kubeconfig secrets across multiple
-Kubernetes clusters for a Redpanda multicluster deployment.
+		Short: "Bootstrap TLS certificates and peer configuration for a Redpanda Stretch Cluster",
+		Long: `Bootstrap the TLS certificates and kubeconfig secrets that the multicluster
+operators of a Redpanda Stretch Cluster need to communicate across Kubernetes
+clusters.
 
 This command connects to each specified Kubernetes context, generates a shared
 CA certificate, and distributes per-cluster TLS certificates and kubeconfig
@@ -457,7 +458,7 @@ to learn each cluster's external IP/hostname. The resulting peer list is
 printed on success for pasting into helm values.
 
 --output=yaml skips applying anything and writes manifests as YAML. No
-cluster contact or kubeconfig is needed — cluster names are derived from
+cluster contact or kubeconfig is needed: cluster names are derived from
 --context flags (LB mode) or --dns-override keys (bootstrap mode).
 
 When --output-dir <dir> is set, one file per cluster is written into the

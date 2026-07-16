@@ -16,8 +16,12 @@ import (
 func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "multicluster",
-		Short: "Manage Redpanda multicluster deployments on Kubernetes",
-		Long:  "Commands for bootstrapping and managing Redpanda multicluster deployments across multiple Kubernetes clusters.",
+		Short: "Manage the multicluster operators that run a Redpanda Stretch Cluster",
+		Long: `Commands for bootstrapping and managing the multicluster operators that run
+a Redpanda Stretch Cluster: a single logical Redpanda cluster distributed
+across multiple Kubernetes clusters. One operator runs in each Kubernetes
+cluster, and the operators coordinate through Raft consensus to manage the
+Stretch Cluster as a single unit.`,
 	}
 
 	cmd.AddCommand(
