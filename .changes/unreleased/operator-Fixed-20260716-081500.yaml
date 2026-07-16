@@ -1,0 +1,9 @@
+project: operator
+kind: Fixed
+body: |-
+  StretchCluster lifecycle hooks now clear maintenance mode left behind by a
+  previous incarnation of the pod that re-registered under a different node
+  id, matching the equivalent `charts/redpanda` `postStart` fix. Stretch
+  StatefulSets render their hooks from the operator, not the chart, so they
+  previously relied solely on the reconciler backstop for ghost remediation.
+time: 2026-07-16T08:15:00.000000-07:00
