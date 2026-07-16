@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -48,28 +49,28 @@ import (
 // commonly run longer.
 const defaultClearMaintenanceModeAfter = 30 * time.Minute
 
-// podNotReadyFor returns how long the pod's Ready condition has been False and
-// whether it is currently not-Ready. The transition time lives on the pod, so
-// this survives operator restarts. A pod with no Ready condition at all (e.g.
-// stuck Pending before the scheduler/kubelet ever gets to report Ready — the
-// exact state of a pod whose node is cordoned or lost) is not-Ready since the
-// pod was created, not for a fixed zero duration: a pod that's been Pending
-// for the full threshold is precisely the stuck case decideClearMaintenance
-// exists to unblock, and pinning the duration at 0 would mean its threshold
-// gate could never fire for it. A freshly-created pod (CreationTimestamp ~=
-// now) still comes out to ~zero duration, so it's no less protected than
-// before.
-func podNotReadyFor(pod *corev1.Pod, now time.Time) (time.Duration, bool) {
+// podNotReadyFor returns how long the pod's Ready condition has been False; a
+// Ready pod reports zero, which never reaches the (always positive) clear
+// threshold. The transition time lives on the pod, so this survives operator
+// restarts. A pod with no Ready condition at all (e.g. stuck Pending before
+// the scheduler/kubelet ever gets to report Ready — the exact state of a pod
+// whose node is cordoned or lost) is not-Ready since the pod was created, not
+// for a fixed zero duration: a pod that's been Pending for the full threshold
+// is precisely the stuck case decideClearMaintenance exists to unblock, and
+// pinning the duration at 0 would mean its threshold gate could never fire
+// for it. A freshly-created pod (CreationTimestamp ~= now) still comes out to
+// ~zero duration, so it's no less protected than before.
+func podNotReadyFor(pod *corev1.Pod, now time.Time) time.Duration {
 	for _, cond := range pod.Status.Conditions {
 		if cond.Type != corev1.PodReady {
 			continue
 		}
 		if cond.Status == corev1.ConditionTrue {
-			return 0, false
+			return 0
 		}
-		return now.Sub(cond.LastTransitionTime.Time), true
+		return now.Sub(cond.LastTransitionTime.Time)
 	}
-	return now.Sub(pod.CreationTimestamp.Time), true
+	return now.Sub(pod.CreationTimestamp.Time)
 }
 
 // decideClearMaintenance is the guard for clearing a broker's maintenance mode.
@@ -154,9 +155,14 @@ func brokerInMaintenance(b rpadmin.Broker) bool {
 // clearing its maintenance flag is safe without any down-duration threshold.
 // Detection is keyed on the full advertised host (not the pod-name label, which
 // can collide across StretchCluster members) plus the RPC port, so distinct
-// brokers that merely share a hostname are never conflated. Ghosts in
-// flat-network (pod IP) mode are not caught here: the replacement pod gets a
-// new IP, so no address is shared.
+// brokers that merely share a hostname are never conflated. Only stable DNS
+// names participate: a bare-IP advertised address (flat-network mode) is
+// skipped outright, because Kubernetes reuses pod IPs — a gracefully
+// restarting broker's IP can be handed to an unrelated pod whose broker would
+// then masquerade as a "live successor", force-clearing maintenance on a
+// broker that is still expected to come back under its old id. Flat-network
+// ghosts are therefore never detected here (the replacement pod advertises a
+// new IP, so no address is shared with the ghost anyway).
 func ghostBrokersInMaintenance(brokers []rpadmin.Broker) []rpadmin.Broker {
 	byAddr := make(map[string][]rpadmin.Broker, len(brokers))
 	for _, b := range brokers {
@@ -165,6 +171,9 @@ func ghostBrokersInMaintenance(brokers []rpadmin.Broker) []rpadmin.Broker {
 			host = h
 		}
 		if host == "" {
+			continue
+		}
+		if net.ParseIP(host) != nil {
 			continue
 		}
 		key := fmt.Sprintf("%s:%d", host, b.InternalRPCPort)
@@ -204,19 +213,32 @@ func brokerIsAlive(b rpadmin.Broker) bool {
 	return ptr.Deref(b.IsAlive, true)
 }
 
+// isMaintenanceAlreadyClearedErr reports whether an error from
+// DisableMaintenanceMode means there is nothing left to clear: 400 (the broker
+// is not in maintenance mode) or 404 (the broker id is gone entirely). Both
+// are expected races on the ghost path — the chart's postStart hook and the
+// operator clear the same ghost by design — and the loser of that race must
+// not abort the rest of the reconcile pass.
+func isMaintenanceAlreadyClearedErr(err error) bool {
+	var httpErr *rpadmin.HTTPResponseError
+	if !errors.As(err, &httpErr) || httpErr.Response == nil {
+		return false
+	}
+	return httpErr.Response.StatusCode == http.StatusBadRequest || httpErr.Response.StatusCode == http.StatusNotFound
+}
+
 // clearStuckMaintenanceMode clears maintenance mode on two classes of broker:
 // ghost brokers (dead ids superseded by a live broker at the same advertised
 // address — cleared immediately, see ghostBrokersInMaintenance) and stuck
 // brokers that are in maintenance, reported not-alive by the cluster, and
 // whose pod has been not-Ready for at least the threshold. Shared by the
 // single-cluster and StretchCluster reconcilers. It queries the full broker
-// list (which includes
-// down brokers, unlike the live-only brokerMap built during decommission) so a
-// stuck-down broker can be matched to its pod by name (DNS mode) or IP
-// (flat-network mode). A pod name that ambiguously matches more than one
-// broker (see brokersByPodName) is skipped rather than guessed, since acting on
-// the wrong broker would incorrectly clear maintenance mode on a broker that
-// never satisfied the threshold.
+// list (which includes down brokers, unlike the live-only brokerMap built
+// during decommission) so a stuck-down broker can be matched to its pod by
+// name (DNS mode) or IP (flat-network mode). A pod name that ambiguously
+// matches more than one broker (see brokersByPodName) is skipped rather than
+// guessed, since acting on the wrong broker would incorrectly clear
+// maintenance mode on a broker that never satisfied the threshold.
 func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pods []*lifecycle.MulticlusterPod, threshold time.Duration, logger logr.Logger) error {
 	brokers, err := admin.Brokers(ctx)
 	if err != nil {
@@ -228,22 +250,34 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 	// again (running the successor broker), so the not-Ready threshold below
 	// would never fire for them, and the pod-name lookup would refuse the
 	// two-brokers-one-name bucket as ambiguous. See ghostBrokersInMaintenance.
-	podByName := make(map[string]*lifecycle.MulticlusterPod, len(pods))
+	podsByName := make(map[string][]*lifecycle.MulticlusterPod, len(pods))
 	for _, pod := range pods {
-		podByName[pod.GetName()] = pod
+		podsByName[pod.GetName()] = append(podsByName[pod.GetName()], pod)
 	}
 	for _, ghost := range ghostBrokersInMaintenance(brokers) {
 		host := ghost.InternalRPCAddress
 		if h, _, err := net.SplitHostPort(host); err == nil {
 			host = h
 		}
+		// Cluster attribution for the log/metric is best-effort (the clear
+		// itself targets a node id): pod names can collide across
+		// StretchCluster members, so only attribute when the name maps to
+		// exactly one pod rather than guessing and naming the wrong member.
 		clusterName := ""
-		if pod, ok := podByName[strings.SplitN(host, ".", 2)[0]]; ok {
-			clusterName = pod.GetCanonicalClusterName()
+		if matched := podsByName[strings.SplitN(host, ".", 2)[0]]; len(matched) == 1 {
+			clusterName = matched[0].GetCanonicalClusterName()
 		}
 		logger.Info("clearing maintenance mode on ghost broker superseded by a live broker at the same address",
 			"nodeID", ghost.NodeID, "address", ghost.InternalRPCAddress, "cluster", clusterName)
 		if err := admin.DisableMaintenanceMode(ctx, ghost.NodeID, true); err != nil {
+			// The chart's postStart hook races the operator to clear the same
+			// ghost by design; losing that race (400 not-in-maintenance, 404
+			// broker gone) means the work is already done, not a failure.
+			if isMaintenanceAlreadyClearedErr(err) {
+				logger.Info("ghost broker maintenance mode was already cleared or the broker is gone",
+					"nodeID", ghost.NodeID, "reason", err.Error())
+				continue
+			}
 			return errors.Wrapf(err, "disabling maintenance mode for ghost broker %d", ghost.NodeID)
 		}
 		observability.MaintenanceModeGhostCleared.WithLabelValues(clusterName).Inc()
@@ -252,8 +286,10 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 	byPod := brokersByPodName(brokers)
 	now := time.Now()
 	for _, pod := range pods {
-		notReadyFor, notReady := podNotReadyFor(pod.Pod, now)
-		if !notReady || notReadyFor < threshold {
+		// A Ready pod reports a zero not-ready duration, so the threshold
+		// gate alone (threshold is always positive) skips healthy pods.
+		notReadyFor := podNotReadyFor(pod.Pod, now)
+		if notReadyFor < threshold {
 			continue
 		}
 		candidates, ok := byPod[pod.GetName()]
