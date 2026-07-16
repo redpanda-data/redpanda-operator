@@ -33,6 +33,10 @@ func (s *singleClusterManager) GetClusterNames() []string {
 	return []string{mcmanager.LocalCluster}
 }
 
+func (s *singleClusterManager) GetConfiguredClusterNames() []string {
+	return []string{mcmanager.LocalCluster}
+}
+
 func (s *singleClusterManager) GetLocalClusterName() string {
 	return mcmanager.LocalCluster
 }

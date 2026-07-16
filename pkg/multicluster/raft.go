@@ -17,6 +17,7 @@ import (
 	"hash/fnv"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"sync/atomic"
 	"time"
@@ -589,7 +590,20 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 		}
 	}
 
-	manager, err := newManager(config.Name, config.LocalLeaderElection != nil, config.Logger.WithName("manager"), restConfig, clusterProvider, broadcaster, func() string {
+	// The full configured cluster set, in the same shape GetClusterNames
+	// produces (local-cluster sentinel + sorted remote peer names). Captured
+	// from the static peer configuration so it is complete from construction
+	// time, before any bootstrap peer's runtime registration has happened.
+	configuredClusterNames := []string{mcmanager.LocalCluster}
+	for _, peer := range config.Peers {
+		if peer.Name == config.Name {
+			continue
+		}
+		configuredClusterNames = append(configuredClusterNames, peer.Name)
+	}
+	sort.Strings(configuredClusterNames)
+
+	manager, err := newManager(config.Name, configuredClusterNames, config.LocalLeaderElection != nil, config.Logger.WithName("manager"), restConfig, clusterProvider, broadcaster, func() string {
 		return idsToNames[currentLeader.Load()]
 	}, func() map[string]cluster.Cluster {
 		clusters := map[string]cluster.Cluster{}
@@ -626,14 +640,22 @@ func NewRaftRuntimeManager(config *RaftConfiguration) (Manager, error) {
 
 type raftManager struct {
 	mcmanager.Manager
-	runnable            *leaderRunnable
-	manager             *leaderelection.LeaderManager
-	logger              logr.Logger
-	localClusterName    string
-	getLeader           func() string
-	getClusters         func() map[string]cluster.Cluster
-	addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error
-	clusterHealth       *clusterHealthTracker
+	runnable         *leaderRunnable
+	manager          *leaderelection.LeaderManager
+	logger           logr.Logger
+	localClusterName string
+	// configuredClusterNames is the full set of clusters this manager is
+	// configured to manage — the local-cluster sentinel plus every remote
+	// raft peer — fixed at construction time. Unlike the runtime provider
+	// backing getClusters, it does not depend on peer registration having
+	// completed, so it is authoritative during the window between process
+	// start (or leadership acquisition) and AddOrReplaceCluster finishing
+	// for every bootstrap peer (K8S-891).
+	configuredClusterNames []string
+	getLeader              func() string
+	getClusters            func() map[string]cluster.Cluster
+	addOrReplaceCluster    func(ctx context.Context, clusterName string, cl cluster.Cluster) error
+	clusterHealth          *clusterHealthTracker
 }
 
 func (m *raftManager) AddOrReplaceCluster(ctx context.Context, clusterName string, cl cluster.Cluster) error {
@@ -651,6 +673,10 @@ func (m *raftManager) GetClusterNames() []string {
 	}
 	sort.Strings(clusters)
 	return clusters
+}
+
+func (m *raftManager) GetConfiguredClusterNames() []string {
+	return slices.Clone(m.configuredClusterNames)
 }
 
 func (m *raftManager) GetLocalClusterName() string {
@@ -675,7 +701,7 @@ func (m *raftManager) IsClusterReachable(clusterName string) bool {
 	return m.clusterHealth.IsReachable(clusterName)
 }
 
-func newManager(localClusterName string, localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, broadcaster *restartBroadcaster, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
+func newManager(localClusterName string, configuredClusterNames []string, localLeaderElection bool, logger logr.Logger, config *rest.Config, provider multicluster.Provider, broadcaster *restartBroadcaster, getLeader func() string, getClusters func() map[string]cluster.Cluster, addOrReplaceCluster func(ctx context.Context, clusterName string, cl cluster.Cluster) error, manager *leaderelection.LeaderManager, opts manager.Options) (Manager, error) {
 	mgr, err := mcmanager.New(config, provider, opts)
 	if err != nil {
 		return nil, err
@@ -704,7 +730,7 @@ func newManager(localClusterName string, localLeaderElection bool, logger logr.L
 	})
 	manager.RegisterRoutine(healthTracker.Start)
 
-	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger.WithName("raft-manager"), localClusterName: localClusterName, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster, clusterHealth: healthTracker}, nil
+	return &raftManager{Manager: mgr, manager: manager, runnable: runnable, logger: logger.WithName("raft-manager"), localClusterName: localClusterName, configuredClusterNames: configuredClusterNames, getLeader: getLeader, getClusters: getClusters, addOrReplaceCluster: addOrReplaceCluster, clusterHealth: healthTracker}, nil
 }
 
 func (m *raftManager) Add(r mcmanager.Runnable) error {

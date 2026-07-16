@@ -26,6 +26,16 @@ type Manager interface {
 	GetLeader() string
 	// GetClusterNames returns the names of all clusters known to this manager.
 	GetClusterNames() []string
+	// GetConfiguredClusterNames returns the names of every cluster this
+	// manager is configured to manage, whether or not the cluster has
+	// completed runtime registration yet. For the raft manager this is the
+	// static peer list from its configuration: bootstrap-mode peers appear
+	// here from process start even though they are registered with the
+	// runtime provider (and so appear in GetClusterNames) only after raft
+	// leadership is acquired and their kubeconfig fetched. Use this, not
+	// GetClusterNames, when the caller needs the complete expected cluster
+	// set — e.g. to detect that a cross-cluster view is partial (K8S-891).
+	GetConfiguredClusterNames() []string
 	// GetLocalClusterName returns the canonical name of the local cluster.
 	// In a multicluster setup this is the raft node name (e.g. "cluster-1").
 	// In a single-cluster setup this returns mcmanager.LocalCluster ("").
