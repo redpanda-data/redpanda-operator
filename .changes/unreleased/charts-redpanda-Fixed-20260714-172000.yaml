@@ -1,0 +1,14 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+  The `postStart` lifecycle hook now clears maintenance mode left behind by a
+  previous incarnation of the pod that re-registered under a different node id
+  (e.g. after losing its data directory when running without persistent
+  storage). Previously the old node id was left in maintenance mode forever,
+  which blocked every other broker from entering maintenance mode and excluded
+  the ghost broker from the partition autobalancer's auto-decommission
+  (`partition_autobalancing_node_autodecommission_timeout_sec`). The hook only
+  clears ids the cluster reports dead (`is_alive=false`) and draining,
+  retrying briefly while the cluster's health monitor catches up with a fast
+  pod restart; a normal restart that keeps its node id is unaffected.
+time: 2026-07-14T17:20:00.000000-07:00
