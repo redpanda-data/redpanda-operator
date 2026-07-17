@@ -167,8 +167,10 @@ func (r *MulticlusterReconciler) reconcileStaleDiskWipe(ctx context.Context, sta
 	now := time.Now()
 
 	for _, pod := range state.pools.ExistingPods() {
-		notReadyFor, notReady := podNotReadyFor(pod.Pod, now)
-		if !notReady || notReadyFor < threshold {
+		// A Ready pod reports a zero not-ready duration, so the threshold
+		// gate alone (threshold is always positive) skips healthy pods.
+		notReadyFor := podNotReadyFor(pod.Pod, now)
+		if notReadyFor < threshold {
 			continue
 		}
 

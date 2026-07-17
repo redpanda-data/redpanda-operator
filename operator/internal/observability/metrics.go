@@ -103,6 +103,23 @@ var (
 		Help:      "Brokers whose stuck maintenance-mode flag was cleared by the operator after being down past the threshold, labeled by cluster.",
 	}, []string{"cluster"})
 
+	// MaintenanceModeGhostCleared counts ghost brokers whose leaked
+	// maintenance-mode flag the operator cleared: broker ids that were
+	// superseded by a live broker advertising the same address under a
+	// different id (a pod that lost its data directory and re-registered),
+	// left in maintenance mode by the pod's preStop hook
+	// (redpanda-data/redpanda-operator#1674). Such a ghost occupies the
+	// cluster's single maintenance-mode slot and is excluded from the
+	// partition balancer's auto-decommission until cleared. Labeled by the
+	// broker's cluster (member) name (empty for the single-cluster Redpanda
+	// reconciler).
+	MaintenanceModeGhostCleared = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "maintenance_mode_ghost_cleared_total",
+		Help:      "Ghost brokers (superseded by a live broker at the same address) whose leaked maintenance-mode flag was cleared by the operator, labeled by cluster.",
+	}, []string{"cluster"})
+
 	// MaintenanceModeClearSkippedAmbiguous counts pods whose long-down state
 	// would otherwise gate a maintenance-mode clear, but whose pod name matched
 	// more than one broker (e.g. a StretchCluster with identically-named
@@ -221,6 +238,7 @@ func init() {
 		ReconcileLastSuccessTimestampSeconds,
 		PVCUnbinderGateDeferred,
 		MaintenanceModeCleared,
+		MaintenanceModeGhostCleared,
 		MaintenanceModeClearSkippedAmbiguous,
 
 		// Group 2 — StretchCluster member status.

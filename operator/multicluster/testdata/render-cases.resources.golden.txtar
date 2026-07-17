@@ -548,6 +548,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="audit-logging-pool-a-${POD_ORDINAL}.audit-logging"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -571,6 +580,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -1364,6 +1417,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="common-labels-pool-a-${POD_ORDINAL}.common-labels"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -1387,6 +1449,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -2158,6 +2264,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="custom-cluster-domain-pool-a-${POD_ORDINAL}.custom-cluster-domain"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -2181,6 +2296,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -2945,6 +3104,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="custom-config-pool-a-${POD_ORDINAL}.custom-config"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -2968,6 +3136,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -3731,6 +3943,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="custom-image-pool-a-${POD_ORDINAL}.custom-image"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -3754,6 +3975,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -4517,6 +4782,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="custom-resources-pool-a-${POD_ORDINAL}.custom-resources"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -4540,6 +4814,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -5303,6 +5621,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="custom-resources-explicit-pool-a-${POD_ORDINAL}.custom-resources-explicit"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -5326,6 +5653,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -6089,6 +6460,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="enterprise-pool-a-${POD_ORDINAL}.enterprise"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -6112,6 +6492,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -6875,6 +7299,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="external-loadbalancer-pool-a-${POD_ORDINAL}.external-loadbalancer"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -6898,6 +7331,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -7661,6 +8138,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="external-nodeport-pool-a-${POD_ORDINAL}.external-nodeport"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -7684,6 +8170,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -8447,6 +8977,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="external-tls-pool-a-${POD_ORDINAL}.external-tls"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -8470,6 +9009,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -9221,6 +9804,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="flat-network-pool-a-${POD_ORDINAL}.flat-network"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -9244,6 +9836,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -10081,6 +10717,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="flat-network-tls-pool-a-${POD_ORDINAL}.flat-network-tls"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -10104,6 +10749,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -11588,6 +12277,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="full-featured-pool-cold-${POD_ORDINAL}.full-featured"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -11611,6 +12309,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -11715,6 +12457,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="full-featured-pool-hot-${POD_ORDINAL}.full-featured"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -11738,6 +12489,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -12678,6 +13473,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="host-tuners-pool-a-${POD_ORDINAL}.host-tuners"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -12701,6 +13505,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -13464,6 +14312,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="init-containers-pool-a-${POD_ORDINAL}.init-containers"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -13487,6 +14344,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -14302,6 +15203,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="${SERVICE_NAME}.mcs-network.svc.clusterset.local"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -14325,6 +15235,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -15084,6 +16038,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="${SERVICE_NAME}.mcs-network-tls.svc.clusterset.local"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -15107,6 +16070,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -15909,6 +16916,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="memory-locking-pool-a-${POD_ORDINAL}.memory-locking"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -15932,6 +16948,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -16695,6 +17755,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="minimal-pool-a-${POD_ORDINAL}.minimal"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -16718,6 +17787,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -17481,6 +18594,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="monitoring-pool-a-${POD_ORDINAL}.monitoring"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -17504,6 +18626,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -18745,6 +19911,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="multi-pool-pool-a-${POD_ORDINAL}.multi-pool"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -18768,6 +19943,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -18870,6 +20089,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="multi-pool-pool-b-${POD_ORDINAL}.multi-pool"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -18893,6 +20121,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -20604,6 +21876,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="multi-pool-heterogeneous-ports-pool-a-${POD_ORDINAL}.multi-pool-heterogeneous-ports"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -20627,6 +21908,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -20729,6 +22054,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="multi-pool-heterogeneous-ports-pool-b-${POD_ORDINAL}.multi-pool-heterogeneous-ports"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -20752,6 +22086,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -20854,6 +22232,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="multi-pool-heterogeneous-ports-pool-c-${POD_ORDINAL}.multi-pool-heterogeneous-ports"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -20877,6 +22264,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -21616,6 +23047,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="per-pod-service-overrides-pool-a-${POD_ORDINAL}.per-pod-service-overrides"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -21639,6 +23079,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -22292,6 +23776,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="per-pod-service-remote-disabled-pool-a-${POD_ORDINAL}.per-pod-service-remote-disabled"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -22315,6 +23808,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -22989,6 +24526,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="pool-overrides-cluster-pool-a-${POD_ORDINAL}.pool-overrides-cluster"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -23012,6 +24558,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -23775,6 +25365,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="pvc-retention-policy-pool-a-${POD_ORDINAL}.pvc-retention-policy"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -23798,6 +25397,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -24561,6 +26204,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="rack-awareness-pool-a-${POD_ORDINAL}.rack-awareness"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -24584,6 +26236,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -25351,6 +27047,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="sasl-scram256-pool-a-${POD_ORDINAL}.sasl-scram256"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -25374,6 +27079,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -26156,6 +27905,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="sasl-scram512-with-tls-pool-a-${POD_ORDINAL}.sasl-scram512-with-tls"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -26179,6 +27937,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -26933,6 +28735,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="single-replica-pool-a-${POD_ORDINAL}.single-replica"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -26956,6 +28767,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -27630,6 +29485,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="storage-hostpath-pool-a-${POD_ORDINAL}.storage-hostpath"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -27653,6 +29517,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -28416,6 +30324,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="storage-pv-custom-pool-a-${POD_ORDINAL}.storage-pv-custom"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -28439,6 +30356,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -29202,6 +31163,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tiered-storage-emptydir-pool-a-${POD_ORDINAL}.tiered-storage-emptydir"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -29225,6 +31195,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -29988,6 +32002,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tiered-storage-hostpath-pool-a-${POD_ORDINAL}.tiered-storage-hostpath"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -30011,6 +32034,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -30774,6 +32841,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tiered-storage-pv-pool-a-${POD_ORDINAL}.tiered-storage-pv"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -30797,6 +32873,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -31378,6 +33498,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent  ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail  ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tls-disabled-pool-a-${POD_ORDINAL}.tls-disabled"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -31401,6 +33530,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX}  ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -32164,6 +34337,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tls-issuer-ref-pool-a-${POD_ORDINAL}.tls-issuer-ref"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -32187,6 +34369,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -32950,6 +35176,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tls-issuer-ref-mtls-pool-a-${POD_ORDINAL}.tls-issuer-ref-mtls"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -32973,6 +35208,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -33736,6 +36015,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tls-mtls-pool-a-${POD_ORDINAL}.tls-mtls"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -33759,6 +36047,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished
@@ -34522,6 +36854,15 @@
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+      # run bare to list all brokers, or append /<node id> for a single broker
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+      # the address this pod's broker advertises to the rest of the cluster,
+      # i.e. the internal_rpc_address its broker registers under; must stay
+      # character-identical to the statefulset's --advertise-rpc-addr host
+      POD_ORDINAL=${SERVICE_NAME##*-}
+      POD_FQDN="tls-self-signed-pool-a-${POD_ORDINAL}.tls-self-signed"
     postStart.sh: |-
       #!/usr/bin/env bash
       # This code should be similar if not exactly the same as that found in the panda-operator, see
@@ -34545,6 +36886,50 @@
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
             sleep 0.5
+        done
+
+        # A previous incarnation of this pod may have re-registered with the
+        # cluster under a different node id after losing its data directory
+        # (e.g. when running without persistent storage). preStop put that old
+        # node id into maintenance mode and nothing ever clears it: the ghost
+        # broker occupies the cluster's only maintenance-mode slot, and the
+        # partition autobalancer excludes maintenance-mode brokers from
+        # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+        # maintenance mode on any broker id that advertises this pod's address
+        # but isn't the current broker. Only a broker the cluster reports dead
+        # (is_alive=false) and draining is cleared — but the health monitor can
+        # lag a fast pod restart and briefly report the dead previous
+        # incarnation as still alive, so keep re-checking until every stale
+        # drainer at this address is gone; the surrounding timeout wrapper
+        # bounds this loop.
+        while true; do
+            GHOSTS_REMAIN=false
+            until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+                sleep 0.5
+            done
+            for BROKER_ID in ${BROKER_IDS}; do
+                if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+                BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+                # compare the advertised address exactly (not as a regex, which
+                # would treat the dots in ${POD_FQDN} as wildcards)
+                BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+                if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+                if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+                # a drainer at this pod's address still reported alive is the
+                # health monitor lagging behind the restart; retry until the
+                # cluster reports it dead
+                if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+                echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                GHOST_STATUS=""
+                # a 400 means not in maintenance mode, a 404 means already removed
+                until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                    GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                    sleep 0.5
+                done
+            done
+            if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+            sleep 5
         done
 
         touch /tmp/postStartHookFinished

@@ -354,8 +354,7 @@ func TestStaleDiskWipeForPendingPodWithNoReadyCondition(t *testing.T) {
 	const selfNodeID = 0
 	const selfUUID = "uuid-0-retired"
 
-	notReadyFor, notReady := podNotReadyFor(pendingPod, now)
-	require.True(t, notReady, "a Pending pod with no PodReady condition must be reported not-ready")
+	notReadyFor := podNotReadyFor(pendingPod, now)
 	require.GreaterOrEqual(t, notReadyFor, threshold,
 		"podNotReadyFor must measure a never-scheduled Pending pod's not-ready duration from its CreationTimestamp, not pin it at 0")
 
