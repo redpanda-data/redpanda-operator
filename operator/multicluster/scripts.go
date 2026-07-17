@@ -70,7 +70,41 @@ type ScriptParams struct {
 }
 
 // scriptParamsFromState extracts all values needed for script generation from a RenderState.
+<<<<<<< HEAD
 func scriptParamsFromState(state *RenderState) ScriptParams {
+=======
+// scriptInternalAdvertiseAddress returns the advertised address template for
+// internal listeners. In MCS mode, uses the clusterset.local domain.
+// For mesh/flat modes, uses the per-pod service name (<pool>-<ordinal>)
+// which is resolvable across clusters, rather than the StatefulSet pod FQDN
+// which only resolves within the local cluster.
+func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) string {
+	if state.Spec().Networking.IsMCS() {
+		return fmt.Sprintf("${SERVICE_NAME}.%s.svc.clusterset.local", state.namespace)
+	}
+	// Use per-pod service name pattern: <cluster-pool-name>-<ordinal>.<namespace>
+	// This matches the cross-cluster per-pod Service created by the operator
+	// (see PerPodServiceName in service_per_pod.go). ${POD_ORDINAL} is
+	// derived at script runtime from SERVICE_NAME.
+	return fmt.Sprintf("%s-${POD_ORDINAL}.%s", state.poolFullname(pool), state.namespace)
+}
+
+// scriptParamsForLifecycle returns script params for lifecycle hooks for the
+// given pool. The lifecycle scripts are mounted per-pool so admin URL / TLS
+// flags / protocol come from this pool's TLS/Listeners/ClusterDomain.
+func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
+	return ScriptParams{
+		AdminCurlFlags:           poolAdminTLSCurlFlags(pool),
+		CurlURL:                  pool.Spec.AdminInternalURL(state.fullname(), state.namespace),
+		TotalReplicas:            state.totalReplicas(),
+		AdminHTTPProtocol:        pool.Spec.AdminInternalHTTPProtocol(),
+		AdminAPIURLs:             pool.Spec.AdminAPIURLs(state.fullname(), state.namespace),
+		InternalAdvertiseAddress: scriptInternalAdvertiseAddress(state, pool),
+	}
+}
+
+func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
+>>>>>>> 36c1b5fb (charts/redpanda, operator: clear maintenance mode leaked when a broker rejoins under a new node id (#1676))
 	p := ScriptParams{
 		AdminCurlFlags:              state.adminTLSCurlFlags(),
 		CurlURL:                     state.Spec().AdminInternalURL(state.fullname(), state.namespace),
@@ -123,6 +157,15 @@ func lifecycleCommonSh(p ScriptParams) string {
 		`CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent -o /dev/null -w "%{http_code}"'`,
 		`CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent -o /dev/null -w "%{http_code}"'`,
 		fmt.Sprintf(`CURL_MAINTENANCE_GET_CMD="curl -X GET --silent %s ${CURL_URL}/v1/maintenance"`, p.AdminCurlFlags),
+		``,
+		`# run bare to list all brokers, or append /<node id> for a single broker`,
+		fmt.Sprintf(`CURL_BROKERS_CMD_PREFIX="curl --silent --fail %s ${CURL_URL}/v1/brokers"`, p.AdminCurlFlags),
+		``,
+		`# the address this pod's broker advertises to the rest of the cluster,`,
+		`# i.e. the internal_rpc_address its broker registers under; must stay`,
+		`# character-identical to the statefulset's --advertise-rpc-addr host`,
+		`POD_ORDINAL=${SERVICE_NAME##*-}`,
+		fmt.Sprintf(`POD_FQDN="%s"`, p.InternalAdvertiseAddress),
 	}, "\n")
 }
 
@@ -151,6 +194,50 @@ func lifecyclePostStartSh(p ScriptParams) string {
 		`  until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do`,
 		`      status=$(${CURL_MAINTENANCE_DELETE_CMD})`,
 		`      sleep 0.5`,
+		`  done`,
+		``,
+		`  # A previous incarnation of this pod may have re-registered with the`,
+		`  # cluster under a different node id after losing its data directory`,
+		`  # (e.g. when running without persistent storage). preStop put that old`,
+		`  # node id into maintenance mode and nothing ever clears it: the ghost`,
+		`  # broker occupies the cluster's only maintenance-mode slot, and the`,
+		`  # partition autobalancer excludes maintenance-mode brokers from`,
+		`  # auto-decommission (redpanda-data/redpanda-operator#1674). Clear`,
+		`  # maintenance mode on any broker id that advertises this pod's address`,
+		`  # but isn't the current broker. Only a broker the cluster reports dead`,
+		`  # (is_alive=false) and draining is cleared — but the health monitor can`,
+		`  # lag a fast pod restart and briefly report the dead previous`,
+		`  # incarnation as still alive, so keep re-checking until every stale`,
+		`  # drainer at this address is gone; the surrounding timeout wrapper`,
+		`  # bounds this loop.`,
+		`  while true; do`,
+		`      GHOSTS_REMAIN=false`,
+		`      until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do`,
+		`          sleep 0.5`,
+		`      done`,
+		`      for BROKER_ID in ${BROKER_IDS}; do`,
+		`          if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi`,
+		`          BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue`,
+		`          # compare the advertised address exactly (not as a regex, which`,
+		`          # would treat the dots in ${POD_FQDN} as wildcards)`,
+		`          BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')`,
+		`          if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi`,
+		`          if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi`,
+		`          # a drainer at this pod's address still reported alive is the`,
+		`          # health monitor lagging behind the restart; retry until the`,
+		`          # cluster reports it dead`,
+		`          if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi`,
+		`          echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"`,
+		fmt.Sprintf(`          CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} %s ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"`, p.AdminCurlFlags),
+		`          GHOST_STATUS=""`,
+		`          # a 400 means not in maintenance mode, a 404 means already removed`,
+		`          until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do`,
+		`              GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})`,
+		`              sleep 0.5`,
+		`          done`,
+		`      done`,
+		`      if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi`,
+		`      sleep 5`,
 		`  done`,
 		``,
 		`  touch /tmp/postStartHookFinished`,

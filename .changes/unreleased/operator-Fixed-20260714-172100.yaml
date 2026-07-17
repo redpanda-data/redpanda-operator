@@ -1,0 +1,12 @@
+project: operator
+kind: Fixed
+body: |-
+  The operator now clears maintenance mode on ghost brokers: dead broker ids
+  that were superseded by a live broker advertising the same address under a
+  different node id (a pod that lost its data directory and rejoined the
+  cluster). This remediates clusters that already leaked maintenance state
+  before the `postStart` hook fix, without requiring a pod restart. Detection
+  requires a stable advertised DNS address shared between the ghost and its
+  successor; brokers advertising bare pod IPs (flat-network mode) are never
+  matched, since a reused pod IP is not a stable identity.
+time: 2026-07-14T17:21:00.000000-07:00

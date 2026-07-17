@@ -162,6 +162,19 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
+<<<<<<< HEAD
+=======
+	cmd.Flags().IntVar(&o.postRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
+	cmd.Flags().DurationVar(&o.clearMaintenanceModeAfter, "clear-maintenance-mode-after", 30*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the Redpanda partition balancer can auto-decommission it. A broker left in maintenance mode is excluded from auto-decommission. There's no signal distinguishing a stuck broker from one intentionally in a longer planned maintenance window, so raise this if your maintenance windows commonly run longer. This threshold does not apply to ghost brokers — dead broker ids superseded by a live broker advertising the same address under a different id — whose leaked maintenance flag is cleared immediately since they can never rejoin. Default 30m.")
+
+	// Telemetry related flags.
+	cmd.Flags().BoolVar(&o.disableTelemetry, "disable-telemetry", false, "Disable anonymous cluster-shape telemetry.")
+	cmd.Flags().StringVar(&o.telemetrySourceIdentifier, "telemetry-source-identifier", "", "Override the auto-detected Deployment UID used to identify this operator installation in telemetry.")
+	cmd.Flags().StringVar(&o.telemetryEndpoint, "telemetry-endpoint", "", "Override the telemetry ingestion endpoint (testing).")
+	cmd.Flags().DurationVar(&o.telemetryPeriod, "telemetry-period", 0, "Interval between telemetry reports. 0 uses the library default (24h).")
+	cmd.Flags().StringToStringVar(&o.telemetryFeatures, "telemetry-features", nil, "Additional ad-hoc feature flags to include in every telemetry report, as name=bool pairs (e.g. redpanda-cloud=true). Repeatable or comma-separated; entries override the built-in feature flags.")
+	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file. When set and valid, its checksum (id_hash) is included in telemetry to correlate licensed clusters to an account.")
+>>>>>>> 36c1b5fb (charts/redpanda, operator: clear maintenance mode leaked when a broker rejoins under a new node id (#1676))
 
 	// Secret store related flags.
 	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
