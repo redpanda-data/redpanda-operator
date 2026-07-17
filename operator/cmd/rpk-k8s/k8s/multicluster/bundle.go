@@ -466,9 +466,9 @@ func bundleCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "bundle",
-		Short: "Collect a diagnostics bundle from a multicluster operator deployment",
-		Long: `Collects environment data from each Kubernetes cluster running the
-Redpanda multicluster operator and packages it into a ZIP file for support.
+		Short: "Collect a diagnostics bundle from the operators of a Redpanda Stretch Cluster",
+		Long: `Collects environment data from each Kubernetes cluster in a Redpanda Stretch
+Cluster deployment and packages it into a ZIP file for support.
 This is the operator-side counterpart to 'rpk debug bundle', which collects
 data from the Redpanda brokers themselves.
 
@@ -477,7 +477,7 @@ discovers peer clusters from labelled cache Secrets stored by the operator's
 raft-bootstrap flow on the starting cluster, so the tool stays useful when
 one of the peer clusters is down. Pass multiple --context flags to bypass
 discovery and diagnose exactly that set.`,
-		Example: `  # Single context — discover peers from the starting cluster
+		Example: `  # Single context: discover peers from the starting cluster
   rpk k8s multicluster bundle --kubeconfig /path/to/kubeconfig
 
   # Specific starting cluster from the default kubeconfig

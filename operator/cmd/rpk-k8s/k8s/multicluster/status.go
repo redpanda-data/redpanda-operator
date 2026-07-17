@@ -95,9 +95,10 @@ func statusCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: "Check the health of a multicluster operator deployment",
-		Long: `Checks each cluster's operator pod health, raft consensus state,
-TLS certificate validity, and cross-cluster consistency.
+		Short: "Check the health of the operators that run a Redpanda Stretch Cluster",
+		Long: `Checks the health of the multicluster operators that run a Redpanda Stretch
+Cluster: each cluster's operator pod health, raft consensus state, TLS
+certificate validity, and cross-cluster consistency.
 
 Connects to each specified Kubernetes context, finds the multicluster operator
 pod, port-forwards to its gRPC transport, and queries raft status. Also
