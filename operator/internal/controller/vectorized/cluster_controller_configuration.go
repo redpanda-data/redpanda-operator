@@ -49,6 +49,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	cfg *clusterconfiguration.CombinedCfg,
 	statefulSetResources []*resources.StatefulSetResource,
+	brokerMode bool,
 	pki *certmanager.PkiReconciler,
 	fqdn string,
 	l logr.Logger,
@@ -118,7 +119,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	}
 
 	// Synchronized status with cluster, including triggering a restart if needed
-	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResources, adminAPI, config, log)
+	conditionData, err := r.synchronizeStatusWithCluster(ctx, redpandaCluster, statefulSetResources, brokerMode, adminAPI, config, log)
 	if err != nil {
 		return 0, err
 	}
@@ -261,6 +262,7 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	statefulsets []*resources.StatefulSetResource,
+	brokerMode bool,
 	adminAPI adminutils.AdminAPIClient,
 	desiredConfig map[string]any,
 	l logr.Logger,
@@ -324,6 +326,20 @@ func (r *ClusterReconciler) synchronizeStatusWithCluster(
 			}
 			if err := sts.MarkPodsForUpdate(ctx, resources.ClusterUpdateReasonConfig); err != nil {
 				return nil, errorWithContext(err, "could not mark pods for update")
+			}
+		}
+		if brokerMode {
+			// In broker mode the restart rides the roll-grant machinery:
+			// the config version is recorded in each Broker's desired pod
+			// template, pods drift against it and are recreated one broker
+			// at a time; Restarting clears once no pod drifts (see
+			// BrokerSetResource.ensureRollGrants).
+			var configVersion int64
+			for i := range status {
+				configVersion = max(configVersion, status[i].ConfigVersion)
+			}
+			if err := resources.MarkBrokersForRestart(ctx, r.Client, redpandaCluster, configVersion); err != nil {
+				return nil, errorWithContext(err, "could not mark Brokers for restart")
 			}
 		}
 	}

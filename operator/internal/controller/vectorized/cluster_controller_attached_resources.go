@@ -54,6 +54,7 @@ const (
 	serviceAccount          = "ServiceAccount"
 	secret                  = "Secret"
 	statefulSet             = "StatefulSet"
+	brokerSetKey            = "BrokerSet"
 	nodePool                = "NodePool"
 )
 
@@ -456,4 +457,47 @@ func (a *attachedResources) getStatefulSet(cfg *clusterconfiguration.CombinedCfg
 		out = append(out, sts.(*resources.StatefulSetResource))
 	}
 	return out, nil
+}
+
+func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) error {
+	pki, err := a.getPKI()
+	if err != nil {
+		return err
+	}
+
+	nps, err := nodepools.GetNodePools(context.TODO(), a.cluster, a.reconciler.Client)
+	if err != nil {
+		return fmt.Errorf("while getting node pools: %w", err)
+	}
+	for _, np := range nps {
+		bsKey := fmt.Sprintf("%s-%s", brokerSetKey, np.Name)
+		if _, ok := a.items[bsKey]; ok {
+			continue
+		}
+
+		a.items[bsKey] = resources.NewBrokerSet(
+			a.reconciler.Client,
+			a.cluster,
+			a.reconciler.Scheme,
+			a.getHeadlessServiceFQDN(),
+			a.getHeadlessServiceName(),
+			a.getNodeportServiceKey(),
+			pki.StatefulSetVolumeProvider(),
+			pki.AdminAPIConfigProvider(),
+			a.getServiceAccountName(),
+			a.reconciler.configuratorSettings,
+			cfg,
+			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.Dialer,
+			a.reconciler.DecommissionWaitInterval,
+			a.log,
+			a.reconciler.MetricsTimeout,
+			*np,
+			a.autoDeletePVCs,
+			a.reconciler.BrokerPodNodeUnavailableToleration)
+
+		a.order = append(a.order, bsKey)
+	}
+
+	return nil
 }

@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: Serialize Broker CR pod rolls via cluster-controller-issued roll-grants (one broker at a time, health-gated) instead of granting all Brokers at once; pod creation is no longer gated on a grant
+time: 2026-07-08T12:00:00.000000000+02:00

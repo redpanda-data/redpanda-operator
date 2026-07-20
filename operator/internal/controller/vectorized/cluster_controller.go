@@ -42,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
@@ -85,6 +86,7 @@ type ClusterReconciler struct {
 	// broker pod templates. See resources.MaybeInjectNodeUnavailableTolerations
 	// for the duration semantics (0=off, positive=seconds, negative=forever).
 	BrokerPodNodeUnavailableToleration time.Duration
+	BrokerCREnabled                    bool
 	Dialer                             redpanda.DialContextFunc
 	Timeout                            time.Duration
 	// this is provided if external cloud secret resolution is configured. It's
@@ -110,6 +112,8 @@ type ClusterReconciler struct {
 //+kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=create;get;list;watch;patch;delete;update;
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;
 //+kubebuilder:rbac:groups=scheduling.k8s.io,resources=priorityclasses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers/status,verbs=get
 //+kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters/finalizers,verbs=update;patch
 //+kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters/status,verbs=get;update;patch
@@ -258,8 +262,29 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	ar.configMap(cfg)
-	if err = ar.statefulSet(cfg); err != nil {
-		return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
+	brokerMode := r.BrokerCREnabled && feature.V1BrokerCR.Get(ctx, &vectorizedCluster)
+	if brokerMode {
+		if err = ar.brokerSet(cfg); err != nil {
+			return ctrl.Result{}, fmt.Errorf("creating broker sets: %w", err)
+		}
+	} else {
+		if r.BrokerCREnabled {
+			if err = resources.RollbackBrokerCRs(ctx, r.Client, r.Scheme, &vectorizedCluster, log); err != nil {
+				// While rollback is blocked (rotation or decommission in
+				// flight) the StatefulSet must NOT be recreated — it would
+				// fight the Broker controller over the pods. Requeue and
+				// retry the rollback instead.
+				var requeueErr *resources.RequeueAfterError
+				if errors.As(err, &requeueErr) {
+					log.Info(requeueErr.Error())
+					return ctrl.Result{RequeueAfter: requeueErr.RequeueAfter}, nil
+				}
+				return ctrl.Result{}, fmt.Errorf("rolling back Broker CRs: %w", err)
+			}
+		}
+		if err = ar.statefulSet(cfg); err != nil {
+			return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
+		}
 	}
 
 	if err = r.setPodNodeIDAnnotation(ctx, &vectorizedCluster, log, ar); err != nil {
@@ -290,15 +315,19 @@ func (r *ClusterReconciler) Reconcile(
 	if vectorizedCluster.Spec.Configuration.SchemaRegistry != nil {
 		schemaRegistryPort = vectorizedCluster.Spec.Configuration.SchemaRegistry.Port
 	}
-	stSets, err := ar.getStatefulSet(cfg)
-	if err != nil {
-		return ctrl.Result{}, err
+	var stSets []*resources.StatefulSetResource
+	if !brokerMode {
+		stSets, err = ar.getStatefulSet(cfg)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	err = r.reportStatus(
 		ctx,
 		&vectorizedCluster,
 		stSets,
+		brokerMode,
 		ar.getHeadlessServiceFQDN(),
 		ar.getClusterServiceFQDN(),
 		schemaRegistryPort,
@@ -314,6 +343,7 @@ func (r *ClusterReconciler) Reconcile(
 		&vectorizedCluster,
 		cfg,
 		stSets,
+		brokerMode,
 		pki,
 		ar.getHeadlessServiceFQDN(),
 		log,
@@ -355,7 +385,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	if r.GhostDecommissioning {
+	if r.GhostDecommissioning && !brokerMode {
 		r.decommissionGhostBrokers(ctx, &vectorizedCluster, log, ar)
 	}
 
@@ -374,15 +404,20 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("invalid image pull policy \"%s\": %w", r.configuratorSettings.ImagePullPolicy, err)
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	b := ctrl.NewControllerManagedBy(mgr).
 		For(&vectorizedv1alpha1.Cluster{}).
 		Owns(&appsv1.StatefulSet{}).
-		Owns(&corev1.Service{}).
-		Watches(
-			&corev1.Pod{},
-			handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForPods),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
-		).
+		Owns(&corev1.Service{})
+
+	if r.BrokerCREnabled {
+		b = b.Owns(&redpandav1alpha2.Broker{})
+	}
+
+	return b.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForPods),
+		builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+	).
 		Watches(
 			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForExternalCASecret),
@@ -518,6 +553,7 @@ func (r *ClusterReconciler) reportStatus(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	stSets []*resources.StatefulSetResource,
+	brokerMode bool,
 	internalFQDN string,
 	clusterFQDN string,
 	schemaRegistryPort int,
@@ -548,10 +584,6 @@ func (r *ClusterReconciler) reportStatus(
 	nodeList.Internal = observedNodesInternal
 	nodeList.SchemaRegistry.Internal = fmt.Sprintf("%s:%d", clusterFQDN, schemaRegistryPort)
 
-	if len(stSets) == 0 {
-		r.Log.Info("no stateful sets found")
-	}
-
 	var version string
 	var versionErr error
 
@@ -559,27 +591,63 @@ func (r *ClusterReconciler) reportStatus(
 	readyReplicas := int32(0)
 	replicas := int32(0)
 	currentReplicas := int32(0)
-	for _, sts := range stSets {
-		if sts.LastObservedState == nil {
-			return errNonexistentLastObservedState
+
+	if brokerMode {
+		var brokerList redpandav1alpha2.BrokerList
+		if err := r.List(ctx, &brokerList, &client.ListOptions{
+			LabelSelector: labels.ForCluster(redpandaCluster).AsClientSelector(),
+			Namespace:     redpandaCluster.Namespace,
+		}); err != nil {
+			return fmt.Errorf("listing Broker CRs for status: %w", err)
 		}
 
-		readyReplicas += sts.LastObservedState.Status.ReadyReplicas
-		replicas += sts.LastObservedState.Status.Replicas
+		perPool := map[string]*vectorizedv1alpha1.NodePoolStatus{}
+		for _, b := range brokerList.Items {
+			pool := b.Labels[labels.NodePoolKey]
+			nps, ok := perPool[pool]
+			if !ok {
+				nps = &vectorizedv1alpha1.NodePoolStatus{}
+				perPool[pool] = nps
+			}
+			nps.Replicas++
+			replicas++
+			if b.Status.Phase == redpandav1alpha2.BrokerPhaseRunning {
+				nps.ReadyReplicas++
+				nps.CurrentReplicas++
+				readyReplicas++
+			}
+		}
+		currentReplicas = readyReplicas
+		for pool, nps := range perPool {
+			nodePoolStatus[pool] = *nps
+		}
+		version = redpandaCluster.Spec.Version
+	} else {
+		if len(stSets) == 0 {
+			r.Log.Info("no stateful sets found")
+		}
+		for _, sts := range stSets {
+			if sts.LastObservedState == nil {
+				return errNonexistentLastObservedState
+			}
 
-		oldNps := redpandaCluster.Status.NodePools[sts.GetNodePool().Name]
+			readyReplicas += sts.LastObservedState.Status.ReadyReplicas
+			replicas += sts.LastObservedState.Status.Replicas
 
-		oldNps.Replicas = sts.GetReplicas()
-		oldNps.ReadyReplicas = sts.LastObservedState.Status.ReadyReplicas
+			oldNps := redpandaCluster.Status.NodePools[sts.GetNodePool().Name]
 
-		nodePoolStatus[sts.GetNodePool().Name] = oldNps
+			oldNps.Replicas = sts.GetReplicas()
+			oldNps.ReadyReplicas = sts.LastObservedState.Status.ReadyReplicas
 
-		currentReplicas += oldNps.CurrentReplicas
+			nodePoolStatus[sts.GetNodePool().Name] = oldNps
 
-		version, versionErr = sts.CurrentVersion(ctx)
+			currentReplicas += oldNps.CurrentReplicas
+
+			version, versionErr = sts.CurrentVersion(ctx)
+		}
 	}
 
-	if versionErr != nil || version == "" {
+	if !brokerMode && (versionErr != nil || version == "") {
 		r.Log.Info(fmt.Sprintf("cannot get CurrentVersion of statefulset, %s", versionErr))
 	}
 	if !statusShouldBeUpdated(&redpandaCluster.Status, nodeList, replicas, readyReplicas, version, versionErr, nodePoolStatus) {

@@ -869,6 +869,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		GhostDecommissioning:               opts.ghostbuster,
 		AutoDeletePVCs:                     opts.autoDeletePVCs,
 		BrokerPodNodeUnavailableToleration: opts.brokerPodNodeUnavailableToleration,
+		BrokerCREnabled:                    opts.enableBrokerController,
 		CloudSecretsExpander:               cloudExpander,
 		Timeout:                            opts.rpClientTimeout,
 	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {

@@ -583,7 +583,7 @@ type ClusterCondition struct {
 }
 
 // ClusterConditionType is a valid value for ClusterCondition.Type
-// +kubebuilder:validation:Enum=ClusterConfigured;OperatorQuiescent
+// +kubebuilder:validation:Enum=ClusterConfigured;OperatorQuiescent;BrokerMigration
 type ClusterConditionType string
 
 // These are valid conditions of the cluster.
@@ -592,6 +592,19 @@ const (
 	ClusterConfiguredConditionType ClusterConditionType = "ClusterConfigured"
 	// OperatorQuiescentConditionType indicates that the operator has no outstanding work to do, based on the observedGeneration.
 	OperatorQuiescentConditionType ClusterConditionType = "OperatorQuiescent"
+	// BrokerMigrationConditionType tracks the StatefulSet→Broker CR
+	// migration: False while the migration is blocked on preconditions or in
+	// progress, True once it completed or was rolled back. Absent on
+	// clusters that never migrated.
+	BrokerMigrationConditionType ClusterConditionType = "BrokerMigration"
+)
+
+// Reasons used with the BrokerMigration condition.
+const (
+	BrokerMigrationReasonBlocked    = "Blocked"
+	BrokerMigrationReasonInProgress = "InProgress"
+	BrokerMigrationReasonComplete   = "Complete"
+	BrokerMigrationReasonRolledBack = "RolledBack"
 )
 
 // GetCondition return the condition of the given type

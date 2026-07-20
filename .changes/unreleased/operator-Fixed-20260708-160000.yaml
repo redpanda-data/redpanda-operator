@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Broker CR deletion no longer decommissions without explicit intent (RFC Q2) — raw deletion releases the pod and PVCs; the last-broker guard now also blocks the deletion path; scale-down marks strictly one broker at a time; Broker.PodName resolves per-pool pod names
+time: 2026-07-08T16:00:00.000000000+02:00
