@@ -21,14 +21,18 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 	runtimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 func pauseReconciliation(ctx context.Context, t framework.TestingT, clusterName string) {
@@ -138,51 +142,11 @@ func createBrokerCRsForCluster(ctx context.Context, t framework.TestingT, cluste
 	t.Cleanup(func(ctx context.Context) {
 		t := framework.T(ctx)
 		var brokers redpandav1alpha2.BrokerList
-		_ = t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
-			redpandav1alpha2.ClusterNameLabel: clusterName,
-		})
+		_ = t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace))
 		for i := range brokers.Items {
 			_ = t.Delete(ctx, &brokers.Items[i])
 		}
 	})
-}
-
-type podUIDSnapshotKey struct{ cluster string }
-
-// snapshotPodUIDs records the UID of every redpanda pod of the cluster so a
-// later step can assert none of them was deleted/recreated.
-func snapshotPodUIDs(ctx context.Context, t framework.TestingT, clusterName string) context.Context {
-	key := t.ResourceKey(clusterName)
-	var pods corev1.PodList
-	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
-		"app.kubernetes.io/instance": clusterName,
-		"app.kubernetes.io/name":     "redpanda",
-	}))
-	require.NotEmpty(t, pods.Items, "no pods to snapshot for cluster %q", clusterName)
-	uids := map[string]string{}
-	for _, p := range pods.Items {
-		uids[p.Name] = string(p.UID)
-	}
-	t.Logf("Snapshot %d pod UIDs for cluster %q: %v", len(uids), clusterName, uids)
-	return context.WithValue(ctx, podUIDSnapshotKey{clusterName}, uids)
-}
-
-func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, clusterName string) {
-	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
-	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
-
-	key := t.ResourceKey(clusterName)
-	var pods corev1.PodList
-	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
-		"app.kubernetes.io/instance": clusterName,
-		"app.kubernetes.io/name":     "redpanda",
-	}))
-	current := map[string]string{}
-	for _, p := range pods.Items {
-		current[p.Name] = string(p.UID)
-	}
-	require.Equal(t, snap, current, "pod UIDs changed for cluster %q — pods were restarted", clusterName)
-	t.Logf("All %d pod UIDs for cluster %q are unchanged", len(current), clusterName)
 }
 
 func grantRollGrantToBroker(ctx context.Context, t framework.TestingT, brokerName string) {
@@ -224,6 +188,36 @@ func allBrokerCRsRunning(ctx context.Context, t framework.TestingT, clusterName 
 	}, 5*time.Minute, 5*time.Second, "not all Broker CRs reached Running phase")
 }
 
+// allBrokerCRsStable waits for every Broker CR of the cluster to report the
+// Stable roll-up condition as True: Ready, StorageBound, BrokerRegistered,
+// ConfigSynced and Quiesced all hold.
+func allBrokerCRsStable(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.Eventually(t, func() bool {
+		var brokers redpandav1alpha2.BrokerList
+		if err := t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		if len(brokers.Items) == 0 {
+			return false
+		}
+		for _, b := range brokers.Items {
+			cond := apimeta.FindStatusCondition(b.Status.Conditions, "Stable")
+			if cond == nil || cond.Status != metav1.ConditionTrue {
+				status := "<missing>"
+				if cond != nil {
+					status = string(cond.Status)
+				}
+				t.Logf("Broker %q condition Stable=%s (want True)", b.Name, status)
+				return false
+			}
+		}
+		return true
+	}, 10*time.Minute, 5*time.Second, "not all Broker CRs for cluster %q became Stable", clusterName)
+}
+
 func setDecommissionOnBroker(ctx context.Context, t framework.TestingT, brokerName string) {
 	key := t.ResourceKey(brokerName)
 	var broker redpandav1alpha2.Broker
@@ -233,6 +227,69 @@ func setDecommissionOnBroker(ctx context.Context, t framework.TestingT, brokerNa
 	broker.Spec.Decommission = true
 	require.NoError(t, t.Patch(ctx, &broker, patch))
 	t.Logf("Set decommission=true on Broker %q", brokerName)
+}
+
+type decommissionedBrokerKey struct {
+	cluster string
+	index   int32
+}
+
+// setDecommissionOnBrokerWithIndex marks the Broker with the given network
+// index for decommission and records its UID so a later step can assert the
+// CR was replaced rather than recommissioned.
+func setDecommissionOnBrokerWithIndex(ctx context.Context, t framework.TestingT, index int, clusterName string) context.Context {
+	key := t.ResourceKey(clusterName)
+	var brokers redpandav1alpha2.BrokerList
+	require.NoError(t, t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+	}))
+
+	var target *redpandav1alpha2.Broker
+	for i := range brokers.Items {
+		if ptr.Deref(brokers.Items[i].Spec.NetworkIndex, -1) == int32(index) {
+			target = &brokers.Items[i]
+			break
+		}
+	}
+	require.NotNil(t, target, "no Broker with index %d for cluster %q", index, clusterName)
+
+	patch := runtimeclient.MergeFrom(target.DeepCopy())
+	target.Spec.Decommission = true
+	require.NoError(t, t.Patch(ctx, target, patch))
+	t.Logf("Set decommission=true on Broker %q (index %d, UID %s)", target.Name, index, target.UID)
+	return context.WithValue(ctx, decommissionedBrokerKey{clusterName, int32(index)}, string(target.UID))
+}
+
+// brokerWithIndexShouldBeReplaced waits until the Broker CR recorded by
+// setDecommissionOnBrokerWithIndex has been deleted and a fresh Broker
+// (different UID, no decommission intent) exists at the same network index.
+func brokerWithIndexShouldBeReplaced(ctx context.Context, t framework.TestingT, index int, clusterName string) {
+	oldUID, ok := ctx.Value(decommissionedBrokerKey{clusterName, int32(index)}).(string)
+	require.True(t, ok, "no decommissioned-broker record for cluster %q index %d", clusterName, index)
+
+	key := t.ResourceKey(clusterName)
+	require.Eventually(t, func() bool {
+		var brokers redpandav1alpha2.BrokerList
+		if err := t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		for i := range brokers.Items {
+			b := &brokers.Items[i]
+			if ptr.Deref(b.Spec.NetworkIndex, -1) != int32(index) {
+				continue
+			}
+			if string(b.UID) == oldUID {
+				t.Logf("Broker index %d is still the old CR (phase=%s)", index, b.Status.Phase)
+				return false
+			}
+			t.Logf("Broker index %d replaced by %q (phase=%s)", index, b.Name, b.Status.Phase)
+			return !b.Spec.Decommission
+		}
+		t.Logf("Broker index %d: old CR gone, waiting for replacement", index)
+		return false
+	}, 10*time.Minute, 5*time.Second, "Broker with index %d for cluster %q was never replaced", index, clusterName)
 }
 
 func brokerShouldReachPhase(ctx context.Context, t framework.TestingT, brokerName, phase string) {
@@ -249,23 +306,31 @@ func brokerShouldReachPhase(ctx context.Context, t framework.TestingT, brokerNam
 
 func updateBrokerPodTemplateEnv(ctx context.Context, t framework.TestingT, brokerName, envKeyValue, _ string) {
 	key := t.ResourceKey(brokerName)
-	var broker redpandav1alpha2.Broker
-	require.NoError(t, t.Get(ctx, key, &broker))
 
 	parts := strings.SplitN(envKeyValue, "=", 2)
 	require.Len(t, parts, 2, "env must be KEY=VALUE, got %q", envKeyValue)
 
-	broker.Spec.PodTemplate.Spec.Containers[0].Env = append(
-		broker.Spec.PodTemplate.Spec.Containers[0].Env,
-		corev1.EnvVar{Name: parts[0], Value: parts[1]},
-	)
+	var checksum string
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var broker redpandav1alpha2.Broker
+		if err := t.Get(ctx, key, &broker); err != nil {
+			return err
+		}
 
-	specBytes, err := yaml.Marshal(broker.Spec.PodTemplate.Spec)
-	require.NoError(t, err)
-	checksum := fmt.Sprintf("%x", sha256.Sum256(specBytes))
-	broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = checksum
+		broker.Spec.PodTemplate.Spec.Containers[0].Env = append(
+			broker.Spec.PodTemplate.Spec.Containers[0].Env,
+			corev1.EnvVar{Name: parts[0], Value: parts[1]},
+		)
 
-	require.NoError(t, t.Update(ctx, &broker))
+		specBytes, err := yaml.Marshal(broker.Spec.PodTemplate.Spec)
+		if err != nil {
+			return err
+		}
+		checksum = fmt.Sprintf("%x", sha256.Sum256(specBytes))
+		broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = checksum
+
+		return t.Update(ctx, &broker)
+	}))
 	t.Logf("Updated Broker %q pod template: added env %s, new checksum %s", brokerName, envKeyValue, checksum[:12])
 }
 
@@ -317,8 +382,117 @@ func brokerPodShouldHaveEnv(ctx context.Context, t framework.TestingT, brokerNam
 	}, 5*time.Minute, 5*time.Second, "Broker %q pod never got env %s=%s", brokerName, envName, envValue)
 }
 
-func clusterAdminAPIShouldShowBrokers(ctx context.Context, t framework.TestingT, clusterName string, count int) {
+func brokerShouldNotBeInMaintenanceMode(ctx context.Context, t framework.TestingT, brokerName, clusterName string) {
+	key := t.ResourceKey(brokerName)
+	var broker redpandav1alpha2.Broker
+	require.NoError(t, t.Get(ctx, key, &broker))
+	require.NotNil(t, broker.Status.BrokerID, "broker %q has no broker ID", brokerName)
+	brokerID := int(*broker.Status.BrokerID)
+
 	clients := clientsForCluster(ctx, clusterName)
+	admin := clients.RedpandaAdmin(ctx)
+
+	brokers, err := admin.Brokers(ctx)
+	require.NoError(t, err)
+
+	for _, b := range brokers {
+		if b.NodeID == brokerID {
+			draining := b.Maintenance != nil && b.Maintenance.Draining
+			t.Logf("Broker %q (nodeID=%d) maintenance=%+v", brokerName, brokerID, b.Maintenance)
+			require.False(t, draining, "broker %q (nodeID=%d) is still in maintenance mode", brokerName, brokerID)
+			return
+		}
+	}
+	t.Fatalf("broker %q (nodeID=%d) not found in admin API response", brokerName, brokerID)
+}
+
+func brokerPVCsShouldBeOwnedByBrokerCR(ctx context.Context, t framework.TestingT, brokerName, _ string) {
+	key := t.ResourceKey(brokerName)
+	var broker redpandav1alpha2.Broker
+	require.NoError(t, t.Get(ctx, key, &broker))
+
+	require.NotEmpty(t, broker.Spec.Storage.ExistingClaims, "Broker %q has no ExistingClaims", brokerName)
+	for _, ec := range broker.Spec.Storage.ExistingClaims {
+		var pvc corev1.PersistentVolumeClaim
+		require.NoError(t, t.Get(ctx, runtimeclient.ObjectKey{Name: ec.Name, Namespace: key.Namespace}, &pvc))
+
+		ctrl := metav1.GetControllerOf(&pvc)
+		require.NotNil(t, ctrl, "PVC %q has no controller ownerRef", ec.Name)
+		require.Equal(t, broker.Name, ctrl.Name, "PVC %q controller ownerRef name mismatch", ec.Name)
+		require.Equal(t, "Broker", ctrl.Kind, "PVC %q controller ownerRef kind mismatch", ec.Name)
+		t.Logf("PVC %q is owned by Broker %q", ec.Name, broker.Name)
+	}
+}
+
+func allBrokerCRsShouldHaveConditions(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var brokers redpandav1alpha2.BrokerList
+	require.NoError(t, t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace)))
+	require.NotEmpty(t, brokers.Items)
+
+	for _, b := range brokers.Items {
+		for _, condType := range []string{"Ready", "PodScheduled", "BrokerRegistered", "StorageBound"} {
+			found := false
+			for _, c := range b.Status.Conditions {
+				if c.Type == condType {
+					found = true
+					require.Equal(t, string(metav1.ConditionTrue), string(c.Status),
+						"Broker %q condition %s is %s (want True)", b.Name, condType, c.Status)
+					break
+				}
+			}
+			require.True(t, found, "Broker %q missing condition %s", b.Name, condType)
+		}
+		t.Logf("Broker %q has all 4 conditions True", b.Name)
+	}
+}
+
+func brokerShouldHaveCondition(ctx context.Context, t framework.TestingT, brokerName, condType, expectedStatus string) {
+	key := t.ResourceKey(brokerName)
+	want := metav1.ConditionStatus(expectedStatus)
+	require.Eventually(t, func() bool {
+		var broker redpandav1alpha2.Broker
+		if err := t.Get(ctx, key, &broker); err != nil {
+			return false
+		}
+		cond := apimeta.FindStatusCondition(broker.Status.Conditions, condType)
+		if cond == nil {
+			t.Logf("Broker %q missing condition %s", brokerName, condType)
+			return false
+		}
+		if cond.Status != want {
+			t.Logf("Broker %q condition %s=%s (want %s)", brokerName, condType, cond.Status, want)
+			return false
+		}
+		return true
+	}, 2*time.Minute, 5*time.Second, "Broker %q condition %s never reached %s", brokerName, condType, expectedStatus)
+}
+
+func clusterShouldHaveNBrokerCRs(ctx context.Context, t framework.TestingT, clusterName string, count int) {
+	key := t.ResourceKey(clusterName)
+	require.Eventually(t, func() bool {
+		var brokers redpandav1alpha2.BrokerList
+		if err := t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		t.Logf("Cluster %q has %d Broker CRs (want %d)", clusterName, len(brokers.Items), count)
+		return len(brokers.Items) == count
+	}, 5*time.Minute, 5*time.Second, "cluster %q never had %d Broker CRs", clusterName, count)
+}
+
+func noStatefulSetShouldExistForCluster(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var stsList appsv1.StatefulSetList
+	require.NoError(t, t.List(ctx, &stsList, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+	}))
+	require.Empty(t, stsList.Items, "expected no StatefulSets for cluster %q, found %d", clusterName, len(stsList.Items))
+}
+
+func clusterAdminAPIShouldShowBrokers(ctx context.Context, t framework.TestingT, clusterName string, count int) {
+	clients := resolveClusterClients(ctx, clusterName)
 	require.Eventually(t, func() bool {
 		admin, err := clients.factory.RedpandaAdminClient(ctx, clients.resourceTarget)
 		if err != nil {
@@ -334,4 +508,224 @@ func clusterAdminAPIShouldShowBrokers(ctx context.Context, t framework.TestingT,
 		t.Logf("Cluster %q has %d brokers (want %d)", clusterName, len(brokers), count)
 		return len(brokers) == count
 	}, 5*time.Minute, 5*time.Second, "cluster %q never had %d brokers", clusterName, count)
+}
+
+func resolveClusterClients(ctx context.Context, clusterName string) *clusterClients {
+	t := framework.T(ctx)
+	key := t.ResourceKey(clusterName)
+
+	var v2 redpandav1alpha2.Redpanda
+	if err := t.Get(ctx, key, &v2); err == nil {
+		return clientsForCluster(ctx, clusterName)
+	}
+	return v1ClientsForCluster(ctx, clusterName)
+}
+
+func setAnnotationOnV1Cluster(ctx context.Context, t framework.TestingT, annotationKey, annotationValue, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var cluster vectorizedv1alpha1.Cluster
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			return err
+		}
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations[annotationKey] = annotationValue
+		return t.Update(ctx, &cluster)
+	}))
+	t.Logf("Set annotation %s=%s on V1 cluster %q", annotationKey, annotationValue, clusterName)
+}
+
+func removeAnnotationFromV1Cluster(ctx context.Context, t framework.TestingT, annotationKey, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var cluster vectorizedv1alpha1.Cluster
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			return err
+		}
+		delete(cluster.Annotations, annotationKey)
+		return t.Update(ctx, &cluster)
+	}))
+	t.Logf("Removed annotation %s from V1 cluster %q", annotationKey, clusterName)
+}
+
+func statefulSetShouldExistForCluster(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var stsList appsv1.StatefulSetList
+	require.NoError(t, t.List(ctx, &stsList, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+	}))
+	require.NotEmpty(t, stsList.Items, "expected at least one StatefulSet for cluster %q", clusterName)
+}
+
+func noStatefulSetShouldEventuallyExistForCluster(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.Eventually(t, func() bool {
+		var stsList appsv1.StatefulSetList
+		if err := t.List(ctx, &stsList, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		t.Logf("Cluster %q has %d StatefulSets (want 0)", clusterName, len(stsList.Items))
+		return len(stsList.Items) == 0
+	}, 5*time.Minute, 5*time.Second, "cluster %q still has StatefulSets", clusterName)
+}
+
+func statefulSetShouldEventuallyExistForCluster(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.Eventually(t, func() bool {
+		var stsList appsv1.StatefulSetList
+		if err := t.List(ctx, &stsList, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		t.Logf("Cluster %q has %d StatefulSets (want >=1)", clusterName, len(stsList.Items))
+		return len(stsList.Items) > 0
+	}, 5*time.Minute, 5*time.Second, "cluster %q never got a StatefulSet", clusterName)
+}
+
+type podUIDSnapshotKey struct{ cluster string }
+
+func snapshotPodUIDs(ctx context.Context, t framework.TestingT, clusterName string) context.Context {
+	key := t.ResourceKey(clusterName)
+	var pods corev1.PodList
+	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+		"app.kubernetes.io/name":     "redpanda",
+	}))
+	uids := map[string]string{}
+	for _, p := range pods.Items {
+		uids[p.Name] = string(p.UID)
+	}
+	t.Logf("Snapshot %d pod UIDs for cluster %q: %v", len(uids), clusterName, uids)
+	return context.WithValue(ctx, podUIDSnapshotKey{clusterName}, uids)
+}
+
+func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, clusterName string) {
+	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
+	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
+
+	key := t.ResourceKey(clusterName)
+	var pods corev1.PodList
+	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+		"app.kubernetes.io/name":     "redpanda",
+	}))
+	current := map[string]string{}
+	for _, p := range pods.Items {
+		current[p.Name] = string(p.UID)
+	}
+	for name, oldUID := range snap {
+		newUID, exists := current[name]
+		if !exists {
+			t.Logf("Pod %q: MISSING (was UID %s)", name, oldUID)
+		} else if newUID != oldUID {
+			t.Logf("Pod %q: UID CHANGED %s -> %s (pod was recreated)", name, oldUID, newUID)
+		} else {
+			t.Logf("Pod %q: UID unchanged %s", name, oldUID)
+		}
+	}
+	for name := range current {
+		if _, ok := snap[name]; !ok {
+			t.Logf("Pod %q: NEW (UID %s, not in snapshot)", name, current[name])
+		}
+	}
+	require.Equal(t, snap, current, "pod UIDs changed for cluster %q — pods were restarted", clusterName)
+	t.Logf("All %d pod UIDs for cluster %q are unchanged", len(current), clusterName)
+}
+
+func setNodePoolReplicasOnV1Cluster(ctx context.Context, t framework.TestingT, poolName string, replicas int, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var cluster vectorizedv1alpha1.Cluster
+	require.NoError(t, t.Get(ctx, key, &cluster))
+
+	patch := runtimeclient.MergeFrom(cluster.DeepCopy())
+	found := false
+	for i := range cluster.Spec.NodePools {
+		if cluster.Spec.NodePools[i].Name == poolName {
+			cluster.Spec.NodePools[i].Replicas = ptr.To(int32(replicas))
+			found = true
+		}
+	}
+	require.True(t, found, "nodePool %q not found on cluster %q", poolName, clusterName)
+	require.NoError(t, t.Patch(ctx, &cluster, patch))
+	t.Logf("Set nodePool %q replicas to %d on V1 cluster %q", poolName, replicas, clusterName)
+}
+
+func addAdditionalConfigurationToV1Cluster(ctx context.Context, t framework.TestingT, configKey, configValue, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var cluster vectorizedv1alpha1.Cluster
+	require.NoError(t, t.Get(ctx, key, &cluster))
+
+	patch := runtimeclient.MergeFrom(cluster.DeepCopy())
+	if cluster.Spec.AdditionalConfiguration == nil {
+		cluster.Spec.AdditionalConfiguration = map[string]string{}
+	}
+	cluster.Spec.AdditionalConfiguration[configKey] = configValue
+	require.NoError(t, t.Patch(ctx, &cluster, patch))
+	t.Logf("Set additionalConfiguration %s=%s on V1 cluster %q", configKey, configValue, clusterName)
+}
+
+// podsShouldRollOneAtATime waits until every pod from the UID snapshot (taken
+// via snapshotPodUIDs) has been replaced and is ready again, while asserting
+// that at no sampled point more than one pod was unavailable — i.e. the
+// cluster controller serialized the roll via roll-grants.
+func podsShouldRollOneAtATime(ctx context.Context, t framework.TestingT, clusterName string) {
+	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
+	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
+	require.NotEmpty(t, snap)
+
+	key := t.ResourceKey(clusterName)
+	maxUnavailable := 0
+	require.Eventually(t, func() bool {
+		var pods corev1.PodList
+		if err := t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+			"app.kubernetes.io/name":     "redpanda",
+		}); err != nil {
+			return false
+		}
+
+		byName := map[string]*corev1.Pod{}
+		for i := range pods.Items {
+			byName[pods.Items[i].Name] = &pods.Items[i]
+		}
+
+		unavailable, replaced := 0, 0
+		for name, oldUID := range snap {
+			pod, exists := byName[name]
+			switch {
+			case !exists || !utils.IsPodReady(pod):
+				unavailable++
+			case string(pod.UID) != oldUID:
+				replaced++
+			}
+		}
+		if unavailable > maxUnavailable {
+			maxUnavailable = unavailable
+		}
+		t.Logf("Roll progress for cluster %q: %d/%d replaced, %d unavailable (max seen %d)",
+			clusterName, replaced, len(snap), unavailable, maxUnavailable)
+		return unavailable == 0 && replaced == len(snap)
+	}, 15*time.Minute, 2*time.Second, "pods for cluster %q never finished rolling", clusterName)
+
+	require.LessOrEqual(t, maxUnavailable, 1,
+		"more than one pod was unavailable at once during the roll — rolls are not serialized")
+}
+
+func clusterShouldEventuallyHaveNBrokerCRs(ctx context.Context, t framework.TestingT, clusterName string, count int) {
+	key := t.ResourceKey(clusterName)
+	require.Eventually(t, func() bool {
+		var brokers redpandav1alpha2.BrokerList
+		if err := t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}); err != nil {
+			return false
+		}
+		t.Logf("Cluster %q has %d Broker CRs (want %d)", clusterName, len(brokers.Items), count)
+		return len(brokers.Items) == count
+	}, 5*time.Minute, 5*time.Second, "cluster %q never reached %d Broker CRs", clusterName, count)
 }

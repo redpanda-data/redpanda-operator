@@ -5367,6 +5367,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -6512,6 +6530,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -20934,6 +20970,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -22095,6 +22149,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -31768,6 +31840,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -32872,6 +32962,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -35930,6 +36038,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -37273,6 +37399,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -39830,6 +39974,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -41092,6 +41254,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -48380,6 +48560,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -49564,6 +49762,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -58855,6 +59071,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -60366,6 +60600,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -73883,6 +74135,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -75362,6 +75632,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:
@@ -78514,6 +78802,24 @@ rules:
   - update
   - watch
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
+- apiGroups:
   - networking.k8s.io
   resources:
   - ingresses
@@ -80054,6 +80360,24 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - brokers/status
+  verbs:
+  - get
 - apiGroups:
   - networking.k8s.io
   resources:

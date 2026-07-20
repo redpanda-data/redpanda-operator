@@ -17,6 +17,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -37,6 +38,20 @@ func iApplyKubernetesManifest(ctx context.Context, t framework.TestingT, manifes
 	})
 
 	t.ApplyManifest(ctx, file.Name())
+}
+
+// iApplyKubernetesManifestWithoutCleanup applies a manifest without
+// registering a deletion cleanup, leaving the created resources in place after
+// the scenario finishes.
+func iApplyKubernetesManifestWithoutCleanup(ctx context.Context, t framework.TestingT, manifest *godog.DocString) {
+	content := normalizeContent(t, PatchManifest(t, manifest.Content))
+
+	var obj unstructured.Unstructured
+	require.NoError(t, yaml.Unmarshal(content, &obj.Object))
+	if obj.GetNamespace() == "" {
+		obj.SetNamespace(t.Namespace())
+	}
+	require.NoError(t, t.Create(ctx, &obj))
 }
 
 func iInstallLocalCRDs(ctx context.Context, t framework.TestingT, directory string) {

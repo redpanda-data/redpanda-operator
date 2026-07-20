@@ -97,6 +97,7 @@ type SuiteBuilder struct {
 	exitOnCleanupFailures bool
 	skipCleanup           bool
 	skipFeatures          bool
+	retainHelmCharts      bool
 	// registeredGroups maps group name to the feature tag that identifies it.
 	// The special "default" group represents features with none of the registered tags.
 	registeredGroups map[string]string
@@ -352,6 +353,15 @@ func (b *SuiteBuilder) SkipCleanup() *SuiteBuilder {
 	return b
 }
 
+// RetainHelmCharts prevents suite-level helm charts (registered via
+// WithHelmChart) from being uninstalled during teardown. During setup,
+// install attempts against an already-present release are tolerated so a
+// retained provider cluster can be reused across runs.
+func (b *SuiteBuilder) RetainHelmCharts() *SuiteBuilder {
+	b.retainHelmCharts = true
+	return b
+}
+
 // SkipFeatures causes RunT to run only the setup phase (provider creation,
 // helm charts, AfterSetup hooks) and skip executing feature scenarios. The
 // teardown phase still runs unless SkipCleanup is also set. This is intended
@@ -465,6 +475,7 @@ func (b *SuiteBuilder) Build() (*Suite, error) {
 		exitOnCleanupFailures: b.exitOnCleanupFailures,
 		skipCleanup:           b.skipCleanup,
 		skipFeatures:          b.skipFeatures,
+		retainHelmCharts:      b.retainHelmCharts,
 	}, nil
 }
 
@@ -488,6 +499,7 @@ type Suite struct {
 	exitOnCleanupFailures bool
 	skipCleanup           bool
 	skipFeatures          bool
+	retainHelmCharts      bool
 }
 
 // makeGodogSuite creates a godog.TestSuite for the given feature contents.
@@ -569,7 +581,7 @@ func (s *Suite) suiteSetup(sc *suiteCleanup) func(*godog.TestSuiteContext) {
 				}
 			}
 
-			if helmClient != nil {
+			if helmClient != nil && !s.retainHelmCharts {
 				for _, chart := range s.helmCharts {
 					if err := helmClient.Uninstall(ctx, helm.Release{
 						Namespace: chart.options.Namespace,
@@ -616,6 +628,11 @@ func (s *Suite) suiteSetup(sc *suiteCleanup) func(*godog.TestSuiteContext) {
 				setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 
 				_, err = helmClient.Install(ctx, chart.repo+"/"+chart.chart, chart.options)
+				// With retained charts, a release left over from a previous
+				// run on a retained cluster is expected — not an error.
+				if err != nil && s.retainHelmCharts && strings.Contains(err.Error(), "cannot re-use") {
+					err = nil
+				}
 				setupErrorCheck(ctx, errors.WithStack(err), cleanup)
 			}
 

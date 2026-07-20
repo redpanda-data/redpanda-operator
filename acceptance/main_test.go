@@ -70,6 +70,9 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 
 	builder := framework.SuiteBuilderFromFlags().
 		Strict().
+		// TEMPORARY (broker CRD debugging): keep cert-manager installed at
+		// suite teardown so issued TLS secrets survive across runs.
+		RetainHelmCharts().
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
@@ -130,6 +133,16 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 
 	builder = builder.
 		OnFeature(func(ctx context.Context, t framework.TestingT, tags ...framework.ParsedTag) {
+			// Features tagged @default-namespace run in the default namespace
+			// instead of an isolated one, so nothing is cascade-deleted at
+			// feature teardown. Intended as a temporary debugging aid: the
+			// created resources survive the run for manual inspection, but
+			// must be deleted manually before the feature can run again.
+			for _, tag := range t.FeatureTags() {
+				if tag == "default-namespace" {
+					return
+				}
+			}
 			// this actually switches namespaces, run it first
 			t.IsolateNamespace(ctx)
 		}).
