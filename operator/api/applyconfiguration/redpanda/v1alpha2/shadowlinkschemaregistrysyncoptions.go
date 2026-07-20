@@ -18,6 +18,7 @@ import (
 // ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration represents a declarative configuration of the ShadowLinkSchemaRegistrySyncOptions type for use
 // with apply.
 type ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration struct {
+	Enabled                 *bool                                                     `json:"enabled,omitempty"`
 	Mode                    *redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
 	ShadowSchemaRegistryAPI *ShadowLinkSchemaRegistryAPIOptionsApplyConfiguration     `json:"shadowSchemaRegistryAPI,omitempty"`
 }
@@ -26,6 +27,14 @@ type ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration struct {
 // apply.
 func ShadowLinkSchemaRegistrySyncOptions() *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration {
 	return &ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration{}
+}
+
+// WithEnabled sets the Enabled field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Enabled field is set to the value of the last call.
+func (b *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration) WithEnabled(value bool) *ShadowLinkSchemaRegistrySyncOptionsApplyConfiguration {
+	b.Enabled = &value
+	return b
 }
 
 // WithMode sets the Mode field in the declarative configuration to the given value

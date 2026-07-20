@@ -264,6 +264,36 @@ func TestShadowLinkValidation(t *testing.T) {
 				}
 			},
 		},
+		// The deprecated enabled field must keep validating for objects created
+		// by an earlier build of the CRD (mode did not exist then).
+		"no errors on deprecated enabled=false without a mode": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Enabled: ptr.To(false),
+				}
+			},
+		},
+		"no errors on deprecated enabled=true with api options but no mode": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Enabled: ptr.To(true),
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+					},
+				}
+			},
+		},
+		"error on api options with deprecated enabled=false": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Enabled: ptr.To(false),
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+					},
+				}
+			},
+			errors: []string{`shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode is api`},
+		},
 		"no errors on update when using SASL on static config": {
 			doUpdate: true,
 			rawManifest: `
@@ -354,8 +384,11 @@ func TestShadowLinkDefaults(t *testing.T) {
 		PatternType: PatternTypeLiteral,
 	}}, link.Spec.RoleSyncOptions.RoleNameFilters)
 
-	// Schemas replicate in topic mode by default.
+	// Schemas replicate in topic mode by default. The mode field is not
+	// server-side defaulted (so the deprecated enabled field can still take
+	// effect on objects from an earlier build); an unset mode resolves to topic.
 	require.NotNil(t, link.Spec.SchemaRegistrySyncOptions)
-	require.Equal(t, ShadowLinkSchemaRegistrySyncOptionsModeTopic, link.Spec.SchemaRegistrySyncOptions.Mode)
+	require.Empty(t, link.Spec.SchemaRegistrySyncOptions.Mode)
+	require.Equal(t, ShadowLinkSchemaRegistrySyncOptionsModeTopic, link.Spec.SchemaRegistrySyncOptions.ShadowingMode())
 	require.Nil(t, link.Spec.SchemaRegistrySyncOptions.ShadowSchemaRegistryAPI)
 }

@@ -570,7 +570,7 @@ func (c *Factory) schemaRegistrySettingsForShadowLink(ctx context.Context, link 
 	// API options for such a block anyway, so resolving a stale or missing
 	// Secret reference here would only fail the entire reconcile for a
 	// feature the user turned off.
-	if options == nil || options.Mode != redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI || options.ShadowSchemaRegistryAPI == nil {
+	if options == nil || options.ShadowingMode() != redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI || options.ShadowSchemaRegistryAPI == nil {
 		return nil, nil
 	}
 	api := options.ShadowSchemaRegistryAPI

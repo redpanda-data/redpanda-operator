@@ -227,14 +227,24 @@ spec:
                   schemaRegistrySyncOptions.schema_registry_shadowing_mode to disabled
                   to turn schema replication off.
                 properties:
+                  enabled:
+                    description: |-
+                      Deprecated: use schema_registry_shadowing_mode instead. Enabled is
+                      retained for compatibility with objects created by an earlier build
+                      of this CRD, where a boolean toggled schema replication. It is
+                      honored only when schema_registry_shadowing_mode is unset: false maps
+                      to disabled, and true maps to api when shadowSchemaRegistryAPI is
+                      configured or topic otherwise. When both are set,
+                      schema_registry_shadowing_mode takes precedence.
+                    type: boolean
                   schema_registry_shadowing_mode:
-                    default: topic
                     description: |-
                       Mode selects how schemas are replicated from the source cluster.
-                      Defaults to topic, which shadows the source Redpanda cluster's
-                      internal schemas topic. Set to api to replicate from the source
-                      schema registry over its REST API (configured via
-                      shadowSchemaRegistryAPI), or disabled to turn schema replication off.
+                      Defaults to topic (shadow the source Redpanda cluster's internal
+                      schemas topic) when neither this nor the legacy enabled field is set.
+                      Set to api to replicate from the source schema registry over its REST
+                      API (configured via shadowSchemaRegistryAPI), or disabled to turn schema
+                      replication off.
                     enum:
                     - disabled
                     - topic
@@ -924,9 +934,11 @@ spec:
                   rule: '!has(self.schema_registry_shadowing_mode) || self.schema_registry_shadowing_mode
                     != ''api'' || has(self.shadowSchemaRegistryAPI)'
                 - message: shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode
-                    is api
+                    is api (or, via the deprecated enabled field, when enabled is
+                    true)
                   rule: '!has(self.shadowSchemaRegistryAPI) || (has(self.schema_registry_shadowing_mode)
-                    && self.schema_registry_shadowing_mode == ''api'')'
+                    && self.schema_registry_shadowing_mode == ''api'') || (!has(self.schema_registry_shadowing_mode)
+                    && has(self.enabled) && self.enabled)'
               securitySyncOptions:
                 description: Security settings sync options
                 properties:

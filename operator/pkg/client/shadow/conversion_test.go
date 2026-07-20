@@ -154,6 +154,43 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 		}, nil))
 	})
 
+	// Backward compatibility for objects created by an earlier build of the
+	// CRD, where a boolean toggled schema replication (mode did not exist).
+	t.Run("deprecated enabled=false turns schema replication off", func(t *testing.T) {
+		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Enabled: ptr.To(false),
+		}, nil))
+	})
+
+	t.Run("deprecated enabled=true without api maps to topic", func(t *testing.T) {
+		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Enabled: ptr.To(true),
+		}, nil)
+		require.NotNil(t, options)
+		require.NotNil(t, options.GetShadowSchemaRegistryTopic())
+		require.Nil(t, options.GetShadowSchemaRegistryApi())
+	})
+
+	t.Run("deprecated enabled=true with api options maps to api", func(t *testing.T) {
+		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Enabled: ptr.To(true),
+			ShadowSchemaRegistryAPI: &redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions{
+				SourceURL: "https://registry.example.com",
+			},
+		}, nil)
+		require.NotNil(t, options)
+		require.NotNil(t, options.GetShadowSchemaRegistryApi())
+		require.Nil(t, options.GetShadowSchemaRegistryTopic())
+	})
+
+	t.Run("explicit mode wins over the deprecated enabled field", func(t *testing.T) {
+		// enabled=true would imply topic, but an explicit disabled mode wins.
+		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Mode:    redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled,
+			Enabled: ptr.To(true),
+		}, nil))
+	})
+
 	t.Run("api mode maps the full configuration", func(t *testing.T) {
 		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
 			Mode: redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI,

@@ -423,20 +423,51 @@ const (
 
 // Options for syncing schema registry settings
 // +kubebuilder:validation:XValidation:message="shadowSchemaRegistryAPI is required when schema_registry_shadowing_mode is api",rule="!has(self.schema_registry_shadowing_mode) || self.schema_registry_shadowing_mode != 'api' || has(self.shadowSchemaRegistryAPI)"
-// +kubebuilder:validation:XValidation:message="shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode is api",rule="!has(self.shadowSchemaRegistryAPI) || (has(self.schema_registry_shadowing_mode) && self.schema_registry_shadowing_mode == 'api')"
+// +kubebuilder:validation:XValidation:message="shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode is api (or, via the deprecated enabled field, when enabled is true)",rule="!has(self.shadowSchemaRegistryAPI) || (has(self.schema_registry_shadowing_mode) && self.schema_registry_shadowing_mode == 'api') || (!has(self.schema_registry_shadowing_mode) && has(self.enabled) && self.enabled)"
 type ShadowLinkSchemaRegistrySyncOptions struct {
+	// Deprecated: use schema_registry_shadowing_mode instead. Enabled is
+	// retained for compatibility with objects created by an earlier build
+	// of this CRD, where a boolean toggled schema replication. It is
+	// honored only when schema_registry_shadowing_mode is unset: false maps
+	// to disabled, and true maps to api when shadowSchemaRegistryAPI is
+	// configured or topic otherwise. When both are set,
+	// schema_registry_shadowing_mode takes precedence.
+	Enabled *bool `json:"enabled,omitempty"`
 	// Mode selects how schemas are replicated from the source cluster.
-	// Defaults to topic, which shadows the source Redpanda cluster's
-	// internal schemas topic. Set to api to replicate from the source
-	// schema registry over its REST API (configured via
-	// shadowSchemaRegistryAPI), or disabled to turn schema replication off.
-	// +kubebuilder:default=topic
+	// Defaults to topic (shadow the source Redpanda cluster's internal
+	// schemas topic) when neither this nor the legacy enabled field is set.
+	// Set to api to replicate from the source schema registry over its REST
+	// API (configured via shadowSchemaRegistryAPI), or disabled to turn schema
+	// replication off.
 	Mode ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
 	// Configuration for replicating schemas from the source cluster's
 	// schema registry REST API (for example a Confluent Schema Registry)
 	// instead of shadowing a source Redpanda cluster's internal schemas
 	// topic. Required when mode is api and forbidden otherwise.
 	ShadowSchemaRegistryAPI *ShadowLinkSchemaRegistryAPIOptions `json:"shadowSchemaRegistryAPI,omitempty"`
+}
+
+// ShadowingMode resolves the effective schema-registry shadowing mode. An
+// explicit Mode always wins; when it is unset the deprecated Enabled field is
+// honored for compatibility with objects created by an earlier build of this
+// CRD (false → disabled; true → api when ShadowSchemaRegistryAPI is set, else
+// topic). With neither set the mode is topic.
+func (o *ShadowLinkSchemaRegistrySyncOptions) ShadowingMode() ShadowLinkSchemaRegistrySyncOptionsMode {
+	if o == nil {
+		return ShadowLinkSchemaRegistrySyncOptionsModeTopic
+	}
+	if o.Mode != "" {
+		return o.Mode
+	}
+	if o.Enabled != nil {
+		if !*o.Enabled {
+			return ShadowLinkSchemaRegistrySyncOptionsModeDisabled
+		}
+		if o.ShadowSchemaRegistryAPI != nil {
+			return ShadowLinkSchemaRegistrySyncOptionsModeAPI
+		}
+	}
+	return ShadowLinkSchemaRegistrySyncOptionsModeTopic
 }
 
 // UnsupportedSchemaFeaturePolicy controls what happens when a source schema

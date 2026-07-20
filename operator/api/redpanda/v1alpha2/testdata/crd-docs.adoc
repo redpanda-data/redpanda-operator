@@ -4824,11 +4824,19 @@ Options for syncing schema registry settings
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Deprecated: use schema_registry_shadowing_mode instead. Enabled is +
+retained for compatibility with objects created by an earlier build +
+of this CRD, where a boolean toggled schema replication. It is +
+honored only when schema_registry_shadowing_mode is unset: false maps +
+to disabled, and true maps to api when shadowSchemaRegistryAPI is +
+configured or topic otherwise. When both are set, +
+schema_registry_shadowing_mode takes precedence. + |  | 
 | *`schema_registry_shadowing_mode`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistrysyncoptionsmode[$$ShadowLinkSchemaRegistrySyncOptionsMode$$]__ | Mode selects how schemas are replicated from the source cluster. +
-Defaults to topic, which shadows the source Redpanda cluster's +
-internal schemas topic. Set to api to replicate from the source +
-schema registry over its REST API (configured via +
-shadowSchemaRegistryAPI), or disabled to turn schema replication off. + | topic | Enum: [disabled topic api] +
+Defaults to topic (shadow the source Redpanda cluster's internal +
+schemas topic) when neither this nor the legacy enabled field is set. +
+Set to api to replicate from the source schema registry over its REST +
+API (configured via shadowSchemaRegistryAPI), or disabled to turn schema +
+replication off. + |  | Enum: [disabled topic api] +
 
 | *`shadowSchemaRegistryAPI`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkschemaregistryapioptions[$$ShadowLinkSchemaRegistryAPIOptions$$]__ | Configuration for replicating schemas from the source cluster's +
 schema registry REST API (for example a Confluent Schema Registry) +

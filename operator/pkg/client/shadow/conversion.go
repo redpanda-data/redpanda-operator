@@ -121,7 +121,9 @@ func convertCRDToAPISchemaRegistrySyncOptions(options *redpandav1alpha2.ShadowLi
 		options = &redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{}
 	}
 	apiOptions := &adminv2api.SchemaRegistrySyncOptions{}
-	switch options.Mode {
+	// ShadowingMode resolves the deprecated enabled field for objects created
+	// by an earlier build of the CRD; an unset mode/enabled pair means topic.
+	switch options.ShadowingMode() {
 	case redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled:
 		return nil
 	case redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI:
@@ -132,8 +134,6 @@ func convertCRDToAPISchemaRegistrySyncOptions(options *redpandav1alpha2.ShadowLi
 		}
 		apiOptions.SetShadowSchemaRegistryApi(convertCRDToAPIShadowSchemaRegistryAPI(options.ShadowSchemaRegistryAPI, settings))
 	default:
-		// The CRD defaults the mode to "topic"; an unset mode on an object
-		// created before defaulting existed means the same thing.
 		apiOptions.SetShadowSchemaRegistryTopic(&adminv2api.SchemaRegistrySyncOptions_ShadowSchemaRegistryTopic{})
 	}
 	return apiOptions
