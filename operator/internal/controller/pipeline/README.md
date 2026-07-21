@@ -19,7 +19,7 @@ credentials and secrets.
   without a valid license the controller reconciles Pipelines to
   `License=False` with a license reason (see [Step 2](#step-2-run-the-pipeline-controller)).
 - The cluster can pull the Connect image
-  (`docker.redpanda.com/redpandadata/connect:4.100.0` by default).
+  (`docker.redpanda.com/redpandadata/connect:4.101.0` by default).
 
 ---
 
@@ -306,7 +306,7 @@ RPCN custom-plugins RFC.
 spec:
   replicas: 3                              # default 1; 0 to stop; autoscalable (see below)
   paused: true                             # scale to zero, keep the resource
-  image: docker.redpanda.com/redpandadata/connect:4.100.0  # override the default
+  image: docker.redpanda.com/redpandadata/connect:4.101.0  # override the default
   resources:                               # standard pod resource requirements
     requests: { cpu: 100m, memory: 256Mi }
     limits:   { cpu: "1",  memory: 1Gi }
@@ -318,7 +318,7 @@ spec:
 
 Image precedence: `spec.image` > operator chart default
 (`connectController.image.{repository,tag}`) > the binary-baked
-`connect:4.100.0`.
+`connect:4.101.0`.
 
 ### Pinning a pipeline to a Kubernetes node pool
 

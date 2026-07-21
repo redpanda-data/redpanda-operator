@@ -541,7 +541,7 @@ func TestSizing(t *testing.T) {
 // the version (tag or shortened digest) may reach the payload — never the
 // repository, which can carry internal registry hostnames or team names.
 func TestImageVersion(t *testing.T) {
-	require.Equal(t, "4.100.0", imageVersion("docker.redpanda.com/redpandadata/connect:4.100.0"))
+	require.Equal(t, "4.101.0", imageVersion("docker.redpanda.com/redpandadata/connect:4.101.0"))
 	require.Equal(t, "v1.2.3", imageVersion("registry.internal.acme.corp:5000/data-platform/connect:v1.2.3"))
 	require.Equal(t, "unspecified", imageVersion("registry.internal.acme.corp:5000/data-platform/connect"),
 		"a registry port must not be mistaken for a tag")

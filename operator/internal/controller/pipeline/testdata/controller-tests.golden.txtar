@@ -52,7 +52,7 @@
           - /redpanda-connect
           - run
           - /config/connect.yaml
-          image: docker.redpanda.com/redpandadata/connect:4.100.0
+          image: docker.redpanda.com/redpandadata/connect:4.101.0
           name: connect
           ports:
           - containerPort: 4195
@@ -77,7 +77,7 @@
           - /redpanda-connect
           - lint
           - /config/connect.yaml
-          image: docker.redpanda.com/redpandadata/connect:4.100.0
+          image: docker.redpanda.com/redpandadata/connect:4.101.0
           name: lint
           resources: {}
           terminationMessagePolicy: FallbackToLogsOnError
@@ -144,7 +144,7 @@
           - /redpanda-connect
           - run
           - /config/connect.yaml
-          image: docker.redpanda.com/redpandadata/connect:4.100.0
+          image: docker.redpanda.com/redpandadata/connect:4.101.0
           name: connect
           ports:
           - containerPort: 4195
@@ -169,7 +169,7 @@
           - /redpanda-connect
           - lint
           - /config/connect.yaml
-          image: docker.redpanda.com/redpandadata/connect:4.100.0
+          image: docker.redpanda.com/redpandadata/connect:4.101.0
           name: lint
           resources: {}
           terminationMessagePolicy: FallbackToLogsOnError
