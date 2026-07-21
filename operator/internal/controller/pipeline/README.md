@@ -304,7 +304,7 @@ RPCN custom-plugins RFC.
 
 ```yaml
 spec:
-  replicas: 3                              # default 1; 0 to stop
+  replicas: 3                              # default 1; 0 to stop; autoscalable (see below)
   paused: true                             # scale to zero, keep the resource
   image: docker.redpanda.com/redpandadata/connect:4.100.0  # override the default
   resources:                               # standard pod resource requirements
@@ -356,6 +356,94 @@ spec:
                 operator: In
                 values: ["connect", "connect-spot"]   # either pool is fine
 ```
+
+### Autoscaling with HPA or KEDA
+
+The Pipeline CRD implements the Kubernetes **scale subresource**, so anything
+that speaks `/scale` can drive `spec.replicas`: `kubectl scale`, a
+`HorizontalPodAutoscaler`, or a KEDA `ScaledObject`. Always target the
+*Pipeline*, never its Deployment — the operator resets the Deployment's
+replica count to the Pipeline's on every sync, so an autoscaler pointed at
+the Deployment gets fought and undone.
+
+```bash
+kubectl scale pipeline/hello --replicas=4
+```
+
+CPU/memory-based HPA works out of the box — pipeline pods always carry
+resource requests (defaults `100m` / `256Mi` when `spec.resources` is unset):
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hello
+spec:
+  scaleTargetRef:
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    name: hello
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 80 }
+    - type: Resource
+      resource:
+        name: memory
+        target: { type: Utilization, averageUtilization: 80 }
+```
+
+To scale on [the metrics Connect itself emits](https://docs.redpanda.com/connect/components/metrics/about/)
+(`input_received`, `output_sent`, `processor_latency_ns`, ... served on the
+pod's `http` port, 4195, at `/metrics`), get them into Prometheus first —
+`connectController.monitoring.enabled: true` renders a PodMonitor per
+pipeline for Prometheus Operator setups — then either:
+
+- expose them to HPA as custom metrics via
+  [prometheus-adapter](https://github.com/kubernetes-sigs/prometheus-adapter)
+  (`type: Pods` metric), or
+- use **KEDA**, whose `prometheus` trigger queries Prometheus directly (no
+  adapter) and can also scale the pipeline to zero when idle. For pipelines
+  consuming from Redpanda, KEDA's `kafka` trigger scales on consumer-group
+  lag — usually the signal you actually want:
+
+```yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: hello
+spec:
+  scaleTargetRef:
+    apiVersion: cluster.redpanda.com/v1alpha2
+    kind: Pipeline
+    name: hello
+  minReplicaCount: 1                  # 0 enables scale-to-zero
+  maxReplicaCount: 10
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-operated.monitoring.svc:9090
+        query: sum(rate(input_received{namespace="pipelines", pod=~"hello-.*"}[2m]))
+        threshold: "5000"
+    - type: cpu                       # triggers combine; highest wins
+      metricType: Utilization
+      metadata: { value: "80" }
+```
+
+Semantics worth knowing:
+
+- `spec.paused: true` wins over the autoscaler: the workload stays at zero
+  while paused (phase `Stopped`) even as HPA/KEDA keep writing `replicas`,
+  and unpausing resumes at the autoscaler-managed count.
+- Setting `spec.replicas: 0` yourself disables a plain HPA (standard HPA
+  behavior for scaled-to-zero targets) until you scale back up. KEDA with
+  `minReplicaCount: 0` manages the 0↔1 transition itself.
+- Once an autoscaler owns `replicas`, stop declaring it in the manifests you
+  apply (or have your GitOps tool ignore the field) so config syncs don't
+  undo the autoscaler's writes.
 
 ---
 

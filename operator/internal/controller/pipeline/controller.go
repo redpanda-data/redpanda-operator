@@ -743,6 +743,10 @@ func (c *Controller) applyStatus(ctx context.Context, pipeline *redpandav1alpha2
 
 	pipeline.Status.ObservedGeneration = pipeline.Generation
 	pipeline.Status.Phase = phase
+	// status.selector backs the scale subresource's selectorpath (how HPA and
+	// KEDA find the pods behind this Pipeline); it must stay in sync with the
+	// Deployment's pod selector, which is fixed to Labels(pipeline).
+	pipeline.Status.Selector = metav1.FormatLabelSelector(&metav1.LabelSelector{MatchLabels: Labels(pipeline)})
 	pipeline.Status.Conditions = conditionsForApply(pipeline, conditions)
 
 	return c.Ctl.ApplyStatus(ctx, pipeline, client.ForceOwnership)

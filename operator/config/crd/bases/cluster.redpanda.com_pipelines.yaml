@@ -6900,12 +6900,42 @@ spec:
                   label). Combine with Tolerations if the node pool is tainted.
                 type: object
               paused:
-                description: Paused stops the pipeline by scaling replicas to zero
-                  when set to true.
+                description: |-
+                  Paused stops the pipeline by scaling replicas to zero when set to true.
+
+                  Paused wins over .replicas, including values an autoscaler writes
+                  through the scale subresource: while paused the Deployment stays at
+                  zero (the pipeline reports Stopped) even if HPA/KEDA keep updating
+                  .replicas, and unpausing resumes at the current .replicas count.
                 type: boolean
               replicas:
                 default: 1
-                description: Replicas is the number of pipeline replicas to run.
+                description: |-
+                  Replicas is the number of pipeline replicas to run.
+
+                  This field backs the Pipeline's scale subresource, so `kubectl scale
+                  pipeline/<name>`, HorizontalPodAutoscaler, and KEDA ScaledObjects all
+                  read and write it through `/scale`. To autoscale a pipeline, point the
+                  autoscaler at the Pipeline itself — NOT at its Deployment, whose
+                  replica count the operator continuously resets to this field:
+
+                    scaleTargetRef:
+                      apiVersion: cluster.redpanda.com/v1alpha2
+                      kind: Pipeline
+                      name: <pipeline-name>
+
+                  CPU and memory HPAs work out of the box: pipeline pods always carry
+                  resource requests (operator defaults apply when .resources is unset).
+                  To scale on the metrics Redpanda Connect itself emits (input_received,
+                  output_sent, processor_latency_ns, ...) feed them to the autoscaler —
+                  e.g. scrape the pods' `http` port at /metrics (the operator's
+                  monitoring PodMonitor does this) into Prometheus, then use
+                  prometheus-adapter for HPA custom metrics or a KEDA prometheus
+                  trigger.
+
+                  When an autoscaler manages this field, omit it from applied manifests
+                  (or have your GitOps tool ignore it) so config syncs don't undo the
+                  autoscaler's writes.
                 format: int32
                 minimum: 0
                 type: integer
@@ -7487,12 +7517,26 @@ spec:
                 format: int32
                 type: integer
               replicas:
-                description: Replicas is the number of desired replicas.
+                description: |-
+                  Replicas is the number of pipeline pods observed on the underlying
+                  Deployment. The scale subresource reports it as status.replicas, which
+                  is how HPA and KEDA observe the pipeline's current scale.
                 format: int32
                 type: integer
+              selector:
+                description: |-
+                  Selector is the label selector for this pipeline's pods, in string
+                  form. The scale subresource reports it as status.selector, which is
+                  how HPA and KEDA discover the pods backing this Pipeline when
+                  computing per-pod (cpu/memory/custom) metrics.
+                type: string
             type: object
         type: object
     served: true
     storage: true
     subresources:
+      scale:
+        labelSelectorPath: .status.selector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
       status: {}

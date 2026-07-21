@@ -3036,7 +3036,31 @@ Files are mounted in the /config directory alongside connect.yaml. +
 The key "connect.yaml" is reserved and cannot be used. +
 Maps to pipeline config files when migrating to Redpanda Cloud. + |  | Optional: \{} +
 
-| *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. + | 1 | Minimum: 0 +
+| *`replicas`* __integer__ | Replicas is the number of pipeline replicas to run. +
+
+This field backs the Pipeline's scale subresource, so `kubectl scale +
+pipeline/<name>`, HorizontalPodAutoscaler, and KEDA ScaledObjects all +
+read and write it through `/scale`. To autoscale a pipeline, point the +
+autoscaler at the Pipeline itself — NOT at its Deployment, whose +
+replica count the operator continuously resets to this field: +
+
+scaleTargetRef: +
+apiVersion: cluster.redpanda.com/v1alpha2 +
+kind: Pipeline +
+name: <pipeline-name> +
+
+CPU and memory HPAs work out of the box: pipeline pods always carry +
+resource requests (operator defaults apply when .resources is unset). +
+To scale on the metrics Redpanda Connect itself emits (input_received, +
+output_sent, processor_latency_ns, ...) feed them to the autoscaler — +
+e.g. scrape the pods' `http` port at /metrics (the operator's +
+monitoring PodMonitor does this) into Prometheus, then use +
+prometheus-adapter for HPA custom metrics or a KEDA prometheus +
+trigger. +
+
+When an autoscaler manages this field, omit it from applied manifests +
+(or have your GitOps tool ignore it) so config syncs don't undo the +
+autoscaler's writes. + | 1 | Minimum: 0 +
 Optional: \{} +
 
 | *`image`* __string__ | Image is the container image for the Redpanda Connect deployment. + |  | Optional: \{} +
@@ -3053,7 +3077,12 @@ SA here keeps the trust boundary per-pipeline. +
 The operator does NOT create the ServiceAccount; provision it +
 (along with the appropriate cloud-IAM annotations) out-of-band. + |  | Optional: \{} +
 
-| *`paused`* __boolean__ | Paused stops the pipeline by scaling replicas to zero when set to true. + |  | Optional: \{} +
+| *`paused`* __boolean__ | Paused stops the pipeline by scaling replicas to zero when set to true. +
+
+Paused wins over .replicas, including values an autoscaler writes +
+through the scale subresource: while paused the Deployment stays at +
+zero (the pipeline reports Stopped) even if HPA/KEDA keep updating +
+.replicas, and unpausing resumes at the current .replicas count. + |  | Optional: \{} +
 
 | *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | Resources defines the compute resource requirements for the pipeline pods. + |  | Optional: \{} +
 
@@ -3228,9 +3257,16 @@ PipelineStatus defines the observed state of a Pipeline.
 | *`phase`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinephase[$$PipelinePhase$$]__ | Phase describes the current phase of the pipeline lifecycle. + |  | Enum: [Pending Provisioning Running Stopped Unknown] +
 Optional: \{} +
 
-| *`replicas`* __integer__ | Replicas is the number of desired replicas. + |  | Optional: \{} +
+| *`replicas`* __integer__ | Replicas is the number of pipeline pods observed on the underlying +
+Deployment. The scale subresource reports it as status.replicas, which +
+is how HPA and KEDA observe the pipeline's current scale. + |  | Optional: \{} +
 
 | *`readyReplicas`* __integer__ | ReadyReplicas is the number of ready pipeline pods. + |  | Optional: \{} +
+
+| *`selector`* __string__ | Selector is the label selector for this pipeline's pods, in string +
+form. The scale subresource reports it as status.selector, which is +
+how HPA and KEDA discover the pods backing this Pipeline when +
+computing per-pod (cpu/memory/custom) metrics. + |  | Optional: \{} +
 
 |===
 

@@ -26,12 +26,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -285,6 +287,89 @@ func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
 	assert.Equal(t, metav1.ConditionFalse, clusterRefCond.Status)
 	assert.Equal(t, redpandav1alpha2.PipelineReasonClusterRefInvalid, clusterRefCond.Reason)
 	assert.Equal(t, redpandav1alpha2.PipelinePhaseProvisioning, pipeline.Status.Phase)
+}
+
+// TestScaleSubresource exercises the Pipeline's /scale subresource — the
+// contract HorizontalPodAutoscaler, KEDA, and `kubectl scale` build on. An
+// autoscaler-written scale must land on .spec.replicas (and from there on the
+// Deployment), and the advertised status.selector must parse and match the
+// pipeline's pod labels so per-pod metrics can be resolved.
+func TestScaleSubresource(t *testing.T) {
+	ctl := setupTestEnv(t)
+
+	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: "test-scale-subresource"},
+	})
+	require.NoError(t, err)
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "scaled-pipeline",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  generate:\n    mapping: 'root = \"hello\"'\noutput:\n  stdout: {}\n",
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pipeline))
+
+	// Every status write flows through applyStatus, which stamps
+	// status.selector — so even the license-less reconcile path (envtest
+	// cannot mint a valid enterprise license) populates the scale selector.
+	c := &Controller{Ctl: ctl, LicenseFilePath: ""}
+	_, err = c.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(pipeline)})
+	require.NoError(t, err)
+
+	// controller-runtime's subresource client speaks the same /scale endpoint
+	// HPA, KEDA, and kubectl scale use.
+	cl, err := client.New(ctl.RestConfig(), client.Options{Scheme: ctl.Scheme()})
+	require.NoError(t, err)
+
+	scale := &autoscalingv1.Scale{}
+	require.NoError(t, cl.SubResource("scale").Get(t.Context(), pipeline, scale))
+	assert.Equal(t, int32(1), scale.Spec.Replicas, "CRD defaulting should surface replicas=1 through /scale")
+
+	// HPA calls labels.Parse on the advertised selector and matches it
+	// against pods; it must parse and select the pipeline's pod labels.
+	sel, err := labels.Parse(scale.Status.Selector)
+	require.NoError(t, err)
+	assert.True(t, sel.Matches(labels.Set(Labels(pipeline))),
+		"scale selector %q must match the pipeline pod labels", scale.Status.Selector)
+
+	// An autoscaler scaling out writes spec.replicas through /scale...
+	scale.Spec.Replicas = 3
+	require.NoError(t, cl.SubResource("scale").Update(t.Context(), pipeline, client.WithSubResourceBody(scale)))
+
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	require.NotNil(t, pipeline.Spec.Replicas)
+	assert.Equal(t, int32(3), *pipeline.Spec.Replicas)
+
+	// ...and the sync path propagates it onto the Deployment (a licensed
+	// Reconcile drives this same syncer).
+	syncer, err := c.syncerFor(pipeline, c.rendererFor(pipeline, nil, nil, nil, ""))
+	require.NoError(t, err)
+	_, err = syncer.Sync(t.Context())
+	require.NoError(t, err)
+
+	var dp appsv1.Deployment
+	require.NoError(t, ctl.Get(t.Context(), kube.ObjectKey{Name: pipeline.Name, Namespace: ns.Name}, &dp))
+	require.NotNil(t, dp.Spec.Replicas)
+	assert.Equal(t, int32(3), *dp.Spec.Replicas)
+
+	// KEDA's scale-to-zero writes 0 the same way; the CRD's replicas default
+	// must not resurrect it to 1.
+	scale.Spec.Replicas = 0
+	require.NoError(t, cl.SubResource("scale").Update(t.Context(), pipeline, client.WithSubResourceBody(scale)))
+	require.NoError(t, ctl.Get(t.Context(), kube.AsKey(pipeline), pipeline))
+	require.NotNil(t, pipeline.Spec.Replicas)
+	assert.Equal(t, int32(0), *pipeline.Spec.Replicas)
+	assert.Equal(t, int32(0), pipeline.GetReplicas())
+
+	// paused wins over autoscaler-written replicas: the effective count parks
+	// at zero while .spec.replicas stays owned by the autoscaler.
+	pipeline.Spec.Replicas = ptr.To(int32(3))
+	pipeline.Spec.Paused = true
+	assert.Equal(t, int32(0), pipeline.GetReplicas())
 }
 
 // TestSetupWithManager exercises the real registration path — scheme types,

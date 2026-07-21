@@ -167,6 +167,30 @@ type PipelineSpec struct {
 	ConfigFiles map[string]string `json:"configFiles,omitempty"`
 
 	// Replicas is the number of pipeline replicas to run.
+	//
+	// This field backs the Pipeline's scale subresource, so `kubectl scale
+	// pipeline/<name>`, HorizontalPodAutoscaler, and KEDA ScaledObjects all
+	// read and write it through `/scale`. To autoscale a pipeline, point the
+	// autoscaler at the Pipeline itself — NOT at its Deployment, whose
+	// replica count the operator continuously resets to this field:
+	//
+	//   scaleTargetRef:
+	//     apiVersion: cluster.redpanda.com/v1alpha2
+	//     kind: Pipeline
+	//     name: <pipeline-name>
+	//
+	// CPU and memory HPAs work out of the box: pipeline pods always carry
+	// resource requests (operator defaults apply when .resources is unset).
+	// To scale on the metrics Redpanda Connect itself emits (input_received,
+	// output_sent, processor_latency_ns, ...) feed them to the autoscaler —
+	// e.g. scrape the pods' `http` port at /metrics (the operator's
+	// monitoring PodMonitor does this) into Prometheus, then use
+	// prometheus-adapter for HPA custom metrics or a KEDA prometheus
+	// trigger.
+	//
+	// When an autoscaler manages this field, omit it from applied manifests
+	// (or have your GitOps tool ignore it) so config syncs don't undo the
+	// autoscaler's writes.
 	// +kubebuilder:default=1
 	// +kubebuilder:validation:Minimum=0
 	// +optional
@@ -191,6 +215,11 @@ type PipelineSpec struct {
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 
 	// Paused stops the pipeline by scaling replicas to zero when set to true.
+	//
+	// Paused wins over .replicas, including values an autoscaler writes
+	// through the scale subresource: while paused the Deployment stays at
+	// zero (the pipeline reports Stopped) even if HPA/KEDA keep updating
+	// .replicas, and unpausing resumes at the current .replicas count.
 	// +optional
 	Paused bool `json:"paused,omitempty"`
 
@@ -417,18 +446,28 @@ type PipelineStatus struct {
 	// +optional
 	Phase PipelinePhase `json:"phase,omitempty"`
 
-	// Replicas is the number of desired replicas.
+	// Replicas is the number of pipeline pods observed on the underlying
+	// Deployment. The scale subresource reports it as status.replicas, which
+	// is how HPA and KEDA observe the pipeline's current scale.
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
 
 	// ReadyReplicas is the number of ready pipeline pods.
 	// +optional
 	ReadyReplicas int32 `json:"readyReplicas,omitempty"`
+
+	// Selector is the label selector for this pipeline's pods, in string
+	// form. The scale subresource reports it as status.selector, which is
+	// how HPA and KEDA discover the pods backing this Pipeline when
+	// computing per-pod (cpu/memory/custom) metrics.
+	// +optional
+	Selector string `json:"selector,omitempty"`
 }
 
 // Pipeline defines a Redpanda Connect pipeline managed by the operator.
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
 // +kubebuilder:resource:path=pipelines,shortName=rpcn
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
