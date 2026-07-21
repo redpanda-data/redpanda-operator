@@ -142,14 +142,58 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 		require.NotNil(t, options.GetShadowSchemaRegistryTopic())
 	})
 
-	t.Run("enabled=false turns schema replication off", func(t *testing.T) {
+	t.Run("disabled mode turns schema replication off", func(t *testing.T) {
+		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Mode: redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled,
+		}, nil))
+	})
+
+	t.Run("api mode without options replicates nothing rather than panicking", func(t *testing.T) {
+		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Mode: redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI,
+		}, nil))
+	})
+
+	// Backward compatibility for objects created by an earlier build of the
+	// CRD, where a boolean toggled schema replication (mode did not exist).
+	t.Run("deprecated enabled=false turns schema replication off", func(t *testing.T) {
 		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
 			Enabled: ptr.To(false),
 		}, nil))
 	})
 
+	t.Run("deprecated enabled=true without api maps to topic", func(t *testing.T) {
+		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Enabled: ptr.To(true),
+		}, nil)
+		require.NotNil(t, options)
+		require.NotNil(t, options.GetShadowSchemaRegistryTopic())
+		require.Nil(t, options.GetShadowSchemaRegistryApi())
+	})
+
+	t.Run("deprecated enabled=true with api options maps to api", func(t *testing.T) {
+		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Enabled: ptr.To(true),
+			ShadowSchemaRegistryAPI: &redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions{
+				SourceURL: "https://registry.example.com",
+			},
+		}, nil)
+		require.NotNil(t, options)
+		require.NotNil(t, options.GetShadowSchemaRegistryApi())
+		require.Nil(t, options.GetShadowSchemaRegistryTopic())
+	})
+
+	t.Run("explicit mode wins over the deprecated enabled field", func(t *testing.T) {
+		// enabled=true would imply topic, but an explicit disabled mode wins.
+		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Mode:    redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled,
+			Enabled: ptr.To(true),
+		}, nil))
+	})
+
 	t.Run("api mode maps the full configuration", func(t *testing.T) {
 		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Mode: redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI,
 			ShadowSchemaRegistryAPI: &redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions{
 				SourceURL:                  "https://psrc-xxxxx.us-east-1.aws.confluent.cloud",
 				TailInterval:               ptr.To(metav1.Duration{Duration: 10 * time.Second}),
@@ -159,11 +203,14 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 					Contexts: []string{"."},
 					Subjects: []string{"orders-value"},
 				},
-				ContextMappings: []redpandav1alpha2.ShadowLinkSchemaRegistryContextMapping{{
-					Source:      ".",
-					Destination: ".shadow",
-				}},
+				Destination: &redpandav1alpha2.ShadowLinkSchemaRegistryContextDestination{
+					Exact: []redpandav1alpha2.ShadowLinkSchemaRegistryContextMapping{{
+						Source:      ".",
+						Destination: ".shadow",
+					}},
+				},
 				UnsupportedSchemaFeaturePolicy: ptr.To(redpandav1alpha2.UnsupportedSchemaFeaturePolicyRemove),
+				Paused:                         true,
 			},
 		}, &SchemaRegistrySettings{
 			BasicAuthentication: &HTTPBasicAuthenticationSettings{
@@ -184,6 +231,7 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 		require.Equal(t, []string{"."}, api.SourceFilter.Contexts)
 		require.Equal(t, []string{"orders-value"}, api.SourceFilter.Subjects)
 		require.Equal(t, adminv2api.UnsupportedSchemaFeaturePolicy_UNSUPPORTED_SCHEMA_FEATURE_POLICY_REMOVE, api.UnsupportedSchemaFeaturePolicy)
+		require.True(t, api.Paused)
 
 		exact := api.Destination.GetExact()
 		require.NotNil(t, exact)
@@ -202,8 +250,9 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 		require.Equal(t, "ca-pem", api.TlsSettings.GetTlsPemSettings().Ca)
 	})
 
-	t.Run("api mode without mappings keeps identity destination", func(t *testing.T) {
+	t.Run("api mode without a destination keeps identity mapping", func(t *testing.T) {
 		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
+			Mode: redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeAPI,
 			ShadowSchemaRegistryAPI: &redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions{
 				SourceURL: "https://registry.example.com",
 			},

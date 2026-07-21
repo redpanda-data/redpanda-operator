@@ -39,8 +39,8 @@ require (
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.10-20221127060915-a1ecdc58eccd.1 // indirect
 	buf.build/gen/go/redpandadata/cloud/protocolbuffers/go v1.36.10-20251124181447-cf877111f58c.1 // indirect
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.11-20260316210807-5d899910f714.1 // indirect
-	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260624144219-f1d5d6c05e3a.1 // indirect
-	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260624144219-f1d5d6c05e3a.1 // indirect
+	buf.build/gen/go/redpandadata/core/connectrpc/go v1.19.2-20260714112317-973b760dcc8a.1 // indirect
+	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260714112317-973b760dcc8a.1 // indirect
 	cel.dev/expr v0.25.1 // indirect
 	cloud.google.com/go/auth v0.18.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect

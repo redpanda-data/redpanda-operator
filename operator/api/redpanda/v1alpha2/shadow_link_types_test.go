@@ -132,14 +132,89 @@ func TestShadowLinkValidation(t *testing.T) {
 		"error on schema registry api options without a source url": {
 			mutate: func(link *ShadowLink) {
 				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode:                    ShadowLinkSchemaRegistrySyncOptionsModeAPI,
 					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{},
 				}
 			},
 			errors: []string{`spec.schemaRegistrySyncOptions.shadowSchemaRegistryAPI.sourceURL in body should be at least 1 chars long`},
 		},
+		"error on api mode without schema registry api options": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
+				}
+			},
+			errors: []string{`shadowSchemaRegistryAPI is required when schema_registry_shadowing_mode is api`},
+		},
+		"error on schema registry api options outside api mode": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeTopic,
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+					},
+				}
+			},
+			errors: []string{`shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode is api`},
+		},
+		"error on schema registry tls with insecureSkipTlsVerify": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+						TLS:       &CommonTLS{InsecureSkipTLSVerify: true},
+					},
+				}
+			},
+			errors: []string{`insecureSkipTlsVerify is not supported for schema registry connections`},
+		},
+		"error on schema registry tls with deprecated secret references": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+						TLS:       &CommonTLS{DeprecatedCaCert: &SecretKeyRef{Name: "ca"}},
+					},
+				}
+			},
+			errors: []string{`use caCert, cert, and key rather than the deprecated secret-reference fields`},
+		},
+		"error on destination with both identity and exact": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+						Destination: &ShadowLinkSchemaRegistryContextDestination{
+							Identity: &ShadowLinkSchemaRegistryIdentityContextMapping{},
+							Exact: []ShadowLinkSchemaRegistryContextMapping{{
+								Source:      ".",
+								Destination: ".shadow",
+							}},
+						},
+					},
+				}
+			},
+			errors: []string{`exactly one of identity or exact must be set`},
+		},
+		"error on empty destination": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL:   "https://registry.example.com",
+						Destination: &ShadowLinkSchemaRegistryContextDestination{},
+					},
+				}
+			},
+			errors: []string{`exactly one of identity or exact must be set`},
+		},
 		"error on schema registry basic auth without a value source": {
 			mutate: func(link *ShadowLink) {
 				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
 					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
 						SourceURL: "https://registry.example.com",
 						Authentication: &ShadowLinkSchemaRegistryAuthentication{
@@ -156,6 +231,7 @@ func TestShadowLinkValidation(t *testing.T) {
 		"no errors on schema registry api options with secret references": {
 			mutate: func(link *ShadowLink) {
 				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeAPI,
 					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
 						SourceURL: "https://psrc-xxxxx.us-east-1.aws.confluent.cloud",
 						Authentication: &ShadowLinkSchemaRegistryAuthentication{
@@ -184,9 +260,39 @@ func TestShadowLinkValidation(t *testing.T) {
 					Enabled: ptr.To(false),
 				}
 				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Mode: ShadowLinkSchemaRegistrySyncOptionsModeDisabled,
+				}
+			},
+		},
+		// The deprecated enabled field must keep validating for objects created
+		// by an earlier build of the CRD (mode did not exist then).
+		"no errors on deprecated enabled=false without a mode": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
 					Enabled: ptr.To(false),
 				}
 			},
+		},
+		"no errors on deprecated enabled=true with api options but no mode": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Enabled: ptr.To(true),
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+					},
+				}
+			},
+		},
+		"error on api options with deprecated enabled=false": {
+			mutate: func(link *ShadowLink) {
+				link.Spec.SchemaRegistrySyncOptions = &ShadowLinkSchemaRegistrySyncOptions{
+					Enabled: ptr.To(false),
+					ShadowSchemaRegistryAPI: &ShadowLinkSchemaRegistryAPIOptions{
+						SourceURL: "https://registry.example.com",
+					},
+				}
+			},
+			errors: []string{`shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode is api`},
 		},
 		"no errors on update when using SASL on static config": {
 			doUpdate: true,
@@ -278,9 +384,11 @@ func TestShadowLinkDefaults(t *testing.T) {
 		PatternType: PatternTypeLiteral,
 	}}, link.Spec.RoleSyncOptions.RoleNameFilters)
 
-	// Schemas replicate by default.
+	// Schemas replicate in topic mode by default. The mode field is not
+	// server-side defaulted (so the deprecated enabled field can still take
+	// effect on objects from an earlier build); an unset mode resolves to topic.
 	require.NotNil(t, link.Spec.SchemaRegistrySyncOptions)
-	require.NotNil(t, link.Spec.SchemaRegistrySyncOptions.Enabled)
-	require.True(t, *link.Spec.SchemaRegistrySyncOptions.Enabled)
+	require.Empty(t, link.Spec.SchemaRegistrySyncOptions.Mode)
+	require.Equal(t, ShadowLinkSchemaRegistrySyncOptionsModeTopic, link.Spec.SchemaRegistrySyncOptions.ShadowingMode())
 	require.Nil(t, link.Spec.SchemaRegistrySyncOptions.ShadowSchemaRegistryAPI)
 }

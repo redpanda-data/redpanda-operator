@@ -162,8 +162,9 @@ type ShadowLinkSpec struct {
 	// Security settings sync options
 	SecuritySyncOptions *ShadowLinkSecuritySettingsSyncOptions `json:"securitySyncOptions,omitempty"`
 	// Schema registry sync options. Schemas are replicated from the source
-	// cluster by default; set schemaRegistrySyncOptions.enabled to false to
-	// turn schema replication off.
+	// cluster by default; set
+	// schemaRegistrySyncOptions.schema_registry_shadowing_mode to disabled
+	// to turn schema replication off.
 	// +kubebuilder:default={}
 	SchemaRegistrySyncOptions *ShadowLinkSchemaRegistrySyncOptions `json:"schemaRegistrySyncOptions,omitempty"`
 	// RBAC role sync options. Roles are replicated from the source cluster
@@ -403,31 +404,70 @@ type ShadowLinkRoleSyncOptions struct {
 	RoleNameFilters []NameFilter `json:"roleNameFilters,omitempty"`
 }
 
+// ShadowLinkSchemaRegistrySyncOptionsMode selects how schemas are replicated
+// from the source cluster. It mirrors the schema_registry_shadowing_mode
+// oneof in shadow_link.proto so that additional modes can be introduced.
+// +kubebuilder:validation:Enum=disabled;topic;api
 type ShadowLinkSchemaRegistrySyncOptionsMode string
 
 const (
-	ShadowLinkSchemaRegistrySyncOptionsModeNone  ShadowLinkSchemaRegistrySyncOptionsMode = ""
+	// Schemas are not replicated.
+	ShadowLinkSchemaRegistrySyncOptionsModeDisabled ShadowLinkSchemaRegistrySyncOptionsMode = "disabled"
+	// The source Redpanda cluster's internal schemas topic is shadowed
+	// byte-for-byte.
 	ShadowLinkSchemaRegistrySyncOptionsModeTopic ShadowLinkSchemaRegistrySyncOptionsMode = "topic"
+	// Schemas are replicated from the source schema registry over its REST
+	// API, configured via shadowSchemaRegistryAPI.
+	ShadowLinkSchemaRegistrySyncOptionsModeAPI ShadowLinkSchemaRegistrySyncOptionsMode = "api"
 )
 
 // Options for syncing schema registry settings
+// +kubebuilder:validation:XValidation:message="shadowSchemaRegistryAPI is required when schema_registry_shadowing_mode is api",rule="!has(self.schema_registry_shadowing_mode) || self.schema_registry_shadowing_mode != 'api' || has(self.shadowSchemaRegistryAPI)"
+// +kubebuilder:validation:XValidation:message="shadowSchemaRegistryAPI may only be set when schema_registry_shadowing_mode is api (or, via the deprecated enabled field, when enabled is true)",rule="!has(self.shadowSchemaRegistryAPI) || (has(self.schema_registry_shadowing_mode) && self.schema_registry_shadowing_mode == 'api') || (!has(self.schema_registry_shadowing_mode) && has(self.enabled) && self.enabled)"
 type ShadowLinkSchemaRegistrySyncOptions struct {
-	// Enabled controls whether schemas are replicated from the source
-	// cluster. Defaults to true, which shadows the source Redpanda
-	// cluster's internal schemas topic or, when shadowSchemaRegistryAPI is
-	// configured, replicates from the source schema registry over its REST
-	// API. Set to false to turn schema replication off.
-	// +kubebuilder:default=true
+	// Deprecated: use schema_registry_shadowing_mode instead. Enabled is
+	// retained for compatibility with objects created by an earlier build
+	// of this CRD, where a boolean toggled schema replication. It is
+	// honored only when schema_registry_shadowing_mode is unset: false maps
+	// to disabled, and true maps to api when shadowSchemaRegistryAPI is
+	// configured or topic otherwise. When both are set,
+	// schema_registry_shadowing_mode takes precedence.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Deprecated: schemas now replicate in "topic" mode by default. Use
-	// enabled to turn replication off and shadowSchemaRegistryAPI to
-	// replicate from an external schema registry instead.
+	// Mode selects how schemas are replicated from the source cluster.
+	// Defaults to topic (shadow the source Redpanda cluster's internal
+	// schemas topic) when neither this nor the legacy enabled field is set.
+	// Set to api to replicate from the source schema registry over its REST
+	// API (configured via shadowSchemaRegistryAPI), or disabled to turn schema
+	// replication off.
 	Mode ShadowLinkSchemaRegistrySyncOptionsMode `json:"schema_registry_shadowing_mode,omitempty"`
 	// Configuration for replicating schemas from the source cluster's
 	// schema registry REST API (for example a Confluent Schema Registry)
 	// instead of shadowing a source Redpanda cluster's internal schemas
-	// topic.
+	// topic. Required when mode is api and forbidden otherwise.
 	ShadowSchemaRegistryAPI *ShadowLinkSchemaRegistryAPIOptions `json:"shadowSchemaRegistryAPI,omitempty"`
+}
+
+// ShadowingMode resolves the effective schema-registry shadowing mode. An
+// explicit Mode always wins; when it is unset the deprecated Enabled field is
+// honored for compatibility with objects created by an earlier build of this
+// CRD (false → disabled; true → api when ShadowSchemaRegistryAPI is set, else
+// topic). With neither set the mode is topic.
+func (o *ShadowLinkSchemaRegistrySyncOptions) ShadowingMode() ShadowLinkSchemaRegistrySyncOptionsMode {
+	if o == nil {
+		return ShadowLinkSchemaRegistrySyncOptionsModeTopic
+	}
+	if o.Mode != "" {
+		return o.Mode
+	}
+	if o.Enabled != nil {
+		if !*o.Enabled {
+			return ShadowLinkSchemaRegistrySyncOptionsModeDisabled
+		}
+		if o.ShadowSchemaRegistryAPI != nil {
+			return ShadowLinkSchemaRegistrySyncOptionsModeAPI
+		}
+	}
+	return ShadowLinkSchemaRegistrySyncOptionsModeTopic
 }
 
 // UnsupportedSchemaFeaturePolicy controls what happens when a source schema
@@ -454,8 +494,13 @@ type ShadowLinkSchemaRegistryAPIOptions struct {
 	// Authentication options used to connect to the source schema
 	// registry.
 	Authentication *ShadowLinkSchemaRegistryAuthentication `json:"authentication,omitempty"`
-	// TLS settings used to connect to the source schema registry.
-	TLS *ShadowLinkSchemaRegistryTLS `json:"tls,omitempty"`
+	// TLS settings used to connect to the source schema registry. Unlike
+	// Kafka API connections, schema registry connection material is passed
+	// to the cluster as PEM data, so insecureSkipTlsVerify and the
+	// deprecated secret-reference fields are not supported here.
+	// +kubebuilder:validation:XValidation:message="insecureSkipTlsVerify is not supported for schema registry connections",rule="!has(self.insecureSkipTlsVerify) || !self.insecureSkipTlsVerify"
+	// +kubebuilder:validation:XValidation:message="use caCert, cert, and key rather than the deprecated secret-reference fields",rule="!has(self.caCertSecretRef) && !has(self.certSecretRef) && !has(self.keySecretRef)"
+	TLS *CommonTLS `json:"tls,omitempty"`
 	// How often to poll the source registry for incremental changes.
 	// If not provided, the cluster default (10s) is used.
 	TailInterval *metav1.Duration `json:"tailInterval,omitempty"`
@@ -469,12 +514,17 @@ type ShadowLinkSchemaRegistryAPIOptions struct {
 	// Selects which schema registry contexts and subjects are replicated.
 	// If not provided, the entire source registry is replicated.
 	SourceFilter *ShadowLinkSchemaRegistrySourceFilter `json:"sourceFilter,omitempty"`
-	// Maps source contexts to destination contexts on the shadow cluster.
-	// If empty, source context names are kept as-is.
-	ContextMappings []ShadowLinkSchemaRegistryContextMapping `json:"contextMappings,omitempty"`
+	// Destination context mapping for source schema registry data. If not
+	// provided, source context names are preserved on the shadow cluster.
+	Destination *ShadowLinkSchemaRegistryContextDestination `json:"destination,omitempty"`
 	// Policy applied when a source schema uses features that the Redpanda
 	// schema registry does not support. Defaults to fail.
 	UnsupportedSchemaFeaturePolicy *UnsupportedSchemaFeaturePolicy `json:"unsupportedSchemaFeaturePolicy,omitempty"`
+	// Allows the user to pause the schema registry sync task. If paused,
+	// the task enters the 'paused' state, stops replicating schemas from
+	// the source, and the per-context client write protection on the
+	// contexts this link owns is lifted.
+	Paused bool `json:"paused,omitempty"`
 }
 
 // Authentication options for a source schema registry.
@@ -495,30 +545,6 @@ type ShadowLinkSchemaRegistryBasicAuthentication struct {
 	Password ValueSource `json:"password"`
 }
 
-// TLS settings used to connect to a source schema registry over its REST
-// API. Only the fields below are honored for schema registry connections;
-// unlike the Kafka API TLS configuration there is no insecureSkipTlsVerify
-// escape hatch.
-type ShadowLinkSchemaRegistryTLS struct {
-	// Enabled turns on TLS for the connection to the source schema registry.
-	// Set this to true when the registry is served by publicly issued
-	// certificates (for example Confluent Cloud) and no caCert, cert, or key
-	// needs to be supplied. Providing any of caCert, cert, or key implies TLS
-	// regardless of this field.
-	Enabled bool `json:"enabled,omitempty"`
-	// CaCert references the certificate authority used to verify the source
-	// schema registry's TLS certificate. May reference a Kubernetes Secret.
-	CaCert *ValueSource `json:"caCert,omitempty"`
-	// Cert references the client public certificate used to establish an mTLS
-	// connection to the source schema registry. May reference a Kubernetes
-	// Secret.
-	Cert *ValueSource `json:"cert,omitempty"`
-	// Key references the client private key used to establish an mTLS
-	// connection to the source schema registry. If cert is provided, key must
-	// be provided as well. May reference a Kubernetes Secret.
-	Key *ValueSource `json:"key,omitempty"`
-}
-
 // Selects which contexts and subjects are replicated from a source schema
 // registry.
 type ShadowLinkSchemaRegistrySourceFilter struct {
@@ -529,6 +555,24 @@ type ShadowLinkSchemaRegistrySourceFilter struct {
 	// subjects are replicated.
 	Subjects []string `json:"subjects,omitempty"`
 }
+
+// Destination context mapping for source schema registry data. It mirrors
+// the SchemaRegistryContextDestination oneof in shadow_link.proto: exactly
+// one of identity or exact must be set.
+// +kubebuilder:validation:XValidation:message="exactly one of identity or exact must be set",rule="has(self.identity) != has(self.exact)"
+type ShadowLinkSchemaRegistryContextDestination struct {
+	// Preserve source context names in the destination schema registry.
+	// Mutually exclusive with exact.
+	Identity *ShadowLinkSchemaRegistryIdentityContextMapping `json:"identity,omitempty"`
+	// Map selected source contexts to explicit destination contexts. Every
+	// source context in the effective source scope must have exactly one
+	// mapping. Mutually exclusive with identity.
+	// +kubebuilder:validation:MinItems=1
+	Exact []ShadowLinkSchemaRegistryContextMapping `json:"exact,omitempty"`
+}
+
+// Preserve source context names in the destination schema registry.
+type ShadowLinkSchemaRegistryIdentityContextMapping struct{}
 
 // Maps a source schema registry context to a destination context on the
 // shadow cluster.
