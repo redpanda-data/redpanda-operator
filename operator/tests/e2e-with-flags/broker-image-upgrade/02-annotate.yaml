@@ -1,0 +1,9 @@
+# Pure-metadata template change: spec.annotations feeds the pod template but
+# does NOT alter the rendered node config, so no config-checksum change.
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: broker-upgrade
+spec:
+  annotations:
+    test.redpanda.com/propagation: "works"

@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"slices"
 	"strings"
 	"time"
 
@@ -211,6 +212,7 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		r.reconcilePVCAdoption,
 		r.reconcilePVAffinity,
 		r.reconcilePodRotation,
+		r.reconcilePodMetadata,
 		r.reconcileBrokerRegistration,
 		r.reconcileDecommission,
 	}
@@ -315,18 +317,14 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		if pod.Annotations == nil {
 			pod.Annotations = map[string]string{}
 		}
-		// Stamp the desired checksum ONLY when the pod carries none — the
+		// Stamp desired rotation keys ONLY when the pod carries none — the
 		// STS→Broker migration case, where preconditions verified the pod
 		// already runs the desired config and adoption must not queue a
-		// pointless rotation. A pod that already carries a checksum
+		// pointless rotation. A pod that already carries a value
 		// (self-heal re-adoption after a raw CR deletion) keeps its live
-		// value: overwriting it with the desired one would mark a stale pod
+		// one: overwriting it with the desired value would mark a stale pod
 		// current and silently skip its rotation.
-		if _, ok := pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]; !ok {
-			if cs := broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]; cs != "" {
-				pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = cs
-			}
-		}
+		backfillRotationKeys(broker, pod)
 		if err := controllerutil.SetControllerReference(broker, pod, scheme); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -336,7 +334,46 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		return ctrl.Result{Requeue: true}, nil
 	}
 
+	// Owned pods created before pod-template-hash tracking existed lack the
+	// hash annotation; treating them as outdated would roll the whole fleet
+	// on operator upgrade. Backfill the desired hash instead — template
+	// drift predating the hash is undetectable either way, and every future
+	// template change rotates through the freshly stamped value.
+	if _, ok := pod.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]; !ok {
+		if backfillRotationKeys(broker, pod) {
+			l.Info("backfilling pod-template-hash on pre-hash pod", "name", podName)
+			if err := k8sClient.Update(ctx, pod); err != nil {
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{Requeue: true}, nil
+		}
+	}
+
 	return ctrl.Result{}, nil
+}
+
+// backfillRotationKeys copies each desired rotation annotation onto the pod
+// when the pod carries none, reporting whether anything was stamped. It
+// never overwrites a live value.
+func backfillRotationKeys(broker *redpandav1alpha2.Broker, pod *corev1.Pod) bool {
+	keys := []string{
+		redpandav1alpha2.BrokerPodTemplateHashAnnotation,
+		redpandav1alpha2.BrokerConfigChecksumAnnotation,
+	}
+	stamped := false
+	for _, key := range keys {
+		if _, ok := pod.Annotations[key]; ok {
+			continue
+		}
+		if desired := broker.Spec.PodTemplate.Annotations[key]; desired != "" {
+			if pod.Annotations == nil {
+				pod.Annotations = map[string]string{}
+			}
+			pod.Annotations[key] = desired
+			stamped = true
+		}
+	}
+	return stamped
 }
 
 func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
@@ -418,10 +455,11 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 	if broker.Spec.Decommission {
 		return ctrl.Result{}, nil
 	}
-	// PodOutdated covers both the config checksum and the restart-requiring
-	// cluster-config version (see resources.MarkBrokersForRestart); the
-	// recreated pod inherits both from the desired template, clearing the
-	// drift.
+	// PodOutdated covers the pod SPEC hash (image, resources, env, ...), the
+	// config checksum and the restart-requiring cluster-config version (see
+	// resources.MarkBrokersForRestart); the recreated pod inherits all of
+	// them from the desired template, clearing the drift. Template metadata
+	// never rotates a pod — reconcilePodMetadata syncs it in place.
 	if !broker.PodOutdated(state.pod) {
 		return ctrl.Result{}, nil
 	}
@@ -429,6 +467,17 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 	l := log.FromContext(ctx)
 	if !state.granted {
 		l.Info("pod needs rotation but no roll-grant", "name", state.pod.Name)
+		// An interrupted drain (grant expired or re-keyed away mid-roll,
+		// controller restart) must not strand this broker in maintenance
+		// mode: only one broker may be in maintenance at a time, so a
+		// stranded one deadlocks every future grantee's drain. Parking here
+		// short-circuits the chain before reconcileBrokerRegistration's
+		// disable, so undo it best-effort now.
+		if broker.Status.BrokerID != nil {
+			if err := r.disableMaintenanceMode(ctx, state.clusterName, broker); err != nil {
+				l.V(1).Info("could not disable maintenance mode while parked without a grant", "error", err)
+			}
+		}
 		state.phase = redpandav1alpha2.BrokerPhaseRunning
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 	}
@@ -448,11 +497,65 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 	}
 	l.Info("rotating pod", "name", state.pod.Name,
 		"oldChecksum", state.pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation],
-		"newChecksum", broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation])
+		"newChecksum", broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation],
+		"oldTemplateHash", state.pod.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation],
+		"newTemplateHash", broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation])
 	if err := cluster.GetClient().Delete(ctx, state.pod); err != nil {
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{Requeue: true}, nil
+}
+
+// reconcilePodMetadata converges the live pod's labels and annotations
+// toward the desired pod template IN PLACE — metadata is mutable on running
+// pods, so propagating it must not cost a drain and a restart the way spec
+// changes do. The sync is deliberately NOT grant-gated (it is
+// non-disruptive) and deliberately additive: keys removed from
+// the template stay on the pod until its next rotation rebuilds it from the
+// template — deleting would require knowing which pod keys the template ever
+// owned, versus keys added by kubelet, the CNI, or the cluster controller.
+// The rotation identity keys (RotationAnnotations) are NEVER synced: on a
+// pod they mean "what this pod was created from", and overwriting them with
+// desired values would silently swallow a pending rotation.
+func (r *BrokerReconciler) reconcilePodMetadata(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+	if state.pod == nil || state.broker.Spec.Decommission {
+		return ctrl.Result{}, nil
+	}
+	pod := state.pod
+	tpl := state.broker.Spec.PodTemplate
+
+	patch := client.MergeFrom(pod.DeepCopy())
+	changed := false
+	for k, v := range tpl.Annotations {
+		if slices.Contains(redpandav1alpha2.RotationAnnotations, k) {
+			continue
+		}
+		if pod.Annotations[k] != v {
+			if pod.Annotations == nil {
+				pod.Annotations = map[string]string{}
+			}
+			pod.Annotations[k] = v
+			changed = true
+		}
+	}
+	for k, v := range tpl.Labels {
+		if pod.Labels[k] != v {
+			if pod.Labels == nil {
+				pod.Labels = map[string]string{}
+			}
+			pod.Labels[k] = v
+			changed = true
+		}
+	}
+	if !changed {
+		return ctrl.Result{}, nil
+	}
+
+	log.FromContext(ctx).Info("syncing pod metadata in place", "name", pod.Name)
+	if err := cluster.GetClient().Patch(ctx, pod, patch); err != nil {
+		return ctrl.Result{}, fmt.Errorf("syncing metadata onto pod %s: %w", pod.Name, err)
+	}
+	return ctrl.Result{}, nil
 }
 
 // reconcileBrokerRegistration verifies cluster membership on EVERY pass with
@@ -1211,8 +1314,9 @@ func brokerActiveAndAlive(b *rpadmin.Broker) bool {
 }
 
 // hasValidRollGrant returns true if the Broker CR carries a roll-grant
-// annotation whose config-checksum portion matches the Broker's desired
-// pod template checksum and whose deadline has not passed.
+// annotation whose checksum portion matches the Broker's desired pod
+// template hash (the rotation identity the cluster controller keys grants
+// on) and whose deadline has not passed.
 func hasValidRollGrant(ctx context.Context, broker *redpandav1alpha2.Broker) bool {
 	grant := feature.RollGrant.Get(ctx, broker)
 	if grant == "" {
@@ -1222,7 +1326,7 @@ func hasValidRollGrant(ctx context.Context, broker *redpandav1alpha2.Broker) boo
 	if !ok {
 		return false
 	}
-	if grantChecksum != broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] {
+	if grantChecksum != broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] {
 		return false
 	}
 	return time.Now().Before(deadline)

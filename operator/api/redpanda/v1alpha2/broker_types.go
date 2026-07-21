@@ -42,6 +42,19 @@ const BrokerConfigChecksumAnnotation = "config.redpanda.com/checksum"
 // cluster controller only ever writes it to the Broker SPEC — never to pods.
 const BrokerClusterConfigVersionAnnotation = "operator.redpanda.com/cluster-config-version"
 
+// BrokerPodTemplateHashAnnotation carries a hash of the desired pod
+// template's SPEC — the analog of a StatefulSet's controller-revision-hash:
+// pods inherit it at creation and a mismatch with the desired template
+// demands a rotation. Without it, spec-only changes (image, resources, env)
+// that leave the rendered node config untouched would never reach live
+// pods. Template labels and annotations are deliberately NOT part of the
+// hash: metadata is mutable in place and the Broker controller syncs it onto
+// live pods without a restart (the config checksum and restart marker, the
+// two metadata keys that do require a restart, are their own PodOutdated
+// keys). Whoever writes the pod template must re-stamp this annotation after
+// any SPEC mutation.
+const BrokerPodTemplateHashAnnotation = "operator.redpanda.com/pod-template-hash"
+
 const (
 	// NodePoolLabel carries the name of the node pool a Broker belongs to.
 	// It mirrors labels.NodePoolKey, redeclared here to keep the API package
@@ -70,6 +83,8 @@ const (
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="BrokerID",type="integer",JSONPath=".status.brokerID"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Owner Kind",type="string",JSONPath=".spec.clusterRef.kind",description="Kind of the owning resource; empty means the default (Redpanda)"
+// +kubebuilder:printcolumn:name="Owner",type="string",JSONPath=".spec.clusterRef.name",description="Name of the owning resource"
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 type Broker struct {
 	metav1.TypeMeta   `json:",inline"`

@@ -101,11 +101,63 @@ func TestPodOutdated(t *testing.T) {
 		BrokerConfigChecksumAnnotation: "checksum-a",
 	})))
 
+	// Template-hash drift demands rotation even when checksum and restart
+	// marker agree — the template-only change case (image, labels, ...).
+	broker.Spec.PodTemplate.Annotations[BrokerPodTemplateHashAnnotation] = "hash-b"
+	assert.True(t, broker.PodOutdated(pod(map[string]string{
+		BrokerConfigChecksumAnnotation:       "checksum-a",
+		BrokerClusterConfigVersionAnnotation: "7",
+		BrokerPodTemplateHashAnnotation:      "hash-a",
+	})))
+
 	// An UNSET desired key never demands rotation, whatever the pod has.
 	broker.Spec.PodTemplate.Annotations = map[string]string{}
 	assert.False(t, broker.PodOutdated(pod(map[string]string{
 		BrokerConfigChecksumAnnotation: "anything",
 	})))
+}
+
+func TestPodTemplateHash(t *testing.T) {
+	template := func() *BrokerPodTemplate {
+		return &BrokerPodTemplate{
+			Labels:      map[string]string{"app": "redpanda"},
+			Annotations: map[string]string{BrokerConfigChecksumAnnotation: "checksum-a"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda:v1"}},
+			},
+		}
+	}
+
+	base := template().Hash()
+	assert.NotEmpty(t, base)
+	assert.Equal(t, base, template().Hash(), "hash must be deterministic")
+
+	// Stamping the hash into the template must not change the template's
+	// hash — metadata is not part of the input.
+	stamped := template()
+	stamped.Annotations[BrokerPodTemplateHashAnnotation] = base
+	assert.Equal(t, base, stamped.Hash())
+
+	// Spec changes are the rotation identity.
+	image := template()
+	image.Spec.Containers[0].Image = "redpanda:v2"
+	assert.NotEqual(t, base, image.Hash(), "image change must change the hash")
+
+	// Metadata is synced onto live pods in place — it must NOT feed the
+	// hash, or every label/annotation change would cost a rotation.
+	lbl := template()
+	lbl.Labels["extra"] = "x"
+	assert.Equal(t, base, lbl.Hash(), "label change must not change the hash")
+
+	ann := template()
+	ann.Annotations["user.redpanda.com/note"] = "x"
+	assert.Equal(t, base, ann.Hash(), "annotation change must not change the hash")
+
+	// The config checksum and restart marker are their own PodOutdated keys,
+	// not hash inputs.
+	marker := template()
+	marker.Annotations[BrokerClusterConfigVersionAnnotation] = "8"
+	assert.Equal(t, base, marker.Hash(), "restart marker must not change the hash")
 }
 
 func TestBuildPodDeepCopies(t *testing.T) {

@@ -516,6 +516,65 @@ func (s *BrokerControllerSuite) TestPodCreatedWithoutGrant() {
 // observationally identical to a working one (ConfigSynced=False is set as
 // soon as drift is detected, BEFORE the rotation completes, so an Eventually
 // on it alone can pass mid-rotation).
+// TestPodMetadataSyncedWithoutRotation is the regression test for the
+// template-propagation gap: a metadata-only template change (a
+// Cluster.spec.annotations edit, a label change) must reach the live pod IN
+// PLACE — no roll-grant, no drain, no restart. Spec changes remain the
+// rotation-worthy class (TestPodRotationWithoutGrant covers that gate).
+func (s *BrokerControllerSuite) TestPodMetadataSyncedWithoutRotation() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
+
+	target := brokers[0]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+	// The adopted pod predates the Broker CR: the adoption backfill must
+	// have stamped the desired spec hash onto it (treating it as current) —
+	// otherwise every migration would queue a pointless roll.
+	desiredHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+	require.NotEmpty(t, desiredHash)
+	var podBefore corev1.Pod
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &podBefore)) {
+			return
+		}
+		assert.Equal(ct, desiredHash, podBefore.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation],
+			"adoption should backfill the spec hash onto the pre-existing pod")
+	}, time.Minute, 2*time.Second)
+
+	// A pure-metadata template change: annotation and label move, the spec
+	// hash stays put. NO roll-grant is issued.
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	p := client.MergeFrom(target.DeepCopy())
+	target.Spec.PodTemplate.Annotations["test.redpanda.com/propagation"] = "works"
+	if target.Spec.PodTemplate.Labels == nil {
+		target.Spec.PodTemplate.Labels = map[string]string{}
+	}
+	target.Spec.PodTemplate.Labels["test.redpanda.com/label"] = "works"
+	require.Equal(t, desiredHash, target.Spec.PodTemplate.Hash(),
+		"metadata must not move the spec hash")
+	require.NoError(t, c.Patch(ctx, target, p))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var pod corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod)) {
+			return
+		}
+		assert.Equal(ct, "works", pod.Annotations["test.redpanda.com/propagation"])
+		assert.Equal(ct, "works", pod.Labels["test.redpanda.com/label"])
+		assert.Equal(ct, podBefore.UID, pod.UID, "metadata sync must not recreate the pod")
+	}, 2*time.Minute, 2*time.Second, "metadata never reached the live pod")
+
+	// The rotation bookkeeping keys were not disturbed by the sync.
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	require.Equal(t, podBefore.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation],
+		pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation])
+	require.Equal(t, desiredHash, pod.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation])
+}
+
 func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
@@ -529,9 +588,13 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &podBefore))
 
 	// Change the desired checksum so the pod is outdated; no grant exists.
+	// Re-stamp the template hash the way every production template writer
+	// does — grants are keyed on it.
 	newChecksum := "deliberately-changed-checksum"
 	p := client.MergeFrom(target.DeepCopy())
 	target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"] = newChecksum
+	target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = target.Spec.PodTemplate.Hash()
+	newTemplateHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	// Drift is reported...
@@ -553,13 +616,14 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 		return pod.UID != podBefore.UID
 	}, 30*time.Second, 2*time.Second, "pod was rotated without a roll-grant")
 
-	// Issue a grant matching the new checksum: the rotation may now proceed.
+	// Issue a grant matching the new template hash: the rotation may now
+	// proceed.
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
 	p = client.MergeFrom(target.DeepCopy())
 	if target.Annotations == nil {
 		target.Annotations = map[string]string{}
 	}
-	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(newChecksum, time.Now().Add(10*time.Minute))
+	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(newTemplateHash, time.Now().Add(10*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
@@ -690,8 +754,8 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	if target.Annotations == nil {
 		target.Annotations = map[string]string{}
 	}
-	checksum := target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(checksum, time.Now().Add(30*time.Minute))
+	templateHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(templateHash, time.Now().Add(30*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	// Create a replacement k3d node so the pod has somewhere to schedule,
@@ -778,9 +842,18 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 		podSpec := pod.Spec
 		podSpec.NodeName = ""
 
-		specBytes, err := yaml.Marshal(podSpec)
-		require.NoError(t, err)
-		checksum := fmt.Sprintf("%x", sha256.Sum256(specBytes))
+		// Use the checksum the chart stamped on the live pod: the adoption
+		// backfill preserves a pod's existing checksum (overwriting would
+		// swallow pending rotations), so a synthetic value here would leave
+		// every adopted broker permanently PodOutdated — parked at the
+		// rotation step waiting for a grant, never reaching the steps behind
+		// it (e.g. the in-place metadata sync).
+		checksum := pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]
+		if checksum == "" {
+			specBytes, err := yaml.Marshal(podSpec)
+			require.NoError(t, err)
+			checksum = fmt.Sprintf("%x", sha256.Sum256(specBytes))
+		}
 
 		storage := redpandav1alpha2.BrokerStorage{}
 		if opts.useVolumeClaimTemplates {
@@ -829,6 +902,10 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 				Storage: storage,
 			},
 		}
+		// Stamp the rotation identity the way the cluster controller does;
+		// grants are keyed on it. The adopted pods predate the Broker and
+		// lack the annotation — the adoption backfill covers them.
+		broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = broker.Spec.PodTemplate.Hash()
 		require.NoError(t, c.Create(ctx, broker))
 		brokers = append(brokers, broker)
 	}
@@ -846,8 +923,8 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 			if b.Annotations == nil {
 				b.Annotations = map[string]string{}
 			}
-			checksum := b.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-			b.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(checksum, deadline)
+			templateHash := b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+			b.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(templateHash, deadline)
 			require.NoError(t, c.Patch(ctx, b, p))
 		}
 	}

@@ -15,7 +15,6 @@ func init() {
 	// General scenario steps
 	framework.RegisterStep(`^(vectorized )?cluster "([^"]*)" is available$`, checkClusterAvailability)
 	framework.RegisterStep(`^I apply Kubernetes manifest:$`, iApplyKubernetesManifest)
-	framework.RegisterStep(`^I apply Kubernetes manifest without cleanup:$`, iApplyKubernetesManifestWithoutCleanup)
 	framework.RegisterStep(`^I exec "([^"]+)" in a Pod matching "([^"]+)", it will output:$`, execInPodMatchingEventuallyMatches)
 	framework.RegisterStep(`^kubectl exec -it "([^"]+)" "([^"]+)" will eventually output:$`, execInPodEventuallyMatches)
 	framework.RegisterStep(`Pod "([^"]+)" (?:will|is) eventually(?: be)? (Running|Pending)`, podWillEventuallyBeInPhase)

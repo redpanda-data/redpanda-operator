@@ -135,6 +135,9 @@ func createBrokerCRsForCluster(ctx context.Context, t framework.TestingT, cluste
 				},
 			},
 		}
+		// Stamp the rotation identity the way every template writer must;
+		// the adoption backfill copies it onto the pre-existing pod.
+		broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = broker.Spec.PodTemplate.Hash()
 		require.NoError(t, t.Create(ctx, broker))
 		t.Logf("Created Broker CR %q (networkIndex=%d)", brokerName, i)
 	}
@@ -154,14 +157,15 @@ func grantRollGrantToBroker(ctx context.Context, t framework.TestingT, brokerNam
 	var broker redpandav1alpha2.Broker
 	require.NoError(t, t.Get(ctx, key, &broker))
 
-	checksum := broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]
-	require.NotEmpty(t, checksum, "broker %q missing config checksum", brokerName)
+	// Grants are keyed on the pod-template hash — the rotation identity.
+	templateHash := broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+	require.NotEmpty(t, templateHash, "broker %q missing pod-template hash", brokerName)
 
 	patch := runtimeclient.MergeFrom(broker.DeepCopy())
 	if broker.Annotations == nil {
 		broker.Annotations = map[string]string{}
 	}
-	broker.Annotations[feature.RollGrant.Key] = feature.FormatRollGrant(checksum, time.Now().Add(feature.RollGrantTTL))
+	broker.Annotations[feature.RollGrant.Key] = feature.FormatRollGrant(templateHash, time.Now().Add(feature.RollGrantTTL))
 	require.NoError(t, t.Patch(ctx, &broker, patch))
 	t.Logf("Granted roll-grant to Broker %q", brokerName)
 }
@@ -328,6 +332,9 @@ func updateBrokerPodTemplateEnv(ctx context.Context, t framework.TestingT, broke
 		}
 		checksum = fmt.Sprintf("%x", sha256.Sum256(specBytes))
 		broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = checksum
+		// Every template writer must re-stamp the rotation identity after a
+		// mutation — grants are keyed on it.
+		broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = broker.Spec.PodTemplate.Hash()
 
 		return t.Update(ctx, &broker)
 	}))
@@ -671,8 +678,15 @@ func addAdditionalConfigurationToV1Cluster(ctx context.Context, t framework.Test
 
 // podsShouldRollOneAtATime waits until every pod from the UID snapshot (taken
 // via snapshotPodUIDs) has been replaced and is ready again, while asserting
-// that at no sampled point more than one pod was unavailable — i.e. the
-// cluster controller serialized the roll via roll-grants.
+// that at no sampled point more than one pod was being REPLACED — i.e. the
+// cluster controller serialized the roll via roll-grants. "Being replaced"
+// means deleted (missing) or recreated-but-never-yet-ready; once a
+// replacement has been observed Ready its roll is complete and later
+// readiness dips don't re-count it. Readiness alone is deliberately not the
+// signal: the V1 readiness probe reports CLUSTER health, so every rotation's
+// node-down window can flip neighboring pods unready, and a k3d agent
+// NotReady blip marks all its pods unready at once — neither is a
+// serialization violation.
 func podsShouldRollOneAtATime(ctx context.Context, t framework.TestingT, clusterName string) {
 	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
 	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
@@ -680,6 +694,9 @@ func podsShouldRollOneAtATime(ctx context.Context, t framework.TestingT, cluster
 
 	key := t.ResourceKey(clusterName)
 	maxUnavailable := 0
+	// wasReady latches per pod name once its REPLACEMENT has been observed
+	// Ready: from then on that pod's roll is done, whatever its probe says.
+	wasReady := map[string]bool{}
 	require.Eventually(t, func() bool {
 		var pods corev1.PodList
 		if err := t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
@@ -694,22 +711,32 @@ func podsShouldRollOneAtATime(ctx context.Context, t framework.TestingT, cluster
 			byName[pods.Items[i].Name] = &pods.Items[i]
 		}
 
-		unavailable, replaced := 0, 0
+		unavailable, replaced, readyNow := 0, 0, 0
 		for name, oldUID := range snap {
 			pod, exists := byName[name]
+			replacedUID := exists && string(pod.UID) != oldUID
+			ready := exists && utils.IsPodReady(pod)
+			if replacedUID && ready {
+				wasReady[name] = true
+			}
+			if ready {
+				readyNow++
+			}
 			switch {
-			case !exists || !utils.IsPodReady(pod):
+			case !exists || (replacedUID && !wasReady[name]):
 				unavailable++
-			case string(pod.UID) != oldUID:
+			case replacedUID:
 				replaced++
 			}
 		}
 		if unavailable > maxUnavailable {
 			maxUnavailable = unavailable
 		}
-		t.Logf("Roll progress for cluster %q: %d/%d replaced, %d unavailable (max seen %d)",
-			clusterName, replaced, len(snap), unavailable, maxUnavailable)
-		return unavailable == 0 && replaced == len(snap)
+		t.Logf("Roll progress for cluster %q: %d/%d replaced, %d unavailable, %d ready (max unavailable seen %d)",
+			clusterName, replaced, len(snap), unavailable, readyNow, maxUnavailable)
+		// Done when every pod is replaced AND currently ready — the latch
+		// only relaxes the mid-roll accounting, not the exit condition.
+		return unavailable == 0 && replaced == len(snap) && readyNow == len(snap)
 	}, 15*time.Minute, 2*time.Second, "pods for cluster %q never finished rolling", clusterName)
 
 	require.LessOrEqual(t, maxUnavailable, 1,

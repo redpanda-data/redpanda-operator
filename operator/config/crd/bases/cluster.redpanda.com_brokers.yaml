@@ -26,6 +26,14 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
+    - description: Kind of the owning resource; empty means the default (Redpanda)
+      jsonPath: .spec.clusterRef.kind
+      name: Owner Kind
+      type: string
+    - description: Name of the owning resource
+      jsonPath: .spec.clusterRef.name
+      name: Owner
+      type: string
     - jsonPath: .status.conditions[?(@.type=="Ready")].status
       name: Ready
       type: string

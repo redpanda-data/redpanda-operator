@@ -1,8 +1,8 @@
-@serial @default-namespace
+@serial
 Feature: Broker CRD with V1 Cluster inlined nodePools
   @skip:gke @skip:aks @skip:eks
   Scenario: V1 Cluster with inlined nodePools creates Broker CRs per pool
-    Given I apply Kubernetes manifest without cleanup:
+    Given I apply Kubernetes manifest:
       """
       apiVersion: redpanda.vectorized.io/v1alpha1
       kind: Cluster
@@ -13,7 +13,6 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
       spec:
         image: ${DEFAULT_REDPANDA_REPO}
         version: ${DEFAULT_REDPANDA_TAG}
-        replicas: null
         additionalConfiguration: {}
         podDisruptionBudget:
           enabled: true
@@ -40,6 +39,18 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
         nodePools:
           - name: blue-a
             replicas: 3
+            # See the sibling features: override the harpoon k3d cluster's
+            # aggressive 10s not-ready/unreachable eviction default — UID
+            # stability is asserted here.
+            tolerations:
+              - key: node.kubernetes.io/not-ready
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 300
+              - key: node.kubernetes.io/unreachable
+                operator: Exists
+                effect: NoExecute
+                tolerationSeconds: 300
             storage:
               capacity: 2Gi
             cloudCacheStorage:

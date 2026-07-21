@@ -458,6 +458,16 @@ func brokersFromStatefulSet(
 		podSpec.Subdomain = cluster.Name
 		normalizePodSpecDefaults(&podSpec)
 
+		// Broker-mode drain and maintenance-mode handling is controller-driven
+		// (BrokerReconciler.ensureDrained + the registration pass's disable);
+		// the StatefulSet-era lifecycle hook scripts are redundant here, and
+		// their render gate (CalculateCurrentReplicas > 1) reads volatile
+		// cluster STATUS — keeping them would churn the pod-template hash
+		// through bootstrap and migration and trigger spurious rotations.
+		for ci := range podSpec.Containers {
+			podSpec.Containers[ci].Lifecycle = nil
+		}
+
 		for vi := range podSpec.Volumes {
 			v := &podSpec.Volumes[vi]
 			if v.PersistentVolumeClaim != nil && vctNames[v.PersistentVolumeClaim.ClaimName] {
@@ -497,6 +507,18 @@ func brokersFromStatefulSet(
 			brokerAnnotations = map[string]string{feature.BrokerDeletionPolicy.Key: policy}
 		}
 
+		podTemplate := redpandav1alpha2.BrokerPodTemplate{
+			Labels:      brokerLabels,
+			Annotations: podAnnotations,
+			Spec:        podSpec,
+		}
+		// The rotation identity: any pod SPEC change — image, resources, env
+		// — must reach live pods, not only changes that alter the rendered
+		// node config. Template metadata is excluded: the Broker controller
+		// syncs it onto live pods in place, without a rotation (see
+		// BrokerPodTemplateHashAnnotation).
+		podTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = podTemplate.Hash()
+
 		broker := redpandav1alpha2.Broker{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   cluster.Namespace,
@@ -510,12 +532,8 @@ func brokersFromStatefulSet(
 					Name:  cluster.Name,
 				},
 				NetworkIndex: ptr.To(i),
-				PodTemplate: redpandav1alpha2.BrokerPodTemplate{
-					Labels:      brokerLabels,
-					Annotations: podAnnotations,
-					Spec:        podSpec,
-				},
-				Storage: storage,
+				PodTemplate:  podTemplate,
+				Storage:      storage,
 			},
 		}
 
@@ -620,9 +638,11 @@ func (r *BrokerSetResource) updateBroker(ctx context.Context, l logr.Logger, exi
 // (health-gated) and revokes; the Broker controller only reads it.
 //
 // Grant lifecycle per reconcile:
-//  1. Revoke grants that completed (pod matches desired checksum, is ready,
-//     and the broker is registered) or went stale (checksum mismatch after a
-//     config change mid-roll).
+//  1. Revoke grants that completed (pod matches the desired template, is
+//     ready, and the broker is registered). A grant whose template hash went
+//     stale mid-roll (desired-template change) is re-keyed IN PLACE — never
+//     handed to another broker, since the holder may be half drained and
+//     only one broker may be in maintenance mode at a time.
 //  2. If any unexpired grant remains, wait — never double-grant. Expired
 //     grants are treated as released (feature.RollGrantTTL is a safety valve
 //     against controller restarts and wedged rolls).
@@ -661,7 +681,10 @@ func (r *BrokerSetResource) ensureRollGrants(ctx context.Context, l logr.Logger)
 		// (BrokerRegistered condition, recomputed by the Broker controller
 		// from a live admin-API observation each reconcile): the rotated pod
 		// must have rejoined under the same node_id (RFC rolling step 3).
-		desiredChecksum := b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]
+		// The grant is keyed on the pod-template SPEC hash, so a desired-spec
+		// change mid-roll marks it stale (metadata changes sync in place and
+		// neither need nor invalidate a grant).
+		desiredHash := b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
 		rollComplete := pod != nil &&
 			!b.PodOutdated(pod) &&
 			utils.IsPodReady(pod) &&
@@ -670,8 +693,8 @@ func (r *BrokerSetResource) ensureRollGrants(ctx context.Context, l logr.Logger)
 		if grant := b.Annotations[feature.RollGrant.Key]; grant != "" {
 			grantChecksum, deadline, ok := feature.ParseRollGrant(grant)
 			switch {
-			case !ok || grantChecksum != desiredChecksum:
-				l.Info("revoking stale roll-grant", "broker", b.Name, "grant", grant)
+			case !ok:
+				l.Info("revoking malformed roll-grant", "broker", b.Name, "grant", grant)
 				if err := r.revokeRollGrant(ctx, b); err != nil {
 					return err
 				}
@@ -680,6 +703,19 @@ func (r *BrokerSetResource) ensureRollGrants(ctx context.Context, l logr.Logger)
 				if err := r.revokeRollGrant(ctx, b); err != nil {
 					return err
 				}
+			case grantChecksum != desiredHash:
+				// The desired template changed mid-roll. NEVER hand the
+				// grant to another broker here: the holder may be half
+				// drained, and a revocation would strand it in maintenance
+				// mode — deadlocking the next grantee's drain (Redpanda
+				// allows one broker in maintenance at a time). Re-key the
+				// grant in place instead; the rotation applies the newest
+				// template at pod recreation, so the roll converges.
+				l.Info("re-keying mid-roll grant after desired-template change", "broker", b.Name)
+				if err := r.grantRoll(ctx, b, desiredHash, now); err != nil {
+					return err
+				}
+				activeGrants++
 			case now.Before(deadline):
 				activeGrants++
 			default:
@@ -751,23 +787,31 @@ func (r *BrokerSetResource) ensureRollGrants(ctx context.Context, l logr.Logger)
 	}
 
 	granted := candidates[0]
-	checksum := granted.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]
-	grant := feature.FormatRollGrant(checksum, now.Add(feature.RollGrantTTL))
-	l.Info("granting roll", "broker", granted.Name, "grant", grant, "outstanding", len(candidates))
-
-	p := k8sclient.MergeFrom(granted.DeepCopy())
-	if granted.Annotations == nil {
-		granted.Annotations = map[string]string{}
-	}
-	granted.Annotations[feature.RollGrant.Key] = grant
-	if err := r.Patch(ctx, granted, p); err != nil {
-		return fmt.Errorf("granting roll to Broker %s: %w", granted.Name, err)
+	templateHash := granted.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+	l.Info("granting roll", "broker", granted.Name, "outstanding", len(candidates))
+	if err := r.grantRoll(ctx, granted, templateHash, now); err != nil {
+		return err
 	}
 
 	return &RequeueAfterError{
 		RequeueAfter: RequeueDuration,
 		Msg:          fmt.Sprintf("granted roll to Broker %s", granted.Name),
 	}
+}
+
+// grantRoll stamps a roll-grant keyed on the given template hash with a
+// fresh deadline, both for first issuance and for re-keying a mid-roll grant
+// after a desired-template change.
+func (r *BrokerSetResource) grantRoll(ctx context.Context, b *redpandav1alpha2.Broker, templateHash string, now time.Time) error {
+	p := k8sclient.MergeFrom(b.DeepCopy())
+	if b.Annotations == nil {
+		b.Annotations = map[string]string{}
+	}
+	b.Annotations[feature.RollGrant.Key] = feature.FormatRollGrant(templateHash, now.Add(feature.RollGrantTTL))
+	if err := r.Patch(ctx, b, p); err != nil {
+		return fmt.Errorf("granting roll to Broker %s: %w", b.Name, err)
+	}
+	return nil
 }
 
 func (r *BrokerSetResource) revokeRollGrant(ctx context.Context, b *redpandav1alpha2.Broker) error {

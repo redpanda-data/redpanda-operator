@@ -1,0 +1,32 @@
+# Control experiment for broker-image-upgrade step 02: the SAME cluster spec
+# WITHOUT the migrate-to-broker-cr annotation — StatefulSet-managed.
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: sts-annotation
+spec:
+  image: "redpandadata/redpanda"
+  version: "v25.1.9"
+  replicas: 3
+  restartConfig:
+    underReplicatedPartitionThreshold: 0
+  resources:
+    requests:
+      cpu: "100m"
+      memory: 256Mi
+    limits:
+      cpu: "100m"
+      memory: 256Mi
+    redpanda:
+      memory: 217Mi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      - port: 9092
+    adminApi:
+      - port: 9644
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''
