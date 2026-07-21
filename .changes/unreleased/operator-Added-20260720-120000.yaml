@@ -1,4 +1,0 @@
-project: operator
-kind: Added
-body: "`Pipeline` CRs can now be horizontally autoscaled (**Beta**): the Pipeline CRD exposes the Kubernetes scale subresource (`.spec.replicas` / `.status.replicas` / `.status.selector`), so `kubectl scale`, HorizontalPodAutoscaler, and KEDA ScaledObjects can drive pipeline replicas directly. CPU/memory HPAs work out of the box (pipeline pods always carry resource requests); scaling on Redpanda Connect's own metrics (`input_received`, `output_sent`, ...) works through prometheus-adapter custom metrics or a KEDA `prometheus`/`kafka` trigger. `spec.paused` keeps precedence over autoscaler-written replica counts."
-time: 2026-07-20T12:00:00.000000-07:00
