@@ -5,7 +5,7 @@ processor:
   - 'NodePool.*$'
   - 'EmbeddedNodePoolSpec$'
   - 'Deprecated.*$'
-  - 'Stretch.*$'
+  - '\.Broker.*$' # The Broker CRD is dark-launched (--enable-broker, default false); dot-prefixed so RedpandaBrokerPool stays documented.
   ignoreFields:
   - 'migration$'
   customMarkers:

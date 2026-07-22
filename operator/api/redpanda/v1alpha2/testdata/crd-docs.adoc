@@ -13,7 +13,6 @@
 
 
 .Resource Types
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker[$$Broker$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-console[$$Console$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-group[$$Group$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipeline[$$Pipeline$$]
@@ -22,6 +21,7 @@
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandarole[$$RedpandaRole$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schema[$$Schema$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlink[$$ShadowLink$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchcluster[$$StretchCluster$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topic[$$Topic$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-user[$$User$$]
 
@@ -349,6 +349,7 @@ Auth configures authentication in the Helm values. See https://docs.redpanda.com
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -468,329 +469,6 @@ taken from sasl.mechanism. + |  | Enum: [SCRAM-SHA-256 SCRAM-SHA-512] +
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker"]
-==== Broker
-
-
-
-
-
-
-
-
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
-| *`kind`* __string__ | `Broker` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
-| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
- |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]__ |  |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstatus[$$BrokerStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Ready] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:PodScheduled] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:StorageBound] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:BrokerRegistered] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:ConfigSynced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerphase"]
-==== BrokerPhase
-
-_Underlying type:_ _string_
-
-BrokerPhase describes the lifecycle phase of a Broker.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstatus[$$BrokerStatus$$]
-****
-
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpodtemplate"]
-==== BrokerPodTemplate
-
-
-
-BrokerPodTemplate defines the pod metadata and spec for a broker.
-Uses flattened labels/annotations instead of nested ObjectMeta to avoid
-strict decoding issues with controller-gen's bare `metadata: type: object`.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`labels`* __object (keys:string, values:string)__ | Labels to apply to the pod. + |  | Optional: \{} +
-
-| *`annotations`* __object (keys:string, values:string)__ | Annotations to apply to the pod. + |  | Optional: \{} +
-
-| *`spec`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#podspec-v1-core[$$PodSpec$$]__ | Spec is the pod spec. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec"]
-==== BrokerPoolSpec
-
-
-
-NodePoolSpec contains the node pool spec for the given node pool.
-Note that the defaulting behavior comes from the underlying Redpanda
-chart renderer, the attributes specified here will get merged in and
-override the defaults.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool[$$RedpandaBrokerPool$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | AdditionalSelectorLabels are extra labels added to the StatefulSet's +
-pod selector and pod template. Lets operators bucket pods by custom +
-dimensions (e.g. team, environment) without affecting the operator- +
-managed labels. + |  | 
-| *`replicas`* __integer__ | Replicas is the desired number of broker pods in this pool. Defaults +
-to 1 if unset. + |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ | AdditionalRedpandaCmdFlags are extra flags appended to the +
-`rpk redpanda start` command line for every broker in this pool. + |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a strategic-merge patch applied on top of the +
-operator-rendered Pod template. Common uses: nodeSelector, +
-tolerations, custom volumes, sidecar containers, security context +
-overrides. + |  | 
-| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ | InitContainers controls the init containers the operator renders +
-(fs-validator, set-data-dir-ownership, configurator). Lets users +
-toggle them on/off and tune flags. + |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Image is the Redpanda container image (repository + tag) for this +
-pool. Defaults to the operator's built-in chart-pinned image when +
-unset. + |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | SidecarImage is the operator sidecar container image for this pool. +
-Defaults to the operator's own image at build time. + |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | InitContainerImage is the image used for init containers that don't +
-need the full Redpanda binary (e.g. busybox for fs-validator, +
-chown). Defaults to busybox:latest. + |  | 
-| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for +
-PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces +
-any value inherited from the parent Redpanda CRD's +
-`statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level +
-value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used. +
-Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via +
-scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's +
-StatefulSet is deleted. + |  | 
-| *`clusterDomain`* __string__ | ClusterDomain customizes the Kubernetes cluster DNS domain used to +
-generate internal pod hostnames (`<pod>.<svc>.<ns>.svc.<domain>`). +
-Defaults to `cluster.local`. Per-pool to support clusters that span +
-k8s environments with different DNS roots. + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | TLS configures the listener cert set (server certs, optional client +
-certs, CA toggles, custom issuers). Per-pool so different pools can +
-run different listener TLS configurations while sharing the +
-cluster-wide root CA managed by the operator. + |  | 
-| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | External configures external access (NodePort / LoadBalancer types, +
-advertised addresses, ExternalDNS hookup). Per-pool so pools in +
-different regions/clouds can expose themselves differently. + |  | 
-| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | RBAC toggles operator-managed Roles / ClusterRoles for this pool +
-(sidecar perms, rpk-debug-bundle perms, metrics-reader). Per-pool +
-because the bound ServiceAccount is per-pool. + |  | 
-| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | ServiceAccount controls creation and naming of the per-pool +
-ServiceAccount used by broker / sidecar pods. Per-pool so users can +
-pre-create SAs with their own IAM bindings (workload identity, etc.). + |  | 
-| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Monitoring toggles the per-pool ServiceMonitor. Per-pool so different +
-pools can opt in/out of Prometheus scraping independently. + |  | 
-| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | ImagePullSecrets are private-registry credentials for pulling the +
-Redpanda / sidecar / init-container images. When non-empty, this +
-list fully overrides any list set on StretchClusterSpec; when +
-empty/nil, the cluster's list is inherited. See +
-BrokerPoolSpec.MergeFromCluster. + |  | 
-| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | RackAwareness configures the Kubernetes node-label that's mapped to +
-the broker's `rack` config so Redpanda places replicas across racks/ +
-zones. Per-pool because rack labels can differ between K8s clusters. + |  | 
-| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ |  |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolstatus"]
-==== BrokerPoolStatus
-
-
-
-BrokerPoolStatus defines the observed state of any node pools tied to this cluster
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandabrokerpool[$$RedpandaBrokerPool$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | Name is the name of the pool + |  | 
-| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
-the node pool. This differs from DesiredReplicas during +
-a scaling operation, but should be the same once the cluster +
-has quiesced. + |  | 
-| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
-run for the cluster. It combines the desired replicas across +
-all node pools. + |  | 
-| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
-match their node pool definitions. If OutOfDateReplicas is not 0 +
-it should mean that the operator will soon roll this many pods. + |  | 
-| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
-their node pool definitions. + |  | 
-| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
-as part of a scaling down operation. + |  | 
-| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
-currently passing. + |  | 
-| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
-state. + |  | 
-| *`deployedGeneration`* __integer__ | DeployedGeneration represents the generation of the NodePool CRD that is currently +
-deployed as a StatefulSet + |  | 
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda. + |  | Optional: \{} +
-
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec"]
-==== BrokerSpec
-
-
-
-BrokerSpec defines the desired state of a single Redpanda broker.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker[$$Broker$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`clusterRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clusterref[$$ClusterRef$$]__ | ClusterRef references the parent resource that owns this Broker. +
-Supported targets: +
-- V1 Cluster: group=redpanda.vectorized.io, kind=Cluster +
-- V2 Redpanda: group=cluster.redpanda.com (default), kind=Redpanda (default) +
-- NodePool: group=cluster.redpanda.com (default), kind=NodePool +
-When pointing to a NodePool, the controller resolves the underlying +
-cluster through the NodePool's own ClusterRef. + |  | Required: \{} +
-
-| *`decommission`* __boolean__ | Decommission, when set to true, triggers the Broker controller to +
-decommission this broker via the Redpanda admin API. Decommission is +
-never triggered on raw CR deletion alone — only when this field is +
-explicitly set. + |  | Optional: \{} +
-
-| *`networkIndex`* __integer__ | NetworkIndex is the stable external-addressing slot for this broker. +
-For ordinal-named pods this is the pod ordinal; the V2 chart uses it +
-to select external.addresses[networkIndex]. The value is captured from +
-the parsed ordinal at migration time and preserved across pod rotation. +
-Required: the index is also the pod-name suffix, so an omitted value +
-would collide with an explicit networkIndex: 0. + |  | Minimum: 0 +
-Required: \{} +
-
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpodtemplate[$$BrokerPodTemplate$$]__ | PodTemplate is the fully resolved pod spec for this broker. + |  | 
-| *`storage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]__ | Storage defines PVC templates or references to existing claims. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstatus"]
-==== BrokerStatus
-
-
-
-BrokerStatus defines the observed state of a single Redpanda broker.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-broker[$$Broker$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`phase`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerphase[$$BrokerPhase$$]__ | Phase is the high-level lifecycle state of the broker. + |  | Optional: \{} +
-
-| *`brokerID`* __integer__ | BrokerID is the Redpanda node_id, discovered via the admin API after +
-the broker registers with the cluster. Nil until discovered. + |  | Optional: \{} +
-
-| *`podName`* __string__ | PodName is the name of the pod managed by this Broker CR. + |  | Optional: \{} +
-
-| *`podIP`* __string__ | PodIP is the IP address of the pod managed by this Broker CR. + |  | Optional: \{} +
-
-| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Broker. + |  | Optional: \{} +
-
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage"]
-==== BrokerStorage
-
-
-
-BrokerStorage configures persistent storage for the broker.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`volumeClaimTemplates`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokervolumeclaim[$$BrokerVolumeClaim$$] array__ | VolumeClaimTemplates for new brokers (fresh PVC creation). + |  | Optional: \{} +
-
-| *`existingClaims`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-existingclaim[$$ExistingClaim$$] array__ | ExistingClaims for migrated brokers (references to StatefulSet-created PVCs). + |  | Optional: \{} +
-
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokervolumeclaim"]
-==== BrokerVolumeClaim
-
-
-
-BrokerVolumeClaim defines a PVC template with an explicit name field,
-avoiding the embedded ObjectMeta strict-decoding issue.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | Name of the PVC to create. + |  | 
-| *`spec`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#persistentvolumeclaimspec-v1-core[$$PersistentVolumeClaimSpec$$]__ | Spec defines the desired characteristics of the volume. + |  | 
-|===
-
-
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-budget"]
 ==== Budget
 
@@ -824,6 +502,7 @@ CPU configures CPU resources for containers. See https://docs.redpanda.com/curre
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resources[$$Resources$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchresources[$$StretchResources$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -934,8 +613,6 @@ ClusterRef represents a reference to a cluster that is being targeted.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerspec[$$BrokerSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-clustersource[$$ClusterSource$$]
 ****
 
@@ -1060,6 +737,7 @@ Config configures Redpanda config properties supported by Redpanda that may not 
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -1428,6 +1106,7 @@ CredentialSecretRef can be used to set cloud_storage_secret_key from referenced 
 
 .Appears In:
 ****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtiered[$$StretchTiered$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered[$$Tiered$$]
 ****
 
@@ -1479,121 +1158,8 @@ on remote Kubernetes clusters.
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec"]
-==== EmbeddedBrokerPoolSpec
 
 
-
-
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`additionalSelectorLabels`* __object (keys:string, values:string)__ | AdditionalSelectorLabels are extra labels added to the StatefulSet's +
-pod selector and pod template. Lets operators bucket pods by custom +
-dimensions (e.g. team, environment) without affecting the operator- +
-managed labels. + |  | 
-| *`replicas`* __integer__ | Replicas is the desired number of broker pods in this pool. Defaults +
-to 1 if unset. + |  | 
-| *`additionalRedpandaCmdFlags`* __string array__ | AdditionalRedpandaCmdFlags are extra flags appended to the +
-`rpk redpanda start` command line for every broker in this pool. + |  | 
-| *`podTemplate`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-podtemplate[$$PodTemplate$$]__ | PodTemplate is a strategic-merge patch applied on top of the +
-operator-rendered Pod template. Common uses: nodeSelector, +
-tolerations, custom volumes, sidecar containers, security context +
-overrides. + |  | 
-| *`initContainers`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-poolinitcontainers[$$PoolInitContainers$$]__ | InitContainers controls the init containers the operator renders +
-(fs-validator, set-data-dir-ownership, configurator). Lets users +
-toggle them on/off and tune flags. + |  | 
-| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Image is the Redpanda container image (repository + tag) for this +
-pool. Defaults to the operator's built-in chart-pinned image when +
-unset. + |  | 
-| *`sidecarImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | SidecarImage is the operator sidecar container image for this pool. +
-Defaults to the operator's own image at build time. + |  | 
-| *`initContainerImage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-initcontainerimage[$$InitContainerImage$$]__ | InitContainerImage is the image used for init containers that don't +
-need the full Redpanda binary (e.g. busybox for fs-validator, +
-chown). Defaults to busybox:latest. + |  | 
-| *`persistentVolumeClaimRetentionPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#statefulsetpersistentvolumeclaimretentionpolicy-v1-apps[$$StatefulSetPersistentVolumeClaimRetentionPolicy$$]__ | PersistentVolumeClaimRetentionPolicy overrides the lifecycle policy for +
-PersistentVolumeClaims on this NodePool's StatefulSet. When set, it replaces +
-any value inherited from the parent Redpanda CRD's +
-`statefulset.persistentVolumeClaimRetentionPolicy`. When unset, the cluster-level +
-value (or the Kubernetes default of `Retain`/`Retain` if also unset) is used. +
-Set `whenScaled: Delete` to delete a broker's PVC when it is decommissioned via +
-scale-down, and `whenDeleted: Delete` to delete all PVCs when the NodePool's +
-StatefulSet is deleted. + |  | 
-| *`clusterDomain`* __string__ | ClusterDomain customizes the Kubernetes cluster DNS domain used to +
-generate internal pod hostnames (`<pod>.<svc>.<ns>.svc.<domain>`). +
-Defaults to `cluster.local`. Per-pool to support clusters that span +
-k8s environments with different DNS roots. + |  | 
-| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls[$$TLS$$]__ | TLS configures the listener cert set (server certs, optional client +
-certs, CA toggles, custom issuers). Per-pool so different pools can +
-run different listener TLS configurations while sharing the +
-cluster-wide root CA managed by the operator. + |  | 
-| *`external`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external[$$External$$]__ | External configures external access (NodePort / LoadBalancer types, +
-advertised addresses, ExternalDNS hookup). Per-pool so pools in +
-different regions/clouds can expose themselves differently. + |  | 
-| *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | RBAC toggles operator-managed Roles / ClusterRoles for this pool +
-(sidecar perms, rpk-debug-bundle perms, metrics-reader). Per-pool +
-because the bound ServiceAccount is per-pool. + |  | 
-| *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | ServiceAccount controls creation and naming of the per-pool +
-ServiceAccount used by broker / sidecar pods. Per-pool so users can +
-pre-create SAs with their own IAM bindings (workload identity, etc.). + |  | 
-| *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Monitoring toggles the per-pool ServiceMonitor. Per-pool so different +
-pools can opt in/out of Prometheus scraping independently. + |  | 
-| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | ImagePullSecrets are private-registry credentials for pulling the +
-Redpanda / sidecar / init-container images. When non-empty, this +
-list fully overrides any list set on StretchClusterSpec; when +
-empty/nil, the cluster's list is inherited. See +
-BrokerPoolSpec.MergeFromCluster. + |  | 
-| *`rackAwareness`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rackawareness[$$RackAwareness$$]__ | RackAwareness configures the Kubernetes node-label that's mapped to +
-the broker's `rack` config so Redpanda places replicas across racks/ +
-zones. Per-pool because rack labels can differ between K8s clusters. + |  | 
-|===
-
-
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolstatus"]
-==== EmbeddedBrokerPoolStatus
-
-
-
-EmbeddedBrokerPoolStatus defines the observed state of any node pools tied to this cluster
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolstatus[$$BrokerPoolStatus$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | Name is the name of the pool + |  | 
-| *`replicas`* __integer__ | Replicas is the number of actual replicas currently across +
-the node pool. This differs from DesiredReplicas during +
-a scaling operation, but should be the same once the cluster +
-has quiesced. + |  | 
-| *`desiredReplicas`* __integer__ | DesiredReplicas is the number of replicas that ought to be +
-run for the cluster. It combines the desired replicas across +
-all node pools. + |  | 
-| *`outOfDateReplicas`* __integer__ | OutOfDateReplicas is the number of replicas that don't currently +
-match their node pool definitions. If OutOfDateReplicas is not 0 +
-it should mean that the operator will soon roll this many pods. + |  | 
-| *`upToDateReplicas`* __integer__ | UpToDateReplicas is the number of replicas that currently match +
-their node pool definitions. + |  | 
-| *`condemnedReplicas`* __integer__ | CondemnedReplicas is the number of replicas that will be decommissioned +
-as part of a scaling down operation. + |  | 
-| *`readyReplicas`* __integer__ | ReadyReplicas is the number of replicas whose readiness probes are +
-currently passing. + |  | 
-| *`runningReplicas`* __integer__ | RunningReplicas is the number of replicas that are actively in a running +
-state. + |  | 
-|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise"]
@@ -1608,6 +1174,7 @@ Enterprise configures an Enterprise license key to enable Redpanda Enterprise fe
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -1640,26 +1207,6 @@ EnterpriseLicenseSecretRef configures a reference to a Secret resource that cont
 |===
 
 
-[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-existingclaim"]
-==== ExistingClaim
-
-
-
-ExistingClaim references a pre-existing PVC by name.
-
-
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerstorage[$$BrokerStorage$$]
-****
-
-[cols="20a,50a,15a,15a", options="header"]
-|===
-| Field | Description | Default | Validation
-| *`name`* __string__ | Name of the existing PVC. + |  | 
-| *`mountPath`* __string__ | MountPath inside the container. + |  | 
-|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-external"]
@@ -1673,7 +1220,6 @@ External defines external connectivity settings in the Helm values.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
@@ -2184,7 +1730,6 @@ InitContainerImage configures the init container image used to perform initial s
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-statefulset[$$Statefulset$$]
 ****
@@ -2634,6 +2179,7 @@ Memory configures memory resources.
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-resources[$$Resources$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchresources[$$StretchResources$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -2678,7 +2224,6 @@ Monitoring configures monitoring resources for Redpanda. See https://docs.redpan
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
@@ -2779,6 +2324,27 @@ XValidation rules enforce this. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-networking"]
+==== Networking
+
+
+
+Networking configures cross-cluster networking for stretch clusters.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`crossClusterMode`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-crossclustermode[$$CrossClusterMode$$]__ | CrossClusterMode controls how per-pod Services route traffic to pods +
+on remote Kubernetes clusters. Defaults to "mesh". + |  | Enum: [mesh flat mcs] +
+
+|===
 
 
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-oidcloginsecrets"]
@@ -2915,6 +2481,8 @@ PersistentVolume configures configurations for a PersistentVolumeClaim to use to
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-storage[$$Storage$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchstorage[$$StretchStorage$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtiered[$$StretchTiered$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tiered[$$Tiered$$]
 ****
 
@@ -3349,7 +2917,6 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postinstalljob[$$PostInstallJob$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-postupgradejob[$$PostUpgradeJob$$]
@@ -3419,7 +2986,6 @@ PodTemplate will pass label and annotation to Statefulset Pod template.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 ****
 
@@ -3544,7 +3110,6 @@ RBAC configures role-based access control (RBAC).
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
@@ -3622,7 +3187,6 @@ RackAwareness configures rack awareness in the Helm values. See https://docs.red
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
@@ -3748,8 +3312,6 @@ More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-
 
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
-| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]__ |  |  | 
-| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolstatus[$$BrokerPoolStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Bound] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Deployed] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
 |===
 
 
@@ -3931,12 +3493,12 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rpcontrollers[$$RPControllers$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaconnectors[$$RedpandaConnectors$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-sidecars[$$SideCars$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -3960,6 +3522,7 @@ RedpandaImage configures the Redpanda container image settings in the Helm value
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandastatus[$$RedpandaStatus$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterstatus[$$StretchClusterStatus$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
@@ -4784,7 +4347,6 @@ ServiceAccount configures Service Accounts.
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
@@ -5720,6 +5282,547 @@ Storage configures storage-related settings in the Helm values. See https://docs
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener"]
+==== StretchAPIListener
+
+
+
+StretchAPIListener configures an API listener (Admin, HTTP, Kafka, SchemaRegistry)
+for stretch clusters.
+
+Collapsed from Admin, HTTP, Kafka, SchemaRegistry — all identical after removing
+deprecated KafkaEndpoint field from HTTP and SchemaRegistry (was not respected)
+and deprecated SecretRef from ListenerTLS (had no effect).
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlisteners[$$StretchListeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
+| *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. + |  | 
+| *`appProtocol`* __string__ |  |  | 
+| *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistenertls[$$StretchListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. + |  | 
+| *`external`* __object (keys:string, values:xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchexternallistener[$$StretchExternalListener$$])__ | Defines settings for the external listeners. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchauditlogging"]
+==== StretchAuditLogging
+
+
+
+StretchAuditLogging configures how to perform audit logging for a redpanda cluster
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to enable audit logging or not + |  | 
+| *`partitions`* __integer__ | Integer value defining the number of partitions used by a newly created audit topic + |  | 
+| *`enabledEventTypes`* __string array__ | Event types that should be captured by audit logs + |  | 
+| *`excludedTopics`* __string array__ | List of topics to exclude from auditing + |  | 
+| *`excludedPrincipals`* __string array__ | List of principals to exclude from auditing + |  | 
+| *`clientMaxBufferSize`* __integer__ | Defines the number of bytes (in bytes) allocated by the internal audit client for audit messages. + |  | 
+| *`queueDrainIntervalMs`* __integer__ | In ms, frequency in which per shard audit logs are batched to client for write to audit log. + |  | 
+| *`queueMaxBufferSizePerShard`* __integer__ | Defines the maximum amount of memory used (in bytes) by the audit buffer in each shard + |  | 
+| *`replicationFactor`* __integer__ | Defines the replication factor for a newly created audit log topic. This configuration applies +
+only to the audit log topic and may be different from the cluster or other topic configurations. +
+This cannot be altered for existing audit log topics. Setting this value is optional. If a value is not provided, +
+Redpanda will use the `internal_topic_replication_factor` cluster config value. Default is `null` + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchcluster"]
+==== StretchCluster
+
+
+
+StretchCluster defines the CRD for StretchCluster configuration.
+
+
+
+
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
+| *`kind`* __string__ | `StretchCluster` | |
+| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
+Servers may infer this from the endpoint the client submits requests to. +
+Cannot be updated. +
+In CamelCase. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
+
+| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
+Servers should convert recognized schemas to the latest internal value, and +
+may reject unrecognized values. +
+More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
+
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+ |  | 
+| *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]__ |  |  | 
+| *`status`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterstatus[$$StretchClusterStatus$$]__ |  | { conditions:[map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Ready] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Healthy] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:LicenseValid] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:ResourcesSynced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:ConfigurationApplied] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:SpecSynced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:BootstrapUserSynced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Quiesced] map[lastTransitionTime:1970-01-01T00:00:00Z message:Waiting for controller reason:NotReconciled status:Unknown type:Stable]] } | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec"]
+==== StretchClusterSpec
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchcluster[$$StretchCluster$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`commonLabels`* __object (keys:string, values:string)__ | Assigns custom labels to all resources generated by the operator. Specify labels as key/value pairs. + |  | 
+| *`image`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaimage[$$RedpandaImage$$]__ | Defines the container image settings to use for the Redpanda cluster. + |  | 
+| *`imagePullSecrets`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ | Specifies credentials for a private image repository. For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/. + |  | 
+| *`enterprise`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise[$$Enterprise$$]__ | Defines an Enterprise license. + |  | 
+| *`auth`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-auth[$$Auth$$]__ | Defines authentication settings for listeners. + |  | 
+| *`logging`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlogging[$$StretchLogging$$]__ | Defines the log level settings. + |  | 
+| *`auditLogging`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchauditlogging[$$StretchAuditLogging$$]__ | Defines audit logging settings. + |  | 
+| *`resources`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchresources[$$StretchResources$$]__ | Defines container resource settings. + |  | 
+| *`storage`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchstorage[$$StretchStorage$$]__ | Defines storage settings for the Redpanda data directory and the Tiered Storage cache. + |  | 
+| *`tuning`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtuning[$$StretchTuning$$]__ | Defines settings for the autotuner tool in Redpanda. + |  | 
+| *`config`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-config[$$Config$$]__ | Defines configuration properties supported by Redpanda. + |  | 
+| *`networking`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-networking[$$Networking$$]__ | Defines cross-cluster networking settings. + |  | 
+| *`internalServiceAnnotations`* __object (keys:string, values:string)__ | InternalServiceAnnotations is applied to the headless ClusterIP +
+Service rendered for each member K8s cluster. The headless Service is +
+cluster-wide (one per K8s cluster, not per NodePool), so its +
+annotations live on StretchCluster.spec rather than on individual +
+pools. Typical use: annotations consumed by other operators or +
+controllers in the same cluster (DNS controllers, service-mesh +
+sidecars, etc.) that need to attach to the headless Service. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterstatus"]
+==== StretchClusterStatus
+
+
+
+
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchcluster[$$StretchCluster$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the StretchCluster. + |  | Optional: \{} +
+
+| *`configVersion`* __string__ | ConfigVersion contains the configuration version written in +
+Redpanda used for restarting broker nodes as necessary. + |  | Optional: \{} +
+
+| *`license`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandalicensestatus[$$RedpandaLicenseStatus$$]__ | LicenseStatus contains information about the current state of any +
+installed license in the Redpanda cluster. + |  | Optional: \{} +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchexternallistener"]
+==== StretchExternalListener
+
+
+
+StretchExternalListener configures an external listener in stretch clusters.
+
+Forked from ExternalListener: embeds StretchListener instead of Listener.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
+| *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. + |  | 
+| *`appProtocol`* __string__ |  |  | 
+| *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistenertls[$$StretchListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. + |  | 
+| *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
+| *`nodePort`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistener"]
+==== StretchListener
+
+
+
+StretchListener configures a single listener in stretch clusters.
+
+Forked from Listener: references StretchListenerTLS instead of ListenerTLS.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchexternallistener[$$StretchExternalListener$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
+| *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. + |  | 
+| *`appProtocol`* __string__ |  |  | 
+| *`port`* __integer__ | Specifies the container port number for this listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistenertls[$$StretchListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+| *`prefixTemplate`* __string__ | Specifies the template used for generating the advertised addresses of Services. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistenertls"]
+==== StretchListenerTLS
+
+
+
+StretchListenerTLS configures TLS for a listener in stretch clusters.
+
+Forked from ListenerTLS: removed deprecated SecretRef field (had no effect).
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchexternallistener[$$StretchExternalListener$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistener[$$StretchListener$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchrpc[$$StretchRPC$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cert`* __string__ | References a specific certificate for the listener. + |  | 
+| *`enabled`* __boolean__ | Specifies whether TLS is enabled for the listener. + |  | 
+| *`requireClientAuth`* __boolean__ | Indicates whether client authentication (mTLS) is required. + |  | 
+| *`trustStore`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-truststore[$$TrustStore$$]__ | TrustStore allows setting the `truststore_path` on this listener. + |  | MaxProperties: 1 +
+MinProperties: 1 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlisteners"]
+==== StretchListeners
+
+
+
+StretchListeners configures listener settings for stretch clusters.
+
+Forked from Listeners: uses StretchAPIListener (collapsed from Admin, HTTP,
+Kafka, SchemaRegistry — all identical after removing deprecated KafkaEndpoint
+from HTTP and SchemaRegistry) and StretchRPC.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`admin`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]__ | Configures settings for the Admin API listeners. + |  | 
+| *`http`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]__ | Configures settings for the HTTP Proxy listeners. + |  | 
+| *`kafka`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]__ | Configures settings for the Kafka API listeners. + |  | 
+| *`rpc`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchrpc[$$StretchRPC$$]__ | Configures settings for the RPC API listener. + |  | 
+| *`schemaRegistry`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchapilistener[$$StretchAPIListener$$]__ | Configures settings for the Schema Registry listeners. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlogging"]
+==== StretchLogging
+
+
+
+StretchLogging defines log level settings for stretch clusters.
+
+Forked from Logging: uses StretchUsageStats instead of UsageStats.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`logLevel`* __string__ | Specifies the log level. + |  | 
+| *`usageStats`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchusagestats[$$StretchUsageStats$$]__ | Defines settings for usage statistics reporting. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchrpc"]
+==== StretchRPC
+
+
+
+StretchRPC configures the RPC API listener for stretch clusters.
+
+Forked from RPC: references StretchListenerTLS instead of ListenerTLS.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlisteners[$$StretchListeners$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
+| *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistenertls[$$StretchListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchresources"]
+==== StretchResources
+
+
+
+StretchResources defines container resource settings for stretch clusters.
+
+Forked from Resources: changed Limits/Requests from *map[corev1.ResourceName]resource.Quantity
+(pointer-to-map) to corev1.ResourceList (standard K8s type alias) for idiomatic usage.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cpu`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-cpu[$$CPU$$]__ | Specifies the number of CPU cores. + |  | 
+| *`memory`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-memory[$$Memory$$]__ | Specifies the amount of memory. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchstorage"]
+==== StretchStorage
+
+
+
+StretchStorage configures storage for stretch clusters.
+
+Forked from Storage: uses StretchTiered instead of Tiered to pick up
+the cleaned-up StretchTieredConfig.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`hostPath`* __string__ | Specifies the absolute path on the worker node to store the Redpanda data directory. + |  | 
+| *`persistentVolume`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-persistentvolume[$$PersistentVolume$$]__ | Configures a PersistentVolumeClaim (PVC) template to create for each Pod. + |  | 
+| *`tiered`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtiered[$$StretchTiered$$]__ | Configures storage for the Tiered Storage cache. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtiered"]
+==== StretchTiered
+
+
+
+StretchTiered configures tiered storage for stretch clusters.
+
+Forked from Tiered: uses StretchTieredConfig instead of TieredConfig.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchstorage[$$StretchStorage$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`mountType`* __string__ | mountType: "none", "hostPath", "emptyDir", or "persistentVolume". + |  | 
+| *`hostPath`* __string__ | Specifies the absolute path on the worker node to store the Tiered Storage cache. + |  | 
+| *`persistentVolume`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-persistentvolume[$$PersistentVolume$$]__ | Configures a PersistentVolumeClaim (PVC) template for the Tiered Storage cache. + |  | 
+| *`config`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtieredconfig[$$StretchTieredConfig$$]__ | Configures Tiered Storage properties. + |  | 
+| *`credentialsSecretRef`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-credentialsecretref[$$CredentialSecretRef$$]__ | CredentialsSecretRef sets cloud_storage_secret_key and/or cloud_storage_access_key from a referenced Secret. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtieredconfig"]
+==== StretchTieredConfig
+
+
+
+StretchTieredConfig configures Tiered Storage properties for stretch clusters.
+
+Forked from TieredConfig: removed deprecated CloudStorageReconciliationIntervalMs
+(see https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms);
+replaced *apiutil.JSONBoolean with *bool for CloudStorageEnabled (JSONBoolean was a
+Helm-era hack to handle "true" vs true in values files).
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtiered[$$StretchTiered$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`cloud_storage_enabled`* __boolean__ |  |  | 
+| *`cloud_storage_api_endpoint`* __string__ |  |  | 
+| *`cloud_storage_api_endpoint_port`* __integer__ |  |  | 
+| *`cloud_storage_bucket`* __string__ |  |  | 
+| *`cloud_storage_azure_container`* __string__ |  |  | 
+| *`cloud_storage_azure_managed_identity_id`* __string__ |  |  | 
+| *`cloud_storage_azure_storage_account`* __string__ |  |  | 
+| *`cloud_storage_azure_shared_key`* __string__ |  |  | 
+| *`cloud_storage_azure_adls_endpoint`* __string__ |  |  | 
+| *`cloud_storage_azure_adls_port`* __integer__ |  |  | 
+| *`cloud_storage_cache_check_interval`* __integer__ |  |  | 
+| *`cloud_storage_cache_directory`* __string__ |  |  | 
+| *`cloud_storage_cache_size`* __string__ |  |  | 
+| *`cloud_storage_credentials_source`* __string__ |  |  | 
+| *`cloud_storage_disable_tls`* __boolean__ |  |  | 
+| *`cloud_storage_enable_remote_read`* __boolean__ |  |  | 
+| *`cloud_storage_enable_remote_write`* __boolean__ |  |  | 
+| *`cloud_storage_initial_backoff_ms`* __integer__ |  |  | 
+| *`cloud_storage_manifest_upload_timeout_ms`* __integer__ |  |  | 
+| *`cloud_storage_max_connection_idle_time_ms`* __integer__ |  |  | 
+| *`cloud_storage_max_connections`* __integer__ |  |  | 
+| *`cloud_storage_region`* __string__ |  |  | 
+| *`cloud_storage_segment_max_upload_interval_sec`* __integer__ |  |  | 
+| *`cloud_storage_segment_upload_timeout_ms`* __integer__ |  |  | 
+| *`cloud_storage_trust_file`* __string__ |  |  | 
+| *`cloud_storage_upload_ctrl_d_coeff`* __integer__ |  |  | 
+| *`cloud_storage_upload_ctrl_max_shares`* __integer__ |  |  | 
+| *`cloud_storage_upload_ctrl_min_shares`* __integer__ |  |  | 
+| *`cloud_storage_upload_ctrl_p_coeff`* __integer__ |  |  | 
+| *`cloud_storage_upload_ctrl_update_interval_ms`* __integer__ |  |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchtuning"]
+==== StretchTuning
+
+
+
+StretchTuning defines autotuner settings for stretch clusters.
+
+Forked from Tuning: removed ExtraVolumeMounts and Resources fields which are
+init-container concerns (used by Statefulset.InitContainers.Tuning in the Helm chart)
+and have no meaning as cluster-level tuning configuration.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`ballast_file_path`* __string__ | Specifies the file path for ballast file. + |  | 
+| *`ballast_file_size`* __string__ | Defines the size of the ballast file. + |  | 
+| *`tune_aio_events`* __boolean__ | Specifies whether to increase the number of allowed asynchronous IO events. + |  | 
+| *`tune_ballast_file`* __boolean__ | Specifies whether to create the ballast file. + |  | 
+| *`tune_clocksource`* __boolean__ | Specifies whether to synchronize NTP. + |  | 
+| *`well_known_io`* __string__ | Specifies the vendor, VM type, and storage device type that Redpanda runs on, in the format <vendor>:<vm>:<storage>. + |  | 
+| *`apply_host_tuners`* __boolean__ | ApplyHostTuners enables a chroot-based tuning init container that +
+gives `rpk redpanda tune all` access to the host's /sys, /proc, +
+NICs and block devices, so tuners like disk_irq, disk_scheduler, +
+disk_nomerges and net actually apply. Enabling it default-enables +
+those tuners plus fstrim, disk_write_cache (GCP-only) and cpu; an +
+explicit `config.rpk.tune_*: false` overrides any of the defaults. +
+Requires `tune_aio_events: true` (rendering fails otherwise). +
+Defaults to false. +
+
+Security: the tuning init container runs privileged and the pod +
+mounts twelve hostPath volumes (/bin, /sbin, /usr, /lib, /lib64 +
+read-only; /sys, /proc, /etc, /dev, /var, /run writable; plus the +
+tuner state file). The namespace needs the PSA `privileged` level, +
+or on OpenShift an SCC allowing hostPath and privileged containers. +
+
+Constraints: run at most one Redpanda pod per node (the default +
+anti-affinity) — concurrent tuners race on kernel parameters. +
+Disabling the flag does not revert tuning already applied to a +
+node: sysctl/IRQ/block-device settings persist until reboot and +
+the fstrim systemd timer rpk installs keeps firing until removed. + |  | 
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchusagestats"]
+==== StretchUsageStats
+
+
+
+StretchUsageStats defines usage statistics settings for stretch clusters.
+
+Forked from UsageStats: removed deprecated Organization field and unused ClusterID field.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlogging[$$StretchLogging$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether usage statistics are enabled. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-tls"]
 ==== TLS
 
@@ -5731,7 +5834,6 @@ TLS configures TLS in the Helm values. See https://docs.redpanda.com/current/man
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-brokerpoolspec[$$BrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-embeddedbrokerpoolspec[$$EmbeddedBrokerPoolSpec$$]
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
 ****
@@ -6028,6 +6130,7 @@ TrustStore is a mapping from a value on either a Secret or ConfigMap to the
 .Appears In:
 ****
 - xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchlistenertls[$$StretchListenerTLS$$]
 ****
 
 [cols="20a,50a,15a,15a", options="header"]
