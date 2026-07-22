@@ -14,6 +14,25 @@ This is a Go monorepo using `go.work` with multiple modules:
 - `gen/` — Code generation tools (partial, schema, pipeline)
 - `harpoon/` — BDD test framework for acceptance tests
 
+## Reconciliation: Idempotency & Quiescence
+
+**Read this before changing controller watch triggers or requeue/rate-limit intervals.**
+
+A healthy controller **quiesces**: once a resource matches its desired state, `Reconcile` returns `(Result{}, nil)` (or the controller's periodic requeue) and stops writing. If a resource reconciles forever — or on a tight interval on an otherwise-stable cluster — that is a **non-determinism / idempotency bug**: something is written on every pass. It is **not**, first and foremost, a watch-trigger or requeue-interval problem.
+
+**Root-cause it; do not bandage it.** Before changing any watch trigger or interval, find the exact write that happens every loop. Common culprits:
+- A status field recomputed each pass with `time.Now()`, unstable map/slice ordering, or re-applied defaulting.
+- A **rate-limited status condition** heartbeating: `setStatusCondition` (`operator/internal/statuses/zz_generated_status.go`) bumps `LastTransitionTime` once `time.Since(LastTransitionTime) > rateLimit`, which dirties the status and retriggers reconciliation. The `rateLimit` values live in `operator/statuses.yaml` (e.g. `LicenseValid`, `ConfigurationApplied`). Too tight a rate == perpetual churn at roughly that interval; windows offset across conditions cluster into bursts.
+- **Cross-resource churn**: e.g. the Redpanda CR status being rewritten every loop retriggers watching controllers (Topic, owned resources). When a *downstream* resource won't quiesce, suspect the *upstream* status writer — fix it there, not in the downstream watch.
+
+**Do NOT** "fix" infinite reconciliation by tuning `Watches(...)`, event predicates (`GenerationChangedPredicate`, etc.), `EnqueueRequestsFromMapFunc`, `RequeueAfter`, or `rateLimit` to reduce trigger frequency *as the primary fix*. That masks the underlying bug and the churn reappears later (or on another resource). Adjusting triggers is legitimate only as an additional refinement *after* the per-loop write has been found and eliminated.
+
+**Verify quiescence with a unit test, not an integration harness.** The cheap proof is that the pure "what mutations does convergence require?" function returns nothing on converged input — e.g. `generateConf` in `topic_controller.go` returns an empty set map (see `TestGenerateConf`), or `UpdateConditions` returns `changed=false`. The churn is often NOT a Kubernetes write — it can be an outbound admin/Kafka RPC (e.g. `IncrementalAlterConfigs`) or a time-gated status heartbeat — so assert on the decision function's output, not on whether the CR object changed. For rate-limited conditions, age the condition's `LastTransitionTime` (or advance a clock) and assert it re-dirties no faster than its configured `rateLimit`. References:
+- `operator/internal/observability/wrapper.go` — the steady-state signal (`(Result{}, nil)`, or a requeue matching the controller's periodic interval, == quiesced); the same signal powers the `OperatorReconcileRunaway` Prometheus alert.
+- `operator/internal/statuses/rate_limit_test.go` — the cadence-test pattern (it constructs conditions with an aged `LastTransitionTime`). Its blind spot: `TestUpdateConditions_IdempotentOnHealthyCluster` calls `UpdateConditions` twice in quick succession, so the rate window never elapses and it can't see rate-limited churn.
+
+**When reviewing** a PR that changes watch triggers, predicates, `RequeueAfter`, or `rateLimit`: require an explicit statement of the per-loop write that was identified and fixed. A trigger/interval change with no named root cause is a red flag — request the root-cause analysis before approving.
+
 ## Build System
 
 - **Task runner**: [go-task](https://taskfile.dev/) via `Taskfile.yml` with includes from `taskfiles/`
