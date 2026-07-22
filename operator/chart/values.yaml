@@ -145,7 +145,39 @@ podLabels: {}
 #
 # - `--additional-controllers`: Additional controllers to deploy. The supported value is `decommission`, which runs the NodePool-aware broker decommissioner; `legacy-decommission` opts into the deprecated controller. For more information about the Decommission controller, see [Use the Decommission controller](https://docs.redpanda.com/current/manage/kubernetes/k-decommission-brokers/#Automated). PVC remediation is handled by the PVCUnbinder via `--unbind-pvcs-after`.
 additionalCmdFlags: []
-# - --additional-controllers="<controller-name"
+
+# -- Additional annotations to add to all resources managed by the operator.
+# Useful for satisfying OPA Gatekeeper RequiredAnnotations constraints.
+# For example, `owner: "platform-team@example.com"`.
+commonAnnotations: {}
+
+# -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
+# Requires an operator-level enterprise license that includes the Redpanda
+# Connect product, configured via `enterprise.licenseSecretRef`; without one,
+# every Pipeline reconciles to `License=False` / `LicenseInvalid` and gets no
+# workload.
+# Note: Pipeline CRs carry an operator finalizer — disabling this while Pipeline
+# CRs exist blocks their deletion until the controller is re-enabled (or the
+# finalizer is removed by hand). Delete Pipelines before disabling.
+connectController:
+  enabled: false
+  # -- Default Redpanda Connect image applied to every Pipeline CR that
+  # does not pin its own `.spec.image`. Per-Pipeline `.spec.image` still
+  # wins; if neither is set, the operator falls back to the
+  # PipelineDefaultImage constant baked into the binary (currently
+  # docker.redpanda.com/redpandadata/connect:4.101.0).
+  # image:
+  #   repository: docker.redpanda.com/redpandadata/connect
+  #   tag: "4.101.0"
+  # -- Monitoring configuration for Connect pipeline pods.
+  monitoring:
+    # -- Enables PodMonitor creation for all Connect pipelines.
+    # Requires the Prometheus Operator CRDs (monitoring.coreos.com) to be installed.
+    enabled: false
+    # -- Prometheus scrape interval for pipeline PodMonitors.
+    # scrapeInterval: "30s"
+    # -- Additional labels to add to pipeline PodMonitors.
+    # labels: {}
 
 # -- Additional labels to add to all Kubernetes objects.
 # For example, `my.k8s.service: redpanda-operator`.

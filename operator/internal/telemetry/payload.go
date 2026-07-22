@@ -131,4 +131,38 @@ type Payload struct {
 	// election, cloud-secrets provider, PVC Unbinder, etc.). PVC Unbinder usage
 	// is reported here under "pvcUnbinder" rather than as a dedicated field.
 	Features map[string]bool `json:"features"`
+
+	// Connect aggregates the Redpanda Connect pipelines managed by the operator.
+	Connect ConnectStats `json:"connect"`
+}
+
+// ConnectStats summarizes the Redpanda Connect (Pipeline) controller's fleet.
+type ConnectStats struct {
+	// Enabled reports whether any Pipeline CRs exist (Connect is in use in
+	// this install). The authoritative "controller is running" signal is the
+	// connectController entry in Payload.Features.
+	Enabled bool `json:"enabled"`
+	// PipelineCount is the number of Pipeline CRs the operator is managing —
+	// the primary Connect adoption/scale metric.
+	PipelineCount int `json:"pipelineCount"`
+	// RunningPipelines counts pipelines whose status phase is Running.
+	RunningPipelines int `json:"runningPipelines,omitempty"`
+	// PausedPipelines counts pipelines with spec.paused set.
+	PausedPipelines int `json:"pausedPipelines,omitempty"`
+	// DesiredReplicas is the sum of each pipeline's effective desired replica
+	// count (paused pipelines contribute 0) — the number of Connect pods the
+	// operator is trying to run fleet-wide.
+	DesiredReplicas int `json:"desiredReplicas,omitempty"`
+	// ReadyReplicas is the sum of ready Connect pods across all pipelines.
+	ReadyReplicas int `json:"readyReplicas,omitempty"`
+	// NodeCount is the number of distinct cluster nodes the Connect pods are
+	// scheduled across — a spread signal that distinguishes "many pipelines on
+	// one node" from "many pipelines fanned out across the fleet". Best-effort:
+	// 0 when pods cannot be listed or none are scheduled yet.
+	NodeCount int `json:"nodeCount,omitempty"`
+	// Versions are the distinct Connect image versions in use across the
+	// fleet (for support and EOL planning). Only the tag (or a shortened
+	// digest) is reported — never the repository, which can carry internal
+	// registry hostnames or team names. Anonymous.
+	Versions []string `json:"versions,omitempty"`
 }

@@ -536,3 +536,43 @@ func TestSizing(t *testing.T) {
 	require.Equal(t, 80, gib)
 	require.Equal(t, []string{"2c/8Gi", "4c/16Gi"}, sizes)
 }
+
+// TestImageVersion pins the anonymization of Connect image references: only
+// the version (tag or shortened digest) may reach the payload — never the
+// repository, which can carry internal registry hostnames or team names.
+func TestImageVersion(t *testing.T) {
+	require.Equal(t, "4.101.0", imageVersion("docker.redpanda.com/redpandadata/connect:4.101.0"))
+	require.Equal(t, "v1.2.3", imageVersion("registry.internal.acme.corp:5000/data-platform/connect:v1.2.3"))
+	require.Equal(t, "unspecified", imageVersion("registry.internal.acme.corp:5000/data-platform/connect"),
+		"a registry port must not be mistaken for a tag")
+	require.Equal(t, "unspecified", imageVersion("connect"))
+	require.Equal(t, "sha256:0123456789ab", imageVersion("repo/connect@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"))
+}
+
+// TestAggregatePipelines_ImageResolution verifies the collector resolves the
+// effective image through all three precedence tiers (spec.image >
+// --connect-default-image > baked-in constant) and reports versions only.
+func TestAggregatePipelines_ImageResolution(t *testing.T) {
+	pinned := "internal.registry.example.com/team-a/connect:4.99.1"
+	pipelines := []redpandav1alpha2.Pipeline{
+		{Spec: redpandav1alpha2.PipelineSpec{Image: &pinned}},
+		{Spec: redpandav1alpha2.PipelineSpec{}}, // falls to the operator default
+	}
+
+	// With the operator-level default plumbed in, unpinned pipelines report
+	// its version — not the baked-in constant.
+	c := &Collector{ConnectDefaultImage: "docker.redpanda.com/redpandadata/connect:4.101.0"}
+	payload := &Payload{}
+	c.aggregatePipelines(payload, pipelines)
+	require.Equal(t, []string{"4.101.0", "4.99.1"}, payload.Connect.Versions)
+	for _, v := range payload.Connect.Versions {
+		require.NotContains(t, v, "internal.registry.example.com", "repositories must never reach the payload")
+	}
+
+	// Without an operator-level default, the baked-in constant's version is
+	// reported for unpinned pipelines.
+	c = &Collector{}
+	payload = &Payload{}
+	c.aggregatePipelines(payload, pipelines)
+	require.Contains(t, payload.Connect.Versions, imageVersion(redpandav1alpha2.PipelineDefaultImage))
+}

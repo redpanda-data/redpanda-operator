@@ -40,6 +40,12 @@ Sets the Kubernetes cluster domain.
 
 **Default:** `"cluster.local"`
 
+### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonAnnotations)
+
+Additional annotations to add to all resources managed by the operator. Useful for satisfying OPA Gatekeeper RequiredAnnotations constraints. For example, `owner: "platform-team@example.com"`.
+
+**Default:** `{}`
+
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonLabels)
 
 Additional labels to add to all Kubernetes objects. For example, `my.k8s.service: redpanda-operator`.
@@ -121,6 +127,28 @@ Configuration for webhooks, such as the port they listen on. Webhooks are HTTP c
 Sets the port for the webhook server to listen on.
 
 **Default:** `9443`
+
+### [connectController](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController)
+
+Enables the Redpanda Connect controller for managing Connect pipeline CRs. Requires an operator-level enterprise license that includes the Redpanda Connect product, configured via `enterprise.licenseSecretRef`; without one, every Pipeline reconciles to `License=False` / `LicenseInvalid` and gets no workload. Note: Pipeline CRs carry an operator finalizer — disabling this while Pipeline CRs exist blocks their deletion until the controller is re-enabled (or the finalizer is removed by hand). Delete Pipelines before disabling.
+
+**Default:**
+
+```
+{"enabled":false,"monitoring":{"enabled":false}}
+```
+
+### [connectController.monitoring](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController.monitoring)
+
+Monitoring configuration for Connect pipeline pods.
+
+**Default:** `{"enabled":false}`
+
+### [connectController.monitoring.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController.monitoring.enabled)
+
+Enables PodMonitor creation for all Connect pipelines. Requires the Prometheus Operator CRDs (monitoring.coreos.com) to be installed.
+
+**Default:** `false`
 
 ### [controllers](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=controllers)
 

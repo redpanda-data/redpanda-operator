@@ -173,11 +173,43 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
-{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled)) -}}
+{{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.connectController.enabled) "--connect-monitoring-enabled" (printf "%t" $values.connectController.monitoring.enabled)) -}}
+{{- if (ne $values.connectController.monitoring.scrapeInterval "") -}}
+{{- $_ := (set $defaults "--connect-monitoring-scrape-interval" $values.connectController.monitoring.scrapeInterval) -}}
+{{- end -}}
+{{- if (and (and (ne (toJson $values.connectController.image) "null") (ne $values.connectController.image.repository "")) (ne $values.connectController.image.tag "")) -}}
+{{- $_ := (set $defaults "--connect-default-image" (printf "%s:%s" $values.connectController.image.repository $values.connectController.image.tag)) -}}
+{{- end -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.connectController.monitoring.labels)))) "r") | int) (0 | int)) -}}
+{{- $labelArg := "" -}}
+{{- range $key, $value := $values.connectController.monitoring.labels -}}
+{{- if (ne $labelArg "") -}}
+{{- $labelArg = (printf "%s%s" $labelArg ",") -}}
+{{- end -}}
+{{- $labelArg = (printf "%s%s" $labelArg (get (fromJson (include "operator.quoteFlagMapPair" (dict "a" (list (printf "%s=%s" $key $value))))) "r")) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_ := (set $defaults "--connect-monitoring-labels" $labelArg) -}}
+{{- end -}}
 {{- $_ := (get (fromJson (include "operator.addLicenseFilePathArg" (dict "a" (list $defaults $values)))) "r") -}}
 {{- $_ := (get (fromJson (include "operator.addControllerSyncIntervalArgs" (dict "a" (list $defaults $values)))) "r") -}}
 {{- if $values.crds.enabled -}}
 {{- $_ := (set $defaults "--enable-shadowlinks" "true") -}}
+{{- end -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.commonAnnotations)))) "r") | int) (0 | int)) -}}
+{{- $annotationArg := "" -}}
+{{- range $key, $value := $values.commonAnnotations -}}
+{{- if (ne $annotationArg "") -}}
+{{- $annotationArg = (printf "%s%s" $annotationArg ",") -}}
+{{- end -}}
+{{- $annotationArg = (printf "%s%s" $annotationArg (get (fromJson (include "operator.quoteFlagMapPair" (dict "a" (list (printf "%s=%s" $key $value))))) "r")) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_ := (set $defaults "--common-annotations" $annotationArg) -}}
 {{- end -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}
@@ -199,6 +231,21 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $flags) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "operator.quoteFlagMapPair" -}}
+{{- $pair := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (and (not (contains "," $pair)) (not (contains "\"" $pair))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $pair) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (printf "%s%s" (printf "%s%s" "\"" (replace "\"" "\"\"" $pair)) "\"")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

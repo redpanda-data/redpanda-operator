@@ -10,8 +10,10 @@
 package operator
 
 import (
+	"strings"
 	"testing"
 
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -152,4 +154,45 @@ func TestChangeDefaultFlag(t *testing.T) {
 		}).Spec.Template.Spec
 		assert.Contains(t, spec.Containers[0].Args, "--enable-console=false")
 	})
+}
+
+// TestCommonAnnotationsFlagRoundTrip proves the rendered --common-annotations
+// value parses back through the exact pflag machinery the operator binary
+// uses. pflag's StringToString splits multi-pair values with encoding/csv, so
+// an unquoted comma inside an annotation value used to split mid-pair and
+// crash-loop the operator at startup — a values-only breakage.
+func TestCommonAnnotationsFlagRoundTrip(t *testing.T) {
+	annotations := map[string]string{
+		"owner":       "platform-team@example.com",
+		"description": "primary, staging, and dev clusters", // commas — the regression
+		"expr":        "a=b",                                // '=' in value
+	}
+
+	spec := renderDeployment(t, map[string]any{
+		"commonAnnotations": annotations,
+	}).Spec.Template.Spec
+
+	var rendered string
+	for _, arg := range spec.Containers[0].Args {
+		if strings.HasPrefix(arg, "--common-annotations=") {
+			rendered = strings.TrimPrefix(arg, "--common-annotations=")
+		}
+	}
+	require.NotEmpty(t, rendered, "expected a --common-annotations argument")
+
+	// Parse with the same flag type the operator binary registers.
+	parsed := map[string]string{}
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	fs.StringToStringVar(&parsed, "common-annotations", nil, "")
+	require.NoError(t, fs.Parse([]string{"--common-annotations=" + rendered}),
+		"the rendered flag value must survive pflag's CSV parsing")
+	assert.Equal(t, annotations, parsed)
+}
+
+// TestQuoteFlagMapPair pins the quoting rules used for pflag StringToString
+// flag values.
+func TestQuoteFlagMapPair(t *testing.T) {
+	assert.Equal(t, "k=v", quoteFlagMapPair("k=v"), "plain pairs pass through")
+	assert.Equal(t, "\"k=a,b\"", quoteFlagMapPair("k=a,b"), "commas force CSV quoting")
+	assert.Equal(t, "\"k=a\"\"b\"", quoteFlagMapPair("k=a\"b"), "quotes are doubled per CSV")
 }

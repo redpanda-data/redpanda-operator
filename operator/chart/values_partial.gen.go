@@ -49,6 +49,8 @@ type PartialValues struct {
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
+	CommonAnnotations     map[string]string             "json:\"commonAnnotations,omitempty\""
+	ConnectController     *PartialConnectController     "json:\"connectController,omitempty\""
 	Controllers           *PartialControllers           "json:\"controllers,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
 	Telemetry             *PartialTelemetry             "json:\"telemetry,omitempty\""
@@ -101,6 +103,12 @@ type PartialVectorizedControllers struct {
 	Enabled *bool "json:\"enabled,omitempty\""
 }
 
+type PartialConnectController struct {
+	Enabled    *bool                           "json:\"enabled,omitempty\""
+	Monitoring *PartialConnectMonitoringConfig "json:\"monitoring,omitempty\""
+	Image      *PartialConnectControllerImage  "json:\"image,omitempty\""
+}
+
 type PartialControllers struct {
 	Topic      *PartialControllerSyncConfig "json:\"topic,omitempty\""
 	User       *PartialControllerSyncConfig "json:\"user,omitempty\""
@@ -148,6 +156,12 @@ type PartialLeaderElectionConfig struct {
 	ResourceName *string "json:\"resourceName,omitempty\""
 }
 
+type PartialConnectMonitoringConfig struct {
+	Enabled        *bool             "json:\"enabled,omitempty\""
+	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
+	Labels         map[string]string "json:\"labels,omitempty\""
+}
+
 type PartialControllerSyncConfig struct {
 	Interval *string "json:\"interval,omitempty\""
 }
@@ -163,6 +177,11 @@ type PartialMulticlusterService struct {
 type PartialMetadata struct {
 	Labels      map[string]string "json:\"labels,omitempty\""
 	Annotations map[string]string "json:\"annotations,omitempty\""
+}
+
+type PartialConnectControllerImage struct {
+	Repository *string "json:\"repository,omitempty\""
+	Tag        *string "json:\"tag,omitempty\""
 }
 
 type PartialPeer struct {

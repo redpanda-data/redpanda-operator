@@ -65,6 +65,12 @@ type Collector struct {
 	// the reported version tracks in-place cluster upgrades. Optional: when nil,
 	// kubeVersion is omitted from the payload.
 	Discovery discovery.ServerVersionInterface
+	// ConnectDefaultImage is the operator-level Connect image override (the
+	// --connect-default-image flag / connectController.image chart values).
+	// Needed to resolve the effective image of Pipelines that don't pin
+	// .spec.image — without it, fleets running the chart default would be
+	// misreported as running the binary-baked constant.
+	ConnectDefaultImage string
 }
 
 // Collect builds a Payload describing the current shape of the cluster.
@@ -241,7 +247,111 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 		}
 	}
 
+	// Connect pipelines: is the Connect controller in use, at what scale.
+	var pipelines redpandav1alpha2.PipelineList
+	if ok, err := c.list(ctx, &pipelines); err != nil {
+		return nil, err
+	} else if ok {
+		c.aggregatePipelines(payload, pipelines.Items)
+	}
+
+	// Node spread: count the distinct nodes the Connect pods are scheduled
+	// across. Gated on having pipelines at all so installs with the CRD present
+	// but no pipelines don't pay for a pod list every cycle.
+	if payload.Connect.PipelineCount > 0 {
+		if err := c.countConnectNodes(ctx, payload); err != nil {
+			return nil, err
+		}
+	}
+
 	return payload, nil
+}
+
+// aggregatePipelines folds the Pipeline fleet into the payload: count, paused /
+// running counts, desired vs ready replicas, and the distinct image versions in
+// use.
+func (c *Collector) aggregatePipelines(payload *Payload, items []redpandav1alpha2.Pipeline) {
+	payload.Connect.Enabled = true
+	payload.Connect.PipelineCount = len(items)
+
+	versions := map[string]struct{}{}
+	for i := range items {
+		p := &items[i]
+		if p.Spec.Paused {
+			payload.Connect.PausedPipelines++
+		}
+		if p.Status.Phase == redpandav1alpha2.PipelinePhaseRunning {
+			payload.Connect.RunningPipelines++
+		}
+		// GetReplicas already returns 0 for paused pipelines, matching the pods
+		// the operator is actually trying to run.
+		payload.Connect.DesiredReplicas += int(p.GetReplicas())
+		payload.Connect.ReadyReplicas += int(p.Status.ReadyReplicas)
+		versions[imageVersion(c.resolvePipelineImage(p))] = struct{}{}
+	}
+	for v := range versions {
+		payload.Connect.Versions = append(payload.Connect.Versions, v)
+	}
+	sort.Strings(payload.Connect.Versions)
+}
+
+// resolvePipelineImage mirrors the controller's three-tier image precedence:
+// the Pipeline's own .spec.image, then the operator-level default
+// (--connect-default-image), then the binary-baked constant.
+func (c *Collector) resolvePipelineImage(p *redpandav1alpha2.Pipeline) string {
+	if p.Spec.Image != nil && *p.Spec.Image != "" {
+		return *p.Spec.Image
+	}
+	if c.ConnectDefaultImage != "" {
+		return c.ConnectDefaultImage
+	}
+	return redpandav1alpha2.PipelineDefaultImage
+}
+
+// imageVersion reduces an image reference to just its version so the payload
+// stays anonymous: full references can carry internal registry hostnames and
+// team/project names. A tag (`repo:v1.2.3`) reports as the tag; a digest pin
+// (`repo@sha256:...`) reports as a shortened digest; a bare repository reports
+// as "unspecified".
+func imageVersion(image string) string {
+	if _, digest, ok := strings.Cut(image, "@"); ok {
+		if len(digest) > 19 {
+			digest = digest[:19] // "sha256:" + 12 hex chars
+		}
+		return digest
+	}
+	// Only treat a trailing :suffix as a tag when the colon comes after the
+	// last path separator — `registry:5000/repo` has no tag.
+	if i := strings.LastIndex(image, ":"); i > strings.LastIndex(image, "/") {
+		return image[i+1:]
+	}
+	return "unspecified"
+}
+
+// countConnectNodes lists the Connect pods across all namespaces and records how
+// many distinct nodes they are scheduled on. Best-effort: a missing-RBAC or
+// NoMatch error leaves NodeCount at zero (per-field degradation).
+func (c *Collector) countConnectNodes(ctx context.Context, payload *Payload) error {
+	var pods corev1.PodList
+	ok, err := c.list(ctx, &pods, client.MatchingLabels{
+		"app.kubernetes.io/managed-by": "redpanda-operator",
+		"app.kubernetes.io/component":  "connect-pipeline",
+	})
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	nodes := map[string]struct{}{}
+	for i := range pods.Items {
+		if node := pods.Items[i].Spec.NodeName; node != "" {
+			nodes[node] = struct{}{}
+		}
+	}
+	payload.Connect.NodeCount = len(nodes)
+	return nil
 }
 
 // aggregateRedpandas folds the Redpanda fleet into the payload: count, broker

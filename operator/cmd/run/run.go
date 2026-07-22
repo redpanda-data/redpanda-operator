@@ -42,6 +42,7 @@ import (
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
+	pipelinecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/pipeline"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	vectorizedcontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
@@ -106,6 +107,7 @@ type RunOptions struct {
 
 	enableV2NodepoolController  bool
 	enableBrokerController      bool
+	enableConnectController     bool
 	enableConsoleController     bool
 	managerOptions              ctrl.Options
 	clusterDomain               string
@@ -155,6 +157,13 @@ type RunOptions struct {
 	telemetryPeriod           time.Duration
 	telemetryFeatures         map[string]string
 	licenseFilePath           string
+
+	// Connect (Pipeline CRD) controller configuration.
+	commonAnnotations               map[string]string
+	connectMonitoringEnabled        bool
+	connectMonitoringScrapeInterval string
+	connectMonitoringLabels         map[string]string
+	connectDefaultImage             string
 }
 
 func (o *RunOptions) BindFlags(cmd *cobra.Command) {
@@ -179,6 +188,12 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
+	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
+	cmd.Flags().StringToStringVar(&o.commonAnnotations, "common-annotations", nil, "Annotations to propagate to all operator-managed resources (key=value pairs)")
+	cmd.Flags().BoolVar(&o.connectMonitoringEnabled, "connect-monitoring-enabled", false, "Enable PodMonitor creation for Connect pipelines")
+	cmd.Flags().StringVar(&o.connectMonitoringScrapeInterval, "connect-monitoring-scrape-interval", "", "Prometheus scrape interval for Connect pipeline PodMonitors (e.g. 30s)")
+	cmd.Flags().StringToStringVar(&o.connectMonitoringLabels, "connect-monitoring-labels", nil, "Additional labels for Connect pipeline PodMonitors (key=value pairs)")
+	cmd.Flags().StringVar(&o.connectDefaultImage, "connect-default-image", "", "Default Redpanda Connect image (repo:tag) used when a Pipeline CR does not pin its own .spec.image. Per-Pipeline .spec.image wins; if neither is set, falls back to the operator binary's hardcoded PipelineDefaultImage.")
 	cmd.Flags().BoolVar(&o.enableV2NodepoolController, "enable-v2-nodepools", false, "Specifies whether or not to enabled the v2 nodepool controller")
 	cmd.Flags().BoolVar(&o.enableBrokerController, "enable-broker", false, "Specifies whether or not to enable the Broker controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
@@ -224,7 +239,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.telemetryEndpoint, "telemetry-endpoint", "", "Override the telemetry ingestion endpoint (testing).")
 	cmd.Flags().DurationVar(&o.telemetryPeriod, "telemetry-period", 0, "Interval between telemetry reports. 0 uses the library default (24h).")
 	cmd.Flags().StringToStringVar(&o.telemetryFeatures, "telemetry-features", nil, "Additional ad-hoc feature flags to include in every telemetry report, as name=bool pairs (e.g. redpanda-cloud=true). Repeatable or comma-separated; entries override the built-in feature flags.")
-	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file. When set and valid, its checksum (id_hash) is included in telemetry to correlate licensed clusters to an account.")
+	cmd.Flags().StringVar(&o.licenseFilePath, "license-file-path", "", "The path to the Redpanda enterprise license file (populated from enterprise.licenseSecretRef in the operator Helm chart). Gates enterprise features: the Redpanda Connect controller (--enable-connect) requires it and reconciles every Pipeline to LicenseInvalid without it. When set and valid, its checksum (id_hash) is also included in telemetry to correlate licensed clusters to an account.")
 
 	// Secret store related flags.
 	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
@@ -332,8 +347,8 @@ func Run(
 	v1Controllers := opts.enableVectorizedControllers
 	v2Controllers := opts.enableRedpandaControllers
 
-	if (opts.enableV2NodepoolController || opts.enableConsoleController) && !v2Controllers {
-		return errors.New("running NodePool or Console controllers requires running the Redpanda controller")
+	if (opts.enableV2NodepoolController || opts.enableConsoleController || opts.enableConnectController) && !v2Controllers {
+		return errors.New("running NodePool, Console, or Connect controllers requires running the Redpanda controller")
 	}
 
 	setupLog := ctrl.LoggerFrom(ctx).WithName("setup")
@@ -544,6 +559,38 @@ func Run(
 				return err
 			}
 		}
+
+		// Connect Reconciler (enterprise feature, gated by the operator-level
+		// license from --license-file-path / enterprise.licenseSecretRef).
+		if opts.enableConnectController {
+			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+				Options: client.Options{
+					Scheme: mgr.GetScheme(),
+					Cache: &client.CacheOptions{
+						Reader: mgr.GetCache(),
+					},
+				},
+				FieldManager: string(lifecycle.DefaultFieldOwner),
+			})
+			if err != nil {
+				return err
+			}
+
+			if err := (&pipelinecontroller.Controller{
+				Ctl:               pipelineCtl,
+				LicenseFilePath:   opts.licenseFilePath,
+				CommonAnnotations: opts.commonAnnotations,
+				DefaultImage:      opts.connectDefaultImage,
+				Monitoring: pipelinecontroller.MonitoringConfig{
+					Enabled:        opts.connectMonitoringEnabled,
+					ScrapeInterval: opts.connectMonitoringScrapeInterval,
+					Labels:         opts.connectMonitoringLabels,
+				},
+			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
+				return err
+			}
+		}
 	}
 
 	// The ShadowLink controller is opt-in: it requires the experimental
@@ -744,6 +791,7 @@ func Run(
 			"namespaceScoped":  opts.namespace != "",
 			"leaderElection":   opts.managerOptions.LeaderElection,
 			// Cloud-secrets backend (provider only, never the secret values).
+			"connectController": opts.enableConnectController,
 			"cloudSecrets":      opts.cloudSecretsEnabled,
 			"cloudSecretsAWS":   opts.cloudSecretsEnabled && (opts.cloudSecretsConfig.AWSRegion != "" || opts.cloudSecretsConfig.AWSRoleARN != ""),
 			"cloudSecretsGCP":   opts.cloudSecretsEnabled && opts.cloudSecretsConfig.GCPProjectID != "",
@@ -758,12 +806,13 @@ func Run(
 		}
 
 		tele, err := telemetry.NewRunnable(mgr.GetAPIReader(), disco, setupLog, telemetry.Options{
-			Endpoint:        opts.telemetryEndpoint,
-			ID:              id,
-			OperatorVersion: version.Version,
-			IDHash:          idHash,
-			Features:        features,
-			Period:          opts.telemetryPeriod,
+			Endpoint:            opts.telemetryEndpoint,
+			ID:                  id,
+			OperatorVersion:     version.Version,
+			IDHash:              idHash,
+			Features:            features,
+			ConnectDefaultImage: opts.connectDefaultImage,
+			Period:              opts.telemetryPeriod,
 		})
 		if err != nil {
 			setupLog.Error(err, "unable to build telemetry runnable")

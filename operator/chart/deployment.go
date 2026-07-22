@@ -12,6 +12,7 @@ package operator
 
 import (
 	"fmt"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -364,6 +365,33 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--configurator-tag":              containerTag(dot),
 		"--configurator-base-image":       values.Image.Repository,
 		"--enable-vectorized-controllers": fmt.Sprintf("%t", values.VectorizedControllers.Enabled),
+		"--enable-connect":                fmt.Sprintf("%t", values.ConnectController.Enabled),
+		"--connect-monitoring-enabled":    fmt.Sprintf("%t", values.ConnectController.Monitoring.Enabled),
+	}
+
+	if values.ConnectController.Monitoring.ScrapeInterval != "" {
+		defaults["--connect-monitoring-scrape-interval"] = values.ConnectController.Monitoring.ScrapeInterval
+	}
+
+	if values.ConnectController.Image != nil &&
+		values.ConnectController.Image.Repository != "" &&
+		values.ConnectController.Image.Tag != "" {
+		defaults["--connect-default-image"] = fmt.Sprintf(
+			"%s:%s",
+			values.ConnectController.Image.Repository,
+			values.ConnectController.Image.Tag,
+		)
+	}
+
+	if len(values.ConnectController.Monitoring.Labels) > 0 {
+		labelArg := ""
+		for key, value := range helmette.SortedMap(values.ConnectController.Monitoring.Labels) {
+			if labelArg != "" {
+				labelArg = labelArg + ","
+			}
+			labelArg = labelArg + quoteFlagMapPair(fmt.Sprintf("%s=%s", key, value))
+		}
+		defaults["--connect-monitoring-labels"] = labelArg
 	}
 
 	addLicenseFilePathArg(defaults, values)
@@ -380,6 +408,18 @@ func operatorArguments(dot *helmette.Dot) []string {
 	// directions (userProvided wins on merge).
 	if values.CRDs.Enabled {
 		defaults["--enable-shadowlinks"] = "true"
+	}
+
+	if len(values.CommonAnnotations) > 0 {
+		// Build comma-separated key=value pairs for --common-annotations flag.
+		annotationArg := ""
+		for key, value := range helmette.SortedMap(values.CommonAnnotations) {
+			if annotationArg != "" {
+				annotationArg = annotationArg + ","
+			}
+			annotationArg = annotationArg + quoteFlagMapPair(fmt.Sprintf("%s=%s", key, value))
+		}
+		defaults["--common-annotations"] = annotationArg
 	}
 
 	if values.Webhook.Enabled {
@@ -402,6 +442,20 @@ func operatorArguments(dot *helmette.Dot) []string {
 	}
 
 	return flags
+}
+
+// quoteFlagMapPair CSV-quotes a single key=value pair destined for a
+// comma-joined pflag StringToString flag (--common-annotations,
+// --connect-monitoring-labels). pflag parses multi-pair values with
+// encoding/csv, so an unquoted comma (or double quote) inside a value splits
+// mid-pair and fails flag parsing — a values-only change that would
+// crash-loop the operator at startup. Pairs without CSV-special characters
+// are returned unchanged.
+func quoteFlagMapPair(pair string) string {
+	if !strings.Contains(pair, ",") && !strings.Contains(pair, "\"") {
+		return pair
+	}
+	return "\"" + strings.ReplaceAll(pair, "\"", "\"\"") + "\""
 }
 
 // addControllerSyncIntervalArgs renders the controllers.<resource>.interval
