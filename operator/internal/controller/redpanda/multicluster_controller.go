@@ -136,6 +136,17 @@ type stretchClusterReconciliationState struct {
 	admin                 *rpadmin.AdminAPI
 	bootstrapUser         string
 	bootstrapPassword     string
+
+	// unobservedBrokerPoolClusters lists the configured clusters whose
+	// RedpandaBrokerPool list could not be fetched this pass (unreachable
+	// probe, transient list error, etc.). When non-empty, cluster.BrokerPools
+	// (and therefore cluster.GetAllBrokerPools()) is a partial view of the
+	// StretchCluster's true broker membership, so rendering seed_servers or
+	// any other pool-derived resource from it risks producing an incomplete
+	// list — e.g. a self-only seed list for a freshly added pool, which makes
+	// that broker bootstrap its own standalone cluster instead of joining
+	// (K8S-891). Callers must defer pool-derived rendering while this is set.
+	unobservedBrokerPoolClusters []string
 }
 
 func (s *stretchClusterReconciliationState) cleanup() {
@@ -277,11 +288,29 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
 	}
 
+	// syncCA (Phase 1) and both Phase 2 reconcilers derive pool-scoped
+	// resources — CA cert names, seed_servers, StatefulSets, ConfigMaps —
+	// from state.cluster.GetAllBrokerPools(), the union of BrokerPools
+	// fetched across every expected cluster. If any cluster wasn't observed
+	// this pass, that union is incomplete — skip exactly those pool-derived
+	// steps rather than apply a partial view (K8S-891; see
+	// checkBrokerPoolViewComplete). Everything else still runs: a peer
+	// outage is precisely when Phase 3's recovery steps (maintenance-mode
+	// clear, stale-disk wipe, decommission hygiene, license/config sync)
+	// are needed on the members we can still reach.
+	poolViewIncomplete, poolViewResult := r.checkBrokerPoolViewComplete(ctx, state)
+
 	// Phase 1: cross-cluster syncers — ensure shared resources exist in all k8s clusters
 	// before any per-cluster reconciliation begins.
 	syncers := []stretchClusterReconciliationFn{
 		r.syncBootstrapUser,
-		r.syncCA,
+	}
+	// syncCA derives the managed-cert names from the BrokerPool union, so it
+	// is deferred alongside Phase 2 while the pool view is incomplete.
+	// syncBootstrapUser is spec-derived and skips unreachable peers itself,
+	// so it always runs.
+	if !poolViewIncomplete {
+		syncers = append(syncers, r.syncCA)
 	}
 
 	for _, syncer := range syncers {
@@ -295,24 +324,33 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// Phase 2: sync Kubernetes resources (simple resources + broker pools).
 	// EndpointSlice sync runs between resource creation and pool readiness
 	// checks so that pods can discover each other before becoming ready.
-	resourceReconcilers := []stretchClusterReconciliationFn{
-		r.reconcileResources,
-		r.reconcilePools,
-	}
-	for _, reconciler := range resourceReconcilers {
-		result, err := reconciler(ctx, state, cluster)
-		if err != nil || result.RequeueAfter > 0 {
-			l.V(log.TraceLevel).Info("aborting reconciliation early during resource sync", "error", err, "requeueAfter", result.RequeueAfter)
-			return r.syncStatus(ctx, cluster, state, result, err)
+	// Skipped entirely while the pool view is incomplete:
+	// checkBrokerPoolViewComplete has already set ResourcesSynced to a
+	// retryable error explaining the deferral.
+	if !poolViewIncomplete {
+		resourceReconcilers := []stretchClusterReconciliationFn{
+			r.reconcileResources,
+			r.reconcilePools,
 		}
-	}
+		for _, reconciler := range resourceReconcilers {
+			result, err := reconciler(ctx, state, cluster)
+			if err != nil || result.RequeueAfter > 0 {
+				l.V(log.TraceLevel).Info("aborting reconciliation early during resource sync", "error", err, "requeueAfter", result.RequeueAfter)
+				return r.syncStatus(ctx, cluster, state, result, err)
+			}
+		}
 
-	// All Kubernetes resources are in sync.
-	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+		// All Kubernetes resources are in sync.
+		state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
+	}
 
 	// Phase 3: cluster-level reconciliation (admin API, maintenance mode,
 	// stale-disk wipe, decommission, config, license) — see clusterReconcilers
-	// for ordering.
+	// for ordering. Deliberately NOT gated on the pool view: these steps act
+	// through the admin API and on the pods/pools we can see, and any
+	// "no desired counterpart → drain" decision inside them is separately
+	// guarded by the per-cluster observed set threaded into
+	// FetchExistingAndDesiredPools.
 	for _, reconciler := range r.clusterReconcilers() {
 		result, err := reconciler(ctx, state, cluster)
 		if err != nil || result.RequeueAfter > 0 {
@@ -323,13 +361,18 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 
 	// we're at the end of reconciliation, so sync back our status.
 	// Poll again quickly (faster than the periodic requeue) while the cluster is
-	// not yet settled: either scaled up with no broker Ready yet, or a scale/roll
-	// is still in flight (reconcilePools skipped mutations this pass). This is
-	// applied here — after the Phase-3 cluster reconcilers — rather than aborting
-	// inside reconcilePools, so outage-recovery steps still run while brokers are
-	// unready or churning. See PoolTracker.ScaledUpButNoneReady / CheckScale.
+	// not yet settled: pool-derived rendering was deferred on an incomplete
+	// pool view, the cluster scaled up with no broker Ready yet, or a
+	// scale/roll is still in flight (reconcilePools skipped mutations this
+	// pass). This is applied here — after the Phase-3 cluster reconcilers —
+	// rather than aborting earlier, so outage-recovery steps still run while
+	// a peer is unobserved or brokers are unready or churning. See
+	// PoolTracker.ScaledUpButNoneReady / CheckScale.
 	pollResult := ctrl.Result{}
-	if state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx) {
+	switch {
+	case poolViewIncomplete:
+		pollResult = poolViewResult
+	case state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx):
 		l.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
 		pollResult.RequeueAfter = requeueTimeout
 	}
@@ -400,6 +443,43 @@ func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpa
 		}
 	}
 	return ""
+}
+
+// checkBrokerPoolViewComplete reports whether fetchInitialState observed
+// every expected cluster's BrokerPool list this pass. When a cluster was
+// probe-skipped, its List call failed, or its runtime registration hasn't
+// completed yet — most commonly a brief post-leader-election window before
+// the engage cycle and bootstrap peer registration finish —
+// state.cluster.GetAllBrokerPools() is a partial view of the
+// StretchCluster's true broker membership.
+//
+// Rendering seed_servers (or any other pool-derived resource, e.g. syncCA's
+// managed-cert-name derivation) from a partial view is unsafe: a freshly
+// added pool can render with a self-only seed list, and a broker that
+// bootstraps from a self-only seed list forms its own standalone cluster
+// instead of joining the existing one — a split-brain (K8S-891). When this
+// returns incomplete=true, the caller must skip exactly the pool-derived
+// steps (syncCA and the Phase 2 renderers) and requeue with the returned
+// result at the end of the pass — but must still run the steps that don't
+// need the complete pool view (syncBootstrapUser and the Phase 3 cluster
+// reconcilers), since a peer outage is exactly when Phase 3's recovery work
+// is needed on reachable members. The next pass retries once the peer
+// becomes reachable (health.go's unreachable→reachable transition also
+// wakes the engage loop directly, so this typically resolves within one
+// probe interval).
+func (r *MulticlusterReconciler) checkBrokerPoolViewComplete(ctx context.Context, state *stretchClusterReconciliationState) (incomplete bool, _ ctrl.Result) {
+	if len(state.unobservedBrokerPoolClusters) == 0 {
+		return false, ctrl.Result{}
+	}
+
+	l := log.FromContext(ctx).WithName("checkBrokerPoolViewComplete")
+	msg := fmt.Sprintf(
+		"broker pool view incomplete, clusters not yet observed: %s — deferring resource rendering to avoid an incomplete seed_servers list",
+		strings.Join(state.unobservedBrokerPoolClusters, ", "),
+	)
+	l.Info(msg)
+	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, msg)
+	return true, ctrl.Result{RequeueAfter: requeueTimeout}
 }
 
 // checkSpecConsistency fetches the StretchCluster from every reachable cluster
@@ -561,6 +641,56 @@ func specDiffFields(a, b redpandav1alpha2.StretchClusterSpec) []string {
 	return fields
 }
 
+// expectedBrokerPoolClusters returns the set of clusters whose BrokerPool
+// list must be observed before pool-derived rendering is safe: the union of
+// the currently-registered clusters (the caller passes sccluster.GetClusters(),
+// sourced from Manager.GetClusterNames) and the manager's *configured*
+// clusters. The configured set is what closes the K8S-891 startup/failover
+// race: in bootstrap mode a peer is registered with the runtime provider only
+// after raft leadership is acquired and its kubeconfig fetched, so a
+// reconcile racing that registration would otherwise see expected ==
+// observed == {local} and render a self-only seed list anyway. Taking the
+// union (rather than the configured set alone) keeps any dynamically
+// registered cluster in the expected set too.
+func (r *MulticlusterReconciler) expectedBrokerPoolClusters(registered []string) []string {
+	return unionClusterNames(registered, r.Manager.GetConfiguredClusterNames())
+}
+
+// unionClusterNames returns the sorted, deduplicated union of the two
+// cluster-name lists.
+func unionClusterNames(a, b []string) []string {
+	seen := make(map[string]struct{}, len(a)+len(b))
+	var union []string
+	for _, names := range [][]string{a, b} {
+		for _, name := range names {
+			if _, ok := seen[name]; ok {
+				continue
+			}
+			seen[name] = struct{}{}
+			union = append(union, name)
+		}
+	}
+	sort.Strings(union)
+	return union
+}
+
+// unobservedClusters returns the canonical names of every entry in
+// allClusters that observed does not mark true, preserving allClusters'
+// order. Used to detect when FetchExistingBrokerPoolsFromAllClusters'
+// observed set is missing an expected cluster — i.e. its BrokerPool list
+// was probe-skipped, failed to fetch, or the cluster isn't even registered
+// with the runtime provider yet, making the union of BrokerPools an
+// incomplete view of the StretchCluster (K8S-891).
+func unobservedClusters(allClusters []string, observed map[string]bool, getLocalClusterName func() string) []string {
+	var missing []string
+	for _, clusterName := range allClusters {
+		if !observed[clusterName] {
+			missing = append(missing, lifecycle.CanonicalClusterName(clusterName, getLocalClusterName))
+		}
+	}
+	return missing
+}
+
 func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*stretchClusterReconciliationState, error) {
 	logger := log.FromContext(ctx)
 	logger.V(log.DebugLevel).Info("fetchInitialState")
@@ -574,6 +704,13 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 		return nil, err
 	}
 	sccluster.BrokerPools = brokerPools
+
+	// Any expected cluster missing from brokerPoolsObserved means its
+	// BrokerPool list was probe-skipped or failed to fetch this pass, so
+	// sccluster.BrokerPools (and GetAllBrokerPools()) is an incomplete view.
+	// Recorded here so Reconcile can defer any pool-derived rendering until
+	// every cluster has been observed (K8S-891).
+	unobservedBrokerPoolClusters := unobservedClusters(r.expectedBrokerPoolClusters(sccluster.GetClusters()), brokerPoolsObserved, r.Manager.GetLocalClusterName)
 
 	// grab our existing and desired pool resources
 	// so that we can immediately calculate cluster status
@@ -609,10 +746,11 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	sccluster.PodEndpoints = pools.PodEndpoints(ctx)
 
 	return &stretchClusterReconciliationState{
-		cluster:               sccluster,
-		pools:                 pools,
-		status:                status,
-		restartOnConfigChange: restartOnConfigChange,
+		cluster:                      sccluster,
+		pools:                        pools,
+		status:                       status,
+		restartOnConfigChange:        restartOnConfigChange,
+		unobservedBrokerPoolClusters: unobservedBrokerPoolClusters,
 	}, nil
 }
 

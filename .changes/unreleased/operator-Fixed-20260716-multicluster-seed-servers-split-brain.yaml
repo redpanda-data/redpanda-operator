@@ -1,0 +1,19 @@
+project: operator
+kind: Fixed
+body: |-
+    The multicluster StretchCluster controller no longer renders broker
+    StatefulSets and ConfigMaps when a configured peer cluster's BrokerPool
+    list wasn't observed this reconcile pass — whether the peer was probe-
+    unreachable, its list call failed, or its runtime registration hadn't
+    completed yet (e.g. a brief post-leader-election window before the
+    engage cycle and bootstrap peer registration finish). Previously the
+    renderer could compute `seed_servers` from an incomplete cross-cluster
+    pool view, producing a self-only seed list for a freshly added
+    RedpandaBrokerPool. A broker that bootstraps from a self-only seed list
+    forms its own standalone cluster instead of joining the existing
+    StretchCluster, causing a split-brain. Only the pool-derived steps (CA
+    sync and resource rendering) are deferred and retried; cluster-level
+    recovery — maintenance-mode clearing, stale-disk wipe, decommission
+    hygiene, and license/config sync — keeps running on reachable members
+    during the deferral.
+time: 2026-07-16T09:00:00.000000-07:00

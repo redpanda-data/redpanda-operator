@@ -94,6 +94,13 @@ func (s *staticMulticlusterManager) GetClusterNames() []string {
 	return s.names
 }
 
+// GetConfiguredClusterNames is identical to GetClusterNames for the static
+// manager: its full cluster set is registered at construction time, so there
+// is never a configured-but-unregistered window.
+func (s *staticMulticlusterManager) GetConfiguredClusterNames() []string {
+	return s.names
+}
+
 func (s *staticMulticlusterManager) GetLocalClusterName() string {
 	return s.local
 }
