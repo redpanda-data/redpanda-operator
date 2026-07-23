@@ -15,10 +15,12 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	corev1 "k8s.io/api/core/v1"
@@ -155,7 +157,9 @@ func (c *Factory) stretchAdminClientForEndpoints(ctx context.Context, sc *redpan
 		return nil, errors.Wrap(err, "building TLS config")
 	}
 
-	username, password, err := c.stretchClusterAuth(ctx, sc, k8sClient)
+	// The admin API authenticates with HTTP Basic Auth (rpadmin.BasicAuth),
+	// which is mechanism-agnostic, so the SCRAM mechanism is not needed here.
+	username, password, _, err := c.stretchClusterAuth(ctx, sc, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading auth credentials")
 	}
@@ -211,15 +215,19 @@ func (c *Factory) kafkaForStretchCluster(ctx context.Context, sc *redpandav1alph
 		clientOpts = append(clientOpts, kgo.DialTLSConfig(tlsConfig))
 	}
 
-	username, password, err := c.stretchClusterAuth(ctx, sc, k8sClient)
+	username, password, mechanism, err := c.stretchClusterAuth(ctx, sc, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading auth credentials")
 	}
 	if username != "" {
-		clientOpts = append(clientOpts, kgo.SASL(scram.Auth{
+		saslMechanism, err := scramMechanismForStretch(scram.Auth{
 			User: username,
 			Pass: password,
-		}.AsSha256Mechanism()))
+		}, mechanism)
+		if err != nil {
+			return nil, errors.Wrap(err, "resolving SASL mechanism")
+		}
+		clientOpts = append(clientOpts, kgo.SASL(saslMechanism))
 	}
 
 	return kgo.NewClient(clientOpts...)
@@ -275,7 +283,9 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 
 	srOpts := []sr.ClientOpt{sr.URLs(urls...), sr.HTTPClient(&http.Client{Transport: transport})}
 
-	username, password, err := c.stretchClusterAuth(ctx, sc, k8sClient)
+	// Schema Registry authenticates with HTTP Basic Auth, which is
+	// mechanism-agnostic, so the SCRAM mechanism is not needed here.
+	username, password, _, err := c.stretchClusterAuth(ctx, sc, k8sClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading auth credentials")
 	}
@@ -423,10 +433,15 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 }
 
 // stretchClusterAuth reads the bootstrap user credentials from the bootstrap
-// user secret if SASL is enabled.
-func (c *Factory) stretchClusterAuth(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (username, password string, _ error) {
+// user secret if SASL is enabled. The returned mechanism is the SASL mechanism
+// configured on the cluster (defaulting to SCRAM-SHA-512) — it matches the
+// mechanism Redpanda used to create the bootstrap user's SCRAM credential (see
+// bootstrapUserEnvVars in operator/multicluster/statefulset_redpanda.go) and
+// must be honored by SCRAM clients. When SASL is disabled all returns are
+// empty.
+func (c *Factory) stretchClusterAuth(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (username, password, mechanism string, _ error) {
 	if !sc.Spec.Auth.IsSASLEnabled() {
-		return "", "", nil
+		return "", "", "", nil
 	}
 
 	// Resolve via the shared helper so the operator's own admin/Kafka/SR clients
@@ -436,13 +451,29 @@ func (c *Factory) stretchClusterAuth(ctx context.Context, sc *redpandav1alpha2.S
 	secretName, passwordKey := sc.BootstrapUserPasswordLocation()
 	var secret corev1.Secret
 	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: secretName}, &secret); err != nil {
-		return "", "", errors.Wrapf(err, "reading bootstrap user secret %q", secretName)
+		return "", "", "", errors.Wrapf(err, "reading bootstrap user secret %q", secretName)
 	}
 
 	pw, ok := secret.Data[passwordKey]
 	if !ok || len(pw) == 0 {
-		return "", "", fmt.Errorf("bootstrap user secret %q has no password", secretName)
+		return "", "", "", fmt.Errorf("bootstrap user secret %q has no password", secretName)
 	}
 
-	return redpandav1alpha2.StretchClusterBootstrapUsername, string(pw), nil
+	return redpandav1alpha2.StretchClusterBootstrapUsername, string(pw), sc.Spec.Auth.SASL.GetMechanism(), nil
+}
+
+// scramMechanismForStretch maps a StretchCluster's configured SASL mechanism to
+// the corresponding franz-go SCRAM mechanism for the given credentials. The
+// bootstrap user is always provisioned with a SCRAM mechanism
+// (SCRAM-SHA-256/512); hardcoding one silently breaks SASL whenever the
+// configured mechanism differs — e.g. the SCRAM-SHA-512 default (K8S-899).
+func scramMechanismForStretch(auth scram.Auth, mechanism string) (sasl.Mechanism, error) {
+	switch strings.ToUpper(mechanism) {
+	case "SCRAM-SHA-256":
+		return auth.AsSha256Mechanism(), nil
+	case "SCRAM-SHA-512":
+		return auth.AsSha512Mechanism(), nil
+	default:
+		return nil, fmt.Errorf("unsupported SASL mechanism %q for StretchCluster bootstrap user, supported: [SCRAM-SHA-256, SCRAM-SHA-512]", mechanism)
+	}
 }

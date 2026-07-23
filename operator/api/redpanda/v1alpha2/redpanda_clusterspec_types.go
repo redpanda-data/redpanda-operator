@@ -399,6 +399,7 @@ type SASL struct {
 	// Enables SASL authentication. If you enable SASL authentication, you must provide a Secret name in `secretRef`.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies the default authentication mechanism to use for superusers. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+	// +kubebuilder:validation:Enum=SCRAM-SHA-256;SCRAM-SHA-512
 	Mechanism *string `json:"mechanism,omitempty"`
 	// If `users` is empty, `secretRef` specifies the name of the Secret that contains your superuser credentials in the format <username>:<password>:<optional-authentication-mechanism>. Otherwise, `secretRef` specifies the name of the Secret that the chart creates to store the credentials in `users`.
 	SecretRef *string `json:"secretRef,omitempty"`
@@ -435,12 +436,14 @@ type BootstrapUser struct {
 	// Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
 	// NOTE: for the StretchCluster kind this field is currently ignored; the mechanism is
 	// taken from sasl.mechanism.
+	// +kubebuilder:validation:Enum=SCRAM-SHA-256;SCRAM-SHA-512
 	Mechanism *string `json:"mechanism,omitempty"`
 }
 
 // UsersItems configures a list of superusers in the Helm values.
 type UsersItems struct {
 	// Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+	// +kubebuilder:validation:Enum=SCRAM-SHA-256;SCRAM-SHA-512
 	Mechanism *string `json:"mechanism,omitempty"`
 	// Specifies the name of the superuser.
 	Name *string `json:"name,omitempty"`

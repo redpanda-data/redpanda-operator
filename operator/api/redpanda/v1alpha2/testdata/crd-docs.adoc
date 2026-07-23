@@ -463,7 +463,8 @@ makes the operator and brokers authenticate with a credential the cluster never 
 Rotate the bootstrap user out of band (via the admin API) instead. + |  | 
 | *`mechanism`* __string__ | Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. +
 NOTE: for the StretchCluster kind this field is currently ignored; the mechanism is +
-taken from sasl.mechanism. + |  | 
+taken from sasl.mechanism. + |  | Enum: [SCRAM-SHA-256 SCRAM-SHA-512] +
+
 |===
 
 
@@ -4329,7 +4330,8 @@ SASL configures SASL authentication in the Helm values.
 |===
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Enables SASL authentication. If you enable SASL authentication, you must provide a Secret name in `secretRef`. + |  | 
-| *`mechanism`* __string__ | Specifies the default authentication mechanism to use for superusers. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
+| *`mechanism`* __string__ | Specifies the default authentication mechanism to use for superusers. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | Enum: [SCRAM-SHA-256 SCRAM-SHA-512] +
+
 | *`secretRef`* __string__ | If `users` is empty, `secretRef` specifies the name of the Secret that contains your superuser credentials in the format <username>:<password>:<optional-authentication-mechanism>. Otherwise, `secretRef` specifies the name of the Secret that the chart creates to store the credentials in `users`. + |  | 
 | *`users`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-usersitems[$$UsersItems$$] array__ | Specifies a list of superuser credentials. + |  | 
 | *`bootstrapUser`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-bootstrapuser[$$BootstrapUser$$]__ | Specifies configuration about the bootstrap user. + |  | 
@@ -6324,7 +6326,8 @@ UsersItems configures a list of superusers in the Helm values.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`mechanism`* __string__ | Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | 
+| *`mechanism`* __string__ | Specifies the authentication mechanism to use for superusers. Overrides the default in `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`. + |  | Enum: [SCRAM-SHA-256 SCRAM-SHA-512] +
+
 | *`name`* __string__ | Specifies the name of the superuser. + |  | 
 | *`password`* __string__ | Specifies the superuser password. + |  | 
 |===

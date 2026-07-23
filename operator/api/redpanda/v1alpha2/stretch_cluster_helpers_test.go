@@ -129,7 +129,7 @@ func TestSASL(t *testing.T) {
 		}{
 			{"nil receiver", nil, redpandav1alpha2.DefaultSASLMechanism},
 			{"zero value", &redpandav1alpha2.SASL{}, redpandav1alpha2.DefaultSASLMechanism},
-			{"custom mechanism", &redpandav1alpha2.SASL{Mechanism: ptr.To("PLAIN")}, "PLAIN"},
+			{"configured mechanism passes through", &redpandav1alpha2.SASL{Mechanism: ptr.To("SCRAM-SHA-256")}, "SCRAM-SHA-256"},
 			{"empty string falls back to default", &redpandav1alpha2.SASL{Mechanism: ptr.To("")}, redpandav1alpha2.DefaultSASLMechanism},
 		}
 		for _, tt := range tests {

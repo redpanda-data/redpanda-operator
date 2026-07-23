@@ -1083,6 +1083,9 @@ spec:
                                   Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
                                   NOTE: for the StretchCluster kind this field is currently ignored; the mechanism is
                                   taken from sasl.mechanism.
+                                enum:
+                                - SCRAM-SHA-256
+                                - SCRAM-SHA-512
                                 type: string
                               name:
                                 description: |-
@@ -1141,6 +1144,9 @@ spec:
                             description: Specifies the default authentication mechanism
                               to use for superusers. Options are `SCRAM-SHA-256` and
                               `SCRAM-SHA-512`.
+                            enum:
+                            - SCRAM-SHA-256
+                            - SCRAM-SHA-512
                             type: string
                           secretRef:
                             description: If `users` is empty, `secretRef` specifies
@@ -1159,6 +1165,9 @@ spec:
                                   description: Specifies the authentication mechanism
                                     to use for superusers. Overrides the default in
                                     `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+                                  enum:
+                                  - SCRAM-SHA-256
+                                  - SCRAM-SHA-512
                                   type: string
                                 name:
                                   description: Specifies the name of the superuser.
@@ -35083,6 +35092,9 @@ spec:
                                   Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
                                   NOTE: for the StretchCluster kind this field is currently ignored; the mechanism is
                                   taken from sasl.mechanism.
+                                enum:
+                                - SCRAM-SHA-256
+                                - SCRAM-SHA-512
                                 type: string
                               name:
                                 description: |-
@@ -35141,6 +35153,9 @@ spec:
                             description: Specifies the default authentication mechanism
                               to use for superusers. Options are `SCRAM-SHA-256` and
                               `SCRAM-SHA-512`.
+                            enum:
+                            - SCRAM-SHA-256
+                            - SCRAM-SHA-512
                             type: string
                           secretRef:
                             description: If `users` is empty, `secretRef` specifies
@@ -35159,6 +35174,9 @@ spec:
                                   description: Specifies the authentication mechanism
                                     to use for superusers. Overrides the default in
                                     `SASL`. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+                                  enum:
+                                  - SCRAM-SHA-256
+                                  - SCRAM-SHA-512
                                   type: string
                                 name:
                                   description: Specifies the name of the superuser.
