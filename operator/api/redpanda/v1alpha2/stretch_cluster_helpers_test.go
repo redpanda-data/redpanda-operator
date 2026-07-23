@@ -2053,3 +2053,57 @@ func TestPoolFSValidator(t *testing.T) {
 		}
 	})
 }
+
+func TestBootstrapUserPasswordLocation(t *testing.T) {
+	sc := &redpandav1alpha2.StretchCluster{}
+	sc.Name = "stretch"
+
+	withSASL := func(bu *redpandav1alpha2.BootstrapUser) *redpandav1alpha2.StretchCluster {
+		out := sc.DeepCopy()
+		out.Spec.Auth = &redpandav1alpha2.Auth{
+			SASL: &redpandav1alpha2.SASL{Enabled: ptr.To(true), BootstrapUser: bu},
+		}
+		return out
+	}
+
+	tests := []struct {
+		name     string
+		cluster  *redpandav1alpha2.StretchCluster
+		wantName string
+		wantKey  string
+	}{
+		{"no auth falls back to operator-managed", sc, "stretch-bootstrap-user", "password"},
+		{"SASL without bootstrapUser falls back", withSASL(nil), "stretch-bootstrap-user", "password"},
+		{"bootstrapUser without secretKeyRef falls back", withSASL(&redpandav1alpha2.BootstrapUser{}), "stretch-bootstrap-user", "password"},
+		{
+			"secretKeyRef name and key are honored",
+			withSASL(&redpandav1alpha2.BootstrapUser{SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "user-secret"},
+				Key:                  "user-key",
+			}}),
+			"user-secret", "user-key",
+		},
+		{
+			"secretKeyRef name only defaults the key",
+			withSASL(&redpandav1alpha2.BootstrapUser{SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: "user-secret"},
+			}}),
+			"user-secret", "password",
+		},
+		{
+			"secretKeyRef key only defaults the name",
+			withSASL(&redpandav1alpha2.BootstrapUser{SecretKeyRef: &corev1.SecretKeySelector{
+				Key: "user-key",
+			}}),
+			"stretch-bootstrap-user", "user-key",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotName, gotKey := tt.cluster.BootstrapUserPasswordLocation()
+			assert.Equal(t, tt.wantName, gotName)
+			assert.Equal(t, tt.wantKey, gotKey)
+		})
+	}
+}

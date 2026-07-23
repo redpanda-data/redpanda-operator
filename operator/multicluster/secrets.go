@@ -18,7 +18,6 @@ import (
 	"k8s.io/utils/ptr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
 // secrets returns all Secrets for the given RenderState. Object order matches
@@ -148,10 +147,20 @@ func secretSASLUsers(state *RenderState) (*corev1.Secret, error) {
 
 // secretBootstrapUser returns the bootstrap user Secret. If an existing secret
 // was found during state construction (fetchBootstrapUser), it's returned as-is
-// to preserve the password across reconciliations. Otherwise a new secret with a
-// random 32-char password is created. The secret is marked Immutable so that
-// Kubernetes rejects any future mutations — password rotation requires deleting
-// and re-creating the secret.
+// to preserve the password across reconciliations. Otherwise it returns nil.
+//
+// The renderer is deliberately NOT a password generator. Creation and
+// cross-cluster synchronization of the immutable bootstrap-user Secret is owned
+// exclusively by the MulticlusterReconciler's syncBootstrapUser(), which runs as
+// a Phase-1 syncer before any resource rendering. Generating a second,
+// independent random password here races that single writer: when the same
+// StretchCluster manifest is applied to every member cluster at once (a scripted
+// loop or a GitOps controller), the two uncoordinated RandAlphaNum(32) calls can
+// persist divergent passwords into the immutable Secret on different clusters.
+// The leader's consistency check then hard-errors and all reconciliation stops
+// with no way to self-heal (K8S-900). Treating a missing Secret as "not ready
+// yet" keeps syncBootstrapUser the sole source of truth; the Secret it created
+// is picked up on this or the next reconcile via fetchBootstrapUser.
 func secretBootstrapUser(state *RenderState) *corev1.Secret {
 	if !state.Spec().Auth.IsSASLEnabled() {
 		return nil
@@ -162,29 +171,10 @@ func secretBootstrapUser(state *RenderState) *corev1.Secret {
 		return nil
 	}
 
-	// Re-emit the existing secret to preserve the password.
-	if state.bootstrapUserSecret != nil {
-		return state.bootstrapUserSecret
-	}
-
-	password := tplutil.RandAlphaNum(32)
-
-	return &corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Secret",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      state.cluster.BootstrapUserSecretName(),
-			Namespace: state.namespace,
-			Labels:    state.commonLabels(),
-		},
-		Immutable: ptr.To(true),
-		Type:      corev1.SecretTypeOpaque,
-		StringData: map[string]string{
-			redpandav1alpha2.StretchClusterBootstrapPasswordKey: password,
-		},
-	}
+	// Re-emit the existing secret to preserve the password. A nil secret means
+	// syncBootstrapUser hasn't created it yet — emit nothing rather than racing
+	// it with a freshly generated password (see doc comment above).
+	return state.bootstrapUserSecret
 }
 
 // secretFSValidator returns the filesystem validator Secret for a pool.

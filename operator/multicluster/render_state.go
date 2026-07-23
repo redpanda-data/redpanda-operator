@@ -353,7 +353,8 @@ func (r *RenderState) podOrdinalOffset(pool *redpandav1alpha2.RedpandaBrokerPool
 // fetchBootstrapUser looks up an existing bootstrap user secret so that we
 // re-emit it with the same password rather than generating a new random one
 // on every reconciliation. If the secret doesn't exist yet, secretBootstrapUser()
-// will create one with a fresh random password.
+// emits nothing: the secret is created and synced across clusters exclusively by
+// the MulticlusterReconciler's syncBootstrapUser() single writer (K8S-900).
 func (r *RenderState) fetchBootstrapUser() error {
 	if r.client == nil || !r.Spec().Auth.IsSASLEnabled() {
 		return nil

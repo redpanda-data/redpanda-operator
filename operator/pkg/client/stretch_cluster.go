@@ -429,13 +429,17 @@ func (c *Factory) stretchClusterAuth(ctx context.Context, sc *redpandav1alpha2.S
 		return "", "", nil
 	}
 
-	secretName := sc.BootstrapUserSecretName()
+	// Resolve via the shared helper so the operator's own admin/Kafka/SR clients
+	// read from the same location the reconciler wrote to — the user-pinned
+	// bootstrapUser.secretKeyRef when set, otherwise the operator-managed
+	// <name>-bootstrap-user Secret (K8S-900).
+	secretName, passwordKey := sc.BootstrapUserPasswordLocation()
 	var secret corev1.Secret
 	if err := k8sClient.Get(ctx, client.ObjectKey{Namespace: sc.Namespace, Name: secretName}, &secret); err != nil {
 		return "", "", errors.Wrapf(err, "reading bootstrap user secret %q", secretName)
 	}
 
-	pw, ok := secret.Data[redpandav1alpha2.StretchClusterBootstrapPasswordKey]
+	pw, ok := secret.Data[passwordKey]
 	if !ok || len(pw) == 0 {
 		return "", "", fmt.Errorf("bootstrap user secret %q has no password", secretName)
 	}

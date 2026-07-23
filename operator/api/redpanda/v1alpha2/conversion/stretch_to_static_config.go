@@ -170,13 +170,16 @@ func stretchListenerTLS(sc *redpandav1alpha2.StretchCluster, poolSpec *redpandav
 // stretchBootstrapPasswordSource returns the ValueSource pointing at the
 // per-cluster bootstrap user secret.
 func stretchBootstrapPasswordSource(sc *redpandav1alpha2.StretchCluster) *ir.ValueSource {
+	// Resolve via the shared helper so the generated static config points at a
+	// user-pinned bootstrapUser.secretKeyRef location when set (K8S-900).
+	secretName, passwordKey := sc.BootstrapUserPasswordLocation()
 	return &ir.ValueSource{
 		Namespace: sc.Namespace,
 		SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: sc.BootstrapUserSecretName(),
+				Name: secretName,
 			},
-			Key: redpandav1alpha2.StretchClusterBootstrapPasswordKey,
+			Key: passwordKey,
 		},
 	}
 }

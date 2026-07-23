@@ -148,7 +148,10 @@ func bootstrapUserEnvVars(state *RenderState) []corev1.EnvVar {
 	}
 
 	mechanism := state.Spec().Auth.SASL.GetMechanism()
-	secretName := state.cluster.BootstrapUserSecretName()
+	// Resolve via the shared helper so the pod reads from a user-pinned
+	// bootstrapUser.secretKeyRef location when set, matching what the reconciler
+	// creates/syncs (K8S-900).
+	secretName, passwordKey := state.cluster.BootstrapUserPasswordLocation()
 
 	return []corev1.EnvVar{
 		{
@@ -162,7 +165,7 @@ func bootstrapUserEnvVars(state *RenderState) []corev1.EnvVar {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: secretName,
 					},
-					Key: redpandav1alpha2.StretchClusterBootstrapPasswordKey,
+					Key: passwordKey,
 				},
 			},
 		},

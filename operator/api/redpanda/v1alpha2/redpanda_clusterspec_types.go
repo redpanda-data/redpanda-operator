@@ -412,11 +412,29 @@ type SASL struct {
 type BootstrapUser struct {
 	// Name specifies the name of the bootstrap user created for the cluster, if unspecified
 	// defaults to "kubernetes-controller".
+	// NOTE: for the StretchCluster kind this field is currently ignored; the bootstrap
+	// username is fixed to "kubernetes-controller". Only secretKeyRef is honored there.
 	Name *string `json:"name,omitempty"`
 	// Specifies the location where the generated password will be written or a pre-existing
-	// password will be read from.
+	// password will be read from. For the StretchCluster kind the referenced key is required
+	// (there is no default key at the CRD level).
+	//
+	// For the StretchCluster kind the referenced Secret is read and replicated by the
+	// operator to every member cluster in the same namespace, so whoever can set this field
+	// is trusted to name a Secret whose contents may be copied across all member clusters of
+	// the mesh. The operator never overwrites an existing Secret of that name on a member
+	// cluster.
+	//
+	// IMPORTANT: for the StretchCluster kind the bootstrap password is consumed only when the
+	// cluster is first bootstrapped and cannot be rotated afterwards by editing this Secret,
+	// changing secretKeyRef to a different location, or removing secretKeyRef. Redpanda keeps
+	// the SCRAM credential it was bootstrapped with, so changing the source after bootstrap
+	// makes the operator and brokers authenticate with a credential the cluster never learned.
+	// Rotate the bootstrap user out of band (via the admin API) instead.
 	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
 	// Specifies the authentication mechanism to use for the bootstrap user. Options are `SCRAM-SHA-256` and `SCRAM-SHA-512`.
+	// NOTE: for the StretchCluster kind this field is currently ignored; the mechanism is
+	// taken from sasl.mechanism.
 	Mechanism *string `json:"mechanism,omitempty"`
 }
 

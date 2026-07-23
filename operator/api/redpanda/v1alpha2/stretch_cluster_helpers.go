@@ -813,6 +813,47 @@ func (sc *StretchCluster) BootstrapUserSecretName() string {
 	return fmt.Sprintf("%s-bootstrap-user", sc.Name)
 }
 
+// BootstrapUserPasswordLocation resolves the Secret name and data key that hold
+// the bootstrap user's SCRAM password.
+//
+// When the user pins a location via spec.auth.sasl.bootstrapUser.secretKeyRef,
+// that name and key are honored: the operator reads a pre-existing password from
+// it or writes a generated one to it, and replicates the Secret to every member
+// cluster. When no secretKeyRef is given it falls back to the operator-managed
+// <name>-bootstrap-user Secret and the [StretchClusterBootstrapPasswordKey] data
+// key.
+//
+// Note that the StretchCluster CRD marks secretKeyRef.key as required, so in
+// practice a user-pinned ref always carries a key; the key fallback below is
+// defense-in-depth for callers that construct a ref programmatically. Only
+// secretKeyRef is honored for StretchCluster — bootstrapUser.name and
+// bootstrapUser.mechanism are ignored (see their field docs).
+//
+// Every bootstrap-user consumer MUST resolve the location through this method so
+// the reconciler's syncBootstrapUser, the StatefulSet RPK_PASS env var, the
+// admin/Kafka client factory, and the static-config conversion always agree on
+// where the password lives (see the note on [StretchCluster.BootstrapUserSecretName]).
+func (sc *StretchCluster) BootstrapUserPasswordLocation() (secretName, passwordKey string) {
+	secretName = sc.BootstrapUserSecretName()
+	passwordKey = StretchClusterBootstrapPasswordKey
+
+	if sc.Spec.Auth == nil || sc.Spec.Auth.SASL == nil {
+		return secretName, passwordKey
+	}
+	bootstrapUser := sc.Spec.Auth.SASL.BootstrapUser
+	if bootstrapUser == nil || bootstrapUser.SecretKeyRef == nil {
+		return secretName, passwordKey
+	}
+
+	if bootstrapUser.SecretKeyRef.Name != "" {
+		secretName = bootstrapUser.SecretKeyRef.Name
+	}
+	if bootstrapUser.SecretKeyRef.Key != "" {
+		passwordKey = bootstrapUser.SecretKeyRef.Key
+	}
+	return secretName, passwordKey
+}
+
 // --- StretchClusterSpec convenience methods ---
 
 // GetResourceRequirements returns the Kubernetes resource requirements from the spec.
