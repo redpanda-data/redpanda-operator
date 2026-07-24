@@ -558,6 +558,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			}
 		}
 		slices.Sort(liveUnbound)
+		// liveExempted is the set of claims the gate is ACTUALLY being
+		// overridden for, per the live API server — not the cached
+		// `exempted` snapshot from above, which can name claims that
+		// have since bound. The Event and log below report this set so
+		// the paper trail matches what really happened.
+		var liveExempted []string
 		for _, name := range liveUnbound {
 			if _, stuck := exemptClaims[name]; !stuck {
 				msg := fmt.Sprintf("PVC %q has no volumeName on the live API server; deferring", name)
@@ -565,20 +571,48 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 				r.recordGateDeferred(&pod, gatePVCRebinding, msg)
 				return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 			}
+			liveExempted = append(liveExempted, name)
+		}
+		// Re-confirm the reconciled Pod's own mis-pin proof against live
+		// state at THIS instant, immediately before overriding the gate.
+		// The proof in podMispinned was computed earlier in this same
+		// reconcile (by stuckClaimNames, before the uncached re-list
+		// above); a node that recovered since then — uncordoned, Ready
+		// again, or the conflicting occupant gone — must not still
+		// authorize destruction. A re-confirmation read failure defers
+		// conservatively, the same fail-safe direction as the evidence
+		// chain (context cancellation still surfaces as an error).
+		if podMispinned {
+			if podMispinned, err = r.podHasMispinnedBoundClaim(ctx, &pod); err != nil {
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					return ctrl.Result{}, ctxErr
+				}
+				logger.Error(err, "failed to re-confirm the reconciled Pod's mis-pin proof; keeping the conservative deferral", "name", pod.Name)
+				r.recordGateDeferred(&pod, gatePVCRebinding, "mis-pin proof re-confirmation failed; deferring")
+				return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+			}
+		}
+		if !podMispinned {
+			logger.Info(fmt.Sprintf("unbound claims %v are exempted, but the reconciled Pod no longer holds its own mis-pin proof; deferring", liveExempted), "name", pod.Name)
+			r.recordGateDeferred(&pod, gatePVCRebinding, fmt.Sprintf("unbound claims %s are exempted, but the reconciled Pod no longer holds its own mis-pin proof; deferring", claimListForEvent(liveExempted)))
+			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 		}
 		// A safety gate is being overridden. Leave the same paper
 		// trail a deferral gets: metric, Event, and log, naming the
 		// exempted claims. Recorded only when the reconcile really
-		// proceeds: the freed-pv gate below is durable and can hold
-		// for days, and counting a "pass" every 30s during that hold
-		// would poison the metric. The Event is a Warning — it
-		// precedes destructive deletion, and Warning is what event
-		// pipelines filter for.
-		if !pvGates.freedPVUnresolved {
-			logger.Info(fmt.Sprintf("unbound claims %v are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", exempted), "name", pod.Name)
+		// proceeds AND some claim is actually being overridden on the
+		// live server (liveExempted non-empty): if the cache showed
+		// unbound claims that have all since bound, the gate passes on
+		// its own and no override occurred. The freed-pv gate below is
+		// durable and can hold for days, and counting a "pass" every
+		// 30s during that hold would poison the metric. The Event is a
+		// Warning — it precedes destructive deletion, and Warning is
+		// what event pipelines filter for.
+		if len(liveExempted) > 0 && !pvGates.freedPVUnresolved {
+			logger.Info(fmt.Sprintf("unbound claims %v are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", liveExempted), "name", pod.Name)
 			observability.PVCUnbinderGateExempted.Inc()
 			if r.Recorder != nil {
-				msg := fmt.Sprintf("unbound claims %s are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", claimListForEvent(exempted))
+				msg := fmt.Sprintf("unbound claims %s are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", claimListForEvent(liveExempted))
 				r.Recorder.Eventf(&pod, nil, corev1.EventTypeWarning, eventReasonGateExempted, "Exempt", "%s", msg)
 			}
 		}
@@ -1410,22 +1444,21 @@ func (r *Controller) listClusterPVCsByName(ctx context.Context, reader client.Re
 // scale-up) always defer. Names need no namespace: every list here is
 // scoped to pod.Namespace.
 func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbound []string) (map[string]struct{}, bool, error) {
-	// The reconciled pod's mis-pin proof is computed exactly once and
-	// returned to the caller, which needs it again after the Gate 3
-	// loop (the own-proof check before destruction).
-	podMispinned, err := r.podHasMispinnedBoundClaim(ctx, pod)
+	// StorageClass binding modes are memoized for the whole exemption
+	// run (reconciled Pod + every sibling): a cluster's claims almost
+	// all share one StorageClass, so an unmemoized uncached Get per
+	// claim would re-read the same object many times every 30s during
+	// an incident. Scoped to this run (a local, not a Controller field)
+	// because binding mode can change via delete-and-recreate, which
+	// the memo must not outlive.
+	scWFFC := map[string]bool{}
+	// The reconciled Pod is evaluated by exactly the same evidence
+	// chain as a sibling (exemptClaimNames), which also yields its
+	// mis-pin proof — returned to the caller, which needs it again
+	// after the Gate 3 loop (the own-proof check before destruction).
+	out, podMispinned, err := r.exemptClaimNames(ctx, pod, scWFFC)
 	if err != nil {
 		return nil, false, err
-	}
-	out := map[string]struct{}{}
-	if podMispinned {
-		own, err := r.unboundWFFCClaimNames(ctx, pod)
-		if err != nil {
-			return nil, false, err
-		}
-		for name := range own {
-			out[name] = struct{}{}
-		}
 	}
 	instance := pod.Labels[operatorlabels.InstanceKey]
 	if instance == "" {
@@ -1467,7 +1500,7 @@ func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbou
 		if ok, requeueAfter := r.ShouldRemediate(sibCtx, p); !ok || requeueAfter > 0 {
 			continue
 		}
-		exempt, err := r.exemptClaimNames(sibCtx, p)
+		exempt, _, err := r.exemptClaimNames(sibCtx, p, scWFFC)
 		if err != nil {
 			return nil, false, err
 		}
@@ -1489,8 +1522,14 @@ func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbou
 //     Immediate binding signals a provisioning failure, not this
 //     deadlock, and keeps deferring.
 //
+// It also returns the mis-pin proof itself, so the caller
+// ([Controller.stuckClaimNames]) can surface the reconciled Pod's
+// proof without re-running the evidence chain.
+//
 // PVC reads are uncached: this evidence opens a gate in front of
 // destructive deletion, so it must reflect true API-server state.
+// scWFFC memoizes StorageClass binding-mode reads across the caller's
+// run; it may be nil.
 //
 // Deliberately NOT required: that the Pod's Pending message names
 // volume affinity. The mis-pin proof stands on its own — a Bound
@@ -1502,23 +1541,25 @@ func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbou
 // exact gap this exemption closes. Freeing a claim that is dead-ended
 // on an unavailable node is never harmful; at worst it is not enough
 // by itself.
-func (r *Controller) exemptClaimNames(ctx context.Context, pod *corev1.Pod) (map[string]struct{}, error) {
+func (r *Controller) exemptClaimNames(ctx context.Context, pod *corev1.Pod, scWFFC map[string]bool) (map[string]struct{}, bool, error) {
 	mispinned, err := r.podHasMispinnedBoundClaim(ctx, pod)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if !mispinned {
-		return map[string]struct{}{}, nil
+		return map[string]struct{}{}, false, nil
 	}
-	return r.unboundWFFCClaimNames(ctx, pod)
+	claims, err := r.unboundWFFCClaimNames(ctx, pod, scWFFC)
+	return claims, mispinned, err
 }
 
 // unboundWFFCClaimNames returns the names of pod's own StatefulSet
 // claims that are unbound AND use a WaitForFirstConsumer StorageClass.
 // It is the claim-collection half of [Controller.exemptClaimNames];
 // callers must establish the mis-pin proof first. PVC reads are
-// uncached (they feed an exemption decision).
-func (r *Controller) unboundWFFCClaimNames(ctx context.Context, pod *corev1.Pod) (map[string]struct{}, error) {
+// uncached (they feed an exemption decision). scWFFC memoizes
+// StorageClass binding-mode reads across the run; it may be nil.
+func (r *Controller) unboundWFFCClaimNames(ctx context.Context, pod *corev1.Pod, scWFFC map[string]bool) (map[string]struct{}, error) {
 	out := map[string]struct{}{}
 	for _, key := range StsPVCs(pod) {
 		var pvc corev1.PersistentVolumeClaim
@@ -1531,7 +1572,7 @@ func (r *Controller) unboundWFFCClaimNames(ctx context.Context, pod *corev1.Pod)
 		if pvc.Spec.VolumeName != "" {
 			continue
 		}
-		if wffc, err := r.claimUsesWaitForFirstConsumer(ctx, &pvc); err != nil {
+		if wffc, err := r.claimUsesWaitForFirstConsumer(ctx, &pvc, scWFFC); err != nil {
 			return nil, err
 		} else if wffc {
 			out[key.Name] = struct{}{}
@@ -1929,7 +1970,14 @@ func podUnconditionallyTolerates(tolerations []corev1.Toleration, taint *corev1.
 // delete-and-recreate under the same name, which is exactly what a
 // lagging informer would hide. An uncached Get also keeps the RBAC
 // grant at bare `get`.
-func (r *Controller) claimUsesWaitForFirstConsumer(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (bool, error) {
+//
+// scWFFC, if non-nil, memoizes the name→isWFFC answer for the duration
+// of one exemption run so the same StorageClass (which typically backs
+// every claim in a cluster) is read once rather than per claim. It is
+// a per-run parameter rather than a Controller field precisely because
+// the uncached read must not be cached ACROSS runs — a delete-recreate
+// of the class between reconciles must be observed.
+func (r *Controller) claimUsesWaitForFirstConsumer(ctx context.Context, pvc *corev1.PersistentVolumeClaim, scWFFC map[string]bool) (bool, error) {
 	var name string
 	if class, found := pvc.Annotations[corev1.BetaStorageClassAnnotation]; found {
 		name = class
@@ -1941,14 +1989,28 @@ func (r *Controller) claimUsesWaitForFirstConsumer(ctx context.Context, pvc *cor
 	if name == "" {
 		return false, nil
 	}
+	if scWFFC != nil {
+		if wffc, ok := scWFFC[name]; ok {
+			return wffc, nil
+		}
+	}
 	var sc storagev1.StorageClass
 	if err := r.reader().Get(ctx, client.ObjectKey{Name: name}, &sc); err != nil {
 		if apierrors.IsNotFound(err) {
+			// Unknown class resolves to false (defer). Memoize the
+			// negative too, so a missing class isn't re-Got per claim.
+			if scWFFC != nil {
+				scWFFC[name] = false
+			}
 			return false, nil
 		}
 		return false, err
 	}
-	return sc.VolumeBindingMode != nil && *sc.VolumeBindingMode == storagev1.VolumeBindingWaitForFirstConsumer, nil
+	wffc := sc.VolumeBindingMode != nil && *sc.VolumeBindingMode == storagev1.VolumeBindingWaitForFirstConsumer
+	if scWFFC != nil {
+		scWFFC[name] = wffc
+	}
+	return wffc, nil
 }
 
 // PodHasVolumeAffinityUnschedulable reports whether a Pod is Pending
