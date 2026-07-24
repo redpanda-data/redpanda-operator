@@ -135,6 +135,7 @@ type RunOptions struct {
 	unbindPVCsAfter                     time.Duration
 	unbinderSelector                    pflagutil.LabelSelectorValue
 	allowPVRebinding                    bool
+	disablePVCRebindingGateExemption    bool
 	brokerPodNodeUnavailableToleration  time.Duration
 	autoDeletePVCs                      bool
 	webhookCertPath                     string
@@ -225,6 +226,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration; the Broker controller's dead-node PV remediation (--enable-broker) also uses this timeout when set, and falls back to its own default (5m) when zero")
 	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "DEPRECATED. When the PVCUnbinder fires, also clear the freed PV's ClaimRef so the disk can be reused if the node returns. Risks cross-broker disk swap when multiple PVs are cleared concurrently. Leave at false (the default) — the unbinder's pause-annotation, multi-pod auto-detect, and per-cluster serialization gates make this flag unnecessary in practice and unsafe in the cases where it would have been useful.")
 	_ = cmd.Flags().MarkDeprecated("allow-pv-rebinding", "the gating checks added to the PVCUnbinder (pause annotation, multi-pod auto-detect, per-cluster serialization) supersede this flag; see the PVCUnbinder controller godoc")
+	cmd.Flags().BoolVar(&o.disablePVCRebindingGateExemption, "disable-pvc-rebinding-gate-exemption", false, "Escape hatch: turn off the PVCUnbinder's stuck-claim exemption so its pvc-rebinding gate defers on every unbound claim (the pre-exemption behavior). Use if the exemption's proof chain misfires in your environment; unlike the pause annotation it keeps the rest of the unbinder running.")
 	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().DurationVar(&o.brokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
@@ -705,10 +707,11 @@ func Run(
 		setupLog.Info("starting PVCUnbinder controller", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)
 
 		if err := (&pvcunbinder.Controller{
-			Client:         mgr.GetClient(),
-			Timeout:        opts.unbindPVCsAfter,
-			Selector:       opts.unbinderSelector.Selector,
-			AllowRebinding: opts.allowPVRebinding,
+			Client:                     mgr.GetClient(),
+			Timeout:                    opts.unbindPVCsAfter,
+			Selector:                   opts.unbinderSelector.Selector,
+			AllowRebinding:             opts.allowPVRebinding,
+			DisableStuckClaimExemption: opts.disablePVCRebindingGateExemption,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err

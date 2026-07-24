@@ -706,8 +706,15 @@ statefulset:
     # such as `local` or `hostPath`, are used. It does so by monitoring redpanda Pods that are in a "Pending" state for at least the period
     # specified by `unbindAfter`. After this period it will delete the Pod's PVC to re-trigger volume provisioning.
     pvcUnbinder:
+      # -- Enables the PVCUnbinder sidecar controller. Note: with `rbac.enabled`, this renders a
+      # ClusterRole that grants the Pod's ServiceAccount cluster-wide read access to Nodes,
+      # regardless of the other pvcUnbinder settings.
       enabled: false
       unbindAfter: 60s
+      # -- Renders `--disable-pvc-rebinding-gate-exemption`: turns off the pvc-rebinding gate's
+      # stuck-claim exemption (an escape hatch if its proof chain misfires in your environment)
+      # while keeping the rest of the PVCUnbinder running.
+      disableStuckClaimExemption: false
     # The BrokerDecommissioner attempts to decommission brokers that have been non-gracefully terminated in a cluster due to something
     # like a Node crash. When a broker is determined to no longer be valid (i.e. it has been replaced by a broker with a different id)
     # the decommissioner reaches out to the deployed cluster and begins a decommission operation after detecting the broker as invalid

@@ -78,17 +78,43 @@ var (
 	// detect silent inaction — e.g., a forgotten pause annotation, a
 	// stuck multi-node-event signal, or a cache-staleness hold that
 	// never clears. The `gate` label values are: "pause" (Gate 1),
-	// "multi-node" (Gate 2), "in-flight" (Gate 0 cache-staleness
-	// bridge), "pvc-rebinding" (Gate 3, a PVC in the cluster is
-	// recreated but not yet bound), and "freed-pv" (Gate 4, a PV whose
+	// "multi-node" (Gate 2), "in-flight" (Gate 0, a previous
+	// unbind for the cluster has not settled yet), "pvc-rebinding" (Gate 3, a PVC in the cluster is
+	// recreated but not yet bound — except claims whose Pods are
+	// PROVABLY deadlocked on a mis-pinned local-PV claim per the
+	// unbinder's stuckClaimNames proof chain; other stuck Pods, e.g.
+	// under soft anti-affinity or required terms the unbinder cannot
+	// interpret, non-WaitForFirstConsumer
+	// classes, or unresolvable PV node affinity, still increment it,
+	// so do NOT exclude stuck Pods from alerts on this gate; under
+	// --allow-pv-rebinding or --disable-pvc-rebinding-gate-exemption
+	// the exemption is disabled entirely and every unbound claim
+	// counts), and "freed-pv" (Gate 4, a PV whose
 	// ClaimRef we cleared under --allow-pv-rebinding is still Available
 	// with a live node — unbinding more pods could mis-pair disks).
+	// Note: the "multi-node" gate also holds the known unfixed sibling
+	// of the mis-pinned-claim deadlock — when two victims' PVs land on
+	// two different occupied nodes, the unbinder defers there and
+	// manual PVC deletion is required.
 	PVCUnbinderGateDeferred = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "pvc_unbinder_gate_deferred_total",
 		Help:      "PVCUnbinder reconciles that returned early because a safety gate deferred remediation, labeled by which gate fired.",
 	}, []string{"gate"})
+
+	// PVCUnbinderGateExempted counts reconciles where the pvc-rebinding
+	// gate (Gate 3) was PASSED because every unbound claim was exempted
+	// as a stuck-Pod claim — i.e. the unbinder overrode a safety gate
+	// and proceeded to destructive remediation. This is the metric
+	// counterpart of the PVCUnbinderGateExempted Event; alert or trend
+	// on it to notice a mis-firing exemption even after Events age out.
+	PVCUnbinderGateExempted = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metricsNamespace,
+		Subsystem: metricsSubsystem,
+		Name:      "pvc_unbinder_gate_exempted_total",
+		Help:      "PVCUnbinder reconciles that proceeded past the pvc-rebinding gate because all unbound claims were exempted as stuck-Pod claims.",
+	})
 
 	// MaintenanceModeCleared counts brokers whose stuck maintenance-mode flag
 	// the operator cleared because the broker had been down (pod not-Ready)
@@ -237,6 +263,7 @@ func init() {
 		ReconcileSteadyStateTotal,
 		ReconcileLastSuccessTimestampSeconds,
 		PVCUnbinderGateDeferred,
+		PVCUnbinderGateExempted,
 		MaintenanceModeCleared,
 		MaintenanceModeGhostCleared,
 		MaintenanceModeClearSkippedAmbiguous,

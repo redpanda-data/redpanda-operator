@@ -375,6 +375,7 @@ values:
         repository: localhost/redpanda-operator
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:
@@ -604,6 +605,7 @@ pools:
         repository: localhost/redpanda-operator
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:
@@ -988,6 +990,7 @@ values:
         repository: localhost/redpanda-operator
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:
@@ -1360,6 +1363,7 @@ values:
         repository: localhost/redpanda-operator
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:
@@ -1506,6 +1510,7 @@ pools:
         repository: localhost/redpanda-operator
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:
@@ -1591,6 +1596,7 @@ pools:
         repository: localhost/test
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:
@@ -1972,6 +1978,7 @@ values:
         repository: localhost/redpanda-operator
         tag: dev
       pvcUnbinder:
+        disableStuckClaimExemption: false
         enabled: false
         unbindAfter: 60s
       rpkProfileWatcher:

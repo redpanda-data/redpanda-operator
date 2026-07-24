@@ -290,8 +290,9 @@ type PartialSidecars struct {
 	Image       *PartialImage "json:\"image,omitempty\""
 	Args        []string      "json:\"args,omitempty\""
 	PVCUnbinder *struct {
-		Enabled     *bool   "json:\"enabled,omitempty\""
-		UnbindAfter *string "json:\"unbindAfter,omitempty\""
+		Enabled                    *bool   "json:\"enabled,omitempty\""
+		UnbindAfter                *string "json:\"unbindAfter,omitempty\""
+		DisableStuckClaimExemption *bool   "json:\"disableStuckClaimExemption,omitempty\""
 	} "json:\"pvcUnbinder,omitempty\""
 	BrokerDecommissioner *struct {
 		Enabled                    *bool   "json:\"enabled,omitempty\""
