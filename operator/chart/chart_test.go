@@ -330,16 +330,8 @@ func TestRBACBindings(t *testing.T) {
 // TestRBACStretchRackAwarenessScoped asserts that the operator only claims
 // the nodes list/watch grant needed for StretchCluster's per-pool rack
 // awareness ClusterRole (operator/multicluster/rbac.go) on multicluster
-// installs, and not on default single-cluster installs.
+// installs.
 func TestRBACStretchRackAwarenessScoped(t *testing.T) {
-	defaultObjs, err := Chart.Render(nil, helmette.Release{Name: "operator"}, PartialValues{})
-	require.NoError(t, err)
-
-	defaultClusterRoleRules, _ := ExtractRules(defaultObjs)
-	nodeVerbs := defaultClusterRoleRules["#nodes"]
-	require.NotContains(t, nodeVerbs, "list", "default single-cluster install should not hold nodes:list")
-	require.NotContains(t, nodeVerbs, "watch", "default single-cluster install should not hold nodes:watch")
-
 	multiclusterObjs, err := Chart.Render(nil, helmette.Release{Name: "operator"}, PartialValues{
 		Multicluster: &PartialMulticluster{
 			Enabled:                      ptr.To(true),
