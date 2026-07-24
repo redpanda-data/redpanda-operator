@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "Prometheus datasource scraping the redpanda-operator /metrics endpoint.",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -45,7 +35,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "stat",
       "title": "Current leader",
@@ -60,7 +50,7 @@
       "targets": [
         {
           "expr": "last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1",
-          "legendFormat": "{{vcluster}} / {{pod}}",
+          "legendFormat": "{{cluster}} / {{job}}",
           "instant": true,
           "refId": "A"
         }
@@ -84,7 +74,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "stat",
       "title": "Raft term",
@@ -112,7 +102,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Leader changes (last 10m)",
@@ -141,7 +131,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Send latency p99 (per peer, leader's view)",
@@ -169,7 +159,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Send queue length (per sender → destination)",
@@ -184,7 +174,7 @@
       "targets": [
         {
           "expr": "operator_multicluster_raft_send_queue_length",
-          "legendFormat": "{{vcluster}} → {{peer}}",
+          "legendFormat": "{{cluster}} → {{peer}}",
           "refId": "A"
         }
       ],
@@ -197,7 +187,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Messages sent / received rate (heartbeats, append)",
@@ -230,7 +220,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Send errors (last 5m, by class)",
@@ -259,7 +249,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Follower match-lag entries (leader's view)",
@@ -287,7 +277,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Peer reachability + dropped messages",
@@ -302,12 +292,12 @@
       "targets": [
         {
           "expr": "operator_multicluster_raft_peer_reachable",
-          "legendFormat": "reachable — {{vcluster}} → {{peer}}",
+          "legendFormat": "reachable — {{cluster}} → {{peer}}",
           "refId": "A"
         },
         {
           "expr": "rate(operator_multicluster_raft_messages_dropped_total[5m])",
-          "legendFormat": "dropped/s — {{vcluster}} → {{peer}}",
+          "legendFormat": "dropped/s — {{cluster}} → {{peer}}",
           "refId": "B"
         }
       ],
@@ -320,11 +310,11 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "state-timeline",
       "title": "Leadership history",
-      "description": "Status timeline of which peer was the raft leader over time. Each row is one vCluster peer; coloured segments mark the windows where that peer reported state=leader=1. Aggregated with max by (vcluster) so pod restarts (which create new instance/pod label sets while reusing the vcluster external label) appear on a single row.\n\nHow to read: a single long green bar on one peer = stable leadership. Stripes across multiple peers = leader flapping (correlate with the Send latency / Send errors panels to find the cause).",
+      "description": "Status timeline of which peer was the raft leader over time. Each row is one cluster peer; coloured segments mark the windows where that peer reported state=leader=1. Aggregated with max by (cluster) so pod restarts (which create new instance/pod label sets while reusing the cluster external label) appear on a single row.\n\nHow to read: a single long green bar on one peer = stable leadership. Stripes across multiple peers = leader flapping (correlate with the Send latency / Send errors panels to find the cause).",
       "id": 49,
       "gridPos": {
         "x": 0,
@@ -334,8 +324,8 @@
       },
       "targets": [
         {
-          "expr": "max by (vcluster) (operator_multicluster_raft_state{state=\"leader\"})",
-          "legendFormat": "{{vcluster}}",
+          "expr": "max by (cluster) (operator_multicluster_raft_state{state=\"leader\"})",
+          "legendFormat": "{{cluster}}",
           "refId": "A"
         }
       ],
@@ -385,7 +375,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Member reachability (per StretchCluster, per member)",
@@ -415,7 +405,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Broker shortfall (desired − ready, per member)",
@@ -445,7 +435,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Spec drift (per member)",
@@ -475,7 +465,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Replication health (per StretchCluster)",
@@ -518,7 +508,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Reconcile rate (per controller)",
@@ -546,7 +536,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Reconcile error rate (per controller)",
@@ -574,7 +564,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Reconcile duration p99 (per controller)",
@@ -602,7 +592,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Steady-state vs total reconciles",
@@ -648,7 +638,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Workqueue depth (per controller)",
@@ -676,7 +666,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Active workers / max workers (worst per controller)",
@@ -706,7 +696,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Workqueue retries rate (per controller)",
@@ -747,7 +737,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "type": "timeseries",
       "title": "Seconds since last steady-state reconcile (per controller, leader's view)",
