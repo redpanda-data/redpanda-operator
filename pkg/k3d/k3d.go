@@ -533,6 +533,14 @@ func (c *Cluster) CreateNodeWithName(name string) error {
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
 	}
+	// The new node starts with an empty image store, so the cluster's
+	// import-marker cache is stale by definition: a subsequent ImportImage
+	// would filter every previously-imported image and silently no-op,
+	// leaving pods scheduled onto this node in ImagePullBackOff forever
+	// (localhost/-registry images cannot be pulled). Clear the markers so
+	// the next import really runs; re-importing to the old nodes is
+	// merely redundant.
+	clearImageMarkers(c.Name)
 	return nil
 }
 

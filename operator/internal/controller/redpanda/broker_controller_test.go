@@ -748,6 +748,19 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	t.Log("waiting for Broker to report Stuck")
 	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseStuck)
 
+	// Create the replacement k3d node and import the suite's images BEFORE
+	// granting: pod recreation is not grant-gated, so the moment
+	// remediation deletes the pod its replacement schedules — if the fresh
+	// node's image import is still streaming at that point, the kubelet's
+	// registry pull of localhost/redpanda-operator:dev fails hard and the
+	// resulting ImagePullBackOff (capped at 5m) can outlast the recovery
+	// wait. The stuck pod cannot unstick on the new node meanwhile: its PV
+	// stays pinned to the deleted node's hostname until remediation, which
+	// the grant below gates.
+	t.Log("creating replacement k3d node")
+	require.NoError(t, env.Host().CreateNode())
+	require.NoError(t, env.Host().ImportImage(s.importImages...))
+
 	// Grant a fresh roll-grant for the remediation.
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
 	p := client.MergeFrom(target.DeepCopy())
@@ -757,15 +770,6 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	templateHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
 	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(templateHash, time.Now().Add(30*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
-
-	// Create a replacement k3d node so the pod has somewhere to schedule,
-	// and re-import the suite's images: `k3d node create` starts an empty
-	// node, and soft anti-affinity prefers it — without the operator image
-	// present the sidecar would sit in ImagePullBackOff and the recovery
-	// wait below would time out.
-	t.Log("creating replacement k3d node")
-	require.NoError(t, env.Host().CreateNode())
-	require.NoError(t, env.Host().ImportImage(s.importImages...))
 
 	// Wait for the broker to recover to Running.
 	t.Log("waiting for Broker to recover to Running")
