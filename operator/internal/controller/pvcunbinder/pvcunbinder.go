@@ -1315,6 +1315,10 @@ func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 // the reclaim policy of a PV the caller then declines to touch would
 // silently override an admin's `Delete` policy and strand Released volumes.
 //
+// Node existence is judged by the kubernetes.io/hostname label (the value
+// PV NodeAffinity carries), not by Node object name — the two differ under
+// kubelet --hostname-override.
+//
 // apiReader must be an uncached client for accurate Node existence checks.
 func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
 	l := log.FromContext(ctx)
@@ -1346,16 +1350,20 @@ func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader,
 		if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
 			continue
 		}
-		nodeName := NodeFromPVAffinity(&pv)
-		if nodeName == "" {
+		hostname := NodeFromPVAffinity(&pv)
+		if hostname == "" {
 			continue
 		}
-		var node corev1.Node
-		if err := apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
+		// PV NodeAffinity carries the kubernetes.io/hostname LABEL value.
+		// Resolve the node by that label, never by object name: under
+		// kubelet --hostname-override the two differ, and a name-based Get
+		// would report a live node as gone — authorizing PVC deletion for
+		// a healthy broker.
+		var nodeList corev1.NodeList
+		if err := apiReader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
+			return nil, err
+		}
+		if len(nodeList.Items) > 0 {
 			continue
 		}
 		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimRetain {
@@ -1364,7 +1372,7 @@ func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader,
 			if err := c.Patch(ctx, &pv, patch); err != nil {
 				return nil, fmt.Errorf("patching PV %s to Retain: %w", pv.Name, err)
 			}
-			l.Info("patched PV to Retain", "pv", pv.Name, "deadNode", nodeName)
+			l.Info("patched PV to Retain", "pv", pv.Name, "deadNodeHostname", hostname)
 		}
 		affected = append(affected, pvc)
 	}

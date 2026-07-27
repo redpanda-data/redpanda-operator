@@ -50,7 +50,7 @@ import (
 // +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=persistentvolumes,verbs=get;list;patch
-// +kubebuilder:rbac:groups="",resources=nodes,verbs=get
+// +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 

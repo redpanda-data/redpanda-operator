@@ -2994,3 +2994,69 @@ func TestClaimListForEvent(t *testing.T) {
 	require.Less(t, len(msg), 1024, "maximal-length claim names must still fit the Event note limit")
 	require.Contains(t, capped, "more)", "the omitted-name count must still be reported")
 }
+
+// TestDeadNodePVCsResolvesNodeByHostnameLabel proves node liveness is
+// judged by the kubernetes.io/hostname LABEL, not the Node object name:
+// PV NodeAffinity carries the label value, and under kubelet
+// --hostname-override the two differ — a name-based Get would report a
+// live node as gone and authorize deleting a healthy broker's PVC.
+func TestDeadNodePVCsResolvesNodeByHostnameLabel(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+
+	hostPathPV := func(name, claimName, hostname string) *corev1.PersistentVolume {
+		pv := newPVWithAffinity(name, "ns", claimName, hostname)
+		pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
+		}
+		pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimDelete
+		pv.Status.Phase = corev1.VolumeBound
+		return pv
+	}
+
+	pod := withPVC(withPVC(newPod("rp-0", "ns", "redpanda"), "datadir-rp-0"), "excluded-rp-0")
+
+	// The node's OBJECT name differs from its hostname label — the
+	// --hostname-override shape.
+	overriddenNode := &corev1.Node{ObjectMeta: metav1.ObjectMeta{
+		Name:   "ip-10-0-0-1.ec2.internal",
+		Labels: map[string]string{corev1.LabelHostname: "live-hostname"},
+	}}
+
+	c := fake.NewClientBuilder().WithScheme(s).WithObjects(
+		overriddenNode,
+		newPVC("datadir-rp-0", "ns", "redpanda", "pv-live"),
+		hostPathPV("pv-live", "datadir-rp-0", "live-hostname"),
+		newPVC("excluded-rp-0", "ns", "redpanda", "pv-excluded"),
+		hostPathPV("pv-excluded", "excluded-rp-0", "dead-hostname"),
+	).Build()
+
+	// Live node under hostname-override: nothing is remediable, and the
+	// PV's reclaim policy stays untouched.
+	affected, err := DeadNodePVCs(ctx, c, c, pod, "excluded-rp-0")
+	require.NoError(t, err)
+	require.Empty(t, affected, "a live node must not be treated as dead just because its object name differs from its hostname label")
+	var pv corev1.PersistentVolume
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-live"}, &pv))
+	require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy)
+
+	// The excluded claim's PV is pinned to a genuinely absent hostname,
+	// but exclusion must skip both remediation and the Retain patch.
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-excluded"}, &pv))
+	require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy)
+
+	// Genuinely dead node (no node carries the hostname label): the claim
+	// is returned and its PV is Retain-patched.
+	dead := withPVC(newPod("rp-1", "ns", "redpanda"), "datadir-rp-1")
+	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
+		overriddenNode,
+		newPVC("datadir-rp-1", "ns", "redpanda", "pv-dead"),
+		hostPathPV("pv-dead", "datadir-rp-1", "gone-hostname"),
+	).Build()
+	affected, err = DeadNodePVCs(ctx, c, c, dead)
+	require.NoError(t, err)
+	require.Len(t, affected, 1)
+	require.Equal(t, "datadir-rp-1", affected[0].Name)
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-dead"}, &pv))
+	require.Equal(t, corev1.PersistentVolumeReclaimRetain, pv.Spec.PersistentVolumeReclaimPolicy)
+}
