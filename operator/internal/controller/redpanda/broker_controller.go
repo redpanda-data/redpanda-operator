@@ -54,13 +54,15 @@ import (
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 
-// defaultUnbindPVCsAfter is the Broker controller's own dead-node PV
+// defaultUnbindPVCsAfter is the Broker controller's own PV-affinity
 // remediation timeout, used when --unbind-pvcs-after is not set. Remediation
 // must not silently stay disabled just because the (PVCUnbinder-oriented)
 // flag was left at its zero default: it only fires for pods stuck Pending on
-// PV node affinity whose Node OBJECT has been deleted from the API — a
-// strong dead-node signal — and it is additionally roll-grant-gated, so the
-// cluster controller serializes and health-gates it.
+// PV node affinity under a proof — the pinned Node OBJECT deleted from the
+// API, or every pinned node provably unusable for this pod (cordoned,
+// untolerated NotReady, or occupied by an anti-affinity-conflicting pod) —
+// and it is additionally roll-grant-gated, so the cluster controller
+// serializes and health-gates it.
 // TODO: give the Broker controller its own flag (e.g.
 // --broker-unbind-pvcs-after) when the feature grows its GA config surface.
 const defaultUnbindPVCsAfter = 5 * time.Minute
@@ -1169,18 +1171,23 @@ func (r *BrokerReconciler) ensureDrained(ctx context.Context, clusterName string
 	return true, nil
 }
 
-// remediatePVAffinity handles the dead-node recovery path: when a pod
-// can't schedule because its PVCs are bound to PVs pinned to a node
-// that no longer exists, we delete the affected PVCs and pod so the
-// next reconcile recreates everything on a live node.
+// remediatePVAffinity handles the unusable-node recovery paths: when a pod
+// can't schedule because its PVCs are bound to PVs pinned to a node that
+// no longer exists (dead node), or to nodes that all reject this pod —
+// cordoned, untolerated NotReady/unreachable, or occupied by a pod
+// matching one of this pod's own required anti-affinity terms (a PV
+// mis-provisioned onto another broker's node) — we delete the affected
+// PVCs and pod so the next reconcile recreates everything on a usable
+// node.
 //
 // PV identification and Retain-patching is delegated to
-// [pvcunbinder.DeadNodePVCs]. Only VolumeClaimTemplate PVCs are
-// remediated — ExistingClaims are externally-managed and the controller
-// doesn't own their spec, so those are left for the admin to handle.
+// [pvcunbinder.DeadNodePVCs] and [pvcunbinder.MispinnedPVCs]. Only
+// VolumeClaimTemplate PVCs are remediated — ExistingClaims are
+// externally-managed and the controller doesn't own their spec, so those
+// are left for the admin to handle.
 //
 // Returns true if remediation was performed (caller should requeue).
-// Returns false if the timeout hasn't elapsed or the node still exists.
+// Returns false if the timeout hasn't elapsed or no proof holds.
 func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, broker *redpandav1alpha2.Broker, pod *corev1.Pod) (bool, error) {
 	// Unreachable through SetupBrokerController (which defaults the value);
 	// guards direct construction only.
@@ -1200,6 +1207,23 @@ func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logge
 		}
 	}
 
+	// Re-qualify the pod on an uncached read, decoded into a fresh object,
+	// immediately before evidence gathering and destruction: a stale
+	// informer copy of a since-resolved (or since-replaced) pod must not
+	// reach the PVC deletes.
+	fresh := &corev1.Pod{}
+	if err := apiReader.Get(ctx, client.ObjectKeyFromObject(pod), fresh); err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	if fresh.UID != pod.UID || !pvcunbinder.PodHasVolumeAffinityUnschedulable(fresh) {
+		l.Info("pod no longer qualifies on uncached re-read; skipping PV affinity remediation", "pod", pod.Name)
+		return false, nil
+	}
+	pod = fresh
+
 	// ExistingClaims are excluded up front: the controller doesn't own
 	// their spec, so they are neither remediated NOR Retain-patched —
 	// flipping the reclaim policy of a PV we then decline to touch would
@@ -1213,11 +1237,23 @@ func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logge
 		return false, err
 	}
 	if len(remediable) == 0 {
+		// No dead-node proof. Try the mis-pin proof: claims bound to
+		// HostPath/Local PVs whose every eligible node is unavailable to
+		// this pod — cordoned, untolerated NotReady/unreachable, or
+		// occupied by a pod matching one of this pod's own required
+		// anti-affinity terms (the shape where a PV is provisioned onto a
+		// node another broker occupies and the pod can never schedule).
+		remediable, err = pvcunbinder.MispinnedPVCs(ctx, k8sClient, apiReader, pod, existingClaimNames...)
+		if err != nil {
+			return false, err
+		}
+	}
+	if len(remediable) == 0 {
 		return false, nil
 	}
 
 	for i := range remediable {
-		l.Info("deleting PVC pinned to dead node", "pvc", remediable[i].Name)
+		l.Info("deleting PVC pinned to an unusable node", "pvc", remediable[i].Name)
 		if err := k8sClient.Delete(ctx, &remediable[i]); err != nil && !apierrors.IsNotFound(err) {
 			return false, fmt.Errorf("deleting PVC %s: %w", remediable[i].Name, err)
 		}
