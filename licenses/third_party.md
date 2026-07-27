@@ -258,7 +258,7 @@ Run `task generate:third-party-licenses-list`.
 | golang.org/x/exp | [BSD-3-Clause](https://go.googlesource.com/exp/+/e25ba8c21ef6/LICENSE) |
 | golang.org/x/mod/semver | [BSD-3-Clause](https://go.googlesource.com/mod/+/v0.35.0/LICENSE) |
 | golang.org/x/net | [BSD-3-Clause](https://go.googlesource.com/net/+/v0.54.0/LICENSE) |
-| golang.org/x/oauth2 | [BSD-3-Clause](https://go.googlesource.com/oauth2/+/v0.35.0/LICENSE) |
+| golang.org/x/oauth2 | [BSD-3-Clause](https://go.googlesource.com/oauth2/+/v0.36.0/LICENSE) |
 | golang.org/x/sync | [BSD-3-Clause](https://go.googlesource.com/sync/+/v0.20.0/LICENSE) |
 | golang.org/x/sys | [BSD-3-Clause](https://go.googlesource.com/sys/+/v0.44.0/LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://go.googlesource.com/term/+/v0.43.0/LICENSE) |
@@ -269,9 +269,9 @@ Run `task generate:third-party-licenses-list`.
 | google.golang.org/api | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.250.0/LICENSE) |
 | google.golang.org/api/internal/third_party/uritemplates | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.250.0/internal/third_party/uritemplates/LICENSE) |
 | google.golang.org/genproto/googleapis | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/95abcf5c77ba/LICENSE) |
-| google.golang.org/genproto/googleapis/api | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/9d38bb4040a9/googleapis/api/LICENSE) |
-| google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/9d38bb4040a9/googleapis/rpc/LICENSE) |
-| google.golang.org/grpc | [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.80.0/LICENSE) |
+| google.golang.org/genproto/googleapis/api | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/afd174a4e478/LICENSE) |
+| google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/afd174a4e478/LICENSE) |
+| google.golang.org/grpc | [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.82.1/LICENSE) |
 | google.golang.org/protobuf | [BSD-3-Clause](https://go.googlesource.com/protobuf/+/v1.36.11/LICENSE) |
 | gopkg.in/evanphx/json-patch.v4 | [BSD-3-Clause](https://gopkg.in/evanphx/json-patch.v4/blob/v4.13.0/LICENSE) |
 | gopkg.in/inf.v0 | [BSD-3-Clause](https://github.com/go-inf/inf/blob/v0.9.1/LICENSE) |
