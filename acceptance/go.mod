@@ -16,7 +16,7 @@ require (
 	github.com/twmb/franz-go v1.21.2
 	github.com/twmb/franz-go/pkg/kadm v1.18.0
 	github.com/twmb/franz-go/pkg/sr v1.7.0
-	google.golang.org/grpc v1.80.0
+	google.golang.org/grpc v1.82.1
 	helm.sh/helm/v3 v3.18.5
 	k8s.io/api v0.35.1
 	k8s.io/apimachinery v0.35.1
