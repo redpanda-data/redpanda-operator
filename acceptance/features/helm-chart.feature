@@ -28,14 +28,20 @@ Feature: Redpanda Helm Chart
     When I stop the Node running Pod "bazquux-2"
     And Pod "bazquux-2" is eventually Pending
     Then Pod "bazquux-2" will eventually be Running
-    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list | sed -E 's/\s+/ /gm' | cut -d ' ' -f 1,6" will eventually output:
+    # As of Redpanda 26.2 `rpk redpanda admin brokers list` renders the
+    # sectioned `rpk cluster info` format: the BROKERS table is
+    # `ID HOST PORT CORES MEMBERSHIP IS-ALIVE VERSION [UUID]` (the controller
+    # row's ID carries a `*` suffix, stripped by `tr` since any broker may be
+    # controller), followed by a DISK SPACE section the `awk` window drops by
+    # keeping only the header-to-blank-line span of the BROKERS table.
+    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list | sed -E 's/\s+/ /gm' | awk '/^ID /{found=1} /^$/{found=0} found' | cut -d ' ' -f 1,5 | tr -d '*'" will eventually output:
     ```
     ID MEMBERSHIP
     0 active
     1 active
     3 active
     ```
-    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list --include-decommissioned | sed -E 's/\s+/ /gm' | cut -d ' ' -f 1,6" will eventually output:
+    And kubectl exec -it "bazquux-0" "rpk redpanda admin brokers list --include-decommissioned | sed -E 's/\s+/ /gm' | awk '/^ID /{found=1} /^$/{found=0} found' | cut -d ' ' -f 1,5 | tr -d '*'" will eventually output:
     ```
     ID MEMBERSHIP
     0 active
