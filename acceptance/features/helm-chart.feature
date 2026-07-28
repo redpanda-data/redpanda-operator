@@ -7,6 +7,12 @@ Feature: Redpanda Helm Chart
      nameOverride: foobar
      fullnameOverride: bazquux
 
+     # Use the test image rather than the chart's default. The default tag
+     # may not be published yet while a release is being staged.
+     image:
+       repository: ${DEFAULT_REDPANDA_REPO}
+       tag: ${DEFAULT_REDPANDA_TAG}
+
      statefulset:
        sideCars:
          image:
@@ -43,6 +49,12 @@ Feature: Redpanda Helm Chart
     ```yaml
      fullnameOverride: saslupgrade
 
+     # Use the test image rather than the chart's default. The default tag
+     # may not be published yet while a release is being staged.
+     image:
+       repository: ${DEFAULT_REDPANDA_REPO}
+       tag: ${DEFAULT_REDPANDA_TAG}
+
      statefulset:
        replicas: 1
        sideCars:
@@ -66,6 +78,12 @@ Feature: Redpanda Helm Chart
     When I helm upgrade "sasl-upgrade" "../charts/redpanda/chart" with values:
     ```yaml
      fullnameOverride: saslupgrade
+
+     # Use the test image rather than the chart's default. The default tag
+     # may not be published yet while a release is being staged.
+     image:
+       repository: ${DEFAULT_REDPANDA_REPO}
+       tag: ${DEFAULT_REDPANDA_TAG}
 
      statefulset:
        replicas: 1
