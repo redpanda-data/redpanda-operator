@@ -207,10 +207,21 @@ func TestIntegrationChart(t *testing.T) {
 }
 
 func testRP(name string, namespace string) *redpandav1alpha2.Redpanda {
-	return &redpandav1alpha2.Redpanda{
+	rp := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec:       redpandav1alpha2.MinimalRedpandaSpec(),
 	}
+
+	// Use the test image rather than the operator's default. The default tag
+	// may not be published yet while a release is being staged.
+	if repo := os.Getenv("TEST_REDPANDA_REPO"); repo != "" {
+		if version := os.Getenv("TEST_REDPANDA_VERSION"); version != "" {
+			rp.Spec.ClusterSpec.Image.Repository = ptr.To(repo)
+			rp.Spec.ClusterSpec.Image.Tag = ptr.To(version)
+		}
+	}
+
+	return rp
 }
 
 func TestChartYaml(t *testing.T) {

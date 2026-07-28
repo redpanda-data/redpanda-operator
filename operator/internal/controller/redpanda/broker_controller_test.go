@@ -892,6 +892,7 @@ func (s *BrokerControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 		Spec: redpandav1alpha2.MinimalRedpandaSpec(),
 	}
 	rp.Spec.ClusterSpec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+	rp.Spec.ClusterSpec.Image.Tag = ptr.To(os.Getenv("TEST_REDPANDA_VERSION"))
 	return rp
 }
 

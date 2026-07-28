@@ -13,6 +13,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -289,6 +290,12 @@ type chart struct {
 
 func (s *StatefulSetDecommissionerSuite) installChart(name string, overrides map[string]any) *chart {
 	values := map[string]any{
+		// Use the test image rather than the chart's default. The default tag
+		// may not be published yet while a release is being staged.
+		"image": map[string]any{
+			"repository": os.Getenv("TEST_REDPANDA_REPO"),
+			"tag":        os.Getenv("TEST_REDPANDA_VERSION"),
+		},
 		"statefulset": map[string]any{
 			"replicas": 1,
 			"sideCars": map[string]any{
