@@ -709,9 +709,13 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	require.NoError(t, env.Host().CreateNode())
 	require.NoError(t, env.Host().ImportImage(s.importImages...))
 
-	// Wait for the broker to recover to Running.
+	// Wait for the broker to recover to Running. This leg gets a longer
+	// budget than the default: it covers replacement-node startup, the image
+	// import above racing the pod's first pull (a transient
+	// ImagePullBackOff correctly reports Stuck), and a redpanda cold start —
+	// which together can exceed 5 minutes on a loaded CI host.
 	t.Log("waiting for Broker to recover to Running")
-	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseRunning)
+	s.waitForPhaseWithin(t, ctx, c, target, redpandav1alpha2.BrokerPhaseRunning, 12*time.Minute)
 
 	// Verify remediation happened: the old PVs should have Retain policy.
 	for pvcName, pvName := range originalPVNames {
@@ -926,11 +930,15 @@ func (s *BrokerControllerSuite) waitForDeletion(t testing.TB, ctx context.Contex
 }
 
 func (s *BrokerControllerSuite) waitForPhase(t testing.TB, ctx context.Context, c client.Client, broker *redpandav1alpha2.Broker, phase redpandav1alpha2.BrokerPhase) {
+	s.waitForPhaseWithin(t, ctx, c, broker, phase, 5*time.Minute)
+}
+
+func (s *BrokerControllerSuite) waitForPhaseWithin(t testing.TB, ctx context.Context, c client.Client, broker *redpandav1alpha2.Broker, phase redpandav1alpha2.BrokerPhase, timeout time.Duration) {
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
 		assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(broker), broker))
 		t.Logf("Broker %q phase=%s (want %s)", broker.Name, broker.Status.Phase, phase)
 		assert.Equal(ct, phase, broker.Status.Phase)
-	}, 5*time.Minute, 5*time.Second)
+	}, timeout, 5*time.Second)
 }
 
 func (s *BrokerControllerSuite) applyAndWait(t testing.TB, ctx context.Context, c client.Client, objs ...client.Object) {
