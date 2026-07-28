@@ -94,8 +94,13 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer usersClient.Close()
 	defer syncer.Close()
 
+	// A managed user is ready once we have recorded it as managed and the
+	// cluster holds its credential under the mechanism the spec asks for.
+	// Anything short of that needs the credential (re)written.
+	managedUserIsReady := hasManagedUser && credentials.HasRequestedMechanism
+
 	switch {
-	case shouldManageUser && (!credentials.HasRequestedMechanism || !hasManagedUser):
+	case shouldManageUser && !managedUserIsReady:
 		// Create a new user or adopt an existing one. UpsertSCRAM is
 		// idempotent so this is safe regardless of whether the user
 		// already exists in Redpanda. We also recreate the user if a
