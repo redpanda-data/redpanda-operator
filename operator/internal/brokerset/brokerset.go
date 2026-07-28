@@ -1,0 +1,575 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+// Package brokerset implements CR-agnostic management of Broker custom
+// resources for a single node pool: rendering Broker CRs from a desired
+// StatefulSet template, steady-state reconciliation (create/update/scale-down
+// via decommission intent), cluster-wide roll-grant serialization, the
+// StatefulSet→Broker migration state machine, and its rollback.
+//
+// Everything specific to the owning cluster CR — V1 Cluster or V2 Redpanda —
+// is injected through [BrokerSet]'s fields: the owner object, the ClusterRef
+// stamped into Broker specs, label sets and selectors, the config-checksum
+// annotation key, and callbacks for health gating and migration progress
+// reporting. The hard-won invariants (grant re-keying in place, decommission
+// intent never unset, annotation-based rotation identity) live here, once.
+package brokerset
+
+import (
+	"context"
+	"fmt"
+	"maps"
+	"slices"
+	"sort"
+
+	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
+	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
+)
+
+const (
+	// NetworkIndexLabelKey carries the Broker's network index (its ordinal)
+	// on the Broker CR and its pod template for cheap label selection.
+	NetworkIndexLabelKey = "cluster.redpanda.com/network-index"
+
+	// BrokerDecommissionFinalizer is the Broker controller's finalizer;
+	// rollback removes it so CR deletion cannot trigger a decommission.
+	BrokerDecommissionFinalizer = "cluster.redpanda.com/broker-decommission"
+)
+
+// Migration condition reasons, shared by every owning-CR flavor (the V1
+// BrokerMigration condition uses these same strings).
+const (
+	MigrationReasonBlocked    = "Blocked"
+	MigrationReasonInProgress = "InProgress"
+	MigrationReasonComplete   = "Complete"
+	MigrationReasonRolledBack = "RolledBack"
+)
+
+// MigrationReporter records STS→Broker migration progress on the owning
+// cluster's status. The migration state itself is always derived from world
+// state, never persisted — reporting is best-effort observability and must
+// not fail the migration.
+type MigrationReporter interface {
+	// Report records the given condition value. Implementations should
+	// de-duplicate writes when nothing changed.
+	Report(ctx context.Context, status corev1.ConditionStatus, reason, message string)
+	// NeedsCompletion reports whether migration progress was previously
+	// recorded and not yet marked complete. Steady state promotes such a
+	// record to Complete; clusters that never migrated never get one.
+	NeedsCompletion(ctx context.Context) bool
+}
+
+// BrokerSet manages the Broker CRs of one node pool on behalf of an owning
+// cluster resource. Construct one per pool per reconcile; it holds no state
+// beyond its configuration.
+type BrokerSet struct {
+	Client k8sclient.Client
+	Scheme *runtime.Scheme
+
+	// Owner is the cluster resource that controller-owns every Broker CR
+	// and the migration backup ConfigMap.
+	Owner k8sclient.Object
+	// ClusterRef is stamped into each Broker's spec.clusterRef.
+	ClusterRef redpandav1alpha2.ClusterRef
+	// PoolName is the node pool this set manages (backup ConfigMap key).
+	PoolName string
+
+	// BrokerLabels label every Broker CR of this pool and its pod template.
+	// Callers MUST include redpandav1alpha2.ClusterNameLabel (Broker.PodName
+	// relies on it when ClusterRef names a pool rather than the cluster) and
+	// whatever labels PoolSelector and ClusterSelector match on.
+	BrokerLabels map[string]string
+	// PoolSelector selects this pool's Broker CRs.
+	PoolSelector k8slabels.Selector
+	// ClusterSelector selects ALL the owner's Broker CRs across pools —
+	// roll serialization and decommission mutual exclusion are cluster-wide.
+	ClusterSelector k8slabels.Selector
+	// PodSelector selects this pool's pods (migration preconditions).
+	PodSelector k8slabels.Selector
+
+	// ConfigChecksumKey is the pod-template annotation on the rendered
+	// StatefulSet carrying the node-config checksum (V1:
+	// redpanda.vectorized.io/configmap-hash, V2: config.redpanda.com/checksum).
+	// Its value is copied to BrokerConfigChecksumAnnotation — one of the three
+	// rotation-identity keys.
+	ConfigChecksumKey string
+
+	// IsClusterHealthy gates roll-grant issuance and the migration's
+	// destructive step. Return a *RequeueAfterError when unhealthy so the
+	// owning reconciler backs off instead of erroring. nil means
+	// always-healthy (tests only).
+	IsClusterHealthy func(ctx context.Context) error
+	// OnQuiesced runs when no rolls are outstanding and no grants are active
+	// (V1 clears Status.Restarting here). Optional.
+	OnQuiesced func(ctx context.Context) error
+	// MigrationBlockedReason contributes owner-specific quiescence checks to
+	// the migration preconditions (V1: cluster restarting, decommission
+	// recorded in status). Return a non-empty human-readable reason to block
+	// the migration this pass. Optional.
+	MigrationBlockedReason func(ctx context.Context) (string, error)
+	// Reporter records migration progress. Optional.
+	Reporter MigrationReporter
+
+	Logger logr.Logger
+}
+
+// report is the nil-safe Reporter.Report.
+func (s *BrokerSet) report(ctx context.Context, status corev1.ConditionStatus, reason, message string) {
+	if s.Reporter != nil {
+		s.Reporter.Report(ctx, status, reason, message)
+	}
+}
+
+// Ensure runs the full per-pool Broker lifecycle. If a live StatefulSet named
+// stsKey exists the migration state machine runs; otherwise steady-state
+// reconciliation. desiredSTS is the rendered desired StatefulSet — the
+// canonical pod template converted into Broker CRs; it may be mutated. A nil
+// desiredSTS (deleted pool, nothing rendered) skips migration and renders no
+// desired Brokers, leaving only excess-broker reconciliation and roll grants.
+func (s *BrokerSet) Ensure(ctx context.Context, stsKey types.NamespacedName, desiredSTS *appsv1.StatefulSet, desiredReplicas int32) error {
+	l := s.Logger.WithValues("nodepool", s.PoolName)
+
+	existingSTS, err := s.getExistingStatefulSet(ctx, stsKey)
+	if err != nil {
+		return fmt.Errorf("checking for existing StatefulSet: %w", err)
+	}
+
+	if existingSTS != nil && desiredSTS != nil {
+		return s.ensureMigration(ctx, l, existingSTS, desiredSTS)
+	}
+
+	return s.ensureBrokers(ctx, l, desiredSTS, desiredReplicas)
+}
+
+// ensureBrokers is the steady-state broker lifecycle (new cluster or
+// post-migration).
+func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS *appsv1.StatefulSet, desiredReplicas int32) error {
+	// Migration completion is observed, not recorded: reaching steady state
+	// (no StatefulSet left) IS completion. Only progress an existing
+	// condition — clusters that never migrated don't get one.
+	if s.Reporter != nil && s.Reporter.NeedsCompletion(ctx) {
+		s.report(ctx, corev1.ConditionTrue,
+			MigrationReasonComplete, "StatefulSet removed; Broker CRs manage all pods")
+	}
+
+	var desired []redpandav1alpha2.Broker
+	if desiredSTS != nil {
+		var err error
+		desired, err = s.RenderBrokers(desiredSTS, desiredReplicas, false)
+		if err != nil {
+			return fmt.Errorf("rendering desired Broker CRs: %w", err)
+		}
+	}
+
+	existing, err := s.listBrokers(ctx)
+	if err != nil {
+		return fmt.Errorf("listing existing Broker CRs: %w", err)
+	}
+
+	existingByIndex := IndexBrokers(existing)
+
+	decommissionInFlight := slices.ContainsFunc(existing, func(b redpandav1alpha2.Broker) bool {
+		return b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned
+	})
+
+	for i := range desired {
+		d := &desired[i]
+		idx := *d.Spec.NetworkIndex
+
+		existingBroker, ok := existingByIndex[idx]
+		if !ok {
+			if err := s.createBroker(ctx, l, desiredSTS.Name, d); err != nil {
+				return err
+			}
+			continue
+		}
+		delete(existingByIndex, idx)
+
+		if err := s.EnsureDesiredBroker(ctx, l, existingBroker, d); err != nil {
+			return err
+		}
+	}
+
+	if err := s.ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight); err != nil {
+		return err
+	}
+
+	return s.EnsureRollGrants(ctx, l)
+}
+
+// EnsureDesiredBroker reconciles one desired Broker against the existing CR
+// at the same index.
+//
+// Decommission intent — whether set by scale-down or manually by a human —
+// is never unset by the operator (recommission was dropped from RFC Q2): a
+// broker with the intent set is left alone until the decommission completes.
+// Once terminal, the CR is deleted so the next pass creates a fresh Broker
+// (and node identity) for the still-desired index. Re-creation waits for the
+// old CR to be fully gone so its deletion handling cannot race the
+// replacement's identically-named pod.
+func (s *BrokerSet) EnsureDesiredBroker(ctx context.Context, l logr.Logger, existingBroker, d *redpandav1alpha2.Broker) error {
+	if existingBroker.Spec.Decommission {
+		if existingBroker.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned && existingBroker.DeletionTimestamp.IsZero() {
+			l.Info("replacing decommissioned Broker at desired index", "name", existingBroker.Name, "index", *existingBroker.Spec.NetworkIndex)
+			if err := s.Client.Delete(ctx, existingBroker); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("deleting decommissioned Broker %s: %w", existingBroker.Name, err)
+			}
+		}
+		return nil
+	}
+
+	return s.UpdateBroker(ctx, l, existingBroker, d)
+}
+
+// ReconcileExcessBrokers drives scale-down: excess brokers (index >=
+// desiredReplicas, highest first) are marked for decommission strictly one at
+// a time — any decommission already in flight (including a manual one on a
+// desired index) blocks marking the next one — and deleted once they reach
+// the Decommissioned phase.
+func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, existingByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight bool) error {
+	var excess []*redpandav1alpha2.Broker
+	for idx, b := range existingByIndex {
+		if idx >= desiredReplicas {
+			excess = append(excess, b)
+		}
+	}
+	sort.Slice(excess, func(i, j int) bool {
+		return ptr.Deref(excess[i].Spec.NetworkIndex, 0) > ptr.Deref(excess[j].Spec.NetworkIndex, 0)
+	})
+
+	for _, b := range excess {
+		if b.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned {
+			l.Info("deleting decommissioned Broker CR", "name", b.Name)
+			if err := s.Client.Delete(ctx, b); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("deleting decommissioned Broker %s: %w", b.Name, err)
+			}
+			continue
+		}
+		if decommissionInFlight {
+			// A decommission is already in flight (here or anywhere in the
+			// pool) — never start a second one; wait for it to complete.
+			break
+		}
+		l.Info("marking Broker for decommission (scale-down)", "name", b.Name, "index", *b.Spec.NetworkIndex)
+		b.Spec.Decommission = true
+		if err := s.Client.Update(ctx, b); err != nil {
+			return fmt.Errorf("setting decommission on Broker %s: %w", b.Name, err)
+		}
+		break // one at a time
+	}
+
+	return nil
+}
+
+// RenderBrokers converts a StatefulSet spec into Broker CRs, one per ordinal.
+// When migration=false (new cluster), Brokers use VolumeClaimTemplates. When
+// migration=true (STS→Broker migration), Brokers use ExistingClaims to
+// reference StatefulSet-created PVCs and replicas should come from the live
+// STS.
+func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migration bool) ([]redpandav1alpha2.Broker, error) {
+	stsName := sts.Name
+
+	configHash := sts.Spec.Template.Annotations[s.ConfigChecksumKey]
+
+	vctNames := map[string]bool{}
+	for _, vct := range sts.Spec.VolumeClaimTemplates {
+		vctNames[vct.Name] = true
+	}
+
+	var brokerVCTs []redpandav1alpha2.BrokerVolumeClaim
+	if !migration {
+		for _, vct := range sts.Spec.VolumeClaimTemplates {
+			brokerVCTs = append(brokerVCTs, redpandav1alpha2.BrokerVolumeClaim{
+				Name: vct.Name,
+				Spec: vct.Spec,
+			})
+		}
+	}
+
+	var brokers []redpandav1alpha2.Broker
+	for i := int32(0); i < replicas; i++ {
+		podName := fmt.Sprintf("%s-%d", stsName, i)
+
+		podSpec := *sts.Spec.Template.Spec.DeepCopy()
+		podSpec.Hostname = podName
+		// The StatefulSet controller would set the subdomain to the STS's
+		// serviceName (the headless service) — replicate that for identical
+		// pod DNS records.
+		podSpec.Subdomain = sts.Spec.ServiceName
+		normalizePodSpecDefaults(&podSpec)
+
+		// Broker-mode drain and maintenance-mode handling is controller-driven
+		// (BrokerReconciler.ensureDrained + the registration pass's disable);
+		// the StatefulSet-era lifecycle hook scripts are redundant here, and
+		// their render gate (CalculateCurrentReplicas > 1) reads volatile
+		// cluster STATUS — keeping them would churn the pod-template hash
+		// through bootstrap and migration and trigger spurious rotations.
+		for ci := range podSpec.Containers {
+			podSpec.Containers[ci].Lifecycle = nil
+		}
+
+		for vi := range podSpec.Volumes {
+			v := &podSpec.Volumes[vi]
+			if v.PersistentVolumeClaim != nil && vctNames[v.PersistentVolumeClaim.ClaimName] {
+				v.PersistentVolumeClaim.ClaimName = fmt.Sprintf("%s-%s", v.PersistentVolumeClaim.ClaimName, podName)
+			}
+		}
+
+		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
+		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
+
+		brokerLabels := maps.Clone(s.BrokerLabels)
+		brokerLabels[NetworkIndexLabelKey] = fmt.Sprintf("%d", i)
+
+		storage := redpandav1alpha2.BrokerStorage{
+			VolumeClaimTemplates: brokerVCTs,
+		}
+		if migration {
+			var claims []redpandav1alpha2.ExistingClaim
+			for _, vct := range sts.Spec.VolumeClaimTemplates {
+				claims = append(claims, redpandav1alpha2.ExistingClaim{
+					Name: fmt.Sprintf("%s-%s", vct.Name, podName),
+				})
+			}
+			storage = redpandav1alpha2.BrokerStorage{
+				ExistingClaims: claims,
+			}
+		}
+
+		// Propagate the deletion policy so it stays readable during cluster
+		// teardown, after the owning cluster object itself is gone.
+		var brokerAnnotations map[string]string
+		if policy, ok := s.Owner.GetAnnotations()[feature.BrokerDeletionPolicy.Key]; ok {
+			brokerAnnotations = map[string]string{feature.BrokerDeletionPolicy.Key: policy}
+		}
+
+		podTemplate := redpandav1alpha2.BrokerPodTemplate{
+			Labels:      brokerLabels,
+			Annotations: podAnnotations,
+			Spec:        podSpec,
+		}
+		// The rotation identity: any pod SPEC change — image, resources, env
+		// — must reach live pods, not only changes that alter the rendered
+		// node config. Template metadata is excluded: the Broker controller
+		// syncs it onto live pods in place, without a rotation (see
+		// BrokerPodTemplateHashAnnotation).
+		podTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = podTemplate.Hash()
+
+		broker := redpandav1alpha2.Broker{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace:   s.Owner.GetNamespace(),
+				Labels:      brokerLabels,
+				Annotations: brokerAnnotations,
+			},
+			Spec: redpandav1alpha2.BrokerSpec{
+				ClusterRef:   *s.ClusterRef.DeepCopy(),
+				NetworkIndex: ptr.To(i),
+				PodTemplate:  podTemplate,
+				Storage:      storage,
+			},
+		}
+
+		if err := controllerutil.SetControllerReference(s.Owner, &broker, s.Scheme); err != nil {
+			return nil, fmt.Errorf("setting owner reference on Broker ordinal %d: %w", i, err)
+		}
+
+		brokers = append(brokers, broker)
+	}
+
+	return brokers, nil
+}
+
+// normalizePodSpecDefaults aligns the rendered pod spec with the values the
+// Broker CRD's structural defaulting applies on write (container port
+// protocol defaults to TCP). Without this the in-memory render never compares
+// equal to the stored object — the API server re-adds the default on every
+// write — and each reconcile issues a pointless no-op update.
+func normalizePodSpecDefaults(spec *corev1.PodSpec) {
+	defaultPorts := func(containers []corev1.Container) {
+		for i := range containers {
+			for j := range containers[i].Ports {
+				if containers[i].Ports[j].Protocol == "" {
+					containers[i].Ports[j].Protocol = corev1.ProtocolTCP
+				}
+			}
+		}
+	}
+	defaultPorts(spec.InitContainers)
+	defaultPorts(spec.Containers)
+}
+
+// listBrokers lists this pool's Broker CRs owned by the owner.
+func (s *BrokerSet) listBrokers(ctx context.Context) ([]redpandav1alpha2.Broker, error) {
+	var list redpandav1alpha2.BrokerList
+	if err := s.Client.List(ctx, &list, &k8sclient.ListOptions{
+		LabelSelector: s.PoolSelector,
+		Namespace:     s.Owner.GetNamespace(),
+	}); err != nil {
+		return nil, err
+	}
+	// Filter to only those owned by this cluster.
+	var owned []redpandav1alpha2.Broker
+	for _, b := range list.Items {
+		if metav1.IsControlledBy(&b, s.Owner) {
+			owned = append(owned, b)
+		}
+	}
+	return owned, nil
+}
+
+// listClusterBrokers lists Broker CRs owned by this cluster across ALL node
+// pools — roll serialization is cluster-wide, not per-pool.
+func (s *BrokerSet) listClusterBrokers(ctx context.Context) ([]redpandav1alpha2.Broker, error) {
+	var list redpandav1alpha2.BrokerList
+	if err := s.Client.List(ctx, &list, &k8sclient.ListOptions{
+		LabelSelector: s.ClusterSelector,
+		Namespace:     s.Owner.GetNamespace(),
+	}); err != nil {
+		return nil, err
+	}
+	var owned []redpandav1alpha2.Broker
+	for _, b := range list.Items {
+		if metav1.IsControlledBy(&b, s.Owner) {
+			owned = append(owned, b)
+		}
+	}
+	return owned, nil
+}
+
+func (s *BrokerSet) createBroker(ctx context.Context, l logr.Logger, stsName string, desired *redpandav1alpha2.Broker) error {
+	desired.GenerateName = stsName + "-"
+
+	l.Info("creating Broker CR", "generateName", desired.GenerateName, "index", *desired.Spec.NetworkIndex)
+	return s.Client.Create(ctx, desired)
+}
+
+// UpdateBroker syncs the desired pod template (and propagated annotations)
+// onto an existing Broker CR, skipping no-op writes.
+func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, desired *redpandav1alpha2.Broker) error {
+	// Preserve the restart marker: it is stamped by MarkForRestart, not by
+	// the renderer, and must survive PodTemplate syncs until the restart has
+	// rolled through.
+	restartKey := redpandav1alpha2.BrokerClusterConfigVersionAnnotation
+	if v, ok := existing.Spec.PodTemplate.Annotations[restartKey]; ok {
+		if desired.Spec.PodTemplate.Annotations == nil {
+			desired.Spec.PodTemplate.Annotations = map[string]string{}
+		}
+		if _, set := desired.Spec.PodTemplate.Annotations[restartKey]; !set {
+			desired.Spec.PodTemplate.Annotations[restartKey] = v
+		}
+	}
+
+	policyKey := feature.BrokerDeletionPolicy.Key
+	desiredPolicy, desiredPolicySet := desired.Annotations[policyKey]
+	existingPolicy, existingPolicySet := existing.Annotations[policyKey]
+	policyChanged := desiredPolicy != existingPolicy || desiredPolicySet != existingPolicySet
+
+	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) &&
+		!policyChanged {
+		return nil
+	}
+	// Spec.Decommission is deliberately not synced: decommission intent is
+	// never unset by the operator, not even when the index is desired again.
+	// Terminal brokers at desired indices are replaced by EnsureDesiredBroker.
+	existing.Spec.PodTemplate = desired.Spec.PodTemplate
+	if desiredPolicySet {
+		if existing.Annotations == nil {
+			existing.Annotations = map[string]string{}
+		}
+		existing.Annotations[policyKey] = desiredPolicy
+	} else {
+		delete(existing.Annotations, policyKey)
+	}
+
+	l.V(1).Info("updating Broker CR", "name", existing.Name, "index", *existing.Spec.NetworkIndex)
+	return s.Client.Update(ctx, existing)
+}
+
+func (s *BrokerSet) getBrokerPod(ctx context.Context, b *redpandav1alpha2.Broker) (*corev1.Pod, error) {
+	var pod corev1.Pod
+	err := s.Client.Get(ctx, types.NamespacedName{Name: b.PodName(), Namespace: b.Namespace}, &pod)
+	if apierrors.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting pod for Broker %s: %w", b.Name, err)
+	}
+	return &pod, nil
+}
+
+// IndexBrokers indexes Broker CRs by their network index.
+func IndexBrokers(brokers []redpandav1alpha2.Broker) map[int32]*redpandav1alpha2.Broker {
+	m := map[int32]*redpandav1alpha2.Broker{}
+	for i := range brokers {
+		if brokers[i].Spec.NetworkIndex != nil {
+			m[*brokers[i].Spec.NetworkIndex] = &brokers[i]
+		}
+	}
+	return m
+}
+
+// MarkForRestart records a restart-requiring cluster-config version in each
+// Broker's desired pod template (the `kubectl rollout restart` pattern): pods
+// inherit the annotation at creation, so a live pod whose value differs from
+// the desired template needs a rotation. The resulting restarts ride the
+// roll-grant machinery one broker at a time. Only Broker SPECS are written —
+// the cluster controller never touches pods, which belong to the Broker
+// controller.
+func MarkForRestart(ctx context.Context, c k8sclient.Client, owner k8sclient.Object, selector k8slabels.Selector, version string) error {
+	var list redpandav1alpha2.BrokerList
+	if err := c.List(ctx, &list, &k8sclient.ListOptions{
+		LabelSelector: selector,
+		Namespace:     owner.GetNamespace(),
+	}); err != nil {
+		return fmt.Errorf("listing Broker CRs: %w", err)
+	}
+
+	for i := range list.Items {
+		b := &list.Items[i]
+		if !metav1.IsControlledBy(b, owner) {
+			continue
+		}
+		if b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] == version {
+			continue
+		}
+		patch := k8sclient.MergeFrom(b.DeepCopy())
+		if b.Spec.PodTemplate.Annotations == nil {
+			b.Spec.PodTemplate.Annotations = map[string]string{}
+		}
+		b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = version
+		if err := c.Patch(ctx, b, patch); err != nil {
+			return fmt.Errorf("marking Broker %s for restart: %w", b.Name, err)
+		}
+	}
+	return nil
+}
+
+// podUnschedulable reports whether the pod cannot be scheduled — the Stuck
+// class that a granted pod+PVC recreation (PV-affinity remediation) can fix.
+func podUnschedulable(pod *corev1.Pod) bool {
+	for _, c := range pod.Status.Conditions {
+		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionFalse {
+			return true
+		}
+	}
+	return false
+}
