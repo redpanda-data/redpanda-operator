@@ -452,10 +452,17 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 	// deadlock. An UNREADY pod deliberately keeps rotating without an
 	// identity: it may never register at all (e.g. crash-looping on the very
 	// config this rotation fixes), and there is no leadership to drain.
+	//
+	// This MUST return a zero Result: a non-zero one stops the reconciler
+	// chain before reconcileBrokerRegistration ever runs, so the identity
+	// this branch is waiting on would never be adopted — a livelock.
+	// Falling through lets registration adopt the ID (its status update
+	// triggers the next pass, which rotates with a drain) or schedule its
+	// own retry when membership hasn't caught up yet.
 	if broker.Status.BrokerID == nil && isPodReady(state.pod) {
 		l.Info("pod needs rotation but broker identity not yet adopted, deferring", "name", state.pod.Name)
 		state.phase = redpandav1alpha2.BrokerPhaseRunning
-		return ctrl.Result{RequeueAfter: requeueShort}, nil
+		return ctrl.Result{}, nil
 	}
 	if broker.Status.BrokerID != nil {
 		drained, err := r.ensureDrained(ctx, state.clusterName, broker)
