@@ -173,3 +173,25 @@ jobs:
           token: ${{ env.ACTIONS_BOT_TOKEN }}
           repository: redpanda-data/helm-charts
           event-type: sync-operator-repo-releases
+
+      # Regenerate the rpk k8s plugin docs in redpanda-data/docs. The docs
+      # workflow (update-rpk-plugin-docs.yml) refreshes only the k8s subtree
+      # of its rpk command snapshot and opens a PR against each docs branch
+      # whose rpk version has the k8s command. The version pin is required:
+      # pre-GA plugin releases are not promoted to latest in the manifest,
+      # so an unpinned `rpk k8s install` resolves nothing.
+      - name: Compute rpk k8s plugin version
+        if: ${{ startsWith(steps.get_ref.outputs.ref_name, 'operator/v') }}
+        id: k8s_version
+        run: |
+          tag="${{ steps.get_ref.outputs.ref_name }}"
+          version="$(basename "$tag")"
+          echo "version=${version#v}" >> "$GITHUB_OUTPUT"
+      - name: Trigger rpk k8s plugin docs update in redpanda-data/docs
+        if: ${{ startsWith(steps.get_ref.outputs.ref_name, 'operator/v') }}
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ env.ACTIONS_BOT_TOKEN }}
+          repository: redpanda-data/docs
+          event-type: update-rpk-plugin-docs
+          client-payload: '{"plugin": "k8s", "version": "${{ steps.k8s_version.outputs.version }}"}'
