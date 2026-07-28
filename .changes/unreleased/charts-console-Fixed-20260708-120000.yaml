@@ -1,4 +1,0 @@
-project: charts/console
-kind: Fixed
-body: "Fixed the NOTES output for `service.type=LoadBalancer` so it prints the intended LoadBalancer access instructions. The template previously branched on `NodePort` twice, leaving the LoadBalancer guidance (waiting for the external IP and reading `.status.loadBalancer.ingress`) unreachable. Fixes #1644."
-time: 2026-07-08T12:00:00.000000-07:00

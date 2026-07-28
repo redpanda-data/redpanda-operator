@@ -1,8 +1,0 @@
-project: operator
-kind: Added
-body: |-
-    Added a top-level `priorityClassName` value to the operator Helm chart. Set it
-    to a higher-priority PriorityClass so the Redpanda Operator Pod is less likely
-    to be preempted when the cluster is under resource pressure. Defaults to `""`
-    (the cluster's global default PriorityClass, if any).
-time: 2026-06-12T12:00:00.000000-00:00

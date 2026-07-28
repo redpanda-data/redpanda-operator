@@ -154,8 +154,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda
-    tag: v26.1.1
+    repository: redpandadata/redpanda-unstable
+    tag: v26.2.1-rc6
   license_key: ""
   listeners:
     admin:
@@ -766,8 +766,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda
-    tag: v26.1.1
+    repository: redpandadata/redpanda-unstable
+    tag: v26.2.1-rc6
   license_key: ""
   listeners:
     admin:
@@ -1142,8 +1142,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda
-    tag: v26.1.1
+    repository: redpandadata/redpanda-unstable
+    tag: v26.2.1-rc6
   license_key: ""
   listeners:
     admin:
@@ -1469,12 +1469,12 @@ pools:
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
         containers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda
         initContainers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: tuning
         priorityClassName: ""
         securityContext: {}
@@ -1555,12 +1555,12 @@ pools:
                   app.kubernetes.io/name: '{{ include "redpanda.name" . }}'
               topologyKey: kubernetes.io/hostname
         containers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda
         initContainers:
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
-        - image: redpandadata/redpanda:v26.1.1
+        - image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: tuning
         priorityClassName: ""
         securityContext: {}
@@ -1757,8 +1757,8 @@ values:
   force: false
   fullnameOverride: ""
   image:
-    repository: redpandadata/redpanda
-    tag: v26.1.1
+    repository: redpandadata/redpanda-unstable
+    tag: v26.2.1-rc6
   license_key: ""
   listeners:
     admin:
