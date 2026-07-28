@@ -6300,7 +6300,13 @@ UserAuthenticationSpec defines the authentication mechanism enabled for this Red
 | Field | Description | Default | Validation
 | *`type`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-saslmechanism[$$SASLMechanism$$]__ | SASL mechanism to use for the user credentials. Valid values are: +
 - scram-sha-512 +
-- scram-sha-256 + | scram-sha-512 | Enum: [scram-sha-256 scram-sha-512 SCRAM-SHA-256 SCRAM-SHA-512] +
+- scram-sha-256 +
+
+Redpanda stores a single credential per user, so changing this on an +
+existing user replaces that credential rather than adding one. The +
+previous mechanism stops working as soon as the change is reconciled, +
+which may be at any point within the reconciliation interval. Move +
+clients onto the new mechanism first, or they will fail to authenticate. + | scram-sha-512 | Enum: [scram-sha-256 scram-sha-512 SCRAM-SHA-256 SCRAM-SHA-512] +
 
 | *`password`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-password[$$Password$$]__ | Password specifies where a password is read from. + |  | 
 | *`syncCredentials`* __boolean__ | SyncCredentials when set to true causes the operator to re-read the +

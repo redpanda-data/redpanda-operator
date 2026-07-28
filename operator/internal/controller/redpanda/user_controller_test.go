@@ -19,11 +19,13 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/sasl"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
@@ -288,6 +290,139 @@ func TestUserCredentialSync(t *testing.T) {
 
 	// Verify rotated password now works.
 	verifyAuth("rotated-password")
+
+	// Cleanup.
+	require.NoError(t, k8sClient.Delete(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+}
+
+// TestUserMechanismChange verifies that changing spec.authentication.type on an
+// already-managed User rewrites the credential under the newly requested
+// mechanism.
+//
+// Redpanda stores a single SCRAM credential per user, mechanism included. The
+// credential for the previous mechanism keeps the user present, so an
+// existence-only check reports "nothing to do" while the user's only credential
+// is for a mechanism it no longer uses. The user is then unable to authenticate
+// at all, and the CR still reports Synced=True.
+func TestUserMechanismChange(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	userName := "mechanism-user-" + strconv.Itoa(int(time.Now().UnixNano()))
+	const password = "mechanism-password"
+
+	user := &redpandav1alpha2.User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: metav1.NamespaceDefault,
+		},
+		Spec: redpandav1alpha2.UserSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+				Type: ptr.To(redpandav1alpha2.SASLMechanismScramSHA512),
+				Password: redpandav1alpha2.Password{
+					Value: password,
+					ValueFrom: &redpandav1alpha2.PasswordSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: userName + "-password",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(user)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	// authenticates reports whether the user can log in with the given
+	// mechanism. Authentication is checked against the broker rather than
+	// inferred from CR status, because status is Synced=True either way.
+	authenticates := func(t *testing.T, mechanism func(scram.Auth) sasl.Mechanism) bool {
+		t.Helper()
+		c, err := kgo.NewClient(kgo.SeedBrokers(environment.KafkaURL), timeoutOption, kgo.SASL(mechanism(scram.Auth{
+			User: userName,
+			Pass: password,
+		})))
+		require.NoError(t, err)
+		defer c.Close()
+		_, err = kadm.NewClient(c).BrokerMetadata(ctx)
+		return err == nil
+	}
+
+	sha512 := func(a scram.Auth) sasl.Mechanism { return a.AsSha512Mechanism() }
+	sha256 := func(a scram.Auth) sasl.Mechanism { return a.AsSha256Mechanism() }
+
+	// Step 1: create the user under SCRAM-SHA-512.
+	require.NoError(t, k8sClient.Create(ctx, user))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.True(t, user.Status.ManagedUser)
+	require.True(t, authenticates(t, sha512), "expected the initial mechanism to authenticate")
+
+	// Step 2: change the requested mechanism to SCRAM-SHA-256.
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	user.Spec.Authentication.Type = ptr.To(redpandav1alpha2.SASLMechanismScramSHA256)
+	require.NoError(t, k8sClient.Update(ctx, user))
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	// Step 3: the newly requested mechanism must authenticate.
+	require.True(t, authenticates(t, sha256), "expected the user to authenticate with the newly requested mechanism")
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.True(t, user.Status.ManagedUser)
+	require.Equal(t, metav1.ConditionTrue, user.Status.Conditions[0].Status)
+
+	// Redpanda stores a single credential per user, so rewriting it under the
+	// requested mechanism replaces the previous one rather than adding to it.
+	require.False(t, authenticates(t, sha512), "expected the previous mechanism to stop working once replaced")
+
+	// Step 4: a further reconcile must not error and must leave the user
+	// working, i.e. the repair converges rather than fighting itself.
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.True(t, authenticates(t, sha256))
+
+	// Step 5: removing authentication must delete the credential the cluster
+	// actually holds. After the rewrite above that is SCRAM-SHA-256, while a
+	// spec with no authentication implies SCRAM-SHA-512, so deleting the
+	// spec-derived mechanism would orphan a live credential and leave the
+	// finalizer retrying a RESOURCE_NOT_FOUND forever.
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	user.Spec.Authentication = nil
+	require.NoError(t, k8sClient.Update(ctx, user))
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.False(t, user.Status.ManagedUser, "expected managedUser to clear once authentication is removed")
+	require.Equal(t, metav1.ConditionTrue, user.Status.Conditions[0].Status,
+		"expected the sync to succeed rather than loop on deleting a mechanism the user does not hold")
+
+	userClient, err := environment.Factory.Users(ctx, user, timeoutOption)
+	require.NoError(t, err)
+	defer userClient.Close()
+
+	state, err := userClient.CredentialState(ctx, user)
+	require.NoError(t, err)
+	require.False(t, state.Exists, "expected the credential to be deleted, not orphaned under the old mechanism")
 
 	// Cleanup.
 	require.NoError(t, k8sClient.Delete(ctx, user))
