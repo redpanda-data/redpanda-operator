@@ -63,18 +63,35 @@ func NewClient(ctx context.Context, kubeClient client.Client, kafkaAdminClient *
 	}, nil
 }
 
-// Delete deletes the given user.
+// Delete deletes the given user's SCRAM credentials.
+//
+// The mechanisms removed are the ones the cluster actually holds, not the one
+// named in the spec. The two diverge precisely when it matters: after a
+// mechanism change, or once spec.authentication is removed entirely, which
+// leaves no mechanism to read and would otherwise fall back to SCRAM-SHA-512.
+// Deleting a mechanism the user does not hold leaves the live credential
+// orphaned and fails the finalizer, because the broker's RESOURCE_NOT_FOUND is
+// not recognised as "already gone" by the caller.
 func (c *Client) Delete(ctx context.Context, user *redpandav1alpha2.User) error {
-	sasl := kadm.ScramSha512
-	if user.Spec.Authentication != nil && user.Spec.Authentication.Type != nil {
-		var err error
-		sasl, err = user.Spec.Authentication.Type.ScramToKafka()
-		if err != nil {
+	if !c.scramAPISupported {
+		// The admin API deletes the user outright; mechanisms do not apply.
+		return c.adminClient.DeleteUser(ctx, user.Name)
+	}
+
+	_, mechanisms, err := c.describe(ctx, user.Name)
+	if err != nil {
+		return err
+	}
+
+	// An absent user yields no mechanisms, making this a no-op rather than an
+	// error, so deletion stays idempotent.
+	for _, mechanism := range mechanisms {
+		if err := c.delete(ctx, user.Name, mechanism); err != nil {
 			return err
 		}
 	}
 
-	return c.delete(ctx, user.Name, sasl)
+	return nil
 }
 
 // Create creates the given user, generating a password if necessary and synchronizing it to
@@ -112,9 +129,11 @@ func (c *Client) Update(ctx context.Context, user *redpandav1alpha2.User) error 
 }
 
 // Has returns whether or not the Redpanda cluster already contains the given
-// user, regardless of which SASL mechanism its credential uses. This is the
-// right question for deletion: the user is present, and therefore needs
-// cleaning up, as long as a credential exists under its name.
+// user, regardless of which SASL mechanism its credential uses.
+//
+// Callers deciding whether to write credentials want CredentialState instead:
+// existence alone cannot distinguish a usable credential from one left under a
+// mechanism the user no longer asks for.
 func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, error) {
 	exists, _, err := c.describe(ctx, user.Name)
 	return exists, err
@@ -149,6 +168,16 @@ func (c *Client) CredentialState(ctx context.Context, user *redpandav1alpha2.Use
 		return CredentialState{}, err
 	}
 
+	return credentialState(exists, mechanisms, user)
+}
+
+// credentialState derives the state from an already-observed cluster response.
+// It is split out from CredentialState so that the mechanism matching, and in
+// particular the nil-versus-empty mechanism convention it rests on, is testable
+// without a broker. Getting that convention wrong in either direction is costly:
+// treating unknown as none rewrites credentials on every reconcile, and treating
+// none as unknown reintroduces the bug this exists to prevent.
+func credentialState(exists bool, mechanisms []kadm.ScramMechanism, user *redpandav1alpha2.User) (CredentialState, error) {
 	if !exists {
 		return CredentialState{}, nil
 	}
@@ -165,6 +194,10 @@ func (c *Client) CredentialState(ctx context.Context, user *redpandav1alpha2.Use
 		return CredentialState{}, err
 	}
 
+	// Redpanda holds a single credential per user, so in practice this compares
+	// against one mechanism. Should a user ever hold several, a credential for
+	// the requested mechanism is enough to authenticate and the others are
+	// revoked by Delete rather than here, since rewriting is not revocation.
 	return CredentialState{
 		Exists:                true,
 		HasRequestedMechanism: slices.Contains(mechanisms, mechanism),

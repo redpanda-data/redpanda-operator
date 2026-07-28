@@ -399,6 +399,31 @@ func TestUserMechanismChange(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, authenticates(t, sha256))
 
+	// Step 5: removing authentication must delete the credential the cluster
+	// actually holds. After the rewrite above that is SCRAM-SHA-256, while a
+	// spec with no authentication implies SCRAM-SHA-512, so deleting the
+	// spec-derived mechanism would orphan a live credential and leave the
+	// finalizer retrying a RESOURCE_NOT_FOUND forever.
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	user.Spec.Authentication = nil
+	require.NoError(t, k8sClient.Update(ctx, user))
+
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, user))
+	require.False(t, user.Status.ManagedUser, "expected managedUser to clear once authentication is removed")
+	require.Equal(t, metav1.ConditionTrue, user.Status.Conditions[0].Status,
+		"expected the sync to succeed rather than loop on deleting a mechanism the user does not hold")
+
+	userClient, err := environment.Factory.Users(ctx, user, timeoutOption)
+	require.NoError(t, err)
+	defer userClient.Close()
+
+	state, err := userClient.CredentialState(ctx, user)
+	require.NoError(t, err)
+	require.False(t, state.Exists, "expected the credential to be deleted, not orphaned under the old mechanism")
+
 	// Cleanup.
 	require.NoError(t, k8sClient.Delete(ctx, user))
 	_, err = environment.Reconciler.Reconcile(ctx, req)
