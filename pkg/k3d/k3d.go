@@ -16,7 +16,10 @@ package k3d
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -216,20 +219,25 @@ func GetOrCreate(name string, opts ...ClusterOpt) (*Cluster, error) {
 }
 
 // imageMarkerPath returns a file path used to track whether an image has
-// already been imported into a given k3d cluster.
-func imageMarkerPath(clusterName, image string) string {
+// already been imported into a given k3d cluster. The marker is scoped to a
+// fingerprint of the cluster's node set: an import only provably reached the
+// nodes that existed when it ran, so a marker written against a different
+// node set must not short-circuit a re-import — otherwise a node added later
+// (or left behind by a killed run on a retained cluster) never receives
+// locally-built, unpullable images like localhost/redpanda-operator:dev.
+func imageMarkerPath(clusterName, nodesFingerprint, image string) string {
 	// Sanitize image name for use as a filename.
 	safe := strings.NewReplacer("/", "_", ":", "_", ".", "_").Replace(image)
-	return filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s-img-%s", clusterName, safe))
+	return filepath.Join(os.TempDir(), fmt.Sprintf("k3d-%s-img-%s-%s", clusterName, nodesFingerprint, safe))
 }
 
-func imageAlreadyImported(clusterName, image string) bool {
-	_, err := os.Stat(imageMarkerPath(clusterName, image))
+func imageAlreadyImported(clusterName, nodesFingerprint, image string) bool {
+	_, err := os.Stat(imageMarkerPath(clusterName, nodesFingerprint, image))
 	return err == nil
 }
 
-func markImageImported(clusterName, image string) {
-	os.WriteFile(imageMarkerPath(clusterName, image), nil, 0o600) //nolint:errcheck
+func markImageImported(clusterName, nodesFingerprint, image string) {
+	os.WriteFile(imageMarkerPath(clusterName, nodesFingerprint, image), nil, 0o600) //nolint:errcheck
 }
 
 // clearImageMarkers removes all image import marker files for a given cluster,
@@ -471,14 +479,50 @@ func (c *Cluster) ImportImage(images ...string) error {
 	return c.importImages(images...)
 }
 
+// nodeFingerprint returns a stable hash of the cluster's current node names.
+// Import markers are scoped to it (see imageMarkerPath).
+func (c *Cluster) nodeFingerprint() (string, error) {
+	out, err := exec.Command("k3d", "node", "list", "-o", "json").Output()
+	if err != nil {
+		return "", errors.Wrap(err, "listing k3d nodes")
+	}
+	var nodes []struct {
+		Name          string            `json:"name"`
+		RuntimeLabels map[string]string `json:"runtimeLabels"`
+	}
+	if err := json.Unmarshal(out, &nodes); err != nil {
+		return "", errors.Wrap(err, "parsing k3d node list")
+	}
+	var names []string
+	for _, n := range nodes {
+		// Match by the k3d.cluster runtime label, NOT a name prefix: nodes
+		// added via `k3d node create` get their given name re-prefixed
+		// (e.g. k3d-k3d-<cluster>-agent-0-0) and would escape a prefix match.
+		if n.RuntimeLabels["k3d.cluster"] == c.Name {
+			names = append(names, n.Name)
+		}
+	}
+	slices.Sort(names)
+	sum := sha256.Sum256([]byte(strings.Join(names, ",")))
+	return hex.EncodeToString(sum[:8]), nil
+}
+
 // importImages is the lock-free implementation of ImportImage, for use by
 // callers that already hold a lock (e.g. GetOrCreate).
 func (c *Cluster) importImages(images ...string) error {
+	// Markers are scoped to the current node set: any change to the
+	// cluster's nodes invalidates the fast path so a re-import reaches
+	// nodes the previous import missed.
+	fingerprint, err := c.nodeFingerprint()
+	if err != nil {
+		return err
+	}
+
 	// Filter out images that have already been imported into this cluster
 	// (by a previous test process). Uses marker files in /tmp to track.
 	var needed []string
 	for _, img := range images {
-		if !imageAlreadyImported(c.Name, img) {
+		if !imageAlreadyImported(c.Name, fingerprint, img) {
 			needed = append(needed, img)
 		}
 	}
@@ -493,7 +537,7 @@ func (c *Cluster) importImages(images ...string) error {
 
 	// Mark all images as imported.
 	for _, img := range needed {
-		markImageImported(c.Name, img)
+		markImageImported(c.Name, fingerprint, img)
 	}
 	return nil
 }
@@ -533,6 +577,13 @@ func (c *Cluster) CreateNodeWithName(name string) error {
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
 	}
+	// Import markers are scoped to the node-set fingerprint, so adding a
+	// node normally invalidates them by itself. Clearing here additionally
+	// covers the delete-then-recreate-same-name case, where the fingerprint
+	// ends up identical but the fresh node is empty — a stale marker would
+	// leave locally-built, unpullable images (e.g.
+	// localhost/redpanda-operator:dev) permanently missing from it.
+	clearImageMarkers(c.Name)
 	return nil
 }
 

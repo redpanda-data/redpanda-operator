@@ -18,7 +18,7 @@ Run `task generate:third-party-licenses-list`.
 | cloud.google.com/go/compute/metadata | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/compute/metadata/v0.9.0/LICENSE) |
 | cloud.google.com/go/iam | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/iam/v1.5.3/LICENSE) |
 | cloud.google.com/go/secretmanager | [Apache-2.0](https://github.com/googleapis/google-cloud-go/blob/secretmanager/v1.16.0/LICENSE) |
-| connectrpc.com/connect | [Apache-2.0](https://github.com/connectrpc/connect-go/blob/v1.19.2/LICENSE) |
+| connectrpc.com/connect | [Apache-2.0](https://github.com/connectrpc/connect-go/blob/v1.20.0/LICENSE) |
 | dario.cat/mergo | [BSD-3-Clause](https://github.com/imdario/mergo/blob/v1.0.2/LICENSE) |
 | emperror.dev/errors | [MIT](https://github.com/emperror/errors/blob/v0.8.1/LICENSE) |
 | github.com/AlecAivazis/survey/v2 | [MIT](https://github.com/AlecAivazis/survey/blob/v2.3.7/LICENSE) |
@@ -88,7 +88,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/fsnotify/fsnotify | [BSD-3-Clause](https://github.com/fsnotify/fsnotify/blob/v1.9.0/LICENSE) |
 | github.com/fxamacker/cbor/v2 | [MIT](https://github.com/fxamacker/cbor/blob/v2.9.0/LICENSE) |
 | github.com/getsentry/sentry-go | [MIT](https://github.com/getsentry/sentry-go/blob/v0.42.0/LICENSE) |
-| github.com/go-chi/chi/v5 | [MIT](https://github.com/go-chi/chi/blob/v5.2.5/LICENSE) |
+| github.com/go-chi/chi/v5 | [MIT](https://github.com/go-chi/chi/blob/v5.3.0/LICENSE) |
 | github.com/go-errors/errors | [MIT](https://github.com/go-errors/errors/blob/v1.5.1/LICENSE.MIT) |
 | github.com/go-gorp/gorp/v3 | [MIT](https://github.com/go-gorp/gorp/blob/v3.1.0/LICENSE) |
 | github.com/go-jose/go-jose/v4 | [Apache-2.0](https://github.com/go-jose/go-jose/blob/v4.1.4/LICENSE) |
@@ -136,7 +136,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/gosuri/uitable/util/wordwrap | [MIT](https://github.com/gosuri/uitable/blob/v0.0.4/util/wordwrap/LICENSE.md) |
 | github.com/gregjones/httpcache | [MIT](https://github.com/gregjones/httpcache/blob/901d90724c79/LICENSE.txt) |
 | github.com/grpc-ecosystem/go-grpc-prometheus | [Apache-2.0](https://github.com/grpc-ecosystem/go-grpc-prometheus/blob/v1.2.0/LICENSE) |
-| github.com/grpc-ecosystem/grpc-gateway/v2 | [BSD-3-Clause](https://github.com/grpc-ecosystem/grpc-gateway/blob/v2.28.0/LICENSE) |
+| github.com/grpc-ecosystem/grpc-gateway/v2 | [BSD-3-Clause](https://github.com/grpc-ecosystem/grpc-gateway/blob/v2.29.0/LICENSE) |
 | github.com/hashicorp/errwrap | [MPL-2.0](https://github.com/hashicorp/errwrap/blob/v1.1.0/LICENSE) |
 | github.com/hashicorp/go-multierror | [MPL-2.0](https://github.com/hashicorp/go-multierror/blob/v1.1.1/LICENSE) |
 | github.com/hashicorp/go-uuid | [MPL-2.0](https://github.com/hashicorp/go-uuid/blob/v1.0.3/LICENSE) |
@@ -228,7 +228,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/sethgrid/pester | [MIT](https://github.com/sethgrid/pester/blob/v1.2.0/LICENSE.md) |
 | github.com/shopspring/decimal | [MIT](https://github.com/shopspring/decimal/blob/v1.4.0/LICENSE) |
 | github.com/sirupsen/logrus | [MIT](https://github.com/sirupsen/logrus/blob/v1.9.4/LICENSE) |
-| github.com/spf13/afero | [Apache-2.0](https://github.com/spf13/afero/blob/v1.14.0/LICENSE.txt) |
+| github.com/spf13/afero | [Apache-2.0](https://github.com/spf13/afero/blob/v1.15.0/LICENSE.txt) |
 | github.com/spf13/cast | [MIT](https://github.com/spf13/cast/blob/v1.9.2/LICENSE) |
 | github.com/spf13/cobra | [Apache-2.0](https://github.com/spf13/cobra/blob/v1.10.2/LICENSE.txt) |
 | github.com/spf13/pflag | [BSD-3-Clause](https://github.com/spf13/pflag/blob/v1.0.10/LICENSE) |
@@ -258,16 +258,16 @@ Run `task generate:third-party-licenses-list`.
 | go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go-contrib/blob/instrumentation/net/http/otelhttp/v0.65.0/LICENSE) |
 | go.opentelemetry.io/otel | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/v1.44.0/LICENSE) |
 | go.opentelemetry.io/otel | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/v1.44.0/LICENSE) |
-| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.43.0/LICENSE) |
-| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.43.0/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.44.0/LICENSE) |
+| go.opentelemetry.io/otel/exporters/otlp/otlptrace | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/v1.44.0/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.43.0/LICENSE) |
 | go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/exporters/otlp/otlptrace/otlptracegrpc/v1.43.0/LICENSE) |
 | go.opentelemetry.io/otel/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.19.0/LICENSE) |
 | go.opentelemetry.io/otel/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/log/v0.19.0/LICENSE) |
 | go.opentelemetry.io/otel/metric | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.44.0/LICENSE) |
 | go.opentelemetry.io/otel/metric | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/metric/v1.44.0/LICENSE) |
-| go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.43.0/LICENSE) |
-| go.opentelemetry.io/otel/sdk | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.43.0/LICENSE) |
+| go.opentelemetry.io/otel/sdk | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.44.0/LICENSE) |
+| go.opentelemetry.io/otel/sdk | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/v1.44.0/LICENSE) |
 | go.opentelemetry.io/otel/sdk/log | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.19.0/LICENSE) |
 | go.opentelemetry.io/otel/sdk/log | [BSD-3-Clause](https://github.com/open-telemetry/opentelemetry-go/blob/sdk/log/v0.19.0/LICENSE) |
 | go.opentelemetry.io/otel/trace | [Apache-2.0](https://github.com/open-telemetry/opentelemetry-go/blob/trace/v1.44.0/LICENSE) |
@@ -292,8 +292,8 @@ Run `task generate:third-party-licenses-list`.
 | google.golang.org/api | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.270.0/LICENSE) |
 | google.golang.org/api/internal/third_party/uritemplates | [BSD-3-Clause](https://github.com/googleapis/google-api-go-client/blob/v0.270.0/internal/third_party/uritemplates/LICENSE) |
 | google.golang.org/genproto/googleapis | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/0b37fe3546d5/LICENSE) |
-| google.golang.org/genproto/googleapis/api | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/3700d4141b60/LICENSE) |
-| google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/60b97b32f348/LICENSE) |
+| google.golang.org/genproto/googleapis/api | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/3dc84a4a5aaa/LICENSE) |
+| google.golang.org/genproto/googleapis/rpc | [Apache-2.0](https://github.com/googleapis/go-genproto/blob/3dc84a4a5aaa/LICENSE) |
 | google.golang.org/grpc | [Apache-2.0](https://github.com/grpc/grpc-go/blob/v1.82.1/LICENSE) |
 | google.golang.org/protobuf | [BSD-3-Clause](https://go.googlesource.com/protobuf/+/v1.36.11/LICENSE) |
 | gopkg.in/evanphx/json-patch.v4 | [BSD-3-Clause](https://gopkg.in/evanphx/json-patch.v4/blob/v4.13.0/LICENSE) |

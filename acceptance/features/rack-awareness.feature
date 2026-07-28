@@ -13,6 +13,9 @@ Feature: Rack Awareness
       name: rack-awareness
     spec:
       clusterSpec:
+        image:
+          repository: ${DEFAULT_REDPANDA_REPO}
+          tag: ${DEFAULT_REDPANDA_TAG}
         console:
           enabled: false
         statefulset:
