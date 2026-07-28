@@ -416,10 +416,16 @@ func (s *BrokerControllerSuite) TestFinalizerRawDeletionReleases() {
 		}
 	}
 
-	// Membership is untouched: still 3 brokers.
-	bs, err := admin.Brokers(ctx)
-	require.NoError(t, err)
-	assert.Len(t, bs, 3)
+	// Membership is untouched: still 3 brokers. Retried because the admin
+	// endpoint we dial may be mid-rotation (the setup grant is still live),
+	// which surfaces as transient EOFs or a briefly missing pod.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		bs, err := admin.Brokers(ctx)
+		if !assert.NoError(ct, err) {
+			return
+		}
+		assert.Len(ct, bs, 3)
+	}, 2*time.Minute, 5*time.Second)
 }
 
 // TestSpecDecommission verifies the spec-driven decommission path:

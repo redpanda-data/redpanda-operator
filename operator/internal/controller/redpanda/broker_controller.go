@@ -285,7 +285,20 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 
 	if state.pod == nil {
 		if broker.Spec.Decommission {
-			return ctrl.Result{}, nil
+			// A decommission that has already resolved its identity (or
+			// finished) must not resurrect the pod: mid-flight the broker
+			// drains via other members, and Decommissioned is terminal. But
+			// with NO identity yet there is nothing to decommission — and on
+			// a single-broker cluster the pod is the only admin endpoint, so
+			// staying podless deadlocks reconcileDecommission's identity
+			// resolution forever (e.g. a rotation deleted the pod right as
+			// the intent was set). Recreate the pod so the decommission can
+			// actually start. Side effect: a Broker created WITH the intent
+			// already set briefly runs (and joins) before decommissioning —
+			// preferable to wedging in Decommissioning.
+			if broker.Status.BrokerID != nil || broker.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned {
+				return ctrl.Result{}, nil
+			}
 		}
 		// Pod-ensure is deliberately NOT gated on a roll-grant (RFC Q5):
 		// creation is non-disruptive, initial cluster bootstrap needs all
@@ -431,6 +444,18 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 		l.Info("pod needs rotation but no roll-grant", "name", state.pod.Name)
 		state.phase = redpandav1alpha2.BrokerPhaseRunning
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+	}
+	// A READY pod without an adopted identity registers within seconds —
+	// hold the rotation until then so it always drains first. Rotating in
+	// that window deletes a serving broker undrained, and (on a
+	// single-broker cluster) can race a decommission intent into a podless
+	// deadlock. An UNREADY pod deliberately keeps rotating without an
+	// identity: it may never register at all (e.g. crash-looping on the very
+	// config this rotation fixes), and there is no leadership to drain.
+	if broker.Status.BrokerID == nil && isPodReady(state.pod) {
+		l.Info("pod needs rotation but broker identity not yet adopted, deferring", "name", state.pod.Name)
+		state.phase = redpandav1alpha2.BrokerPhaseRunning
+		return ctrl.Result{RequeueAfter: requeueShort}, nil
 	}
 	if broker.Status.BrokerID != nil {
 		drained, err := r.ensureDrained(ctx, state.clusterName, broker)

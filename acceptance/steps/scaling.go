@@ -46,6 +46,13 @@ func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, cl
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				// Use the test image rather than the operator's default. The
+				// default tag may not be published yet while a release is
+				// being staged.
+				Image: &redpandav1alpha2.RedpandaImage{
+					Repository: ptr.To(DefaultRedpandaRepo),
+					Tag:        ptr.To(DefaultRedpandaTag),
+				},
 				Statefulset: &redpandav1alpha2.Statefulset{
 					Replicas: ptr.To(nodeCount),
 					SideCars: &redpandav1alpha2.SideCars{

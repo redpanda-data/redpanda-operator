@@ -22,6 +22,9 @@ Feature: Helm chart to Redpanda Operator migration
     # end::helm-values[]
         # Without the below values, the operator would have to modify the cluster after the migration.
         # As this is test specific because we use a local version of the operator, this block is excluded from the helm-values tag above.
+        image:
+          repository: ${DEFAULT_REDPANDA_REPO}
+          tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           sideCars:
             image:
@@ -62,6 +65,10 @@ Feature: Helm chart to Redpanda Operator migration
           clusterSpec:
             fullnameOverride: name-override
     # end::redpanda-custom-resource-manifest[]
+            # The image is copied verbatim from the (test-specific) Helm values above.
+            image:
+              repository: ${DEFAULT_REDPANDA_REPO}
+              tag: ${DEFAULT_REDPANDA_TAG}
             # The Secret reference is copied verbatim from the Helm values; the Secret is unchanged.
             config:
               extraClusterConfiguration:
