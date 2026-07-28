@@ -111,9 +111,64 @@ func (c *Client) Update(ctx context.Context, user *redpandav1alpha2.User) error 
 	return c.create(ctx, user.Name, password, sasl)
 }
 
-// Has returns whether or not the Redpanda cluster already contains the given user.
+// Has returns whether or not the Redpanda cluster already contains the given
+// user, regardless of which SASL mechanism its credential uses. This is the
+// right question for deletion: the user is present, and therefore needs
+// cleaning up, as long as a credential exists under its name.
 func (c *Client) Has(ctx context.Context, user *redpandav1alpha2.User) (bool, error) {
-	return c.has(ctx, user.Name)
+	exists, _, err := c.describe(ctx, user.Name)
+	return exists, err
+}
+
+// CredentialState is what a Redpanda cluster currently holds for a user.
+type CredentialState struct {
+	// Exists reports whether the cluster holds a credential for the user's name
+	// under any SASL mechanism. This is the right question for deletion.
+	Exists bool
+	// HasRequestedMechanism reports whether the user's credential uses the
+	// mechanism named by spec.authentication.type. This is the right question
+	// for deciding whether the credential needs to be written.
+	//
+	// Redpanda stores a single SCRAM credential per user, mechanism included, so
+	// a user whose requested mechanism changed still Exists -- by way of a
+	// credential for the *previous* mechanism -- while being unable to
+	// authenticate with the mechanism it now asks for. That stale credential is
+	// not a redundant extra: it is the only one the user has.
+	//
+	// Brokers that predate the Kafka SCRAM APIs do not expose the mechanism.
+	// There this mirrors Exists, preserving the previous behavior rather than
+	// guessing.
+	HasRequestedMechanism bool
+}
+
+// CredentialState returns what the cluster holds for the given user, in a single
+// round trip.
+func (c *Client) CredentialState(ctx context.Context, user *redpandav1alpha2.User) (CredentialState, error) {
+	exists, mechanisms, err := c.describe(ctx, user.Name)
+	if err != nil {
+		return CredentialState{}, err
+	}
+
+	if !exists {
+		return CredentialState{}, nil
+	}
+
+	// A nil mechanism list means "unknown" rather than "none": either the broker
+	// does not report mechanisms, or the user requests no particular one.
+	// Neither is grounds for rewriting credentials.
+	if mechanisms == nil || user.Spec.Authentication == nil || user.Spec.Authentication.Type == nil {
+		return CredentialState{Exists: true, HasRequestedMechanism: true}, nil
+	}
+
+	mechanism, err := user.Spec.Authentication.Type.ScramToKafka()
+	if err != nil {
+		return CredentialState{}, err
+	}
+
+	return CredentialState{
+		Exists:                true,
+		HasRequestedMechanism: slices.Contains(mechanisms, mechanism),
+	}, nil
 }
 
 // Close closes the underlying kafka connection
@@ -192,32 +247,50 @@ func (c *Client) getExistingPassword(ctx context.Context, user *redpandav1alpha2
 	return string(data), nil
 }
 
-func (c *Client) has(ctx context.Context, username string) (bool, error) {
+// describe reports whether the given user exists and, when the broker supports
+// the Kafka SCRAM APIs, which SASL mechanisms its credentials use. A nil
+// mechanism slice means the mechanisms are unknown, which is distinct from a
+// non-nil empty slice meaning the user holds no credentials.
+//
+// The Kafka API models this as a list, but Redpanda stores a single credential
+// per user, so in practice at most one mechanism is reported.
+func (c *Client) describe(ctx context.Context, username string) (bool, []kadm.ScramMechanism, error) {
 	if c.scramAPISupported {
 		scrams, err := c.kafkaAdminClient.DescribeUserSCRAMs(ctx, username)
 		if err != nil {
-			return false, err
+			return false, nil, err
 		}
 		if err := scrams.Error(); err != nil {
 			var franzErr *kerr.Error
 			if errors.As(err, &franzErr) {
 				if franzErr.Code == kerr.ResourceNotFound.Code {
-					return false, nil
+					return false, nil, nil
 				}
 			}
 
-			return false, err
+			return false, nil, err
 		}
 
-		return len(scrams) != 0, nil
+		described, ok := scrams[username]
+		if !ok {
+			return len(scrams) != 0, nil, nil
+		}
+
+		mechanisms := make([]kadm.ScramMechanism, 0, len(described.CredInfos))
+		for _, info := range described.CredInfos {
+			mechanisms = append(mechanisms, info.Mechanism)
+		}
+
+		return len(scrams) != 0, mechanisms, nil
 	}
 
+	// The admin API only lists user names, so mechanisms are unknowable here.
 	users, err := c.adminClient.ListUsers(ctx)
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 
-	return slices.Contains(users, username), nil
+	return slices.Contains(users, username), nil, nil
 }
 
 func (c *Client) getPassword(ctx context.Context, user *redpandav1alpha2.User) (string, error) {

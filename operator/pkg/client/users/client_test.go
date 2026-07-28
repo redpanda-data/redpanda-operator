@@ -81,25 +81,104 @@ func TestClient(t *testing.T) {
 			t.Run(mechanism.String(), func(t *testing.T) {
 				username := "testuser" + strconv.Itoa(int(time.Now().UnixNano()))
 
-				ok, err := usersClient.has(ctx, username)
+				exists, mechanisms, err := usersClient.describe(ctx, username)
 				require.NoError(t, err)
-				require.False(t, ok)
+				require.False(t, exists)
+				require.Empty(t, mechanisms)
 
 				err = usersClient.create(ctx, username, "password", mechanism)
 				require.NoError(t, err)
 
-				ok, err = usersClient.has(ctx, username)
+				exists, mechanisms, err = usersClient.describe(ctx, username)
 				require.NoError(t, err)
-				require.True(t, ok)
+				require.True(t, exists)
+				// describe must report the mechanism the credential was
+				// written under, and only that one.
+				require.Equal(t, []kadm.ScramMechanism{mechanism}, mechanisms)
 
 				err = usersClient.delete(ctx, username, mechanism)
 				require.NoError(t, err)
 
-				ok, err = usersClient.has(ctx, username)
+				exists, mechanisms, err = usersClient.describe(ctx, username)
 				require.NoError(t, err)
-				require.False(t, ok)
+				require.False(t, exists)
+				require.Empty(t, mechanisms)
 			})
 		}
+
+		// A user holding a credential for one mechanism must not be reported as
+		// holding one for another. Exists stays true because the name is taken,
+		// while HasRequestedMechanism goes false -- that difference is what tells
+		// the controller to rewrite the credential instead of silently leaving
+		// the user unable to authenticate.
+		t.Run("credentials are per mechanism", func(t *testing.T) {
+			username := "testuser" + strconv.Itoa(int(time.Now().UnixNano()))
+
+			require.NoError(t, usersClient.create(ctx, username, "password", kadm.ScramSha512))
+			t.Cleanup(func() {
+				_ = usersClient.delete(ctx, username, kadm.ScramSha512)
+				_ = usersClient.delete(ctx, username, kadm.ScramSha256)
+			})
+
+			userWithMechanism := func(mechanism redpandav1alpha2.SASLMechanism) *redpandav1alpha2.User {
+				return &redpandav1alpha2.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      username,
+						Namespace: metav1.NamespaceDefault,
+					},
+					Spec: redpandav1alpha2.UserSpec{
+						Authentication: &redpandav1alpha2.UserAuthenticationSpec{
+							Type: ptr.To(mechanism),
+							Password: redpandav1alpha2.Password{
+								Value: "password",
+							},
+						},
+					},
+				}
+			}
+
+			matching := userWithMechanism(redpandav1alpha2.SASLMechanismScramSHA512)
+			diverging := userWithMechanism(redpandav1alpha2.SASLMechanismScramSHA256)
+
+			state, err := usersClient.CredentialState(ctx, matching)
+			require.NoError(t, err)
+			require.True(t, state.Exists)
+			require.True(t, state.HasRequestedMechanism, "expected the stored mechanism to be reported as present")
+
+			state, err = usersClient.CredentialState(ctx, diverging)
+			require.NoError(t, err)
+			require.True(t, state.Exists, "expected the user name to still be taken")
+			require.False(t, state.HasRequestedMechanism, "expected a mechanism with no credential to be reported as absent")
+
+			// Both spellings refer to the same Redpanda user, so Has must remain
+			// mechanism-agnostic no matter which mechanism is requested.
+			for _, user := range []*redpandav1alpha2.User{matching, diverging} {
+				exists, err := usersClient.Has(ctx, user)
+				require.NoError(t, err)
+				require.True(t, exists, "expected Has to ignore the requested mechanism")
+			}
+
+			// Writing a credential under a different mechanism replaces the
+			// existing one rather than joining it: Redpanda keeps a single SCRAM
+			// credential per user. This is why the mechanism has to be part of
+			// the check -- the stale credential is not merely redundant, it is
+			// the only one the user has, and it is for the wrong mechanism.
+			require.NoError(t, usersClient.create(ctx, username, "password", kadm.ScramSha256))
+
+			exists, mechanisms, err := usersClient.describe(ctx, username)
+			require.NoError(t, err)
+			require.True(t, exists)
+			require.Equal(t, []kadm.ScramMechanism{kadm.ScramSha256}, mechanisms)
+
+			state, err = usersClient.CredentialState(ctx, diverging)
+			require.NoError(t, err)
+			require.True(t, state.HasRequestedMechanism, "expected the newly written mechanism to be reported as present")
+
+			state, err = usersClient.CredentialState(ctx, matching)
+			require.NoError(t, err)
+			require.True(t, state.Exists)
+			require.False(t, state.HasRequestedMechanism, "expected the replaced mechanism to be reported as absent")
+		})
 	}
 
 	t.Run("default test image", func(t *testing.T) {

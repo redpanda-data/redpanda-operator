@@ -87,7 +87,7 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 			})...))), err
 	}
 
-	usersClient, syncer, hasUser, err := r.userAndACLClients(ctx, request)
+	usersClient, syncer, credentials, err := r.userAndACLClients(ctx, request)
 	if err != nil {
 		return createPatch(err)
 	}
@@ -95,11 +95,17 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer syncer.Close()
 
 	switch {
-	case shouldManageUser && (!hasUser || !hasManagedUser):
+	case shouldManageUser && (!credentials.HasRequestedMechanism || !hasManagedUser):
 		// Create a new user or adopt an existing one. UpsertSCRAM is
 		// idempotent so this is safe regardless of whether the user
 		// already exists in Redpanda. We also recreate the user if a
 		// previously managed user was deleted out of band.
+		//
+		// This additionally covers a user whose credential is for a mechanism
+		// other than the one it now requests, which is what a change to
+		// spec.authentication.type leaves behind. Redpanda stores a single
+		// credential per user, so that stale credential is the user's only one
+		// and it cannot authenticate until this rewrites it.
 		if err := usersClient.Create(ctx, user); err != nil {
 			return createPatch(err)
 		}
@@ -114,7 +120,7 @@ func (r *UserReconciler) SyncResource(ctx context.Context, request ResourceReque
 		}
 
 	case !shouldManageUser && hasManagedUser:
-		if hasUser {
+		if credentials.Exists {
 			if err := usersClient.Delete(ctx, user); err != nil {
 				return createPatch(err)
 			}
@@ -148,14 +154,14 @@ func (r *UserReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	user := request.object
 	hasManagedACLs, hasManagedUser := user.HasManagedACLs(), user.HasManagedUser()
 
-	usersClient, syncer, hasUser, err := r.userAndACLClients(ctx, request)
+	usersClient, syncer, credentials, err := r.userAndACLClients(ctx, request)
 	if err != nil {
 		return ignoreAllConnectionErrors(request.logger, err)
 	}
 	defer usersClient.Close()
 	defer syncer.Close()
 
-	if hasUser && hasManagedUser {
+	if credentials.Exists && hasManagedUser {
 		request.logger.V(2).Info("Deleting managed user")
 		if err := usersClient.Delete(ctx, user); err != nil {
 			return ignoreAllConnectionErrors(request.logger, err)
@@ -172,24 +178,24 @@ func (r *UserReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	return nil
 }
 
-func (r *UserReconciler) userAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (*users.Client, *acls.Syncer, bool, error) {
+func (r *UserReconciler) userAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.User]) (*users.Client, *acls.Syncer, users.CredentialState, error) {
 	user := request.object
 	usersClient, err := request.factory.UsersForCluster(ctx, user, request.clusterName, r.extraOptions...)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, users.CredentialState{}, err
 	}
 
 	syncer, err := request.factory.ACLsForCluster(ctx, user, request.clusterName, r.extraOptions...)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, users.CredentialState{}, err
 	}
 
-	hasUser, err := usersClient.Has(ctx, user)
+	credentials, err := usersClient.CredentialState(ctx, user)
 	if err != nil {
-		return nil, nil, false, err
+		return nil, nil, users.CredentialState{}, err
 	}
 
-	return usersClient, syncer, hasUser, nil
+	return usersClient, syncer, credentials, nil
 }
 
 const userPasswordSecretIndex = "__user_referencing_password_secret"
