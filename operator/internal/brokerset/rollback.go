@@ -138,6 +138,19 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig) (boo
 
 // Rollback cleans up Broker CRs when the migration annotation is removed,
 // allowing the StatefulSet to re-adopt pods.
+//
+// Rollback is resumable at any point: a transient error (e.g. an update
+// conflict against an object the Broker controller is also writing) aborts
+// the pass and bubbles out of the owning Reconcile, which requeues; the
+// retry re-derives everything from world state, and every mutation is
+// freshly-read and idempotent. The one asymmetric window: a failure after
+// the last Broker CR is deleted but before the backup restore runs — the
+// retry then finds no Brokers and returns nil, and the owning reconciler's
+// ordinary StatefulSet ensure recreates the STS from the RENDER instead of
+// the backup (the same fallback as a broker-born cluster with no backup).
+// The leftover backup ConfigMap is refreshed by the next migration
+// (ensureBackupConfigMap updates in place), so it cannot serve a stale
+// restore.
 func Rollback(ctx context.Context, cfg RollbackConfig) error {
 	c, l := cfg.Client, cfg.Logger
 
