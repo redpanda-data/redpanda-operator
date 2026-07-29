@@ -46,6 +46,23 @@ func iCreateABasicClusterWithNodes(ctx context.Context, t framework.TestingT, cl
 		},
 		Spec: redpandav1alpha2.RedpandaSpec{
 			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				// Use the test image rather than the operator's default. The
+				// default tag may not be published yet while a release is
+				// being staged.
+				Image: &redpandav1alpha2.RedpandaImage{
+					Repository: ptr.To(DefaultRedpandaRepo),
+					Tag:        ptr.To(DefaultRedpandaTag),
+				},
+				// Disable the external NodePort service: the chart allocates
+				// STATIC nodePorts (e.g. 31644 for admin), which are a
+				// host-cluster-wide resource — two test clusters with
+				// external enabled on the same shared k3d cluster reject
+				// each other's Services with "provided port is already
+				// allocated". None of the features using this step exercise
+				// external connectivity.
+				External: &redpandav1alpha2.External{
+					Enabled: ptr.To(false),
+				},
 				Statefulset: &redpandav1alpha2.Statefulset{
 					Replicas: ptr.To(nodeCount),
 					SideCars: &redpandav1alpha2.SideCars{

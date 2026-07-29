@@ -1006,6 +1006,12 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 
 func minimalValues(partials ...*redpanda.PartialValues) *redpanda.PartialValues {
 	final := &redpanda.PartialValues{
+		// Use the test image rather than the chart's default. The default tag
+		// may not be published yet while a release is being staged.
+		Image: &redpanda.PartialImage{
+			Repository: ptr.To(os.Getenv("TEST_REDPANDA_REPO")),
+			Tag:        ptr.To(os.Getenv("TEST_REDPANDA_VERSION")),
+		},
 		Console: &consolechart.PartialValues{
 			Enabled: ptr.To(false),
 		},

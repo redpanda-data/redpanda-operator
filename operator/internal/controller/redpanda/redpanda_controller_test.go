@@ -1094,6 +1094,7 @@ func (s *RedpandaControllerSuite) minimalRP() *redpandav1alpha2.Redpanda {
 	}
 
 	rp.Spec.ClusterSpec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+	rp.Spec.ClusterSpec.Image.Tag = ptr.To(os.Getenv("TEST_REDPANDA_VERSION"))
 
 	return rp
 }
@@ -1108,6 +1109,7 @@ func (s *RedpandaControllerSuite) minimalNodePool(cluster *redpandav1alpha2.Redp
 	}
 
 	np.Spec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+	np.Spec.Image.Tag = ptr.To(os.Getenv("TEST_REDPANDA_VERSION"))
 
 	return np
 }

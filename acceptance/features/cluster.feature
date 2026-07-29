@@ -13,6 +13,9 @@ Feature: Basic cluster tests
       name: upgrade
     spec:
       clusterSpec:
+        image:
+          repository: ${DEFAULT_REDPANDA_REPO}
+          tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           replicas: 1
         listeners:
@@ -33,6 +36,9 @@ Feature: Basic cluster tests
       name: upgrade
     spec:
       clusterSpec:
+        image:
+          repository: ${DEFAULT_REDPANDA_REPO}
+          tag: ${DEFAULT_REDPANDA_TAG}
         statefulset:
           replicas: 1
         listeners:

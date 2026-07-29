@@ -6,6 +6,13 @@ spec:
   image: ${DEFAULT_REDPANDA_REPO}
   version: ${DEFAULT_REDPANDA_TAG}
   replicas: 1
+  # Declared here rather than patched via the Admin API by the test steps:
+  # the v1 operator reasserts cluster configuration DECLARATIVELY (roughly
+  # every minute), removing any property not present in this CR — an
+  # out-of-band `rpk cluster config set` / EnableFeature patch is silently
+  # reverted mid-test. Needed by the shadow-links feature.
+  additionalConfiguration:
+    redpanda.enable_shadow_linking: "true"
   # 512Mi is required for v26.1+ brokers which OOM during startup with 256Mi,
   # even in developer mode.
   resources:

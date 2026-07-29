@@ -142,6 +142,12 @@ type UserAuthenticationSpec struct {
 	// SASL mechanism to use for the user credentials. Valid values are:
 	// - scram-sha-512
 	// - scram-sha-256
+	//
+	// Redpanda stores a single credential per user, so changing this on an
+	// existing user replaces that credential rather than adding one. The
+	// previous mechanism stops working as soon as the change is reconciled,
+	// which may be at any point within the reconciliation interval. Move
+	// clients onto the new mechanism first, or they will fail to authenticate.
 	// +kubebuilder:validation:Enum=scram-sha-256;scram-sha-512;SCRAM-SHA-256;SCRAM-SHA-512
 	// +kubebuilder:default=scram-sha-512
 	Type *SASLMechanism `json:"type,omitempty"`

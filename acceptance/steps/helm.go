@@ -38,7 +38,7 @@ func iHelmInstall(ctx context.Context, t framework.TestingT, name, chart, versio
 	}
 
 	var valuesMap map[string]any
-	require.NoError(t, yaml.Unmarshal([]byte(values.Content), &valuesMap))
+	require.NoError(t, yaml.Unmarshal([]byte(PatchManifest(t, values.Content)), &valuesMap))
 
 	t.InstallHelmChart(ctx, chart, helm.InstallOptions{
 		Name:      name,
@@ -50,7 +50,7 @@ func iHelmInstall(ctx context.Context, t framework.TestingT, name, chart, versio
 
 func iHelmUpgrade(ctx context.Context, t framework.TestingT, name, chart, version string, values *godog.DocString) {
 	var valuesMap map[string]any
-	require.NoError(t, yaml.Unmarshal([]byte(values.Content), &valuesMap))
+	require.NoError(t, yaml.Unmarshal([]byte(PatchManifest(t, values.Content)), &valuesMap))
 
 	t.UpgradeHelmChart(ctx, name, chart, helm.UpgradeOptions{
 		Version:   version,
