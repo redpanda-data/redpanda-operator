@@ -12,7 +12,8 @@
 
 |                                            Branch                                            | Release Series | [End of Support](https://support.redpanda.com/hc/en-us/articles/20617574366743-Redpanda-Supported-Versions) |
 |:--------------------------------------------------------------------------------------------:|:--------------:|:-----------------------------------------------------------------------------------------------------------:|
-|            [`main`](https://github.com/redpanda-data/redpanda-operator/tree/main)            |    v26.2.x     |                                                     TBD                                                     |
+|            [`main`](https://github.com/redpanda-data/redpanda-operator/tree/main)            |    v26.3.x     |                                                     TBD                                                     |
+| [`release/v26.2.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v26.2.x) |    v26.2.x     |                                              Apr 1, 2027 (est)                                              |
 | [`release/v26.1.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v26.1.x) |    v26.1.x     |                                              Apr 1, 2027 (est)                                              |
 | [`release/v25.3.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v25.3.x) |    v25.3.x     |                                             Nov 19, 2026 (est)                                              |
 | [`release/v25.2.x`](https://github.com/redpanda-data/redpanda-operator/tree/release/v25.2.x) |    v25.2.x     |                                             Jul 31, 2026 (est)                                              |
