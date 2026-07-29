@@ -37,6 +37,7 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -209,7 +210,7 @@ func TestEnsureRollGrantsGrantsExactlyOne(t *testing.T) {
 		{index: 2, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.ensureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -233,7 +234,7 @@ func TestEnsureRollGrantsNoSecondGrantWhileActive(t *testing.T) {
 		{index: 1, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.ensureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -251,7 +252,7 @@ func TestEnsureRollGrantsRevokesOnCompletion(t *testing.T) {
 		{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.ensureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
 	assert.Empty(t, listGrantedBrokers(t, c))
 }
 
@@ -264,7 +265,7 @@ func TestEnsureRollGrantsRevokesStaleChecksum(t *testing.T) {
 		{index: 0, grant: staleGrant, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.ensureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
 	assert.Empty(t, listGrantedBrokers(t, c))
 }
 
@@ -279,7 +280,7 @@ func TestEnsureRollGrantsRekeysStaleMidRoll(t *testing.T) {
 		{index: 1, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.ensureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -303,7 +304,7 @@ func TestEnsureRollGrantsRegrantsExpired(t *testing.T) {
 		{index: 1, grant: expiredGrant, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.ensureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 
@@ -335,7 +336,7 @@ func TestEnsureRollGrantsRestartMarker(t *testing.T) {
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
 	assert.NotContains(t, pod.Annotations, redpandav1alpha2.BrokerClusterConfigVersionAnnotation)
 
-	err := r.ensureRollGrants(ctx, ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 	assert.Equal(t, []string{"rp-broker-0"}, listGrantedBrokers(t, c))
@@ -357,7 +358,7 @@ func TestUpdateBrokerPreservesRestartMarker(t *testing.T) {
 	delete(desired.Spec.PodTemplate.Annotations, redpandav1alpha2.BrokerClusterConfigVersionAnnotation)
 	desired.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = "next-checksum"
 
-	require.NoError(t, r.updateBroker(ctx, ctrl.Log, &existing, desired))
+	require.NoError(t, r.core(ctrl.Log).UpdateBroker(ctx, ctrl.Log, &existing, desired))
 
 	var updated redpandav1alpha2.Broker
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &updated))
@@ -379,7 +380,7 @@ func TestEnsureRollGrantsClearsRestarting(t *testing.T) {
 	r.pandaCluster.Status.SetRestarting(true)
 	require.NoError(t, c.Status().Update(context.Background(), r.pandaCluster))
 
-	require.NoError(t, r.ensureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
 
 	assert.False(t, r.pandaCluster.Status.IsRestarting())
 	var persisted vectorizedv1alpha1.Cluster
@@ -393,7 +394,7 @@ func TestEnsureRollGrantsUnhealthyCluster(t *testing.T) {
 		{index: 0, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
-	err := r.ensureRollGrants(context.Background(), ctrl.Log)
+	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
 	var requeue *RequeueAfterError
 	require.ErrorAs(t, err, &requeue)
 	assert.Empty(t, listGrantedBrokers(t, c))
@@ -406,7 +407,7 @@ func TestEnsureRollGrantsHoldsDuringDecommission(t *testing.T) {
 		{index: 2, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 	}, interceptor.Funcs{})
 
-	require.NoError(t, r.ensureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
 	assert.Empty(t, listGrantedBrokers(t, c))
 }
 
@@ -428,7 +429,7 @@ func TestEnsureRollGrantsQuiescentClusterNoWrites(t *testing.T) {
 		{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
 	}, failWrites)
 
-	require.NoError(t, r.ensureRollGrants(context.Background(), ctrl.Log))
+	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
 }
 
 func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
@@ -477,7 +478,7 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	cond := persisted.Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType)
 	require.NotNil(t, cond)
 	assert.Equal(t, corev1.ConditionTrue, cond.Status)
-	assert.Equal(t, vectorizedv1alpha1.BrokerMigrationReasonRolledBack, cond.Reason)
+	assert.Equal(t, brokerset.MigrationReasonRolledBack, cond.Reason)
 }
 
 func TestRollbackWithoutBackupFallsBack(t *testing.T) {
@@ -517,7 +518,7 @@ func TestUpdateBrokerSkipsNoopWrites(t *testing.T) {
 	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &existing))
 	desired := existing.DeepCopy()
 
-	require.NoError(t, r.updateBroker(context.Background(), ctrl.Log, &existing, desired))
+	require.NoError(t, r.core(ctrl.Log).UpdateBroker(context.Background(), ctrl.Log, &existing, desired))
 }
 
 // migrationFixture builds a quiescent live STS + matching desired STS + ready
@@ -627,7 +628,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		cluster := brokerSetTestCluster()
 		fix := quiescentMigrationFixture(cluster, 3)
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		require.NoError(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired))
+		require.NoError(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired))
 	})
 
 	t.Run("blocked while restarting", func(t *testing.T) {
@@ -635,7 +636,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		cluster.Status.SetRestarting(true)
 		fix := quiescentMigrationFixture(cluster, 3)
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "restarting")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "restarting")
 	})
 
 	t.Run("blocked while decommissioning", func(t *testing.T) {
@@ -643,7 +644,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		cluster.Status.DecommissioningNode = ptr.To(int32(2))
 		fix := quiescentMigrationFixture(cluster, 3)
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "decommission")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "decommission")
 	})
 
 	t.Run("blocked while STS rollout incomplete", func(t *testing.T) {
@@ -651,7 +652,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		fix.live.Status.ReadyReplicas = 2
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "rollout has not completed")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "rollout has not completed")
 
 		// The blockage is surfaced on the Cluster's BrokerMigration condition.
 		var persisted vectorizedv1alpha1.Cluster
@@ -659,7 +660,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		cond := persisted.Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType)
 		require.NotNil(t, cond)
 		assert.Equal(t, corev1.ConditionFalse, cond.Status)
-		assert.Equal(t, vectorizedv1alpha1.BrokerMigrationReasonBlocked, cond.Reason)
+		assert.Equal(t, brokerset.MigrationReasonBlocked, cond.Reason)
 	})
 
 	// Regression: after a rollback the StatefulSet adopts pods created by the
@@ -671,7 +672,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		fix.live.Status.UpdatedReplicas = 0
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		require.NoError(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired))
+		require.NoError(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired))
 	})
 
 	t.Run("blocked while config change pending on STS", func(t *testing.T) {
@@ -679,7 +680,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		fix.desired.Spec.Template.Annotations[ConfigMapHashAnnotationKey] = "next-checksum"
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "config change pending")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "config change pending")
 	})
 
 	t.Run("blocked while a pod runs stale config", func(t *testing.T) {
@@ -687,7 +688,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		fix.pods[1].Annotations[ConfigMapHashAnnotationKey] = testOldChecksum
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "not running the desired configuration")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "not running the desired configuration")
 	})
 
 	t.Run("blocked while a pod is not ready", func(t *testing.T) {
@@ -695,7 +696,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		fix.pods[2].Status.Conditions = nil
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "not ready")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "not ready")
 	})
 
 	t.Run("blocked while cluster unhealthy", func(t *testing.T) {
@@ -703,7 +704,7 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		r := buildMigrationBrokerSet(t, false, cluster, fix)
 		var requeue *RequeueAfterError
-		require.ErrorAs(t, r.verifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), &requeue)
+		require.ErrorAs(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), &requeue)
 	})
 }
 
@@ -722,7 +723,7 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true},
 		})
-		require.NoError(t, verifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by in-flight decommission", func(t *testing.T) {
@@ -730,7 +731,7 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 		})
-		requireMigrationBlocked(t, verifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "decommissioning")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "decommissioning")
 	})
 
 	t.Run("fully decommissioned broker does not block", func(t *testing.T) {
@@ -738,28 +739,28 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
 		})
-		require.NoError(t, verifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by active roll-grant", func(t *testing.T) {
 		brokers, c := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))},
 		})
-		requireMigrationBlocked(t, verifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "roll-grant")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "roll-grant")
 	})
 
 	t.Run("expired roll-grant does not block", func(t *testing.T) {
 		brokers, c := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))},
 		})
-		require.NoError(t, verifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by missing pod", func(t *testing.T) {
 		brokers, c := build(t, []testBroker{
 			{index: 0}, // no pod: rotation in flight
 		})
-		requireMigrationBlocked(t, verifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "missing")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "missing")
 	})
 }
 
@@ -773,7 +774,7 @@ func TestUpdateBrokerWritesOnChange(t *testing.T) {
 	desired := existing.DeepCopy()
 	desired.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = "next-checksum"
 
-	require.NoError(t, r.updateBroker(context.Background(), ctrl.Log, &existing, desired))
+	require.NoError(t, r.core(ctrl.Log).UpdateBroker(context.Background(), ctrl.Log, &existing, desired))
 
 	var updated redpandav1alpha2.Broker
 	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &updated))
@@ -802,7 +803,7 @@ func TestDecommissionIntentIsNeverUnset(t *testing.T) {
 		// the intent of) a decommissioning broker.
 		desired.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = "next-checksum"
 
-		require.NoError(t, r.ensureDesiredBroker(ctx, ctrl.Log, &existing, desired))
+		require.NoError(t, r.core(ctrl.Log).EnsureDesiredBroker(ctx, ctrl.Log, &existing, desired))
 
 		var updated redpandav1alpha2.Broker
 		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &updated))
@@ -820,7 +821,7 @@ func TestDecommissionIntentIsNeverUnset(t *testing.T) {
 		desired := existing.DeepCopy()
 		desired.Spec.Decommission = false
 
-		require.NoError(t, r.ensureDesiredBroker(ctx, ctrl.Log, &existing, desired))
+		require.NoError(t, r.core(ctrl.Log).EnsureDesiredBroker(ctx, ctrl.Log, &existing, desired))
 
 		var deleted redpandav1alpha2.Broker
 		err := c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &deleted)
@@ -838,7 +839,7 @@ func TestDecommissionIntentIsNeverUnset(t *testing.T) {
 		desired.Spec.Decommission = false
 		desired.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = "next-checksum"
 
-		require.NoError(t, r.updateBroker(ctx, ctrl.Log, &existing, desired))
+		require.NoError(t, r.core(ctrl.Log).UpdateBroker(ctx, ctrl.Log, &existing, desired))
 
 		var updated redpandav1alpha2.Broker
 		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &updated))
@@ -856,7 +857,7 @@ func TestUpdateBrokerSyncsDeletionPolicy(t *testing.T) {
 	desired := existing.DeepCopy()
 	desired.Annotations = map[string]string{feature.BrokerDeletionPolicy.Key: "orphan"}
 
-	require.NoError(t, r.updateBroker(context.Background(), ctrl.Log, &existing, desired))
+	require.NoError(t, r.core(ctrl.Log).UpdateBroker(context.Background(), ctrl.Log, &existing, desired))
 
 	var updated redpandav1alpha2.Broker
 	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &updated))
@@ -894,7 +895,8 @@ func TestBrokersFromStatefulSetPodNameConsistency(t *testing.T) {
 				NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: tc.pool, Replicas: ptr.To(int32(2))},
 			}
 
-			brokers, err := brokersFromStatefulSet(cluster, sts, nodePool, scheme, false)
+			r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+			brokers, err := r.core(ctrl.Log).RenderBrokers(sts, ptr.Deref(nodePool.Replicas, 0), false)
 			require.NoError(t, err)
 			require.Len(t, brokers, 2)
 			for i := range brokers {
@@ -942,7 +944,8 @@ func TestBrokersFromStatefulSetNormalizesDefaults(t *testing.T) {
 		NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default", Replicas: ptr.To(int32(1))},
 	}
 
-	brokers, err := brokersFromStatefulSet(cluster, sts, nodePool, scheme, false)
+	r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+	brokers, err := r.core(ctrl.Log).RenderBrokers(sts, ptr.Deref(nodePool.Replicas, 0), false)
 	require.NoError(t, err)
 	require.Len(t, brokers, 1)
 
@@ -966,7 +969,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 		t.Helper()
 		var list redpandav1alpha2.BrokerList
 		require.NoError(t, c.List(ctx, &list))
-		return indexBrokers(list.Items)
+		return brokerset.IndexBrokers(list.Items)
 	}
 
 	t.Run("marks exactly one excess broker", func(t *testing.T) {
@@ -979,7 +982,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 4, podChecksum: testCurrentChecksum, podReady: true},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.reconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false))
 		assert.True(t, get(t, c, "rp-broker-4").Spec.Decommission)
 		assert.False(t, get(t, c, "rp-broker-3").Spec.Decommission)
 	})
@@ -991,7 +994,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 4, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.reconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true))
 		assert.False(t, get(t, c, "rp-broker-3").Spec.Decommission)
 	})
 
@@ -1002,7 +1005,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 3, podChecksum: testCurrentChecksum, podReady: true},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.reconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true))
 		assert.False(t, get(t, c, "rp-broker-3").Spec.Decommission)
 	})
 
@@ -1012,7 +1015,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 4, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.reconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false))
 
 		var gone redpandav1alpha2.Broker
 		err := c.Get(ctx, types.NamespacedName{Name: "rp-broker-4", Namespace: "test"}, &gone)

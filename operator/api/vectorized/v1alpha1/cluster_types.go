@@ -595,16 +595,9 @@ const (
 	// BrokerMigrationConditionType tracks the StatefulSet→Broker CR
 	// migration: False while the migration is blocked on preconditions or in
 	// progress, True once it completed or was rolled back. Absent on
-	// clusters that never migrated.
+	// clusters that never migrated. Reason vocabulary: the
+	// operator/internal/brokerset MigrationReason* constants.
 	BrokerMigrationConditionType ClusterConditionType = "BrokerMigration"
-)
-
-// Reasons used with the BrokerMigration condition.
-const (
-	BrokerMigrationReasonBlocked    = "Blocked"
-	BrokerMigrationReasonInProgress = "InProgress"
-	BrokerMigrationReasonComplete   = "Complete"
-	BrokerMigrationReasonRolledBack = "RolledBack"
 )
 
 // GetCondition return the condition of the given type

@@ -1321,38 +1321,20 @@ func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 //
 // apiReader must be an uncached client for accurate Node existence checks.
 func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
-	l := log.FromContext(ctx)
-	var affected []corev1.PersistentVolumeClaim
-	for i := range pod.Spec.Volumes {
-		if pod.Spec.Volumes[i].PersistentVolumeClaim == nil {
-			continue
-		}
-		if slices.Contains(exclude, pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName) {
-			continue
-		}
-		var pvc corev1.PersistentVolumeClaim
-		if err := c.Get(ctx, client.ObjectKey{
-			Name:      pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName,
-			Namespace: pod.Namespace,
-		}, &pvc); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return nil, err
-		}
+	return remediablePVCs(ctx, c, c, pod, exclude, func(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolume, bool, error) {
 		if pvc.Spec.VolumeName == "" {
-			continue
+			return nil, false, nil
 		}
 		var pv corev1.PersistentVolume
 		if err := c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
-			continue
+			return nil, false, nil
 		}
 		hostname := NodeFromPVAffinity(&pv)
 		if hostname == "" {
-			continue
+			return nil, false, nil
 		}
 		// PV NodeAffinity carries the kubernetes.io/hostname LABEL value.
 		// Resolve the node by that label, never by object name: under
@@ -1361,18 +1343,48 @@ func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader,
 		// a healthy broker.
 		var nodeList corev1.NodeList
 		if err := apiReader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		if len(nodeList.Items) > 0 {
+			return nil, false, nil
+		}
+		return &pv, true, nil
+	})
+}
+
+// remediablePVCs walks the pod's PVC-backed volumes, skipping claims named in
+// exclude, reads each claim via pvcReader, and collects those for which proof
+// returns (pv, true) — Retain-patching that PV first so storage survives
+// claim deletion.
+func remediablePVCs(ctx context.Context, c client.Client, pvcReader client.Reader, pod *corev1.Pod, exclude []string, proof func(context.Context, *corev1.PersistentVolumeClaim) (*corev1.PersistentVolume, bool, error)) ([]corev1.PersistentVolumeClaim, error) {
+	l := log.FromContext(ctx)
+	var affected []corev1.PersistentVolumeClaim
+	for i := range pod.Spec.Volumes {
+		src := pod.Spec.Volumes[i].PersistentVolumeClaim
+		if src == nil || slices.Contains(exclude, src.ClaimName) {
+			continue
+		}
+		var pvc corev1.PersistentVolumeClaim
+		if err := pvcReader.Get(ctx, client.ObjectKey{Name: src.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return nil, err
+		}
+		pv, remediable, err := proof(ctx, &pvc)
+		if err != nil {
+			return nil, err
+		}
+		if !remediable {
 			continue
 		}
 		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimRetain {
 			patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
 			pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
-			if err := c.Patch(ctx, &pv, patch); err != nil {
+			if err := c.Patch(ctx, pv, patch); err != nil {
 				return nil, fmt.Errorf("patching PV %s to Retain: %w", pv.Name, err)
 			}
-			l.Info("patched PV to Retain", "pv", pv.Name, "deadNodeHostname", hostname)
+			l.Info("patched PV to Retain", "pv", pv.Name)
 		}
 		affected = append(affected, pvc)
 	}
@@ -1397,43 +1409,9 @@ func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader,
 // authorizes destructive deletion, and a stale occupant, node, or claim
 // view could manufacture proof of a conflict that no longer exists.
 func MispinnedPVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
-	l := log.FromContext(ctx)
-	var affected []corev1.PersistentVolumeClaim
-	for i := range pod.Spec.Volumes {
-		if pod.Spec.Volumes[i].PersistentVolumeClaim == nil {
-			continue
-		}
-		if slices.Contains(exclude, pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName) {
-			continue
-		}
-		var pvc corev1.PersistentVolumeClaim
-		if err := apiReader.Get(ctx, client.ObjectKey{
-			Name:      pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName,
-			Namespace: pod.Namespace,
-		}, &pvc); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return nil, err
-		}
-		pv, mispinned, err := claimMispinnedForPod(ctx, apiReader, apiReader, &pvc, pod)
-		if err != nil {
-			return nil, err
-		}
-		if !mispinned {
-			continue
-		}
-		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimRetain {
-			patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
-			pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
-			if err := c.Patch(ctx, pv, patch); err != nil {
-				return nil, fmt.Errorf("patching PV %s to Retain: %w", pv.Name, err)
-			}
-			l.Info("patched mis-pinned PV to Retain", "pv", pv.Name)
-		}
-		affected = append(affected, pvc)
-	}
-	return affected, nil
+	return remediablePVCs(ctx, c, apiReader, pod, exclude, func(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolume, bool, error) {
+		return claimMispinnedForPod(ctx, apiReader, apiReader, pvc, pod)
+	})
 }
 
 // listClusterPVCsByName returns a name→PVC snapshot for the PVCs that

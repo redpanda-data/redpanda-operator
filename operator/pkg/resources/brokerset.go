@@ -179,74 +179,6 @@ func (r *BrokerSetResource) Ensure(ctx context.Context) error {
 	return r.core(l).Ensure(ctx, r.stsResource.Key(), desired, ptr.Deref(r.nodePool.Replicas, 0))
 }
 
-// GetNodePool returns the node pool this BrokerSet manages.
-func (r *BrokerSetResource) GetNodePool() *vectorizedv1alpha1.NodePoolSpecWithDeleted {
-	return &r.nodePool
-}
-
-// --- thin delegates (also the unit-test surface) ---
-
-func (r *BrokerSetResource) ensureRollGrants(ctx context.Context, l logr.Logger) error {
-	return r.core(l).EnsureRollGrants(ctx, l)
-}
-
-func (r *BrokerSetResource) verifyMigrationPreconditions(ctx context.Context, l logr.Logger, liveSTS, desiredSTS *appsv1.StatefulSet) error {
-	return r.core(l).VerifyMigrationPreconditions(ctx, l, liveSTS, desiredSTS)
-}
-
-func (r *BrokerSetResource) ensureDesiredBroker(ctx context.Context, l logr.Logger, existingBroker, d *redpandav1alpha2.Broker) error {
-	return r.core(l).EnsureDesiredBroker(ctx, l, existingBroker, d)
-}
-
-//nolint:unparam // test-only shim; production callers go through brokerset directly
-func (r *BrokerSetResource) reconcileExcessBrokers(ctx context.Context, l logr.Logger, existingByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight bool) error {
-	return r.core(l).ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight)
-}
-
-func (r *BrokerSetResource) updateBroker(ctx context.Context, l logr.Logger, existing, desired *redpandav1alpha2.Broker) error {
-	return r.core(l).UpdateBroker(ctx, l, existing, desired)
-}
-
-// brokersFromStatefulSet converts a StatefulSet spec into Broker CRs, one per
-// ordinal — the V1-shaped entry point to brokerset.RenderBrokers.
-func brokersFromStatefulSet(
-	cluster *vectorizedv1alpha1.Cluster,
-	sts *appsv1.StatefulSet,
-	nodePool vectorizedv1alpha1.NodePoolSpecWithDeleted,
-	scheme *runtime.Scheme,
-	migration bool,
-) ([]redpandav1alpha2.Broker, error) {
-	replicas := ptr.Deref(nodePool.Replicas, 0)
-	if migration {
-		replicas = ptr.Deref(sts.Spec.Replicas, 0)
-	}
-
-	brokerLabels := maps.Clone(map[string]string(labels.ForCluster(cluster).WithNodePool(nodePool.Name)))
-	brokerLabels[redpandav1alpha2.ClusterNameLabel] = cluster.Name
-
-	set := &brokerset.BrokerSet{
-		Scheme: scheme,
-		Owner:  cluster,
-		ClusterRef: redpandav1alpha2.ClusterRef{
-			Group: ptr.To("redpanda.vectorized.io"),
-			Kind:  ptr.To("Cluster"),
-			Name:  cluster.Name,
-		},
-		PoolName:          nodePool.Name,
-		BrokerLabels:      brokerLabels,
-		ConfigChecksumKey: ConfigMapHashAnnotationKey,
-	}
-	return set.RenderBrokers(sts, replicas, migration)
-}
-
-func indexBrokers(brokers []redpandav1alpha2.Broker) map[int32]*redpandav1alpha2.Broker {
-	return brokerset.IndexBrokers(brokers)
-}
-
-func verifyRollbackPreconditions(ctx context.Context, c k8sclient.Client, l logr.Logger, brokers []redpandav1alpha2.Broker) error {
-	return brokerset.VerifyRollbackPreconditions(ctx, c, l, brokers)
-}
-
 // MarkBrokersForRestart records a restart-requiring cluster-config version in
 // each Broker's desired pod template (the `kubectl rollout restart` pattern):
 // pods inherit the annotation at creation, so a live pod whose value differs
@@ -292,7 +224,7 @@ func (rep *v1MigrationReporter) Report(ctx context.Context, status corev1.Condit
 
 func (rep *v1MigrationReporter) NeedsCompletion(context.Context) bool {
 	cond := rep.cluster.Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType)
-	return cond != nil && cond.Reason != vectorizedv1alpha1.BrokerMigrationReasonComplete
+	return cond != nil && cond.Reason != brokerset.MigrationReasonComplete
 }
 
 // setMigrationCondition records STS→Broker migration progress on the Cluster
