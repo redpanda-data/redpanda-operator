@@ -131,22 +131,31 @@ func checkRPKCommands(ctx context.Context, t framework.TestingT, clusterName str
 		// After config changes (e.g., admin port update), the pod restarts
 		// and the container may not be available immediately even though
 		// the cluster reports as "stable".
+		//
+		// `--detailed` forces an Admin API round-trip, which is what this
+		// step is really checking. The deprecated `rpk redpanda admin
+		// brokers list` can't be used here: as of Redpanda 26.2 it prints a
+		// deprecation notice to stderr on every run, tripping the
+		// empty-stderr assertion below.
+		brokersCommand := []string{"rpk", "cluster", "info", "-b", "--detailed"}
 		require.Eventually(t, func() bool {
 			stdout.Reset()
 			stderr.Reset()
 			err := ctl.Exec(ctx, &p, kube.ExecOptions{
 				Container: "redpanda",
-				Command:   []string{"rpk", "redpanda", "admin", "brokers", "list"},
+				Command:   brokersCommand,
 				Stdin:     nil,
 				Stdout:    &stdout,
 				Stderr:    &stderr,
 			})
 			if err != nil {
-				t.Logf("rpk brokers list on pod %q failed (will retry): %v", p.Name, err)
+				t.Logf("%q on pod %q failed (will retry): %v", strings.Join(brokersCommand, " "), p.Name, err)
 				return false
 			}
 			return len(stderr.Bytes()) == 0
-		}, 2*time.Minute, 2*time.Second, "rpk brokers list never succeeded on pod %q\nStdout: %s\nStderr: %s", p.Name, stdout.String(), stderr.String())
+		}, 2*time.Minute, 2*time.Second, "%s", delayLog(func() string {
+			return fmt.Sprintf("%q never succeeded on pod %q\nStdout: %s\nStderr: %s", strings.Join(brokersCommand, " "), p.Name, stdout.String(), stderr.String())
+		}))
 		stdout.Reset()
 
 		require.Eventually(t, func() bool {

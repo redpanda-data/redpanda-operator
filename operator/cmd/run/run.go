@@ -61,7 +61,7 @@ type Controller string
 
 const (
 	defaultConfiguratorContainerImage = "docker.redpanda.com/redpandadata/redpanda-operator"
-	DefaultRedpandaImageTag           = "v26.1.9"
+	DefaultRedpandaImageTag           = "v26.2.1"
 	DefaultRedpandaRepository         = "docker.redpanda.com/redpandadata/redpanda"
 
 	AllNonVectorizedControllers = Controller("all")
@@ -521,6 +521,7 @@ func Run(
 
 		// NodePool Reconciler
 		if opts.enableV2NodepoolController {
+			setupLog.Info("starting NodePool controller")
 			if err := (&redpandacontrollers.NodePoolReconciler{
 				Manager: mcmanager,
 			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
@@ -556,6 +557,8 @@ func Run(
 				return err
 			}
 
+			setupLog.Info("starting Console controller")
+
 			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig()}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
@@ -577,6 +580,8 @@ func Run(
 			if err != nil {
 				return err
 			}
+
+			setupLog.Info("starting Connect controller")
 
 			if err := (&pipelinecontroller.Controller{
 				Ctl:               pipelineCtl,
@@ -601,6 +606,7 @@ func Run(
 	// the Redpanda controllers off) uses it for links between BYOC clusters
 	// and for replicating from external sources such as Confluent.
 	if opts.enableShadowLinks {
+		setupLog.Info("starting ShadowLink controller")
 		if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
@@ -633,6 +639,7 @@ func Run(
 	}
 
 	if opts.enableBrokerController {
+		setupLog.Info("starting Broker controller")
 		if err := redpandacontrollers.SetupBrokerController(ctx, mcmanager, factory, opts.namespace, opts.unbindPVCsAfter); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Broker")
 			return err
@@ -682,6 +689,9 @@ func Run(
 			return err
 		}
 		adapter := redpandaDecommissionerAdapter{client: mgr.GetClient(), factory: factory}
+
+		setupLog.Info("starting StatefulSetDecommissioner controller", "selector", selector.String())
+
 		d := decommissioning.NewStatefulSetDecommissioner(
 			mgr,
 			adapter.getAdminClient,
@@ -893,6 +903,9 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 
 	if opts.enableGhostBrokerDecommissioner && opts.enableVectorizedControllers {
 		adapter := vectorizedDecommissionerAdapter{factory: factory, client: mgr.GetClient()}
+
+		log.Info(ctx, "starting StatefulSetDecommissioner controller", "cleanupPVC", false, "decommissionOnTooHighOrdinal", false)
+
 		d := decommissioning.NewStatefulSetDecommissioner(
 			mgr,
 			adapter.getAdminClient,

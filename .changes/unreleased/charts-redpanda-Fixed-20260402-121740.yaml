@@ -1,4 +1,0 @@
-project: charts/redpanda
-kind: Fixed
-body: Fixed an issue with post-upgrade processing of cluster configuration that resulted in configuration errors due to removed properties across Redpanda versions.
-time: 2026-04-02T12:17:40.953478-04:00
