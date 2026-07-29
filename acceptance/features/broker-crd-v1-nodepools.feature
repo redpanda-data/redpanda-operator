@@ -87,6 +87,15 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
     And all Broker CRs for cluster "rp-with-pools" should be Stable
     And cluster "rp-with-pools" admin API should show 3 brokers
     And pods for cluster "rp-with-pools" should have the same UIDs as the snapshot
+    # A node-config change bumps the config checksum; the cluster controller
+    # must serialize the resulting pod rotations via roll-grants. Fresh UID
+    # snapshot: the roll step requires every snapshotted pod to be replaced.
+    When I snapshot pod UIDs for cluster "rp-with-pools"
+    And I add additional configuration "pandaproxy_client.retries" with value "10" to V1 cluster "rp-with-pools"
+    Then pods for cluster "rp-with-pools" should roll one at a time
+    And all Broker CRs for cluster "rp-with-pools" should be Running
+    And all Broker CRs for cluster "rp-with-pools" should be Stable
+    And cluster "rp-with-pools" admin API should show 3 brokers
     # Scale the nodePool up while in broker mode.
     When I set nodePool "blue-a" replicas to 4 on V1 cluster "rp-with-pools"
     Then cluster "rp-with-pools" should eventually have 4 Broker CRs
