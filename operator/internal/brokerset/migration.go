@@ -235,25 +235,41 @@ func (s *BrokerSet) ensureBackupConfigMap(ctx context.Context, l logr.Logger, st
 	cmName := migrationBackupName(s.Owner.GetName())
 	poolKey := fmt.Sprintf("%s.json", s.PoolName)
 
-	var cm corev1.ConfigMap
-	err := s.Client.Get(ctx, types.NamespacedName{Name: cmName, Namespace: s.Owner.GetNamespace()}, &cm)
-	if err == nil {
-		if _, ok := cm.Data[poolKey]; ok {
-			return nil
-		}
-		data, err := json.Marshal(sts)
-		if err != nil {
-			return err
-		}
-		cm.Data[poolKey] = string(data)
-		return s.Client.Update(ctx, &cm)
+	// Store only what restoreStatefulSetsFromBackup consumes. Marshaling the
+	// live object verbatim would embed resourceVersion/status churn and make
+	// the staleness comparison below dirty on every pass.
+	backup := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        sts.Name,
+			Labels:      sts.Labels,
+			Annotations: sts.Annotations,
+		},
+		Spec: sts.Spec,
 	}
-	if !apierrors.IsNotFound(err) {
+	data, err := json.Marshal(backup)
+	if err != nil {
 		return err
 	}
 
-	data, err := json.Marshal(sts)
-	if err != nil {
+	var cm corev1.ConfigMap
+	err = s.Client.Get(ctx, types.NamespacedName{Name: cmName, Namespace: s.Owner.GetNamespace()}, &cm)
+	if err == nil {
+		// Refresh a stale entry in place: the live StatefulSet keeps
+		// converging until the handover (and a leaked backup from an
+		// aborted rollback may predate a whole earlier migration), and
+		// rollback restores the backup verbatim — restoring anything but
+		// the CURRENT StatefulSet would roll the re-adopted pods.
+		if cm.Data[poolKey] == string(data) {
+			return nil
+		}
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
+		cm.Data[poolKey] = string(data)
+		l.Info("migration: refreshing STS backup ConfigMap", "name", cmName, "pool", s.PoolName)
+		return s.Client.Update(ctx, &cm)
+	}
+	if !apierrors.IsNotFound(err) {
 		return err
 	}
 

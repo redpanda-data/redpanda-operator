@@ -1079,3 +1079,37 @@ func TestMigrationPrunesStaleShadows(t *testing.T) {
 	err = r.Client.Get(ctx, stsKey, &sts)
 	assert.True(t, apierrors.IsNotFound(err), "migration should have orphan-deleted the StatefulSet")
 }
+
+// TestMigrationRefreshesStaleBackup covers a leaked backup ConfigMap (e.g.
+// from a rollback aborted in its post-delete window) being refreshed by the
+// next migration: rollback restores the backup verbatim, so restoring
+// anything but the CURRENT StatefulSet would roll the re-adopted pods.
+func TestMigrationRefreshesStaleBackup(t *testing.T) {
+	ctx := context.Background()
+	cluster := brokerSetTestCluster()
+
+	fix := quiescentMigrationFixture(cluster, 2)
+	r := buildMigrationBrokerSet(t, true, cluster, fix)
+
+	stale := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-migration-backup", cluster.Name),
+			Namespace: cluster.Namespace,
+		},
+		Data: map[string]string{
+			"default.json": `{"metadata":{"name":"rp"},"spec":{"replicas":9}}`,
+		},
+	}
+	require.NoError(t, r.Client.Create(ctx, stale))
+
+	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+	require.NoError(t, r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2))
+
+	var cm corev1.ConfigMap
+	require.NoError(t, r.Client.Get(ctx, k8sclient.ObjectKeyFromObject(stale), &cm))
+
+	var backup appsv1.StatefulSet
+	require.NoError(t, json.Unmarshal([]byte(cm.Data["default.json"]), &backup))
+	require.Equal(t, int32(2), *backup.Spec.Replicas, "the backup must reflect the live StatefulSet, not the leaked entry")
+	require.Equal(t, testCurrentChecksum, backup.Spec.Template.Annotations[ConfigMapHashAnnotationKey])
+}
