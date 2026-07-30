@@ -69,6 +69,24 @@ func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, des
 	}
 	existingByIndex := IndexBrokers(existing)
 
+	// Prune shadows above the live replica count: an STS scale-down between
+	// shadow creation and handover removed those ordinals' brokers through
+	// the StatefulSet machinery, so their shadows are stale. They must not
+	// survive into steady state, where they would read as excess brokers to
+	// decommission — a decommission that can never complete, since the
+	// Redpanda node behind them was already removed by the scale-down. Raw
+	// CR deletion never decommissions (RFC Q2), so deleting an inert shadow
+	// is safe.
+	for idx, b := range existingByIndex {
+		if int(idx) >= stsReplicas {
+			l.Info("migration: pruning stale shadow Broker above live replica count", "name", b.Name, "index", idx, "replicas", stsReplicas)
+			if err := s.Client.Delete(ctx, b); err != nil && !apierrors.IsNotFound(err) {
+				return fmt.Errorf("pruning stale shadow Broker %s: %w", b.Name, err)
+			}
+			delete(existingByIndex, idx)
+		}
+	}
+
 	// State 0→1: create shadow Broker CRs for missing ordinals.
 	for i := range shadowBrokers {
 		d := &shadowBrokers[i]
@@ -86,15 +104,21 @@ func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, des
 		return fmt.Errorf("backing up StatefulSet: %w", err)
 	}
 
-	// Re-list to confirm all shadow Brokers exist.
+	// Re-list to confirm every needed shadow exists. The check is
+	// index-based, not count-based: shadows pruned above may still be listed
+	// while their finalizer runs, and counting them would let the destructive
+	// step proceed with a needed ordinal missing.
 	existing, err = s.listBrokers(ctx)
 	if err != nil {
 		return err
 	}
-	if len(existing) < stsReplicas {
-		l.Info("migration: waiting for all shadow Broker CRs", "have", len(existing), "want", stsReplicas)
-		s.report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, "creating shadow Broker CRs")
-		return nil
+	byIndex := IndexBrokers(existing)
+	for i := int32(0); i < int32(stsReplicas); i++ {
+		if b, ok := byIndex[i]; !ok || !b.DeletionTimestamp.IsZero() {
+			l.Info("migration: waiting for all shadow Broker CRs", "missingIndex", i, "want", stsReplicas)
+			s.report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, "creating shadow Broker CRs")
+			return nil
+		}
 	}
 
 	// State 1→2: verify retention, orphan-delete STS.

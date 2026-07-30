@@ -1023,3 +1023,59 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 		assert.True(t, get(t, c, "rp-broker-3").Spec.Decommission, "next excess broker should be marked")
 	})
 }
+
+// TestMigrationPrunesStaleShadows covers a scale-down landing between shadow
+// creation and handover: the StatefulSet machinery (which keeps running while
+// the live STS exists) removed the ordinal's broker, so its shadow is stale
+// and must be pruned before the destructive step — surviving into steady
+// state it would read as an excess broker to decommission, a decommission
+// that can never complete.
+func TestMigrationPrunesStaleShadows(t *testing.T) {
+	ctx := context.Background()
+	cluster := brokerSetTestCluster()
+
+	// Live STS at 2 replicas, quiescent and healthy — but shadows exist for
+	// ordinals 0..2 from before a 3→2 scale-down.
+	fix := quiescentMigrationFixture(cluster, 2)
+	r := buildMigrationBrokerSet(t, true, cluster, fix)
+
+	poolLabels := labels.ForCluster(cluster).WithNodePool("default")
+	for i := int32(0); i < 3; i++ {
+		shadow := &redpandav1alpha2.Broker{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("rp-shadow-%d", i),
+				Namespace: cluster.Namespace,
+				Labels:    poolLabels,
+			},
+			Spec: redpandav1alpha2.BrokerSpec{
+				ClusterRef: redpandav1alpha2.ClusterRef{
+					Group: ptr.To("redpanda.vectorized.io"),
+					Kind:  ptr.To("Cluster"),
+					Name:  cluster.Name,
+				},
+				NetworkIndex: ptr.To(i),
+			},
+		}
+		require.NoError(t, controllerutil.SetControllerReference(cluster, shadow, r.scheme))
+		require.NoError(t, r.Client.Create(ctx, shadow))
+	}
+
+	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+	require.NoError(t, r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2))
+
+	// The stale shadow is pruned, without decommission intent.
+	var gone redpandav1alpha2.Broker
+	err := r.Client.Get(ctx, types.NamespacedName{Name: "rp-shadow-2", Namespace: cluster.Namespace}, &gone)
+	assert.True(t, apierrors.IsNotFound(err), "stale shadow above the live replica count should be pruned")
+
+	// The needed shadows survive untouched and the migration proceeded to
+	// the handover: the StatefulSet is orphan-deleted.
+	for i := 0; i < 2; i++ {
+		var b redpandav1alpha2.Broker
+		require.NoError(t, r.Client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("rp-shadow-%d", i), Namespace: cluster.Namespace}, &b))
+		assert.False(t, b.Spec.Decommission, "needed shadow %d must not carry decommission intent", i)
+	}
+	var sts appsv1.StatefulSet
+	err = r.Client.Get(ctx, stsKey, &sts)
+	assert.True(t, apierrors.IsNotFound(err), "migration should have orphan-deleted the StatefulSet")
+}

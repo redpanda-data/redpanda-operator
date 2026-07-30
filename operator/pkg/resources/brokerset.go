@@ -18,6 +18,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -44,9 +45,11 @@ type BrokerSetResource struct {
 	k8sclient.Client
 	scheme       *runtime.Scheme
 	pandaCluster *vectorizedv1alpha1.Cluster
-	// stsResource is a StatefulSetResource used purely for rendering — its
-	// obj() method produces the canonical pod template that we convert into
-	// Broker CRs. The STS is never created.
+	// stsResource renders the canonical pod template (obj()) that we convert
+	// into Broker CRs, and — while a live StatefulSet still exists
+	// (migration not yet handed over) — keeps converging it via Ensure. It
+	// never CREATES a StatefulSet: Ensure is only invoked against one that
+	// already exists.
 	stsResource *StatefulSetResource
 	nodePool    vectorizedv1alpha1.NodePoolSpecWithDeleted
 	logger      logr.Logger
@@ -163,6 +166,26 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 
 func (r *BrokerSetResource) Ensure(ctx context.Context) error {
 	l := r.logger.WithValues("nodepool", r.nodePool.Name)
+
+	// While the live StatefulSet still exists (migration not yet handed
+	// over), it remains the authoritative pod manager: keep converging it —
+	// template updates, health-gated rolls, scaling — exactly as in
+	// StatefulSet mode. Without this, a spec or config change made after the
+	// migrate annotation was set (including an operator upgrade that renders
+	// a different template) could never reach the pods, and the migration
+	// preconditions ("config change pending, StatefulSet not yet updated")
+	// would block forever. Guarded on existence so a broker-born cluster or
+	// a completed migration never (re)creates the StatefulSet.
+	var live appsv1.StatefulSet
+	getErr := r.Get(ctx, r.stsResource.Key(), &live)
+	if getErr != nil && !apierrors.IsNotFound(getErr) {
+		return fmt.Errorf("checking for existing StatefulSet: %w", getErr)
+	}
+	if getErr == nil && live.DeletionTimestamp.IsZero() {
+		if err := r.stsResource.Ensure(ctx); err != nil {
+			return err
+		}
+	}
 
 	// Render the desired STS (obj()), never the live one. This ensures the
 	// configmap checksum matches what steady state will compute
