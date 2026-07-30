@@ -994,8 +994,9 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 // reconcileDelete handles Broker CR deletion (RFC Q2):
 //
 //   - Decommission runs ONLY when Spec.Decommission is set — never on raw CR
-//     deletion alone — and a Stuck result (e.g. last-broker guard) blocks
-//     deletion instead of falling through to pod removal.
+//     deletion alone, and never during owner teardown (the admin API is dying
+//     under it; see the case body) — and a Stuck result (e.g. last-broker
+//     guard) blocks deletion instead of falling through to pod removal.
 //   - Raw deletion while the owning cluster is alive RELEASES the pod and
 //     PVCs (ownerRefs stripped): the broker keeps running and data survives.
 //     Once an owning cluster controller manages Broker CRs (none is wired up
@@ -1036,8 +1037,26 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 
 	case broker.Spec.Decommission:
 		// Deletion WITH explicit intent: decommission, then let the CR
-		// deletion cascade pod and PVCs.
-		//
+		// deletion cascade pod and PVCs — UNLESS the owning cluster itself
+		// is being torn down. During teardown the sibling Brokers are being
+		// deleted concurrently, so the admin API dies under the decommission
+		// (or the last-broker guard trips) and insisting on completion wedges
+		// this CR's finalizer forever: pod and PVCs leak in Terminating and
+		// namespace deletion hangs. Teardown also makes the decommission
+		// pointless — the whole cluster is going away — so apply the
+		// deletion policy directly, exactly like intent-less deletion.
+		if r.ownerTearingDown(ctx, l, k8sClient, broker) {
+			if r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade {
+				l.Info("cluster teardown, skipping decommission, removing finalizer (cascade policy)", "name", broker.Name)
+			} else {
+				l.Info("cluster teardown, skipping decommission, releasing resources (orphan policy)", "name", broker.Name)
+				if err := r.releaseBrokerResources(ctx, l, k8sClient, broker, &pod); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+			break
+		}
+
 		// Status.BrokerID may be nil because a status update raced — resolve
 		// it live rather than skipping the decommission and leaving a dead
 		// membership entry behind.
@@ -1101,17 +1120,14 @@ const (
 	deletionPolicyOrphan  brokerDeletionPolicy = "orphan"
 )
 
-// deletionPolicy decides what happens to the pod and PVCs when a Broker CR is
-// deleted without decommission intent. While the owning cluster is alive the
-// answer is always orphan (release + self-heal); during cluster teardown the
-// policy propagated onto the Broker (feature.BrokerDeletionPolicy, default
-// cascade) decides. On any uncertainty the answer is orphan — releasing a pod
-// is recoverable, destroying its data is not.
-func (r *BrokerReconciler) deletionPolicy(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker) brokerDeletionPolicy {
+// ownerTearingDown reports whether the Broker's controller owner (its
+// cluster) is being deleted or is already gone. Uncertainty reads as false:
+// wrongly assuming teardown could destroy data (cascade policy) or skip a
+// legitimate decommission.
+func (r *BrokerReconciler) ownerTearingDown(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker) bool {
 	owner := metav1.GetControllerOf(broker)
 	if owner == nil {
-		// Unowned Broker deleted directly: release rather than destroy.
-		return deletionPolicyOrphan
+		return false
 	}
 
 	var ownerObj client.Object
@@ -1121,20 +1137,29 @@ func (r *BrokerReconciler) deletionPolicy(ctx context.Context, l logr.Logger, k8
 	case owner.Kind == "Redpanda" && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
 		ownerObj = &redpandav1alpha2.Redpanda{}
 	default:
-		return deletionPolicyOrphan
+		return false
 	}
 
-	ownerDeleting := false
 	err := k8sClient.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, ownerObj)
 	switch {
 	case err == nil:
-		ownerDeleting = !ownerObj.GetDeletionTimestamp().IsZero()
+		return !ownerObj.GetDeletionTimestamp().IsZero()
 	case apierrors.IsNotFound(err):
-		ownerDeleting = true
+		return true
 	default:
-		l.Info("could not determine owner state, releasing rather than destroying", "owner", owner.Name, "error", err)
+		l.Info("could not determine owner state, assuming it is alive", "owner", owner.Name, "error", err)
+		return false
 	}
-	if !ownerDeleting {
+}
+
+// deletionPolicy decides what happens to the pod and PVCs when a Broker CR is
+// deleted. While the owning cluster is alive the answer is always orphan
+// (release + self-heal); during cluster teardown the policy propagated onto
+// the Broker (feature.BrokerDeletionPolicy, default cascade) decides. On any
+// uncertainty the answer is orphan — releasing a pod is recoverable,
+// destroying its data is not.
+func (r *BrokerReconciler) deletionPolicy(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker) brokerDeletionPolicy {
+	if !r.ownerTearingDown(ctx, l, k8sClient, broker) {
 		return deletionPolicyOrphan
 	}
 

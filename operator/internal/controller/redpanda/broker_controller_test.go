@@ -373,6 +373,55 @@ func (s *BrokerControllerSuite) TestDecommissionIntentRemovedRevivesSlot() {
 // TestFinalizerRawDeletionReleases verifies RFC Q2: deleting a Broker CR
 // WITHOUT spec.decommission never decommissions — the pod and PVCs are
 // released (ownerRefs stripped) and the broker keeps serving.
+// TestClusterTeardownSkipsDecommission covers deleting the owning cluster
+// while a Broker carries in-flight decommission intent: the finalizer must
+// not insist on completing the decommission — the owner is gone, so admin
+// resolution fails (and the sibling brokers are dying under it) — or the CR,
+// pod, and PVCs leak in Terminating and namespace deletion hangs forever.
+// Teardown applies the deletion policy directly instead.
+func (s *BrokerControllerSuite) TestClusterTeardownSkipsDecommission() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
+
+	// setupBrokerCluster hand-builds unowned Brokers; teardown semantics
+	// require the real ownership wiring (controller ownerRef → GC cascade).
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	for _, b := range brokers {
+		require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(b), b))
+		patch := client.MergeFrom(b.DeepCopy())
+		require.NoError(t, controllerutil.SetControllerReference(rp, b, c.Scheme()))
+		require.NoError(t, c.Patch(ctx, b, patch))
+	}
+
+	// Mark a decommission and immediately tear the owner down: on the next
+	// finalizer pass the owner is gone, so completing the decommission is
+	// impossible — it must be skipped, not waited for.
+	target := brokers[len(brokers)-1]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	patch := client.MergeFrom(target.DeepCopy())
+	target.Spec.Decommission = true
+	require.NoError(t, c.Patch(ctx, target, patch))
+
+	require.NoError(t, c.Delete(ctx, rp))
+
+	// Every Broker CR — including the decommissioning one — must finalize
+	// and cascade its pod away.
+	for _, b := range brokers {
+		s.waitForDeletion(t, ctx, c, b)
+	}
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		for i := range brokers {
+			var pod corev1.Pod
+			err := c.Get(ctx, client.ObjectKey{Name: fmt.Sprintf("%s-%d", rp.Name, i), Namespace: rp.Namespace}, &pod)
+			if !apierrors.IsNotFound(err) && pod.DeletionTimestamp.IsZero() {
+				assert.Fail(ct, "pod still alive after cascade teardown", "pod %s-%d", rp.Name, i)
+			}
+		}
+	}, 5*time.Minute, 5*time.Second)
+}
+
 func (s *BrokerControllerSuite) TestFinalizerRawDeletionReleases() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
