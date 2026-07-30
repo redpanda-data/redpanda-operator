@@ -115,10 +115,26 @@ type RedpandaReconciler struct {
 	// applies defaultClearMaintenanceModeAfter (30m); set via the
 	// --clear-maintenance-mode-after flag.
 	MaintenanceModeClearThreshold time.Duration
+	// StaleDiskWipeNotReadyThreshold is how long a broker pod must remain
+	// not-Ready with a confirmed stale on-disk identity before the operator
+	// wipes the stale disk (deleting the pod's PVCs, if any, plus the pod) to
+	// recover a decommissioned-broker bad_rejoin crashloop (K8S-843). Zero
+	// applies defaultStaleDiskWipeNotReadyThreshold; a negative value disables
+	// the stale-disk wipe entirely. Set via the --wipe-stale-disk-after flag.
+	StaleDiskWipeNotReadyThreshold time.Duration
+
+	// staleDiskWipeDebounce carries retired-identity observations across
+	// reconcile passes so the destructive wipe only fires on a re-confirmed
+	// identity (see wipeDebounce). Zero value is ready to use.
+	staleDiskWipeDebounce wipeDebounce
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch;create;update;patch;delete
+// pods/log powers the stale-disk wipe's bad_rejoin log-evidence fallback: a
+// bad_rejoin broker never binds its admin API, so its kubelet-attributed logs
+// are the only readable statement of its on-disk identity.
+// +kubebuilder:rbac:groups="",resources=pods/log,verbs=get
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles;rolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
@@ -184,6 +200,10 @@ type clusterReconciliationState struct {
 	status                *lifecycle.ClusterStatus
 	restartOnConfigChange bool
 	admin                 *rpadmin.AdminAPI
+	// podEndpoints lazily renders the cluster's per-pod admin endpoints
+	// (memoized: at most one render per pass, and none when no remediation
+	// step needs an endpoint). Set alongside admin by initAdminClient.
+	podEndpoints lazyEndpoints
 }
 
 func (s *clusterReconciliationState) cleanup() {
@@ -323,6 +343,15 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 // not yet Finished, which is exactly the state a broker stuck in maintenance
 // mode sits in forever (the partition balancer refuses to move data off a
 // maintenance-mode node), so the clear would never run if ordered after it.
+//
+// reconcileStaleDiskWipe must precede reconcileDecommission for the same
+// reason the StretchCluster chain orders it there: reconcileDecommission runs
+// the rolling-restart pre-check and requeues (aborting the rest of the chain)
+// whenever HasRecentlyReplacedPods() is true — i.e. while any recently
+// replaced pod is still not-Ready. A decommissioned-broker bad_rejoin
+// (K8S-843) is exactly that state (its pod is stuck not-Ready), so if the wipe
+// step were ordered after reconcileDecommission it would never run to recover
+// the very bad_rejoin it exists for.
 func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 	return []clusterReconciliationFn{
 		r.reconcileParameterValidation,
@@ -336,6 +365,9 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		// clear maintenance mode on brokers that have been down long enough
 		// that their stuck maintenance flag is blocking auto-decommission
 		r.reconcileMaintenanceMode,
+		// recover brokers crashlooping on a retired on-disk identity
+		// (decommissioned-broker bad_rejoin) by wiping their stale state
+		r.reconcileStaleDiskWipe,
 		// now we ensure that we reconcile all of our decommissioning nodes
 		// TODO: Do we want to rate limit this as well given that it also calls the admin API?
 		// My thought is no since we want to be snappy with decommissioning.
@@ -523,6 +555,12 @@ func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *cluster
 		return ctrl.Result{}, err
 	}
 	state.admin = admin
+	// Rendering the per-pod admin endpoints builds the full chart render
+	// state, so it is deferred until a remediation step actually needs an
+	// endpoint and shared (memoized) across every step of this pass.
+	state.podEndpoints = memoizeEndpoints(func() []string {
+		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
+	})
 	return ctrl.Result{}, nil
 }
 

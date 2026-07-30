@@ -51,6 +51,12 @@ rules:
   - update
 - apiGroups:
   - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
+- apiGroups:
+  - ""
   - events.k8s.io
   resources:
   - events

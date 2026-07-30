@@ -130,20 +130,23 @@ var (
 	}, []string{"cluster"})
 
 	// MaintenanceModeGhostCleared counts ghost brokers whose leaked
-	// maintenance-mode flag the operator cleared: broker ids that were
-	// superseded by a live broker advertising the same address under a
-	// different id (a pod that lost its data directory and re-registered),
-	// left in maintenance mode by the pod's preStop hook
-	// (redpanda-data/redpanda-operator#1674). Such a ghost occupies the
-	// cluster's single maintenance-mode slot and is excluded from the
-	// partition balancer's auto-decommission until cleared. Labeled by the
-	// broker's cluster (member) name (empty for the single-cluster Redpanda
-	// reconciler).
+	// maintenance-mode flag the operator cleared: broker ids proven superseded
+	// at their own advertised address (a pod that lost its data directory and
+	// re-registered under a fresh id), left in maintenance mode by the pod's
+	// preStop hook (redpanda-data/redpanda-operator#1674). Supersession is
+	// proven either by a live registered broker sharing the ghost's address
+	// under a different id, or — when the successor cannot register at all,
+	// the leader-restart deadlock of redpanda#31057 — by the pod at that
+	// address self-reporting a different node id via its local admin API. Such
+	// a ghost occupies the cluster's single maintenance-mode slot and is
+	// excluded from the partition balancer's auto-decommission until cleared.
+	// Labeled by the broker's cluster (member) name (empty for the
+	// single-cluster Redpanda reconciler).
 	MaintenanceModeGhostCleared = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,
 		Name:      "maintenance_mode_ghost_cleared_total",
-		Help:      "Ghost brokers (superseded by a live broker at the same address) whose leaked maintenance-mode flag was cleared by the operator, labeled by cluster.",
+		Help:      "Ghost brokers (proven superseded at their own advertised address) whose leaked maintenance-mode flag was cleared by the operator, labeled by cluster.",
 	}, []string{"cluster"})
 
 	// MaintenanceModeClearSkippedAmbiguous counts pods whose long-down state

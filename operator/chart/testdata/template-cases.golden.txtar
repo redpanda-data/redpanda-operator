@@ -366,6 +366,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -1295,6 +1296,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -1994,6 +1996,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -2950,6 +2953,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -3669,6 +3673,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -4611,6 +4616,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -5474,6 +5480,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -6620,6 +6627,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -7424,6 +7432,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -8367,6 +8376,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -9070,6 +9080,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -10052,6 +10063,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -10843,6 +10855,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -11871,6 +11884,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -12695,6 +12709,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -13655,6 +13670,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -14361,6 +14377,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -15309,6 +15326,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -16017,6 +16035,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -16997,6 +17016,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -17703,6 +17723,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -18484,6 +18505,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -19204,6 +19226,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -20159,6 +20182,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -21041,6 +21065,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -22203,6 +22228,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -22918,6 +22944,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -23745,6 +23772,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -24439,6 +24467,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -25396,6 +25425,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -26110,6 +26140,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -27059,6 +27090,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -28142,6 +28174,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -29308,6 +29341,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -30023,6 +30057,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -31011,6 +31046,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -31875,6 +31911,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -32980,6 +33017,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -34067,6 +34105,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -35171,6 +35210,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -36037,6 +36077,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -37381,6 +37422,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -38095,6 +38137,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -39056,6 +39099,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -39937,6 +39981,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -41200,6 +41245,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -42269,6 +42315,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -43414,6 +43461,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -44550,6 +44598,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -45726,6 +45775,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -46451,6 +46501,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -47613,6 +47664,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -48487,6 +48539,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -49672,6 +49725,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -51079,6 +51133,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -52426,6 +52481,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -53251,6 +53307,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -54228,6 +54285,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -55096,6 +55154,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -56512,6 +56571,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -58962,6 +59022,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -60474,6 +60535,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -62154,6 +62216,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -63402,6 +63465,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -65818,6 +65882,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -67312,6 +67377,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -68136,6 +68202,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -69667,6 +69734,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -71165,6 +71233,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -72407,6 +72476,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -73990,6 +74060,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -75470,6 +75541,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -76315,6 +76387,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -77608,6 +77681,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -78621,6 +78695,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -80162,6 +80237,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -80986,6 +81062,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -82430,6 +82507,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -83257,6 +83335,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -84186,6 +84265,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -84975,6 +85055,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -85993,6 +86074,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -86782,6 +86864,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -87808,6 +87891,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -88597,6 +88681,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -89617,6 +89702,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -90316,6 +90402,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -91246,6 +91333,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -91945,6 +92033,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -92917,6 +93006,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -93707,6 +93797,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -94680,6 +94771,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -95469,6 +95561,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -96397,6 +96490,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -97096,6 +97190,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -98041,6 +98136,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -98740,6 +98836,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -99668,6 +99765,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -100367,6 +100465,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -101295,6 +101394,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -101994,6 +102094,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -102922,6 +103023,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -103621,6 +103723,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -104557,6 +104660,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -105256,6 +105360,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -106192,6 +106297,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -106891,6 +106997,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -107853,6 +107960,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -108552,6 +108660,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -109604,6 +109713,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -110303,6 +110413,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -111267,6 +111378,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -111966,6 +112078,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -112930,6 +113043,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -113629,6 +113743,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -114592,6 +114707,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -115307,6 +115423,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -116346,6 +116463,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -117152,6 +117270,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -118246,6 +118365,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -119052,6 +119172,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -120140,6 +120261,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -120946,6 +121068,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -121967,6 +122090,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -122773,6 +122897,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -123786,6 +123911,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -124576,6 +124702,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -125635,6 +125762,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -126334,6 +126462,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -127269,6 +127398,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -127968,6 +128098,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:
@@ -128897,6 +129028,7 @@ rules:
   - ""
   resources:
   - nodes
+  - pods/log
   verbs:
   - get
 - apiGroups:

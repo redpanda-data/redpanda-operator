@@ -23,6 +23,7 @@ operator/test-generator-chart/files/
 operator/tests/_e2e_helm_artifacts_v2/
 operator/tests/e2e-v2-helm/
 *.idea
+manual-testing/
 
 .DS_Store
 
