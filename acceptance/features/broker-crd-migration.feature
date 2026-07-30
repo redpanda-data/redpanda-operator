@@ -77,9 +77,16 @@ Feature: Broker CRD migration from StatefulSet
     When I remove annotation "operator.redpanda.com/migrate-to-broker-cr" from V1 cluster "broker-migrate"
     Then a StatefulSet should eventually exist for cluster "broker-migrate"
     And cluster "broker-migrate" should eventually have 0 Broker CRs
-    When I add additional configuration "pandaproxy_client.retries" with value "10" to V1 cluster "broker-migrate"
+    When I snapshot pod UIDs for cluster "broker-migrate"
+    And I add additional configuration "pandaproxy_client.retries" with value "10" to V1 cluster "broker-migrate"
     And I set annotation "operator.redpanda.com/migrate-to-broker-cr" to "true" on V1 cluster "broker-migrate"
-    Then cluster "broker-migrate" should have 3 Broker CRs
+    # The pending change rolls through the StatefulSet machinery first —
+    # serialized and health-gated — and only once the pods carry the desired
+    # configuration does the migration fire. Waiting for the roll explicitly
+    # keeps the Broker CR assertion below inside its own budget: on slower
+    # (CI) hardware the three-pod roll alone can exceed it.
+    Then pods for cluster "broker-migrate" should roll one at a time
+    And cluster "broker-migrate" should have 3 Broker CRs
     And no StatefulSet should eventually exist for cluster "broker-migrate"
     And all Broker CRs for cluster "broker-migrate" should be Running
     And cluster "broker-migrate" admin API should show 3 brokers
