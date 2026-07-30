@@ -824,6 +824,17 @@ func (r *ClusterReconciler) createExternalNodesList(
 			externalAdminListener != nil && needExternalIP(externalAdminListener.External) ||
 			externalProxyListener != nil && needExternalIP(externalProxyListener.External.ExternalConnectivityConfig) ||
 			schemaRegistryConf != nil && schemaRegistryConf.External != nil && needExternalIP(*schemaRegistryConf.GetExternal()) {
+			// An unscheduled pod has no node and therefore no external
+			// addresses — skip it rather than failing the whole node list:
+			// the empty-name Get below errors unconditionally, and via
+			// reportStatus that would abort every reconcile before
+			// configuration, license, and ghost-decommission handling for
+			// as long as ANY pod is Pending (a pod pinned to a dead node by
+			// PV affinity keeps it Pending indefinitely). The pod's
+			// addresses appear once it schedules.
+			if pods[i].Spec.NodeName == "" {
+				continue
+			}
 			if err := r.Get(ctx, types.NamespacedName{Name: pods[i].Spec.NodeName}, &node); err != nil {
 				return nil, fmt.Errorf("failed to retrieve node %s: %w", pods[i].Spec.NodeName, err)
 			}
