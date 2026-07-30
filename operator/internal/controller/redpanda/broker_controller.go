@@ -75,6 +75,15 @@ const requeueShort = 2 * time.Second
 // every broker in the fleet.
 const requeueDrain = 10 * time.Second
 
+// requeueDecommission paces the completion poll of an in-flight
+// decommission. Completion happens on the Redpanda side, so no watch event
+// fires for it — polling is the only signal — and decommissions are
+// serialized one broker at a time, so this latency accumulates across every
+// broker of a scale-down or pool drain. The status check is a single cheap
+// admin GET; polling at periodicRequeue would put a multi-minute floor under
+// each drained broker.
+const requeueDecommission = 10 * time.Second
+
 type BrokerReconciler struct {
 	Manager       multicluster.Manager
 	ClientFactory internalclient.ClientFactory
@@ -705,7 +714,7 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 	}
 	state.phase = decommResult.phase
 	if decommResult.requeue {
-		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+		return ctrl.Result{RequeueAfter: requeueDecommission}, nil
 	}
 
 	if state.phase == redpandav1alpha2.BrokerPhaseDecommissioned {
@@ -1037,7 +1046,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 				return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 			}
 			if result.requeue {
-				return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+				return ctrl.Result{RequeueAfter: requeueDecommission}, nil
 			}
 		}
 		l.Info("deleting pod after decommission", "name", podName)
