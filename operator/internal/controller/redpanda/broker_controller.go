@@ -941,11 +941,30 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 	}
 	defer admin.Close()
 
-	// Last-broker guard (RFC Q2).
 	brokers, err := admin.Brokers(ctx)
 	if err != nil {
 		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
 	}
+
+	// A re-entry after a lost terminal status write — the completion pass
+	// crashed, or its status Update hit a conflict — arrives here with a
+	// recorded BrokerID that is no longer a cluster member. Detect that
+	// BEFORE the last-broker guard: the guard cannot tell "would remove the
+	// last member" from "already removed, stale retry", and on a drain that
+	// just shrank the membership it would park this Broker in Stuck forever.
+	member := false
+	for i := range brokers {
+		if brokers[i].NodeID == brokerID {
+			member = true
+			break
+		}
+	}
+	if !member {
+		l.Info("broker already absent from cluster membership, decommission finished", "brokerID", brokerID)
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioned}, nil
+	}
+
+	// Last-broker guard (RFC Q2).
 	if len(brokers) <= 1 {
 		l.Info("blocking decommission: last broker in cluster", "brokerID", brokerID)
 		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseStuck}, nil
