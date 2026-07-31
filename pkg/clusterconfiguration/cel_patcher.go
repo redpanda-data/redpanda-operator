@@ -91,7 +91,7 @@ func (t *Template[T]) Fixup(engine func(reflect.Value) (*cel.Env, error)) error 
 		if err != nil {
 			var w Warning
 			if errors.As(err, &w) {
-				t.Warnings = append(t.Warnings, err)
+				t.Warnings = append(t.Warnings, errors.Wrapf(err, "could not resolve property %q", f.Field))
 				continue
 			}
 			errs = append(errs, errors.Newf("problem running CEL expression for field %q: %w", f.Field, err))

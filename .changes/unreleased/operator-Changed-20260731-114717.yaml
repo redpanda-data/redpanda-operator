@@ -1,0 +1,12 @@
+project: operator
+kind: Changed
+body: |
+  Unresolvable external secrets referenced from cluster config now surface
+  with the affected property named (e.g. `could not resolve property
+  "iceberg_rest_catalog_client_secret": ...`). The reconcile still fails
+  before pushing config; in addition, the v1 Cluster CR's ClusterConfigured
+  condition is now set to the warning text (previously the failure was only
+  visible as a reconcile error), the v2 Redpanda CR's ConfigurationApplied
+  condition carries the same message, and the v2 controller emits a Warning
+  event per unresolvable property.
+time: 2026-07-31T11:47:17.000000+00:00

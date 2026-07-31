@@ -134,6 +134,11 @@ func (n *nodeCfg) Reify(ctx context.Context, reader k8sclient.Reader, cloudExpan
 	if err := t.Fixup(factory); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	// TODO(follow-up): t.Warnings is dropped here, the same latent pattern
+	// clusterCfg.Reify used to have (see K8S-858). It is unreachable today
+	// because node-config fixups never wrap values in errorToWarning, but if
+	// that changes these warnings should be stored and surfaced like
+	// clusterCfg's.
 	n.concrete = cfg
 	return n.concrete, nil
 }
