@@ -532,9 +532,11 @@ func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brok
 		if !drained {
 			// Re-check quickly: while this broker holds the roll-grant, no
 			// other broker can roll — every second spent waiting here extends
-			// the whole fleet's roll duration.
+			// the whole fleet's roll duration. The broker is registered and
+			// serving while it drains, so the phase stays Running — anything
+			// else would blink a false "being created" on every rotation.
 			l.Info("waiting for leadership drain before rotation", "brokerID", *broker.Status.BrokerID)
-			state.phase = redpandav1alpha2.BrokerPhaseProvisioning
+			state.phase = redpandav1alpha2.BrokerPhaseRunning
 			return ctrl.Result{RequeueAfter: requeueDrain}, nil
 		}
 	}
