@@ -119,3 +119,17 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
     And all Broker CRs for cluster "rp-with-pools" should be Running
     And all Broker CRs for cluster "rp-with-pools" should be Stable
     And cluster "rp-with-pools" admin API should show 4 brokers
+    # Add a nodePool, then remove it again — the shape of a node pool
+    # migration in the cloud product: the removed pool's brokers must be
+    # drained (decommissioned one at a time) even though no StatefulSet ever
+    # existed for it to reconstruct the deleted pool from.
+    When I add nodePool "green" with 1 replica to V1 cluster "rp-with-pools"
+    Then cluster "rp-with-pools" should eventually have 5 Broker CRs
+    And all Broker CRs for cluster "rp-with-pools" should be Running
+    And all Broker CRs for cluster "rp-with-pools" should be Stable
+    And cluster "rp-with-pools" admin API should show 5 brokers
+    When I remove nodePool "green" from V1 cluster "rp-with-pools"
+    Then cluster "rp-with-pools" should eventually have 4 Broker CRs
+    And all Broker CRs for cluster "rp-with-pools" should be Running
+    And all Broker CRs for cluster "rp-with-pools" should be Stable
+    And cluster "rp-with-pools" admin API should show 4 brokers

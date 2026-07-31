@@ -187,6 +187,8 @@ func init() {
 	framework.RegisterStep(`^I grant a roll-grant to Broker "([^"]*)"$`, grantRollGrantToBroker)
 	framework.RegisterStep(`^I add additional configuration "([^"]*)" with value "([^"]*)" to V1 cluster "([^"]*)"$`, addAdditionalConfigurationToV1Cluster)
 	framework.RegisterStep(`^I set nodePool "([^"]*)" replicas to (\d+) on V1 cluster "([^"]*)"$`, setNodePoolReplicasOnV1Cluster)
+	framework.RegisterStep(`^I add nodePool "([^"]*)" with (\d+) replicas? to V1 cluster "([^"]*)"$`, addNodePoolToV1Cluster)
+	framework.RegisterStep(`^I remove nodePool "([^"]*)" from V1 cluster "([^"]*)"$`, removeNodePoolFromV1Cluster)
 	framework.RegisterStep(`^pods for cluster "([^"]*)" should roll one at a time$`, podsShouldRollOneAtATime)
 	framework.RegisterStep(`^all Broker CRs for cluster "([^"]*)" should be Running$`, allBrokerCRsRunning)
 	framework.RegisterStep(`^all Broker CRs for cluster "([^"]*)" should be Stable$`, allBrokerCRsStable)

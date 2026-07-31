@@ -188,6 +188,16 @@ func (r *BrokerSetResource) Ensure(ctx context.Context) error {
 		if err := r.stsResource.Ensure(ctx); err != nil {
 			return err
 		}
+	} else if r.nodePool.Deleted {
+		// A deleted pool with no StatefulSet is broker-backed: its spec may
+		// be a minimal reconstruction from Broker CR labels (see
+		// nodepools.GetNodePoolsWithBrokerBacked), so nothing can be rendered
+		// from it. A nil desired StatefulSet is exactly the engine's drain
+		// path — no desired brokers, excess brokers decommissioned one at a
+		// time. Deleted pools whose StatefulSet still exists (removed
+		// mid-migration) keep the branch above: the live StatefulSet remains
+		// the pod manager until the migration hands over.
+		return r.core(l).Ensure(ctx, r.stsResource.Key(), nil, 0)
 	}
 
 	// Render the desired STS (obj()), never the live one. This ensures the

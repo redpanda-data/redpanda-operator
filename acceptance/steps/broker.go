@@ -662,6 +662,51 @@ func setNodePoolReplicasOnV1Cluster(ctx context.Context, t framework.TestingT, p
 	t.Logf("Set nodePool %q replicas to %d on V1 cluster %q", poolName, replicas, clusterName)
 }
 
+// addNodePoolToV1Cluster appends a new nodePool cloned from the FIRST pool in
+// the spec (storage, resources, tolerations — everything but name, replicas,
+// and hostIndexOffset), so the pool schedules under the same constraints the
+// scenario's manifest set up. The hostIndexOffset is bumped by 100 per
+// existing pool to keep host indices collision-free.
+func addNodePoolToV1Cluster(ctx context.Context, t framework.TestingT, poolName string, replicas int, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var cluster vectorizedv1alpha1.Cluster
+	require.NoError(t, t.Get(ctx, key, &cluster))
+	require.NotEmpty(t, cluster.Spec.NodePools, "cluster %q has no nodePools to clone from", clusterName)
+
+	patch := runtimeclient.MergeFrom(cluster.DeepCopy())
+	for _, np := range cluster.Spec.NodePools {
+		require.NotEqual(t, poolName, np.Name, "nodePool %q already exists on cluster %q", poolName, clusterName)
+	}
+	pool := *cluster.Spec.NodePools[0].DeepCopy()
+	pool.Name = poolName
+	pool.Replicas = ptr.To(int32(replicas))
+	pool.HostIndexOffset = cluster.Spec.NodePools[0].HostIndexOffset + 100*len(cluster.Spec.NodePools)
+	cluster.Spec.NodePools = append(cluster.Spec.NodePools, pool)
+	require.NoError(t, t.Patch(ctx, &cluster, patch))
+	t.Logf("Added nodePool %q with %d replica(s) to V1 cluster %q", poolName, replicas, clusterName)
+}
+
+func removeNodePoolFromV1Cluster(ctx context.Context, t framework.TestingT, poolName, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var cluster vectorizedv1alpha1.Cluster
+	require.NoError(t, t.Get(ctx, key, &cluster))
+
+	patch := runtimeclient.MergeFrom(cluster.DeepCopy())
+	kept := cluster.Spec.NodePools[:0]
+	found := false
+	for _, np := range cluster.Spec.NodePools {
+		if np.Name == poolName {
+			found = true
+			continue
+		}
+		kept = append(kept, np)
+	}
+	require.True(t, found, "nodePool %q not found on cluster %q", poolName, clusterName)
+	cluster.Spec.NodePools = kept
+	require.NoError(t, t.Patch(ctx, &cluster, patch))
+	t.Logf("Removed nodePool %q from V1 cluster %q", poolName, clusterName)
+}
+
 func addAdditionalConfigurationToV1Cluster(ctx context.Context, t framework.TestingT, configKey, configValue, clusterName string) {
 	key := t.ResourceKey(clusterName)
 	var cluster vectorizedv1alpha1.Cluster
