@@ -27,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -44,6 +45,7 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -611,7 +613,9 @@ func (r *ClusterReconciler) reportStatus(
 			}
 			nps.Replicas++
 			replicas++
-			if b.Status.Phase == redpandav1alpha2.BrokerPhaseRunning {
+			// Phase stays Running through readiness dips once a broker has
+			// registered; the Ready condition is the actual health signal.
+			if apimeta.IsStatusConditionTrue(b.Status.Conditions, statuses.BrokerReady) {
 				nps.ReadyReplicas++
 				nps.CurrentReplicas++
 				readyReplicas++

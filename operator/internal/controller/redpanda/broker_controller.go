@@ -764,6 +764,29 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 	return ctrl.Result{}, nil
 }
 
+// defaultPhase derives the informational phase for a reconcile pass that
+// didn't pin an explicit one (Pending/Decommissioning/Decommissioned/Stuck
+// are all set explicitly by their handlers). Registration is a one-way gate
+// out of Provisioning: a broker that has joined the cluster stays Running
+// through pod readiness dips — the Ready condition carries transient health.
+// The pod readiness probe is cluster-scoped, so a single restarting broker
+// would otherwise regress every registered broker's phase to Provisioning.
+func defaultPhase(broker *redpandav1alpha2.Broker, pod *corev1.Pod) redpandav1alpha2.BrokerPhase {
+	phase := redpandav1alpha2.BrokerPhaseProvisioning
+	if broker.Status.BrokerID != nil || isPodReady(pod) {
+		phase = redpandav1alpha2.BrokerPhaseRunning
+	}
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == corev1.PodScheduled && cond.Status == corev1.ConditionFalse && cond.Reason == "Unschedulable" {
+			phase = redpandav1alpha2.BrokerPhaseStuck
+		}
+	}
+	if reason := podStuckReason(pod); reason != "" {
+		phase = redpandav1alpha2.BrokerPhaseStuck
+	}
+	return phase
+}
+
 func (r *BrokerReconciler) syncBrokerStatus(ctx context.Context, state *brokerReconciliationState, k8sCluster cluster.Cluster, result ctrl.Result) (ctrl.Result, error) {
 	broker := state.broker
 	pod := state.pod
@@ -775,18 +798,7 @@ func (r *BrokerReconciler) syncBrokerStatus(ctx context.Context, state *brokerRe
 
 	phase := state.phase
 	if phase == "" {
-		phase = redpandav1alpha2.BrokerPhaseProvisioning
-		if isPodReady(pod) {
-			phase = redpandav1alpha2.BrokerPhaseRunning
-		}
-		for _, cond := range pod.Status.Conditions {
-			if cond.Type == corev1.PodScheduled && cond.Status == corev1.ConditionFalse && cond.Reason == "Unschedulable" {
-				phase = redpandav1alpha2.BrokerPhaseStuck
-			}
-		}
-		if reason := podStuckReason(pod); reason != "" {
-			phase = redpandav1alpha2.BrokerPhaseStuck
-		}
+		phase = defaultPhase(broker, pod)
 	}
 	if state.registrationConflict != "" {
 		phase = redpandav1alpha2.BrokerPhaseStuck
