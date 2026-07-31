@@ -20,6 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -35,6 +36,9 @@ type attachedResources struct {
 	items          map[string]resources.Resource
 	order          []string
 	autoDeletePVCs bool
+	// brokerMigration accumulates per-pool migration reports; the reconciler
+	// flushes one aggregate BrokerMigration condition after Ensure().
+	brokerMigration *brokerset.MigrationAggregator
 }
 
 const (
@@ -469,6 +473,9 @@ func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) err
 	if err != nil {
 		return fmt.Errorf("while getting node pools: %w", err)
 	}
+	if a.brokerMigration == nil {
+		a.brokerMigration = brokerset.NewMigrationAggregator()
+	}
 	for _, np := range nps {
 		bsKey := fmt.Sprintf("%s-%s", brokerSetKey, np.Name)
 		if _, ok := a.items[bsKey]; ok {
@@ -494,7 +501,8 @@ func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) err
 			a.reconciler.MetricsTimeout,
 			*np,
 			a.autoDeletePVCs,
-			a.reconciler.BrokerPodNodeUnavailableToleration)
+			a.reconciler.BrokerPodNodeUnavailableToleration,
+			resources.NewMigrationPoolReporter(a.brokerMigration, np.Name, a.reconciler.Client, a.cluster, a.log))
 
 		a.order = append(a.order, bsKey)
 	}

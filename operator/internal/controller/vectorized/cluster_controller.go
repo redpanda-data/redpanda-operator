@@ -295,6 +295,15 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	result, errs := ar.Ensure()
+	// Migration runs per pool but the BrokerMigration condition is
+	// cluster-scoped: flush ONE aggregate of every pool's report so a
+	// finished pool never declares Complete while another is still blocked.
+	// The Ensure loop runs every pool even through requeues, so this sits
+	// before the requeue return; on errors the information is partial and
+	// the aggregator skips the write.
+	if brokerMode && errs == nil && ar.brokerMigration != nil {
+		resources.FlushBrokerMigrationCondition(ctx, r.Client, &vectorizedCluster, log, ar.brokerMigration)
+	}
 	if errs != nil {
 		return ctrl.Result{}, errs
 	}

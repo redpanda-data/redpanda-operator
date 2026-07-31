@@ -52,7 +52,12 @@ type BrokerSetResource struct {
 	// already exists.
 	stsResource *StatefulSetResource
 	nodePool    vectorizedv1alpha1.NodePoolSpecWithDeleted
-	logger      logr.Logger
+	// reporter accumulates this pool's migration progress. Migration runs
+	// per pool but the BrokerMigration condition is cluster-scoped, so pools
+	// must never write it directly — the cluster controller flushes one
+	// aggregate after all pools have reconciled.
+	reporter brokerset.MigrationReporter
+	logger   logr.Logger
 }
 
 // NewBrokerSet creates a BrokerSetResource that renders Broker CRs by first
@@ -78,6 +83,7 @@ func NewBrokerSet(
 	nodePool vectorizedv1alpha1.NodePoolSpecWithDeleted,
 	autoDeletePVCs bool,
 	brokerPodNodeUnavailableToleration time.Duration,
+	reporter brokerset.MigrationReporter,
 ) *BrokerSetResource {
 	sts := NewStatefulSet(
 		client, pandaCluster, scheme,
@@ -94,6 +100,7 @@ func NewBrokerSet(
 		pandaCluster: pandaCluster,
 		stsResource:  sts,
 		nodePool:     nodePool,
+		reporter:     reporter,
 		logger:       logger.WithName("BrokerSetResource"),
 	}
 }
@@ -155,12 +162,8 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 			}
 			return "", nil
 		},
-		Reporter: &v1MigrationReporter{
-			client:  r.Client,
-			cluster: r.pandaCluster,
-			logger:  l,
-		},
-		Logger: l,
+		Reporter: r.reporter,
+		Logger:   l,
 	}
 }
 
@@ -229,6 +232,28 @@ func RollbackBrokerCRs(ctx context.Context, c k8sclient.Client, scheme *runtime.
 		},
 		Logger: l,
 	})
+}
+
+// NewMigrationPoolReporter returns the migration reporter for one node pool:
+// reports accumulate into agg (the cluster controller flushes one aggregate
+// after all pools reconcile), while NeedsCompletion keeps reading the
+// Cluster's BrokerMigration condition.
+func NewMigrationPoolReporter(agg *brokerset.MigrationAggregator, pool string, c k8sclient.Client, cluster *vectorizedv1alpha1.Cluster, l logr.Logger) brokerset.MigrationReporter {
+	return agg.PoolReporter(pool, &v1MigrationReporter{client: c, cluster: cluster, logger: l})
+}
+
+// FlushBrokerMigrationCondition writes the aggregate of every pool's
+// migration report to the Cluster's BrokerMigration condition. Migration
+// runs per pool but the condition is cluster-scoped: aggregating before the
+// single write is what keeps a finished pool from declaring Complete while
+// another is still blocked. Call after all pools have reconciled; empty or
+// partial information (a pool errored before reporting) skips the write.
+func FlushBrokerMigrationCondition(ctx context.Context, c k8sclient.Client, cluster *vectorizedv1alpha1.Cluster, l logr.Logger, agg *brokerset.MigrationAggregator) {
+	status, reason, message, ok := agg.Aggregate()
+	if !ok {
+		return
+	}
+	setMigrationCondition(ctx, c, cluster, l, status, reason, message)
 }
 
 // v1MigrationReporter records STS→Broker migration progress on the V1

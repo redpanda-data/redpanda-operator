@@ -652,15 +652,24 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		fix := quiescentMigrationFixture(cluster, 3)
 		fix.live.Status.ReadyReplicas = 2
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "rollout has not completed")
 
-		// The blockage is surfaced on the Cluster's BrokerMigration condition.
+		// Pool reports accumulate; the cluster controller flushes ONE
+		// aggregate after all pools reconcile. Wire the pool reporter and
+		// flush here to assert the blockage reaches the Cluster's
+		// BrokerMigration condition through that path.
+		agg := brokerset.NewMigrationAggregator()
+		r.reporter = NewMigrationPoolReporter(agg, r.nodePool.Name, r.Client, cluster, ctrl.Log)
+
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "rollout has not completed")
+		FlushBrokerMigrationCondition(ctx, r.Client, cluster, ctrl.Log, agg)
+
 		var persisted vectorizedv1alpha1.Cluster
 		require.NoError(t, r.Get(ctx, types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}, &persisted))
 		cond := persisted.Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType)
 		require.NotNil(t, cond)
 		assert.Equal(t, corev1.ConditionFalse, cond.Status)
 		assert.Equal(t, brokerset.MigrationReasonBlocked, cond.Reason)
+		assert.Contains(t, cond.Message, "nodepool "+r.nodePool.Name+":")
 	})
 
 	// Regression: after a rollback the StatefulSet adopts pods created by the
