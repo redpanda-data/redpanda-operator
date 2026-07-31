@@ -81,21 +81,28 @@ func (r *ClusterReconciler) reconcileConfiguration(
 		return 0, errorWithContext(err, "error while creating the concrete configuration")
 	}
 	// If any fixups produced warnings (typically `errorToWarning`-wrapped
-	// failed external secret lookups on Optional secrets), the
-	// corresponding entries in `config` still hold their unexpanded
-	// `${secrets.X}` placeholders. Pushing that to PatchClusterConfig
-	// would surface Redpanda's downstream validation error (e.g. "Must
-	// set both of iceberg_rest_catalog_client_id ...") instead of the
-	// actual root cause (e.g. an AccessDeniedException from the secret
-	// store). Bail out of the reconcile with the warning text so it
-	// shows up as the actionable cause in the Cluster CR's
-	// ClusterConfiguredConditionType status condition. Shares the same
-	// helper as the v2 path. See K8S-858.
+	// failed external secret lookups on Optional secrets), the affected
+	// properties are missing from `config`. Pushing that to
+	// PatchClusterConfig would surface Redpanda's downstream validation
+	// error (e.g. "Must set both of iceberg_rest_catalog_client_id ...")
+	// instead of the actual root cause (e.g. an AccessDeniedException from
+	// the secret store). Record the warnings on the ClusterConfigured
+	// condition and fail the reconcile before pushing, so the CR carries
+	// the actionable cause and we retry with backoff until the values
+	// resolve. See K8S-858.
 	if msg := clusterconfiguration.FormatWarnings(cfg.ClusterConfigWarnings()); msg != "" {
-		return 0, errorWithContext(
-			fmt.Errorf("cluster config has unresolved external secret references: %s", msg),
-			"unresolved external secret references",
-		)
+		err := fmt.Errorf("cluster configuration contains unresolvable values: %s", msg)
+		if redpandaCluster.Status.SetCondition(
+			vectorizedv1alpha1.ClusterConfiguredConditionType,
+			corev1.ConditionFalse,
+			vectorizedv1alpha1.ClusterConfiguredReasonError,
+			err.Error(),
+		) {
+			if updateErr := r.Status().Update(ctx, redpandaCluster); updateErr != nil {
+				return 0, errorWithContext(updateErr, "could not update condition on cluster")
+			}
+		}
+		return 0, errorWithContext(err, "reifying cluster configuration")
 	}
 
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated

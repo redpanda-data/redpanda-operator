@@ -927,16 +927,19 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 		return ctrl.Result{}, errors.WithStack(err)
 	}
 	// If any fixups produced warnings (typically `errorToWarning`-wrapped
-	// failed external secret lookups on Optional secrets), the
-	// corresponding entries in `config` still hold their unexpanded
-	// `${secrets.X}` placeholders. Pushing that to PatchClusterConfig
-	// would surface Redpanda's downstream validation error (e.g. "Must
-	// set both of iceberg_rest_catalog_client_id ...") instead of the
-	// actual root cause (e.g. an AccessDeniedException from the secret
-	// store). Fail the reconcile with the warning text so the user sees
-	// the actionable cause directly in the status condition. See K8S-858.
+	// failed external secret lookups on Optional secrets), the affected
+	// properties are missing from `config`. Pushing that to the admin API
+	// would surface Redpanda's downstream validation error (e.g. "Must set
+	// both of iceberg_rest_catalog_client_id ...") instead of the actual
+	// root cause (e.g. an AccessDeniedException from the secret store).
+	// Emit a Warning event per unresolvable property and fail the
+	// reconcile before pushing; the deferred SetConfigurationApplied puts
+	// the warning text on the ConfigurationApplied condition. See K8S-858.
 	if msg := clusterconfiguration.FormatWarnings(warnings); msg != "" {
-		err := errors.Newf("cluster config has unresolved external secret references: %s", msg)
+		for _, w := range warnings {
+			cluster.GetEventRecorderFor("RedpandaReconciler").Eventf(state.cluster.Redpanda, "Warning", redpandav1alpha2.EventSeverityError, "unresolvable cluster configuration value: %s", w.Error()) //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
+		}
+		err := errors.Newf("cluster configuration contains unresolvable values: %s", msg)
 		logger.Error(err, "fetching cluster config")
 		return ctrl.Result{}, err
 	}

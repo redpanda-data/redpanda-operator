@@ -41,12 +41,11 @@ func TestFormatWarnings(t *testing.T) {
 }
 
 // TestClusterCfg_Warnings_FromOptionalSecretFailure asserts that
-// errorToWarning-wrapped failed expansions (the contract used for
-// Optional external secrets, configuration_cluster.go:181-183) are
-// surfaced through the new Warnings accessor so the v1 and v2
-// controllers can lift them into a status condition before pushing the
-// partially-rendered config to Redpanda. Regression coverage for
-// K8S-858.
+// errorToWarning-wrapped failed expansions (the contract clusterCfg.compile
+// emits for Optional external secret refs) are
+// surfaced through the Warnings accessor so the v1 and v2 controllers
+// can lift them into a status condition (and, on v2, Warning events)
+// before failing the reconcile. Regression coverage for K8S-858.
 func TestClusterCfg_Warnings_FromOptionalSecretFailure(t *testing.T) {
 	cfg := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext("namespace"))
 	cfg.SetAdditionalConfiguration("iceberg_rest_catalog_client_secret", `""`)
@@ -63,11 +62,14 @@ func TestClusterCfg_Warnings_FromOptionalSecretFailure(t *testing.T) {
 	)
 
 	_, err := cfg.Reify(context.TODO(), nil, nil, nil)
-	require.NoError(t, err, "Reify itself must not fail for a Warning; the field is left unexpanded")
+	require.NoError(t, err, "Reify itself must not fail for a Warning; the property is omitted from the result")
 
 	warnings := cfg.Warnings()
 	require.Len(t, warnings, 1, "expected one Warning for the simulated optional-secret failure")
 	assert.Contains(t, warnings[0].Error(), "DATABRICKS_CLIENT_SECRET")
+	// The warning must name the affected property, not just the underlying
+	// secret failure, so the user can tell which config value is missing.
+	assert.Contains(t, warnings[0].Error(), `could not resolve property "iceberg_rest_catalog_client_secret"`)
 
 	// And the shared formatter should produce a user-facing summary that
 	// the controller can drop straight into a status condition message.
