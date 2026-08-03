@@ -11,6 +11,7 @@ package lifecycle
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/redpanda-data/common-go/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -133,7 +134,30 @@ func (m *V2SimpleResourceRenderer) MigratingResources() []client.Object {
 	}
 }
 
+// GetAdminAPIEndpoints returns the admin-API endpoint ("<pod-fqdn>:<port>") for
+// every desired pod across the cluster's pools. The first DNS label of each is
+// the pod name, which podAdminEndpoint-style lookups rely on to dial a specific
+// broker (stale-disk wipe, ghost maintenance-mode clears). Like Render it needs
+// no defaulters (endpoints depend only on names, replicas, cluster domain, and
+// admin port); a conversion failure returns nil and callers treat a missing
+// endpoint as "cannot verify, do nothing".
 func (m *V2SimpleResourceRenderer) GetAdminAPIEndpoints(cluster *ClusterWithPools) []string {
-	// no-op
-	return nil
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, cluster.NodePools)
+	if err != nil {
+		return nil
+	}
+
+	// The default statefulset is not among state.Pools (those hold only
+	// NodePool-derived pools); mirror the chart's StatefulSets renderer, which
+	// prepends it as an unnamed Pool.
+	pools := append([]redpanda.Pool{{Statefulset: state.Values.Statefulset}}, state.Pools...)
+
+	var endpoints []string
+	for _, pool := range pools {
+		poolFullname := redpanda.Fullname(state) + pool.Suffix()
+		for i := int32(0); i < pool.Statefulset.Replicas; i++ {
+			endpoints = append(endpoints, fmt.Sprintf("%s-%d.%s:%d", poolFullname, i, redpanda.InternalDomain(state), state.Values.Listeners.Admin.Port))
+		}
+	}
+	return endpoints
 }

@@ -26,6 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
@@ -166,6 +167,31 @@ func (r *ResourceClient[T, U]) DeleteStatefulSetForBrokerPool(ctx context.Contex
 	return ctl.Delete(ctx, set.StatefulSet)
 }
 
+// GetLivePod returns the live Pod matching the snapshot's name/namespace, or
+// (nil, nil) if it no longer exists. Callers re-check the UID before acting
+// destructively: the pod may have been deleted and recreated (same name, new
+// UID) since the pass began.
+func (r *ResourceClient[T, U]) GetLivePod(ctx context.Context, pod *MulticlusterPod) (*corev1.Pod, error) {
+	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
+		return nil, nil
+	}
+	ctl, err := r.ctl(ctx, pod.clusterName)
+	if err != nil {
+		if pod.clusterName != mcmanager.LocalCluster {
+			return nil, nil
+		}
+		return nil, err
+	}
+	live := &corev1.Pod{}
+	if err := ctl.Get(ctx, client.ObjectKey{Namespace: pod.GetNamespace(), Name: pod.GetName()}, live); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return live, nil
+}
+
 // DeletePod deletes a Pod, routing to the correct cluster.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will clean up when it reconnects.
@@ -212,6 +238,16 @@ func (r *ResourceClient[T, U]) DeletePVCsForPod(ctx context.Context, pod *Multic
 		if vol.PersistentVolumeClaim == nil {
 			continue
 		}
+		// Only delete the StatefulSet's own per-broker claims, named
+		// "<volumeName>-<podName>" by the StatefulSet controller (the data dir
+		// and tiered-storage cache). A user-supplied PVC the pod also mounts
+		// won't match this pattern and is left untouched.
+		want := vol.Name + "-" + pod.GetName()
+		if vol.PersistentVolumeClaim.ClaimName != want {
+			logger.Info("skipping non-StatefulSet PVC in stale-disk wipe (not the broker's own data claim)",
+				"pvc", vol.PersistentVolumeClaim.ClaimName, "volume", vol.Name, "pod", pod.GetName())
+			continue
+		}
 		pvc := &corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      vol.PersistentVolumeClaim.ClaimName,
@@ -227,6 +263,32 @@ func (r *ResourceClient[T, U]) DeletePVCsForPod(ctx context.Context, pod *Multic
 		logger.Info("deleted PVC for broker pod", "pvc", pvc.Name, "pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName())
 	}
 	return nil
+}
+
+// GetPodLogs returns recent log content from one container of a broker pod,
+// routed to the pod's cluster. It backs the stale-disk wipe's bad_rejoin
+// fallback when the broker's admin API can't answer: the stream is
+// kubelet-attributed to this exact pod, so unlike an address-based dial it
+// can't be misdirected by stale DNS or pod-IP reuse. An unreachable remote
+// returns an error (callers treat unreadable logs as "evidence unavailable,
+// defer"). The read is bounded by podLogsReadTimeout, independent of the
+// caller's context, so a wedged stream can't park a reconcile worker.
+func (r *ResourceClient[T, U]) GetPodLogs(ctx context.Context, pod *MulticlusterPod, opts *corev1.PodLogOptions) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, podLogsReadTimeout)
+	defer cancel()
+	cl, err := r.manager.GetCluster(ctx, pod.clusterName)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting cluster %q for pod logs", pod.GetCanonicalClusterName())
+	}
+	clientset, err := kubernetes.NewForConfig(cl.GetConfig())
+	if err != nil {
+		return "", errors.Wrap(err, "building clientset for pod logs")
+	}
+	raw, err := clientset.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), opts).DoRaw(ctx)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading logs for pod %s/%s", pod.GetNamespace(), pod.GetName())
+	}
+	return string(raw), nil
 }
 
 // PatchBrokerPoolSet updates a StatefulSet for a specific node pool.
@@ -449,6 +511,10 @@ const RemoteCallTimeout = 5 * time.Second
 // starvation, an unsynced informer cache) from consuming the entire
 // reconcile budget on one Get.
 const LocalCallTimeout = 10 * time.Second
+
+// podLogsReadTimeout bounds a single pod-log read, independent of the caller's
+// context, so a wedged stream can't park a reconcile worker indefinitely.
+const podLogsReadTimeout = 15 * time.Second
 
 // CallTimeoutFor returns the per-call timeout for the given cluster — short
 // for remote peers, more generous for the local apiserver. Use it to wrap a

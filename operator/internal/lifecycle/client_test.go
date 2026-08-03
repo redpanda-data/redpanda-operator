@@ -263,6 +263,20 @@ func TestClientDeletePVCsForPod(t *testing.T) {
 	}
 	require.NoError(t, i.k8sClient.Create(ctx, dataPVC))
 
+	// A user-supplied static PVC mounted into the broker pod (e.g. a shared RWX
+	// volume). The wipe must NOT delete it: its claim name does not follow the
+	// StatefulSet volumeClaimTemplate pattern "<volumeName>-<podName>".
+	userPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{Name: "shared-user-data", Namespace: ns},
+		Spec: corev1.PersistentVolumeClaimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources: corev1.VolumeResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceStorage: resource.MustParse("1Gi")},
+			},
+		},
+	}
+	require.NoError(t, i.k8sClient.Create(ctx, userPVC))
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: "redpanda-rp-east-0", Namespace: ns},
 		Spec: corev1.PodSpec{
@@ -271,6 +285,12 @@ func TestClientDeletePVCsForPod(t *testing.T) {
 					Name: "datadir",
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir-redpanda-rp-east-0"},
+					},
+				},
+				{
+					Name: "extra",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "shared-user-data"},
 					},
 				},
 				{
@@ -284,6 +304,11 @@ func TestClientDeletePVCsForPod(t *testing.T) {
 	mcPod := &MulticlusterPod{Pod: pod, clusterName: mcmanager.LocalCluster}
 
 	require.NoError(t, i.resourceClient.DeletePVCsForPod(ctx, mcPod))
+
+	// The user's static PVC must be untouched — no deletionTimestamp.
+	gotUser := &corev1.PersistentVolumeClaim{}
+	require.NoError(t, i.k8sClient.Get(ctx, client.ObjectKeyFromObject(userPVC), gotUser))
+	require.Nil(t, gotUser.GetDeletionTimestamp(), "a user-supplied static PVC must never be deleted by the stale-disk wipe")
 
 	// envtest runs the apiserver's StorageObjectInUseProtection admission
 	// plugin (which stamps the pvc-protection finalizer) but no

@@ -1,0 +1,13 @@
+project: gotohelm
+kind: Fixed
+body: |-
+    A nil rest.Config no longer poisons a GoChart's capabilities cache with an empty stub.
+
+      NewCapabilities(nil) returns empty capabilities without an error, and charts
+      are commonly package-global singletons — if a nil-config caller won the first
+      render after process start, every later real-config render saw an empty
+      KubeVersion. Observed in the Redpanda operator as an empty
+      capability-derived pod env var triggering a spurious cluster-wide rolling
+      restart after operator restarts. Nil-config resolutions are no longer
+      cached.
+time: 2026-07-29T19:01:00.000000-04:00

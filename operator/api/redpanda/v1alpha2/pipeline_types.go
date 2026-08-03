@@ -115,9 +115,15 @@ const (
 
 // PipelineSpec defines the desired state of a Redpanda Connect pipeline.
 //
+// NB: "namespace" is a CEL reserved word, so the clusterRef.namespace rule
+// must address the field through Kubernetes' escaped form __namespace__ —
+// the unescaped spelling fails CEL compilation at CRD admission ("undefined
+// field 'namespace'"), which the apiserver rejects, and the all-or-nothing
+// CRD installer then refuses to install every CRD.
+//
 // +kubebuilder:validation:XValidation:message="userRef must be empty when cluster.staticConfiguration is set",rule="!has(self.cluster) || !has(self.cluster.staticConfiguration) || !has(self.userRef)"
 // +kubebuilder:validation:XValidation:message="userRef cannot be set without cluster.clusterRef",rule="!has(self.userRef) || (has(self.cluster) && has(self.cluster.clusterRef))"
-// +kubebuilder:validation:XValidation:message="cluster.clusterRef.namespace is not supported for pipelines; the referenced Redpanda must live in the Pipeline's namespace",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.namespace)"
+// +kubebuilder:validation:XValidation:message="cluster.clusterRef.namespace is not supported for pipelines; the referenced Redpanda must live in the Pipeline's namespace",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.__namespace__)"
 // +kubebuilder:validation:XValidation:message="cluster.clusterRef.group must be cluster.redpanda.com (or unset) for pipelines",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.group) || self.cluster.clusterRef.group == 'cluster.redpanda.com'"
 // +kubebuilder:validation:XValidation:message="cluster.clusterRef.kind must be Redpanda (or unset) for pipelines",rule="!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.kind) || self.cluster.clusterRef.kind == 'Redpanda'"
 type PipelineSpec struct {
