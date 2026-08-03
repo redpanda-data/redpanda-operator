@@ -116,6 +116,11 @@ type MulticlusterReconciler struct {
 	// applies defaultStaleDiskWipeNotReadyThreshold; a negative value disables
 	// the stale-disk wipe entirely. Set via the --wipe-stale-disk-after flag.
 	StaleDiskWipeNotReadyThreshold time.Duration
+
+	// staleDiskWipeDebounce carries retired-identity observations across
+	// reconcile passes so the destructive wipe only fires on a re-confirmed
+	// identity (see wipeDebounce). Zero value is ready to use.
+	staleDiskWipeDebounce wipeDebounce
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -136,6 +141,10 @@ type stretchClusterReconciliationState struct {
 	admin                 *rpadmin.AdminAPI
 	bootstrapUser         string
 	bootstrapPassword     string
+	// podEndpoints lazily renders the cluster's per-pod admin endpoints
+	// (memoized: at most one render per pass, and none when no remediation
+	// step needs an endpoint). Set alongside admin by initAdminClient.
+	podEndpoints lazyEndpoints
 
 	// unobservedBrokerPoolClusters lists the configured clusters whose
 	// RedpandaBrokerPool list could not be fetched this pass (unreachable
@@ -1335,6 +1344,11 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 		return ctrl.Result{}, err
 	}
 	state.admin = admin
+	// Deferred + memoized so a pass renders the per-pod endpoint list at most
+	// once, and only when a remediation step actually needs an endpoint.
+	state.podEndpoints = memoizeEndpoints(func() []string {
+		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
+	})
 	return ctrl.Result{}, nil
 }
 

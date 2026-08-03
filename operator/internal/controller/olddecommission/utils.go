@@ -20,7 +20,6 @@ import (
 	"helm.sh/helm/v3/pkg/cli"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -70,7 +69,13 @@ func getHelmValues(ctx context.Context, c client.Client, log logr.Logger, releas
 			return nil, fmt.Errorf("getting Redpanda customer resource: %w", err)
 		}
 
-		d, err := rp.GetDot(&rest.Config{})
+		// nil, not &rest.Config{}: this path only needs the rendered values
+		// (d.Values), never Capabilities, so render offline. A non-nil but
+		// unusable config would make the chart's capability resolution dial the
+		// apiserver and fail (empty rest.Config defaults its host to
+		// localhost:80); nil is the supported "render without cluster access"
+		// signal and yields empty capabilities without an error.
+		d, err := rp.GetDot(nil)
 		if err != nil {
 			return nil, fmt.Errorf("compute chart values: %w", err)
 		}
