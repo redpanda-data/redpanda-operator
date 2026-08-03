@@ -2579,6 +2579,12 @@ PipelinePhase describes the lifecycle phase of a Pipeline.
 
 PipelineSpec defines the desired state of a Redpanda Connect pipeline.
 
+NB: "namespace" is a CEL reserved word, so the clusterRef.namespace rule
+must address the field through Kubernetes' escaped form __namespace__ —
+the unescaped spelling fails CEL compilation at CRD admission ("undefined
+field 'namespace'"), which the apiserver rejects, and the all-or-nothing
+CRD installer then refuses to install every CRD.
+
 
 
 .Appears In:

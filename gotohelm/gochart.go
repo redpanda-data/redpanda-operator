@@ -251,22 +251,47 @@ func (c *GoChart) WithSyntheticKubeVersion(version *helmette.KubeVersion) *GoCha
 // reconciler. If resolution fails, empty capabilities are returned because
 // capabilities are only used for non-critical metadata (e.g. metrics env vars)
 // and should not block reconciliation.
-func (c *GoChart) resolveCapabilities(cfg *kube.RESTConfig) helmette.Capabilities {
+//
+// A nil cfg is likewise never cached: NewCapabilities(nil) returns an empty
+// stub WITHOUT an error, and charts are commonly package-global — if a
+// nil-config caller (e.g. a controller that renders without cluster access)
+// wins the first-render race at process start, caching its stub would pin
+// EMPTY capabilities for every later real-config render in the process.
+// The symptom: capability-derived pod-template fields (the
+// REDPANDA_METRICS_K8S_VERSION env) render empty after an operator
+// restart, changing the StatefulSet revision and triggering a spurious
+// cluster-wide rolling restart.
+func (c *GoChart) resolveCapabilities(cfg *kube.RESTConfig) (helmette.Capabilities, error) {
 	c.capCache.mu.Lock()
 	defer c.capCache.mu.Unlock()
 
 	if c.capCache.cached {
-		return c.capCache.caps
+		return c.capCache.caps, nil
 	}
 
 	caps, err := helmette.NewCapabilities(cfg)
+	if cfg == nil {
+		// A nil config legitimately renders without cluster access (e.g. the
+		// sidecar, or a controller rendering offline): NewCapabilities(nil)
+		// returns an empty stub with no error. Never cached (see above), never
+		// an error.
+		return caps, nil
+	}
 	if err != nil {
-		return helmette.Capabilities{}
+		// A REAL config that failed discovery must NOT render with empty
+		// capabilities. The capability-derived KubeVersion feeds the broker
+		// StatefulSet pod template (REDPANDA_METRICS_K8S_VERSION), so an empty
+		// value changes the pod-template revision and triggers a spurious
+		// cluster-wide rolling restart. Surface the error so the caller
+		// requeues and retries against a resolvable apiserver, rather than
+		// silently rendering — and applying — a rolled template. Uncached: the
+		// next attempt re-resolves.
+		return helmette.Capabilities{}, errors.WithStack(err)
 	}
 
 	c.capCache.caps = caps
 	c.capCache.cached = true
-	return caps
+	return caps, nil
 }
 
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
@@ -340,7 +365,10 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		return nil, errors.WithStack(err)
 	}
 
-	capabilities := c.resolveCapabilities(cfg)
+	capabilities, err := c.resolveCapabilities(cfg)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	if c.kubeversion != nil {
 		capabilities.KubeVersion = *c.kubeversion
 	}

@@ -7430,7 +7430,7 @@ spec:
               rule: '!has(self.userRef) || (has(self.cluster) && has(self.cluster.clusterRef))'
             - message: cluster.clusterRef.namespace is not supported for pipelines;
                 the referenced Redpanda must live in the Pipeline's namespace
-              rule: '!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.namespace)'
+              rule: '!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.__namespace__)'
             - message: cluster.clusterRef.group must be cluster.redpanda.com (or unset)
                 for pipelines
               rule: '!has(self.cluster) || !has(self.cluster.clusterRef) || !has(self.cluster.clusterRef.group)
