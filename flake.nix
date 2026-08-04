@@ -1,12 +1,21 @@
 {
   inputs = {
+    # Picking an arbitrary SHA of nixpkgs can result in having to build from
+    # source if the hydra build failed or it wasn't included in a build until a
+    # later batch. Instead:
+    # 1. Find the commit with the change you want.
+    # 2. Find the nearest PASSING build on https://hydra.nixos.org/job/nixpkgs/unstable/unstable/all
+    # 3. Run:  nix flake update nixpkgs --override-input nixpkgs nixpkgs/<SHA FROM ABOVE>
     nixpkgs.url = "nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     devshell = {
       url = "github:numtide/devshell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    otel-tui.url = "github:ymtdzzz/otel-tui";
+    otel-tui = {
+      url = "github:ymtdzzz/otel-tui";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -44,6 +53,9 @@
             env = [
               { name = "CGO_ENABLED"; value = "0"; }
               { name = "GOROOT"; value = "${pkgs.go_1_26}/share/go"; }
+              # Prevent go from downloading toolchains other than the one pinned by nix.
+              # See https://go.dev/doc/toolchain#select
+              { name = "GOTOOLCHAIN"; value = "local"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
@@ -92,12 +104,12 @@
               pkgs.goverter
               pkgs.grpc-tools
               pkgs.helm-3-10-3
+              pkgs.helm-3-19-1
               pkgs.helm-docs
               pkgs.jq
               pkgs.k3d # Kind alternative that allows adding/removing Nodes.
               pkgs.kind
               pkgs.kubectl
-              pkgs.kubernetes-helm
               pkgs.kustomize
               pkgs.kuttl
               pkgs.licenseupdater
