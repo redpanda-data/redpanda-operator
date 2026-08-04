@@ -64,6 +64,8 @@ tasks:
   update-golden-files:
     desc: "Regenerate ALL golden files. Dynamically finds the test functions that assert goldens and runs ONLY those, not their whole packages. Intended as a pre-commit aid."
     preconditions:
+      - sh: test -n "$IN_NIX_SHELL"
+        msg: "not in the nix devshell — run `nix develop -c task dev:update-golden-files` so goldens are written with the tool versions CI asserts against"
       - sh: test -n "$TEST_REDPANDA_REPO" && test -n "$TEST_REDPANDA_VERSION"
         msg: "TEST_REDPANDA_REPO/TEST_REDPANDA_VERSION are unset — run inside `nix develop` so lifecycle goldens regenerate with the same image values CI asserts against"
     cmds:
