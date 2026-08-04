@@ -115,12 +115,10 @@ tasks:
           echo "--- $pkg ${run_args:--run <all>} $flag_args"
           # OVERWRITE_GOLDEN_FILES drives the env-var mechanism and is ignored
           # everywhere else; -update-golden is passed only where the flag is
-          # linked (an unknown flag fails the test binary).
-          # -timeout is pinned explicitly because the chart TestTemplate run
-          # derives its helm-exec context from t.Deadline() (testutil.Context)
-          # and legitimately takes ~1min — an ambient GOFLAGS/-timeout of 1m
-          # kills its tail subtests with "context deadline exceeded". -count=1
-          # forces execution so goldens are rewritten even on cached results.
+          # linked (an unknown flag fails the test binary). -timeout is pinned
+          # explicitly so an ambient GOFLAGS -timeout can't shrink
+          # t.Deadline() below what the chart render needs. -count=1 forces
+          # execution so goldens are rewritten even on cached results.
           OVERWRITE_GOLDEN_FILES=1 go test "$pkg" -timeout 15m -count=1 $run_args $flag_args
         done
 
