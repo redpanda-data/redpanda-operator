@@ -140,6 +140,7 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      broker.PodName(),
 					Namespace: cluster.Namespace,
+					Labels:    clusterLabels,
 					Annotations: map[string]string{
 						redpandav1alpha2.BrokerConfigChecksumAnnotation:  tb.podChecksum,
 						redpandav1alpha2.BrokerPodTemplateHashAnnotation: testTemplateHash(tb.podChecksum),
@@ -459,7 +460,12 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	}
 	require.NoError(t, c.Create(ctx, cm))
 
-	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+	// First pass: Broker CRs cleaned up and the StatefulSet restored, but the
+	// pods are not yet re-adopted by it — rollback must hold the success
+	// report AND the backup ConfigMap until they are.
+	err = RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log)
+	var requeue *RequeueAfterError
+	require.ErrorAs(t, err, &requeue, "expected a requeue while the StatefulSet has not adopted the pods")
 
 	var restored appsv1.StatefulSet
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp", Namespace: "test"}, &restored))
@@ -469,9 +475,21 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	require.NotNil(t, owner)
 	assert.Equal(t, r.pandaCluster.Name, owner.Name)
 
+	var kept corev1.ConfigMap
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-migration-backup", Namespace: "test"}, &kept),
+		"backup ConfigMap must survive until the pods are adopted")
+
+	// Simulate the StatefulSet controller adopting the pod, then finish.
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
+	require.NoError(t, controllerutil.SetControllerReference(&restored, &pod, r.scheme))
+	require.NoError(t, c.Update(ctx, &pod))
+
+	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+
 	var gone corev1.ConfigMap
 	err = c.Get(ctx, types.NamespacedName{Name: "rp-migration-backup", Namespace: "test"}, &gone)
-	assert.True(t, apierrors.IsNotFound(err), "backup ConfigMap should be deleted after restore")
+	assert.True(t, apierrors.IsNotFound(err), "backup ConfigMap should be deleted once the pods are adopted")
 
 	var persisted vectorizedv1alpha1.Cluster
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp", Namespace: "test"}, &persisted))
