@@ -131,7 +131,7 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 		Scheme: r.scheme,
 		Owner:  r.pandaCluster,
 		ClusterRef: redpandav1alpha2.ClusterRef{
-			Group: ptr.To("redpanda.vectorized.io"),
+			Group: ptr.To(vectorizedv1alpha1.GroupName),
 			Kind:  ptr.To("Cluster"),
 			Name:  r.pandaCluster.Name,
 		},

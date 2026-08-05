@@ -46,7 +46,7 @@ func migrationBackupName(ownerName string) string {
 func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, desired *appsv1.StatefulSet) error {
 	l.Info("migration: StatefulSet exists, running state machine", "sts", sts.Name)
 
-	stsReplicas := int(ptr.Deref(sts.Spec.Replicas, 0))
+	stsReplicas := int(ptr.Deref(sts.Spec.Replicas, 1))
 
 	// Shadow Brokers are rendered from the desired STS, not the live one.
 	// This ensures the config checksum matches what ensureBrokers will
@@ -178,7 +178,7 @@ func (s *BrokerSet) VerifyMigrationPreconditions(ctx context.Context, l logr.Log
 	// rolls them, so those counters never converge and would block
 	// re-migration forever. The per-pod readiness and desired-config checks
 	// below are the actual rollout-completeness signal.
-	specReplicas := ptr.Deref(liveSTS.Spec.Replicas, 0)
+	specReplicas := ptr.Deref(liveSTS.Spec.Replicas, 1)
 	st := liveSTS.Status
 	if st.ObservedGeneration != liveSTS.Generation ||
 		st.Replicas != specReplicas ||

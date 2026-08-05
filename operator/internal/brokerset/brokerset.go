@@ -46,8 +46,12 @@ import (
 )
 
 const (
-	// NetworkIndexLabelKey carries the Broker's network index (its ordinal)
-	// on the Broker CR and its pod template for cheap label selection.
+	// NetworkIndexLabelKey carries the Broker's network index on the Broker
+	// CR and its pod template for cheap label selection. The network index
+	// selects the broker's stable network identity (pod name, advertised
+	// address slot) and survives pod replacement; it is deliberately not
+	// called "ordinal" — Broker CR names are non-ordinal, and only the PODS
+	// keep StatefulSet ordinal names.
 	NetworkIndexLabelKey = "cluster.redpanda.com/network-index"
 
 	// BrokerDecommissionFinalizer is the Broker controller's finalizer;
