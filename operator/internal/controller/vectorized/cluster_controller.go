@@ -265,12 +265,16 @@ func (r *ClusterReconciler) Reconcile(
 
 	ar.configMap(cfg)
 	brokerMode := r.BrokerCREnabled && feature.V1BrokerCR.Get(ctx, &vectorizedCluster)
-	if brokerMode {
-		if err = ar.brokerSet(cfg); err != nil {
-			return ctrl.Result{}, fmt.Errorf("creating broker sets: %w", err)
-		}
-	} else {
-		if r.BrokerCREnabled {
+
+	if r.BrokerCREnabled {
+		if brokerMode {
+			if err = ar.brokerSet(cfg); err != nil {
+				return ctrl.Result{}, fmt.Errorf("creating broker sets: %w", err)
+			}
+		} else {
+			// Broker support is on but this cluster is not (or no longer)
+			// annotated: clean up any leftover Broker CRs before the
+			// StatefulSet below may be recreated.
 			if err = resources.RollbackBrokerCRs(ctx, r.Client, r.Scheme, &vectorizedCluster, log); err != nil {
 				// While rollback is blocked (rotation or decommission in
 				// flight) the StatefulSet must NOT be recreated — it would
@@ -284,6 +288,9 @@ func (r *ClusterReconciler) Reconcile(
 				return ctrl.Result{}, fmt.Errorf("rolling back Broker CRs: %w", err)
 			}
 		}
+	}
+
+	if !brokerMode {
 		if err = ar.statefulSet(cfg); err != nil {
 			return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
 		}
