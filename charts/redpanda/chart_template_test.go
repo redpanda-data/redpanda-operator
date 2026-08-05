@@ -89,7 +89,11 @@ func TestTemplate(t *testing.T) {
 	client, err := helm.New(helm.Options{ConfigHome: tmp})
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	// The sequential helm invocations below take ~70s on an idle 16-core
+	// machine, and this package runs alongside the rest of test:unit. The
+	// budget is a guard rail against a hung `helm template`, not a
+	// performance assertion, so keep some headroom.
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	archive, err := txtar.ParseFile("testdata/template-cases.txtar")

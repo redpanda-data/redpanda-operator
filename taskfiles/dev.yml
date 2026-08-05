@@ -61,6 +61,69 @@ tasks:
     cmds:
       - licenseupdater ./... -config .licenseupdater.yaml
 
+  update-golden-files:
+    desc: "Regenerate ALL golden files. Dynamically finds the test functions that assert goldens and runs ONLY those, not their whole packages. Intended as a pre-commit aid."
+    preconditions:
+      - sh: test -n "$IN_NIX_SHELL"
+        msg: "not in the nix devshell — run `nix develop -c task dev:update-golden-files` so goldens are written with the tool versions CI asserts against"
+      - sh: test -n "$TEST_REDPANDA_REPO" && test -n "$TEST_REDPANDA_VERSION"
+        msg: "TEST_REDPANDA_REPO/TEST_REDPANDA_VERSION are unset — run inside `nix develop` so lifecycle goldens regenerate with the same image values CI asserts against"
+    cmds:
+      - |
+        set -euo pipefail
+        # Golden assertions funnel through one of three mechanisms:
+        #   - pkg/testutil helpers (NewTxTar/AssertGolden/Update): driven by the
+        #     -update-golden flag. testutil.Update() ORs in goldenfile.Update(),
+        #     so that single flag covers testutil users too; the legacy -update
+        #     flag is NOT universal (goldenfile-only test binaries reject it as
+        #     an undefined flag) and is deliberately not used.
+        #   - common-go/goldenfile directly: driven by -update-golden.
+        #   - the OVERWRITE_GOLDEN_FILES env var (operator/pkg/resources style).
+        # Detection greps test files for those identifiers rather than relying
+        # on testdata file naming, because not every golden artifact is named
+        # *.golden* (gotohelm, gen/partial and pkg/lint keep theirs under other
+        # names) and some *.golden* files are read-only input fixtures. The
+        # enclosing test function is recorded so only the golden tests run —
+        # some of these packages carry minutes of unrelated envtest suites.
+        scan=$(mktemp)
+        trap 'rm -f "$scan"' EXIT
+        grep -rl --include='*_test.go' \
+            --exclude-dir='.claude' --exclude-dir='temp' --exclude-dir='.git' \
+            -E 'testutil\.(NewTxTar|AssertGolden|Update\(\))|goldenfile\.|OVERWRITE_GOLDEN_FILES' . \
+        | while IFS= read -r f; do
+            awk -v dir="$(dirname "$f")" '
+              /^func / { fn=$2; sub(/\(.*$/, "", fn) }
+              /testutil\.(NewTxTar|AssertGolden|Update\(\))|goldenfile\./ { print dir "\t" fn "\tflag" }
+              /OVERWRITE_GOLDEN_FILES/                                    { print dir "\t" fn "\tenv" }
+            ' "$f"
+          done | sort -u > "$scan"
+
+        for pkg in $(cut -f1 "$scan" | sort -u); do
+          fns=$(awk -F'\t' -v p="$pkg" '$1 == p && $2 ~ /^Test/ {print $2}' "$scan" | sort -u | paste -sd'|' -)
+          stray=$(awk -F'\t' -v p="$pkg" '$1 == p && $2 !~ /^Test/' "$scan" | wc -l)
+          run_args=""
+          if [ "$stray" -eq 0 ] && [ -n "$fns" ]; then
+            run_args="-run ^($fns)$"
+          else
+            # A golden helper referenced outside any Test function (e.g. from a
+            # shared assertion helper) can be reached from tests this scan can't
+            # name — run the whole package rather than silently missing them.
+            echo "note: $pkg references golden helpers outside Test functions; running the whole package"
+          fi
+          flag_args=""
+          if awk -F'\t' -v p="$pkg" '$1 == p && $3 == "flag"' "$scan" | grep -q .; then
+            flag_args="-update-golden"
+          fi
+          echo "--- $pkg ${run_args:--run <all>} $flag_args"
+          # OVERWRITE_GOLDEN_FILES drives the env-var mechanism and is ignored
+          # everywhere else; -update-golden is passed only where the flag is
+          # linked (an unknown flag fails the test binary). -timeout is pinned
+          # explicitly so an ambient GOFLAGS -timeout can't shrink
+          # t.Deadline() below what the chart render needs. -count=1 forces
+          # execution so goldens are rewritten even on cached results.
+          OVERWRITE_GOLDEN_FILES=1 go test "$pkg" -timeout 15m -count=1 $run_args $flag_args
+        done
+
   setup-multicluster-dev-env:
     - 'echo "--- Setting up multicluster dev env using k3s and vCluster(s)"'
     # -groups dev-env narrows the multicluster suite to stretch-cluster-basics.feature
