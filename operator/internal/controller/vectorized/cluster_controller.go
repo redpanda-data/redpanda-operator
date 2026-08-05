@@ -264,7 +264,7 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	ar.configMap(cfg)
-	brokerMode := r.BrokerCREnabled && feature.V1BrokerCR.Get(ctx, &vectorizedCluster)
+	brokerMode := r.BrokerCREnabled && feature.V1UseBrokerCR.Get(ctx, &vectorizedCluster)
 
 	if r.BrokerCREnabled {
 		if brokerMode {

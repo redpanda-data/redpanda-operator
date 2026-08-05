@@ -38,7 +38,7 @@ import (
 var _ Resource = &BrokerSetResource{}
 
 // BrokerSetResource manages Broker CRs for a single node pool, replacing
-// StatefulSetResource when the cluster has the migrate-to-broker-cr
+// StatefulSetResource when the cluster has the use-broker-cr
 // annotation. It is a thin V1 (vectorized Cluster) adapter around the
 // CR-agnostic machinery in operator/internal/brokerset.
 type BrokerSetResource struct {

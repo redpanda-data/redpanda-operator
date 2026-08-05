@@ -1,5 +1,5 @@
 # Control experiment for broker-image-upgrade step 02: the SAME cluster spec
-# WITHOUT the migrate-to-broker-cr annotation — StatefulSet-managed.
+# WITHOUT the use-broker-cr annotation — StatefulSet-managed.
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
