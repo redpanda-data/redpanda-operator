@@ -21,9 +21,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -252,45 +254,34 @@ func (s *BrokerSet) ensureBackupConfigMap(ctx context.Context, l logr.Logger, st
 		return err
 	}
 
-	var cm corev1.ConfigMap
-	err = s.Client.Get(ctx, types.NamespacedName{Name: cmName, Namespace: s.Owner.GetNamespace()}, &cm)
-	if err == nil {
-		// Refresh a stale entry in place: the live StatefulSet keeps
-		// converging until the handover (and a leaked backup from an
-		// aborted rollback may predate a whole earlier migration), and
-		// rollback restores the backup verbatim — restoring anything but
-		// the CURRENT StatefulSet would roll the re-adopted pods.
-		if cm.Data[poolKey] == string(data) {
-			return nil
-		}
-		if cm.Data == nil {
-			cm.Data = map[string]string{}
-		}
-		cm.Data[poolKey] = string(data)
-		l.Info("migration: refreshing STS backup ConfigMap", "name", cmName, "pool", s.PoolName)
-		return s.Client.Update(ctx, &cm)
+	// Server-side apply of this pool's key only, with a per-pool field
+	// manager: pools co-own the shared ConfigMap without read-modify-write
+	// races, a stale entry (the live StatefulSet keeps converging until the
+	// handover; a leaked backup from an aborted rollback may predate a whole
+	// earlier migration) is refreshed in place — rollback restores the backup
+	// verbatim, so restoring anything but the CURRENT StatefulSet would roll
+	// the re-adopted pods — and an unchanged payload is a no-op.
+	gvk, err := apiutil.GVKForObject(s.Owner, s.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "resolving owner GVK")
 	}
-	if !apierrors.IsNotFound(err) {
-		return err
-	}
-
-	cm = corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cmName,
-			Namespace: s.Owner.GetNamespace(),
-			Labels: map[string]string{
-				"redpanda.com/migration": "statefulset-to-broker",
-			},
-		},
-		Data: map[string]string{
+	cm := applycorev1.ConfigMap(cmName, s.Owner.GetNamespace()).
+		WithLabels(map[string]string{
+			"redpanda.com/migration": "statefulset-to-broker",
+		}).
+		WithData(map[string]string{
 			poolKey: string(data),
-		},
-	}
-	if err := controllerutil.SetControllerReference(s.Owner, &cm, s.Scheme); err != nil {
-		return err
-	}
-	l.Info("migration: created STS backup ConfigMap", "name", cmName, "pool", s.PoolName)
-	return s.Client.Create(ctx, &cm)
+		}).
+		WithOwnerReferences(applymetav1.OwnerReference().
+			WithAPIVersion(gvk.GroupVersion().String()).
+			WithKind(gvk.Kind).
+			WithName(s.Owner.GetName()).
+			WithUID(s.Owner.GetUID()).
+			WithController(true).
+			WithBlockOwnerDeletion(true))
+	l.Info("migration: applying STS backup ConfigMap", "name", cmName, "pool", s.PoolName)
+	return s.Client.Apply(ctx, cm,
+		k8sclient.ForceOwnership, k8sclient.FieldOwner("brokerset-migration-"+s.PoolName))
 }
 
 func verifyPVCRetention(sts *appsv1.StatefulSet) error {
