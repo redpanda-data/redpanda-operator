@@ -15,6 +15,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/utils/ptr"
@@ -47,7 +48,7 @@ import (
 func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 	brokers, err := s.listClusterBrokers(ctx)
 	if err != nil {
-		return fmt.Errorf("listing cluster Broker CRs: %w", err)
+		return errors.Wrap(err, "listing cluster Broker CRs")
 	}
 
 	now := time.Now()
@@ -202,7 +203,7 @@ func (s *BrokerSet) grantRoll(ctx context.Context, b *redpandav1alpha2.Broker, t
 	}
 	b.Annotations[feature.RollGrant.Key] = feature.FormatRollGrant(templateHash, now.Add(feature.RollGrantTTL))
 	if err := s.Client.Patch(ctx, b, p); err != nil {
-		return fmt.Errorf("granting roll to Broker %s: %w", b.Name, err)
+		return errors.Wrapf(err, "granting roll to Broker %s", b.Name)
 	}
 	return nil
 }
@@ -211,7 +212,7 @@ func (s *BrokerSet) revokeRollGrant(ctx context.Context, b *redpandav1alpha2.Bro
 	p := k8sclient.MergeFrom(b.DeepCopy())
 	delete(b.Annotations, feature.RollGrant.Key)
 	if err := s.Client.Patch(ctx, b, p); err != nil {
-		return fmt.Errorf("revoking roll-grant on Broker %s: %w", b.Name, err)
+		return errors.Wrapf(err, "revoking roll-grant on Broker %s", b.Name)
 	}
 	return nil
 }

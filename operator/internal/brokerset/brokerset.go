@@ -28,6 +28,7 @@ import (
 	"slices"
 	"sort"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -154,7 +155,7 @@ func (s *BrokerSet) Ensure(ctx context.Context, stsKey types.NamespacedName, des
 
 	existingSTS, err := s.getExistingStatefulSet(ctx, stsKey)
 	if err != nil {
-		return fmt.Errorf("checking for existing StatefulSet: %w", err)
+		return errors.Wrap(err, "checking for existing StatefulSet")
 	}
 
 	if existingSTS != nil && desiredSTS != nil {
@@ -180,13 +181,13 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		var err error
 		desired, err = s.RenderBrokers(desiredSTS, desiredReplicas, false)
 		if err != nil {
-			return fmt.Errorf("rendering desired Broker CRs: %w", err)
+			return errors.Wrap(err, "rendering desired Broker CRs")
 		}
 	}
 
 	existing, err := s.listBrokers(ctx)
 	if err != nil {
-		return fmt.Errorf("listing existing Broker CRs: %w", err)
+		return errors.Wrap(err, "listing existing Broker CRs")
 	}
 
 	existingByIndex := IndexBrokers(existing)
@@ -235,7 +236,7 @@ func (s *BrokerSet) EnsureDesiredBroker(ctx context.Context, l logr.Logger, exis
 		if existingBroker.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned && existingBroker.DeletionTimestamp.IsZero() {
 			l.Info("replacing decommissioned Broker at desired index", "name", existingBroker.Name, "index", *existingBroker.Spec.NetworkIndex)
 			if err := s.Client.Delete(ctx, existingBroker); err != nil && !apierrors.IsNotFound(err) {
-				return fmt.Errorf("deleting decommissioned Broker %s: %w", existingBroker.Name, err)
+				return errors.Wrapf(err, "deleting decommissioned Broker %s", existingBroker.Name)
 			}
 		}
 		return nil
@@ -264,7 +265,7 @@ func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, e
 		if b.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned {
 			l.Info("deleting decommissioned Broker CR", "name", b.Name)
 			if err := s.Client.Delete(ctx, b); err != nil && !apierrors.IsNotFound(err) {
-				return fmt.Errorf("deleting decommissioned Broker %s: %w", b.Name, err)
+				return errors.Wrapf(err, "deleting decommissioned Broker %s", b.Name)
 			}
 			continue
 		}
@@ -276,7 +277,7 @@ func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, e
 		l.Info("marking Broker for decommission (scale-down)", "name", b.Name, "index", *b.Spec.NetworkIndex)
 		b.Spec.Decommission = true
 		if err := s.Client.Update(ctx, b); err != nil {
-			return fmt.Errorf("setting decommission on Broker %s: %w", b.Name, err)
+			return errors.Wrapf(err, "setting decommission on Broker %s", b.Name)
 		}
 		break // one at a time
 	}
@@ -393,7 +394,7 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 		}
 
 		if err := controllerutil.SetControllerReference(s.Owner, &broker, s.Scheme); err != nil {
-			return nil, fmt.Errorf("setting owner reference on Broker ordinal %d: %w", i, err)
+			return nil, errors.Wrapf(err, "setting owner reference on Broker ordinal %d", i)
 		}
 
 		brokers = append(brokers, broker)
@@ -515,7 +516,7 @@ func (s *BrokerSet) getBrokerPod(ctx context.Context, b *redpandav1alpha2.Broker
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("getting pod for Broker %s: %w", b.Name, err)
+		return nil, errors.Wrapf(err, "getting pod for Broker %s", b.Name)
 	}
 	return &pod, nil
 }
@@ -544,7 +545,7 @@ func MarkForRestart(ctx context.Context, c k8sclient.Client, owner k8sclient.Obj
 		LabelSelector: selector,
 		Namespace:     owner.GetNamespace(),
 	}); err != nil {
-		return fmt.Errorf("listing Broker CRs: %w", err)
+		return errors.Wrap(err, "listing Broker CRs")
 	}
 
 	for i := range list.Items {
@@ -561,7 +562,7 @@ func MarkForRestart(ctx context.Context, c k8sclient.Client, owner k8sclient.Obj
 		}
 		b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = version
 		if err := c.Patch(ctx, b, patch); err != nil {
-			return fmt.Errorf("marking Broker %s for restart: %w", b.Name, err)
+			return errors.Wrapf(err, "marking Broker %s for restart", b.Name)
 		}
 	}
 	return nil

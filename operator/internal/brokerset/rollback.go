@@ -12,10 +12,10 @@ package brokerset
 import (
 	"context"
 	"encoding/json"
-	stderrors "errors"
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -100,7 +100,7 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *
 	for key, data := range cm.Data {
 		var backup appsv1.StatefulSet
 		if err := json.Unmarshal([]byte(data), &backup); err != nil {
-			return fmt.Errorf("unmarshaling StatefulSet backup %s/%s: %w", cm.Name, key, err)
+			return errors.Wrapf(err, "unmarshaling StatefulSet backup %s/%s", cm.Name, key)
 		}
 		restored := &appsv1.StatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
@@ -112,11 +112,11 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *
 			Spec: backup.Spec,
 		}
 		if err := controllerutil.SetControllerReference(cfg.Owner, restored, cfg.Scheme); err != nil {
-			return fmt.Errorf("setting owner reference on restored StatefulSet %s: %w", restored.Name, err)
+			return errors.Wrapf(err, "setting owner reference on restored StatefulSet %s", restored.Name)
 		}
 		cfg.Logger.Info("rollback: restoring StatefulSet from migration backup", "sts", restored.Name, "key", key)
 		if err := cfg.Client.Create(ctx, restored); err != nil && !apierrors.IsAlreadyExists(err) {
-			return fmt.Errorf("restoring StatefulSet %s: %w", restored.Name, err)
+			return errors.Wrapf(err, "restoring StatefulSet %s", restored.Name)
 		}
 	}
 	return nil
@@ -151,7 +151,7 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 		// mid-flight.
 		if err := VerifyRollbackPreconditions(l, brokerList.Items); err != nil {
 			var requeueErr *RequeueAfterError
-			if stderrors.As(err, &requeueErr) {
+			if errors.As(err, &requeueErr) {
 				cfg.report(ctx, corev1.ConditionFalse, MigrationReasonBlocked, requeueErr.Msg)
 			}
 			return err
@@ -169,12 +169,12 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 			b := &brokerList.Items[i]
 			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: b.PodName(), Namespace: cfg.Owner.GetNamespace()}}
 			if err := stripOwnerRef(ctx, c, pod, b.UID); err != nil {
-				return fmt.Errorf("stripping Broker ownerRef from pod %s: %w", pod.Name, err)
+				return errors.Wrapf(err, "stripping Broker ownerRef from pod %s", pod.Name)
 			}
 			for _, ec := range b.Spec.Storage.ExistingClaims {
 				pvc := &corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: ec.Name, Namespace: cfg.Owner.GetNamespace()}}
 				if err := stripOwnerRef(ctx, c, pvc, b.UID); err != nil {
-					return fmt.Errorf("stripping Broker ownerRef from PVC %s: %w", ec.Name, err)
+					return errors.Wrapf(err, "stripping Broker ownerRef from PVC %s", ec.Name)
 				}
 			}
 		}
@@ -188,12 +188,12 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 			b := &brokerList.Items[i]
 			if controllerutil.RemoveFinalizer(b, BrokerDecommissionFinalizer) {
 				if err := c.Update(ctx, b); err != nil && !apierrors.IsNotFound(err) {
-					return fmt.Errorf("removing finalizer from Broker CR %s: %w", b.Name, err)
+					return errors.Wrapf(err, "removing finalizer from Broker CR %s", b.Name)
 				}
 			}
 			l.Info("rollback: deleting Broker CR", "name", b.Name)
 			if err := c.Delete(ctx, b, k8sclient.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !apierrors.IsNotFound(err) {
-				return fmt.Errorf("deleting Broker CR %s: %w", b.Name, err)
+				return errors.Wrapf(err, "deleting Broker CR %s", b.Name)
 			}
 		}
 	}
