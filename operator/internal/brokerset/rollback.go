@@ -53,10 +53,16 @@ func (cfg *RollbackConfig) report(ctx context.Context, status corev1.ConditionSt
 }
 
 // VerifyRollbackPreconditions blocks rollback while a rotation or
-// decommission is mid-flight: every non-decommissioned Broker must have its
-// pod present and no Broker may hold an unexpired roll-grant. Fully
-// Decommissioned brokers (scale-down leftovers) are inert and do not block.
-func VerifyRollbackPreconditions(ctx context.Context, c k8sclient.Client, l logr.Logger, brokers []redpandav1alpha2.Broker) error {
+// decommission is mid-flight, reading only the Broker CRs: no Broker may be
+// mid-decommission and no Broker may hold an unexpired roll-grant (an
+// actively progressing rotation always holds one). Fully Decommissioned
+// brokers (scale-down leftovers) are inert and do not block. A missing pod
+// deliberately does NOT block: with no unexpired grant it is an abandoned
+// rotation (e.g. a wedged Broker controller) or a manual deletion, and the
+// restored StatefulSet recreates the pod — whose postStart hook clears
+// maintenance mode — so proceeding recovers toward a working cluster where
+// waiting would deadlock on the very controller being rolled away from.
+func VerifyRollbackPreconditions(l logr.Logger, brokers []redpandav1alpha2.Broker) error {
 	block := func(reason string) error {
 		l.Info("rollback blocked, waiting for in-flight operations to finish", "reason", reason)
 		return &RequeueAfterError{
@@ -78,13 +84,6 @@ func VerifyRollbackPreconditions(ctx context.Context, c k8sclient.Client, l logr
 			if _, deadline, ok := feature.ParseRollGrant(grant); ok && now.Before(deadline) {
 				return block(fmt.Sprintf("Broker %s holds an active roll-grant", b.Name))
 			}
-		}
-		var pod corev1.Pod
-		if err := c.Get(ctx, types.NamespacedName{Name: b.PodName(), Namespace: b.Namespace}, &pod); err != nil {
-			if apierrors.IsNotFound(err) {
-				return block(fmt.Sprintf("pod %s is missing (rotation in flight)", b.PodName()))
-			}
-			return err
 		}
 	}
 	return nil
@@ -169,7 +168,7 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 	// Rollback is gated on LOCAL state only — never on admin-API health.
 	// It is the escape hatch and must stay available on a degraded cluster;
 	// it is blocked only while another disruptive operation is mid-flight.
-	if err := VerifyRollbackPreconditions(ctx, c, l, brokerList.Items); err != nil {
+	if err := VerifyRollbackPreconditions(l, brokerList.Items); err != nil {
 		var requeueErr *RequeueAfterError
 		if stderrors.As(err, &requeueErr) {
 			cfg.report(ctx, corev1.ConditionFalse, MigrationReasonBlocked, requeueErr.Msg)

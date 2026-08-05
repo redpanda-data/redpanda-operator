@@ -791,48 +791,58 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 	}
 
 	t.Run("all pods present passes", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true},
 		})
-		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by in-flight decommission", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 		})
-		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "decommissioning")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "decommissioning")
 	})
 
 	t.Run("fully decommissioned broker does not block", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
 		})
-		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by active roll-grant", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))},
 		})
-		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "roll-grant")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
 
 	t.Run("expired roll-grant does not block", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))},
 		})
-		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
-	t.Run("blocked by missing pod", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
-			{index: 0}, // no pod: rotation in flight
+	// A missing pod without an unexpired grant is an ABANDONED rotation (or a
+	// manual deletion) and must NOT block: the restored StatefulSet recreates
+	// the pod, whereas waiting would deadlock on a wedged Broker controller.
+	t.Run("missing pod without grant does not block", func(t *testing.T) {
+		brokers, _ := build(t, []testBroker{
+			{index: 0}, // no pod, no grant
 		})
-		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "missing")
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
+	})
+
+	t.Run("missing pod with unexpired grant still blocks", func(t *testing.T) {
+		brokers, _ := build(t, []testBroker{
+			{index: 0, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))}, // rotation actively in flight
+		})
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
 }
 
