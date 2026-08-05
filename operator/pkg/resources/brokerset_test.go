@@ -717,6 +717,69 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 	})
 }
 
+// TestEnsureDeletedPoolWaitsForTerminatingStatefulSet covers the window where
+// a pool was removed from spec.nodePools while its StatefulSet is still
+// terminating: Ensure must neither converge the StatefulSet (it is going
+// away) nor enter the engine's drain path (the engine would find the
+// still-listed StatefulSet and run the migration state machine with no
+// desired spec to feed it). It waits the termination out instead.
+func TestEnsureDeletedPoolWaitsForTerminatingStatefulSet(t *testing.T) {
+	scheme := brokerSetTestScheme(t)
+	cluster := brokerSetTestCluster()
+	pool := vectorizedv1alpha1.NodePoolSpecWithDeleted{
+		NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "blue", Replicas: ptr.To(int32(0))},
+		Deleted:      true,
+	}
+
+	terminating := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              fmt.Sprintf("%s-%s", cluster.Name, pool.Name),
+			Namespace:         cluster.Namespace,
+			DeletionTimestamp: &metav1.Time{Time: time.Now()},
+			Finalizers:        []string{"kubernetes.io/test-blocker"},
+		},
+	}
+	broker := &redpandav1alpha2.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rp-blue-broker-0",
+			Namespace: cluster.Namespace,
+			Labels:    labels.ForCluster(cluster).WithNodePool(pool.Name),
+		},
+		Spec: redpandav1alpha2.BrokerSpec{
+			ClusterRef: redpandav1alpha2.ClusterRef{
+				Group: ptr.To("redpanda.vectorized.io"),
+				Kind:  ptr.To("Cluster"),
+				Name:  cluster.Name,
+			},
+			NetworkIndex: ptr.To(int32(0)),
+		},
+	}
+	require.NoError(t, controllerutil.SetControllerReference(cluster, broker, scheme))
+
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cluster, terminating, broker).
+		Build()
+
+	r := &BrokerSetResource{
+		Client:       c,
+		scheme:       scheme,
+		pandaCluster: cluster,
+		stsResource:  &StatefulSetResource{Client: c, pandaCluster: cluster, nodePool: pool, logger: ctrl.Log.WithName("test")},
+		nodePool:     pool,
+		logger:       ctrl.Log.WithName("test"),
+	}
+
+	err := r.Ensure(context.Background())
+	var requeue *RequeueAfterError
+	require.ErrorAs(t, err, &requeue, "expected a requeue while the StatefulSet terminates, got: %v", err)
+
+	// The pool's broker must be untouched: no drain-decommission stamped.
+	var got redpandav1alpha2.Broker
+	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: broker.Name, Namespace: broker.Namespace}, &got))
+	require.False(t, got.Spec.Decommission, "drain must not start while the StatefulSet still exists")
+}
+
 func TestVerifyRollbackPreconditions(t *testing.T) {
 	ctx := context.Background()
 
