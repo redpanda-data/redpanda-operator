@@ -179,21 +179,43 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 			}
 		}
 
-		// Remove finalizers and delete Broker CRs with orphan propagation.
-		// Finalizer removal prevents the Broker controller's reconcileDelete
-		// from running decommission. Orphan propagation prevents the GC from
+		// Delete Broker CRs with orphan propagation, leaving each CR's
+		// finalizer alone: the Broker controller removes its own finalizer in
+		// reconcileDelete — the pod's ownerRef was stripped above, so it takes
+		// the no-decommission rollback branch (raw CR deletion never
+		// decommissions, RFC Q2). Removing the finalizer from here instead
+		// would race the Broker controller, which re-adds it on every
+		// reconcile of a live CR — a conflict tug-of-war that stalled
+		// rollback for minutes. Orphan propagation prevents the GC from
 		// cascade-deleting pods that the Broker controller re-adopted between
 		// our ownerRef strip above and the delete here.
 		for i := range brokerList.Items {
 			b := &brokerList.Items[i]
-			if controllerutil.RemoveFinalizer(b, BrokerDecommissionFinalizer) {
-				if err := c.Update(ctx, b); err != nil && !apierrors.IsNotFound(err) {
-					return errors.Wrapf(err, "removing finalizer from Broker CR %s", b.Name)
+			if b.DeletionTimestamp.IsZero() {
+				l.Info("rollback: deleting Broker CR", "name", b.Name)
+				if err := c.Delete(ctx, b, k8sclient.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !apierrors.IsNotFound(err) {
+					return errors.Wrapf(err, "deleting Broker CR %s", b.Name)
 				}
+				continue
 			}
-			l.Info("rollback: deleting Broker CR", "name", b.Name)
-			if err := c.Delete(ctx, b, k8sclient.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !apierrors.IsNotFound(err) {
-				return errors.Wrapf(err, "deleting Broker CR %s", b.Name)
+			// Already terminating on a later pass: normally the Broker
+			// controller has stripped its own finalizer by now, so a lingering
+			// one means the controller is degraded or disabled — exactly when
+			// rollback must still work. Strip it ourselves. This cannot
+			// re-enter the tug-of-war (the controller never re-adds a
+			// finalizer on a terminating CR), and the merge patch avoids
+			// optimistic-locking conflicts with its status writes.
+			if controllerutil.ContainsFinalizer(b, BrokerDecommissionFinalizer) {
+				l.Info("rollback: stripping finalizer from terminating Broker CR", "name", b.Name)
+				stripped := b.DeepCopy()
+				controllerutil.RemoveFinalizer(stripped, BrokerDecommissionFinalizer)
+				patch, err := json.Marshal(map[string]any{"metadata": map[string]any{"finalizers": stripped.Finalizers}})
+				if err != nil {
+					return err
+				}
+				if err := c.Patch(ctx, b, k8sclient.RawPatch(types.MergePatchType, patch)); err != nil && !apierrors.IsNotFound(err) {
+					return errors.Wrapf(err, "stripping finalizer from Broker CR %s", b.Name)
+				}
 			}
 		}
 	}

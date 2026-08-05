@@ -499,6 +499,36 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	assert.Equal(t, brokerset.MigrationReasonRolledBack, cond.Reason)
 }
 
+// TestRollbackStripsFinalizerFromTerminatingBroker covers rollback with a
+// degraded Broker controller: normally the controller removes its own
+// finalizer via reconcileDelete once the CR is deleted (the pod is no longer
+// broker-owned), but when it is down the CR would stay terminating forever.
+// Rollback strips the finalizer itself — only on terminating CRs, where the
+// controller can never re-add it, so this cannot re-enter the finalizer
+// tug-of-war that stalled live rollbacks.
+func TestRollbackStripsFinalizerFromTerminatingBroker(t *testing.T) {
+	ctx := context.Background()
+	r, c := buildBrokerSet(t, true, []testBroker{
+		{index: 0, podChecksum: testCurrentChecksum, podReady: true},
+	}, interceptor.Funcs{})
+
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &b))
+	b.Finalizers = append(b.Finalizers, brokerset.BrokerDecommissionFinalizer)
+	require.NoError(t, c.Update(ctx, &b))
+
+	// Pass 1 deletes the CR; with no live Broker controller the finalizer
+	// keeps it terminating.
+	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &b))
+	require.False(t, b.DeletionTimestamp.IsZero(), "CR should be terminating, held by its finalizer")
+
+	// Pass 2 finds the terminating CR and strips the finalizer.
+	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+	err := c.Get(ctx, types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &b)
+	require.True(t, apierrors.IsNotFound(err), "CR should be gone once the finalizer is stripped")
+}
+
 func TestRollbackWithoutBackupFallsBack(t *testing.T) {
 	// No backup ConfigMap: rollback still cleans up Broker CRs and simply
 	// leaves STS creation to the cluster controller's render path.
