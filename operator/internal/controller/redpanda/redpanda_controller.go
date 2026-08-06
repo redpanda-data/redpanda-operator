@@ -835,6 +835,12 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 	maps.Copy(brokerLabels, ownerLabels)
 	brokerLabels[redpandav1alpha2.NodePoolLabel] = nodePoolLabelValue
 	brokerLabels[redpandav1alpha2.ClusterNameLabel] = clusterName
+	// The chart stamps the NodePool generation on the rendered StatefulSet's
+	// labels; carry it onto the Broker CRs so the NodePool controller can
+	// report DeployedGeneration in broker mode, where no StatefulSet exists.
+	if gen := set.Labels[redpanda.NodePoolLabelGeneration]; gen != "" {
+		brokerLabels[redpanda.NodePoolLabelGeneration] = gen
+	}
 
 	poolLabels := maps.Clone(ownerLabels)
 	poolLabels[redpandav1alpha2.NodePoolLabel] = nodePoolLabelValue

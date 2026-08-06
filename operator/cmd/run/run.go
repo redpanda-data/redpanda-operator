@@ -530,7 +530,8 @@ func Run(
 		if opts.enableV2NodepoolController {
 			setupLog.Info("starting NodePool controller")
 			if err := (&redpandacontrollers.NodePoolReconciler{
-				Manager: mcmanager,
+				Manager:         mcmanager,
+				BrokerCREnabled: opts.enableBrokerController,
 			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 				return err
