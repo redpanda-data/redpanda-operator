@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    Machine-readable doc comments for the optional external values (addresses, annotations, externalDns.enabled, prefixTemplate, sourceRanges) so the published Helm spec reference documents them. Comment-only change: no keys, no schema, no rendered output changes.
+time: 2026-08-06T14:26:59.201704+01:00
