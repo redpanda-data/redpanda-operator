@@ -28,6 +28,9 @@ func TestDefaultPhase(t *testing.T) {
 	registered := &redpandav1alpha2.Broker{}
 	registered.Status.BrokerID = ptr.To(int32(4))
 	unregistered := &redpandav1alpha2.Broker{}
+	diskLost := &redpandav1alpha2.Broker{}
+	diskLost.Status.BrokerID = ptr.To(int32(4))
+	diskLost.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{}
 
 	readyPod := &corev1.Pod{Status: corev1.PodStatus{Conditions: []corev1.PodCondition{
 		{Type: corev1.PodReady, Status: corev1.ConditionTrue},
@@ -51,6 +54,7 @@ func TestDefaultPhase(t *testing.T) {
 		"registered, no pod yet":       {registered, &corev1.Pod{}, redpandav1alpha2.BrokerPhaseRunning},
 		"stuck overrides registration": {registered, unschedulablePod, redpandav1alpha2.BrokerPhaseStuck},
 		"stuck overrides provisioning": {unregistered, unschedulablePod, redpandav1alpha2.BrokerPhaseStuck},
+		"disk-lost latch is sticky":    {diskLost, readyPod, redpandav1alpha2.BrokerPhaseDiskLost},
 	} {
 		t.Run(name, func(t *testing.T) {
 			require.Equal(t, tc.want, defaultPhase(tc.broker, tc.pod))
