@@ -190,11 +190,30 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		return errors.Wrap(err, "listing existing Broker CRs")
 	}
 
-	existingByIndex := IndexBrokers(existing)
-
+	// decommissionInFlight is computed over ALL existing CRs — a DiskLost
+	// ticket mid-decommission must serialize against scale-down marks the
+	// same as any other decommission.
 	decommissionInFlight := slices.ContainsFunc(existing, func(b redpandav1alpha2.Broker) bool {
 		return b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned
 	})
+
+	// DiskLost tickets (dead incarnations) never enter the ordinary
+	// desired/excess matching: once released, a ticket and its replacement
+	// share a network index and would collide in IndexBrokers. They are
+	// driven by ReconcileDiskLostTickets instead. Unreleased tickets still
+	// pin their index — their pod/PVC names are not free yet.
+	live, tickets := PartitionDiskLostTickets(existing)
+	existingByIndex := IndexBrokers(live)
+	// The desired loop consumes existingByIndex; the ticket lifecycle needs
+	// an intact live-by-index view to find replacements.
+	liveByIndex := IndexBrokers(live)
+
+	pinned := map[int32]bool{}
+	for _, t := range tickets {
+		if !t.DiskLostReleased() {
+			pinned[ptr.Deref(t.Spec.NetworkIndex, 0)] = true
+		}
+	}
 
 	for i := range desired {
 		d := &desired[i]
@@ -202,6 +221,12 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 
 		existingBroker, ok := existingByIndex[idx]
 		if !ok {
+			if pinned[idx] {
+				// A dead incarnation is still dismantling at this index;
+				// creating the replacement now would collide on pod/PVC
+				// names.
+				continue
+			}
 			if err := s.createBroker(ctx, l, desiredSTS.Name, d); err != nil {
 				return err
 			}
@@ -214,11 +239,116 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		}
 	}
 
+	// Ticket lifecycle runs BEFORE excess handling so ticket decommissions
+	// take priority deterministically; it feeds the updated in-flight state
+	// onward.
+	decommissionInFlight, err = s.ReconcileDiskLostTickets(ctx, l, tickets, liveByIndex, desiredReplicas, decommissionInFlight)
+	if err != nil {
+		return err
+	}
+
 	if err := s.ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight); err != nil {
 		return err
 	}
 
 	return s.EnsureRollGrants(ctx, l)
+}
+
+// PartitionDiskLostTickets splits Broker CRs into live brokers and DiskLost
+// tickets (dead incarnations lingering as decommission records). Tickets
+// must never enter the ordinary desired/excess paths — after index release,
+// a ticket and its replacement share a network index and would collide in
+// IndexBrokers. Tickets are sorted (creationTimestamp, then name) for
+// deterministic handling: an index can legitimately carry two tickets when
+// the replacement's node also dies.
+func PartitionDiskLostTickets(brokers []redpandav1alpha2.Broker) (live []redpandav1alpha2.Broker, tickets []*redpandav1alpha2.Broker) {
+	for i := range brokers {
+		if brokers[i].IsDiskLostTicket() {
+			tickets = append(tickets, &brokers[i])
+			continue
+		}
+		live = append(live, brokers[i])
+	}
+	sort.Slice(tickets, func(i, j int) bool {
+		ti, tj := tickets[i].CreationTimestamp, tickets[j].CreationTimestamp
+		if !ti.Equal(&tj) {
+			return ti.Before(&tj)
+		}
+		return tickets[i].Name < tickets[j].Name
+	})
+	return live, tickets
+}
+
+// ReconcileDiskLostTickets drives dead-incarnation tickets to completion:
+//
+//  1. a ticket that reached Decommissioned is deleted — the dedicated
+//     deletion site: tickets are excluded from both the desired matching
+//     and the excess path, so nothing else would ever delete them;
+//  2. a released ticket with no recorded BrokerID is deleted outright —
+//     nothing provably registered, so there is nothing to decommission
+//     (resolving by pod name is forbidden: the name may already belong to
+//     the replacement);
+//  3. a released ticket at a still-desired index is marked for decommission
+//     only once the replacement at that index has registered — the dead id
+//     first would stall on small clusters that cannot re-replicate onto the
+//     survivors;
+//  4. a released ticket at an undesired index (scale-down / pool deletion)
+//     is marked immediately — no replacement will come.
+//
+// Marks respect the one-decommission-at-a-time invariant and the updated
+// in-flight state is returned for the excess path.
+func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger, tickets []*redpandav1alpha2.Broker, liveByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight bool) (bool, error) {
+	for _, t := range tickets {
+		if !t.DeletionTimestamp.IsZero() {
+			continue
+		}
+		if t.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned {
+			l.Info("deleting decommissioned DiskLost ticket", "name", t.Name)
+			if err := s.Client.Delete(ctx, t); err != nil && !apierrors.IsNotFound(err) {
+				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost ticket %s", t.Name)
+			}
+			continue
+		}
+		if t.Spec.Decommission {
+			// In flight; the Broker controller drives it pod-less against
+			// the recorded id.
+			continue
+		}
+		if !t.DiskLostReleased() {
+			// Still dismantling; its index is pinned above.
+			continue
+		}
+		if t.Status.BrokerID == nil {
+			l.Info("deleting DiskLost ticket without a recorded node_id; a ghost member may remain and needs manual or ghost decommissioning", "name", t.Name)
+			if err := s.Client.Delete(ctx, t); err != nil && !apierrors.IsNotFound(err) {
+				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost ticket %s", t.Name)
+			}
+			continue
+		}
+
+		idx := ptr.Deref(t.Spec.NetworkIndex, 0)
+		if idx < desiredReplicas {
+			// Wait for the replacement to REGISTER, not merely exist:
+			// decommissioning the dead id needs the replacement as a
+			// re-replication target (a 3-node RF=3 cluster cannot drain
+			// onto 2 survivors). Status.BrokerID is the durable signal.
+			replacement := liveByIndex[idx]
+			if replacement == nil || replacement.Status.BrokerID == nil {
+				continue
+			}
+		}
+		if decommissionInFlight {
+			// Never start a second decommission; wait for the current one.
+			continue
+		}
+		l.Info("marking DiskLost ticket for decommission of its dead node_id", "name", t.Name, "brokerID", *t.Status.BrokerID)
+		t.Spec.Decommission = true
+		if err := s.Client.Update(ctx, t); err != nil {
+			return decommissionInFlight, errors.Wrapf(err, "setting decommission on DiskLost ticket %s", t.Name)
+		}
+		decommissionInFlight = true
+	}
+	return decommissionInFlight, nil
 }
 
 // EnsureDesiredBroker reconciles one desired Broker against the existing CR
@@ -566,15 +696,4 @@ func MarkForRestart(ctx context.Context, c k8sclient.Client, owner k8sclient.Obj
 		}
 	}
 	return nil
-}
-
-// podUnschedulable reports whether the pod cannot be scheduled — the Stuck
-// class that a granted pod+PVC recreation (PV-affinity remediation) can fix.
-func podUnschedulable(pod *corev1.Pod) bool {
-	for _, c := range pod.Status.Conditions {
-		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionFalse {
-			return true
-		}
-	}
-	return false
 }
