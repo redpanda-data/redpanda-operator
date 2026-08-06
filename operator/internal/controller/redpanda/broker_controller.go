@@ -792,7 +792,16 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 	if broker.Spec.Decommission {
 		return ctrl.Result{}, nil
 	}
-	if state.pod == nil || !isPodReady(state.pod) {
+	// Discovery must not wait for Kubernetes readiness: the readiness probe
+	// reflects CLUSTER health (rpk cluster health), which can be false for
+	// exactly the reason registration needs to resolve — a DiskLost
+	// replacement registers its fresh node_id while the dead member still
+	// keeps the health overview unhealthy, and the dead id's decommission
+	// waits for that registration. Gating on readiness would deadlock the
+	// three of them. A Running pod with an IP is resolvable (resolveBroker
+	// matches by address); a not-yet-registered broker resolves to nothing
+	// and requeues. BrokerRegistered is documented as orthogonal to Ready.
+	if state.pod == nil || state.pod.Status.Phase != corev1.PodRunning || state.pod.Status.PodIP == "" {
 		return ctrl.Result{}, nil
 	}
 
