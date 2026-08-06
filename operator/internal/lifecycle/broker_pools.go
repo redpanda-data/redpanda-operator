@@ -89,6 +89,15 @@ func (r *ResourceClient[T, U]) fetchBrokerBackedPools(ctx context.Context, ctl *
 		var pods []*corev1.Pod
 		var specReplicas, ready, upToDate int32
 		for _, b := range group {
+			if b.IsDiskLost() {
+				// A dead incarnation is not a live pool member — and after
+				// index release its pod NAME belongs to the replacement, so
+				// counting it would double-count the pair. It still anchors
+				// the group above: a drained pool whose last broker is a
+				// tombstone must keep its facade so the engine's tombstone
+				// lifecycle can run for it.
+				continue
+			}
 			if !b.Spec.Decommission {
 				specReplicas++
 			}
