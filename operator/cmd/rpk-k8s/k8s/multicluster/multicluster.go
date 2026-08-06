@@ -28,6 +28,7 @@ Stretch Cluster as a single unit.`,
 		bootstrapCommand(),
 		bundleCommand(),
 		statusCommand(),
+		checkCommand(),
 	)
 
 	return cmd
