@@ -27,6 +27,7 @@ import (
 	"maps"
 	"slices"
 	"sort"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -190,11 +191,35 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		return errors.Wrap(err, "listing existing Broker CRs")
 	}
 
-	// decommissionInFlight is computed over ALL existing CRs — a DiskLost
-	// ticket mid-decommission must serialize against scale-down marks the
-	// same as any other decommission.
-	decommissionInFlight := slices.ContainsFunc(existing, func(b redpandav1alpha2.Broker) bool {
+	// Decommission mutual exclusion is CLUSTER-wide (see ClusterSelector):
+	// one disruptive operation at a time across ALL pools, so the in-flight
+	// flag must be computed over every pool's brokers — a pool-scoped view
+	// would let two pools scaled down together start two concurrent
+	// decommissions. DiskLost tickets mid-decommission count like any other.
+	clusterBrokers, err := s.listClusterBrokers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "listing cluster Broker CRs")
+	}
+	decommissionInFlight := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
 		return b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned
+	})
+	// A decommission must also never START while a rotation holds an
+	// unexpired roll-grant — the grantee's pod may be down mid-roll, and
+	// draining a second broker would take two out at once. This is the
+	// reverse of EnsureRollGrants' hold-while-decommissioning. Grants
+	// stranded on DiskLost tickets don't count: their holder is already
+	// down either way and EnsureRollGrants revokes them.
+	now := time.Now()
+	rollGrantHeld := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
+		if b.IsDiskLostTicket() {
+			return false
+		}
+		grant := b.Annotations[feature.RollGrant.Key]
+		if grant == "" {
+			return false
+		}
+		_, deadline, ok := feature.ParseRollGrant(grant)
+		return ok && now.Before(deadline)
 	})
 
 	// DiskLost tickets (dead incarnations) never enter the ordinary
@@ -242,12 +267,12 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	// Ticket lifecycle runs BEFORE excess handling so ticket decommissions
 	// take priority deterministically; it feeds the updated in-flight state
 	// onward.
-	decommissionInFlight, err = s.ReconcileDiskLostTickets(ctx, l, tickets, liveByIndex, desiredReplicas, decommissionInFlight)
+	decommissionInFlight, err = s.ReconcileDiskLostTickets(ctx, l, tickets, liveByIndex, desiredReplicas, decommissionInFlight, rollGrantHeld)
 	if err != nil {
 		return err
 	}
 
-	if err := s.ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight); err != nil {
+	if err := s.ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight, rollGrantHeld); err != nil {
 		return err
 	}
 
@@ -295,9 +320,11 @@ func PartitionDiskLostTickets(brokers []redpandav1alpha2.Broker) (live []redpand
 //  4. a released ticket at an undesired index (scale-down / pool deletion)
 //     is marked immediately — no replacement will come.
 //
-// Marks respect the one-decommission-at-a-time invariant and the updated
-// in-flight state is returned for the excess path.
-func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger, tickets []*redpandav1alpha2.Broker, liveByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight bool) (bool, error) {
+// Marks respect the one-disruptive-operation-at-a-time invariant — no
+// concurrent decommission anywhere in the cluster and no unexpired
+// roll-grant — and the updated in-flight state is returned for the excess
+// path.
+func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger, tickets []*redpandav1alpha2.Broker, liveByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight, rollGrantHeld bool) (bool, error) {
 	for _, t := range tickets {
 		if !t.DeletionTimestamp.IsZero() {
 			continue
@@ -337,8 +364,10 @@ func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger,
 				continue
 			}
 		}
-		if decommissionInFlight {
-			// Never start a second decommission; wait for the current one.
+		if decommissionInFlight || rollGrantHeld {
+			// Never start a second decommission, and never start one while
+			// a rotation holds the roll-grant — one disruptive operation at
+			// a time, cluster-wide.
 			continue
 		}
 		l.Info("marking DiskLost ticket for decommission of its dead node_id", "name", t.Name, "brokerID", *t.Status.BrokerID)
@@ -378,9 +407,10 @@ func (s *BrokerSet) EnsureDesiredBroker(ctx context.Context, l logr.Logger, exis
 // ReconcileExcessBrokers drives scale-down: excess brokers (index >=
 // desiredReplicas, highest first) are marked for decommission strictly one at
 // a time — any decommission already in flight (including a manual one on a
-// desired index) blocks marking the next one — and deleted once they reach
-// the Decommissioned phase.
-func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, existingByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight bool) error {
+// desired index, in ANY pool) or an unexpired roll-grant held by a rotation
+// blocks marking the next one — and deleted once they reach the
+// Decommissioned phase.
+func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, existingByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight, rollGrantHeld bool) error {
 	var excess []*redpandav1alpha2.Broker
 	for idx, b := range existingByIndex {
 		if idx >= desiredReplicas {
@@ -399,9 +429,10 @@ func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, e
 			}
 			continue
 		}
-		if decommissionInFlight {
-			// A decommission is already in flight (here or anywhere in the
-			// pool) — never start a second one; wait for it to complete.
+		if decommissionInFlight || rollGrantHeld {
+			// A decommission is already in flight (anywhere in the cluster)
+			// or a rotation holds the roll-grant — one disruptive operation
+			// at a time; wait for it to complete.
 			break
 		}
 		l.Info("marking Broker for decommission (scale-down)", "name", b.Name, "index", *b.Spec.NetworkIndex)

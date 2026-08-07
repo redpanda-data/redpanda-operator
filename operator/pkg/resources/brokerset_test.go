@@ -1164,7 +1164,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 4, podChecksum: testCurrentChecksum, podReady: true},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false, false))
 		assert.True(t, get(t, c, "rp-broker-4").Spec.Decommission)
 		assert.False(t, get(t, c, "rp-broker-3").Spec.Decommission)
 	})
@@ -1176,7 +1176,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 4, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true, false))
 		assert.False(t, get(t, c, "rp-broker-3").Spec.Decommission)
 	})
 
@@ -1187,7 +1187,7 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 3, podChecksum: testCurrentChecksum, podReady: true},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, true, false))
 		assert.False(t, get(t, c, "rp-broker-3").Spec.Decommission)
 	})
 
@@ -1197,12 +1197,127 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 			{index: 4, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
 		}, interceptor.Funcs{})
 
-		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false))
+		require.NoError(t, r.core(ctrl.Log).ReconcileExcessBrokers(ctx, ctrl.Log, byIndex(t, c), 3, false, false))
 
 		var gone redpandav1alpha2.Broker
 		err := c.Get(ctx, types.NamespacedName{Name: "rp-broker-4", Namespace: "test"}, &gone)
 		assert.True(t, apierrors.IsNotFound(err), "decommissioned Broker should be deleted")
 		assert.True(t, get(t, c, "rp-broker-3").Spec.Decommission, "next excess broker should be marked")
+	})
+}
+
+// TestDecommissionMutualExclusionIsClusterWide: the in-flight flag feeding
+// scale-down marks is computed over ALL the owner's Broker CRs, not just the
+// reconciled pool's — two pools scaled down together must not start two
+// concurrent decommissions.
+func TestDecommissionMutualExclusionIsClusterWide(t *testing.T) {
+	ctx := context.Background()
+
+	// Pool "default" has an excess broker at index 2 (desired 2); a broker
+	// of ANOTHER pool is mid-decommission.
+	r, c := buildBrokerSet(t, true, []testBroker{
+		{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
+		{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+		{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+	}, interceptor.Funcs{})
+
+	cluster := brokerSetTestCluster()
+	otherPool := &redpandav1alpha2.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rp-other-0",
+			Namespace: cluster.Namespace,
+			Labels:    labels.ForCluster(cluster).WithNodePool("other"),
+		},
+		Spec: redpandav1alpha2.BrokerSpec{
+			ClusterRef:   redpandav1alpha2.ClusterRef{Group: ptr.To("redpanda.vectorized.io"), Kind: ptr.To("Cluster"), Name: cluster.Name},
+			NetworkIndex: ptr.To(int32(0)),
+			Decommission: true,
+		},
+		Status: redpandav1alpha2.BrokerStatus{Phase: redpandav1alpha2.BrokerPhaseDecommissioning},
+	}
+	require.NoError(t, controllerutil.SetControllerReference(cluster, otherPool, r.scheme))
+	require.NoError(t, c.Create(ctx, otherPool))
+
+	fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
+	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+	if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
+		var requeue *RequeueAfterError
+		require.ErrorAs(t, err, &requeue)
+	}
+
+	var excess redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
+	assert.False(t, excess.Spec.Decommission,
+		"another pool's in-flight decommission must block this pool's scale-down mark")
+}
+
+// TestScaleDownWaitsForActiveRollGrant: an unexpired roll-grant (the
+// grantee's pod may be down mid-roll) blocks starting a decommission — the
+// reverse of EnsureRollGrants' hold-while-decommissioning.
+func TestScaleDownWaitsForActiveRollGrant(t *testing.T) {
+	ctx := context.Background()
+	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
+	expiredGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))
+
+	t.Run("unexpired grant blocks the excess mark", func(t *testing.T) {
+		r, c := buildBrokerSet(t, true, []testBroker{
+			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: activeGrant},
+			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+		}, interceptor.Funcs{})
+
+		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
+		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
+			var requeue *RequeueAfterError
+			require.ErrorAs(t, err, &requeue)
+		}
+
+		var excess redpandav1alpha2.Broker
+		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
+		assert.False(t, excess.Spec.Decommission)
+	})
+
+	t.Run("expired grant does not block", func(t *testing.T) {
+		r, c := buildBrokerSet(t, true, []testBroker{
+			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: expiredGrant},
+			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+			{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+		}, interceptor.Funcs{})
+
+		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
+		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
+			var requeue *RequeueAfterError
+			require.ErrorAs(t, err, &requeue)
+		}
+
+		var excess redpandav1alpha2.Broker
+		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
+		assert.True(t, excess.Spec.Decommission,
+			"an expired grant is a released grant; scale-down must proceed")
+	})
+
+	t.Run("grant stranded on a DiskLost ticket does not block", func(t *testing.T) {
+		// The ticket's own stranded grant (node died mid-roll) must not
+		// block its own decommission mark: rollGrantHeld is computed
+		// excluding tickets.
+		r, c := buildBrokerSet(t, true, []testBroker{
+			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
+			{index: 1, name: "rp-ticket-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: activeGrant},
+			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(5))},
+		}, interceptor.Funcs{})
+
+		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
+		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
+			var requeue *RequeueAfterError
+			require.ErrorAs(t, err, &requeue)
+		}
+
+		var ticket redpandav1alpha2.Broker
+		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-ticket-1", Namespace: "test"}, &ticket))
+		assert.True(t, ticket.Spec.Decommission)
 	})
 }
 
@@ -1235,7 +1350,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		assert.False(t, getBroker(t, c, "rp-ticket-1").Spec.Decommission,
 			"the dead id must not be decommissioned before the replacement registers")
@@ -1248,7 +1363,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false)
+		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		assert.True(t, inFlight, "the mark must propagate to the excess path")
 		assert.True(t, getBroker(t, c, "rp-ticket-1").Spec.Decommission)
@@ -1261,7 +1376,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, true)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, true, false)
 		require.NoError(t, err)
 		assert.False(t, getBroker(t, c, "rp-ticket-1").Spec.Decommission)
 	})
@@ -1272,7 +1387,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 1, false)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 1, false, false)
 		require.NoError(t, err)
 		assert.True(t, getBroker(t, c, "rp-ticket-2").Spec.Decommission,
 			"no replacement will come for an undesired index")
@@ -1284,7 +1399,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		ticket := getBroker(t, c, "rp-ticket-1")
 		assert.False(t, ticket.Spec.Decommission)
@@ -1297,7 +1412,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		var gone redpandav1alpha2.Broker
 		assert.True(t, apierrors.IsNotFound(c.Get(ctx, types.NamespacedName{Name: "rp-ticket-1", Namespace: "test"}, &gone)))
@@ -1309,7 +1424,7 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 		}, interceptor.Funcs{})
 
 		tickets, liveByIndex := partition(t, c)
-		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false)
+		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		assert.False(t, inFlight)
 		var gone redpandav1alpha2.Broker
