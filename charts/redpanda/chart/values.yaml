@@ -272,6 +272,7 @@ external:
   # NodePort is recommended in cases where latency is a priority.
   type: NodePort
   # Optional source range for external access. Only applicable when external.type is LoadBalancer
+  # @doc external.sourceRanges -- Optional source IP ranges for external access. Only applicable when `external.type` is `LoadBalancer`.
   # sourceRanges: []
   # -- Optional domain advertised to external clients
   # If specified, then it will be appended to the `external.addresses` values as each broker's advertised address
@@ -283,11 +284,13 @@ external:
   # If external.domain is set, the domain is appended to these values.
   # There is an option to define a single external address for all brokers and leverage
   # prefixTemplate as it will be calculated during initContainer execution.
+  # @doc external.addresses -- Optional list of addresses that the Redpanda brokers advertise, with one entry for each broker in order of StatefulSet replicas. The number of brokers is defined in `statefulset.replicas`. The values can be IP addresses or DNS names. If `external.domain` is set, the domain is appended to these values. To use a single external address for all brokers, define one entry and use `external.prefixTemplate` so that each broker's address is calculated during initContainer execution.
   # addresses:
   # - redpanda-0
   # - redpanda-1
   # - redpanda-2
   #
+  # @doc external.annotations -- Optional annotations to add to the external Service instances, for example `cloud.google.com/load-balancer-type: "Internal"` or `service.beta.kubernetes.io/aws-load-balancer-type: nlb`.
   # annotations:
     # For example:
     # cloud.google.com/load-balancer-type: "Internal"
@@ -295,8 +298,11 @@ external:
   # If you enable externalDns, each LoadBalancer service instance
   # will be annotated with external-dns hostname
   # matching external.addresses + external.domain
+  # @doc external.externalDns.enabled -- If you enable externalDns, each LoadBalancer Service instance is annotated with the external-dns hostname, matching `external.addresses` plus `external.domain`.
   # externalDns:
   #   enabled: true
+  # @doc external.prefixTemplate -- Optional Go template for the prefix of each broker's advertised address. The result is prepended to `external.domain` during initContainer execution. Only used when `external.addresses` contains a single entry that serves all brokers.
+  # @default -- `""`
   # prefixTemplate: ""
   # -- Gateway API TLSRoute-based external access (alternative to NodePort/LoadBalancer).
   # The chart creates a bootstrap TLSRoute plus one per-broker TLSRoute, routed by SNI
