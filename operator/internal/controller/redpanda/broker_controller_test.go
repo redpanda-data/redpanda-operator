@@ -59,9 +59,6 @@ type BrokerControllerSuite struct {
 
 	env           *testenv.Env
 	clientFactory internalclient.ClientFactory
-	// importImages is the image set newEnv loads into every cluster it
-	// builds; tests that add k3d nodes mid-run re-import it onto them.
-	importImages []string
 }
 
 var _ suite.SetupAllSuite = (*BrokerControllerSuite)(nil)
@@ -107,7 +104,6 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 		}
 	}
 
-	s.importImages = importImages
 	env := testenv.New(t, testenv.Options{
 		Name:               clusterName,
 		Scheme:             controller.V2Scheme,
@@ -712,11 +708,19 @@ func (s *BrokerControllerSuite) TestLastBrokerDecommissionGuard() {
 	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseStuck)
 }
 
-// TestPVAffinityRemediation verifies the dead-node recovery path:
-// create a Redpanda cluster, migrate to Broker CRs, delete a k3d node,
-// force-delete the stuck pod, and assert the Broker controller reports
-// Stuck then — once granted a roll — remediates and recovers.
-func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
+// TestDiskLost verifies the dead-node detection path against a real cluster:
+// delete a k3d node under a broker, force-delete the stranded pod, and assert
+// the Broker controller reports Stuck first (detection timeout not elapsed),
+// then marks the Broker DiskLost — with no roll-grant involved — dismantles
+// its pod and PVCs, releases the network index, and keeps the dead identity
+// immutable. The real scheduler's volume-affinity message and the real Node
+// deletion are the point: unit tests fake both. What follows the release —
+// the owning engine creating a replacement at the index and decommissioning
+// the dead id through the tombstone — is engine logic covered by unit tests
+// (brokerset) and deliberately not replayed here: this suite runs no engine,
+// and hand-simulating it made the test hostage to k3d's flaky image imports
+// onto freshly added nodes.
+func (s *BrokerControllerSuite) TestDiskLost() {
 	t := s.T()
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(trace.Test(t), 20*time.Minute)
@@ -730,8 +734,9 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	ns := env.CreateTestNamespace(t)
 	c := ns.Client
 
-	// No setup grant: the Stuck wait below must prove the ungranted broker
-	// REFUSES to remediate; the explicit grant later is what unlocks it.
+	// No grants anywhere: disk-loss handling is deliberately grant-free —
+	// marking is a status write and the only destructive act against the
+	// cluster rides the decommission.
 	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{
 		useVolumeClaimTemplates: true,
 	})
@@ -752,9 +757,12 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	}
 	require.NotNil(t, target, "no broker pod scheduled on an agent node")
 	targetNode := targetPod.Spec.NodeName
-	t.Logf("target pod %q is on node %q", targetPod.Name, targetNode)
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	require.NotNil(t, target.Status.BrokerID, "target broker must be registered")
+	deadID := *target.Status.BrokerID
+	t.Logf("target pod %q (node_id %d) is on node %q", targetPod.Name, deadID, targetNode)
 
-	// Record the original PVC names for later comparison.
+	// Record the original PVC names: dismantle must delete them.
 	var originalPVCNames []string
 	for _, vol := range targetPod.Spec.Volumes {
 		if vol.PersistentVolumeClaim != nil {
@@ -763,21 +771,12 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	}
 	require.NotEmpty(t, originalPVCNames, "target pod must have PVCs")
 
-	// Record original PV names bound to these PVCs.
-	originalPVNames := map[string]string{} // pvcName -> pvName
-	for _, name := range originalPVCNames {
-		var pvc corev1.PersistentVolumeClaim
-		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc))
-		require.NotEmpty(t, pvc.Spec.VolumeName, "PVC %q must be bound", name)
-		originalPVNames[name] = pvc.Spec.VolumeName
-	}
-
 	// Delete the k3d node. No restoration cleanup is needed: the dedicated
 	// cluster is torn down with the env at test end.
 	t.Logf("deleting k3d node %q", targetNode)
 	require.NoError(t, env.Host().DeleteNode(targetNode))
 
-	// Delete the Kubernetes Node object so the Broker controller sees it as gone.
+	// Delete the Kubernetes Node object so the dead-node proof holds.
 	var nodeObj corev1.Node
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
 		// The node might take a moment to be reported as not-ready.
@@ -799,65 +798,34 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 		assert.NoError(ct, c.Delete(ctx, &pod, client.GracePeriodSeconds(0)))
 	}, 2*time.Minute, 2*time.Second)
 
-	// Wait for Broker to report Stuck (pod recreated but can't schedule due to PV affinity).
+	// The recreated pod cannot schedule (PV pinned to the dead node): Stuck
+	// first — the detection timeout (60s in this suite) has not elapsed.
 	t.Log("waiting for Broker to report Stuck")
 	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseStuck)
 
-	// Create the replacement k3d node and import the suite's images BEFORE
-	// granting: pod recreation is not grant-gated, so the moment
-	// remediation deletes the pod its replacement schedules — if the fresh
-	// node's image import is still streaming at that point, the kubelet's
-	// registry pull of localhost/redpanda-operator:dev fails hard and the
-	// resulting ImagePullBackOff (capped at 5m) can outlast the recovery
-	// wait. The stuck pod cannot unstick on the new node meanwhile: its PV
-	// stays pinned to the deleted node's hostname until remediation, which
-	// the grant below gates.
-	t.Log("creating replacement k3d node")
-	require.NoError(t, env.Host().CreateNode())
-	require.NoError(t, env.Host().ImportImage(s.importImages...))
+	// After the timeout the dead-node proof marks the broker DiskLost and
+	// the dismantle releases the network index: pod and PVCs confirmed gone.
+	t.Log("waiting for DiskLost marking and dismantle")
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(target), target)) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseDiskLost, target.Status.Phase)
+		assert.True(ct, target.DiskLostReleased(), "pod and PVCs must be confirmed gone")
+	}, 5*time.Minute, 2*time.Second)
 
-	// Grant a fresh roll-grant for the remediation.
-	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
-	p := client.MergeFrom(target.DeepCopy())
-	if target.Annotations == nil {
-		target.Annotations = map[string]string{}
+	// Identity is immutable: the tombstone keeps its node_id, holds no
+	// roll-grant, and its resources are gone for good (pod-ensure disabled).
+	require.NotNil(t, target.Status.BrokerID)
+	assert.Equal(t, deadID, *target.Status.BrokerID, "a dead incarnation never changes identity")
+	assert.Empty(t, target.Annotations["operator.redpanda.com/roll-grant"], "disk-loss handling is grant-free")
+	var gone corev1.Pod
+	assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &gone)))
+	for _, name := range originalPVCNames {
+		var pvc corev1.PersistentVolumeClaim
+		assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc)),
+			"dismantle must delete PVC %q", name)
 	}
-	templateHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
-	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(templateHash, time.Now().Add(30*time.Minute))
-	require.NoError(t, c.Patch(ctx, target, p))
-
-	// Create a replacement k3d node so the pod has somewhere to schedule,
-	// and re-import the suite's images: `k3d node create` starts an empty
-	// node, and soft anti-affinity prefers it — without the operator image
-	// present the sidecar would sit in ImagePullBackOff and the recovery
-	// wait below would time out.
-	t.Log("creating replacement k3d node")
-	require.NoError(t, env.Host().CreateNode())
-	require.NoError(t, env.Host().ImportImage(s.importImages...))
-
-	// Wait for the broker to recover to Running. This leg gets a longer
-	// budget than the default: it covers replacement-node startup, the image
-	// import above racing the pod's first pull (a transient
-	// ImagePullBackOff correctly reports Stuck), and a redpanda cold start —
-	// which together can exceed 5 minutes on a loaded CI host.
-	t.Log("waiting for Broker to recover to Running")
-	s.waitForPhaseWithin(t, ctx, c, target, redpandav1alpha2.BrokerPhaseRunning, 12*time.Minute)
-
-	// Verify remediation happened: the old PVs should have Retain policy.
-	for pvcName, pvName := range originalPVNames {
-		var pv corev1.PersistentVolume
-		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvName}, &pv),
-			"original PV %q (from PVC %q) should still exist", pvName, pvcName)
-		assert.Equal(t, corev1.PersistentVolumeReclaimRetain, pv.Spec.PersistentVolumeReclaimPolicy,
-			"original PV %q should have been patched to Retain", pvName)
-	}
-
-	// The target pod should now be on a different node.
-	var recoveredPod corev1.Pod
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &recoveredPod))
-	assert.NotEqual(t, targetNode, recoveredPod.Spec.NodeName,
-		"recovered pod should be on a different node")
-	t.Logf("recovered pod %q is now on node %q (was %q)", recoveredPod.Name, recoveredPod.Spec.NodeName, targetNode)
 }
 
 // --- helpers ---
