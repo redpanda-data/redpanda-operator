@@ -231,7 +231,7 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	existingByIndex := IndexBrokers(live)
 	// The desired loop consumes existingByIndex; the tombstone lifecycle needs
 	// an intact live-by-index view to find replacements.
-	liveByIndex := IndexBrokers(live)
+	liveByIndex := maps.Clone(existingByIndex)
 
 	pinned := map[int32]bool{}
 	for _, t := range tombstones {
@@ -283,9 +283,9 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 // tombstones (dead incarnations lingering as decommission records). Tombstones
 // must never enter the ordinary desired/excess paths — after index release,
 // a tombstone and its replacement share a network index and would collide in
-// IndexBrokers. Tombstones are sorted (creationTimestamp, then name) for
-// deterministic handling: an index can legitimately carry two tombstones when
-// the replacement's node also dies.
+// IndexBrokers. Order is deterministic without sorting: list results arrive
+// name-sorted, which is all the two-tombstones-per-index case (the
+// replacement's node also dies) needs.
 func PartitionDiskLostBrokers(brokers []redpandav1alpha2.Broker) (live []redpandav1alpha2.Broker, tombstones []*redpandav1alpha2.Broker) {
 	for i := range brokers {
 		if brokers[i].IsDiskLost() {
@@ -294,13 +294,6 @@ func PartitionDiskLostBrokers(brokers []redpandav1alpha2.Broker) (live []redpand
 		}
 		live = append(live, brokers[i])
 	}
-	sort.Slice(tombstones, func(i, j int) bool {
-		ti, tj := tombstones[i].CreationTimestamp, tombstones[j].CreationTimestamp
-		if !ti.Equal(&tj) {
-			return ti.Before(&tj)
-		}
-		return tombstones[i].Name < tombstones[j].Name
-	})
 	return live, tombstones
 }
 

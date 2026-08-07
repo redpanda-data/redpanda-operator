@@ -1206,6 +1206,19 @@ func TestReconcileExcessBrokersOneAtATime(t *testing.T) {
 	})
 }
 
+// ensureSteadyState runs the engine's steady-state Ensure (no live STS) with
+// a 2-replica desired render, tolerating the grant-issuance requeue that the
+// spec sync legitimately produces on fixtures with hash-drifted pods.
+func ensureSteadyState(t *testing.T, r *BrokerSetResource) {
+	t.Helper()
+	fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
+	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+	if err := r.core(ctrl.Log).Ensure(context.Background(), stsKey, fix.desired, 2); err != nil {
+		var requeue *RequeueAfterError
+		require.ErrorAs(t, err, &requeue)
+	}
+}
+
 // TestDecommissionMutualExclusionIsClusterWide: the in-flight flag feeding
 // scale-down marks is computed over ALL the owner's Broker CRs, not just the
 // reconciled pool's — two pools scaled down together must not start two
@@ -1238,12 +1251,7 @@ func TestDecommissionMutualExclusionIsClusterWide(t *testing.T) {
 	require.NoError(t, controllerutil.SetControllerReference(cluster, otherPool, r.scheme))
 	require.NoError(t, c.Create(ctx, otherPool))
 
-	fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
-	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
-	if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
-		var requeue *RequeueAfterError
-		require.ErrorAs(t, err, &requeue)
-	}
+	ensureSteadyState(t, r)
 
 	var excess redpandav1alpha2.Broker
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
@@ -1253,50 +1261,34 @@ func TestDecommissionMutualExclusionIsClusterWide(t *testing.T) {
 
 // TestScaleDownWaitsForActiveRollGrant: an unexpired roll-grant (the
 // grantee's pod may be down mid-roll) blocks starting a decommission — the
-// reverse of EnsureRollGrants' hold-while-decommissioning.
+// reverse of EnsureRollGrants' hold-while-decommissioning. An expired grant
+// is a released grant and must not block.
 func TestScaleDownWaitsForActiveRollGrant(t *testing.T) {
 	ctx := context.Background()
 	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
 	expiredGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))
 
-	t.Run("unexpired grant blocks the excess mark", func(t *testing.T) {
-		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: activeGrant},
-			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
-			{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
-		}, interceptor.Funcs{})
+	for name, tc := range map[string]struct {
+		grant      string
+		wantMarked bool
+	}{
+		"unexpired grant blocks the excess mark": {activeGrant, false},
+		"expired grant does not block":           {expiredGrant, true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			r, c := buildBrokerSet(t, true, []testBroker{
+				{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: tc.grant},
+				{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
+				{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
+			}, interceptor.Funcs{})
 
-		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
-		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
-		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
-			var requeue *RequeueAfterError
-			require.ErrorAs(t, err, &requeue)
-		}
+			ensureSteadyState(t, r)
 
-		var excess redpandav1alpha2.Broker
-		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
-		assert.False(t, excess.Spec.Decommission)
-	})
-
-	t.Run("expired grant does not block", func(t *testing.T) {
-		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0)), grant: expiredGrant},
-			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
-			{index: 2, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(2))},
-		}, interceptor.Funcs{})
-
-		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
-		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
-		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
-			var requeue *RequeueAfterError
-			require.ErrorAs(t, err, &requeue)
-		}
-
-		var excess redpandav1alpha2.Broker
-		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
-		assert.True(t, excess.Spec.Decommission,
-			"an expired grant is a released grant; scale-down must proceed")
-	})
+			var excess redpandav1alpha2.Broker
+			require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-broker-2", Namespace: "test"}, &excess))
+			assert.Equal(t, tc.wantMarked, excess.Spec.Decommission)
+		})
+	}
 
 	t.Run("grant stranded on a DiskLost tombstone does not block", func(t *testing.T) {
 		// The tombstone's own stranded grant (node died mid-roll) must not
@@ -1308,12 +1300,7 @@ func TestScaleDownWaitsForActiveRollGrant(t *testing.T) {
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(5))},
 		}, interceptor.Funcs{})
 
-		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
-		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
-		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
-			var requeue *RequeueAfterError
-			require.ErrorAs(t, err, &requeue)
-		}
+		ensureSteadyState(t, r)
 
 		var tombstone redpandav1alpha2.Broker
 		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-tombstone-1", Namespace: "test"}, &tombstone))
@@ -1445,14 +1432,7 @@ func TestDiskLostTombstoneReleasesIndex(t *testing.T) {
 			{index: 1, name: "rp-tombstone-1", diskLost: !released, diskLostReleased: released, brokerID: ptr.To(int32(1))},
 		}, interceptor.Funcs{})
 
-		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
-		stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
-		if err := r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2); err != nil {
-			// The spec sync makes the fixture pod legitimately outdated, so
-			// grant issuance may requeue — irrelevant to index handling.
-			var requeue *RequeueAfterError
-			require.ErrorAs(t, err, &requeue)
-		}
+		ensureSteadyState(t, r)
 
 		var list redpandav1alpha2.BrokerList
 		require.NoError(t, c.List(ctx, &list))
