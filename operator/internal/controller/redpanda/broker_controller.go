@@ -164,11 +164,11 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, k8sClient client.Clie
 		state.pod = &pod
 	}
 
-	if broker.IsDiskLostTicket() && state.pod != nil && !metav1.IsControlledBy(state.pod, broker) {
+	if broker.IsDiskLost() && state.pod != nil && !metav1.IsControlledBy(state.pod, broker) {
 		// The dead incarnation released its network index and a replacement
-		// Broker CR owns the pod of this name now. For this ticket, the pod
+		// Broker CR owns the pod of this name now. For this tombstone, the pod
 		// does not exist: reasoning about the replacement's pod here would
-		// short-circuit the ticket's decommission (shadow-mode branch) and,
+		// short-circuit the tombstone's decommission (shadow-mode branch) and,
 		// worse, let the decommission completion delete the replacement's
 		// pod by name.
 		state.pod = nil
@@ -461,18 +461,18 @@ func (r *BrokerReconciler) reconcileDiskLost(ctx context.Context, state *brokerR
 	l := log.FromContext(ctx)
 	broker := state.broker
 
-	if !broker.IsDiskLostTicket() {
+	if !broker.IsDiskLost() {
 		return r.detectDiskLost(ctx, l, state, cluster)
 	}
 
 	if broker.Spec.Decommission {
 		if broker.Status.BrokerID == nil {
-			// Belt-and-braces (the engine deletes unregistered tickets
-			// without marking them): never let a ticket without a recorded
+			// Belt-and-braces (the engine deletes unregistered tombstones
+			// without marking them): never let a tombstone without a recorded
 			// identity reach the decommission resolve-by-pod-name — the
 			// name may belong to the replacement by now, and resolving it
 			// would decommission the replacement's node_id.
-			l.Info("DiskLost ticket has no recorded node_id; nothing to decommission")
+			l.Info("DiskLost tombstone has no recorded node_id; nothing to decommission")
 			state.phase = redpandav1alpha2.BrokerPhaseDecommissioned
 			return ctrl.Result{RequeueAfter: requeueShort}, nil
 		}
@@ -911,7 +911,7 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		podName := broker.PodName()
 
 		// Every delete below is guarded by controller ownership: a DiskLost
-		// ticket's decommission completes AFTER a replacement Broker took
+		// tombstone's decommission completes AFTER a replacement Broker took
 		// over the network index, so the pod and PVCs answering to these
 		// names belong to the replacement and must be left alone.
 		if state.pod != nil && metav1.IsControlledBy(state.pod, broker) {
@@ -956,7 +956,7 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 // The pod readiness probe is cluster-scoped, so a single restarting broker
 // would otherwise regress every registered broker's phase to Provisioning.
 func defaultPhase(broker *redpandav1alpha2.Broker, pod *corev1.Pod) redpandav1alpha2.BrokerPhase {
-	if broker.IsDiskLostTicket() {
+	if broker.IsDiskLost() {
 		// The latch is terminal; any pass that falls through to the default
 		// must never regress a dead incarnation's phase. Decommissioning /
 		// Decommissioned still win — they arrive via explicit state.phase

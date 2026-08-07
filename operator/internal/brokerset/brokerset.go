@@ -195,7 +195,7 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	// one disruptive operation at a time across ALL pools, so the in-flight
 	// flag must be computed over every pool's brokers — a pool-scoped view
 	// would let two pools scaled down together start two concurrent
-	// decommissions. DiskLost tickets mid-decommission count like any other.
+	// decommissions. DiskLost tombstones mid-decommission count like any other.
 	clusterBrokers, err := s.listClusterBrokers(ctx)
 	if err != nil {
 		return errors.Wrap(err, "listing cluster Broker CRs")
@@ -207,11 +207,11 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	// unexpired roll-grant — the grantee's pod may be down mid-roll, and
 	// draining a second broker would take two out at once. This is the
 	// reverse of EnsureRollGrants' hold-while-decommissioning. Grants
-	// stranded on DiskLost tickets don't count: their holder is already
+	// stranded on DiskLost tombstones don't count: their holder is already
 	// down either way and EnsureRollGrants revokes them.
 	now := time.Now()
 	rollGrantHeld := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
-		if b.IsDiskLostTicket() {
+		if b.IsDiskLost() {
 			return false
 		}
 		grant := b.Annotations[feature.RollGrant.Key]
@@ -222,19 +222,19 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		return ok && now.Before(deadline)
 	})
 
-	// DiskLost tickets (dead incarnations) never enter the ordinary
-	// desired/excess matching: once released, a ticket and its replacement
+	// DiskLost tombstones (dead incarnations) never enter the ordinary
+	// desired/excess matching: once released, a tombstone and its replacement
 	// share a network index and would collide in IndexBrokers. They are
-	// driven by ReconcileDiskLostTickets instead. Unreleased tickets still
+	// driven by ReconcileDiskLostBrokers instead. Unreleased tombstones still
 	// pin their index — their pod/PVC names are not free yet.
-	live, tickets := PartitionDiskLostTickets(existing)
+	live, tombstones := PartitionDiskLostBrokers(existing)
 	existingByIndex := IndexBrokers(live)
-	// The desired loop consumes existingByIndex; the ticket lifecycle needs
+	// The desired loop consumes existingByIndex; the tombstone lifecycle needs
 	// an intact live-by-index view to find replacements.
 	liveByIndex := IndexBrokers(live)
 
 	pinned := map[int32]bool{}
-	for _, t := range tickets {
+	for _, t := range tombstones {
 		if !t.DiskLostReleased() {
 			pinned[ptr.Deref(t.Spec.NetworkIndex, 0)] = true
 		}
@@ -264,10 +264,10 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		}
 	}
 
-	// Ticket lifecycle runs BEFORE excess handling so ticket decommissions
+	// Tombstone lifecycle runs BEFORE excess handling so tombstone decommissions
 	// take priority deterministically; it feeds the updated in-flight state
 	// onward.
-	decommissionInFlight, err = s.ReconcileDiskLostTickets(ctx, l, tickets, liveByIndex, desiredReplicas, decommissionInFlight, rollGrantHeld)
+	decommissionInFlight, err = s.ReconcileDiskLostBrokers(ctx, l, tombstones, liveByIndex, desiredReplicas, decommissionInFlight, rollGrantHeld)
 	if err != nil {
 		return err
 	}
@@ -279,60 +279,60 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	return s.EnsureRollGrants(ctx, l)
 }
 
-// PartitionDiskLostTickets splits Broker CRs into live brokers and DiskLost
-// tickets (dead incarnations lingering as decommission records). Tickets
+// PartitionDiskLostBrokers splits Broker CRs into live brokers and DiskLost
+// tombstones (dead incarnations lingering as decommission records). Tombstones
 // must never enter the ordinary desired/excess paths — after index release,
-// a ticket and its replacement share a network index and would collide in
-// IndexBrokers. Tickets are sorted (creationTimestamp, then name) for
-// deterministic handling: an index can legitimately carry two tickets when
+// a tombstone and its replacement share a network index and would collide in
+// IndexBrokers. Tombstones are sorted (creationTimestamp, then name) for
+// deterministic handling: an index can legitimately carry two tombstones when
 // the replacement's node also dies.
-func PartitionDiskLostTickets(brokers []redpandav1alpha2.Broker) (live []redpandav1alpha2.Broker, tickets []*redpandav1alpha2.Broker) {
+func PartitionDiskLostBrokers(brokers []redpandav1alpha2.Broker) (live []redpandav1alpha2.Broker, tombstones []*redpandav1alpha2.Broker) {
 	for i := range brokers {
-		if brokers[i].IsDiskLostTicket() {
-			tickets = append(tickets, &brokers[i])
+		if brokers[i].IsDiskLost() {
+			tombstones = append(tombstones, &brokers[i])
 			continue
 		}
 		live = append(live, brokers[i])
 	}
-	sort.Slice(tickets, func(i, j int) bool {
-		ti, tj := tickets[i].CreationTimestamp, tickets[j].CreationTimestamp
+	sort.Slice(tombstones, func(i, j int) bool {
+		ti, tj := tombstones[i].CreationTimestamp, tombstones[j].CreationTimestamp
 		if !ti.Equal(&tj) {
 			return ti.Before(&tj)
 		}
-		return tickets[i].Name < tickets[j].Name
+		return tombstones[i].Name < tombstones[j].Name
 	})
-	return live, tickets
+	return live, tombstones
 }
 
-// ReconcileDiskLostTickets drives dead-incarnation tickets to completion:
+// ReconcileDiskLostBrokers drives dead-incarnation tombstones to completion:
 //
-//  1. a ticket that reached Decommissioned is deleted — the dedicated
-//     deletion site: tickets are excluded from both the desired matching
+//  1. a tombstone that reached Decommissioned is deleted — the dedicated
+//     deletion site: tombstones are excluded from both the desired matching
 //     and the excess path, so nothing else would ever delete them;
-//  2. a released ticket with no recorded BrokerID is deleted outright —
+//  2. a released tombstone with no recorded BrokerID is deleted outright —
 //     nothing provably registered, so there is nothing to decommission
 //     (resolving by pod name is forbidden: the name may already belong to
 //     the replacement);
-//  3. a released ticket at a still-desired index is marked for decommission
+//  3. a released tombstone at a still-desired index is marked for decommission
 //     only once the replacement at that index has registered — the dead id
 //     first would stall on small clusters that cannot re-replicate onto the
 //     survivors;
-//  4. a released ticket at an undesired index (scale-down / pool deletion)
+//  4. a released tombstone at an undesired index (scale-down / pool deletion)
 //     is marked immediately — no replacement will come.
 //
 // Marks respect the one-disruptive-operation-at-a-time invariant — no
 // concurrent decommission anywhere in the cluster and no unexpired
 // roll-grant — and the updated in-flight state is returned for the excess
 // path.
-func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger, tickets []*redpandav1alpha2.Broker, liveByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight, rollGrantHeld bool) (bool, error) {
-	for _, t := range tickets {
+func (s *BrokerSet) ReconcileDiskLostBrokers(ctx context.Context, l logr.Logger, tombstones []*redpandav1alpha2.Broker, liveByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight, rollGrantHeld bool) (bool, error) {
+	for _, t := range tombstones {
 		if !t.DeletionTimestamp.IsZero() {
 			continue
 		}
 		if t.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned {
-			l.Info("deleting decommissioned DiskLost ticket", "name", t.Name)
+			l.Info("deleting decommissioned DiskLost tombstone", "name", t.Name)
 			if err := s.Client.Delete(ctx, t); err != nil && !apierrors.IsNotFound(err) {
-				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost ticket %s", t.Name)
+				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost tombstone %s", t.Name)
 			}
 			continue
 		}
@@ -346,9 +346,9 @@ func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger,
 			continue
 		}
 		if t.Status.BrokerID == nil {
-			l.Info("deleting DiskLost ticket without a recorded node_id; a ghost member may remain and needs manual or ghost decommissioning", "name", t.Name)
+			l.Info("deleting DiskLost tombstone without a recorded node_id; a ghost member may remain and needs manual or ghost decommissioning", "name", t.Name)
 			if err := s.Client.Delete(ctx, t); err != nil && !apierrors.IsNotFound(err) {
-				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost ticket %s", t.Name)
+				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost tombstone %s", t.Name)
 			}
 			continue
 		}
@@ -370,10 +370,10 @@ func (s *BrokerSet) ReconcileDiskLostTickets(ctx context.Context, l logr.Logger,
 			// a time, cluster-wide.
 			continue
 		}
-		l.Info("marking DiskLost ticket for decommission of its dead node_id", "name", t.Name, "brokerID", *t.Status.BrokerID)
+		l.Info("marking DiskLost tombstone for decommission of its dead node_id", "name", t.Name, "brokerID", *t.Status.BrokerID)
 		t.Spec.Decommission = true
 		if err := s.Client.Update(ctx, t); err != nil {
-			return decommissionInFlight, errors.Wrapf(err, "setting decommission on DiskLost ticket %s", t.Name)
+			return decommissionInFlight, errors.Wrapf(err, "setting decommission on DiskLost tombstone %s", t.Name)
 		}
 		decommissionInFlight = true
 	}

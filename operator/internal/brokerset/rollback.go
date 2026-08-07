@@ -74,12 +74,12 @@ func VerifyRollbackPreconditions(l logr.Logger, brokers []redpandav1alpha2.Broke
 	now := time.Now()
 	for i := range brokers {
 		b := &brokers[i]
-		if b.IsDiskLostTicket() {
+		if b.IsDiskLost() {
 			// A dead incarnation is pod-less by construction: its (possibly
 			// unfinishable) dead-id decommission cannot fight the restored
 			// StatefulSet over anything, and blocking the escape hatch on
 			// it could wedge the rollback forever. Rollback deletes the
-			// ticket raw; the leaked node_id is logged there.
+			// tombstone raw; the leaked node_id is logged there.
 			continue
 		}
 		if b.Spec.Decommission {
@@ -200,12 +200,12 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 		for i := range brokerList.Items {
 			b := &brokerList.Items[i]
 			if b.DeletionTimestamp.IsZero() {
-				if b.IsDiskLostTicket() && b.Status.BrokerID != nil {
-					// The ticket's dead-id decommission will never run now.
+				if b.IsDiskLost() && b.Status.BrokerID != nil {
+					// The tombstone's dead-id decommission will never run now.
 					// The restored StatefulSet-mode reconciler's ghost
 					// decommissioner (--unsafe-decommission-failed-brokers)
 					// cleans it, or an operator decommissions it manually.
-					l.Info("rollback deletes a DiskLost ticket; its dead node_id remains a cluster member until ghost-decommissioned",
+					l.Info("rollback deletes a DiskLost tombstone; its dead node_id remains a cluster member until ghost-decommissioned",
 						"name", b.Name, "brokerID", *b.Status.BrokerID)
 				}
 				l.Info("rollback: deleting Broker CR", "name", b.Name)

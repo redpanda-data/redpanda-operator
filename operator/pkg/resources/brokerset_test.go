@@ -79,7 +79,7 @@ func brokerSetTestCluster() *vectorizedv1alpha1.Cluster {
 type testBroker struct {
 	index int32
 	// name overrides the default "rp-broker-<index>" CR name — required when
-	// two brokers share an index (a DiskLost ticket and its replacement).
+	// two brokers share an index (a DiskLost tombstone and its replacement).
 	name        string
 	podChecksum string // "" = no pod
 	podReady    bool
@@ -90,7 +90,7 @@ type testBroker struct {
 	decommission     bool
 	phase            redpandav1alpha2.BrokerPhase
 	brokerID         *int32
-	// diskLost marks the Broker as a dead incarnation (ticket);
+	// diskLost marks the Broker as a dead incarnation (tombstone);
 	// diskLostReleased additionally sets the index-release checkpoint.
 	diskLost         bool
 	diskLostReleased bool
@@ -927,20 +927,20 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
 
-	t.Run("disk-lost ticket mid-decommission does not block", func(t *testing.T) {
-		// A ticket's dead-id decommission may be unfinishable (insufficient
+	t.Run("disk-lost tombstone mid-decommission does not block", func(t *testing.T) {
+		// A tombstone's dead-id decommission may be unfinishable (insufficient
 		// survivors); blocking the escape hatch on it would wedge rollback.
 		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, brokerID: ptr.To(int32(1))},
 		})
 		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
-	t.Run("unmarked disk-lost ticket does not block", func(t *testing.T) {
+	t.Run("unmarked disk-lost tombstone does not block", func(t *testing.T) {
 		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
-			{index: 1, name: "rp-ticket-1", diskLost: true, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLost: true, brokerID: ptr.To(int32(1))},
 		})
 		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
@@ -1298,13 +1298,13 @@ func TestScaleDownWaitsForActiveRollGrant(t *testing.T) {
 			"an expired grant is a released grant; scale-down must proceed")
 	})
 
-	t.Run("grant stranded on a DiskLost ticket does not block", func(t *testing.T) {
-		// The ticket's own stranded grant (node died mid-roll) must not
+	t.Run("grant stranded on a DiskLost tombstone does not block", func(t *testing.T) {
+		// The tombstone's own stranded grant (node died mid-roll) must not
 		// block its own decommission mark: rollGrantHeld is computed
-		// excluding tickets.
+		// excluding tombstones.
 		r, c := buildBrokerSet(t, true, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: activeGrant},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: activeGrant},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(5))},
 		}, interceptor.Funcs{})
 
@@ -1315,26 +1315,26 @@ func TestScaleDownWaitsForActiveRollGrant(t *testing.T) {
 			require.ErrorAs(t, err, &requeue)
 		}
 
-		var ticket redpandav1alpha2.Broker
-		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-ticket-1", Namespace: "test"}, &ticket))
-		assert.True(t, ticket.Spec.Decommission)
+		var tombstone redpandav1alpha2.Broker
+		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-tombstone-1", Namespace: "test"}, &tombstone))
+		assert.True(t, tombstone.Spec.Decommission)
 	})
 }
 
-// TestDiskLostTicketLifecycle drives ReconcileDiskLostTickets through its
-// four outcomes: decommissioned tickets are deleted, unregistered tickets
-// are deleted without a decommission, desired-index tickets wait for the
+// TestDiskLostTombstoneLifecycle drives ReconcileDiskLostBrokers through its
+// four outcomes: decommissioned tombstones are deleted, unregistered tombstones
+// are deleted without a decommission, desired-index tombstones wait for the
 // replacement to REGISTER before the dead id's decommission is marked, and
-// undesired-index tickets are marked immediately.
-func TestDiskLostTicketLifecycle(t *testing.T) {
+// undesired-index tombstones are marked immediately.
+func TestDiskLostTombstoneLifecycle(t *testing.T) {
 	ctx := context.Background()
 
 	partition := func(t *testing.T, c k8sclient.Client) ([]*redpandav1alpha2.Broker, map[int32]*redpandav1alpha2.Broker) {
 		t.Helper()
 		var list redpandav1alpha2.BrokerList
 		require.NoError(t, c.List(ctx, &list))
-		live, tickets := brokerset.PartitionDiskLostTickets(list.Items)
-		return tickets, brokerset.IndexBrokers(live)
+		live, tombstones := brokerset.PartitionDiskLostBrokers(list.Items)
+		return tombstones, brokerset.IndexBrokers(live)
 	}
 	getBroker := func(t *testing.T, c k8sclient.Client, name string) *redpandav1alpha2.Broker {
 		t.Helper()
@@ -1345,104 +1345,104 @@ func TestDiskLostTicketLifecycle(t *testing.T) {
 
 	t.Run("waits for the replacement to register", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1))},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true}, // replacement, unregistered
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
+		tombstones, liveByIndex := partition(t, c)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 2, false, false)
 		require.NoError(t, err)
-		assert.False(t, getBroker(t, c, "rp-ticket-1").Spec.Decommission,
+		assert.False(t, getBroker(t, c, "rp-tombstone-1").Spec.Decommission,
 			"the dead id must not be decommissioned before the replacement registers")
 	})
 
 	t.Run("marks once the replacement registered", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1))},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(5))},
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
+		tombstones, liveByIndex := partition(t, c)
+		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		assert.True(t, inFlight, "the mark must propagate to the excess path")
-		assert.True(t, getBroker(t, c, "rp-ticket-1").Spec.Decommission)
+		assert.True(t, getBroker(t, c, "rp-tombstone-1").Spec.Decommission)
 	})
 
 	t.Run("in-flight decommission blocks the mark", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1))},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(5))},
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, true, false)
+		tombstones, liveByIndex := partition(t, c)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 2, true, false)
 		require.NoError(t, err)
-		assert.False(t, getBroker(t, c, "rp-ticket-1").Spec.Decommission)
+		assert.False(t, getBroker(t, c, "rp-tombstone-1").Spec.Decommission)
 	})
 
 	t.Run("undesired index marks immediately", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 2, name: "rp-ticket-2", diskLostReleased: true, brokerID: ptr.To(int32(2))},
+			{index: 2, name: "rp-tombstone-2", diskLostReleased: true, brokerID: ptr.To(int32(2))},
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 1, false, false)
+		tombstones, liveByIndex := partition(t, c)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 1, false, false)
 		require.NoError(t, err)
-		assert.True(t, getBroker(t, c, "rp-ticket-2").Spec.Decommission,
+		assert.True(t, getBroker(t, c, "rp-tombstone-2").Spec.Decommission,
 			"no replacement will come for an undesired index")
 	})
 
-	t.Run("unreleased ticket is left alone", func(t *testing.T) {
+	t.Run("unreleased tombstone is left alone", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 1, name: "rp-ticket-1", diskLost: true, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLost: true, brokerID: ptr.To(int32(1))},
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
+		tombstones, liveByIndex := partition(t, c)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 2, false, false)
 		require.NoError(t, err)
-		ticket := getBroker(t, c, "rp-ticket-1")
-		assert.False(t, ticket.Spec.Decommission)
-		assert.NotNil(t, ticket.Status.DiskLost)
+		tombstone := getBroker(t, c, "rp-tombstone-1")
+		assert.False(t, tombstone.Spec.Decommission)
+		assert.NotNil(t, tombstone.Status.DiskLost)
 	})
 
-	t.Run("decommissioned ticket is deleted", func(t *testing.T) {
+	t.Run("decommissioned tombstone is deleted", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		_, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
+		tombstones, liveByIndex := partition(t, c)
+		_, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		var gone redpandav1alpha2.Broker
-		assert.True(t, apierrors.IsNotFound(c.Get(ctx, types.NamespacedName{Name: "rp-ticket-1", Namespace: "test"}, &gone)))
+		assert.True(t, apierrors.IsNotFound(c.Get(ctx, types.NamespacedName{Name: "rp-tombstone-1", Namespace: "test"}, &gone)))
 	})
 
-	t.Run("released ticket without a recorded id is deleted, never marked", func(t *testing.T) {
+	t.Run("released tombstone without a recorded id is deleted, never marked", func(t *testing.T) {
 		r, c := buildBrokerSet(t, true, []testBroker{
-			{index: 1, name: "rp-ticket-1", diskLostReleased: true},
+			{index: 1, name: "rp-tombstone-1", diskLostReleased: true},
 		}, interceptor.Funcs{})
 
-		tickets, liveByIndex := partition(t, c)
-		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostTickets(ctx, ctrl.Log, tickets, liveByIndex, 2, false, false)
+		tombstones, liveByIndex := partition(t, c)
+		inFlight, err := r.core(ctrl.Log).ReconcileDiskLostBrokers(ctx, ctrl.Log, tombstones, liveByIndex, 2, false, false)
 		require.NoError(t, err)
 		assert.False(t, inFlight)
 		var gone redpandav1alpha2.Broker
-		assert.True(t, apierrors.IsNotFound(c.Get(ctx, types.NamespacedName{Name: "rp-ticket-1", Namespace: "test"}, &gone)))
+		assert.True(t, apierrors.IsNotFound(c.Get(ctx, types.NamespacedName{Name: "rp-tombstone-1", Namespace: "test"}, &gone)))
 	})
 }
 
-// TestDiskLostTicketReleasesIndex proves the index handover end to end
-// through the steady-state Ensure: a RELEASED ticket no longer occupies its
+// TestDiskLostTombstoneReleasesIndex proves the index handover end to end
+// through the steady-state Ensure: a RELEASED tombstone no longer occupies its
 // network index, so the ordinary missing-index path creates the replacement
-// under the same index; an UNRELEASED ticket still pins it.
-func TestDiskLostTicketReleasesIndex(t *testing.T) {
+// under the same index; an UNRELEASED tombstone still pins it.
+func TestDiskLostTombstoneReleasesIndex(t *testing.T) {
 	ctx := context.Background()
 
 	run := func(t *testing.T, released bool) (map[int32]*redpandav1alpha2.Broker, []*redpandav1alpha2.Broker) {
 		r, c := buildBrokerSet(t, true, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
-			{index: 1, name: "rp-ticket-1", diskLost: !released, diskLostReleased: released, brokerID: ptr.To(int32(1))},
+			{index: 1, name: "rp-tombstone-1", diskLost: !released, diskLostReleased: released, brokerID: ptr.To(int32(1))},
 		}, interceptor.Funcs{})
 
 		fix := quiescentMigrationFixture(brokerSetTestCluster(), 2)
@@ -1456,32 +1456,32 @@ func TestDiskLostTicketReleasesIndex(t *testing.T) {
 
 		var list redpandav1alpha2.BrokerList
 		require.NoError(t, c.List(ctx, &list))
-		live, tickets := brokerset.PartitionDiskLostTickets(list.Items)
-		return brokerset.IndexBrokers(live), tickets
+		live, tombstones := brokerset.PartitionDiskLostBrokers(list.Items)
+		return brokerset.IndexBrokers(live), tombstones
 	}
 
-	t.Run("released ticket frees the index for a replacement", func(t *testing.T) {
-		liveByIndex, tickets := run(t, true)
+	t.Run("released tombstone frees the index for a replacement", func(t *testing.T) {
+		liveByIndex, tombstones := run(t, true)
 		require.NotNil(t, liveByIndex[1], "a replacement must be created at the released index")
-		assert.NotEqual(t, "rp-ticket-1", liveByIndex[1].Name)
-		require.Len(t, tickets, 1, "the ticket lingers as the decommission record")
+		assert.NotEqual(t, "rp-tombstone-1", liveByIndex[1].Name)
+		require.Len(t, tombstones, 1, "the tombstone lingers as the decommission record")
 	})
 
-	t.Run("unreleased ticket pins the index", func(t *testing.T) {
+	t.Run("unreleased tombstone pins the index", func(t *testing.T) {
 		liveByIndex, _ := run(t, false)
 		assert.Nil(t, liveByIndex[1], "no replacement while pod/PVC names are not free")
 	})
 }
 
-// TestEnsureRollGrantsSkipsDiskLostTickets: a ticket is never a roll
+// TestEnsureRollGrantsSkipsDiskLostTombstones: a tombstone is never a roll
 // candidate, and a grant stranded on it (node died mid-roll) is revoked so
 // it cannot serialize the fleet.
-func TestEnsureRollGrantsSkipsDiskLostTickets(t *testing.T) {
+func TestEnsureRollGrantsSkipsDiskLostTombstones(t *testing.T) {
 	ctx := context.Background()
 	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
 	r, c := buildBrokerSet(t, true, []testBroker{
 		{index: 0, podChecksum: testOldChecksum, podReady: true},
-		{index: 1, name: "rp-ticket-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: activeGrant},
+		{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: activeGrant},
 	}, interceptor.Funcs{})
 
 	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log)
@@ -1489,7 +1489,7 @@ func TestEnsureRollGrantsSkipsDiskLostTickets(t *testing.T) {
 	require.ErrorAs(t, err, &requeue)
 
 	// The stranded grant is revoked and the rotation grant lands on the
-	// ordinary outdated broker — the ticket's stale grant did not count as
+	// ordinary outdated broker — the tombstone's stale grant did not count as
 	// an active roll.
 	assert.Equal(t, []string{"rp-broker-0"}, listGrantedBrokers(t, c))
 }

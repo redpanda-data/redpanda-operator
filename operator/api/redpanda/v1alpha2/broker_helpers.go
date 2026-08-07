@@ -69,10 +69,10 @@ func (b *Broker) PodOutdated(pod *corev1.Pod) bool {
 	return false
 }
 
-// IsDiskLostTicket reports whether this Broker is a dead incarnation: its
+// IsDiskLost reports whether this Broker is a dead incarnation: its
 // disk was lost with its node and the CR remains only as the decommission
 // record for its node_id (see BrokerStatus.DiskLost).
-func (b *Broker) IsDiskLostTicket() bool {
+func (b *Broker) IsDiskLost() bool {
 	return b.Status.DiskLost != nil
 }
 

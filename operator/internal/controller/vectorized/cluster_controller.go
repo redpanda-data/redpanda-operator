@@ -621,10 +621,10 @@ func (r *ClusterReconciler) reportStatus(
 
 		perPool := map[string]*vectorizedv1alpha1.NodePoolStatus{}
 		for _, b := range brokerList.Items {
-			if b.IsDiskLostTicket() {
+			if b.IsDiskLost() {
 				// A dead incarnation is not a live replica: counting it
-				// would double-count a ticket+replacement pair sharing a
-				// network index (or report a not-yet-replaced ticket as a
+				// would double-count a tombstone+replacement pair sharing a
+				// network index (or report a not-yet-replaced tombstone as a
 				// member).
 				continue
 			}

@@ -250,8 +250,8 @@ func TestDismantleDiskLost(t *testing.T) {
 }
 
 // TestDismantleDiskLostSparesForeignResources: resources answering to the
-// ticket's names but controlled by ANOTHER owner (the replacement CR, after
-// index takeover) are left alone, and the ticket still releases.
+// tombstone's names but controlled by ANOTHER owner (the replacement CR, after
+// index takeover) are left alone, and the tombstone still releases.
 func TestDismantleDiskLostSparesForeignResources(t *testing.T) {
 	broker, pod, objs := diskLostFixture()
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
@@ -266,7 +266,7 @@ func TestDismantleDiskLostSparesForeignResources(t *testing.T) {
 	c, _, err := runDiskLost(t, broker, nil, objs)
 	require.NoError(t, err)
 	require.True(t, broker.Status.DiskLost.ResourcesReleased,
-		"foreign-owned resources count as released for the ticket")
+		"foreign-owned resources count as released for the tombstone")
 
 	ctx := context.Background()
 	var alive corev1.Pod
@@ -275,7 +275,7 @@ func TestDismantleDiskLostSparesForeignResources(t *testing.T) {
 	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "datadir-rp-1", Namespace: "ns"}, &pvc), "the replacement's PVC must survive")
 }
 
-// TestDiskLostChainGating: a marked ticket without decommission intent
+// TestDiskLostChainGating: a marked tombstone without decommission intent
 // short-circuits the chain pass after pass — the pod is never recreated.
 func TestDiskLostChainGating(t *testing.T) {
 	broker, _, objs := diskLostFixture()
@@ -292,11 +292,11 @@ func TestDiskLostChainGating(t *testing.T) {
 	}
 }
 
-// TestDiskLostTicketDecommission: with decommission intent set by the
-// engine, a ticket carrying a recorded id falls through to the ordinary
+// TestDiskLostTombstoneDecommission: with decommission intent set by the
+// engine, a tombstone carrying a recorded id falls through to the ordinary
 // decommission machinery; one without a recorded id short-circuits to
 // Decommissioned (never resolve-by-name — it would hit the replacement).
-func TestDiskLostTicketDecommission(t *testing.T) {
+func TestDiskLostTombstoneDecommission(t *testing.T) {
 	t.Run("recorded id falls through", func(t *testing.T) {
 		broker, _, objs := diskLostFixture()
 		broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now(), ResourcesReleased: true}

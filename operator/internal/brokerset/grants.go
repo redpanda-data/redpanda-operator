@@ -41,7 +41,7 @@ import (
 //     grants are treated as released (feature.RollGrantTTL is a safety valve
 //     against controller restarts and wedged rolls).
 //  3. Hold off while any decommission is in flight: one disruptive operation
-//     at a time. DiskLost tickets (dead incarnations) are never candidates;
+//     at a time. DiskLost tombstones (dead incarnations) are never candidates;
 //     a grant stranded on one (node died mid-roll) is revoked.
 //  4. Grant the first Broker whose pod is outdated (rotation-only),
 //     preferring a broker with an expired grant (mid-roll), only when the
@@ -67,13 +67,13 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 			continue
 		}
 
-		if b.IsDiskLostTicket() {
+		if b.IsDiskLost() {
 			// Dead incarnation: never a roll candidate — its pod (by name)
 			// may already belong to the replacement CR. A grant it may
 			// still hold (node died mid-roll) must not serialize the fleet
 			// against a broker that will never complete a roll.
 			if b.Annotations[feature.RollGrant.Key] != "" {
-				l.Info("revoking roll-grant stranded on a DiskLost ticket", "broker", b.Name)
+				l.Info("revoking roll-grant stranded on a DiskLost tombstone", "broker", b.Name)
 				if err := s.revokeRollGrant(ctx, b); err != nil {
 					return err
 				}
