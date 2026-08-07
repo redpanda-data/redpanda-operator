@@ -59,9 +59,6 @@ type BrokerControllerSuite struct {
 
 	env           *testenv.Env
 	clientFactory internalclient.ClientFactory
-	// importImages is the image set newEnv loads into every cluster it
-	// builds; tests that add k3d nodes mid-run re-import it onto them.
-	importImages []string
 }
 
 var _ suite.SetupAllSuite = (*BrokerControllerSuite)(nil)
@@ -107,7 +104,6 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 		}
 	}
 
-	s.importImages = importImages
 	env := testenv.New(t, testenv.Options{
 		Name:               clusterName,
 		Scheme:             controller.V2Scheme,
@@ -373,6 +369,55 @@ func (s *BrokerControllerSuite) TestDecommissionIntentRemovedRevivesSlot() {
 // TestFinalizerRawDeletionReleases verifies RFC Q2: deleting a Broker CR
 // WITHOUT spec.decommission never decommissions — the pod and PVCs are
 // released (ownerRefs stripped) and the broker keeps serving.
+// TestClusterTeardownSkipsDecommission covers deleting the owning cluster
+// while a Broker carries in-flight decommission intent: the finalizer must
+// not insist on completing the decommission — the owner is gone, so admin
+// resolution fails (and the sibling brokers are dying under it) — or the CR,
+// pod, and PVCs leak in Terminating and namespace deletion hangs forever.
+// Teardown applies the deletion policy directly instead.
+func (s *BrokerControllerSuite) TestClusterTeardownSkipsDecommission() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
+
+	// setupBrokerCluster hand-builds unowned Brokers; teardown semantics
+	// require the real ownership wiring (controller ownerRef → GC cascade).
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	for _, b := range brokers {
+		require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(b), b))
+		patch := client.MergeFrom(b.DeepCopy())
+		require.NoError(t, controllerutil.SetControllerReference(rp, b, c.Scheme()))
+		require.NoError(t, c.Patch(ctx, b, patch))
+	}
+
+	// Mark a decommission and immediately tear the owner down: on the next
+	// finalizer pass the owner is gone, so completing the decommission is
+	// impossible — it must be skipped, not waited for.
+	target := brokers[len(brokers)-1]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	patch := client.MergeFrom(target.DeepCopy())
+	target.Spec.Decommission = true
+	require.NoError(t, c.Patch(ctx, target, patch))
+
+	require.NoError(t, c.Delete(ctx, rp))
+
+	// Every Broker CR — including the decommissioning one — must finalize
+	// and cascade its pod away.
+	for _, b := range brokers {
+		s.waitForDeletion(t, ctx, c, b)
+	}
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		for i := range brokers {
+			var pod corev1.Pod
+			err := c.Get(ctx, client.ObjectKey{Name: fmt.Sprintf("%s-%d", rp.Name, i), Namespace: rp.Namespace}, &pod)
+			if !apierrors.IsNotFound(err) && pod.DeletionTimestamp.IsZero() {
+				assert.Fail(ct, "pod still alive after cascade teardown", "pod %s-%d", rp.Name, i)
+			}
+		}
+	}, 5*time.Minute, 5*time.Second)
+}
+
 func (s *BrokerControllerSuite) TestFinalizerRawDeletionReleases() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
@@ -522,6 +567,65 @@ func (s *BrokerControllerSuite) TestPodCreatedWithoutGrant() {
 // observationally identical to a working one (ConfigSynced=False is set as
 // soon as drift is detected, BEFORE the rotation completes, so an Eventually
 // on it alone can pass mid-rotation).
+// TestPodMetadataSyncedWithoutRotation is the regression test for the
+// template-propagation gap: a metadata-only template change (a
+// Cluster.spec.annotations edit, a label change) must reach the live pod IN
+// PLACE — no roll-grant, no drain, no restart. Spec changes remain the
+// rotation-worthy class (TestPodRotationWithoutGrant covers that gate).
+func (s *BrokerControllerSuite) TestPodMetadataSyncedWithoutRotation() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
+
+	target := brokers[0]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+	// The adopted pod predates the Broker CR: the adoption backfill must
+	// have stamped the desired spec hash onto it (treating it as current) —
+	// otherwise every migration would queue a pointless roll.
+	desiredHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+	require.NotEmpty(t, desiredHash)
+	var podBefore corev1.Pod
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &podBefore)) {
+			return
+		}
+		assert.Equal(ct, desiredHash, podBefore.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation],
+			"adoption should backfill the spec hash onto the pre-existing pod")
+	}, time.Minute, 2*time.Second)
+
+	// A pure-metadata template change: annotation and label move, the spec
+	// hash stays put. NO roll-grant is issued.
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	p := client.MergeFrom(target.DeepCopy())
+	target.Spec.PodTemplate.Annotations["test.redpanda.com/propagation"] = "works"
+	if target.Spec.PodTemplate.Labels == nil {
+		target.Spec.PodTemplate.Labels = map[string]string{}
+	}
+	target.Spec.PodTemplate.Labels["test.redpanda.com/label"] = "works"
+	require.Equal(t, desiredHash, target.Spec.PodTemplate.Hash(),
+		"metadata must not move the spec hash")
+	require.NoError(t, c.Patch(ctx, target, p))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var pod corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod)) {
+			return
+		}
+		assert.Equal(ct, "works", pod.Annotations["test.redpanda.com/propagation"])
+		assert.Equal(ct, "works", pod.Labels["test.redpanda.com/label"])
+		assert.Equal(ct, podBefore.UID, pod.UID, "metadata sync must not recreate the pod")
+	}, 2*time.Minute, 2*time.Second, "metadata never reached the live pod")
+
+	// The rotation bookkeeping keys were not disturbed by the sync.
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	require.Equal(t, podBefore.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation],
+		pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation])
+	require.Equal(t, desiredHash, pod.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation])
+}
+
 func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
@@ -535,9 +639,13 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &podBefore))
 
 	// Change the desired checksum so the pod is outdated; no grant exists.
+	// Re-stamp the template hash the way every production template writer
+	// does — grants are keyed on it.
 	newChecksum := "deliberately-changed-checksum"
 	p := client.MergeFrom(target.DeepCopy())
 	target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"] = newChecksum
+	target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = target.Spec.PodTemplate.Hash()
+	newTemplateHash := target.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	// Drift is reported...
@@ -559,13 +667,14 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 		return pod.UID != podBefore.UID
 	}, 30*time.Second, 2*time.Second, "pod was rotated without a roll-grant")
 
-	// Issue a grant matching the new checksum: the rotation may now proceed.
+	// Issue a grant matching the new template hash: the rotation may now
+	// proceed.
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
 	p = client.MergeFrom(target.DeepCopy())
 	if target.Annotations == nil {
 		target.Annotations = map[string]string{}
 	}
-	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(newChecksum, time.Now().Add(10*time.Minute))
+	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(newTemplateHash, time.Now().Add(10*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
@@ -599,11 +708,19 @@ func (s *BrokerControllerSuite) TestLastBrokerDecommissionGuard() {
 	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseStuck)
 }
 
-// TestPVAffinityRemediation verifies the dead-node recovery path:
-// create a Redpanda cluster, migrate to Broker CRs, delete a k3d node,
-// force-delete the stuck pod, and assert the Broker controller reports
-// Stuck then — once granted a roll — remediates and recovers.
-func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
+// TestDiskLost verifies the dead-node detection path against a real cluster:
+// delete a k3d node under a broker, force-delete the stranded pod, and assert
+// the Broker controller reports Stuck first (detection timeout not elapsed),
+// then marks the Broker DiskLost — with no roll-grant involved — dismantles
+// its pod and PVCs, releases the network index, and keeps the dead identity
+// immutable. The real scheduler's volume-affinity message and the real Node
+// deletion are the point: unit tests fake both. What follows the release —
+// the owning engine creating a replacement at the index and decommissioning
+// the dead id through the tombstone — is engine logic covered by unit tests
+// (brokerset) and deliberately not replayed here: this suite runs no engine,
+// and hand-simulating it made the test hostage to k3d's flaky image imports
+// onto freshly added nodes.
+func (s *BrokerControllerSuite) TestDiskLost() {
 	t := s.T()
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(trace.Test(t), 20*time.Minute)
@@ -617,8 +734,9 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	ns := env.CreateTestNamespace(t)
 	c := ns.Client
 
-	// No setup grant: the Stuck wait below must prove the ungranted broker
-	// REFUSES to remediate; the explicit grant later is what unlocks it.
+	// No grants anywhere: disk-loss handling is deliberately grant-free —
+	// marking is a status write and the only destructive act against the
+	// cluster rides the decommission.
 	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{
 		useVolumeClaimTemplates: true,
 	})
@@ -639,9 +757,12 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	}
 	require.NotNil(t, target, "no broker pod scheduled on an agent node")
 	targetNode := targetPod.Spec.NodeName
-	t.Logf("target pod %q is on node %q", targetPod.Name, targetNode)
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	require.NotNil(t, target.Status.BrokerID, "target broker must be registered")
+	deadID := *target.Status.BrokerID
+	t.Logf("target pod %q (node_id %d) is on node %q", targetPod.Name, deadID, targetNode)
 
-	// Record the original PVC names for later comparison.
+	// Record the original PVC names: dismantle must delete them.
 	var originalPVCNames []string
 	for _, vol := range targetPod.Spec.Volumes {
 		if vol.PersistentVolumeClaim != nil {
@@ -650,21 +771,12 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 	}
 	require.NotEmpty(t, originalPVCNames, "target pod must have PVCs")
 
-	// Record original PV names bound to these PVCs.
-	originalPVNames := map[string]string{} // pvcName -> pvName
-	for _, name := range originalPVCNames {
-		var pvc corev1.PersistentVolumeClaim
-		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc))
-		require.NotEmpty(t, pvc.Spec.VolumeName, "PVC %q must be bound", name)
-		originalPVNames[name] = pvc.Spec.VolumeName
-	}
-
 	// Delete the k3d node. No restoration cleanup is needed: the dedicated
 	// cluster is torn down with the env at test end.
 	t.Logf("deleting k3d node %q", targetNode)
 	require.NoError(t, env.Host().DeleteNode(targetNode))
 
-	// Delete the Kubernetes Node object so the Broker controller sees it as gone.
+	// Delete the Kubernetes Node object so the dead-node proof holds.
 	var nodeObj corev1.Node
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
 		// The node might take a moment to be reported as not-ready.
@@ -686,52 +798,34 @@ func (s *BrokerControllerSuite) TestPVAffinityRemediation() {
 		assert.NoError(ct, c.Delete(ctx, &pod, client.GracePeriodSeconds(0)))
 	}, 2*time.Minute, 2*time.Second)
 
-	// Wait for Broker to report Stuck (pod recreated but can't schedule due to PV affinity).
+	// The recreated pod cannot schedule (PV pinned to the dead node): Stuck
+	// first — the detection timeout (60s in this suite) has not elapsed.
 	t.Log("waiting for Broker to report Stuck")
 	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseStuck)
 
-	// Grant a fresh roll-grant for the remediation.
-	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
-	p := client.MergeFrom(target.DeepCopy())
-	if target.Annotations == nil {
-		target.Annotations = map[string]string{}
+	// After the timeout the dead-node proof marks the broker DiskLost and
+	// the dismantle releases the network index: pod and PVCs confirmed gone.
+	t.Log("waiting for DiskLost marking and dismantle")
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(target), target)) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseDiskLost, target.Status.Phase)
+		assert.True(ct, target.DiskLostReleased(), "pod and PVCs must be confirmed gone")
+	}, 5*time.Minute, 2*time.Second)
+
+	// Identity is immutable: the tombstone keeps its node_id, holds no
+	// roll-grant, and its resources are gone for good (pod-ensure disabled).
+	require.NotNil(t, target.Status.BrokerID)
+	assert.Equal(t, deadID, *target.Status.BrokerID, "a dead incarnation never changes identity")
+	assert.Empty(t, target.Annotations["operator.redpanda.com/roll-grant"], "disk-loss handling is grant-free")
+	var gone corev1.Pod
+	assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &gone)))
+	for _, name := range originalPVCNames {
+		var pvc corev1.PersistentVolumeClaim
+		assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc)),
+			"dismantle must delete PVC %q", name)
 	}
-	checksum := target.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(checksum, time.Now().Add(30*time.Minute))
-	require.NoError(t, c.Patch(ctx, target, p))
-
-	// Create a replacement k3d node so the pod has somewhere to schedule,
-	// and re-import the suite's images: `k3d node create` starts an empty
-	// node, and soft anti-affinity prefers it — without the operator image
-	// present the sidecar would sit in ImagePullBackOff and the recovery
-	// wait below would time out.
-	t.Log("creating replacement k3d node")
-	require.NoError(t, env.Host().CreateNode())
-	require.NoError(t, env.Host().ImportImage(s.importImages...))
-
-	// Wait for the broker to recover to Running. This leg gets a longer
-	// budget than the default: it covers replacement-node startup, the image
-	// import above racing the pod's first pull (a transient
-	// ImagePullBackOff correctly reports Stuck), and a redpanda cold start —
-	// which together can exceed 5 minutes on a loaded CI host.
-	t.Log("waiting for Broker to recover to Running")
-	s.waitForPhaseWithin(t, ctx, c, target, redpandav1alpha2.BrokerPhaseRunning, 12*time.Minute)
-
-	// Verify remediation happened: the old PVs should have Retain policy.
-	for pvcName, pvName := range originalPVNames {
-		var pv corev1.PersistentVolume
-		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvName}, &pv),
-			"original PV %q (from PVC %q) should still exist", pvName, pvcName)
-		assert.Equal(t, corev1.PersistentVolumeReclaimRetain, pv.Spec.PersistentVolumeReclaimPolicy,
-			"original PV %q should have been patched to Retain", pvName)
-	}
-
-	// The target pod should now be on a different node.
-	var recoveredPod corev1.Pod
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &recoveredPod))
-	assert.NotEqual(t, targetNode, recoveredPod.Spec.NodeName,
-		"recovered pod should be on a different node")
-	t.Logf("recovered pod %q is now on node %q (was %q)", recoveredPod.Name, recoveredPod.Spec.NodeName, targetNode)
 }
 
 // --- helpers ---
@@ -788,9 +882,18 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 		podSpec := pod.Spec
 		podSpec.NodeName = ""
 
-		specBytes, err := yaml.Marshal(podSpec)
-		require.NoError(t, err)
-		checksum := fmt.Sprintf("%x", sha256.Sum256(specBytes))
+		// Use the checksum the chart stamped on the live pod: the adoption
+		// backfill preserves a pod's existing checksum (overwriting would
+		// swallow pending rotations), so a synthetic value here would leave
+		// every adopted broker permanently PodOutdated — parked at the
+		// rotation step waiting for a grant, never reaching the steps behind
+		// it (e.g. the in-place metadata sync).
+		checksum := pod.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation]
+		if checksum == "" {
+			specBytes, err := yaml.Marshal(podSpec)
+			require.NoError(t, err)
+			checksum = fmt.Sprintf("%x", sha256.Sum256(specBytes))
+		}
 
 		storage := redpandav1alpha2.BrokerStorage{}
 		if opts.useVolumeClaimTemplates {
@@ -839,6 +942,10 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 				Storage: storage,
 			},
 		}
+		// Stamp the rotation identity the way the cluster controller does;
+		// grants are keyed on it. The adopted pods predate the Broker and
+		// lack the annotation — the adoption backfill covers them.
+		broker.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation] = broker.Spec.PodTemplate.Hash()
 		require.NoError(t, c.Create(ctx, broker))
 		brokers = append(brokers, broker)
 	}
@@ -856,8 +963,8 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 			if b.Annotations == nil {
 				b.Annotations = map[string]string{}
 			}
-			checksum := b.Spec.PodTemplate.Annotations["config.redpanda.com/checksum"]
-			b.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(checksum, deadline)
+			templateHash := b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
+			b.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(templateHash, deadline)
 			require.NoError(t, c.Patch(ctx, b, p))
 		}
 	}

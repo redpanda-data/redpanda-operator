@@ -1162,6 +1162,8 @@ on remote Kubernetes clusters.
 
 
 
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-enterprise"]
 ==== Enterprise
 

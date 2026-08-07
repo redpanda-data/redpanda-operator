@@ -8,6 +8,9 @@ patches:
       - op: add
         path: /spec/template/spec/containers/0/args/-
         value: --auto-delete-pvcs
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --enable-broker
     target:
       group: apps
       version: v1

@@ -2994,3 +2994,71 @@ func TestClaimListForEvent(t *testing.T) {
 	require.Less(t, len(msg), 1024, "maximal-length claim names must still fit the Event note limit")
 	require.Contains(t, capped, "more)", "the omitted-name count must still be reported")
 }
+
+// TestLostDiskClaimsResolvesNodeByHostnameLabel proves node liveness is
+// judged by the kubernetes.io/hostname LABEL, not the Node object name:
+// PV NodeAffinity carries the label value, and under kubelet
+// --hostname-override the two differ — a name-based Get would report a
+// live node as gone and authorize the terminal DiskLost marking of a
+// healthy broker. It also proves the proof is READ-ONLY: reclaim policies
+// are never touched, and claims are collected regardless of who
+// provisioned them (migrated brokers reference ExistingClaims that must
+// still qualify).
+func TestLostDiskClaimsResolvesNodeByHostnameLabel(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+
+	hostPathPV := func(name, claimName, hostname string) *corev1.PersistentVolume {
+		pv := newPVWithAffinity(name, "ns", claimName, hostname)
+		pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
+		}
+		pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimDelete
+		pv.Status.Phase = corev1.VolumeBound
+		return pv
+	}
+
+	pod := withPVC(withPVC(newPod("rp-0", "ns", "redpanda"), "datadir-rp-0"), "existing-rp-0")
+
+	// The node's OBJECT name differs from its hostname label — the
+	// --hostname-override shape.
+	overriddenNode := &corev1.Node{ObjectMeta: metav1.ObjectMeta{
+		Name:   "ip-10-0-0-1.ec2.internal",
+		Labels: map[string]string{corev1.LabelHostname: "live-hostname"},
+	}}
+
+	c := fake.NewClientBuilder().WithScheme(s).WithObjects(
+		overriddenNode,
+		newPVC("datadir-rp-0", "ns", "redpanda", "pv-live"),
+		hostPathPV("pv-live", "datadir-rp-0", "live-hostname"),
+		newPVC("existing-rp-0", "ns", "redpanda", "pv-dead"),
+		hostPathPV("pv-dead", "existing-rp-0", "dead-hostname"),
+	).Build()
+
+	// One claim on a live (hostname-overridden) node, one on a genuinely
+	// absent hostname: only the dead one is proof, and every reclaim policy
+	// stays untouched — the proof mutates nothing.
+	lost, err := LostDiskClaims(ctx, c, pod)
+	require.NoError(t, err)
+	require.Len(t, lost, 1, "a live node must not be treated as dead just because its object name differs from its hostname label")
+	require.Equal(t, "existing-rp-0", lost[0].Name)
+	for _, pvName := range []string{"pv-live", "pv-dead"} {
+		var pv corev1.PersistentVolume
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvName}, &pv))
+		require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy, "the proof must be read-only")
+	}
+
+	// Unbound claim and non-local PV: never proof.
+	unbound := withPVC(newPod("rp-2", "ns", "redpanda"), "datadir-rp-2")
+	nonLocalPV := newPVWithAffinity("pv-nfs", "ns", "datadir-rp-2", "gone-hostname")
+	nonLocalPV.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
+		NFS: &corev1.NFSVolumeSource{Server: "nfs", Path: "/data"},
+	}
+	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
+		newPVC("datadir-rp-2", "ns", "redpanda", "pv-nfs"),
+		nonLocalPV,
+	).Build()
+	lost, err = LostDiskClaims(ctx, c, unbound)
+	require.NoError(t, err)
+	require.Empty(t, lost, "network-attached storage is never disk-loss proof")
+}

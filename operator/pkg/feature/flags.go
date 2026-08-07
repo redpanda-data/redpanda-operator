@@ -23,6 +23,17 @@ const (
 	v1Prefix = "redpanda.vectorized.io"
 )
 
+// V1UseBrokerCR controls whether a V1 Cluster creates Broker CRs
+// instead of StatefulSets.
+// Valid Value(s): true
+var V1UseBrokerCR = Register(V1Flags, AnnotationFeatureFlag[bool]{
+	Key:     "operator.redpanda.com/use-broker-cr",
+	Default: "false",
+	Parse: func(s string) (bool, error) {
+		return s == "true", nil
+	},
+})
+
 // V1Managed controls whether a Cluster resource is
 // reconciled or by the cluster controller(s) or not.
 // Valid Value(s): false

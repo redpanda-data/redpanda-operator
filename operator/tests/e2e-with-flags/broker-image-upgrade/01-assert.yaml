@@ -1,0 +1,18 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 320
+  script: |
+    set -e
+    SEL="app.kubernetes.io/instance=broker-upgrade"
+    # All pods must eventually run the new image and be Ready again.
+    for i in $(seq 1 150); do
+      upgraded=$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.spec.containers[?(@.name=="redpanda")].image}{"\n"}{end}' 2>/dev/null | grep -c 'redpandadata/redpanda:v25.1.9' || true)
+      ready=$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null | grep -c True || true)
+      [ "$upgraded" = "3" ] && [ "$ready" = "3" ] && exit 0
+      sleep 2
+    done
+    echo "pods never rotated to v25.1.9:"
+    kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.containers[?(@.name=="redpanda")].image}{"\n"}{end}'
+    kubectl get brokers.cluster.redpanda.com -n $NAMESPACE -l $SEL -o custom-columns='NAME:.metadata.name,PHASE:.status.phase'
+    exit 1

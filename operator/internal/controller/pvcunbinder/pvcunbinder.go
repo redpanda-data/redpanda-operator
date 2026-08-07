@@ -1304,33 +1304,29 @@ func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 	return ""
 }
 
-// DeadNodePVCs returns the PVCs attached to the pod whose bound PVs are
-// pinned (HostPath or Local volume with NodeAffinity) to nodes that no
-// longer exist. As a side effect, each affected PV's reclaim policy is
-// patched to Retain so the storage survives PVC deletion.
+// LostDiskClaims returns the pod's PVC-backed claims that are bound to
+// HostPath/Local PVs pinned (NodeAffinity) to Kubernetes nodes that no
+// longer exist — the dead-node proof for the Broker controller's DiskLost
+// marking. Read-only: it proves loss and mutates nothing. Unlike the
+// StatefulSet-mode unbinder it takes no exclude list — a lost disk is a
+// lost disk regardless of who provisioned the claim (migrated brokers
+// carry their data claim as an ExistingClaim and must still qualify).
 //
-// PVC names listed in exclude are skipped entirely — they are neither
-// returned nor Retain-patched. Callers that will not remediate a claim
-// (e.g. externally-managed ExistingClaims) must exclude it here: flipping
-// the reclaim policy of a PV the caller then declines to touch would
-// silently override an admin's `Delete` policy and strand Released volumes.
+// Node existence is judged by the kubernetes.io/hostname label (the value
+// PV NodeAffinity carries), not by Node object name — the two differ under
+// kubelet --hostname-override.
 //
-// apiReader must be an uncached client for accurate Node existence checks.
-func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
-	l := log.FromContext(ctx)
+// reader must be an uncached client: the result authorizes the terminal
+// DiskLost marking, and a stale Node view could declare a live node gone.
+func LostDiskClaims(ctx context.Context, reader client.Reader, pod *corev1.Pod) ([]corev1.PersistentVolumeClaim, error) {
 	var affected []corev1.PersistentVolumeClaim
 	for i := range pod.Spec.Volumes {
-		if pod.Spec.Volumes[i].PersistentVolumeClaim == nil {
-			continue
-		}
-		if slices.Contains(exclude, pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName) {
+		src := pod.Spec.Volumes[i].PersistentVolumeClaim
+		if src == nil {
 			continue
 		}
 		var pvc corev1.PersistentVolumeClaim
-		if err := c.Get(ctx, client.ObjectKey{
-			Name:      pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName,
-			Namespace: pod.Namespace,
-		}, &pvc); err != nil {
+		if err := reader.Get(ctx, client.ObjectKey{Name: src.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -1340,31 +1336,30 @@ func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader,
 			continue
 		}
 		var pv corev1.PersistentVolume
-		if err := c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
+		if err := reader.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
 			return nil, err
 		}
 		if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
 			continue
 		}
-		nodeName := NodeFromPVAffinity(&pv)
-		if nodeName == "" {
+		hostname := NodeFromPVAffinity(&pv)
+		if hostname == "" {
 			continue
 		}
-		var node corev1.Node
-		if err := apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return nil, err
-			}
-		} else {
-			continue
+		// PV NodeAffinity carries the kubernetes.io/hostname LABEL value.
+		// Resolve the node by that label, never by object name: under
+		// kubelet --hostname-override the two differ, and a name-based Get
+		// would report a live node as gone — authorizing the terminal
+		// marking of a healthy broker.
+		var nodeList corev1.NodeList
+		if err := reader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
+			return nil, err
 		}
-		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimRetain {
-			patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
-			pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
-			if err := c.Patch(ctx, &pv, patch); err != nil {
-				return nil, fmt.Errorf("patching PV %s to Retain: %w", pv.Name, err)
-			}
-			l.Info("patched PV to Retain", "pv", pv.Name, "deadNode", nodeName)
+		if len(nodeList.Items) > 0 {
+			continue
 		}
 		affected = append(affected, pvc)
 	}
@@ -1615,51 +1610,66 @@ func (r *Controller) podHasMispinnedBoundClaim(ctx context.Context, pod *corev1.
 		if pvc.Spec.VolumeName == "" {
 			continue
 		}
-		var pv corev1.PersistentVolume
-		if err := r.Client.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
+		_, mispinned, err := claimMispinnedForPod(ctx, r.Client, r.reader(), &pvc, pod)
+		if err != nil {
 			return false, err
 		}
-		// The reference must be a real two-way binding. volumeName is
-		// user-settable at claim creation (static pre-binding), so on
-		// its own it proves nothing: a claim pre-pointed at an
-		// arbitrary local PV must not mint mis-pin evidence. Only the
-		// binder completes the back-reference with the claim's UID.
-		// (The destructive pipeline filters PVs by ClaimRef
-		// namespace/name only; the UID match here is deliberately
-		// stricter, and Gate 0's settle check self-heals any
-		// stale-UID PV it stamps.)
-		if pv.Spec.ClaimRef == nil ||
-			pv.Spec.ClaimRef.Namespace != pvc.Namespace ||
-			pv.Spec.ClaimRef.Name != pvc.Name ||
-			pv.Spec.ClaimRef.UID != pvc.UID {
-			continue
-		}
-		if pv.Spec.NodeAffinity == nil || (pv.Spec.HostPath == nil && pv.Spec.Local == nil) {
-			continue
-		}
-		hostnames, ok := pvPinnedHostnames(&pv)
-		if !ok {
-			continue
-		}
-		allUnavailable := true
-		for _, hostname := range hostnames {
-			unavailable, err := r.nodeUnavailableForScheduling(ctx, hostname, pod)
-			if err != nil {
-				return false, err
-			}
-			if !unavailable {
-				allUnavailable = false
-				break
-			}
-		}
-		if allUnavailable {
+		if mispinned {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+// claimMispinnedForPod is the per-claim core of the mis-pin proof: it
+// reports whether pvc is bound to a HostPath/Local PV whose EVERY
+// NodeAffinity-eligible node is unavailable to pod, returning that PV.
+//
+// "Bound" is proven by the PV's ClaimRef back-reference (namespace, name,
+// and UID all matching the claim), never by the claim's volumeName alone —
+// that field is user-settable at creation (static pre-binding), so on its
+// own it proves nothing: a claim pre-pointed at an arbitrary local PV must
+// not mint mis-pin evidence. Only the binder completes the back-reference
+// with the claim's UID.
+//
+// pvReader may be cached (the fields used — NodeAffinity, HostPath/Local,
+// ClaimRef UID — never change on a live Bound PV); nodeReader should be
+// uncached, as node/occupant evidence directly unlocks destructive
+// deletion.
+func claimMispinnedForPod(ctx context.Context, pvReader, nodeReader client.Reader, pvc *corev1.PersistentVolumeClaim, pod *corev1.Pod) (*corev1.PersistentVolume, bool, error) {
+	if pvc.Spec.VolumeName == "" {
+		return nil, false, nil
+	}
+	var pv corev1.PersistentVolume
+	if err := pvReader.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	if pv.Spec.ClaimRef == nil ||
+		pv.Spec.ClaimRef.Namespace != pvc.Namespace ||
+		pv.Spec.ClaimRef.Name != pvc.Name ||
+		pv.Spec.ClaimRef.UID != pvc.UID {
+		return nil, false, nil
+	}
+	if pv.Spec.NodeAffinity == nil || (pv.Spec.HostPath == nil && pv.Spec.Local == nil) {
+		return nil, false, nil
+	}
+	hostnames, ok := pvPinnedHostnames(&pv)
+	if !ok {
+		return nil, false, nil
+	}
+	for _, hostname := range hostnames {
+		unavailable, err := nodeUnavailableForScheduling(ctx, nodeReader, hostname, pod)
+		if err != nil {
+			return nil, false, err
+		}
+		if !unavailable {
+			return nil, false, nil
+		}
+	}
+	return &pv, true, nil
 }
 
 // pvPinnedHostnames returns every hostname the PV's Required
@@ -1749,13 +1759,16 @@ const (
 // Pending state cannot be blamed on this claim (more likely CPU,
 // quota, or unrelated taints) and this returns false.
 //
-// Every read here is uncached. This evidence directly unlocks
-// destructive deletion, and a stale occupant or node view could
-// manufacture proof of a conflict that no longer exists. Gate 0 does
-// not backstop that: it only tracks the unbinder's OWN past actions.
-func (r *Controller) nodeUnavailableForScheduling(ctx context.Context, hostname string, pod *corev1.Pod) (bool, error) {
+// Every read here is uncached — callers pass an uncached reader. This
+// evidence directly unlocks destructive deletion, and a stale occupant
+// or node view could manufacture proof of a conflict that no longer
+// exists. Gate 0 does not backstop that: it only tracks the unbinder's
+// OWN past actions. Shared between the unbinder's Gate 3 exemption
+// chain (via [claimMispinnedForPod]) and the Broker controller's
+// PV-affinity remediation ([MispinnedPVCs]).
+func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hostname string, pod *corev1.Pod) (bool, error) {
 	var nodeList corev1.NodeList
-	if err := r.reader().List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
+	if err := reader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
 		return false, err
 	}
 	if len(nodeList.Items) == 0 {
@@ -1832,7 +1845,7 @@ func (r *Controller) nodeUnavailableForScheduling(ctx context.Context, hostname 
 	// hide such occupants and silently withhold this proof leg for
 	// custom terms that select beyond the release.
 	var podList corev1.PodList
-	if err := r.reader().List(ctx, &podList, &client.ListOptions{Namespace: pod.Namespace}); err != nil {
+	if err := reader.List(ctx, &podList, &client.ListOptions{Namespace: pod.Namespace}); err != nil {
 		return false, err
 	}
 	for i := range podList.Items {
