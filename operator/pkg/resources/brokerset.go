@@ -38,7 +38,7 @@ import (
 var _ Resource = &BrokerSetResource{}
 
 // BrokerSetResource manages Broker CRs for a single node pool, replacing
-// StatefulSetResource when the cluster has the migrate-to-broker-cr
+// StatefulSetResource when the cluster has the use-broker-cr
 // annotation. It is a thin V1 (vectorized Cluster) adapter around the
 // CR-agnostic machinery in operator/internal/brokerset.
 type BrokerSetResource struct {
@@ -131,7 +131,7 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 		Scheme: r.scheme,
 		Owner:  r.pandaCluster,
 		ClusterRef: redpandav1alpha2.ClusterRef{
-			Group: ptr.To("redpanda.vectorized.io"),
+			Group: ptr.To(vectorizedv1alpha1.GroupName),
 			Kind:  ptr.To("Cluster"),
 			Name:  r.pandaCluster.Name,
 		},
@@ -189,6 +189,17 @@ func (r *BrokerSetResource) Ensure(ctx context.Context) error {
 			return err
 		}
 	} else if r.nodePool.Deleted {
+		// A deleted pool whose StatefulSet is mid-termination is neither
+		// STS-managed (branch above requires a live STS) nor drainable yet:
+		// the engine's Ensure would find the still-listed StatefulSet and
+		// enter the migration state machine with no desired spec to feed it.
+		// Wait the termination out; the next pass takes the drain path.
+		if getErr == nil {
+			return &RequeueAfterError{
+				RequeueAfter: RequeueDuration,
+				Msg:          fmt.Sprintf("waiting for StatefulSet %s of deleted pool to finish terminating", live.Name),
+			}
+		}
 		// A deleted pool with no StatefulSet is broker-backed: its spec may
 		// be a minimal reconstruction from Broker CR labels (see
 		// nodepools.GetNodePoolsWithBrokerBacked), so nothing can be rendered

@@ -140,6 +140,7 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      broker.PodName(),
 					Namespace: cluster.Namespace,
+					Labels:    clusterLabels,
 					Annotations: map[string]string{
 						redpandav1alpha2.BrokerConfigChecksumAnnotation:  tb.podChecksum,
 						redpandav1alpha2.BrokerPodTemplateHashAnnotation: testTemplateHash(tb.podChecksum),
@@ -459,7 +460,12 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	}
 	require.NoError(t, c.Create(ctx, cm))
 
-	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+	// First pass: Broker CRs cleaned up and the StatefulSet restored, but the
+	// pods are not yet re-adopted by it — rollback must hold the success
+	// report AND the backup ConfigMap until they are.
+	err = RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log)
+	var requeue *RequeueAfterError
+	require.ErrorAs(t, err, &requeue, "expected a requeue while the StatefulSet has not adopted the pods")
 
 	var restored appsv1.StatefulSet
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp", Namespace: "test"}, &restored))
@@ -469,9 +475,21 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	require.NotNil(t, owner)
 	assert.Equal(t, r.pandaCluster.Name, owner.Name)
 
+	var kept corev1.ConfigMap
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-migration-backup", Namespace: "test"}, &kept),
+		"backup ConfigMap must survive until the pods are adopted")
+
+	// Simulate the StatefulSet controller adopting the pod, then finish.
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
+	require.NoError(t, controllerutil.SetControllerReference(&restored, &pod, r.scheme))
+	require.NoError(t, c.Update(ctx, &pod))
+
+	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+
 	var gone corev1.ConfigMap
 	err = c.Get(ctx, types.NamespacedName{Name: "rp-migration-backup", Namespace: "test"}, &gone)
-	assert.True(t, apierrors.IsNotFound(err), "backup ConfigMap should be deleted after restore")
+	assert.True(t, apierrors.IsNotFound(err), "backup ConfigMap should be deleted once the pods are adopted")
 
 	var persisted vectorizedv1alpha1.Cluster
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp", Namespace: "test"}, &persisted))
@@ -717,6 +735,69 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 	})
 }
 
+// TestEnsureDeletedPoolWaitsForTerminatingStatefulSet covers the window where
+// a pool was removed from spec.nodePools while its StatefulSet is still
+// terminating: Ensure must neither converge the StatefulSet (it is going
+// away) nor enter the engine's drain path (the engine would find the
+// still-listed StatefulSet and run the migration state machine with no
+// desired spec to feed it). It waits the termination out instead.
+func TestEnsureDeletedPoolWaitsForTerminatingStatefulSet(t *testing.T) {
+	scheme := brokerSetTestScheme(t)
+	cluster := brokerSetTestCluster()
+	pool := vectorizedv1alpha1.NodePoolSpecWithDeleted{
+		NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "blue", Replicas: ptr.To(int32(0))},
+		Deleted:      true,
+	}
+
+	terminating := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              fmt.Sprintf("%s-%s", cluster.Name, pool.Name),
+			Namespace:         cluster.Namespace,
+			DeletionTimestamp: &metav1.Time{Time: time.Now()},
+			Finalizers:        []string{"kubernetes.io/test-blocker"},
+		},
+	}
+	broker := &redpandav1alpha2.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rp-blue-broker-0",
+			Namespace: cluster.Namespace,
+			Labels:    labels.ForCluster(cluster).WithNodePool(pool.Name),
+		},
+		Spec: redpandav1alpha2.BrokerSpec{
+			ClusterRef: redpandav1alpha2.ClusterRef{
+				Group: ptr.To("redpanda.vectorized.io"),
+				Kind:  ptr.To("Cluster"),
+				Name:  cluster.Name,
+			},
+			NetworkIndex: ptr.To(int32(0)),
+		},
+	}
+	require.NoError(t, controllerutil.SetControllerReference(cluster, broker, scheme))
+
+	c := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(cluster, terminating, broker).
+		Build()
+
+	r := &BrokerSetResource{
+		Client:       c,
+		scheme:       scheme,
+		pandaCluster: cluster,
+		stsResource:  &StatefulSetResource{Client: c, pandaCluster: cluster, nodePool: pool, logger: ctrl.Log.WithName("test")},
+		nodePool:     pool,
+		logger:       ctrl.Log.WithName("test"),
+	}
+
+	err := r.Ensure(context.Background())
+	var requeue *RequeueAfterError
+	require.ErrorAs(t, err, &requeue, "expected a requeue while the StatefulSet terminates, got: %v", err)
+
+	// The pool's broker must be untouched: no drain-decommission stamped.
+	var got redpandav1alpha2.Broker
+	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: broker.Name, Namespace: broker.Namespace}, &got))
+	require.False(t, got.Spec.Decommission, "drain must not start while the StatefulSet still exists")
+}
+
 func TestVerifyRollbackPreconditions(t *testing.T) {
 	ctx := context.Background()
 
@@ -728,48 +809,58 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 	}
 
 	t.Run("all pods present passes", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, podChecksum: testCurrentChecksum, podReady: true},
 		})
-		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by in-flight decommission", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioning, podChecksum: testCurrentChecksum},
 		})
-		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "decommissioning")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "decommissioning")
 	})
 
 	t.Run("fully decommissioned broker does not block", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true},
 			{index: 1, decommission: true, phase: redpandav1alpha2.BrokerPhaseDecommissioned},
 		})
-		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
 	t.Run("blocked by active roll-grant", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))},
 		})
-		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "roll-grant")
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
 
 	t.Run("expired roll-grant does not block", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
+		brokers, _ := build(t, []testBroker{
 			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))},
 		})
-		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers))
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
 
-	t.Run("blocked by missing pod", func(t *testing.T) {
-		brokers, c := build(t, []testBroker{
-			{index: 0}, // no pod: rotation in flight
+	// A missing pod without an unexpired grant is an ABANDONED rotation (or a
+	// manual deletion) and must NOT block: the restored StatefulSet recreates
+	// the pod, whereas waiting would deadlock on a wedged Broker controller.
+	t.Run("missing pod without grant does not block", func(t *testing.T) {
+		brokers, _ := build(t, []testBroker{
+			{index: 0}, // no pod, no grant
 		})
-		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctx, c, ctrl.Log, brokers), "missing")
+		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
+	})
+
+	t.Run("missing pod with unexpired grant still blocks", func(t *testing.T) {
+		brokers, _ := build(t, []testBroker{
+			{index: 0, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))}, // rotation actively in flight
+		})
+		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
 }
 

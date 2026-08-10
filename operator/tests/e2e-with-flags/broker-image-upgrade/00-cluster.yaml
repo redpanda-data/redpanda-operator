@@ -1,11 +1,11 @@
-# Broker-mode image upgrade: the Cluster is born with the migrate-to-broker-cr
+# Broker-mode image upgrade: the Cluster is born with the use-broker-cr
 # annotation, so the operator manages Broker CRs instead of a StatefulSet.
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
   name: broker-upgrade
   annotations:
-    operator.redpanda.com/migrate-to-broker-cr: "true"
+    operator.redpanda.com/use-broker-cr: "true"
 spec:
   image: "redpandadata/redpanda"
   version: "v24.2.24"

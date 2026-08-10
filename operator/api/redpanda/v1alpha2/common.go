@@ -344,10 +344,14 @@ const (
 	NodePoolRefKind       = "NodePool"
 	StretchClusterRefKind = "StretchCluster"
 
-	// AnnotationMigrateToBrokerCR triggers Broker CR migration when set to
-	// "true" on a Cluster (V1) or Redpanda (V2) resource. Not exposed in
-	// public docs — intended for internal/cloud use only.
-	AnnotationMigrateToBrokerCR = "operator.redpanda.com/migrate-to-broker-cr"
+	// AnnotationUseBrokerCR selects Broker CR mode for a Cluster (V1) or
+	// Redpanda (V2) resource when set to "true": pods are managed via Broker
+	// CRs instead of a StatefulSet. Setting it on a StatefulSet-managed
+	// cluster triggers the migration; the annotation then stays for the
+	// resource's lifetime (removing it rolls back to StatefulSet
+	// management). Not exposed in public docs — intended for internal/cloud
+	// use only.
+	AnnotationUseBrokerCR = "operator.redpanda.com/use-broker-cr"
 )
 
 func (c *ClusterRef) GetGroup() string {

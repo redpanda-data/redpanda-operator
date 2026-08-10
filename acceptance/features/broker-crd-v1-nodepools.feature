@@ -9,7 +9,7 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
       metadata:
         name: rp-with-pools
         annotations:
-          operator.redpanda.com/migrate-to-broker-cr: "true"
+          operator.redpanda.com/use-broker-cr: "true"
       spec:
         image: ${DEFAULT_REDPANDA_REPO}
         version: ${DEFAULT_REDPANDA_TAG}
@@ -74,13 +74,13 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
     And cluster "rp-with-pools" admin API should show 3 brokers
     And I snapshot pod UIDs for cluster "rp-with-pools"
     # Rollback: the nodePool StatefulSet is created and adopts the broker-built pods.
-    When I remove annotation "operator.redpanda.com/migrate-to-broker-cr" from V1 cluster "rp-with-pools"
+    When I remove annotation "operator.redpanda.com/use-broker-cr" from V1 cluster "rp-with-pools"
     Then a StatefulSet should eventually exist for cluster "rp-with-pools"
     And cluster "rp-with-pools" should eventually have 0 Broker CRs
     And cluster "rp-with-pools" admin API should show 3 brokers
     And pods for cluster "rp-with-pools" should have the same UIDs as the snapshot
     # Re-migrate back to Broker CRs.
-    When I set annotation "operator.redpanda.com/migrate-to-broker-cr" to "true" on V1 cluster "rp-with-pools"
+    When I set annotation "operator.redpanda.com/use-broker-cr" to "true" on V1 cluster "rp-with-pools"
     Then cluster "rp-with-pools" should have 3 Broker CRs
     And no StatefulSet should eventually exist for cluster "rp-with-pools"
     And all Broker CRs for cluster "rp-with-pools" should be Running
