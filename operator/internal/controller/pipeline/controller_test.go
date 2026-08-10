@@ -25,6 +25,7 @@ import (
 	"github.com/redpanda-data/common-go/license"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,13 +73,35 @@ func setupTestEnv(t *testing.T) *kube.Ctl {
 	return ctl
 }
 
-func TestReconcile_NoLicense(t *testing.T) {
-	ctl := setupTestEnv(t)
+// ControllerSuite shares a single envtest environment across all of the
+// package's controller tests; each test gets its own namespace.
+type ControllerSuite struct {
+	suite.Suite
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-no-license"},
+	ctl *kube.Ctl
+	ns  *corev1.Namespace
+}
+
+func TestControllerSuite(t *testing.T) {
+	suite.Run(t, new(ControllerSuite))
+}
+
+func (s *ControllerSuite) SetupSuite() {
+	s.ctl = setupTestEnv(s.T())
+}
+
+func (s *ControllerSuite) SetupTest() {
+	ns, err := kube.Create(s.T().Context(), s.ctl, corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{GenerateName: "test-"},
 	})
-	require.NoError(t, err)
+	s.Require().NoError(err)
+	s.ns = ns
+}
+
+func (s *ControllerSuite) TestReconcile_NoLicense() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
 
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -124,13 +147,10 @@ func TestReconcile_NoLicense(t *testing.T) {
 	assert.Empty(t, deployments.Items)
 }
 
-func TestReconcile_InvalidLicenseFile(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestReconcile_InvalidLicenseFile() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-bad-license"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	// Write a bad license file.
 	dir := t.TempDir()
@@ -166,13 +186,10 @@ func TestReconcile_InvalidLicenseFile(t *testing.T) {
 	assert.Contains(t, licenseCond.Message, "failed to read license")
 }
 
-func TestReconcile_InvalidLicenseKeepsManagedResources(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestReconcile_InvalidLicenseKeepsManagedResources() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-license-cleanup"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -195,7 +212,7 @@ func TestReconcile_InvalidLicenseKeepsManagedResources(t *testing.T) {
 		Owner:           *metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
 		OwnershipLabels: Labels(pipeline),
 	}
-	_, err = syncer.Sync(t.Context())
+	_, err := syncer.Sync(t.Context())
 	require.NoError(t, err)
 	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
 
@@ -230,13 +247,10 @@ func TestReconcile_InvalidLicenseKeepsManagedResources(t *testing.T) {
 		"Ready must reflect the live workload, not the license failure")
 }
 
-func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestReconcile_InvalidClusterRefKeepsManagedResources() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-clusterref-cleanup"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -262,7 +276,7 @@ func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
 		Owner:           *metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
 		OwnershipLabels: Labels(pipeline),
 	}
-	_, err = syncer.Sync(t.Context())
+	_, err := syncer.Sync(t.Context())
 	require.NoError(t, err)
 	require.NotEmpty(t, scrapeControllerObjects(t, ctl, pipeline))
 
@@ -294,13 +308,10 @@ func TestReconcile_InvalidClusterRefKeepsManagedResources(t *testing.T) {
 // autoscaler-written scale must land on .spec.replicas (and from there on the
 // Deployment), and the advertised status.selector must parse and match the
 // pipeline's pod labels so per-pod metrics can be resolved.
-func TestScaleSubresource(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestScaleSubresource() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-scale-subresource"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -317,7 +328,7 @@ func TestScaleSubresource(t *testing.T) {
 	// status.selector — so even the license-less reconcile path (envtest
 	// cannot mint a valid enterprise license) populates the scale selector.
 	c := &Controller{Ctl: ctl, LicenseFilePath: ""}
-	_, err = c.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(pipeline)})
+	_, err := c.Reconcile(t.Context(), ctrl.Request{NamespacedName: kube.AsKey(pipeline)})
 	require.NoError(t, err)
 
 	// controller-runtime's subresource client speaks the same /scale endpoint
@@ -378,8 +389,10 @@ func TestScaleSubresource(t *testing.T) {
 // right answer BEFORE mgr.Start(): the previous implementation did a cached
 // List there, which always fails with ErrCacheNotStarted and silently skipped
 // the PodMonitor watch on every real deployment.
-func TestSetupWithManager(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestSetupWithManager() {
+	t := s.T()
+
+	ctl := s.ctl
 
 	newManager := func() ctrl.Manager {
 		mgr, err := ctrl.NewManager(ctl.RestConfig(), ctrl.Options{
@@ -403,17 +416,7 @@ func TestSetupWithManager(t *testing.T) {
 
 	// Install a minimal PodMonitor CRD. A fresh manager (fresh RESTMapper —
 	// the lazy mapper caches negative lookups) must now detect it pre-start.
-	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-		for _, cond := range crd.Status.Conditions {
-			if cond.Type == apiextensionsv1.Established {
-				return cond.Status == apiextensionsv1.ConditionTrue, nil
-			}
-		}
-		return false, nil
-	}, &apiextensionsv1.CustomResourceDefinition{
+	require.NoError(t, kube.ApplyAll(t.Context(), ctl, &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{Name: "podmonitors.monitoring.coreos.com"},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "monitoring.coreos.com",
@@ -431,7 +434,7 @@ func TestSetupWithManager(t *testing.T) {
 				Schema: &apiextensionsv1.CustomResourceValidation{
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Type:                   "object",
-						XPreserveUnknownFields: ptr.To(true),
+						XPreserveUnknownFields: new(true),
 					},
 				},
 			}},
@@ -451,13 +454,10 @@ func TestSetupWithManager(t *testing.T) {
 // Secret-backed self-signed CA), the result is cached, and a delete +
 // recreate of the cluster under the same name does NOT serve the stale entry
 // (UID-keyed cache).
-func TestResolveClusterSource_Success(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestResolveClusterSource_Success() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-clusterref-success"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	rp := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{Name: "basic", Namespace: ns.Name},
@@ -509,13 +509,10 @@ func TestResolveClusterSource_Success(t *testing.T) {
 // controller-side guard behind the CEL rules: clusterRef.namespace/group/kind
 // were previously accepted by the schema and silently ignored, binding the
 // pipeline to a same-named cluster in its own namespace instead.
-func TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-clusterref-guard"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	c := &Controller{Ctl: ctl, clusterConns: newClusterConnCache()}
 	mk := func(ref *redpandav1alpha2.ClusterRef) *redpandav1alpha2.Pipeline {
@@ -528,7 +525,7 @@ func TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds(t *testing.T)
 		}
 	}
 
-	_, err = c.resolveClusterSource(t.Context(), mk(&redpandav1alpha2.ClusterRef{
+	_, err := c.resolveClusterSource(t.Context(), mk(&redpandav1alpha2.ClusterRef{
 		Name:      "prod",
 		Namespace: ptr.To("prod-namespace"),
 	}))
@@ -546,13 +543,10 @@ func TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds(t *testing.T)
 // TestResolveUserRef_Validation covers userRef resolution incl. the password
 // Secret: previously a missing Secret still marked UserRef=True and the pod
 // later wedged in CreateContainerConfigError.
-func TestResolveUserRef_Validation(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestResolveUserRef_Validation() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-userref"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	mechanism := redpandav1alpha2.SASLMechanism("scram-sha-256")
 	user := &redpandav1alpha2.User{
@@ -585,7 +579,7 @@ func TestResolveUserRef_Validation(t *testing.T) {
 	}
 
 	// Password Secret doesn't exist yet: resolution must fail.
-	_, err = resolveUserRef(t.Context(), ctl, pipeline)
+	_, err := resolveUserRef(t.Context(), ctl, pipeline)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "password Secret")
 
@@ -613,13 +607,10 @@ func TestResolveUserRef_Validation(t *testing.T) {
 // object with the Pipeline's name that the Pipeline does not own must refuse
 // to sync (previously ForceOwnership hijacked it, and Pipeline deletion then
 // deleted it).
-func TestFindOwnershipConflict(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestFindOwnershipConflict() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-name-conflict"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	// A ConfigMap owned by "another team", name-colliding with the Pipeline.
 	foreign := &corev1.ConfigMap{
@@ -660,13 +651,10 @@ func TestFindOwnershipConflict(t *testing.T) {
 // TestValidateValueSources covers reconcile-time resolution of valueSources
 // backing objects — previously a typo'd Secret name synced fine and only
 // surfaced as a wedged pod.
-func TestValidateValueSources(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestValidateValueSources() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-valuesources"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	mk := func(sources ...redpandav1alpha2.NamedValueSource) *redpandav1alpha2.Pipeline {
 		return &redpandav1alpha2.Pipeline{
@@ -689,7 +677,7 @@ func TestValidateValueSources(t *testing.T) {
 	}
 
 	// Missing Secret: rejected.
-	err = validateValueSources(t.Context(), ctl, mk(secretSource))
+	err := validateValueSources(t.Context(), ctl, mk(secretSource))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "S3_SECRET_KEY")
 
@@ -731,13 +719,10 @@ func TestValidateValueSources(t *testing.T) {
 // TestCredentialsChecksum covers the rotation-roll digest: it must be stable
 // across reconciles, change when a referenced Secret's content changes, and
 // be empty when the pipeline references nothing.
-func TestCredentialsChecksum(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestCredentialsChecksum() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-creds-checksum"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "rotating", Namespace: ns.Name},
@@ -789,13 +774,10 @@ func TestCredentialsChecksum(t *testing.T) {
 	assert.Empty(t, empty)
 }
 
-func TestReconcile_Deletion(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestReconcile_Deletion() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-deletion"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -818,7 +800,7 @@ func TestReconcile_Deletion(t *testing.T) {
 	}
 
 	// Reconcile the deletion.
-	_, err = c.Reconcile(t.Context(), ctrl.Request{
+	_, err := c.Reconcile(t.Context(), ctrl.Request{
 		NamespacedName: kube.AsKey(pipeline),
 	})
 	require.NoError(t, err)
@@ -883,13 +865,10 @@ func TestRender_GoldenFiles(t *testing.T) {
 	}
 }
 
-func TestReconcile_DeletionGC(t *testing.T) {
-	ctl := setupTestEnv(t)
+func (s *ControllerSuite) TestReconcile_DeletionGC() {
+	t := s.T()
 
-	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-deletion-gc"},
-	})
-	require.NoError(t, err)
+	ctl, ns := s.ctl, s.ns
 
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
@@ -914,7 +893,7 @@ func TestReconcile_DeletionGC(t *testing.T) {
 		Owner:           *metav1.NewControllerRef(pipeline, redpandav1alpha2.SchemeGroupVersion.WithKind("Pipeline")),
 		OwnershipLabels: Labels(pipeline),
 	}
-	_, err = syncer.Sync(t.Context())
+	_, err := syncer.Sync(t.Context())
 	require.NoError(t, err)
 
 	// Verify child objects exist.
