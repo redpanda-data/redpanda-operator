@@ -41,8 +41,9 @@ import (
 //     grants are treated as released (feature.RollGrantTTL is a safety valve
 //     against controller restarts and wedged rolls).
 //  3. Hold off while any decommission is in flight: one disruptive operation
-//     at a time.
-//  4. Grant the first Broker that needs a roll (outdated pod or Stuck phase),
+//     at a time. DiskLost tombstones (dead incarnations) are never candidates;
+//     a grant stranded on one (node died mid-roll) is revoked.
+//  4. Grant the first Broker whose pod is outdated (rotation-only),
 //     preferring a broker with an expired grant (mid-roll), only when the
 //     cluster is healthy.
 func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
@@ -62,6 +63,20 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 		if b.Spec.Decommission {
 			if b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned {
 				decommissionInFlight = true
+			}
+			continue
+		}
+
+		if b.IsDiskLost() {
+			// Dead incarnation: never a roll candidate — its pod (by name)
+			// may already belong to the replacement CR. A grant it may
+			// still hold (node died mid-roll) must not serialize the fleet
+			// against a broker that will never complete a roll.
+			if b.Annotations[feature.RollGrant.Key] != "" {
+				l.Info("revoking roll-grant stranded on a DiskLost tombstone", "broker", b.Name)
+				if err := s.revokeRollGrant(ctx, b); err != nil {
+					return err
+				}
 			}
 			continue
 		}
@@ -121,15 +136,12 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 			continue
 		}
 
-		// Stuck brokers are roll candidates only when the pod is
-		// unschedulable (the PV-affinity remediation case, where deleting
-		// pod+PVC helps). Other Stuck classes — crash loops, image pull
-		// failures, identity conflicts — would not be fixed by a rotation
-		// and need an operator, not a grant.
-		stuckUnschedulable := b.Status.Phase == redpandav1alpha2.BrokerPhaseStuck &&
-			pod != nil && podUnschedulable(pod)
-		needsRoll := (pod != nil && b.PodOutdated(pod)) || stuckUnschedulable
-		if needsRoll {
+		// Grants are rotation-only: a Stuck broker is never a candidate.
+		// Disk loss is handled by the DiskLost replacement flow (no grant —
+		// nothing live is disrupted), and the remaining Stuck classes —
+		// crash loops, image pull failures, identity conflicts — would not
+		// be fixed by a rotation and need an operator, not a grant.
+		if pod != nil && b.PodOutdated(pod) {
 			candidates = append(candidates, b)
 		}
 	}

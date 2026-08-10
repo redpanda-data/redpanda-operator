@@ -27,6 +27,12 @@ const (
 	BrokerPhaseDecommissioning BrokerPhase = "Decommissioning"
 	BrokerPhaseDecommissioned  BrokerPhase = "Decommissioned"
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
+	// BrokerPhaseDiskLost marks a dead incarnation: the broker's pod was
+	// provably unschedulable because its storage is pinned to a Kubernetes
+	// node that no longer exists. Terminal — the CR lingers only as the
+	// decommission record for its node_id while a replacement Broker CR
+	// takes over the network index. See BrokerStatus.DiskLost.
+	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
 // BrokerConfigChecksumAnnotation carries the config checksum on both the
@@ -198,6 +204,13 @@ type BrokerStatus struct {
 	// the broker registers with the cluster. Nil until discovered.
 	// +optional
 	BrokerID *int32 `json:"brokerID,omitempty"`
+	// DiskLost, once set, marks this Broker as a dead incarnation: its pod
+	// was provably unschedulable because its storage is pinned to a
+	// Kubernetes node that no longer exists. Terminal and never cleared —
+	// the CR lingers only as the decommission record for its node_id while
+	// a replacement Broker CR takes over the network index.
+	// +optional
+	DiskLost *DiskLostStatus `json:"diskLost,omitempty"`
 	// PodName is the name of the pod managed by this Broker CR.
 	// +optional
 	PodName string `json:"podName,omitempty"`
@@ -207,4 +220,17 @@ type BrokerStatus struct {
 	// Conditions holds the conditions for the Broker.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+// DiskLostStatus records the two durable checkpoints of disk-loss handling.
+type DiskLostStatus struct {
+	// At is when the dead-node proof was accepted — the point of no return.
+	// +optional
+	At metav1.Time `json:"at,omitempty"`
+	// ResourcesReleased is set once the pod and every PVC were confirmed
+	// gone on an uncached read; only from then on does the network index
+	// stop being occupied by this CR and a replacement may be created.
+	// Monotonic: never unset.
+	// +optional
+	ResourcesReleased bool `json:"resourcesReleased,omitempty"`
 }

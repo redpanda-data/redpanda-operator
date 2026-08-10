@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"reflect"
 	"slices"
 	"strings"
 	"time"
@@ -54,15 +55,13 @@ import (
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 
-// defaultUnbindPVCsAfter is the Broker controller's own PV-affinity
-// remediation timeout, used when --unbind-pvcs-after is not set. Remediation
-// must not silently stay disabled just because the (PVCUnbinder-oriented)
-// flag was left at its zero default: it only fires for pods stuck Pending on
-// PV node affinity under a proof — the pinned Node OBJECT deleted from the
-// API, or every pinned node provably unusable for this pod (cordoned,
-// untolerated NotReady, or occupied by an anti-affinity-conflicting pod) —
-// and it is additionally roll-grant-gated, so the cluster controller
-// serializes and health-gates it.
+// defaultUnbindPVCsAfter is the Broker controller's disk-loss detection
+// timeout, used when --unbind-pvcs-after is not set. Detection must not
+// silently stay disabled just because the (PVCUnbinder-oriented) flag was
+// left at its zero default: marking a Broker DiskLost requires a pod stuck
+// Pending on PV node affinity for at least this long AND the dead-node
+// proof (the pinned Node OBJECT deleted from the API) — the timeout exists
+// so a rebooting node has time to come back before the terminal marking.
 // TODO: give the Broker controller its own flag (e.g.
 // --broker-unbind-pvcs-after) when the feature grows its GA config surface.
 const defaultUnbindPVCsAfter = 5 * time.Minute
@@ -88,8 +87,9 @@ type BrokerReconciler struct {
 	Manager       multicluster.Manager
 	ClientFactory internalclient.ClientFactory
 	// UnbindPVCsAfter is the duration a pod must be stuck in Pending
-	// with volume node-affinity conflict before PVC remediation fires.
-	// Zero disables the remediation.
+	// with volume node-affinity conflict before the broker may be marked
+	// DiskLost (given the dead-node proof also holds). Zero disables the
+	// detection.
 	UnbindPVCsAfter time.Duration
 }
 
@@ -164,6 +164,16 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, k8sClient client.Clie
 		state.pod = &pod
 	}
 
+	if broker.IsDiskLost() && state.pod != nil && !metav1.IsControlledBy(state.pod, broker) {
+		// The dead incarnation released its network index and a replacement
+		// Broker CR owns the pod of this name now. For this tombstone, the pod
+		// does not exist: reasoning about the replacement's pod here would
+		// short-circuit the tombstone's decommission (shadow-mode branch) and,
+		// worse, let the decommission completion delete the replacement's
+		// pod by name.
+		state.pod = nil
+	}
+
 	return state, nil
 }
 
@@ -218,10 +228,13 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 	state.clusterName = req.ClusterName
 
 	reconcilers := []brokerReconcilerFn{
+		// reconcileDiskLost runs first: once a Broker is marked as a dead
+		// incarnation, pod-ensure and PVC-ensure below must never run for
+		// it again (they would resurrect the resources being dismantled).
+		r.reconcileDiskLost,
 		r.reconcilePVCs,
 		r.reconcilePod,
 		r.reconcilePVCAdoption,
-		r.reconcilePVAffinity,
 		r.reconcilePodRotation,
 		r.reconcilePodMetadata,
 		r.reconcileBrokerRegistration,
@@ -434,39 +447,199 @@ func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brok
 	return ctrl.Result{}, nil
 }
 
-func (r *BrokerReconciler) reconcilePVAffinity(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
-	// A decommissioning broker is draining: deleting its pod or discarding
-	// its storage mid-drain would interrupt partition movement (and clear
-	// the identity the decommission needs). reconcileDecommission owns the
-	// pod's fate from here on.
-	if state.broker.Spec.Decommission {
-		return ctrl.Result{}, nil
-	}
-	if state.pod == nil || !pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
-		return ctrl.Result{}, nil
-	}
+// reconcileDiskLost owns the disk-loss lifecycle of a dead incarnation:
+// detection (mark the durable DiskLost latch FIRST — the point of no
+// return), dismantle (idempotent pod+PVC deletion until confirmed gone on
+// an uncached read), and the index-release checkpoint that lets the owning
+// engine create a replacement Broker under the same pod and PVC names.
+// While the latch is set and no decommission intent exists, it
+// short-circuits the chain: pod-ensure and PVC-ensure are disabled for a
+// dead incarnation. Once the engine sets Spec.Decommission (after the
+// replacement registers), it steps aside and the ordinary decommission
+// machinery runs pod-less against the recorded BrokerID.
+func (r *BrokerReconciler) reconcileDiskLost(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
-	if !state.granted {
-		l.Info("pod stuck on PV node affinity, waiting for roll-grant", "name", state.pod.Name)
-		state.phase = redpandav1alpha2.BrokerPhaseStuck
-		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+	broker := state.broker
+
+	if !broker.IsDiskLost() {
+		return r.detectDiskLost(ctx, l, state, cluster)
 	}
-	k8sClient := cluster.GetClient()
+
+	if broker.Spec.Decommission {
+		if broker.Status.BrokerID == nil {
+			// Belt-and-braces (the engine deletes unregistered tombstones
+			// without marking them): never let a tombstone without a recorded
+			// identity reach the decommission resolve-by-pod-name — the
+			// name may belong to the replacement by now, and resolving it
+			// would decommission the replacement's node_id.
+			l.Info("DiskLost tombstone has no recorded node_id; nothing to decommission")
+			state.phase = redpandav1alpha2.BrokerPhaseDecommissioned
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
+		// Fall through: reconcileDecommission runs the pure admin-API
+		// decommission against the recorded id; every pod/PVC-touching
+		// reconciler in between already skips on Spec.Decommission.
+		return ctrl.Result{}, nil
+	}
+
+	return r.dismantleDiskLost(ctx, l, state, cluster)
+}
+
+// detectDiskLost marks the Broker as a dead incarnation when its pod is
+// provably unschedulable because its storage is pinned to a node that no
+// longer exists. Nothing is deleted on the marking pass: dismantle only
+// acts on the persisted latch, which is what makes the mark crash-safe.
+func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+	broker := state.broker
+
+	// A decommissioning broker is draining: its storage and identity belong
+	// to reconcileDecommission. A shadow/STS-owned pod (migration window)
+	// must never be marked — the PVCUnbinder owns remediation until
+	// handover.
+	if broker.Spec.Decommission ||
+		state.pod == nil ||
+		!metav1.IsControlledBy(state.pod, broker) ||
+		!pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		return ctrl.Result{}, nil
+	}
+
+	if r.UnbindPVCsAfter <= 0 {
+		// Unreachable through SetupBrokerController (which defaults the
+		// value); guards direct construction only.
+		l.Info("disk-loss detection disabled (UnbindPVCsAfter=0); broker will stay Stuck until the node returns or the PVC is removed manually")
+		return ctrl.Result{}, nil
+	}
+
+	// Timeout: only accept the proof after the pod has been stuck long
+	// enough for a rebooting node to have come back.
+	for _, cond := range state.pod.Status.Conditions {
+		if cond.Type != corev1.PodScheduled || cond.Status != corev1.ConditionFalse {
+			continue
+		}
+		if delta := r.UnbindPVCsAfter - time.Since(cond.LastTransitionTime.Time); delta > 0 {
+			l.Info("pod stuck on PV node affinity but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
+			return ctrl.Result{RequeueAfter: delta}, nil
+		}
+	}
+
+	// Re-qualify the pod on an uncached read, decoded into a fresh object,
+	// immediately before accepting the proof: a stale informer copy of a
+	// since-resolved (or since-replaced) pod must not authorize the
+	// terminal marking.
 	apiReader := cluster.GetAPIReader()
-	remediated, err := r.remediatePVAffinity(ctx, l, k8sClient, apiReader, state.broker, state.pod)
+	fresh := &corev1.Pod{}
+	if err := apiReader.Get(ctx, client.ObjectKeyFromObject(state.pod), fresh); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, err
+	}
+	if fresh.UID != state.pod.UID || !pvcunbinder.PodHasVolumeAffinityUnschedulable(fresh) {
+		l.Info("pod no longer qualifies on uncached re-read; skipping disk-loss marking", "pod", state.pod.Name)
+		return ctrl.Result{}, nil
+	}
+
+	lost, err := pvcunbinder.LostDiskClaims(ctx, apiReader, fresh)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if remediated {
-		// Remediation discarded the broker's storage: the replacement pod
-		// starts with an empty data dir and registers under a fresh
-		// node_id. Clear the recorded identity so registration adopts it
-		// instead of tripping the rotation continuity check.
-		state.broker.Status.BrokerID = nil
-		return ctrl.Result{Requeue: true}, nil
+	if len(lost) == 0 {
+		// No dead-node proof (e.g. a live-node mis-pin): stays Stuck via
+		// defaultPhase; an operator has to intervene.
+		return ctrl.Result{}, nil
 	}
-	state.phase = redpandav1alpha2.BrokerPhaseStuck
-	return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+
+	names := make([]string, 0, len(lost))
+	for i := range lost {
+		names = append(names, lost[i].Name)
+	}
+	l.Info("marking Broker as a dead incarnation: storage pinned to a node that no longer exists",
+		"claims", names, "brokerID", broker.Status.BrokerID)
+	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
+	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
+	return ctrl.Result{RequeueAfter: requeueShort}, nil
+}
+
+// dismantleDiskLost deletes the dead incarnation's pod and PVCs, repeatably,
+// and sets the ResourcesReleased checkpoint only once every resource is
+// confirmed gone on an uncached read — from then on the network index is
+// free for a replacement Broker. Claim names derive from the SPEC, not the
+// pod: the pod may already be gone.
+func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+	broker := state.broker
+	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
+
+	if broker.DiskLostReleased() {
+		// Waiting for the engine: replacement creation, then the
+		// decommission mark.
+		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+	}
+
+	k8sClient := cluster.GetClient()
+	if state.pod != nil {
+		l.Info("disk-lost dismantle: deleting pod", "pod", state.pod.Name)
+		if err := k8sClient.Delete(ctx, state.pod); err != nil && !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
+
+	podName := broker.PodName()
+	claimNames := make([]string, 0, len(broker.Spec.Storage.VolumeClaimTemplates)+len(broker.Spec.Storage.ExistingClaims))
+	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
+		claimNames = append(claimNames, fmt.Sprintf("%s-%s", vct.Name, podName))
+	}
+	for _, ec := range broker.Spec.Storage.ExistingClaims {
+		claimNames = append(claimNames, ec.Name)
+	}
+	for _, name := range claimNames {
+		var pvc corev1.PersistentVolumeClaim
+		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return ctrl.Result{}, err
+		}
+		// Guard against name reuse: never delete a claim another owner
+		// already controls (the replacement's fresh claim, should orderings
+		// ever race).
+		if owner := metav1.GetControllerOf(&pvc); owner != nil && !metav1.IsControlledBy(&pvc, broker) {
+			continue
+		}
+		l.Info("disk-lost dismantle: deleting PVC", "pvc", name)
+		if err := k8sClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Confirm on the uncached reader: the release checkpoint authorizes a
+	// replacement under these very names, so a stale "gone" must not set it.
+	apiReader := cluster.GetAPIReader()
+	var pod corev1.Pod
+	err := apiReader.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
+	switch {
+	case err == nil:
+		if metav1.IsControlledBy(&pod, broker) {
+			return ctrl.Result{RequeueAfter: requeueShort}, nil // still terminating
+		}
+	case !apierrors.IsNotFound(err):
+		return ctrl.Result{}, err
+	}
+	for _, name := range claimNames {
+		var pvc corev1.PersistentVolumeClaim
+		err := apiReader.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc)
+		switch {
+		case err == nil:
+			if owner := metav1.GetControllerOf(&pvc); owner == nil || metav1.IsControlledBy(&pvc, broker) {
+				return ctrl.Result{RequeueAfter: requeueShort}, nil // still terminating
+			}
+		case !apierrors.IsNotFound(err):
+			return ctrl.Result{}, err
+		}
+	}
+
+	l.Info("disk-lost dismantle complete: pod and PVCs gone, network index released")
+	broker.Status.DiskLost.ResourcesReleased = true
+	return ctrl.Result{RequeueAfter: requeueShort}, nil
 }
 
 func (r *BrokerReconciler) reconcilePodRotation(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
@@ -619,7 +792,16 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 	if broker.Spec.Decommission {
 		return ctrl.Result{}, nil
 	}
-	if state.pod == nil || !isPodReady(state.pod) {
+	// Discovery must not wait for Kubernetes readiness: the readiness probe
+	// reflects CLUSTER health (rpk cluster health), which can be false for
+	// exactly the reason registration needs to resolve — a DiskLost
+	// replacement registers its fresh node_id while the dead member still
+	// keeps the health overview unhealthy, and the dead id's decommission
+	// waits for that registration. Gating on readiness would deadlock the
+	// three of them. A Running pod with an IP is resolvable (resolveBroker
+	// matches by address); a not-yet-registered broker resolves to nothing
+	// and requeues. BrokerRegistered is documented as orthogonal to Ready.
+	if state.pod == nil || state.pod.Status.Phase != corev1.PodRunning || state.pod.Status.PodIP == "" {
 		return ctrl.Result{}, nil
 	}
 
@@ -728,14 +910,24 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		k8sClient := cluster.GetClient()
 		podName := broker.PodName()
 
-		if state.pod != nil {
+		// Every delete below is guarded by controller ownership: a DiskLost
+		// tombstone's decommission completes AFTER a replacement Broker took
+		// over the network index, so the pod and PVCs answering to these
+		// names belong to the replacement and must be left alone.
+		if state.pod != nil && metav1.IsControlledBy(state.pod, broker) {
 			l.Info("deleting pod after decommission", "name", podName)
 			if err := k8sClient.Delete(ctx, state.pod); err != nil && !apierrors.IsNotFound(err) {
 				return ctrl.Result{}, err
 			}
 		}
+		claimNames := make([]string, 0, len(broker.Spec.Storage.VolumeClaimTemplates)+len(broker.Spec.Storage.ExistingClaims))
 		for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-			pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
+			claimNames = append(claimNames, fmt.Sprintf("%s-%s", vct.Name, podName))
+		}
+		for _, ec := range broker.Spec.Storage.ExistingClaims {
+			claimNames = append(claimNames, ec.Name)
+		}
+		for _, pvcName := range claimNames {
 			var pvc corev1.PersistentVolumeClaim
 			if err := k8sClient.Get(ctx, client.ObjectKey{Name: pvcName, Namespace: broker.Namespace}, &pvc); err != nil {
 				if !apierrors.IsNotFound(err) {
@@ -743,20 +935,10 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 				}
 				continue
 			}
-			l.Info("deleting PVC after decommission", "name", pvcName)
-			if err := k8sClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
-			}
-		}
-		for _, ec := range broker.Spec.Storage.ExistingClaims {
-			var pvc corev1.PersistentVolumeClaim
-			if err := k8sClient.Get(ctx, client.ObjectKey{Name: ec.Name, Namespace: broker.Namespace}, &pvc); err != nil {
-				if !apierrors.IsNotFound(err) {
-					return ctrl.Result{}, err
-				}
+			if owner := metav1.GetControllerOf(&pvc); owner != nil && !metav1.IsControlledBy(&pvc, broker) {
 				continue
 			}
-			l.Info("deleting PVC after decommission", "name", ec.Name)
+			l.Info("deleting PVC after decommission", "name", pvcName)
 			if err := k8sClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
 				return ctrl.Result{}, err
 			}
@@ -774,6 +956,13 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 // The pod readiness probe is cluster-scoped, so a single restarting broker
 // would otherwise regress every registered broker's phase to Provisioning.
 func defaultPhase(broker *redpandav1alpha2.Broker, pod *corev1.Pod) redpandav1alpha2.BrokerPhase {
+	if broker.IsDiskLost() {
+		// The latch is terminal; any pass that falls through to the default
+		// must never regress a dead incarnation's phase. Decommissioning /
+		// Decommissioned still win — they arrive via explicit state.phase
+		// and bypass this function.
+		return redpandav1alpha2.BrokerPhaseDiskLost
+	}
 	phase := redpandav1alpha2.BrokerPhaseProvisioning
 	if broker.Status.BrokerID != nil || isPodReady(pod) {
 		phase = redpandav1alpha2.BrokerPhaseRunning
@@ -898,7 +1087,8 @@ func (r *BrokerReconciler) syncBrokerStatus(ctx context.Context, state *brokerRe
 		initial.Phase != broker.Status.Phase ||
 		initial.PodName != broker.Status.PodName ||
 		initial.PodIP != broker.Status.PodIP ||
-		!ptr.Equal(initial.BrokerID, broker.Status.BrokerID)
+		!ptr.Equal(initial.BrokerID, broker.Status.BrokerID) ||
+		!reflect.DeepEqual(initial.DiskLost, broker.Status.DiskLost)
 	if conditionsChanged || fieldsChanged {
 		if err := k8sClient.Status().Update(ctx, broker); err != nil {
 			return ctrl.Result{}, err
@@ -1267,102 +1457,6 @@ func (r *BrokerReconciler) ensureDrained(ctx context.Context, clusterName string
 		return false, nil
 	}
 	// Broker not found in admin API — skip drain, let rotation proceed.
-	return true, nil
-}
-
-// remediatePVAffinity handles the unusable-node recovery paths: when a pod
-// can't schedule because its PVCs are bound to PVs pinned to a node that
-// no longer exists (dead node), or to nodes that all reject this pod —
-// cordoned, untolerated NotReady/unreachable, or occupied by a pod
-// matching one of this pod's own required anti-affinity terms (a PV
-// mis-provisioned onto another broker's node) — we delete the affected
-// PVCs and pod so the next reconcile recreates everything on a usable
-// node.
-//
-// PV identification and Retain-patching is delegated to
-// [pvcunbinder.DeadNodePVCs] and [pvcunbinder.MispinnedPVCs]. Only
-// VolumeClaimTemplate PVCs are remediated — ExistingClaims are
-// externally-managed and the controller doesn't own their spec, so those
-// are left for the admin to handle.
-//
-// Returns true if remediation was performed (caller should requeue).
-// Returns false if the timeout hasn't elapsed or no proof holds.
-func (r *BrokerReconciler) remediatePVAffinity(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, broker *redpandav1alpha2.Broker, pod *corev1.Pod) (bool, error) {
-	// Unreachable through SetupBrokerController (which defaults the value);
-	// guards direct construction only.
-	if r.UnbindPVCsAfter <= 0 {
-		l.Info("PV affinity remediation disabled (UnbindPVCsAfter=0); broker will stay Stuck until the node returns or the PVC is removed manually")
-		return false, nil
-	}
-
-	// Timeout: only act after the pod has been stuck long enough.
-	for _, cond := range pod.Status.Conditions {
-		if cond.Type != corev1.PodScheduled || cond.Status != corev1.ConditionFalse {
-			continue
-		}
-		if delta := r.UnbindPVCsAfter - time.Since(cond.LastTransitionTime.Time); delta > 0 {
-			l.Info("PV affinity stuck but timeout not reached", "remaining", delta.Round(time.Second))
-			return false, nil
-		}
-	}
-
-	// Re-qualify the pod on an uncached read, decoded into a fresh object,
-	// immediately before evidence gathering and destruction: a stale
-	// informer copy of a since-resolved (or since-replaced) pod must not
-	// reach the PVC deletes.
-	fresh := &corev1.Pod{}
-	if err := apiReader.Get(ctx, client.ObjectKeyFromObject(pod), fresh); err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	if fresh.UID != pod.UID || !pvcunbinder.PodHasVolumeAffinityUnschedulable(fresh) {
-		l.Info("pod no longer qualifies on uncached re-read; skipping PV affinity remediation", "pod", pod.Name)
-		return false, nil
-	}
-	pod = fresh
-
-	// ExistingClaims are excluded up front: the controller doesn't own
-	// their spec, so they are neither remediated NOR Retain-patched —
-	// flipping the reclaim policy of a PV we then decline to touch would
-	// override the admin's own policy.
-	var existingClaimNames []string
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		existingClaimNames = append(existingClaimNames, ec.Name)
-	}
-	remediable, err := pvcunbinder.DeadNodePVCs(ctx, k8sClient, apiReader, pod, existingClaimNames...)
-	if err != nil {
-		return false, err
-	}
-	if len(remediable) == 0 {
-		// No dead-node proof. Try the mis-pin proof: claims bound to
-		// HostPath/Local PVs whose every eligible node is unavailable to
-		// this pod — cordoned, untolerated NotReady/unreachable, or
-		// occupied by a pod matching one of this pod's own required
-		// anti-affinity terms (the shape where a PV is provisioned onto a
-		// node another broker occupies and the pod can never schedule).
-		remediable, err = pvcunbinder.MispinnedPVCs(ctx, k8sClient, apiReader, pod, existingClaimNames...)
-		if err != nil {
-			return false, err
-		}
-	}
-	if len(remediable) == 0 {
-		return false, nil
-	}
-
-	for i := range remediable {
-		l.Info("deleting PVC pinned to an unusable node", "pvc", remediable[i].Name)
-		if err := k8sClient.Delete(ctx, &remediable[i]); err != nil && !apierrors.IsNotFound(err) {
-			return false, fmt.Errorf("deleting PVC %s: %w", remediable[i].Name, err)
-		}
-	}
-
-	l.Info("deleting pod for PV affinity remediation", "pod", pod.Name)
-	if err := k8sClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
-		return false, fmt.Errorf("deleting pod %s: %w", pod.Name, err)
-	}
-
 	return true, nil
 }
 

@@ -2995,12 +2995,16 @@ func TestClaimListForEvent(t *testing.T) {
 	require.Contains(t, capped, "more)", "the omitted-name count must still be reported")
 }
 
-// TestDeadNodePVCsResolvesNodeByHostnameLabel proves node liveness is
+// TestLostDiskClaimsResolvesNodeByHostnameLabel proves node liveness is
 // judged by the kubernetes.io/hostname LABEL, not the Node object name:
 // PV NodeAffinity carries the label value, and under kubelet
 // --hostname-override the two differ — a name-based Get would report a
-// live node as gone and authorize deleting a healthy broker's PVC.
-func TestDeadNodePVCsResolvesNodeByHostnameLabel(t *testing.T) {
+// live node as gone and authorize the terminal DiskLost marking of a
+// healthy broker. It also proves the proof is READ-ONLY: reclaim policies
+// are never touched, and claims are collected regardless of who
+// provisioned them (migrated brokers reference ExistingClaims that must
+// still qualify).
+func TestLostDiskClaimsResolvesNodeByHostnameLabel(t *testing.T) {
 	ctx := context.Background()
 	s := newScheme(t, false, false, false)
 
@@ -3014,7 +3018,7 @@ func TestDeadNodePVCsResolvesNodeByHostnameLabel(t *testing.T) {
 		return pv
 	}
 
-	pod := withPVC(withPVC(newPod("rp-0", "ns", "redpanda"), "datadir-rp-0"), "excluded-rp-0")
+	pod := withPVC(withPVC(newPod("rp-0", "ns", "redpanda"), "datadir-rp-0"), "existing-rp-0")
 
 	// The node's OBJECT name differs from its hostname label — the
 	// --hostname-override shape.
@@ -3027,145 +3031,34 @@ func TestDeadNodePVCsResolvesNodeByHostnameLabel(t *testing.T) {
 		overriddenNode,
 		newPVC("datadir-rp-0", "ns", "redpanda", "pv-live"),
 		hostPathPV("pv-live", "datadir-rp-0", "live-hostname"),
-		newPVC("excluded-rp-0", "ns", "redpanda", "pv-excluded"),
-		hostPathPV("pv-excluded", "excluded-rp-0", "dead-hostname"),
+		newPVC("existing-rp-0", "ns", "redpanda", "pv-dead"),
+		hostPathPV("pv-dead", "existing-rp-0", "dead-hostname"),
 	).Build()
 
-	// Live node under hostname-override: nothing is remediable, and the
-	// PV's reclaim policy stays untouched.
-	affected, err := DeadNodePVCs(ctx, c, c, pod, "excluded-rp-0")
+	// One claim on a live (hostname-overridden) node, one on a genuinely
+	// absent hostname: only the dead one is proof, and every reclaim policy
+	// stays untouched — the proof mutates nothing.
+	lost, err := LostDiskClaims(ctx, c, pod)
 	require.NoError(t, err)
-	require.Empty(t, affected, "a live node must not be treated as dead just because its object name differs from its hostname label")
-	var pv corev1.PersistentVolume
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-live"}, &pv))
-	require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy)
-
-	// The excluded claim's PV is pinned to a genuinely absent hostname,
-	// but exclusion must skip both remediation and the Retain patch.
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-excluded"}, &pv))
-	require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy)
-
-	// Genuinely dead node (no node carries the hostname label): the claim
-	// is returned and its PV is Retain-patched.
-	dead := withPVC(newPod("rp-1", "ns", "redpanda"), "datadir-rp-1")
-	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
-		overriddenNode,
-		newPVC("datadir-rp-1", "ns", "redpanda", "pv-dead"),
-		hostPathPV("pv-dead", "datadir-rp-1", "gone-hostname"),
-	).Build()
-	affected, err = DeadNodePVCs(ctx, c, c, dead)
-	require.NoError(t, err)
-	require.Len(t, affected, 1)
-	require.Equal(t, "datadir-rp-1", affected[0].Name)
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-dead"}, &pv))
-	require.Equal(t, corev1.PersistentVolumeReclaimRetain, pv.Spec.PersistentVolumeReclaimPolicy)
-}
-
-// TestMispinnedPVCs exercises the exported live-node sibling of
-// DeadNodePVCs consumed by the Broker controller's PV-affinity
-// remediation: a claim is remediable only under the full mis-pin proof —
-// bound (ClaimRef back-reference with UID) to a HostPath/Local PV whose
-// every eligible node is unavailable to the pod.
-func TestMispinnedPVCs(t *testing.T) {
-	ctx := context.Background()
-	s := newScheme(t, false, false, false)
-
-	boundPV := func(name string, pvc *corev1.PersistentVolumeClaim, hostname string) *corev1.PersistentVolume {
-		pv := newPVWithAffinity(name, pvc.Namespace, pvc.Name, hostname)
-		pv.Spec.ClaimRef.UID = pvc.UID
-		pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
-			HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
-		}
-		pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimDelete
-		pv.Status.Phase = corev1.VolumeBound
-		return pv
+	require.Len(t, lost, 1, "a live node must not be treated as dead just because its object name differs from its hostname label")
+	require.Equal(t, "existing-rp-0", lost[0].Name)
+	for _, pvName := range []string{"pv-live", "pv-dead"} {
+		var pv corev1.PersistentVolume
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvName}, &pv))
+		require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy, "the proof must be read-only")
 	}
-	hardAntiAffinity := &corev1.Affinity{
-		PodAntiAffinity: &corev1.PodAntiAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
-				LabelSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "redpanda"}},
-				TopologyKey:   hostnameTopologyKey,
-			}},
-		},
-	}
-	victim := func(name string) *corev1.Pod {
-		p := withPVC(podWithVolumeAffinityFailure(name, "ns", "redpanda"), "datadir-"+name)
-		p.Labels["app"] = "redpanda"
-		p.Spec.Affinity = hardAntiAffinity
-		return p
-	}
-	occupant := newPod("rp-other", "ns", "redpanda")
-	occupant.Labels["app"] = "redpanda"
-	occupant.Spec.NodeName = "node-a"
-	occupant.Status.Phase = corev1.PodRunning
 
-	// Occupied node: the pod's own hard anti-affinity term matches a live
-	// occupant on the PV's only eligible node — remediable, Retain-patched.
-	pod := victim("rp-1")
-	pvc := newPVC("datadir-rp-1", "ns", "redpanda", "pv-1")
-	pvc.UID = "pvc-uid-1"
-	c := fake.NewClientBuilder().WithScheme(s).WithObjects(
-		newNode("node-a"), occupant, pod, pvc, boundPV("pv-1", pvc, "node-a"),
-	).Build()
-	affected, err := MispinnedPVCs(ctx, c, c, pod)
-	require.NoError(t, err)
-	require.Len(t, affected, 1)
-	require.Equal(t, "datadir-rp-1", affected[0].Name)
-	var pv corev1.PersistentVolume
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-1"}, &pv))
-	require.Equal(t, corev1.PersistentVolumeReclaimRetain, pv.Spec.PersistentVolumeReclaimPolicy)
-
-	// Free node: same shape, no occupant — not remediable.
-	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
-		newNode("node-a"), pod, pvc, boundPV("pv-1", pvc, "node-a"),
-	).Build()
-	affected, err = MispinnedPVCs(ctx, c, c, pod)
-	require.NoError(t, err)
-	require.Empty(t, affected)
-
-	// Tolerate-forever pod + NotReady node: the policy carve-out — only
-	// Node deletion signals permanent loss for such pods.
-	notReady := newNode("node-a")
-	notReady.Status.Conditions = []corev1.NodeCondition{{Type: corev1.NodeReady, Status: corev1.ConditionFalse}}
-	forever := victim("rp-1")
-	forever.Spec.Tolerations = []corev1.Toleration{
-		{Key: taintNodeNotReady, Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoExecute},
-		{Key: taintNodeUnreachable, Operator: corev1.TolerationOpExists, Effect: corev1.TaintEffectNoExecute},
+	// Unbound claim and non-local PV: never proof.
+	unbound := withPVC(newPod("rp-2", "ns", "redpanda"), "datadir-rp-2")
+	nonLocalPV := newPVWithAffinity("pv-nfs", "ns", "datadir-rp-2", "gone-hostname")
+	nonLocalPV.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
+		NFS: &corev1.NFSVolumeSource{Server: "nfs", Path: "/data"},
 	}
 	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
-		notReady, forever, pvc, boundPV("pv-1", pvc, "node-a"),
+		newPVC("datadir-rp-2", "ns", "redpanda", "pv-nfs"),
+		nonLocalPV,
 	).Build()
-	affected, err = MispinnedPVCs(ctx, c, c, forever)
+	lost, err = LostDiskClaims(ctx, c, unbound)
 	require.NoError(t, err)
-	require.Empty(t, affected, "tolerate-forever pods must not treat NotReady as proof")
-
-	// Same NotReady node, grace-period tolerations only: remediable.
-	graced := victim("rp-1")
-	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
-		notReady, graced, pvc, boundPV("pv-1", pvc, "node-a"),
-	).Build()
-	affected, err = MispinnedPVCs(ctx, c, c, graced)
-	require.NoError(t, err)
-	require.Len(t, affected, 1)
-
-	// volumeName-only pre-binding (no ClaimRef UID back-reference): never
-	// proof, even with the node occupied.
-	prebound := newPVC("datadir-rp-1", "ns", "redpanda", "pv-1")
-	prebound.UID = "pvc-uid-other"
-	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
-		newNode("node-a"), occupant, pod, prebound, boundPV("pv-1", pvc, "node-a"),
-	).Build()
-	affected, err = MispinnedPVCs(ctx, c, c, pod)
-	require.NoError(t, err)
-	require.Empty(t, affected)
-
-	// Exclusion skips both remediation and the Retain patch.
-	c = fake.NewClientBuilder().WithScheme(s).WithObjects(
-		newNode("node-a"), occupant, pod, pvc, boundPV("pv-1", pvc, "node-a"),
-	).Build()
-	affected, err = MispinnedPVCs(ctx, c, c, pod, "datadir-rp-1")
-	require.NoError(t, err)
-	require.Empty(t, affected)
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "pv-1"}, &pv))
-	require.Equal(t, corev1.PersistentVolumeReclaimDelete, pv.Spec.PersistentVolumeReclaimPolicy)
+	require.Empty(t, lost, "network-attached storage is never disk-loss proof")
 }

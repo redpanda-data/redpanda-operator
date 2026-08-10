@@ -27,6 +27,7 @@ import (
 	"maps"
 	"slices"
 	"sort"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -190,11 +191,54 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		return errors.Wrap(err, "listing existing Broker CRs")
 	}
 
-	existingByIndex := IndexBrokers(existing)
-
-	decommissionInFlight := slices.ContainsFunc(existing, func(b redpandav1alpha2.Broker) bool {
+	// Decommission mutual exclusion is CLUSTER-wide (see ClusterSelector):
+	// one disruptive operation at a time across ALL pools, so the in-flight
+	// flag must be computed over every pool's brokers — a pool-scoped view
+	// would let two pools scaled down together start two concurrent
+	// decommissions. DiskLost tombstones mid-decommission count like any other.
+	clusterBrokers, err := s.listClusterBrokers(ctx)
+	if err != nil {
+		return errors.Wrap(err, "listing cluster Broker CRs")
+	}
+	decommissionInFlight := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
 		return b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned
 	})
+	// A decommission must also never START while a rotation holds an
+	// unexpired roll-grant — the grantee's pod may be down mid-roll, and
+	// draining a second broker would take two out at once. This is the
+	// reverse of EnsureRollGrants' hold-while-decommissioning. Grants
+	// stranded on DiskLost tombstones don't count: their holder is already
+	// down either way and EnsureRollGrants revokes them.
+	now := time.Now()
+	rollGrantHeld := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
+		if b.IsDiskLost() {
+			return false
+		}
+		grant := b.Annotations[feature.RollGrant.Key]
+		if grant == "" {
+			return false
+		}
+		_, deadline, ok := feature.ParseRollGrant(grant)
+		return ok && now.Before(deadline)
+	})
+
+	// DiskLost tombstones (dead incarnations) never enter the ordinary
+	// desired/excess matching: once released, a tombstone and its replacement
+	// share a network index and would collide in IndexBrokers. They are
+	// driven by ReconcileDiskLostBrokers instead. Unreleased tombstones still
+	// pin their index — their pod/PVC names are not free yet.
+	live, tombstones := PartitionDiskLostBrokers(existing)
+	existingByIndex := IndexBrokers(live)
+	// The desired loop consumes existingByIndex; the tombstone lifecycle needs
+	// an intact live-by-index view to find replacements.
+	liveByIndex := maps.Clone(existingByIndex)
+
+	pinned := map[int32]bool{}
+	for _, t := range tombstones {
+		if !t.DiskLostReleased() {
+			pinned[ptr.Deref(t.Spec.NetworkIndex, 0)] = true
+		}
+	}
 
 	for i := range desired {
 		d := &desired[i]
@@ -202,6 +246,12 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 
 		existingBroker, ok := existingByIndex[idx]
 		if !ok {
+			if pinned[idx] {
+				// A dead incarnation is still dismantling at this index;
+				// creating the replacement now would collide on pod/PVC
+				// names.
+				continue
+			}
 			if err := s.createBroker(ctx, l, desiredSTS.Name, d); err != nil {
 				return err
 			}
@@ -214,11 +264,113 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 		}
 	}
 
-	if err := s.ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight); err != nil {
+	// Tombstone lifecycle runs BEFORE excess handling so tombstone decommissions
+	// take priority deterministically; it feeds the updated in-flight state
+	// onward.
+	decommissionInFlight, err = s.ReconcileDiskLostBrokers(ctx, l, tombstones, liveByIndex, desiredReplicas, decommissionInFlight, rollGrantHeld)
+	if err != nil {
+		return err
+	}
+
+	if err := s.ReconcileExcessBrokers(ctx, l, existingByIndex, desiredReplicas, decommissionInFlight, rollGrantHeld); err != nil {
 		return err
 	}
 
 	return s.EnsureRollGrants(ctx, l)
+}
+
+// PartitionDiskLostBrokers splits Broker CRs into live brokers and DiskLost
+// tombstones (dead incarnations lingering as decommission records). Tombstones
+// must never enter the ordinary desired/excess paths — after index release,
+// a tombstone and its replacement share a network index and would collide in
+// IndexBrokers. Order is deterministic without sorting: list results arrive
+// name-sorted, which is all the two-tombstones-per-index case (the
+// replacement's node also dies) needs.
+func PartitionDiskLostBrokers(brokers []redpandav1alpha2.Broker) (live []redpandav1alpha2.Broker, tombstones []*redpandav1alpha2.Broker) {
+	for i := range brokers {
+		if brokers[i].IsDiskLost() {
+			tombstones = append(tombstones, &brokers[i])
+			continue
+		}
+		live = append(live, brokers[i])
+	}
+	return live, tombstones
+}
+
+// ReconcileDiskLostBrokers drives dead-incarnation tombstones to completion:
+//
+//  1. a tombstone that reached Decommissioned is deleted — the dedicated
+//     deletion site: tombstones are excluded from both the desired matching
+//     and the excess path, so nothing else would ever delete them;
+//  2. a released tombstone with no recorded BrokerID is deleted outright —
+//     nothing provably registered, so there is nothing to decommission
+//     (resolving by pod name is forbidden: the name may already belong to
+//     the replacement);
+//  3. a released tombstone at a still-desired index is marked for decommission
+//     only once the replacement at that index has registered — the dead id
+//     first would stall on small clusters that cannot re-replicate onto the
+//     survivors;
+//  4. a released tombstone at an undesired index (scale-down / pool deletion)
+//     is marked immediately — no replacement will come.
+//
+// Marks respect the one-disruptive-operation-at-a-time invariant — no
+// concurrent decommission anywhere in the cluster and no unexpired
+// roll-grant — and the updated in-flight state is returned for the excess
+// path.
+func (s *BrokerSet) ReconcileDiskLostBrokers(ctx context.Context, l logr.Logger, tombstones []*redpandav1alpha2.Broker, liveByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight, rollGrantHeld bool) (bool, error) {
+	for _, t := range tombstones {
+		if !t.DeletionTimestamp.IsZero() {
+			continue
+		}
+		if t.Status.Phase == redpandav1alpha2.BrokerPhaseDecommissioned {
+			l.Info("deleting decommissioned DiskLost tombstone", "name", t.Name)
+			if err := s.Client.Delete(ctx, t); err != nil && !apierrors.IsNotFound(err) {
+				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost tombstone %s", t.Name)
+			}
+			continue
+		}
+		if t.Spec.Decommission {
+			// In flight; the Broker controller drives it pod-less against
+			// the recorded id.
+			continue
+		}
+		if !t.DiskLostReleased() {
+			// Still dismantling; its index is pinned above.
+			continue
+		}
+		if t.Status.BrokerID == nil {
+			l.Info("deleting DiskLost tombstone without a recorded node_id; a ghost member may remain and needs manual or ghost decommissioning", "name", t.Name)
+			if err := s.Client.Delete(ctx, t); err != nil && !apierrors.IsNotFound(err) {
+				return decommissionInFlight, errors.Wrapf(err, "deleting DiskLost tombstone %s", t.Name)
+			}
+			continue
+		}
+
+		idx := ptr.Deref(t.Spec.NetworkIndex, 0)
+		if idx < desiredReplicas {
+			// Wait for the replacement to REGISTER, not merely exist:
+			// decommissioning the dead id needs the replacement as a
+			// re-replication target (a 3-node RF=3 cluster cannot drain
+			// onto 2 survivors). Status.BrokerID is the durable signal.
+			replacement := liveByIndex[idx]
+			if replacement == nil || replacement.Status.BrokerID == nil {
+				continue
+			}
+		}
+		if decommissionInFlight || rollGrantHeld {
+			// Never start a second decommission, and never start one while
+			// a rotation holds the roll-grant — one disruptive operation at
+			// a time, cluster-wide.
+			continue
+		}
+		l.Info("marking DiskLost tombstone for decommission of its dead node_id", "name", t.Name, "brokerID", *t.Status.BrokerID)
+		t.Spec.Decommission = true
+		if err := s.Client.Update(ctx, t); err != nil {
+			return decommissionInFlight, errors.Wrapf(err, "setting decommission on DiskLost tombstone %s", t.Name)
+		}
+		decommissionInFlight = true
+	}
+	return decommissionInFlight, nil
 }
 
 // EnsureDesiredBroker reconciles one desired Broker against the existing CR
@@ -248,9 +400,10 @@ func (s *BrokerSet) EnsureDesiredBroker(ctx context.Context, l logr.Logger, exis
 // ReconcileExcessBrokers drives scale-down: excess brokers (index >=
 // desiredReplicas, highest first) are marked for decommission strictly one at
 // a time — any decommission already in flight (including a manual one on a
-// desired index) blocks marking the next one — and deleted once they reach
-// the Decommissioned phase.
-func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, existingByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight bool) error {
+// desired index, in ANY pool) or an unexpired roll-grant held by a rotation
+// blocks marking the next one — and deleted once they reach the
+// Decommissioned phase.
+func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, existingByIndex map[int32]*redpandav1alpha2.Broker, desiredReplicas int32, decommissionInFlight, rollGrantHeld bool) error {
 	var excess []*redpandav1alpha2.Broker
 	for idx, b := range existingByIndex {
 		if idx >= desiredReplicas {
@@ -269,9 +422,10 @@ func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, e
 			}
 			continue
 		}
-		if decommissionInFlight {
-			// A decommission is already in flight (here or anywhere in the
-			// pool) — never start a second one; wait for it to complete.
+		if decommissionInFlight || rollGrantHeld {
+			// A decommission is already in flight (anywhere in the cluster)
+			// or a rotation holds the roll-grant — one disruptive operation
+			// at a time; wait for it to complete.
 			break
 		}
 		l.Info("marking Broker for decommission (scale-down)", "name", b.Name, "index", *b.Spec.NetworkIndex)
@@ -566,15 +720,4 @@ func MarkForRestart(ctx context.Context, c k8sclient.Client, owner k8sclient.Obj
 		}
 	}
 	return nil
-}
-
-// podUnschedulable reports whether the pod cannot be scheduled — the Stuck
-// class that a granted pod+PVC recreation (PV-affinity remediation) can fix.
-func podUnschedulable(pod *corev1.Pod) bool {
-	for _, c := range pod.Status.Conditions {
-		if c.Type == corev1.PodScheduled && c.Status == corev1.ConditionFalse {
-			return true
-		}
-	}
-	return false
 }

@@ -69,6 +69,20 @@ func (b *Broker) PodOutdated(pod *corev1.Pod) bool {
 	return false
 }
 
+// IsDiskLost reports whether this Broker is a dead incarnation: its
+// disk was lost with its node and the CR remains only as the decommission
+// record for its node_id (see BrokerStatus.DiskLost).
+func (b *Broker) IsDiskLost() bool {
+	return b.Status.DiskLost != nil
+}
+
+// DiskLostReleased reports whether a dead incarnation has released its
+// network index: its pod and PVCs are confirmed gone, so a replacement
+// Broker may safely be created under the same pod and PVC names.
+func (b *Broker) DiskLostReleased() bool {
+	return b.Status.DiskLost != nil && b.Status.DiskLost.ResourcesReleased
+}
+
 // Hash returns a deterministic hash of the pod template's SPEC — the
 // rotation identity. Template labels and annotations are excluded: metadata
 // is mutable on live pods and is synced in place by the Broker controller,

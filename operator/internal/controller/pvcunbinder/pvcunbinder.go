@@ -1304,114 +1304,66 @@ func NodeFromPVAffinity(pv *corev1.PersistentVolume) string {
 	return ""
 }
 
-// DeadNodePVCs returns the PVCs attached to the pod whose bound PVs are
-// pinned (HostPath or Local volume with NodeAffinity) to nodes that no
-// longer exist. As a side effect, each affected PV's reclaim policy is
-// patched to Retain so the storage survives PVC deletion.
-//
-// PVC names listed in exclude are skipped entirely — they are neither
-// returned nor Retain-patched. Callers that will not remediate a claim
-// (e.g. externally-managed ExistingClaims) must exclude it here: flipping
-// the reclaim policy of a PV the caller then declines to touch would
-// silently override an admin's `Delete` policy and strand Released volumes.
+// LostDiskClaims returns the pod's PVC-backed claims that are bound to
+// HostPath/Local PVs pinned (NodeAffinity) to Kubernetes nodes that no
+// longer exist — the dead-node proof for the Broker controller's DiskLost
+// marking. Read-only: it proves loss and mutates nothing. Unlike the
+// StatefulSet-mode unbinder it takes no exclude list — a lost disk is a
+// lost disk regardless of who provisioned the claim (migrated brokers
+// carry their data claim as an ExistingClaim and must still qualify).
 //
 // Node existence is judged by the kubernetes.io/hostname label (the value
 // PV NodeAffinity carries), not by Node object name — the two differ under
 // kubelet --hostname-override.
 //
-// apiReader must be an uncached client for accurate Node existence checks.
-func DeadNodePVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
-	return remediablePVCs(ctx, c, c, pod, exclude, func(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolume, bool, error) {
-		if pvc.Spec.VolumeName == "" {
-			return nil, false, nil
-		}
-		var pv corev1.PersistentVolume
-		if err := c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
-			return nil, false, err
-		}
-		if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
-			return nil, false, nil
-		}
-		hostname := NodeFromPVAffinity(&pv)
-		if hostname == "" {
-			return nil, false, nil
-		}
-		// PV NodeAffinity carries the kubernetes.io/hostname LABEL value.
-		// Resolve the node by that label, never by object name: under
-		// kubelet --hostname-override the two differ, and a name-based Get
-		// would report a live node as gone — authorizing PVC deletion for
-		// a healthy broker.
-		var nodeList corev1.NodeList
-		if err := apiReader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
-			return nil, false, err
-		}
-		if len(nodeList.Items) > 0 {
-			return nil, false, nil
-		}
-		return &pv, true, nil
-	})
-}
-
-// remediablePVCs walks the pod's PVC-backed volumes, skipping claims named in
-// exclude, reads each claim via pvcReader, and collects those for which proof
-// returns (pv, true) — Retain-patching that PV first so storage survives
-// claim deletion.
-func remediablePVCs(ctx context.Context, c client.Client, pvcReader client.Reader, pod *corev1.Pod, exclude []string, proof func(context.Context, *corev1.PersistentVolumeClaim) (*corev1.PersistentVolume, bool, error)) ([]corev1.PersistentVolumeClaim, error) {
-	l := log.FromContext(ctx)
+// reader must be an uncached client: the result authorizes the terminal
+// DiskLost marking, and a stale Node view could declare a live node gone.
+func LostDiskClaims(ctx context.Context, reader client.Reader, pod *corev1.Pod) ([]corev1.PersistentVolumeClaim, error) {
 	var affected []corev1.PersistentVolumeClaim
 	for i := range pod.Spec.Volumes {
 		src := pod.Spec.Volumes[i].PersistentVolumeClaim
-		if src == nil || slices.Contains(exclude, src.ClaimName) {
+		if src == nil {
 			continue
 		}
 		var pvc corev1.PersistentVolumeClaim
-		if err := pvcReader.Get(ctx, client.ObjectKey{Name: src.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
+		if err := reader.Get(ctx, client.ObjectKey{Name: src.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
 			return nil, err
 		}
-		pv, remediable, err := proof(ctx, &pvc)
-		if err != nil {
-			return nil, err
-		}
-		if !remediable {
+		if pvc.Spec.VolumeName == "" {
 			continue
 		}
-		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimRetain {
-			patch := client.StrategicMergeFrom(pv.DeepCopy(), &client.MergeFromWithOptimisticLock{})
-			pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
-			if err := c.Patch(ctx, pv, patch); err != nil {
-				return nil, fmt.Errorf("patching PV %s to Retain: %w", pv.Name, err)
+		var pv corev1.PersistentVolume
+		if err := reader.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
 			}
-			l.Info("patched PV to Retain", "pv", pv.Name)
+			return nil, err
+		}
+		if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
+			continue
+		}
+		hostname := NodeFromPVAffinity(&pv)
+		if hostname == "" {
+			continue
+		}
+		// PV NodeAffinity carries the kubernetes.io/hostname LABEL value.
+		// Resolve the node by that label, never by object name: under
+		// kubelet --hostname-override the two differ, and a name-based Get
+		// would report a live node as gone — authorizing the terminal
+		// marking of a healthy broker.
+		var nodeList corev1.NodeList
+		if err := reader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
+			return nil, err
+		}
+		if len(nodeList.Items) > 0 {
+			continue
 		}
 		affected = append(affected, pvc)
 	}
 	return affected, nil
-}
-
-// MispinnedPVCs is the live-node sibling of [DeadNodePVCs]: it returns the
-// pod's claims bound (proven by the PV's ClaimRef back-reference) to
-// HostPath/Local PVs whose EVERY NodeAffinity-eligible node is unavailable
-// to the pod — gone, cordoned, NotReady/unreachable judged through the
-// toleration lens (tolerate-forever pods never treat transient
-// unreachability as proof), or occupied by a live pod matching one of the
-// pod's own required anti-affinity terms. This is the mis-provisioning
-// shape where a PV lands on a node another broker occupies and the pod can
-// never schedule anywhere.
-//
-// As with DeadNodePVCs, each affected PV is Retain-patched so storage
-// survives PVC deletion, and claims named in exclude are neither returned
-// nor Retain-patched.
-//
-// Every evidence read goes through apiReader (uncached): the result
-// authorizes destructive deletion, and a stale occupant, node, or claim
-// view could manufacture proof of a conflict that no longer exists.
-func MispinnedPVCs(ctx context.Context, c client.Client, apiReader client.Reader, pod *corev1.Pod, exclude ...string) ([]corev1.PersistentVolumeClaim, error) {
-	return remediablePVCs(ctx, c, apiReader, pod, exclude, func(ctx context.Context, pvc *corev1.PersistentVolumeClaim) (*corev1.PersistentVolume, bool, error) {
-		return claimMispinnedForPod(ctx, apiReader, apiReader, pvc, pod)
-	})
 }
 
 // listClusterPVCsByName returns a name→PVC snapshot for the PVCs that
