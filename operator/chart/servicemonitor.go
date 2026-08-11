@@ -25,10 +25,15 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 		return nil
 	}
 
+	// Render the scheme as lowercase. The prometheus-operator typed constants
+	// (monitoringv1.SchemeHTTP / SchemeHTTPS) resolve to "HTTP" / "HTTPS",
+	// which older prometheus-operator CRDs reject with
+	// `spec.endpoints[0].scheme: Unsupported value`. Lowercase works on every
+	// version. See #1511.
 	endpoint := monitoringv1.Endpoint{
 		Port:   "https",
 		Path:   "/metrics",
-		Scheme: ptr.To(monitoringv1.SchemeHTTPS),
+		Scheme: ptr.To(monitoringv1.Scheme("https")),
 		HTTPConfigWithProxyAndTLSFiles: monitoringv1.HTTPConfigWithProxyAndTLSFiles{
 			HTTPConfigWithTLSFiles: monitoringv1.HTTPConfigWithTLSFiles{
 				TLSConfig: &monitoringv1.TLSConfig{
