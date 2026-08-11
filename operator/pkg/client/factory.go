@@ -11,6 +11,7 @@ package client
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -25,6 +26,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -689,7 +691,56 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 	}
 
 	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
-		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
+		ref := source.GetClusterRef()
+		if ref == nil {
+			return nil, nil
+		}
+
+		namespace := ref.GetNamespace(obj.GetNamespace())
+
+		// A NodePool reference (e.g. a Broker of a NodePool pool, per the
+		// Broker CRD RFC's ownership table) resolves to the underlying
+		// cluster through the NodePool's own clusterRef — one hop only.
+		if ref.IsNodePool() {
+			client, err := c.GetClient(ctx, clusterName)
+			if err != nil {
+				return nil, err
+			}
+
+			var pool redpandav1alpha2.NodePool
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &pool); err != nil {
+				if apierrors.IsNotFound(err) {
+					// The NodePool may be legitimately gone while its Brokers
+					// drain (pool removed from the spec — NodePool deletion is
+					// not gated on the drain). Per the ownership table the
+					// referencing object's controller owner IS the cluster, so
+					// fall back to it; the drain's decommissions depend on this
+					// resolution.
+					if owner := metav1.GetControllerOf(obj); owner != nil &&
+						owner.Kind == "Redpanda" &&
+						strings.SplitN(owner.APIVersion, "/", 2)[0] == redpandav1alpha2.GroupVersion.Group {
+						var cluster redpandav1alpha2.Redpanda
+						if err := client.Get(ctx, types.NamespacedName{Namespace: obj.GetNamespace(), Name: owner.Name}, &cluster); err != nil {
+							if apierrors.IsNotFound(err) {
+								return nil, ErrInvalidClusterRef
+							}
+							return nil, err
+						}
+						return &cluster, nil
+					}
+					return nil, ErrInvalidClusterRef
+				}
+				return nil, err
+			}
+
+			if !pool.Spec.ClusterRef.IsV2() {
+				return nil, ErrInvalidClusterRef
+			}
+			ref = &pool.Spec.ClusterRef
+			namespace = ref.GetNamespace(pool.Namespace)
+		}
+
+		if ref.IsV2() {
 			var cluster redpandav1alpha2.Redpanda
 
 			client, err := c.GetClient(ctx, clusterName)
@@ -697,7 +748,7 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 				return nil, err
 			}
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
+			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &cluster); err != nil {
 				if apierrors.IsNotFound(err) {
 					return nil, ErrInvalidClusterRef
 				}

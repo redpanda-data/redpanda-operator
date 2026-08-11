@@ -13,6 +13,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 	"time"
@@ -557,6 +558,35 @@ func removeAnnotationFromV1Cluster(ctx context.Context, t framework.TestingT, an
 	t.Logf("Removed annotation %s from V1 cluster %q", annotationKey, clusterName)
 }
 
+func setAnnotationOnRedpanda(ctx context.Context, t framework.TestingT, annotationKey, annotationValue, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var cluster redpandav1alpha2.Redpanda
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			return err
+		}
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations[annotationKey] = annotationValue
+		return t.Update(ctx, &cluster)
+	}))
+	t.Logf("Set annotation %s=%s on Redpanda %q", annotationKey, annotationValue, clusterName)
+}
+
+func removeAnnotationFromRedpanda(ctx context.Context, t framework.TestingT, annotationKey, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var cluster redpandav1alpha2.Redpanda
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			return err
+		}
+		delete(cluster.Annotations, annotationKey)
+		return t.Update(ctx, &cluster)
+	}))
+	t.Logf("Removed annotation %s from Redpanda %q", annotationKey, clusterName)
+}
+
 func statefulSetShouldExistForCluster(ctx context.Context, t framework.TestingT, clusterName string) {
 	key := t.ResourceKey(clusterName)
 	var stsList appsv1.StatefulSetList
@@ -616,15 +646,33 @@ func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, cluster
 	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
 
 	key := t.ResourceKey(clusterName)
-	var pods corev1.PodList
-	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
-		"app.kubernetes.io/instance": clusterName,
-		"app.kubernetes.io/name":     "redpanda",
-	}))
-	current := map[string]string{}
-	for _, p := range pods.Items {
-		current[p.Name] = string(p.UID)
-	}
+	// The pod set is eventually consistent with the step sequence around it:
+	// after a scale-down the excess pod lingers in Terminating for its grace
+	// period after its Broker CR (and admin-API membership) are already gone.
+	// Extra or lagging pods converge, so retry on them; a CHANGED UID on a
+	// snapshotted pod never converges (the pod was restarted), so bail out
+	// immediately and let the assertion below report it.
+	var current map[string]string
+	require.Eventually(t, func() bool {
+		var pods corev1.PodList
+		if err := t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+			"app.kubernetes.io/name":     "redpanda",
+		}); err != nil {
+			t.Logf("failed to list pods: %v", err)
+			return false
+		}
+		current = map[string]string{}
+		for _, p := range pods.Items {
+			current[p.Name] = string(p.UID)
+		}
+		for name, oldUID := range snap {
+			if newUID, ok := current[name]; ok && newUID != oldUID {
+				return true
+			}
+		}
+		return maps.Equal(snap, current)
+	}, 2*time.Minute, 2*time.Second, "pod set for cluster %q never converged to the UID snapshot; snapshot: %v, last seen: %v", clusterName, snap, current)
 	for name, oldUID := range snap {
 		newUID, exists := current[name]
 		if !exists {

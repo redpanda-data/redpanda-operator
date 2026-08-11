@@ -511,6 +511,7 @@ func Run(
 			ClientFactory:                  factory,
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
+			BrokerCREnabled:                opts.enableBrokerController,
 			PostRestartCaughtUpPercent:     opts.postRestartCaughtUpPercent,
 			MaintenanceModeClearThreshold:  opts.clearMaintenanceModeAfter,
 			StaleDiskWipeNotReadyThreshold: opts.wipeStaleDiskAfter,
