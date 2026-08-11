@@ -1090,6 +1090,15 @@ func TestBrokersFromStatefulSetPodNameConsistency(t *testing.T) {
 				assert.Equal(t, fmt.Sprintf("%s-%d", tc.stsName, *b.Spec.NetworkIndex), b.PodName())
 				assert.Equal(t, b.Spec.PodTemplate.Spec.Hostname, b.PodName(),
 					"PodName must match the hostname the renderer stamps")
+
+				// Broker-created pods must be indistinguishable from
+				// StatefulSet-created ones: external tooling selects on the
+				// STS-injected identity labels.
+				assert.Equal(t, b.PodName(), b.Spec.PodTemplate.Labels[appsv1.StatefulSetPodNameLabel])
+				assert.Equal(t, fmt.Sprintf("%d", *b.Spec.NetworkIndex), b.Spec.PodTemplate.Labels[appsv1.PodIndexLabel])
+				// The CR itself is not a pod: identity labels stay off it.
+				assert.NotContains(t, b.Labels, appsv1.StatefulSetPodNameLabel)
+				assert.NotContains(t, b.Labels, appsv1.PodIndexLabel)
 			}
 		})
 	}

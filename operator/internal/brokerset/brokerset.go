@@ -548,6 +548,16 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 		brokerLabels := maps.Clone(s.BrokerLabels)
 		brokerLabels[NetworkIndexLabelKey] = fmt.Sprintf("%d", i)
 
+		// Broker-created pods carry the same identity labels the StatefulSet
+		// controller injects on the pods it creates: external tooling (cloud
+		// control planes, per-broker Service selectors, ordinal fieldRefs)
+		// selects on them, and pods must be indistinguishable across
+		// pod-management flavors. Pod-template only — a Broker CR is not a
+		// pod, and its non-ordinal name is not a pod name.
+		podLabels := maps.Clone(brokerLabels)
+		podLabels[appsv1.StatefulSetPodNameLabel] = podName
+		podLabels[appsv1.PodIndexLabel] = fmt.Sprintf("%d", i)
+
 		storage := redpandav1alpha2.BrokerStorage{
 			VolumeClaimTemplates: brokerVCTs,
 		}
@@ -571,7 +581,7 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 		}
 
 		podTemplate := redpandav1alpha2.BrokerPodTemplate{
-			Labels:      brokerLabels,
+			Labels:      podLabels,
 			Annotations: podAnnotations,
 			Spec:        podSpec,
 		}
