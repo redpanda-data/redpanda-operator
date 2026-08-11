@@ -352,6 +352,13 @@ const (
 	// management). Not exposed in public docs — intended for internal/cloud
 	// use only.
 	AnnotationUseBrokerCR = "operator.redpanda.com/use-broker-cr"
+
+	// BrokerMigrationConditionType tracks StatefulSet→Broker CR migration
+	// progress on a Redpanda's status. It is a standalone condition — written
+	// only on clusters that migrate, deliberately outside the generated
+	// condition system (it needs several True-polarity reasons: Complete,
+	// RolledBack) — and matches the V1 Cluster's condition of the same name.
+	BrokerMigrationConditionType = "BrokerMigration"
 )
 
 func (c *ClusterRef) GetGroup() string {

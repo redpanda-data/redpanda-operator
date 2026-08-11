@@ -34,6 +34,20 @@ var V1UseBrokerCR = Register(V1Flags, AnnotationFeatureFlag[bool]{
 	},
 })
 
+// V2UseBrokerCR controls whether a V2 Redpanda creates Broker CRs instead of
+// StatefulSets — the same annotation as V1UseBrokerCR, applied to Redpanda
+// resources. Deliberately NOT registered in the V2 bundle: SetDefaults would
+// stamp "false" onto every Redpanda and re-add the annotation whenever a user
+// removes it, and removal is the documented rollback trigger.
+// Valid Value(s): true
+var V2UseBrokerCR = &AnnotationFeatureFlag[bool]{
+	Key:     "operator.redpanda.com/use-broker-cr",
+	Default: "false",
+	Parse: func(s string) (bool, error) {
+		return s == "true", nil
+	},
+}
+
 // V1Managed controls whether a Cluster resource is
 // reconciled or by the cluster controller(s) or not.
 // Valid Value(s): false

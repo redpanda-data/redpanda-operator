@@ -740,7 +740,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	if restartOnConfigChange {
 		injectedConfigVersion = sc.Status.ConfigVersion
 	}
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, brokerPoolsObserved)
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, sccluster, injectedConfigVersion, brokerPoolsObserved, false)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err

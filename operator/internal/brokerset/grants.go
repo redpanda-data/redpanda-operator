@@ -163,10 +163,7 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 		// restart-requiring config change was being rolled out, it has now
 		// reached every pod (V1 clears Restarting via OnQuiesced — the
 		// broker-mode counterpart of the StatefulSet rolling-update path).
-		if s.OnQuiesced != nil {
-			return s.OnQuiesced(ctx)
-		}
-		return nil
+		return s.Hooks.OnQuiesced(ctx)
 	}
 	if decommissionInFlight {
 		// Decommission progress is observed via Broker status updates, which
@@ -192,10 +189,8 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 
 	// RFC step 1: confirm cluster health before granting. Returns a
 	// RequeueAfterError when unhealthy.
-	if s.IsClusterHealthy != nil {
-		if err := s.IsClusterHealthy(ctx); err != nil {
-			return err
-		}
+	if err := s.Hooks.IsClusterHealthy(ctx); err != nil {
+		return err
 	}
 
 	granted := candidates[0]

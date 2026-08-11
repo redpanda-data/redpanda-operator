@@ -159,19 +159,8 @@ type BrokerSet struct {
 	// rotation-identity keys.
 	ConfigChecksumKey string
 
-	// IsClusterHealthy gates roll-grant issuance and the migration's
-	// destructive step. Return a *RequeueAfterError when unhealthy so the
-	// owning reconciler backs off instead of erroring. nil means
-	// always-healthy (tests only).
-	IsClusterHealthy func(ctx context.Context) error
-	// OnQuiesced runs when no rolls are outstanding and no grants are active
-	// (V1 clears Status.Restarting here). Optional.
-	OnQuiesced func(ctx context.Context) error
-	// MigrationBlockedReason contributes owner-specific quiescence checks to
-	// the migration preconditions (V1: cluster restarting, decommission
-	// recorded in status). Return a non-empty human-readable reason to block
-	// the migration this pass. Optional.
-	MigrationBlockedReason func(ctx context.Context) (string, error)
+	// Hooks supplies the owning CR's view of cluster state. Required.
+	Hooks OwnerHooks
 	// Reporter records migration progress. Optional.
 	Reporter MigrationReporter
 	// Arbitration shares this reconcile pass's in-memory disruptive-write
@@ -182,6 +171,37 @@ type BrokerSet struct {
 
 	Logger logr.Logger
 }
+
+// OwnerHooks supplies the owner-CR-specific behavior the engine cannot
+// derive itself: admin-level health, roll bookkeeping, and owner-side
+// quiescence checks. One implementation exists per owning CR (V1 Cluster:
+// resources.BrokerSetResource, V2 Redpanda: the reconciler's per-pass
+// hooks); NopHooks serves tests.
+type OwnerHooks interface {
+	// IsClusterHealthy gates roll-grant issuance and the migration's
+	// destructive step. Return a *RequeueAfterError when unhealthy so the
+	// owning reconciler backs off instead of erroring.
+	IsClusterHealthy(ctx context.Context) error
+	// OnQuiesced runs when no rolls are outstanding and no grants are
+	// active (V1 clears Status.Restarting here). Owners with no roll
+	// bookkeeping return nil.
+	OnQuiesced(ctx context.Context) error
+	// MigrationBlockedReason contributes owner-specific quiescence checks
+	// to the migration preconditions (V1: cluster restarting, decommission
+	// recorded in status). Return a non-empty human-readable reason to
+	// block the migration this pass.
+	MigrationBlockedReason(ctx context.Context) (string, error)
+}
+
+// NopHooks is an always-healthy, never-blocked OwnerHooks with no
+// quiescence bookkeeping — for tests.
+type NopHooks struct{}
+
+func (NopHooks) IsClusterHealthy(context.Context) error { return nil }
+
+func (NopHooks) OnQuiesced(context.Context) error { return nil }
+
+func (NopHooks) MigrationBlockedReason(context.Context) (string, error) { return "", nil }
 
 // report is the nil-safe Reporter.Report.
 func (s *BrokerSet) report(ctx context.Context, status corev1.ConditionStatus, reason, message string) {
@@ -702,12 +722,19 @@ func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, d
 	policyChanged := desiredPolicy != existingPolicy || desiredPolicySet != existingPolicySet
 
 	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) &&
+		equality.Semantic.DeepEqual(existing.Spec.ClusterRef, desired.Spec.ClusterRef) &&
 		!policyChanged {
 		return nil
 	}
 	// Spec.Decommission is deliberately not synced: decommission intent is
 	// never unset by the operator, not even when the index is desired again.
 	// Terminal brokers at desired indices are replaced by EnsureDesiredBroker.
+	//
+	// ClusterRef IS synced — Broker specs belong to the cluster controller
+	// (RFC separation of concerns); in practice this normalizes
+	// representation drift (e.g. stamping a previously-defaulted kind) and
+	// re-parents Brokers when the ownership model evolves.
+	existing.Spec.ClusterRef = desired.Spec.ClusterRef
 	existing.Spec.PodTemplate = desired.Spec.PodTemplate
 	if desiredPolicySet {
 		if existing.Annotations == nil {

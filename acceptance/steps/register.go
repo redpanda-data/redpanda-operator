@@ -203,6 +203,8 @@ func init() {
 	framework.RegisterStep(`^a StatefulSet should eventually exist for cluster "([^"]*)"$`, statefulSetShouldEventuallyExistForCluster)
 	framework.RegisterStep(`^I set annotation "([^"]*)" to "([^"]*)" on V1 cluster "([^"]*)"$`, setAnnotationOnV1Cluster)
 	framework.RegisterStep(`^I remove annotation "([^"]*)" from V1 cluster "([^"]*)"$`, removeAnnotationFromV1Cluster)
+	framework.RegisterStep(`^I set annotation "([^"]*)" to "([^"]*)" on Redpanda "([^"]*)"$`, setAnnotationOnRedpanda)
+	framework.RegisterStep(`^I remove annotation "([^"]*)" from Redpanda "([^"]*)"$`, removeAnnotationFromRedpanda)
 	framework.RegisterStep(`^I set decommission on Broker "([^"]*)"$`, setDecommissionOnBroker)
 	framework.RegisterStep(`^I set decommission on the Broker with index (\d+) of cluster "([^"]*)"$`, setDecommissionOnBrokerWithIndex)
 	framework.RegisterStep(`^the Broker with index (\d+) of cluster "([^"]*)" should be replaced$`, brokerWithIndexShouldBeReplaced)

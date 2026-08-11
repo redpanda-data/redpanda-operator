@@ -133,6 +133,11 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
+			// Enables the annotation-driven V2 migration/rollback tests.
+			// Inert for the manually-choreographed tests: their clusters are
+			// paused (cluster.redpanda.com/managed=false) before Broker CRs
+			// are hand-built, so the reconciler never sees them.
+			BrokerCREnabled: true,
 		}).SetupWithManager(ctx, mgr, ""))
 
 		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)

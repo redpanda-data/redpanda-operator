@@ -117,6 +117,13 @@ outer:
 // synthesized spec is minimal (name and zero replicas): a deleted
 // broker-backed pool renders no desired brokers, so the drain path never
 // consults the rest of the spec (see BrokerSetResource.Ensure).
+//
+// Use this instead of GetNodePools on every broker-mode reconcile path —
+// not just during migration or rollback: Broker CRs outlive their pool's
+// StatefulSet permanently, so listing only spec pools would drop a deleted
+// broker-backed pool and orphan its brokers instead of draining them.
+// Callers that only care about pools present in the spec should use
+// GetNodePools.
 func GetNodePoolsWithBrokerBacked(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
 	pools, err := GetNodePools(ctx, cluster, k8sClient)
 	if err != nil {
