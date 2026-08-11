@@ -277,8 +277,8 @@ Run `task generate:third-party-licenses-list`.
 | golang.org/x/mod/semver | [BSD-3-Clause](https://go.googlesource.com/mod/+/v0.35.0/LICENSE) |
 | golang.org/x/net | [BSD-3-Clause](https://go.googlesource.com/net/+/v0.54.0/LICENSE) |
 | golang.org/x/oauth2 | [BSD-3-Clause](https://go.googlesource.com/oauth2/+/v0.36.0/LICENSE) |
-| golang.org/x/sync | [BSD-3-Clause](https://go.googlesource.com/sync/+/v0.20.0/LICENSE) |
-| golang.org/x/sys | [BSD-3-Clause](https://go.googlesource.com/sys/+/v0.45.0/LICENSE) |
+| golang.org/x/sync | [BSD-3-Clause](https://go.googlesource.com/sync/+/v0.22.0/LICENSE) |
+| golang.org/x/sys | [BSD-3-Clause](https://go.googlesource.com/sys/+/v0.47.0/LICENSE) |
 | golang.org/x/term | [BSD-3-Clause](https://go.googlesource.com/term/+/v0.43.0/LICENSE) |
 | golang.org/x/text | [BSD-3-Clause](https://go.googlesource.com/text/+/v0.37.0/LICENSE) |
 | golang.org/x/time/rate | [BSD-3-Clause](https://go.googlesource.com/time/+/v0.15.0/LICENSE) |
