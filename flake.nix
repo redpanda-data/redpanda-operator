@@ -49,6 +49,20 @@
           # nix commands. e.g. nix copy .#devshell.
           packages.devshell = self'.devShells.default;
 
+          packages.envtest-shim = pkgs.buildGoModule {
+            name = "envtest-shim";
+
+            src = ./reaper;
+            vendorHash = "sha256-at1aAaxyk07gdZpFnyhTIQS0qtiLHkQK839F6PC06EQ=";
+
+            postInstall = ''
+              mkdir -p $out/shims/
+              ln -s $out/bin/reaper $out/shims/etcd
+              ln -s $out/bin/reaper $out/shims/kube-apiserver
+            '';
+          };
+
+
           devshells.default = {
             env = [
               { name = "CGO_ENABLED"; value = "0"; }
@@ -56,6 +70,10 @@
               # Prevent go from downloading toolchains other than the one pinned by nix.
               # See https://go.dev/doc/toolchain#select
               { name = "GOTOOLCHAIN"; value = "local"; }
+              # Force KUBEBUILDER_ASSETS to run through a shim that ensures
+              # long running processes are terminated rather than orphaned.
+              { name = "TEST_ASSET_ETCD"; value = "${self'.packages.envtest-shim}/shims/etcd"; }
+              { name = "TEST_ASSET_KUBE_APISERVER"; value = "${self'.packages.envtest-shim}/shims/kube-apiserver"; }
               { name = "KUBEBUILDER_ASSETS"; eval = "$(setup-envtest use -p path 1.32.x)"; }
               { name = "PATH"; eval = "$(pwd)/.build:$PATH"; }
               { name = "TEST_CERTMANAGER_VERSION"; eval = "v1.14.2"; }
@@ -78,6 +96,7 @@
             # If the version of the installed binary is important make sure to
             # update TestToolVersions.
             packages = [
+              self'.packages.envtest-shim
               pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               pkgs.awscli2
               pkgs.backport
