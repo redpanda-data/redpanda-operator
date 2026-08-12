@@ -11,7 +11,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $endpoint := (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "tlsConfig" (mustMergeOverwrite (dict "ca" (dict) "cert" (dict)) (mustMergeOverwrite (dict "ca" (dict) "cert" (dict)) (dict "insecureSkipVerify" true)) (dict)))) (dict)) (dict "port" "https" "path" "/metrics" "scheme" "HTTPS" "bearerTokenFile" "/var/run/secrets/kubernetes.io/serviceaccount/token")) -}}
+{{- $endpoint := (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "tlsConfig" (mustMergeOverwrite (dict "ca" (dict) "cert" (dict)) (mustMergeOverwrite (dict "ca" (dict) "cert" (dict)) (dict "insecureSkipVerify" true)) (dict)))) (dict)) (dict "port" "https" "path" "/metrics" "scheme" (toString "https") "bearerTokenFile" "/var/run/secrets/kubernetes.io/serviceaccount/token")) -}}
 {{- if (ne $values.monitoring.scrapeInterval "") -}}
 {{- $_ := (set $endpoint "interval" (toString $values.monitoring.scrapeInterval)) -}}
 {{- end -}}
