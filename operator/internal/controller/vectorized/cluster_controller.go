@@ -268,7 +268,7 @@ func (r *ClusterReconciler) Reconcile(
 
 	if r.BrokerCREnabled {
 		if brokerMode {
-			if err = ar.brokerSet(cfg); err != nil {
+			if err = ar.brokerSet(ctx, cfg); err != nil {
 				return ctrl.Result{}, fmt.Errorf("creating broker sets: %w", err)
 			}
 		} else {

@@ -467,7 +467,7 @@ func (a *attachedResources) getStatefulSet(cfg *clusterconfiguration.CombinedCfg
 	return out, nil
 }
 
-func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) error {
+func (a *attachedResources) brokerSet(ctx context.Context, cfg *clusterconfiguration.CombinedCfg) error {
 	pki, err := a.getPKI()
 	if err != nil {
 		return err
@@ -476,7 +476,7 @@ func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) err
 	// Broker-aware: deleted pools whose StatefulSet is gone (migrated, then
 	// removed from spec.nodePools) are reconstructed from their Broker CRs so
 	// they still get a BrokerSetResource to drain them.
-	nps, err := nodepools.GetNodePoolsWithBrokerBacked(context.TODO(), a.cluster, a.reconciler.Client)
+	nps, err := nodepools.GetNodePoolsWithBrokerBacked(ctx, a.cluster, a.reconciler.Client)
 	if err != nil {
 		return fmt.Errorf("while getting node pools: %w", err)
 	}
