@@ -576,9 +576,6 @@ kind: StretchCluster
 metadata:
   name: cluster
   namespace: default
-spec:
-  monitoring:
-    enabled: true
 ---
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: RedpandaBrokerPool
@@ -591,6 +588,11 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+  monitoring:
+    enabled: true
+    scrapeInterval: 30s
+    labels:
+      release: kube-prometheus-stack
 -- storage-hostpath --
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: StretchCluster
@@ -1042,8 +1044,6 @@ spec:
       port: 33145
       tls:
         cert: default
-  monitoring:
-    enabled: true
   auditLogging:
     enabled: true
   storage:
@@ -1089,6 +1089,8 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 3
+  monitoring:
+    enabled: true
   additionalRedpandaCmdFlags:
     - "--idle-poll-time-us=0"
   additionalSelectorLabels:
@@ -1108,6 +1110,8 @@ spec:
     kind: StretchCluster
     name: cluster
   replicas: 2
+  monitoring:
+    enabled: true
   additionalSelectorLabels:
     tier: cold
 -- flat-network --

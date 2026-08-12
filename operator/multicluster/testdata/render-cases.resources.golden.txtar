@@ -11778,7 +11778,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured
     namespace: full-featured
@@ -11813,6 +11813,60 @@
     type: ClusterIP
   status:
     loadBalancer: {}
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold
+    namespace: full-featured
+  spec:
+    endpoints:
+    - path: /public_metrics
+      port: admin
+      scheme: https
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: full-featured
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-hot
+    namespace: full-featured
+  spec:
+    endpoints:
+    - path: /public_metrics
+      port: admin
+      scheme: https
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: full-featured
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
 - apiVersion: v1
   data:
     .bootstrap.json.in: '{"audit_enabled":"true","cloud_storage_bucket":"\"prod-tiered\"","cloud_storage_cache_size":"21474836480","cloud_storage_credentials_source":"\"aws_instance_metadata\"","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"true","cloud_storage_region":"\"us-east-1\"","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"true","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"true","log_segment_size":"134217728","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"5368709120","superusers":"[\"kubernetes-controller\"]"}'
@@ -13200,7 +13254,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-cold-0
     namespace: full-featured
@@ -13247,7 +13301,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-cold-1
     namespace: full-featured
@@ -13294,7 +13348,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-hot-0
     namespace: full-featured
@@ -13341,7 +13395,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-hot-1
     namespace: full-featured
@@ -13388,7 +13442,7 @@
       app.kubernetes.io/instance: full-featured
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
       team: data-platform
     name: full-featured-pool-hot-2
     namespace: full-featured
@@ -18848,7 +18902,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring
     namespace: monitoring
   spec:
@@ -18882,6 +18936,34 @@
     type: ClusterIP
   status:
     loadBalancer: {}
+- apiVersion: monitoring.coreos.com/v1
+  kind: ServiceMonitor
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: monitoring
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      release: kube-prometheus-stack
+    name: monitoring-pool-a
+    namespace: monitoring
+  spec:
+    endpoints:
+    - interval: 30s
+      path: /public_metrics
+      port: admin
+      scheme: https
+      tlsConfig:
+        ca: {}
+        cert: {}
+        insecureSkipVerify: true
+    namespaceSelector: {}
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: monitoring
+        app.kubernetes.io/name: redpanda
+        monitoring.redpanda.com/enabled: "true"
 - apiVersion: v1
   data:
     .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
@@ -19505,7 +19587,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring-pool-a-0
     namespace: monitoring
   spec:
@@ -19550,7 +19632,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring-pool-a-1
     namespace: monitoring
   spec:
@@ -19595,7 +19677,7 @@
       app.kubernetes.io/instance: monitoring
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-      monitoring.redpanda.com/enabled: "false"
+      monitoring.redpanda.com/enabled: "true"
     name: monitoring-pool-a-2
     namespace: monitoring
   spec:
