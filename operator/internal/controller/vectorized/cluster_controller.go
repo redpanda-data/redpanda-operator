@@ -648,7 +648,15 @@ func (r *ClusterReconciler) reportStatus(
 		for pool, nps := range perPool {
 			nodePoolStatus[pool] = *nps
 		}
+		// Status.Version records what is ROLLED OUT, not what was requested —
+		// the broker-mode counterpart of the StatefulSet path's
+		// CurrentVersion. Stamping the spec version early would defeat the
+		// UpgradeInProgress guard in getQuiescentCondition: Spec.Version and
+		// Status.Version would match from the first pass of an upgrade, and
+		// OperatorQuiescent would report True (bumping ObservedGeneration)
+		// throughout the serialized restart.
 		version = redpandaCluster.Spec.Version
+		versionErr = brokerRolloutIncomplete(redpandaCluster, brokerList.Items, observedPods.Items)
 	} else {
 		if len(stSets) == 0 {
 			r.Log.Info("no stateful sets found")
@@ -710,6 +718,51 @@ func (r *ClusterReconciler) reportStatus(
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update cluster status: %w", err)
+	}
+	return nil
+}
+
+// brokerRolloutIncomplete reports whether the spec version may be recorded
+// as the cluster's rolled-out version in broker mode, mirroring
+// StatefulSetResource.CurrentVersion: nil only when every live (non-DiskLost)
+// Broker's pod exists, is Ready, runs the spec image, and the live Broker
+// count matches the desired replicas. While it returns an error,
+// reportStatus withholds the Status.Version stamp, so Status.Version lags
+// the roll and getQuiescentCondition's UpgradeInProgress guard covers the
+// whole span — including the instants between two grants when every pod
+// briefly reports Ready.
+func brokerRolloutIncomplete(cluster *vectorizedv1alpha1.Cluster, brokers []redpandav1alpha2.Broker, pods []corev1.Pod) error {
+	podsByName := make(map[string]*corev1.Pod, len(pods))
+	for i := range pods {
+		podsByName[pods[i].Name] = &pods[i]
+	}
+
+	live := int32(0)
+	for i := range brokers {
+		b := &brokers[i]
+		if b.IsDiskLost() {
+			// A dead incarnation has no pod to converge; its replacement is
+			// counted separately once created.
+			continue
+		}
+		live++
+		pod, ok := podsByName[b.PodName()]
+		if !ok {
+			//nolint:goerr113 // transient rollout progress, never matched on
+			return fmt.Errorf("rollout incomplete: Broker %s has no pod %s", b.Name, b.PodName())
+		}
+		if !utils.IsPodReady(pod) {
+			//nolint:goerr113 // transient rollout progress, never matched on
+			return fmt.Errorf("rollout incomplete: pod %s is not READY", pod.Name)
+		}
+		if podVersion := resources.RedpandaContainerVersion(pod.Spec.Containers); podVersion != cluster.Spec.Version {
+			//nolint:goerr113 // transient rollout progress, never matched on
+			return fmt.Errorf("rollout incomplete: pod %s has version %q not %q", pod.Name, podVersion, cluster.Spec.Version)
+		}
+	}
+	if desired := cluster.GetDesiredReplicas(); live != desired {
+		//nolint:goerr113 // transient rollout progress, never matched on
+		return fmt.Errorf("rollout incomplete: %d live Brokers, expected %d", live, desired)
 	}
 	return nil
 }
