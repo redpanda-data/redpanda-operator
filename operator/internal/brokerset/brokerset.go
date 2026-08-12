@@ -70,6 +70,46 @@ const (
 	MigrationReasonRolledBack = "RolledBack"
 )
 
+// Arbitration carries the cluster-wide one-disruptive-operation-at-a-time
+// state across every pool's BrokerSet within a SINGLE reconcile pass. The
+// gates (decommission in flight, roll-grant held) are otherwise derived from
+// the informer cache, and the split client cannot see its own writes until
+// the watch event round-trips — so a pass that marks a decommission in pool
+// A would let pool B (or the grant machinery microseconds later) start a
+// second disruption off the stale view. Every disruptive write records
+// itself here, and every gate ORs this in-memory view with the cache-derived
+// one. Construct one per reconcile and share it across the pass's
+// BrokerSets; a nil Arbitration reports nothing in flight.
+type Arbitration struct {
+	decommissionMarked bool
+	rollGranted        bool
+}
+
+// MarkDecommission records that this pass set decommission intent on a
+// Broker.
+func (a *Arbitration) MarkDecommission() {
+	if a != nil {
+		a.decommissionMarked = true
+	}
+}
+
+// MarkRollGrant records that this pass issued or re-keyed a roll-grant.
+func (a *Arbitration) MarkRollGrant() {
+	if a != nil {
+		a.rollGranted = true
+	}
+}
+
+// DecommissionMarked reports whether this pass set decommission intent.
+func (a *Arbitration) DecommissionMarked() bool {
+	return a != nil && a.decommissionMarked
+}
+
+// RollGranted reports whether this pass issued or re-keyed a roll-grant.
+func (a *Arbitration) RollGranted() bool {
+	return a != nil && a.rollGranted
+}
+
 // MigrationReporter records STS→Broker migration progress on the owning
 // cluster's status. The migration state itself is always derived from world
 // state, never persisted — reporting is best-effort observability and must
@@ -134,6 +174,11 @@ type BrokerSet struct {
 	MigrationBlockedReason func(ctx context.Context) (string, error)
 	// Reporter records migration progress. Optional.
 	Reporter MigrationReporter
+	// Arbitration shares this reconcile pass's in-memory disruptive-write
+	// state across pools (see the type's doc). Optional but strongly
+	// recommended: without it the one-disruptive-operation-at-a-time gates
+	// trust only the informer cache, which cannot see this pass's writes.
+	Arbitration *Arbitration
 
 	Logger logr.Logger
 }
@@ -200,7 +245,9 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	if err != nil {
 		return errors.Wrap(err, "listing cluster Broker CRs")
 	}
-	decommissionInFlight := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
+	// OR with the pass-local arbitration state: the cache cannot see marks
+	// made earlier in this same reconcile (another pool, or DiskLost).
+	decommissionInFlight := s.Arbitration.DecommissionMarked() || slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
 		return b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned
 	})
 	// A decommission must also never START while a rotation holds an
@@ -210,7 +257,7 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	// stranded on DiskLost tombstones don't count: their holder is already
 	// down either way and EnsureRollGrants revokes them.
 	now := time.Now()
-	rollGrantHeld := slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
+	rollGrantHeld := s.Arbitration.RollGranted() || slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
 		if b.IsDiskLost() {
 			return false
 		}
@@ -368,6 +415,7 @@ func (s *BrokerSet) ReconcileDiskLostBrokers(ctx context.Context, l logr.Logger,
 		if err := s.Client.Update(ctx, t); err != nil {
 			return decommissionInFlight, errors.Wrapf(err, "setting decommission on DiskLost tombstone %s", t.Name)
 		}
+		s.Arbitration.MarkDecommission()
 		decommissionInFlight = true
 	}
 	return decommissionInFlight, nil
@@ -433,6 +481,7 @@ func (s *BrokerSet) ReconcileExcessBrokers(ctx context.Context, l logr.Logger, e
 		if err := s.Client.Update(ctx, b); err != nil {
 			return errors.Wrapf(err, "setting decommission on Broker %s", b.Name)
 		}
+		s.Arbitration.MarkDecommission()
 		break // one at a time
 	}
 

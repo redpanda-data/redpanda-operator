@@ -801,3 +801,59 @@ func clusterShouldEventuallyHaveNBrokerCRs(ctx context.Context, t framework.Test
 		return len(brokers.Items) == count
 	}, 5*time.Minute, 5*time.Second, "cluster %q never reached %d Broker CRs", clusterName, count)
 }
+
+// scaleTwoNodePoolsOnV1Cluster shrinks two nodePools in ONE update — the
+// shape of a single kubectl apply touching both pools, which a single
+// reconcile pass then observes together.
+func scaleTwoNodePoolsOnV1Cluster(ctx context.Context, t framework.TestingT, poolA string, replicasA int, poolB string, replicasB int, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var cluster vectorizedv1alpha1.Cluster
+	require.NoError(t, t.Get(ctx, key, &cluster))
+
+	patch := runtimeclient.MergeFrom(cluster.DeepCopy())
+	want := map[string]int32{poolA: int32(replicasA), poolB: int32(replicasB)}
+	found := 0
+	for i := range cluster.Spec.NodePools {
+		if replicas, ok := want[cluster.Spec.NodePools[i].Name]; ok {
+			cluster.Spec.NodePools[i].Replicas = ptr.To(replicas)
+			found++
+		}
+	}
+	require.Equal(t, 2, found, "expected both nodePools %q and %q on cluster %q", poolA, poolB, clusterName)
+	require.NoError(t, t.Patch(ctx, &cluster, patch))
+	t.Logf("Scaled nodePool %q to %d and nodePool %q to %d on V1 cluster %q in a single update", poolA, replicasA, poolB, replicasB, clusterName)
+}
+
+// atMostOneBrokerDecommissioningUntil polls the cluster's Broker CRs and
+// fails the moment two are decommissioning concurrently (the cluster-wide
+// one-disruptive-operation-at-a-time invariant), until the broker count
+// settles at want with no decommission in flight.
+func atMostOneBrokerDecommissioningUntil(ctx context.Context, t framework.TestingT, clusterName string, want int) {
+	key := t.ResourceKey(clusterName)
+	deadline := time.Now().Add(15 * time.Minute)
+	for {
+		require.Less(t, time.Now(), deadline,
+			"cluster %q never settled at %d Broker CRs with drains finished", clusterName, want)
+
+		var brokers redpandav1alpha2.BrokerList
+		require.NoError(t, t.List(ctx, &brokers, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+		}))
+		var decommissioning []string
+		for i := range brokers.Items {
+			b := &brokers.Items[i]
+			if b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned {
+				decommissioning = append(decommissioning, fmt.Sprintf("%s(id=%v)", b.Name, b.Status.BrokerID))
+			}
+		}
+		require.LessOrEqualf(t, len(decommissioning), 1,
+			"one-disruptive-operation-at-a-time violated: %d Brokers decommissioning concurrently: %v",
+			len(decommissioning), decommissioning)
+		if len(brokers.Items) == want && len(decommissioning) == 0 {
+			t.Logf("Cluster %q settled at %d Broker CRs with serialized decommissions", clusterName, want)
+			return
+		}
+		t.Logf("Cluster %q: %d Broker CRs (want %d), decommissioning: %v", clusterName, len(brokers.Items), want, decommissioning)
+		time.Sleep(time.Second)
+	}
+}

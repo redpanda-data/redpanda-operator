@@ -57,7 +57,12 @@ type BrokerSetResource struct {
 	// must never write it directly — the cluster controller flushes one
 	// aggregate after all pools have reconciled.
 	reporter brokerset.MigrationReporter
-	logger   logr.Logger
+	// arbitration shares the reconcile pass's disruptive-write state across
+	// all pools' BrokerSets (one per reconcile, owned by the cluster
+	// controller) so the one-disruptive-operation-at-a-time gates see this
+	// pass's own writes, which the informer cache cannot.
+	arbitration *brokerset.Arbitration
+	logger      logr.Logger
 }
 
 // NewBrokerSet creates a BrokerSetResource that renders Broker CRs by first
@@ -84,6 +89,7 @@ func NewBrokerSet(
 	autoDeletePVCs bool,
 	brokerPodNodeUnavailableToleration time.Duration,
 	reporter brokerset.MigrationReporter,
+	arbitration *brokerset.Arbitration,
 ) *BrokerSetResource {
 	sts := NewStatefulSet(
 		client, pandaCluster, scheme,
@@ -101,6 +107,7 @@ func NewBrokerSet(
 		stsResource:  sts,
 		nodePool:     nodePool,
 		reporter:     reporter,
+		arbitration:  arbitration,
 		logger:       logger.WithName("BrokerSetResource"),
 	}
 }
@@ -162,8 +169,9 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 			}
 			return "", nil
 		},
-		Reporter: r.reporter,
-		Logger:   l,
+		Reporter:    r.reporter,
+		Arbitration: r.arbitration,
+		Logger:      l,
 	}
 }
 

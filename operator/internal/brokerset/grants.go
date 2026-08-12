@@ -54,7 +54,13 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 
 	now := time.Now()
 	activeGrants := 0
-	decommissionInFlight := false
+	// Seed both gates from the pass-local arbitration state: the cache
+	// cannot see a decommission marked (or a grant issued by another pool's
+	// invocation) earlier in this same reconcile.
+	if s.Arbitration.RollGranted() {
+		activeGrants++
+	}
+	decommissionInFlight := s.Arbitration.DecommissionMarked()
 	var candidates []*redpandav1alpha2.Broker
 
 	for i := range brokers {
@@ -217,6 +223,7 @@ func (s *BrokerSet) grantRoll(ctx context.Context, b *redpandav1alpha2.Broker, t
 	if err := s.Client.Patch(ctx, b, p); err != nil {
 		return errors.Wrapf(err, "granting roll to Broker %s", b.Name)
 	}
+	s.Arbitration.MarkRollGrant()
 	return nil
 }
 

@@ -39,6 +39,10 @@ type attachedResources struct {
 	// brokerMigration accumulates per-pool migration reports; the reconciler
 	// flushes one aggregate BrokerMigration condition after Ensure().
 	brokerMigration *brokerset.MigrationAggregator
+	// brokerArbitration shares this reconcile pass's disruptive-write state
+	// across all pools' BrokerSets, so the one-disruptive-operation-at-a-time
+	// gates see writes the informer cache has not observed yet.
+	brokerArbitration *brokerset.Arbitration
 }
 
 const (
@@ -479,6 +483,9 @@ func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) err
 	if a.brokerMigration == nil {
 		a.brokerMigration = brokerset.NewMigrationAggregator()
 	}
+	if a.brokerArbitration == nil {
+		a.brokerArbitration = &brokerset.Arbitration{}
+	}
 	for _, np := range nps {
 		bsKey := fmt.Sprintf("%s-%s", brokerSetKey, np.Name)
 		if _, ok := a.items[bsKey]; ok {
@@ -505,7 +512,8 @@ func (a *attachedResources) brokerSet(cfg *clusterconfiguration.CombinedCfg) err
 			*np,
 			a.autoDeletePVCs,
 			a.reconciler.BrokerPodNodeUnavailableToleration,
-			resources.NewMigrationPoolReporter(a.brokerMigration, np.Name, a.reconciler.Client, a.cluster, a.log))
+			resources.NewMigrationPoolReporter(a.brokerMigration, np.Name, a.reconciler.Client, a.cluster, a.log),
+			a.brokerArbitration)
 
 		a.order = append(a.order, bsKey)
 	}

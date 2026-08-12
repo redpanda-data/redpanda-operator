@@ -36,6 +36,7 @@ func init() {
 	framework.RegisterStep(`^topic "([^"]*)" is successfully synced$`, topicIsSuccessfullySynced)
 	framework.RegisterStep(`^I should be able to produce and consume from "([^"]*)" in( vectorized)? cluster "([^"]*)"$`, iShouldBeAbleToProduceAndConsumeFrom)
 	framework.RegisterStep(`I create topic "([^"]*)" in( vectorized)? cluster "([^"]*)"`, iCreateTopicInCluster)
+	framework.RegisterStep(`I create topic "([^"]*)" with (\d+) partitions and replication factor (\d+) in( vectorized)? cluster "([^"]*)"`, iCreateTopicWithShapeInCluster)
 	framework.RegisterStep(`I should find topic "([^"]*)" in( vectorized)? cluster "([^"]*)"`, iShouldFindTopicIn)
 
 	// ShadowLink scenario steps
@@ -187,6 +188,8 @@ func init() {
 	framework.RegisterStep(`^I grant a roll-grant to Broker "([^"]*)"$`, grantRollGrantToBroker)
 	framework.RegisterStep(`^I add additional configuration "([^"]*)" with value "([^"]*)" to V1 cluster "([^"]*)"$`, addAdditionalConfigurationToV1Cluster)
 	framework.RegisterStep(`^I set nodePool "([^"]*)" replicas to (\d+) on V1 cluster "([^"]*)"$`, setNodePoolReplicasOnV1Cluster)
+	framework.RegisterStep(`^I scale nodePool "([^"]*)" to (\d+) and nodePool "([^"]*)" to (\d+) replicas on V1 cluster "([^"]*)" in a single update$`, scaleTwoNodePoolsOnV1Cluster)
+	framework.RegisterStep(`^at most one Broker of cluster "([^"]*)" should be decommissioning at any time until it has (\d+) Broker CRs$`, atMostOneBrokerDecommissioningUntil)
 	framework.RegisterStep(`^I add nodePool "([^"]*)" with (\d+) replicas? to V1 cluster "([^"]*)"$`, addNodePoolToV1Cluster)
 	framework.RegisterStep(`^I remove nodePool "([^"]*)" from V1 cluster "([^"]*)"$`, removeNodePoolFromV1Cluster)
 	framework.RegisterStep(`^pods for cluster "([^"]*)" should roll one at a time$`, podsShouldRollOneAtATime)

@@ -1577,3 +1577,197 @@ func TestMigrationRefreshesStaleBackup(t *testing.T) {
 	require.Equal(t, int32(2), *backup.Spec.Replicas, "the backup must reflect the live StatefulSet, not the leaked entry")
 	require.Equal(t, testCurrentChecksum, backup.Spec.Template.Annotations[ConfigMapHashAnnotationKey])
 }
+
+// --- one-disruptive-operation arbitration under informer lag ---
+// Red-first tests for the PR #1671 review finding: the cluster-wide
+// "one disruptive operation at a time" gates (decommission in flight,
+// roll-grant held) are recomputed from the informer cache, which cannot see
+// writes made earlier in the SAME reconcile pass. The interceptor below
+// serves every BrokerList List from a snapshot client, simulating that lag
+// deterministically: the cache never catches up during the pass.
+
+func staleBrokerLists(snapshot k8sclient.Client) interceptor.Funcs {
+	return interceptor.Funcs{
+		List: func(ctx context.Context, c k8sclient.WithWatch, list k8sclient.ObjectList, opts ...k8sclient.ListOption) error {
+			if _, ok := list.(*redpandav1alpha2.BrokerList); ok {
+				return snapshot.List(ctx, list, opts...)
+			}
+			return c.List(ctx, list, opts...)
+		},
+	}
+}
+
+type arbitrationPool struct {
+	resource    *BrokerSetResource
+	sts         func(replicas int32) *appsv1.StatefulSet
+	brokerNames []string
+}
+
+// buildArbitrationHarness seeds each pool with 3 engine-rendered Broker CRs
+// (so the desired sync is a no-op) in both a live client and a snapshot
+// client; the live client serves BrokerList Lists from the snapshot.
+func buildArbitrationHarness(t *testing.T, poolNames []string) (map[string]*arbitrationPool, k8sclient.Client) {
+	t.Helper()
+	scheme := brokerSetTestScheme(t)
+	cluster := brokerSetTestCluster()
+
+	pools := map[string]*arbitrationPool{}
+	var seed []k8sclient.Object
+	nextID := int32(0)
+	for _, pool := range poolNames {
+		stsName := fmt.Sprintf("%s-%s", cluster.Name, pool)
+		mkSTS := func(replicas int32) *appsv1.StatefulSet {
+			return &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: stsName, Namespace: cluster.Namespace},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To(replicas),
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{ConfigMapHashAnnotationKey: testCurrentChecksum},
+						},
+					},
+				},
+			}
+		}
+
+		r := &BrokerSetResource{
+			pandaCluster: cluster,
+			scheme:       scheme,
+			nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
+				NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: pool, Replicas: ptr.To(int32(3))},
+			},
+			stsResource: &StatefulSetResource{
+				pandaCluster: cluster,
+				logger:       ctrl.Log.WithName("test"),
+				adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
+					adminAPI.SetClusterHealth(true)
+					return adminAPI, nil
+				},
+			},
+			logger: ctrl.Log.WithName("test"),
+		}
+
+		rendered, err := r.core(ctrl.Log).RenderBrokers(mkSTS(3), 3, false)
+		require.NoError(t, err)
+		p := &arbitrationPool{resource: r, sts: mkSTS}
+		for i := range rendered {
+			b := rendered[i].DeepCopy()
+			b.Name = fmt.Sprintf("%s-broker-%d", stsName, i)
+			b.ResourceVersion = "1"
+			b.Status = redpandav1alpha2.BrokerStatus{
+				Phase:    redpandav1alpha2.BrokerPhaseRunning,
+				BrokerID: ptr.To(nextID),
+			}
+			nextID++
+			p.brokerNames = append(p.brokerNames, b.Name)
+			seed = append(seed, b)
+		}
+		pools[pool] = p
+	}
+
+	var snapshotSeed []k8sclient.Object
+	for _, o := range seed {
+		snapshotSeed = append(snapshotSeed, o.DeepCopyObject().(k8sclient.Object))
+	}
+	snapshot := fake.NewClientBuilder().WithScheme(scheme).WithObjects(snapshotSeed...).Build()
+	live := fake.NewClientBuilder().WithScheme(scheme).WithObjects(seed...).
+		WithInterceptorFuncs(staleBrokerLists(snapshot)).Build()
+
+	// One arbitration per reconcile pass, shared across pools — mirrors the
+	// cluster controller's attachedResources wiring.
+	arbitration := &brokerset.Arbitration{}
+	for _, p := range pools {
+		p.resource.Client = live
+		p.resource.stsResource.Client = live
+		p.resource.arbitration = arbitration
+	}
+	return pools, live
+}
+
+func liveDisruptions(t *testing.T, c k8sclient.Client, names []string) (decommissioning, granted []string) {
+	t.Helper()
+	now := time.Now()
+	for _, name := range names {
+		var b redpandav1alpha2.Broker
+		require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: name, Namespace: "test"}, &b))
+		if b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned {
+			decommissioning = append(decommissioning, name)
+		}
+		if grant := b.Annotations[feature.RollGrant.Key]; grant != "" {
+			if _, deadline, ok := feature.ParseRollGrant(grant); ok && now.Before(deadline) {
+				granted = append(granted, name)
+			}
+		}
+	}
+	return decommissioning, granted
+}
+
+func TestTwoPoolScaleDownMarksOneDecommissionPerPass(t *testing.T) {
+	// Scenario B of the review: both pools scaled down in one edit means one
+	// reconcile pass ensures both pools sequentially. Pool green's gate must
+	// see pool blue's decommission mark even though the cache has not.
+	pools, live := buildArbitrationHarness(t, []string{"blue", "green"})
+	ctx := context.Background()
+
+	var names []string
+	for _, pool := range []string{"blue", "green"} {
+		p := pools[pool]
+		stsKey := types.NamespacedName{Namespace: "test", Name: fmt.Sprintf("rp-%s", pool)}
+		require.NoError(t, p.resource.core(ctrl.Log).Ensure(ctx, stsKey, p.sts(2), 2))
+		names = append(names, p.brokerNames...)
+	}
+
+	decommissioning, _ := liveDisruptions(t, live, names)
+	assert.LessOrEqual(t, len(decommissioning), 1,
+		"decommission mutual exclusion is cluster-wide: two pools scaled down in one pass must mark at most one broker, got %v", decommissioning)
+}
+
+func TestScaleDownPassDoesNotGrantRoll(t *testing.T) {
+	// Scenario A of the review: a scale-down mark and a roll-grant must not
+	// be issued in the same pass. Precondition: a rollout is pending with no
+	// active grant (pods run the OLD config; Broker CRs already carry the
+	// new template), and the pool is scaled down in this pass.
+	pools, live := buildArbitrationHarness(t, []string{"blue"})
+	ctx := context.Background()
+	p := pools["blue"]
+
+	for i, name := range p.brokerNames {
+		var b redpandav1alpha2.Broker
+		require.NoError(t, live.Get(ctx, types.NamespacedName{Name: name, Namespace: "test"}, &b))
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      b.PodName(),
+				Namespace: "test",
+				Annotations: map[string]string{
+					redpandav1alpha2.BrokerConfigChecksumAnnotation:  testOldChecksum,
+					redpandav1alpha2.BrokerPodTemplateHashAnnotation: testTemplateHash(testOldChecksum),
+				},
+			},
+			Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda"}}},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+				Conditions: []corev1.PodCondition{
+					{Type: corev1.PodReady, Status: corev1.ConditionTrue},
+					{Type: corev1.ContainersReady, Status: corev1.ConditionTrue},
+				},
+				ContainerStatuses: []corev1.ContainerStatus{{Name: "redpanda", Ready: true}},
+			},
+		}
+		require.NoError(t, live.Create(ctx, pod), "pod %d", i)
+	}
+
+	stsKey := types.NamespacedName{Namespace: "test", Name: "rp-blue"}
+	// A RequeueAfterError is ordinary flow control (grant issuance and holds
+	// both requeue); only real errors fail the pass.
+	if err := p.resource.core(ctrl.Log).Ensure(ctx, stsKey, p.sts(2), 2); err != nil {
+		var requeue *RequeueAfterError
+		require.ErrorAs(t, err, &requeue)
+	}
+
+	decommissioning, granted := liveDisruptions(t, live, p.brokerNames)
+	if len(decommissioning) > 0 {
+		assert.Empty(t, granted,
+			"a roll-grant must not be issued in the pass that marked a decommission (decommissioning=%v granted=%v)", decommissioning, granted)
+	}
+}
