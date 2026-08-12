@@ -409,9 +409,11 @@ func TestEnsureRollGrantsClearsRestarting(t *testing.T) {
 		{index: 0, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
 	}, interceptor.Funcs{})
 
-	r.pandaCluster.Status.NodePools = map[string]vectorizedv1alpha1.NodePoolStatus{
-		r.nodePool.Name: {Restarting: true},
-	}
+	// Only the CLUSTER-level flag is set — this is what broker mode actually
+	// writes (cluster_controller_configuration.go SetRestarting(true) +
+	// MarkBrokersForRestart). The per-pool Restarting flag is an STS-mode
+	// concept: nothing sets it in broker mode, and broker-mode reportStatus
+	// rebuilds pool statuses from scratch, erasing it anyway.
 	r.pandaCluster.Status.SetRestarting(true)
 	require.NoError(t, c.Status().Update(context.Background(), r.pandaCluster))
 

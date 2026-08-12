@@ -151,11 +151,18 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 		IsClusterHealthy:  r.stsResource.isClusterHealthy,
 		OnQuiesced: func(ctx context.Context) error {
 			// A completed roll-out means a restart-requiring config change
-			// (if one was pending) has reached every pod.
+			// (if one was pending) has reached every pod. Clear the CLUSTER-
+			// level Restarting flag directly: broker mode never sets the
+			// per-pool flag (that is STS-mode runUpdate's doing, and broker-
+			// mode reportStatus rebuilds pool statuses from scratch, erasing
+			// it anyway), so updateRestartingStatus's per-pool change guard
+			// would no-op forever — leaving Restarting stuck true and every
+			// future restart-requiring config change gated off.
 			if !r.pandaCluster.Status.IsRestarting() {
 				return nil
 			}
-			if err := r.stsResource.updateRestartingStatus(ctx, false); err != nil {
+			r.pandaCluster.Status.SetRestarting(false)
+			if err := r.Status().Update(ctx, r.pandaCluster); err != nil {
 				return fmt.Errorf("clearing restarting status: %w", err)
 			}
 			return nil
