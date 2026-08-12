@@ -46,15 +46,20 @@ func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 		interval = monitoringv1.Duration(*mon.ScrapeInterval)
 	}
 
+	// Render the scheme as lowercase. The prometheus-operator typed constants
+	// (monitoringv1.SchemeHTTP / SchemeHTTPS) resolve to "HTTP" / "HTTPS",
+	// which older prometheus-operator CRDs reject with
+	// `spec.endpoints[0].scheme: Unsupported value`. Lowercase works on every
+	// version. See #1511.
 	endpoint := monitoringv1.Endpoint{
 		Interval: interval,
 		Path:     publicMetricsPath,
 		Port:     internalAdminAPIPortName,
-		Scheme:   ptr.To(monitoringv1.SchemeHTTP),
+		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 
 	if pool.Spec.IsAdminTLSEnabled() || mon.TLSConfig != nil {
-		endpoint.Scheme = ptr.To(monitoringv1.SchemeHTTPS)
+		endpoint.Scheme = ptr.To(monitoringv1.Scheme("https"))
 
 		// Use custom TLS config if provided, otherwise fall back to insecure skip verify.
 		if mon.TLSConfig != nil {

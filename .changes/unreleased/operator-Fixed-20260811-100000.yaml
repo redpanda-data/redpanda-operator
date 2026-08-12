@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Fixed the operator chart''s `ServiceMonitor` and the StretchCluster per-pool `ServiceMonitor`s to emit `scheme: http` / `scheme: https` (lowercase) instead of the uppercase Go constant values that older `prometheus-operator` CRDs reject with `spec.endpoints[0].scheme: Unsupported value`. Same fix as #1511, which covered the redpanda and console charts.'
+time: 2026-08-11T10:00:00.000000-07:00
