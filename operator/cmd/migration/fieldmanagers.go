@@ -11,12 +11,15 @@ package migration
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"slices"
 
 	"github.com/redpanda-data/common-go/kube"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -52,9 +55,22 @@ func migrateFieldManagers(ctx context.Context, ctl *kube.Ctl, k8sClient client.C
 	consoleTypes := consolechart.Types()
 	ownershipResolver := lifecycle.NewV2OwnershipResolver()
 
+	// Forbidden errors below this point are non-fatal. Installs that manage
+	// RBAC by hand (rbac.create=false) often lack permissions for optional
+	// resource types they don't use — e.g. Gateway API TLSRoutes, swept only
+	// because the CRDs happen to be installed — and failing the post-upgrade
+	// hook over them wedges every subsequent upgrade. Anything skipped here
+	// is re-swept on the next upgrade once the permission is granted. Only
+	// the Redpanda/Console lists above stay fatal: if we can't see the CRs
+	// this job exists to serve, something is fundamentally broken.
+	warnedTypes := map[string]bool{}
+
 	for _, rp := range redpandas.Items {
 		if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, &rp); err != nil {
-			return err
+			if !apierrors.IsForbidden(err) {
+				return err
+			}
+			warnForbiddenUpdate(k8sClient.Scheme(), &rp, err)
 		}
 
 		// get the ownership labels for Redpanda-owned resources
@@ -64,11 +80,18 @@ func migrateFieldManagers(ctx context.Context, ctl *kube.Ctl, k8sClient client.C
 		for _, rt := range redpandaTypes {
 			resources, err := listIfResourceExists(ctx, k8sClient, labels, &rp, rt)
 			if err != nil {
-				return err
+				if !apierrors.IsForbidden(err) {
+					return err
+				}
+				warnForbiddenList(k8sClient.Scheme(), warnedTypes, rt, err)
+				continue
 			}
 			for _, resource := range resources {
 				if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, resource); err != nil {
-					return err
+					if !apierrors.IsForbidden(err) {
+						return err
+					}
+					warnForbiddenUpdate(k8sClient.Scheme(), resource, err)
 				}
 			}
 		}
@@ -76,7 +99,10 @@ func migrateFieldManagers(ctx context.Context, ctl *kube.Ctl, k8sClient client.C
 
 	for _, console := range consoles.Items {
 		if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, &console); err != nil {
-			return err
+			if !apierrors.IsForbidden(err) {
+				return err
+			}
+			warnForbiddenUpdate(k8sClient.Scheme(), &console, err)
 		}
 
 		// get ownership labels for the Console controller
@@ -84,17 +110,53 @@ func migrateFieldManagers(ctx context.Context, ctl *kube.Ctl, k8sClient client.C
 		for _, rt := range consoleTypes {
 			resources, err := listIfResourceExists(ctx, k8sClient, labels, &console, rt)
 			if err != nil {
-				return err
+				if !apierrors.IsForbidden(err) {
+					return err
+				}
+				warnForbiddenList(k8sClient.Scheme(), warnedTypes, rt, err)
+				continue
 			}
 			for _, resource := range resources {
 				if err := maybeUpdate(ctx, undesiredFieldManagers, ctl, k8sClient, resource); err != nil {
-					return err
+					if !apierrors.IsForbidden(err) {
+						return err
+					}
+					warnForbiddenUpdate(k8sClient.Scheme(), resource, err)
 				}
 			}
 		}
 	}
 
 	return nil
+}
+
+// warnForbiddenList records that the sweep is skipping a resource type the
+// migration job's ServiceAccount cannot list. Logged once per type: one
+// missing rule would otherwise repeat for every Redpanda/Console CR. The
+// sweep still runs for each CR's namespace, so namespace-scoped grants that
+// cover only some namespaces migrate what they can.
+func warnForbiddenList(scheme *runtime.Scheme, warned map[string]bool, objectType client.Object, err error) {
+	name := typeName(scheme, objectType)
+	if warned[name] {
+		return
+	}
+	warned[name] = true
+	log.Printf("WARNING: skipping %s: %v — grant the missing permission to the migration job's ServiceAccount, or ignore this warning if you don't use this resource type", name, err)
+}
+
+// warnForbiddenUpdate records that a resource keeps its current field
+// managers because the migration job's ServiceAccount may not update it.
+// Logged per resource rather than per type: unlike a skipped list, these are
+// resources the operator actively manages.
+func warnForbiddenUpdate(scheme *runtime.Scheme, obj client.Object, err error) {
+	log.Printf("WARNING: cannot migrate field managers of %s %s: %v — the resource keeps its current field managers until the next upgrade after the migration job's ServiceAccount is granted the missing permission", typeName(scheme, obj), client.ObjectKeyFromObject(obj), err)
+}
+
+func typeName(scheme *runtime.Scheme, obj client.Object) string {
+	if gvk, err := kube.GVKFor(scheme, obj); err == nil {
+		return gvk.GroupKind().String()
+	}
+	return fmt.Sprintf("%T", obj)
 }
 
 // copied from operator/internal/controller/console/controller.go
