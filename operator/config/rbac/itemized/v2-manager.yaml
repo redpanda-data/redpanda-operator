@@ -41,7 +41,6 @@ rules:
   - ""
   resources:
   - nodes
-  - pods/log
   verbs:
   - get
   - list
@@ -53,6 +52,12 @@ rules:
   - get
   - list
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
 - apiGroups:
   - apps
   resources:

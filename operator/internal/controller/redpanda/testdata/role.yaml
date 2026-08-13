@@ -41,7 +41,6 @@ rules:
   - ""
   resources:
   - nodes
-  - pods/log
   verbs:
   - get
   - list
@@ -55,6 +54,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
 - apiGroups:
   - apiextensions.k8s.io
   resources:
