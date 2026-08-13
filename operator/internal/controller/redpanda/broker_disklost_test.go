@@ -138,7 +138,7 @@ func diskLostFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) 
 func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, pod *corev1.Pod, objs []client.Object) (client.Client, *brokerReconciliationState, error) {
 	c := fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
 		WithObjects(objs...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
-	r := &BrokerReconciler{UnbindPVCsAfter: time.Minute}
+	r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 	state := &brokerReconciliationState{
 		broker:        broker,
 		pod:           pod,
@@ -304,7 +304,7 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 
 		c := fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
 			WithObjects(objs[2:]...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
-		r := &BrokerReconciler{UnbindPVCsAfter: time.Minute}
+		r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 		state := &brokerReconciliationState{broker: broker, initialStatus: broker.Status.DeepCopy()}
 		result, err := r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
 		require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 
 		c := fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
 			WithObjects(objs[2:]...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
-		r := &BrokerReconciler{UnbindPVCsAfter: time.Minute}
+		r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 		state := &brokerReconciliationState{broker: broker, initialStatus: broker.Status.DeepCopy()}
 		result, err := r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
 		require.NoError(t, err)

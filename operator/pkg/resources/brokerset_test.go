@@ -784,12 +784,14 @@ func TestVerifyMigrationPreconditions(t *testing.T) {
 		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "not running the desired configuration")
 	})
 
-	t.Run("blocked while a pod is not ready", func(t *testing.T) {
+	t.Run("blocked while STS reports unready replicas", func(t *testing.T) {
+		// Pod count and readiness are covered by the StatefulSet status
+		// checks (pod objects are consulted only for the config checksum).
 		cluster := brokerSetTestCluster()
 		fix := quiescentMigrationFixture(cluster, 3)
-		fix.pods[2].Status.Conditions = nil
+		fix.live.Status.ReadyReplicas = 2
 		r := buildMigrationBrokerSet(t, true, cluster, fix)
-		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "not ready")
+		requireMigrationBlocked(t, r.core(ctrl.Log).VerifyMigrationPreconditions(ctx, ctrl.Log, fix.live, fix.desired), "rollout has not completed")
 	})
 
 	t.Run("blocked while cluster unhealthy", func(t *testing.T) {
@@ -1527,12 +1529,16 @@ func TestMigrationPrunesStaleShadows(t *testing.T) {
 	}
 
 	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+	// Pass 1 prunes the stale shadow and stops (a pass that wrote defers the
+	// destructive step); pass 2 sees the settled world and hands over.
 	require.NoError(t, r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2))
 
 	// The stale shadow is pruned, without decommission intent.
 	var gone redpandav1alpha2.Broker
 	err := r.Client.Get(ctx, types.NamespacedName{Name: "rp-shadow-2", Namespace: cluster.Namespace}, &gone)
 	assert.True(t, apierrors.IsNotFound(err), "stale shadow above the live replica count should be pruned")
+
+	require.NoError(t, r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2))
 
 	// The needed shadows survive untouched and the migration proceeded to
 	// the handover: the StatefulSet is orphan-deleted.
@@ -1569,6 +1575,9 @@ func TestMigrationRefreshesStaleBackup(t *testing.T) {
 	require.NoError(t, r.Client.Create(ctx, stale))
 
 	stsKey := types.NamespacedName{Name: fix.live.Name, Namespace: fix.live.Namespace}
+	// Pass 1 creates the shadow Broker CRs and stops (a pass that wrote
+	// defers everything downstream); pass 2 refreshes the backup.
+	require.NoError(t, r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2))
 	require.NoError(t, r.core(ctrl.Log).Ensure(ctx, stsKey, fix.desired, 2))
 
 	var cm corev1.ConfigMap

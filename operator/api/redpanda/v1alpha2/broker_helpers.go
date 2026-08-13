@@ -10,9 +10,9 @@
 package v1alpha2
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -98,7 +98,13 @@ func (t *BrokerPodTemplate) Hash() string {
 		// pre-hash behavior (PodOutdated skips unset desired keys).
 		return ""
 	}
-	return fmt.Sprintf("%x", sha256.Sum256(serialized))
+	// FNV over a cryptographic hash: the value is only ever compared against
+	// itself (desired template vs the pod's stamped copy), and the short hex
+	// form is comparable by eye in annotations and logs. 64-bit keeps an
+	// accidental old==new collision across template edits out of the picture.
+	h := fnv.New64a()
+	_, _ = h.Write(serialized)
+	return fmt.Sprintf("%x", h.Sum64())
 }
 
 func (b *Broker) BuildPod(podName string) *corev1.Pod {

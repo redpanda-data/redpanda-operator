@@ -55,7 +55,7 @@ import (
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 
-// defaultUnbindPVCsAfter is the Broker controller's disk-loss detection
+// defaultMarkDiskLostAfter is the Broker controller's disk-loss detection
 // timeout, used when --unbind-pvcs-after is not set. Detection must not
 // silently stay disabled just because the (PVCUnbinder-oriented) flag was
 // left at its zero default: marking a Broker DiskLost requires a pod stuck
@@ -63,8 +63,8 @@ const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 // proof (the pinned Node OBJECT deleted from the API) — the timeout exists
 // so a rebooting node has time to come back before the terminal marking.
 // TODO: give the Broker controller its own flag (e.g.
-// --broker-unbind-pvcs-after) when the feature grows its GA config surface.
-const defaultUnbindPVCsAfter = 5 * time.Minute
+// --mark-disk-lost-after) when the feature grows its GA config surface.
+const defaultMarkDiskLostAfter = 5 * time.Minute
 
 const requeueShort = 2 * time.Second
 
@@ -86,18 +86,18 @@ const requeueDecommission = 10 * time.Second
 type BrokerReconciler struct {
 	Manager       multicluster.Manager
 	ClientFactory internalclient.ClientFactory
-	// UnbindPVCsAfter is the duration a pod must be stuck in Pending
+	// MarkDiskLostAfter is the duration a pod must be stuck in Pending
 	// with volume node-affinity conflict before the broker may be marked
 	// DiskLost (given the dead-node proof also holds). Zero disables the
 	// detection.
-	UnbindPVCsAfter time.Duration
+	MarkDiskLostAfter time.Duration
 }
 
-func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFactory internalclient.ClientFactory, namespace string, unbindPVCsAfter time.Duration) error {
+func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFactory internalclient.ClientFactory, namespace string, markDiskLostAfter time.Duration) error {
 	// --unbind-pvcs-after is honored when set; otherwise fall back to the
 	// controller's own default instead of disabling remediation.
-	if unbindPVCsAfter <= 0 {
-		unbindPVCsAfter = defaultUnbindPVCsAfter
+	if markDiskLostAfter <= 0 {
+		markDiskLostAfter = defaultMarkDiskLostAfter
 	}
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// Tests register several reconcilers against one manager under the
@@ -114,9 +114,9 @@ func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFa
 			controller.FilterNamespaceReconciler(
 				namespace,
 				observability.Wrap[mcreconcile.Request](&BrokerReconciler{
-					Manager:         mgr,
-					ClientFactory:   clientFactory,
-					UnbindPVCsAfter: unbindPVCsAfter,
+					Manager:           mgr,
+					ClientFactory:     clientFactory,
+					MarkDiskLostAfter: markDiskLostAfter,
 				}, "Broker", periodicRequeue)))
 }
 
@@ -164,14 +164,21 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, k8sClient client.Clie
 		state.pod = &pod
 	}
 
-	if broker.IsDiskLost() && state.pod != nil && !metav1.IsControlledBy(state.pod, broker) {
-		// The dead incarnation released its network index and a replacement
-		// Broker CR owns the pod of this name now. For this tombstone, the pod
-		// does not exist: reasoning about the replacement's pod here would
-		// short-circuit the tombstone's decommission (shadow-mode branch) and,
-		// worse, let the decommission completion delete the replacement's
-		// pod by name.
-		state.pod = nil
+	// A pod of this name controlled by a DIFFERENT Broker belongs to another
+	// incarnation — a DiskLost tombstone released its network index and the
+	// replacement owns the name now. For this Broker that pod does not
+	// exist: reasoning about another incarnation's pod would short-circuit a
+	// tombstone's decommission (shadow-mode branch) and, worse, let the
+	// decommission completion delete the replacement's pod by name. Pods
+	// controlled by anything else (a StatefulSet mid-migration) or by nobody
+	// (post-handover orphans) are ours to reason about and adopt.
+	if state.pod != nil {
+		if owner := metav1.GetControllerOf(state.pod); owner != nil &&
+			owner.Kind == "Broker" &&
+			owner.APIVersion == redpandav1alpha2.GroupVersion.String() &&
+			owner.UID != broker.UID {
+			state.pod = nil
+		}
 	}
 
 	return state, nil
@@ -503,10 +510,10 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 		return ctrl.Result{}, nil
 	}
 
-	if r.UnbindPVCsAfter <= 0 {
+	if r.MarkDiskLostAfter <= 0 {
 		// Unreachable through SetupBrokerController (which defaults the
 		// value); guards direct construction only.
-		l.Info("disk-loss detection disabled (UnbindPVCsAfter=0); broker will stay Stuck until the node returns or the PVC is removed manually")
+		l.Info("disk-loss detection disabled (MarkDiskLostAfter=0); broker will stay Stuck until the node returns or the PVC is removed manually")
 		return ctrl.Result{}, nil
 	}
 
@@ -516,7 +523,7 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 		if cond.Type != corev1.PodScheduled || cond.Status != corev1.ConditionFalse {
 			continue
 		}
-		if delta := r.UnbindPVCsAfter - time.Since(cond.LastTransitionTime.Time); delta > 0 {
+		if delta := r.MarkDiskLostAfter - time.Since(cond.LastTransitionTime.Time); delta > 0 {
 			l.Info("pod stuck on PV node affinity but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
 			return ctrl.Result{RequeueAfter: delta}, nil
 		}
@@ -611,8 +618,18 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 		}
 	}
 
-	// Confirm on the uncached reader: the release checkpoint authorizes a
-	// replacement under these very names, so a stale "gone" must not set it.
+	// Confirm the names are actually free before checkpointing. The deletes
+	// above succeeding does NOT mean the objects are gone — deletion is
+	// asynchronous: the pod sits in its grace period (and on a dead node it
+	// lingers until pod garbage collection, since no kubelet can confirm
+	// termination), and PVCs hold the pvc-protection finalizer until their
+	// pod is fully removed. The release checkpoint authorizes a replacement
+	// Broker to create a pod and claims under these very names, so setting
+	// it while a name still exists hands the replacement a collision. The
+	// uncached reader matters for the same reason: a stale "gone" from the
+	// informer must not release the index. Ownership is checked rather than
+	// bare existence so an already-recreated object that belongs to the
+	// replacement doesn't hold the tombstone hostage.
 	apiReader := cluster.GetAPIReader()
 	var pod corev1.Pod
 	err := apiReader.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)

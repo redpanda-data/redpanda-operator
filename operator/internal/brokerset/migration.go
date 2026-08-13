@@ -26,8 +26,6 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 // migrationBackupName returns the name of the ConfigMap holding the
@@ -80,13 +78,20 @@ func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, des
 	// Redpanda node behind them was already removed by the scale-down. Raw
 	// CR deletion never decommissions (RFC Q2), so deleting an inert shadow
 	// is safe.
+	changed := false
 	for idx, b := range existingByIndex {
 		if int(idx) >= stsReplicas {
+			delete(existingByIndex, idx)
+			if !b.DeletionTimestamp.IsZero() {
+				// Already terminating (finalizer running); re-deleting would
+				// only churn.
+				continue
+			}
 			l.Info("migration: pruning stale shadow Broker above live replica count", "name", b.Name, "index", idx, "replicas", stsReplicas)
 			if err := s.Client.Delete(ctx, b); err != nil && !apierrors.IsNotFound(err) {
 				return errors.Wrapf(err, "pruning stale shadow Broker %s", b.Name)
 			}
-			delete(existingByIndex, idx)
+			changed = true
 		}
 	}
 
@@ -100,24 +105,30 @@ func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, des
 			if err := s.Client.Create(ctx, d); err != nil {
 				return errors.Wrapf(err, "creating shadow Broker ordinal %d", idx)
 			}
+			changed = true
 		}
+	}
+
+	// Any write this pass means the world is mid-change: wait for the next
+	// pass instead of re-listing — the cached client cannot see this pass's
+	// own creates and deletes anyway, so a re-list here proves nothing.
+	if changed {
+		l.Info("migration: shadow Broker CRs changed this pass; waiting for the next pass")
+		s.report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, "creating shadow Broker CRs")
+		return nil
 	}
 
 	if err := s.ensureBackupConfigMap(ctx, l, sts); err != nil {
 		return errors.Wrap(err, "backing up StatefulSet")
 	}
 
-	// Re-list to confirm every needed shadow exists. The check is
-	// index-based, not count-based: shadows pruned above may still be listed
-	// while their finalizer runs, and counting them would let the destructive
-	// step proceed with a needed ordinal missing.
-	existing, err = s.listBrokers(ctx)
-	if err != nil {
-		return err
-	}
-	byIndex := IndexBrokers(existing)
+	// Confirm every needed shadow exists before the destructive step. The
+	// check is index-based, not count-based: pruned shadows may still be
+	// listed while their finalizer runs, and counting them would let the
+	// destructive step proceed with a needed ordinal missing. With no writes
+	// this pass, the initial list is the complete view.
 	for i := int32(0); i < int32(stsReplicas); i++ {
-		if b, ok := byIndex[i]; !ok || !b.DeletionTimestamp.IsZero() {
+		if b, ok := existingByIndex[i]; !ok || !b.DeletionTimestamp.IsZero() {
 			l.Info("migration: waiting for all shadow Broker CRs", "missingIndex", i, "want", stsReplicas)
 			s.report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, "creating shadow Broker CRs")
 			return nil
@@ -144,8 +155,9 @@ func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, des
 }
 
 // VerifyMigrationPreconditions blocks the migration state machine until the
-// cluster is quiescent: the live StatefulSet has fully rolled out, every pod
-// is ready and running the DESIRED configuration, no restart or decommission
+// cluster is quiescent: the live StatefulSet has fully rolled out (pod count
+// and readiness via its status), every pod runs the DESIRED configuration
+// (via the pods' config-checksum annotations), no restart or decommission
 // is in flight (owner-specific, via MigrationBlockedReason), and the cluster
 // reports healthy via the admin API.
 //
@@ -194,6 +206,15 @@ func (s *BrokerSet) VerifyMigrationPreconditions(ctx context.Context, l logr.Log
 		return block("config change pending, StatefulSet not yet updated")
 	}
 
+	// Per-pod desired-config check. Pod count and readiness are already
+	// covered by the StatefulSet status checks above; this one cannot be:
+	// under OnDelete, updating the STS template changes NOTHING about live
+	// pods (Replicas and ReadyReplicas stay full through a pending,
+	// not-yet-started roll), and the pods' config-checksum annotations are
+	// the only place the live config state exists. Skipping this would let
+	// the migration adopt stale-config pods — and adoption backfills the
+	// rotation annotations from the desired template, marking those pods
+	// current and silently cancelling the pending rollout.
 	var pods corev1.PodList
 	if err := s.Client.List(ctx, &pods, &k8sclient.ListOptions{
 		Namespace:     s.Owner.GetNamespace(),
@@ -201,14 +222,8 @@ func (s *BrokerSet) VerifyMigrationPreconditions(ctx context.Context, l logr.Log
 	}); err != nil {
 		return errors.Wrap(err, "listing pods for migration preconditions")
 	}
-	if int32(len(pods.Items)) != specReplicas {
-		return block(fmt.Sprintf("expected %d pods, found %d", specReplicas, len(pods.Items)))
-	}
 	for i := range pods.Items {
 		pod := &pods.Items[i]
-		if !utils.IsPodReady(pod) {
-			return block(fmt.Sprintf("pod %s is not ready", pod.Name))
-		}
 		if pod.Annotations[s.ConfigChecksumKey] != desiredHash {
 			return block(fmt.Sprintf("pod %s is not running the desired configuration", pod.Name))
 		}
