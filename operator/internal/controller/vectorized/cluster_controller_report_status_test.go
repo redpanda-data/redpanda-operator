@@ -197,3 +197,179 @@ func TestReportStatusWithholdsVersionDuringBrokerRoll(t *testing.T) {
 		})
 	}
 }
+
+// TestReportStatusPreservesScaleBookkeepingInBrokerMode pins the broker-mode
+// semantics of Status.NodePools: CurrentReplicas is SCALE BOOKKEEPING (how
+// many broker incarnations exist), not a readiness count, and a pool whose
+// Broker CRs don't exist yet must keep its entry. The StatefulSet is still
+// ensured mid-migration, and its render derives Spec.Replicas and the
+// lifecycle hooks from CalculateCurrentReplicas() — writing zero here made
+// the render scale the live StatefulSet to 0 and strip the hooks, deleting
+// every pod at migration entry (then handleScaling re-inited to 3 and the
+// flap repeated until the brokers registered).
+func TestReportStatusPreservesScaleBookkeepingInBrokerMode(t *testing.T) {
+	const version = "v25.1.1"
+
+	tcs := []struct {
+		name string
+		// brokerReady orders shadow Brokers by index; nil means no Broker
+		// CRs exist at all (first migration pass).
+		brokerReady []bool
+		// pool entries present in Status.NodePools before the pass.
+		priorPools map[string]vectorizedv1alpha1.NodePoolStatus
+		// wantCurrent is the expected CurrentReplicas of the "default" pool
+		// entry after the pass; -1 means the entry must be absent.
+		wantCurrent int32
+	}{
+		{
+			name:        "no Broker CRs yet: the pool entry is preserved",
+			brokerReady: nil,
+			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
+				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
+			},
+			wantCurrent: 3,
+		},
+		{
+			name:        "Pending shadow Brokers: CurrentReplicas counts incarnations, not readiness",
+			brokerReady: []bool{false, false, false},
+			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
+				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
+			},
+			wantCurrent: 3,
+		},
+		{
+			name:        "readiness dip: CurrentReplicas stays at the incarnation count",
+			brokerReady: []bool{true, false, true},
+			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
+				"default": {Replicas: 3, ReadyReplicas: 3, CurrentReplicas: 3},
+			},
+			wantCurrent: 3,
+		},
+		{
+			name:        "steady state: all Ready",
+			brokerReady: []bool{true, true, true},
+			priorPools:  map[string]vectorizedv1alpha1.NodePoolStatus{},
+			wantCurrent: 3,
+		},
+		{
+			name:        "drained pool not in spec is dropped, not preserved",
+			brokerReady: []bool{true, true, true},
+			priorPools: map[string]vectorizedv1alpha1.NodePoolStatus{
+				"vanished": {Replicas: 2, ReadyReplicas: 2, CurrentReplicas: 2},
+			},
+			wantCurrent: 3,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			cluster := &vectorizedv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test"},
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Image:    "vectorized/redpanda",
+					Version:  version,
+					Replicas: ptr.To(int32(3)),
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						KafkaAPI: []vectorizedv1alpha1.KafkaAPI{{Port: 9092}},
+					},
+				},
+				Status: vectorizedv1alpha1.ClusterStatus{
+					Version:   version,
+					NodePools: tc.priorPools,
+				},
+			}
+
+			selector := labels.ForCluster(cluster)
+
+			objs := []runtime.Object{cluster}
+			for i := range tc.brokerReady {
+				status := redpandav1alpha2.BrokerStatus{}
+				if tc.brokerReady[i] {
+					status.Conditions = []metav1.Condition{{
+						Type:               statuses.BrokerReady,
+						Status:             metav1.ConditionTrue,
+						Reason:             "Ready",
+						LastTransitionTime: metav1.Now(),
+					}}
+				}
+				objs = append(objs, &redpandav1alpha2.Broker{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("rp-broker-%d", i),
+						Namespace: "test",
+						Labels: map[string]string{
+							labels.NameKey:      selector[labels.NameKey],
+							labels.InstanceKey:  selector[labels.InstanceKey],
+							labels.ComponentKey: selector[labels.ComponentKey],
+							labels.NodePoolKey:  "default",
+						},
+					},
+					Spec: redpandav1alpha2.BrokerSpec{
+						ClusterRef:   redpandav1alpha2.ClusterRef{Name: "rp"},
+						NetworkIndex: ptr.To(int32(i)),
+					},
+					Status: status,
+				})
+			}
+			for i := 0; i < 3; i++ {
+				objs = append(objs, &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      fmt.Sprintf("rp-%d", i),
+						Namespace: "test",
+						Labels: map[string]string{
+							labels.NameKey:      selector[labels.NameKey],
+							labels.InstanceKey:  selector[labels.InstanceKey],
+							labels.ComponentKey: selector[labels.ComponentKey],
+						},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Name:  "redpanda",
+							Image: "vectorized/redpanda:" + version,
+						}},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
+						Conditions: []corev1.PodCondition{
+							{Type: corev1.PodReady, Status: corev1.ConditionTrue},
+							{Type: corev1.ContainersReady, Status: corev1.ConditionTrue},
+						},
+						ContainerStatuses: []corev1.ContainerStatus{{Name: "redpanda", Ready: true}},
+					},
+				})
+			}
+
+			scheme := runtime.NewScheme()
+			require.NoError(t, clientgoscheme.AddToScheme(scheme))
+			require.NoError(t, vectorizedv1alpha1.Install(scheme))
+			require.NoError(t, redpandav1alpha2.Install(scheme))
+			c := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithRuntimeObjects(objs...).
+				WithStatusSubresource(&vectorizedv1alpha1.Cluster{}).
+				Build()
+			r := &ClusterReconciler{Client: c, Scheme: scheme}
+
+			require.NoError(t, r.reportStatus(
+				ctx, cluster, nil, true,
+				"rp.test.svc.cluster.local", "rp-cluster.test.svc.cluster.local", 8081,
+				types.NamespacedName{Name: "rp-external", Namespace: "test"},
+				types.NamespacedName{Name: "rp-bootstrap", Namespace: "test"},
+			))
+
+			var got vectorizedv1alpha1.Cluster
+			require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp", Namespace: "test"}, &got))
+
+			np, ok := got.Status.NodePools["default"]
+			require.True(t, ok, "the default pool entry must exist — wiping it zeroes CalculateCurrentReplicas and flaps the StatefulSet render")
+			require.Equal(t, tc.wantCurrent, np.CurrentReplicas,
+				"CurrentReplicas is scale bookkeeping, not a readiness count")
+			require.GreaterOrEqual(t, got.Status.CurrentReplicas, tc.wantCurrent,
+				"cluster-level CurrentReplicas must not dip below the pool bookkeeping")
+
+			_, vanished := got.Status.NodePools["vanished"]
+			require.False(t, vanished, "pools absent from spec with no Broker CRs are dropped")
+		})
+	}
+}

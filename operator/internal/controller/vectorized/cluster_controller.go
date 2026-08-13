@@ -640,13 +640,36 @@ func (r *ClusterReconciler) reportStatus(
 			// registered; the Ready condition is the actual health signal.
 			if apimeta.IsStatusConditionTrue(b.Status.Conditions, statuses.BrokerReady) {
 				nps.ReadyReplicas++
-				nps.CurrentReplicas++
 				readyReplicas++
 			}
 		}
-		currentReplicas = readyReplicas
 		for pool, nps := range perPool {
+			// CurrentReplicas is SCALE BOOKKEEPING — how many broker
+			// incarnations exist — never a readiness count. The StatefulSet
+			// render derives Spec.Replicas and the maintenance-mode lifecycle
+			// hooks from CalculateCurrentReplicas(), and the StatefulSet is
+			// still ensured mid-migration: writing a readiness-derived zero
+			// here scaled the live StatefulSet to 0 and deleted every pod at
+			// migration entry.
+			nps.CurrentReplicas = nps.Replicas
+			currentReplicas += nps.Replicas
 			nodePoolStatus[pool] = *nps
+		}
+		// A pool whose Broker CRs don't exist yet (the first migration
+		// passes) must keep its entry: the StatefulSet is still authoritative
+		// for it, and wiping the entry zeroes CalculateCurrentReplicas just
+		// the same. Pools absent from the spec with no Broker CRs left are
+		// genuinely gone (drained) and stay dropped.
+		for _, np := range redpandaCluster.GetNodePoolsFromSpec() {
+			if _, ok := nodePoolStatus[np.Name]; ok {
+				continue
+			}
+			if old, ok := redpandaCluster.Status.NodePools[np.Name]; ok {
+				nodePoolStatus[np.Name] = old
+				currentReplicas += old.CurrentReplicas
+				replicas += old.Replicas
+				readyReplicas += old.ReadyReplicas
+			}
 		}
 		// Status.Version records what is ROLLED OUT, not what was requested —
 		// the broker-mode counterpart of the StatefulSet path's
