@@ -36,6 +36,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
@@ -494,8 +495,13 @@ func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPo
 	log.Info("Put broker into maintenance mode",
 		"pod-name", pod.Name, "patch", patchResult.Patch)
 	if err = r.putInMaintenanceMode(ctx, pod.Name); err != nil {
-		if e := new(rpadmin.HTTPResponseError); errors.As(err, &e) && e.Response != nil && e.Response.StatusCode != http.StatusNotFound {
-			log.Info("Enabling maintenance mode failed and returned 404. Ignoring, as broker is most likely decommissioned.", "pod", pod.Name)
+		// Only a 404 may be ignored: the broker is gone (decommissioned), so
+		// there is nothing to drain. Any other refusal is redpanda's own
+		// one-disruption-at-a-time interlock — e.g. a just-evicted broker
+		// still holds the maintenance flag until its replacement clears it —
+		// and overriding it deletes a second broker, undrained.
+		if e := new(rpadmin.HTTPResponseError); errors.As(err, &e) && e.Response != nil && e.Response.StatusCode == http.StatusNotFound {
+			log.Info("Enabling maintenance mode returned 404. Ignoring, as broker is most likely decommissioned.", "pod", pod.Name)
 		} else {
 			// As maintenance mode can not be easily watched using controller runtime the requeue error
 			// is always returned. That way a rolling update will not finish when operator waits for
@@ -923,19 +929,11 @@ func (r *StatefulSetResource) evaluateUnderReplicatedPartitions(
 	return nil
 }
 
-// RequeueAfterError error carrying the time after which to requeue.
-type RequeueAfterError struct {
-	RequeueAfter time.Duration
-	Msg          string
-}
-
-func (e *RequeueAfterError) Error() string {
-	return fmt.Sprintf("RequeueAfterError %s", e.Msg)
-}
-
-func (e *RequeueAfterError) Is(target error) bool {
-	return e.Error() == target.Error()
-}
+// RequeueAfterError error carrying the time after which to requeue. The
+// canonical definition lives in operator/internal/brokerset (the CR-agnostic
+// Broker machinery produces these too); the alias keeps type identity for
+// every errors.As check against *resources.RequeueAfterError.
+type RequeueAfterError = brokerset.RequeueAfterError
 
 // RequeueError error to requeue using default retry backoff.
 type RequeueError struct {

@@ -41,6 +41,10 @@ func iCreateTopicInCluster(ctx context.Context, topic, version, cluster string) 
 	versionedClientsForCluster(ctx, version, cluster).CreateTopic(ctx, topic)
 }
 
+func iCreateTopicWithShapeInCluster(ctx context.Context, topic string, partitions, replication int, version, cluster string) {
+	versionedClientsForCluster(ctx, version, cluster).CreateTopicWithShape(ctx, topic, int32(partitions), int16(replication))
+}
+
 func iShouldBeAbleToProduceAndConsumeFrom(ctx context.Context, t framework.TestingT, topic, version, cluster string) {
 	payload := []byte("test")
 

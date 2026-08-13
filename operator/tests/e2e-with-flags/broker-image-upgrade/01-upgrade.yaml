@@ -1,0 +1,8 @@
+# Bump the image version. In STS mode this triggers a rolling restart; broker
+# mode must do the equivalent via grant-serialized pod rotation.
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: broker-upgrade
+spec:
+  version: "v25.1.9"

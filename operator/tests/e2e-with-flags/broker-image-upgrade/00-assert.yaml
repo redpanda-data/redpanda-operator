@@ -1,0 +1,17 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 320
+  script: |
+    set -e
+    SEL="app.kubernetes.io/instance=broker-upgrade"
+    # Broker-mode: 3 Broker CRs, no StatefulSet, 3 ready pods on the initial image.
+    for i in $(seq 1 150); do
+      brokers=$(kubectl get brokers.cluster.redpanda.com -n $NAMESPACE -l $SEL --no-headers 2>/dev/null | wc -l)
+      ready=$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null | grep -c True || true)
+      [ "$brokers" = "3" ] && [ "$ready" = "3" ] && break
+      sleep 2
+    done
+    test "$(kubectl get brokers.cluster.redpanda.com -n $NAMESPACE -l $SEL --no-headers | wc -l)" = "3"
+    test "$(kubectl get sts -n $NAMESPACE -l $SEL --no-headers 2>/dev/null | wc -l)" = "0"
+    test "$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.spec.containers[?(@.name=="redpanda")].image}{"\n"}{end}' | grep -c 'redpandadata/redpanda:v24.2.24')" = "3"

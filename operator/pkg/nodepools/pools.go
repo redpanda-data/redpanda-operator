@@ -28,6 +28,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
@@ -107,4 +108,52 @@ outer:
 		})
 	}
 	return nodePoolsWithDeleted, nil
+}
+
+// GetNodePoolsWithBrokerBacked returns GetNodePools plus virtual deleted
+// pools reconstructed from Broker CRs. In broker mode a migrated pool has no
+// StatefulSet left to reconstruct it from once it is removed from
+// spec.nodePools — but its Broker CRs still exist and must be drained. The
+// synthesized spec is minimal (name and zero replicas): a deleted
+// broker-backed pool renders no desired brokers, so the drain path never
+// consults the rest of the spec (see BrokerSetResource.Ensure).
+func GetNodePoolsWithBrokerBacked(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
+	pools, err := GetNodePools(ctx, cluster, k8sClient)
+	if err != nil {
+		return nil, err
+	}
+
+	var brokers redpandav1alpha2.BrokerList
+	if err := k8sClient.List(ctx, &brokers, &client.ListOptions{
+		LabelSelector: labels.ForCluster(cluster).AsClientSelector(),
+		Namespace:     cluster.Namespace,
+	}); err != nil {
+		return nil, fmt.Errorf("listing Broker CRs for deleted-pool reconstruction: %w", err)
+	}
+
+	seen := map[string]bool{}
+	for _, p := range pools {
+		seen[p.Name] = true
+	}
+	for i := range brokers.Items {
+		b := &brokers.Items[i]
+		if !slices.ContainsFunc(b.OwnerReferences, func(ref metav1.OwnerReference) bool {
+			return ref.UID == cluster.UID
+		}) {
+			continue
+		}
+		pool := b.Labels[labels.NodePoolKey]
+		if pool == "" || seen[pool] {
+			continue
+		}
+		seen[pool] = true
+		pools = append(pools, &vectorizedv1alpha1.NodePoolSpecWithDeleted{
+			NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{
+				Name:     pool,
+				Replicas: ptr.To(int32(0)),
+			},
+			Deleted: true,
+		})
+	}
+	return pools, nil
 }

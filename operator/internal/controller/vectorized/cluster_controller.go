@@ -27,6 +27,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -42,7 +43,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -85,6 +88,7 @@ type ClusterReconciler struct {
 	// broker pod templates. See resources.MaybeInjectNodeUnavailableTolerations
 	// for the duration semantics (0=off, positive=seconds, negative=forever).
 	BrokerPodNodeUnavailableToleration time.Duration
+	BrokerCREnabled                    bool
 	Dialer                             redpanda.DialContextFunc
 	Timeout                            time.Duration
 	// this is provided if external cloud secret resolution is configured. It's
@@ -110,6 +114,8 @@ type ClusterReconciler struct {
 //+kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=create;get;list;watch;patch;delete;update;
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;
 //+kubebuilder:rbac:groups=scheduling.k8s.io,resources=priorityclasses,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers/status,verbs=get
 //+kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters/finalizers,verbs=update;patch
 //+kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters/status,verbs=get;update;patch
@@ -258,8 +264,36 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	ar.configMap(cfg)
-	if err = ar.statefulSet(cfg); err != nil {
-		return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
+	brokerMode := r.BrokerCREnabled && feature.V1UseBrokerCR.Get(ctx, &vectorizedCluster)
+
+	if r.BrokerCREnabled {
+		if brokerMode {
+			if err = ar.brokerSet(ctx, cfg); err != nil {
+				return ctrl.Result{}, fmt.Errorf("creating broker sets: %w", err)
+			}
+		} else {
+			// Broker support is on but this cluster is not (or no longer)
+			// annotated: clean up any leftover Broker CRs before the
+			// StatefulSet below may be recreated.
+			if err = resources.RollbackBrokerCRs(ctx, r.Client, r.Scheme, &vectorizedCluster, log); err != nil {
+				// While rollback is blocked (rotation or decommission in
+				// flight) the StatefulSet must NOT be recreated — it would
+				// fight the Broker controller over the pods. Requeue and
+				// retry the rollback instead.
+				var requeueErr *resources.RequeueAfterError
+				if errors.As(err, &requeueErr) {
+					log.Info(requeueErr.Error())
+					return ctrl.Result{RequeueAfter: requeueErr.RequeueAfter}, nil
+				}
+				return ctrl.Result{}, fmt.Errorf("rolling back Broker CRs: %w", err)
+			}
+		}
+	}
+
+	if !brokerMode {
+		if err = ar.statefulSet(cfg); err != nil {
+			return ctrl.Result{}, fmt.Errorf("creating statefulsets: %w", err)
+		}
 	}
 
 	if err = r.setPodNodeIDAnnotation(ctx, &vectorizedCluster, log, ar); err != nil {
@@ -268,6 +302,15 @@ func (r *ClusterReconciler) Reconcile(
 	}
 
 	result, errs := ar.Ensure()
+	// Migration runs per pool but the BrokerMigration condition is
+	// cluster-scoped: flush ONE aggregate of every pool's report so a
+	// finished pool never declares Complete while another is still blocked.
+	// The Ensure loop runs every pool even through requeues, so this sits
+	// before the requeue return; on errors the information is partial and
+	// the aggregator skips the write.
+	if brokerMode && errs == nil && ar.brokerMigration != nil {
+		resources.FlushBrokerMigrationCondition(ctx, r.Client, &vectorizedCluster, log, ar.brokerMigration)
+	}
 	if errs != nil {
 		return ctrl.Result{}, errs
 	}
@@ -290,15 +333,19 @@ func (r *ClusterReconciler) Reconcile(
 	if vectorizedCluster.Spec.Configuration.SchemaRegistry != nil {
 		schemaRegistryPort = vectorizedCluster.Spec.Configuration.SchemaRegistry.Port
 	}
-	stSets, err := ar.getStatefulSet(cfg)
-	if err != nil {
-		return ctrl.Result{}, err
+	var stSets []*resources.StatefulSetResource
+	if !brokerMode {
+		stSets, err = ar.getStatefulSet(cfg)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 
 	err = r.reportStatus(
 		ctx,
 		&vectorizedCluster,
 		stSets,
+		brokerMode,
 		ar.getHeadlessServiceFQDN(),
 		ar.getClusterServiceFQDN(),
 		schemaRegistryPort,
@@ -314,6 +361,7 @@ func (r *ClusterReconciler) Reconcile(
 		&vectorizedCluster,
 		cfg,
 		stSets,
+		brokerMode,
 		pki,
 		ar.getHeadlessServiceFQDN(),
 		log,
@@ -355,7 +403,7 @@ func (r *ClusterReconciler) Reconcile(
 		return ctrl.Result{}, err
 	}
 
-	if r.GhostDecommissioning {
+	if r.GhostDecommissioning && !brokerMode {
 		r.decommissionGhostBrokers(ctx, &vectorizedCluster, log, ar)
 	}
 
@@ -374,15 +422,20 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("invalid image pull policy \"%s\": %w", r.configuratorSettings.ImagePullPolicy, err)
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	b := ctrl.NewControllerManagedBy(mgr).
 		For(&vectorizedv1alpha1.Cluster{}).
 		Owns(&appsv1.StatefulSet{}).
-		Owns(&corev1.Service{}).
-		Watches(
-			&corev1.Pod{},
-			handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForPods),
-			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
-		).
+		Owns(&corev1.Service{})
+
+	if r.BrokerCREnabled {
+		b = b.Owns(&redpandav1alpha2.Broker{})
+	}
+
+	return b.Watches(
+		&corev1.Pod{},
+		handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForPods),
+		builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
+	).
 		Watches(
 			&corev1.Secret{},
 			handler.EnqueueRequestsFromMapFunc(r.reconcileClusterForExternalCASecret),
@@ -518,6 +571,7 @@ func (r *ClusterReconciler) reportStatus(
 	ctx context.Context,
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	stSets []*resources.StatefulSetResource,
+	brokerMode bool,
 	internalFQDN string,
 	clusterFQDN string,
 	schemaRegistryPort int,
@@ -548,10 +602,6 @@ func (r *ClusterReconciler) reportStatus(
 	nodeList.Internal = observedNodesInternal
 	nodeList.SchemaRegistry.Internal = fmt.Sprintf("%s:%d", clusterFQDN, schemaRegistryPort)
 
-	if len(stSets) == 0 {
-		r.Log.Info("no stateful sets found")
-	}
-
 	var version string
 	var versionErr error
 
@@ -559,27 +609,103 @@ func (r *ClusterReconciler) reportStatus(
 	readyReplicas := int32(0)
 	replicas := int32(0)
 	currentReplicas := int32(0)
-	for _, sts := range stSets {
-		if sts.LastObservedState == nil {
-			return errNonexistentLastObservedState
+
+	if brokerMode {
+		var brokerList redpandav1alpha2.BrokerList
+		if err := r.List(ctx, &brokerList, &client.ListOptions{
+			LabelSelector: labels.ForCluster(redpandaCluster).AsClientSelector(),
+			Namespace:     redpandaCluster.Namespace,
+		}); err != nil {
+			return fmt.Errorf("listing Broker CRs for status: %w", err)
 		}
 
-		readyReplicas += sts.LastObservedState.Status.ReadyReplicas
-		replicas += sts.LastObservedState.Status.Replicas
+		perPool := map[string]*vectorizedv1alpha1.NodePoolStatus{}
+		for _, b := range brokerList.Items {
+			if b.IsDiskLost() {
+				// A dead incarnation is not a live replica: counting it
+				// would double-count a tombstone+replacement pair sharing a
+				// network index (or report a not-yet-replaced tombstone as a
+				// member).
+				continue
+			}
+			pool := b.Labels[labels.NodePoolKey]
+			nps, ok := perPool[pool]
+			if !ok {
+				nps = &vectorizedv1alpha1.NodePoolStatus{}
+				perPool[pool] = nps
+			}
+			nps.Replicas++
+			replicas++
+			// Phase stays Running through readiness dips once a broker has
+			// registered; the Ready condition is the actual health signal.
+			if apimeta.IsStatusConditionTrue(b.Status.Conditions, statuses.BrokerReady) {
+				nps.ReadyReplicas++
+				readyReplicas++
+			}
+		}
+		for pool, nps := range perPool {
+			// CurrentReplicas is SCALE BOOKKEEPING — how many broker
+			// incarnations exist — never a readiness count. The StatefulSet
+			// render derives Spec.Replicas and the maintenance-mode lifecycle
+			// hooks from CalculateCurrentReplicas(), and the StatefulSet is
+			// still ensured mid-migration: writing a readiness-derived zero
+			// here scaled the live StatefulSet to 0 and deleted every pod at
+			// migration entry.
+			nps.CurrentReplicas = nps.Replicas
+			currentReplicas += nps.Replicas
+			nodePoolStatus[pool] = *nps
+		}
+		// A pool whose Broker CRs don't exist yet (the first migration
+		// passes) must keep its entry: the StatefulSet is still authoritative
+		// for it, and wiping the entry zeroes CalculateCurrentReplicas just
+		// the same. Pools absent from the spec with no Broker CRs left are
+		// genuinely gone (drained) and stay dropped.
+		for _, np := range redpandaCluster.GetNodePoolsFromSpec() {
+			if _, ok := nodePoolStatus[np.Name]; ok {
+				continue
+			}
+			if old, ok := redpandaCluster.Status.NodePools[np.Name]; ok {
+				nodePoolStatus[np.Name] = old
+				currentReplicas += old.CurrentReplicas
+				replicas += old.Replicas
+				readyReplicas += old.ReadyReplicas
+			}
+		}
+		// Status.Version records what is ROLLED OUT, not what was requested —
+		// the broker-mode counterpart of the StatefulSet path's
+		// CurrentVersion. Stamping the spec version early would defeat the
+		// UpgradeInProgress guard in getQuiescentCondition: Spec.Version and
+		// Status.Version would match from the first pass of an upgrade, and
+		// OperatorQuiescent would report True (bumping ObservedGeneration)
+		// throughout the serialized restart.
+		version = redpandaCluster.Spec.Version
+		versionErr = brokerRolloutIncomplete(redpandaCluster, brokerList.Items, observedPods.Items)
+	} else {
+		if len(stSets) == 0 {
+			r.Log.Info("no stateful sets found")
+		}
+		for _, sts := range stSets {
+			if sts.LastObservedState == nil {
+				return errNonexistentLastObservedState
+			}
 
-		oldNps := redpandaCluster.Status.NodePools[sts.GetNodePool().Name]
+			readyReplicas += sts.LastObservedState.Status.ReadyReplicas
+			replicas += sts.LastObservedState.Status.Replicas
 
-		oldNps.Replicas = sts.GetReplicas()
-		oldNps.ReadyReplicas = sts.LastObservedState.Status.ReadyReplicas
+			oldNps := redpandaCluster.Status.NodePools[sts.GetNodePool().Name]
 
-		nodePoolStatus[sts.GetNodePool().Name] = oldNps
+			oldNps.Replicas = sts.GetReplicas()
+			oldNps.ReadyReplicas = sts.LastObservedState.Status.ReadyReplicas
 
-		currentReplicas += oldNps.CurrentReplicas
+			nodePoolStatus[sts.GetNodePool().Name] = oldNps
 
-		version, versionErr = sts.CurrentVersion(ctx)
+			currentReplicas += oldNps.CurrentReplicas
+
+			version, versionErr = sts.CurrentVersion(ctx)
+		}
 	}
 
-	if versionErr != nil || version == "" {
+	if !brokerMode && (versionErr != nil || version == "") {
 		r.Log.Info(fmt.Sprintf("cannot get CurrentVersion of statefulset, %s", versionErr))
 	}
 	if !statusShouldBeUpdated(&redpandaCluster.Status, nodeList, replicas, readyReplicas, version, versionErr, nodePoolStatus) {
@@ -615,6 +741,51 @@ func (r *ClusterReconciler) reportStatus(
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update cluster status: %w", err)
+	}
+	return nil
+}
+
+// brokerRolloutIncomplete reports whether the spec version may be recorded
+// as the cluster's rolled-out version in broker mode, mirroring
+// StatefulSetResource.CurrentVersion: nil only when every live (non-DiskLost)
+// Broker's pod exists, is Ready, runs the spec image, and the live Broker
+// count matches the desired replicas. While it returns an error,
+// reportStatus withholds the Status.Version stamp, so Status.Version lags
+// the roll and getQuiescentCondition's UpgradeInProgress guard covers the
+// whole span — including the instants between two grants when every pod
+// briefly reports Ready.
+func brokerRolloutIncomplete(cluster *vectorizedv1alpha1.Cluster, brokers []redpandav1alpha2.Broker, pods []corev1.Pod) error {
+	podsByName := make(map[string]*corev1.Pod, len(pods))
+	for i := range pods {
+		podsByName[pods[i].Name] = &pods[i]
+	}
+
+	live := int32(0)
+	for i := range brokers {
+		b := &brokers[i]
+		if b.IsDiskLost() {
+			// A dead incarnation has no pod to converge; its replacement is
+			// counted separately once created.
+			continue
+		}
+		live++
+		pod, ok := podsByName[b.PodName()]
+		if !ok {
+			//nolint:goerr113 // transient rollout progress, never matched on
+			return fmt.Errorf("rollout incomplete: Broker %s has no pod %s", b.Name, b.PodName())
+		}
+		if !utils.IsPodReady(pod) {
+			//nolint:goerr113 // transient rollout progress, never matched on
+			return fmt.Errorf("rollout incomplete: pod %s is not READY", pod.Name)
+		}
+		if podVersion := resources.RedpandaContainerVersion(pod.Spec.Containers); podVersion != cluster.Spec.Version {
+			//nolint:goerr113 // transient rollout progress, never matched on
+			return fmt.Errorf("rollout incomplete: pod %s has version %q not %q", pod.Name, podVersion, cluster.Spec.Version)
+		}
+	}
+	if desired := cluster.GetDesiredReplicas(); live != desired {
+		//nolint:goerr113 // transient rollout progress, never matched on
+		return fmt.Errorf("rollout incomplete: %d live Brokers, expected %d", live, desired)
 	}
 	return nil
 }
@@ -756,6 +927,17 @@ func (r *ClusterReconciler) createExternalNodesList(
 			externalAdminListener != nil && needExternalIP(externalAdminListener.External) ||
 			externalProxyListener != nil && needExternalIP(externalProxyListener.External.ExternalConnectivityConfig) ||
 			schemaRegistryConf != nil && schemaRegistryConf.External != nil && needExternalIP(*schemaRegistryConf.GetExternal()) {
+			// An unscheduled pod has no node and therefore no external
+			// addresses — skip it rather than failing the whole node list:
+			// the empty-name Get below errors unconditionally, and via
+			// reportStatus that would abort every reconcile before
+			// configuration, license, and ghost-decommission handling for
+			// as long as ANY pod is Pending (a pod pinned to a dead node by
+			// PV affinity keeps it Pending indefinitely). The pod's
+			// addresses appear once it schedules.
+			if pods[i].Spec.NodeName == "" {
+				continue
+			}
 			if err := r.Get(ctx, types.NamespacedName{Name: pods[i].Spec.NodeName}, &node); err != nil {
 				return nil, fmt.Errorf("failed to retrieve node %s: %w", pods[i].Spec.NodeName, err)
 			}

@@ -1,0 +1,16 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- timeout: 320
+  script: |
+    set -e
+    SEL="app.kubernetes.io/instance=sts-annotation"
+    for i in $(seq 1 150); do
+      ready=$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' 2>/dev/null | grep -c True || true)
+      [ "$ready" = "3" ] && break
+      sleep 2
+    done
+    # StatefulSet mode: STS present, no Broker CRs.
+    test "$(kubectl get sts -n $NAMESPACE -l $SEL --no-headers | wc -l)" = "1"
+    test "$(kubectl get brokers.cluster.redpanda.com -n $NAMESPACE -l $SEL --no-headers 2>/dev/null | wc -l)" = "0"
+    test "$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' | grep -c True)" = "3"

@@ -2013,6 +2013,7 @@ spec:
                       enum:
                       - ClusterConfigured
                       - OperatorQuiescent
+                      - BrokerMigration
                       type: string
                   required:
                   - status

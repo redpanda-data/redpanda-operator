@@ -20,6 +20,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -35,6 +36,13 @@ type attachedResources struct {
 	items          map[string]resources.Resource
 	order          []string
 	autoDeletePVCs bool
+	// brokerMigration accumulates per-pool migration reports; the reconciler
+	// flushes one aggregate BrokerMigration condition after Ensure().
+	brokerMigration *brokerset.MigrationAggregator
+	// brokerArbitration shares this reconcile pass's disruptive-write state
+	// across all pools' BrokerSets, so the one-disruptive-operation-at-a-time
+	// gates see writes the informer cache has not observed yet.
+	brokerArbitration *brokerset.Arbitration
 }
 
 const (
@@ -54,6 +62,7 @@ const (
 	serviceAccount          = "ServiceAccount"
 	secret                  = "Secret"
 	statefulSet             = "StatefulSet"
+	brokerSetKey            = "BrokerSet"
 	nodePool                = "NodePool"
 )
 
@@ -456,4 +465,58 @@ func (a *attachedResources) getStatefulSet(cfg *clusterconfiguration.CombinedCfg
 		out = append(out, sts.(*resources.StatefulSetResource))
 	}
 	return out, nil
+}
+
+func (a *attachedResources) brokerSet(ctx context.Context, cfg *clusterconfiguration.CombinedCfg) error {
+	pki, err := a.getPKI()
+	if err != nil {
+		return err
+	}
+
+	// Broker-aware: deleted pools whose StatefulSet is gone (migrated, then
+	// removed from spec.nodePools) are reconstructed from their Broker CRs so
+	// they still get a BrokerSetResource to drain them.
+	nps, err := nodepools.GetNodePoolsWithBrokerBacked(ctx, a.cluster, a.reconciler.Client)
+	if err != nil {
+		return fmt.Errorf("while getting node pools: %w", err)
+	}
+	if a.brokerMigration == nil {
+		a.brokerMigration = brokerset.NewMigrationAggregator()
+	}
+	if a.brokerArbitration == nil {
+		a.brokerArbitration = &brokerset.Arbitration{}
+	}
+	for _, np := range nps {
+		bsKey := fmt.Sprintf("%s-%s", brokerSetKey, np.Name)
+		if _, ok := a.items[bsKey]; ok {
+			continue
+		}
+
+		a.items[bsKey] = resources.NewBrokerSet(
+			a.reconciler.Client,
+			a.cluster,
+			a.reconciler.Scheme,
+			a.getHeadlessServiceFQDN(),
+			a.getHeadlessServiceName(),
+			a.getNodeportServiceKey(),
+			pki.StatefulSetVolumeProvider(),
+			pki.AdminAPIConfigProvider(),
+			a.getServiceAccountName(),
+			a.reconciler.configuratorSettings,
+			cfg,
+			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.Dialer,
+			a.reconciler.DecommissionWaitInterval,
+			a.log,
+			a.reconciler.MetricsTimeout,
+			*np,
+			a.autoDeletePVCs,
+			a.reconciler.BrokerPodNodeUnavailableToleration,
+			resources.NewMigrationPoolReporter(a.brokerMigration, np.Name, a.reconciler.Client, a.cluster, a.log),
+			a.brokerArbitration)
+
+		a.order = append(a.order, bsKey)
+	}
+
+	return nil
 }

@@ -1257,7 +1257,7 @@ func (r *StatefulSetResource) fullConfiguratorImage() string {
 func (r *StatefulSetResource) Version() string {
 	lastObservedSts := r.LastObservedState
 	if lastObservedSts != nil {
-		return redpandaContainerVersion(lastObservedSts.Spec.Template.Spec.Containers)
+		return RedpandaContainerVersion(lastObservedSts.Spec.Template.Spec.Containers)
 	}
 	return ""
 }
@@ -1272,7 +1272,9 @@ func getAdditionalListenerPortName(listenerName string) string {
 	return listenerName[s:]
 }
 
-func redpandaContainerVersion(containers []corev1.Container) string {
+// RedpandaContainerVersion returns the image tag of the redpanda container
+// in the given list, or "" when there is none (or the image has no tag).
+func RedpandaContainerVersion(containers []corev1.Container) string {
 	for i := range containers {
 		c := containers[i]
 		if c.Name != redpandaContainerName {
@@ -1314,7 +1316,7 @@ func (r *StatefulSetResource) CurrentVersion(ctx context.Context) (string, error
 			//nolint:goerr113 // no need for static error
 			return stsVersion, fmt.Errorf("rollout incomplete: at least one pod (%s) is not READY", pods[i].Name)
 		}
-		podVersion := redpandaContainerVersion(pods[i].Spec.Containers)
+		podVersion := RedpandaContainerVersion(pods[i].Spec.Containers)
 		if podVersion != stsVersion {
 			//nolint:goerr113 // no need for static error
 			return stsVersion, fmt.Errorf("rollout incomplete: at least one pod has version %s not %s", podVersion, stsVersion)

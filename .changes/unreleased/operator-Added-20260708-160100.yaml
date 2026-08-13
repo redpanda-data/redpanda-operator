@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Broker CRD RFC compliance: migration/rollback safeguards (blocked until rollout complete, pods on desired config, cluster healthy); recommission on unsetting spec.decommission; broker-deletion-policy annotation (cascade|orphan); change-guarded Broker status updates; central-config restarts ride the roll-grant machinery; pool-aware pod names; rollback restores the StatefulSet from the migration backup; node_id continuity verified before a roll completes; Stuck detection for crash loops and image pull failures; BrokerMigration condition on the Cluster; Quiesced/Stable Broker conditions maintained'
+time: 2026-07-08T16:01:00.000000000+02:00

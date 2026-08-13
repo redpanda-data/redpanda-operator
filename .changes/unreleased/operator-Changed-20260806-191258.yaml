@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: 'In Broker CR mode, a broker whose disk is lost with its Kubernetes node is no longer healed in place: the Broker is marked with the terminal DiskLost phase, a replacement Broker CR takes over its network index (Broker identity — .status.brokerID — is now immutable), and the dead node_id is decommissioned once the replacement registers. This removes the roll-grant/health-gate deadlock and the ExistingClaims gap that made the previous PV-affinity remediation inoperative for migrated brokers.'
+time: 2026-08-06T19:12:58.774662825+02:00

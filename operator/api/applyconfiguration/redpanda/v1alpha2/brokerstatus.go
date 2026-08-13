@@ -19,11 +19,12 @@ import (
 // BrokerStatusApplyConfiguration represents a declarative configuration of the BrokerStatus type for use
 // with apply.
 type BrokerStatusApplyConfiguration struct {
-	Phase      *redpandav1alpha2.BrokerPhase    `json:"phase,omitempty"`
-	BrokerID   *int32                           `json:"brokerID,omitempty"`
-	PodName    *string                          `json:"podName,omitempty"`
-	PodIP      *string                          `json:"podIP,omitempty"`
-	Conditions []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	Phase      *redpandav1alpha2.BrokerPhase     `json:"phase,omitempty"`
+	BrokerID   *int32                            `json:"brokerID,omitempty"`
+	DiskLost   *DiskLostStatusApplyConfiguration `json:"diskLost,omitempty"`
+	PodName    *string                           `json:"podName,omitempty"`
+	PodIP      *string                           `json:"podIP,omitempty"`
+	Conditions []v1.ConditionApplyConfiguration  `json:"conditions,omitempty"`
 }
 
 // BrokerStatusApplyConfiguration constructs a declarative configuration of the BrokerStatus type for use with
@@ -45,6 +46,14 @@ func (b *BrokerStatusApplyConfiguration) WithPhase(value redpandav1alpha2.Broker
 // If called multiple times, the BrokerID field is set to the value of the last call.
 func (b *BrokerStatusApplyConfiguration) WithBrokerID(value int32) *BrokerStatusApplyConfiguration {
 	b.BrokerID = &value
+	return b
+}
+
+// WithDiskLost sets the DiskLost field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the DiskLost field is set to the value of the last call.
+func (b *BrokerStatusApplyConfiguration) WithDiskLost(value *DiskLostStatusApplyConfiguration) *BrokerStatusApplyConfiguration {
+	b.DiskLost = value
 	return b
 }
 

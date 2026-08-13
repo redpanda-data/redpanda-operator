@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Broker CR reconciliation no longer issues a no-op spec update on every pass — the rendered pod template now carries the port protocol the Broker CRD structurally defaults on write, so the semantic comparison settles
+time: 2026-07-09T11:30:00.000000000+02:00

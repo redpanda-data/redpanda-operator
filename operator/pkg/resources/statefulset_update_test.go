@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -290,6 +291,109 @@ func TestPutInMaintenanceMode(t *testing.T) {
 				require.NoError(t, err)
 			} else {
 				require.ErrorIs(t, err, tc.errorRequired)
+			}
+		})
+	}
+}
+
+// enableRefusingAdminAPI wraps MockAdminAPI so EnableMaintenanceMode fails
+// with a caller-chosen error, the way redpanda refuses a maintenance
+// transition (e.g. while another broker still holds the maintenance flag).
+type enableRefusingAdminAPI struct {
+	*adminutils.MockAdminAPI
+	enableErr error
+}
+
+func (m *enableRefusingAdminAPI) EnableMaintenanceMode(ctx context.Context, nodeID int) error {
+	if m.enableErr != nil {
+		return m.enableErr
+	}
+	return m.MockAdminAPI.EnableMaintenanceMode(ctx, nodeID)
+}
+
+func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
+	httpErr := func(code int) *rpadmin.HTTPResponseError {
+		return &rpadmin.HTTPResponseError{
+			Response: &http.Response{StatusCode: code},
+			Body:     []byte(fmt.Sprintf(`{"message": "refused", "code": %d}`, code)),
+		}
+	}
+
+	tcs := []struct {
+		name       string
+		enableErr  error
+		podDeleted bool
+	}{
+		// Redpanda refusing the maintenance transition must delay the
+		// eviction, not be overridden: the refusal is redpanda's own
+		// one-disruption-at-a-time interlock (another broker may still hold
+		// the maintenance flag), and deleting the pod anyway takes a second
+		// broker down, undrained.
+		{"400 refusal requeues without deleting", httpErr(http.StatusBadRequest), false},
+		{"503 refusal requeues without deleting", httpErr(http.StatusServiceUnavailable), false},
+		// 404 means the broker is gone (decommissioned): there is nothing to
+		// drain, so the eviction proceeds.
+		{"404 proceeds with the eviction", httpErr(http.StatusNotFound), true},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := pandaCluster()
+			cluster.Spec.NodePools[0].Replicas = ptr.To(int32(3))
+
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cluster-first-0",
+					Namespace: "default",
+				},
+				Status: corev1.PodStatus{
+					Conditions: []corev1.PodCondition{{
+						Type:   ClusterUpdatePodCondition,
+						Status: corev1.ConditionTrue,
+						Reason: ClusterUpdateReasonConfig,
+					}},
+				},
+			}
+			c := fake.NewClientBuilder().WithObjects(pod).Build()
+
+			ssres := StatefulSetResource{
+				Client:       c,
+				pandaCluster: cluster,
+				nodePool: vectorizedv1alpha1.NodePoolSpecWithDeleted{
+					NodePoolSpec: cluster.Spec.NodePools[0],
+				},
+				logger: ctrl.Log.WithName("TestPodEvictionHonorsMaintenanceModeRefusal"),
+				adminAPIClientFactory: func(
+					ctx context.Context,
+					k8sClient client.Reader,
+					redpandaCluster *vectorizedv1alpha1.Cluster,
+					fqdn string,
+					adminTLSProvider types.AdminTLSConfigProvider,
+					_ redpanda.DialContextFunc,
+					timeout time.Duration,
+					pods ...string,
+				) (adminutils.AdminAPIClient, error) {
+					return &enableRefusingAdminAPI{
+						MockAdminAPI: &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")},
+						enableErr:    tc.enableErr,
+					}, nil
+				},
+			}
+
+			var artificialPod corev1.Pod
+			artificialPod.Spec = pod.Spec
+
+			err := ssres.podEviction(context.Background(), pod, &artificialPod, nil)
+
+			var requeue *RequeueAfterError
+			require.ErrorAs(t, err, &requeue)
+
+			var got corev1.Pod
+			getErr := c.Get(context.Background(), client.ObjectKeyFromObject(pod), &got)
+			if tc.podDeleted {
+				require.True(t, apierrors.IsNotFound(getErr), "pod should have been deleted, got: %v", getErr)
+			} else {
+				require.NoError(t, getErr, "pod must NOT be deleted while redpanda refuses maintenance mode")
 			}
 		})
 	}

@@ -27,6 +27,12 @@ const (
 	BrokerPhaseDecommissioning BrokerPhase = "Decommissioning"
 	BrokerPhaseDecommissioned  BrokerPhase = "Decommissioned"
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
+	// BrokerPhaseDiskLost marks a dead incarnation: the broker's pod was
+	// provably unschedulable because its storage is pinned to a Kubernetes
+	// node that no longer exists. Terminal — the CR lingers only as the
+	// decommission record for its node_id while a replacement Broker CR
+	// takes over the network index. See BrokerStatus.DiskLost.
+	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
 // BrokerConfigChecksumAnnotation carries the config checksum on both the
@@ -41,6 +47,19 @@ const BrokerConfigChecksumAnnotation = "config.redpanda.com/checksum"
 // whose value differs from the desired template needs a rotation). The
 // cluster controller only ever writes it to the Broker SPEC — never to pods.
 const BrokerClusterConfigVersionAnnotation = "operator.redpanda.com/cluster-config-version"
+
+// BrokerPodTemplateHashAnnotation carries a hash of the desired pod
+// template's SPEC — the analog of a StatefulSet's controller-revision-hash:
+// pods inherit it at creation and a mismatch with the desired template
+// demands a rotation. Without it, spec-only changes (image, resources, env)
+// that leave the rendered node config untouched would never reach live
+// pods. Template labels and annotations are deliberately NOT part of the
+// hash: metadata is mutable in place and the Broker controller syncs it onto
+// live pods without a restart (the config checksum and restart marker, the
+// two metadata keys that do require a restart, are their own PodOutdated
+// keys). Whoever writes the pod template must re-stamp this annotation after
+// any SPEC mutation.
+const BrokerPodTemplateHashAnnotation = "operator.redpanda.com/pod-template-hash"
 
 const (
 	// NodePoolLabel carries the name of the node pool a Broker belongs to.
@@ -70,6 +89,8 @@ const (
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="BrokerID",type="integer",JSONPath=".status.brokerID"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="Owner Kind",type="string",JSONPath=".spec.clusterRef.kind",description="Kind of the owning resource; empty means the default (Redpanda)"
+// +kubebuilder:printcolumn:name="Owner",type="string",JSONPath=".spec.clusterRef.name",description="Name of the owning resource"
 // +kubebuilder:printcolumn:name="Ready",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description=""
 type Broker struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -183,6 +204,13 @@ type BrokerStatus struct {
 	// the broker registers with the cluster. Nil until discovered.
 	// +optional
 	BrokerID *int32 `json:"brokerID,omitempty"`
+	// DiskLost, once set, marks this Broker as a dead incarnation: its pod
+	// was provably unschedulable because its storage is pinned to a
+	// Kubernetes node that no longer exists. Terminal and never cleared —
+	// the CR lingers only as the decommission record for its node_id while
+	// a replacement Broker CR takes over the network index.
+	// +optional
+	DiskLost *DiskLostStatus `json:"diskLost,omitempty"`
 	// PodName is the name of the pod managed by this Broker CR.
 	// +optional
 	PodName string `json:"podName,omitempty"`
@@ -192,4 +220,17 @@ type BrokerStatus struct {
 	// Conditions holds the conditions for the Broker.
 	// +optional
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+}
+
+// DiskLostStatus records the two durable checkpoints of disk-loss handling.
+type DiskLostStatus struct {
+	// At is when the dead-node proof was accepted — the point of no return.
+	// +optional
+	At metav1.Time `json:"at,omitempty"`
+	// ResourcesReleased is set once the pod and every PVC were confirmed
+	// gone on an uncached read; only from then on does the network index
+	// stop being occupied by this CR and a replacement may be created.
+	// Monotonic: never unset.
+	// +optional
+	ResourcesReleased bool `json:"resourcesReleased,omitempty"`
 }
