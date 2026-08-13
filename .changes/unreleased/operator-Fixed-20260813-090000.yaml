@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Fixed the post-upgrade migration job failing the whole upgrade when its ServiceAccount lacks permissions for optional resource types swept during field-manager migration — e.g. Gateway API `tlsroutes`/`httproutes` on clusters that have the Gateway API CRDs installed but manage RBAC manually (`rbac.create=false`). `Forbidden` errors during the sweep are now logged as warnings and the affected type or resource is skipped (and re-swept on the next upgrade); failing to list the `Redpanda`/`Console` custom resources themselves remains fatal.'
+time: 2026-08-13T09:00:00.000000-07:00
