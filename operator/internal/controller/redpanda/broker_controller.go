@@ -31,7 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -110,6 +113,16 @@ func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFa
 	).
 		Owns(&corev1.Pod{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Owns(&corev1.PersistentVolumeClaim{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
+		// Owns(Pod) cannot deliver the one event adoption depends on: after
+		// the STS→Broker handover's orphan-delete, kube GC strips the
+		// StatefulSet ownerRef and the pod becomes OWNERLESS — an ownerless
+		// pod maps to no Broker under Owns, so nothing would wake the Broker
+		// until its periodic requeue (minutes of a migration stalled with
+		// adoptable pods; whether it stalled depended on winning a race
+		// against the CR-creation reconcile flurry). Route ownerless-pod
+		// events to the Broker whose deterministic pod name matches.
+		Watches(&corev1.Pod{}, enqueueBrokerForAdoptablePod,
+			mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Complete(
 			controller.FilterNamespaceReconciler(
 				namespace,
@@ -118,6 +131,34 @@ func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFa
 					ClientFactory:     clientFactory,
 					MarkDiskLostAfter: markDiskLostAfter,
 				}, "Broker", periodicRequeue)))
+}
+
+// enqueueBrokerForAdoptablePod maps pod events that Owns(Pod) is blind to —
+// pods with NO controller owner — onto the Broker whose PodName() matches.
+// The per-cluster closure supplies the right cached client: Broker names are
+// generated, so the orphan can only be matched by listing the namespace's
+// Brokers and comparing deterministic pod names. Owned pods return early;
+// their events keep riding Owns(Pod).
+func enqueueBrokerForAdoptablePod(clusterName string, cl cluster.Cluster) mchandler.EventHandler {
+	return handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []mcreconcile.Request {
+		if metav1.GetControllerOf(o) != nil {
+			return nil
+		}
+		var brokers redpandav1alpha2.BrokerList
+		if err := cl.GetClient().List(ctx, &brokers, client.InNamespace(o.GetNamespace())); err != nil {
+			return nil
+		}
+		for i := range brokers.Items {
+			b := &brokers.Items[i]
+			if b.PodName() == o.GetName() {
+				return []mcreconcile.Request{{
+					Request:     reconcile.Request{NamespacedName: client.ObjectKeyFromObject(b)},
+					ClusterName: clusterName,
+				}}
+			}
+		}
+		return nil
+	})
 }
 
 type brokerReconciliationState struct {
