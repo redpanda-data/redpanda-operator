@@ -1,0 +1,12 @@
+project: operator
+kind: Fixed
+body: |-
+    Official release images now embed the telemetry signing key, enabling operator telemetry.
+
+      The release pipeline fetched `TELEMETRY_PRIVATE_KEY` on the Buildkite agent
+      but never forwarded it into the containerized build
+      (`ci/scripts/run-in-nix-docker.sh` forwards env vars by explicit allowlist),
+      so the key-injection step silently no-op'd, `key.pem` stayed empty, and the
+      telemetry client was compiled out (a disabled no-op) of every published
+      image, including v26.2.1 and its betas.
+time: 2026-08-14T10:47:43+02:00
