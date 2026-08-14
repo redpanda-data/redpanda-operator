@@ -67,6 +67,7 @@ docker run --rm -it \
 	-e ACCEPTANCE_ARTIFACTS_DIR \
 	-e INTEGRATION_ARTIFACTS_DIR \
 	-e REDPANDA_SAMPLE_LICENSE \
+	-e TELEMETRY_PRIVATE_KEY \
 	--user 0:$(id -g) \
 	--privileged \
 	--net=host \
