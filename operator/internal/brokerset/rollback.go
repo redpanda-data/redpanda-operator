@@ -260,7 +260,18 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 			return err
 		}
 		if !cleanedThisPass {
-			// Steady state: no Broker CRs and no pending restore.
+			// Steady state: no Broker CRs and no pending restore. The terminal
+			// RolledBack report from the pass that finished the rollback rides
+			// the owner's status write, which may never land (conflict, crash)
+			// — and the backup ConfigMap, the resume marker, is already gone
+			// by then. So, like migration Complete, the terminal state is
+			// observed rather than recorded: promote a lingering non-terminal
+			// condition here until the write sticks. Clusters that never
+			// migrated have no condition and report nothing.
+			if cfg.Reporter != nil && cfg.Reporter.NeedsRollback(ctx) {
+				cfg.report(ctx, corev1.ConditionTrue,
+					MigrationReasonRolledBack, "Broker CRs removed; StatefulSet manages all pods")
+			}
 			return nil
 		}
 		// No backup exists (a broker-born cluster was never migrated from a

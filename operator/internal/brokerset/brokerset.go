@@ -122,6 +122,13 @@ type MigrationReporter interface {
 	// recorded and not yet marked complete. Steady state promotes such a
 	// record to Complete; clusters that never migrated never get one.
 	NeedsCompletion(ctx context.Context) bool
+	// NeedsRollback reports whether migration progress was previously
+	// recorded and not yet marked RolledBack. Rollback's steady state
+	// promotes such a record to RolledBack — like Complete, the terminal
+	// state is observed, not recorded, so a report lost between the last
+	// rollback action and its persistence (status-write conflict, crash) is
+	// re-derived instead of gone. Clusters that never migrated never get one.
+	NeedsRollback(ctx context.Context) bool
 }
 
 // BrokerSet manages the Broker CRs of one node pool on behalf of an owning

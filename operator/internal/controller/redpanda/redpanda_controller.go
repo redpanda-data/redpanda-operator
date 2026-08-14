@@ -932,6 +932,17 @@ func (rep *v2MigrationReporter) NeedsCompletion(context.Context) bool {
 	return cond != nil && cond.Reason != brokerset.MigrationReasonComplete
 }
 
+// NeedsRollback keeps the terminal RolledBack stamp re-derivable: the report
+// rides the end-of-pass syncStatus, whose update is best-effort (a conflict
+// is swallowed by ignoreConflict), so the pass that deletes the migration
+// backup can lose it — with no resume marker left to retry from. Reading the
+// condition off the freshly-fetched Redpanda makes rollback's steady state
+// re-report until the write actually lands.
+func (rep *v2MigrationReporter) NeedsRollback(context.Context) bool {
+	cond := apimeta.FindStatusCondition(rep.state.cluster.Redpanda.Status.Conditions, redpandav1alpha2.BrokerMigrationConditionType)
+	return cond != nil && cond.Reason != brokerset.MigrationReasonRolledBack
+}
+
 // clusterHealthCheck returns the admin-API health gate used by the brokerset
 // machinery (roll grants and the migration's destructive step), memoizing the
 // admin client onto the reconcile state.

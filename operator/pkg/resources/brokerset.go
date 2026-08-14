@@ -332,6 +332,11 @@ func (rep *v1MigrationReporter) NeedsCompletion(context.Context) bool {
 	return cond != nil && cond.Reason != brokerset.MigrationReasonComplete
 }
 
+func (rep *v1MigrationReporter) NeedsRollback(context.Context) bool {
+	cond := rep.cluster.Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType)
+	return cond != nil && cond.Reason != brokerset.MigrationReasonRolledBack
+}
+
 // setMigrationCondition records STS→Broker migration progress on the Cluster
 // status so operators can observe it (the migration state itself is derived
 // from world state, never persisted). Writes only when the condition value

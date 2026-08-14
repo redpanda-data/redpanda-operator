@@ -103,3 +103,7 @@ func (r *poolReporter) Report(_ context.Context, status corev1.ConditionStatus, 
 func (r *poolReporter) NeedsCompletion(ctx context.Context) bool {
 	return r.inner.NeedsCompletion(ctx)
 }
+
+func (r *poolReporter) NeedsRollback(ctx context.Context) bool {
+	return r.inner.NeedsRollback(ctx)
+}

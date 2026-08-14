@@ -21,6 +21,7 @@ type staticNeedsCompletion bool
 
 func (s staticNeedsCompletion) Report(context.Context, corev1.ConditionStatus, string, string) {}
 func (s staticNeedsCompletion) NeedsCompletion(context.Context) bool                           { return bool(s) }
+func (s staticNeedsCompletion) NeedsRollback(context.Context) bool                             { return bool(s) }
 
 // TestMigrationAggregator pins the flap fix: a pool that finished migrating
 // must never flip the cluster-scoped condition to Complete while another
