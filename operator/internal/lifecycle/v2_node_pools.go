@@ -57,11 +57,46 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 }
 
 func (m *V2NodePoolRenderer) convertToRender(cluster *ClusterWithPools) (*redpanda.RenderState, error) {
+	brokerPools, err := nodePoolsToBrokerPools(cluster.NodePools)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{
 		RedpandaImage:    defaultImage(m.redpandaImage),
 		SidecarImage:     defaultImage(m.sideCarImage),
 		ConfiguratorArgs: m.cloudSecrets.AdditionalConfiguratorArgs(),
-	}, cluster.Redpanda, cluster.NodePools)
+	}, cluster.Redpanda, brokerPools)
+}
+
+// nodePoolsToBrokerPools converts v2 NodePools into the equivalent
+// RedpandaBrokerPools to allow access to [redpanda.RenderState].
+//
+// The resultant [redpandav1alpha2.RedpandaBrokerPools] spec will have a handful of
+// nil fields as [redpandav1alpha2.NodePool] is subset of broker pools. See
+// [redpandav1alpha2.ConvertEmbeddedNodePoolSpecToEmbeddedBrokerPoolSpec] for
+// details.
+func nodePoolsToBrokerPools(pools []*redpandav1alpha2.NodePool) ([]*redpandav1alpha2.RedpandaBrokerPool, error) {
+	converted := make([]*redpandav1alpha2.RedpandaBrokerPool, 0, len(pools))
+	for _, pool := range pools {
+		if pool == nil {
+			continue
+		}
+
+		spec, err := redpandav1alpha2.ConvertEmbeddedNodePoolSpecToEmbeddedBrokerPoolSpec(pool.Spec.EmbeddedNodePoolSpec)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting NodePool %q to a RedpandaBrokerPool", pool.Name)
+		}
+
+		converted = append(converted, &redpandav1alpha2.RedpandaBrokerPool{
+			ObjectMeta: *pool.ObjectMeta.DeepCopy(),
+			Spec: redpandav1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: *spec,
+				ClusterRef:             *pool.Spec.ClusterRef.DeepCopy(),
+			},
+		})
+	}
+	return converted, nil
 }
 
 func isNodePool(object client.Object) bool {

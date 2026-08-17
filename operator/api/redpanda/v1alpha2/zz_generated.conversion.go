@@ -173,6 +173,37 @@ func init() {
 		}
 		return pConsolePartialRenderValues, nil
 	}
+	ConvertEmbeddedNodePoolSpecToEmbeddedBrokerPoolSpec = func(source EmbeddedNodePoolSpec) (*EmbeddedBrokerPoolSpec, error) {
+		var v1alpha2EmbeddedBrokerPoolSpec EmbeddedBrokerPoolSpec
+		if source.AdditionalSelectorLabels != nil {
+			v1alpha2EmbeddedBrokerPoolSpec.AdditionalSelectorLabels = make(map[string]string, len(source.AdditionalSelectorLabels))
+			for key, value := range source.AdditionalSelectorLabels {
+				v1alpha2EmbeddedBrokerPoolSpec.AdditionalSelectorLabels[key] = value
+			}
+		}
+		if source.Replicas != nil {
+			xint32 := *source.Replicas
+			v1alpha2EmbeddedBrokerPoolSpec.Replicas = &xint32
+		}
+		if source.AdditionalRedpandaCmdFlags != nil {
+			v1alpha2EmbeddedBrokerPoolSpec.AdditionalRedpandaCmdFlags = make([]string, len(source.AdditionalRedpandaCmdFlags))
+			for i := 0; i < len(source.AdditionalRedpandaCmdFlags); i++ {
+				v1alpha2EmbeddedBrokerPoolSpec.AdditionalRedpandaCmdFlags[i] = source.AdditionalRedpandaCmdFlags[i]
+			}
+		}
+		pV1alpha2PodTemplate, err := pV1alpha2PodTemplateToPV1alpha2PodTemplate(source.PodTemplate)
+		if err != nil {
+			return nil, err
+		}
+		v1alpha2EmbeddedBrokerPoolSpec.PodTemplate = pV1alpha2PodTemplate
+		v1alpha2EmbeddedBrokerPoolSpec.Services = pV1alpha2NodePoolServicesToPV1alpha2NodePoolServices(source.Services)
+		v1alpha2EmbeddedBrokerPoolSpec.InitContainers = pV1alpha2PoolInitContainersToPV1alpha2PoolInitContainers(source.InitContainers)
+		v1alpha2EmbeddedBrokerPoolSpec.Image = pV1alpha2RedpandaImageToPV1alpha2RedpandaImage(source.Image)
+		v1alpha2EmbeddedBrokerPoolSpec.SidecarImage = pV1alpha2RedpandaImageToPV1alpha2RedpandaImage(source.SidecarImage)
+		v1alpha2EmbeddedBrokerPoolSpec.InitContainerImage = pV1alpha2InitContainerImageToPV1alpha2InitContainerImage(source.InitContainerImage)
+		v1alpha2EmbeddedBrokerPoolSpec.PersistentVolumeClaimRetentionPolicy = pV1StatefulSetPersistentVolumeClaimRetentionPolicyToPV1StatefulSetPersistentVolumeClaimRetentionPolicy(source.PersistentVolumeClaimRetentionPolicy)
+		return &v1alpha2EmbeddedBrokerPoolSpec, nil
+	}
 	ConvertKafkaAPISpecToIR = func(context string, source *KafkaAPISpec) *ir.KafkaAPISpec {
 		var pIrKafkaAPISpec *ir.KafkaAPISpec
 		if source != nil {
@@ -579,6 +610,18 @@ func pV1CapabilitiesToPV1CapabilitiesApplyConfiguration(source *v1.Capabilities)
 		pV1CapabilitiesApplyConfiguration = &v1CapabilitiesApplyConfiguration
 	}
 	return pV1CapabilitiesApplyConfiguration
+}
+func pV1ClientIPConfigApplyConfigurationToPV1ClientIPConfigApplyConfiguration(source *v11.ClientIPConfigApplyConfiguration) *v11.ClientIPConfigApplyConfiguration {
+	var pV1ClientIPConfigApplyConfiguration *v11.ClientIPConfigApplyConfiguration
+	if source != nil {
+		var v1ClientIPConfigApplyConfiguration v11.ClientIPConfigApplyConfiguration
+		if (*source).TimeoutSeconds != nil {
+			xint32 := *(*source).TimeoutSeconds
+			v1ClientIPConfigApplyConfiguration.TimeoutSeconds = &xint32
+		}
+		pV1ClientIPConfigApplyConfiguration = &v1ClientIPConfigApplyConfiguration
+	}
+	return pV1ClientIPConfigApplyConfiguration
 }
 func pV1ConfigMapEnvSourceToPV1ConfigMapEnvSource(source *v1.ConfigMapEnvSource) *v1.ConfigMapEnvSource {
 	var pV1ConfigMapEnvSource *v1.ConfigMapEnvSource
@@ -1044,6 +1087,112 @@ func pV1SecurityContextToPV1SecurityContextApplyConfiguration(source *v1.Securit
 	}
 	return pV1SecurityContextApplyConfiguration
 }
+func pV1ServiceSpecApplyConfigurationToPV1ServiceSpecApplyConfiguration(source *v11.ServiceSpecApplyConfiguration) *v11.ServiceSpecApplyConfiguration {
+	var pV1ServiceSpecApplyConfiguration *v11.ServiceSpecApplyConfiguration
+	if source != nil {
+		var v1ServiceSpecApplyConfiguration v11.ServiceSpecApplyConfiguration
+		if (*source).Ports != nil {
+			v1ServiceSpecApplyConfiguration.Ports = make([]v11.ServicePortApplyConfiguration, len((*source).Ports))
+			for i := 0; i < len((*source).Ports); i++ {
+				v1ServiceSpecApplyConfiguration.Ports[i] = v1ServicePortApplyConfigurationToV1ServicePortApplyConfiguration((*source).Ports[i])
+			}
+		}
+		if (*source).Selector != nil {
+			v1ServiceSpecApplyConfiguration.Selector = make(map[string]string, len((*source).Selector))
+			for key, value := range (*source).Selector {
+				v1ServiceSpecApplyConfiguration.Selector[key] = value
+			}
+		}
+		if (*source).ClusterIP != nil {
+			xstring := *(*source).ClusterIP
+			v1ServiceSpecApplyConfiguration.ClusterIP = &xstring
+		}
+		if (*source).ClusterIPs != nil {
+			v1ServiceSpecApplyConfiguration.ClusterIPs = make([]string, len((*source).ClusterIPs))
+			for j := 0; j < len((*source).ClusterIPs); j++ {
+				v1ServiceSpecApplyConfiguration.ClusterIPs[j] = (*source).ClusterIPs[j]
+			}
+		}
+		if (*source).Type != nil {
+			v1ServiceType := v1.ServiceType(*(*source).Type)
+			v1ServiceSpecApplyConfiguration.Type = &v1ServiceType
+		}
+		if (*source).ExternalIPs != nil {
+			v1ServiceSpecApplyConfiguration.ExternalIPs = make([]string, len((*source).ExternalIPs))
+			for k := 0; k < len((*source).ExternalIPs); k++ {
+				v1ServiceSpecApplyConfiguration.ExternalIPs[k] = (*source).ExternalIPs[k]
+			}
+		}
+		if (*source).SessionAffinity != nil {
+			v1ServiceAffinity := v1.ServiceAffinity(*(*source).SessionAffinity)
+			v1ServiceSpecApplyConfiguration.SessionAffinity = &v1ServiceAffinity
+		}
+		if (*source).LoadBalancerIP != nil {
+			xstring2 := *(*source).LoadBalancerIP
+			v1ServiceSpecApplyConfiguration.LoadBalancerIP = &xstring2
+		}
+		if (*source).LoadBalancerSourceRanges != nil {
+			v1ServiceSpecApplyConfiguration.LoadBalancerSourceRanges = make([]string, len((*source).LoadBalancerSourceRanges))
+			for l := 0; l < len((*source).LoadBalancerSourceRanges); l++ {
+				v1ServiceSpecApplyConfiguration.LoadBalancerSourceRanges[l] = (*source).LoadBalancerSourceRanges[l]
+			}
+		}
+		if (*source).ExternalName != nil {
+			xstring3 := *(*source).ExternalName
+			v1ServiceSpecApplyConfiguration.ExternalName = &xstring3
+		}
+		if (*source).ExternalTrafficPolicy != nil {
+			v1ServiceExternalTrafficPolicy := v1.ServiceExternalTrafficPolicy(*(*source).ExternalTrafficPolicy)
+			v1ServiceSpecApplyConfiguration.ExternalTrafficPolicy = &v1ServiceExternalTrafficPolicy
+		}
+		if (*source).HealthCheckNodePort != nil {
+			xint32 := *(*source).HealthCheckNodePort
+			v1ServiceSpecApplyConfiguration.HealthCheckNodePort = &xint32
+		}
+		if (*source).PublishNotReadyAddresses != nil {
+			xbool := *(*source).PublishNotReadyAddresses
+			v1ServiceSpecApplyConfiguration.PublishNotReadyAddresses = &xbool
+		}
+		v1ServiceSpecApplyConfiguration.SessionAffinityConfig = pV1SessionAffinityConfigApplyConfigurationToPV1SessionAffinityConfigApplyConfiguration((*source).SessionAffinityConfig)
+		if (*source).IPFamilies != nil {
+			v1ServiceSpecApplyConfiguration.IPFamilies = make([]v1.IPFamily, len((*source).IPFamilies))
+			for m := 0; m < len((*source).IPFamilies); m++ {
+				v1ServiceSpecApplyConfiguration.IPFamilies[m] = v1.IPFamily((*source).IPFamilies[m])
+			}
+		}
+		if (*source).IPFamilyPolicy != nil {
+			v1IPFamilyPolicy := v1.IPFamilyPolicy(*(*source).IPFamilyPolicy)
+			v1ServiceSpecApplyConfiguration.IPFamilyPolicy = &v1IPFamilyPolicy
+		}
+		if (*source).AllocateLoadBalancerNodePorts != nil {
+			xbool2 := *(*source).AllocateLoadBalancerNodePorts
+			v1ServiceSpecApplyConfiguration.AllocateLoadBalancerNodePorts = &xbool2
+		}
+		if (*source).LoadBalancerClass != nil {
+			xstring4 := *(*source).LoadBalancerClass
+			v1ServiceSpecApplyConfiguration.LoadBalancerClass = &xstring4
+		}
+		if (*source).InternalTrafficPolicy != nil {
+			v1ServiceInternalTrafficPolicy := v1.ServiceInternalTrafficPolicy(*(*source).InternalTrafficPolicy)
+			v1ServiceSpecApplyConfiguration.InternalTrafficPolicy = &v1ServiceInternalTrafficPolicy
+		}
+		if (*source).TrafficDistribution != nil {
+			xstring5 := *(*source).TrafficDistribution
+			v1ServiceSpecApplyConfiguration.TrafficDistribution = &xstring5
+		}
+		pV1ServiceSpecApplyConfiguration = &v1ServiceSpecApplyConfiguration
+	}
+	return pV1ServiceSpecApplyConfiguration
+}
+func pV1SessionAffinityConfigApplyConfigurationToPV1SessionAffinityConfigApplyConfiguration(source *v11.SessionAffinityConfigApplyConfiguration) *v11.SessionAffinityConfigApplyConfiguration {
+	var pV1SessionAffinityConfigApplyConfiguration *v11.SessionAffinityConfigApplyConfiguration
+	if source != nil {
+		var v1SessionAffinityConfigApplyConfiguration v11.SessionAffinityConfigApplyConfiguration
+		v1SessionAffinityConfigApplyConfiguration.ClientIP = pV1ClientIPConfigApplyConfigurationToPV1ClientIPConfigApplyConfiguration((*source).ClientIP)
+		pV1SessionAffinityConfigApplyConfiguration = &v1SessionAffinityConfigApplyConfiguration
+	}
+	return pV1SessionAffinityConfigApplyConfiguration
+}
 func pV1SleepActionToPV1SleepAction(source *v1.SleepAction) *v1.SleepAction {
 	var pV1SleepAction *v1.SleepAction
 	if source != nil {
@@ -1052,6 +1201,16 @@ func pV1SleepActionToPV1SleepAction(source *v1.SleepAction) *v1.SleepAction {
 		pV1SleepAction = &v1SleepAction
 	}
 	return pV1SleepAction
+}
+func pV1StatefulSetPersistentVolumeClaimRetentionPolicyToPV1StatefulSetPersistentVolumeClaimRetentionPolicy(source *v12.StatefulSetPersistentVolumeClaimRetentionPolicy) *v12.StatefulSetPersistentVolumeClaimRetentionPolicy {
+	var pV1StatefulSetPersistentVolumeClaimRetentionPolicy *v12.StatefulSetPersistentVolumeClaimRetentionPolicy
+	if source != nil {
+		var v1StatefulSetPersistentVolumeClaimRetentionPolicy v12.StatefulSetPersistentVolumeClaimRetentionPolicy
+		v1StatefulSetPersistentVolumeClaimRetentionPolicy.WhenDeleted = v1PersistentVolumeClaimRetentionPolicyTypeToV1PersistentVolumeClaimRetentionPolicyType((*source).WhenDeleted)
+		v1StatefulSetPersistentVolumeClaimRetentionPolicy.WhenScaled = v1PersistentVolumeClaimRetentionPolicyTypeToV1PersistentVolumeClaimRetentionPolicyType((*source).WhenScaled)
+		pV1StatefulSetPersistentVolumeClaimRetentionPolicy = &v1StatefulSetPersistentVolumeClaimRetentionPolicy
+	}
+	return pV1StatefulSetPersistentVolumeClaimRetentionPolicy
 }
 func pV1TCPSocketActionToPV1TCPSocketAction(source *v1.TCPSocketAction) *v1.TCPSocketAction {
 	var pV1TCPSocketAction *v1.TCPSocketAction
@@ -1257,6 +1416,22 @@ func pV1alpha2IngressConfigToPConsolePartialIngressConfig(source *IngressConfig)
 	}
 	return pConsolePartialIngressConfig
 }
+func pV1alpha2InitContainerImageToPV1alpha2InitContainerImage(source *InitContainerImage) *InitContainerImage {
+	var pV1alpha2InitContainerImage *InitContainerImage
+	if source != nil {
+		var v1alpha2InitContainerImage InitContainerImage
+		if (*source).Repository != nil {
+			xstring := *(*source).Repository
+			v1alpha2InitContainerImage.Repository = &xstring
+		}
+		if (*source).Tag != nil {
+			xstring2 := *(*source).Tag
+			v1alpha2InitContainerImage.Tag = &xstring2
+		}
+		pV1alpha2InitContainerImage = &v1alpha2InitContainerImage
+	}
+	return pV1alpha2InitContainerImage
+}
 func pV1alpha2KafkaSecretsToPConsolePartialKafkaSecrets(source *KafkaSecrets) *v3.PartialKafkaSecrets {
 	var pConsolePartialKafkaSecrets *v3.PartialKafkaSecrets
 	if source != nil {
@@ -1333,6 +1508,15 @@ func pV1alpha2MonitoringConfigToPV1alpha2MonitoringConfig(source *MonitoringConf
 	}
 	return pV1alpha2MonitoringConfig
 }
+func pV1alpha2NodePoolServicesToPV1alpha2NodePoolServices(source *NodePoolServices) *NodePoolServices {
+	var pV1alpha2NodePoolServices *NodePoolServices
+	if source != nil {
+		var v1alpha2NodePoolServices NodePoolServices
+		v1alpha2NodePoolServices.PerPod = pV1alpha2PerPodServicesToPV1alpha2PerPodServices((*source).PerPod)
+		pV1alpha2NodePoolServices = &v1alpha2NodePoolServices
+	}
+	return pV1alpha2NodePoolServices
+}
 func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLoginSecrets) *v3.PartialOIDCLoginSecrets {
 	var pConsolePartialOIDCLoginSecrets *v3.PartialOIDCLoginSecrets
 	if source != nil {
@@ -1344,6 +1528,119 @@ func pV1alpha2OIDCLoginSecretsToPConsolePartialOIDCLoginSecrets(source *OIDCLogi
 		pConsolePartialOIDCLoginSecrets = &consolePartialOIDCLoginSecrets
 	}
 	return pConsolePartialOIDCLoginSecrets
+}
+func pV1alpha2PerPodServiceOverrideToPV1alpha2PerPodServiceOverride(source *PerPodServiceOverride) *PerPodServiceOverride {
+	var pV1alpha2PerPodServiceOverride *PerPodServiceOverride
+	if source != nil {
+		var v1alpha2PerPodServiceOverride PerPodServiceOverride
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			v1alpha2PerPodServiceOverride.Enabled = &xbool
+		}
+		if (*source).Labels != nil {
+			v1alpha2PerPodServiceOverride.Labels = make(map[string]string, len((*source).Labels))
+			for key, value := range (*source).Labels {
+				v1alpha2PerPodServiceOverride.Labels[key] = value
+			}
+		}
+		if (*source).Annotations != nil {
+			v1alpha2PerPodServiceOverride.Annotations = make(map[string]string, len((*source).Annotations))
+			for key2, value2 := range (*source).Annotations {
+				v1alpha2PerPodServiceOverride.Annotations[key2] = value2
+			}
+		}
+		v1alpha2PerPodServiceOverride.Spec = pV1ServiceSpecApplyConfigurationToPV1ServiceSpecApplyConfiguration((*source).Spec)
+		pV1alpha2PerPodServiceOverride = &v1alpha2PerPodServiceOverride
+	}
+	return pV1alpha2PerPodServiceOverride
+}
+func pV1alpha2PerPodServicesToPV1alpha2PerPodServices(source *PerPodServices) *PerPodServices {
+	var pV1alpha2PerPodServices *PerPodServices
+	if source != nil {
+		var v1alpha2PerPodServices PerPodServices
+		v1alpha2PerPodServices.Local = pV1alpha2PerPodServiceOverrideToPV1alpha2PerPodServiceOverride((*source).Local)
+		v1alpha2PerPodServices.Remote = pV1alpha2PerPodServiceOverrideToPV1alpha2PerPodServiceOverride((*source).Remote)
+		pV1alpha2PerPodServices = &v1alpha2PerPodServices
+	}
+	return pV1alpha2PerPodServices
+}
+func pV1alpha2PodTemplateToPV1alpha2PodTemplate(source *PodTemplate) (*PodTemplate, error) {
+	var pV1alpha2PodTemplate *PodTemplate
+	if source != nil {
+		var v1alpha2PodTemplate PodTemplate
+		if (*source).Labels != nil {
+			v1alpha2PodTemplate.Labels = make(map[string]string, len((*source).Labels))
+			for key, value := range (*source).Labels {
+				v1alpha2PodTemplate.Labels[key] = value
+			}
+		}
+		if (*source).Annotations != nil {
+			v1alpha2PodTemplate.Annotations = make(map[string]string, len((*source).Annotations))
+			for key2, value2 := range (*source).Annotations {
+				v1alpha2PodTemplate.Annotations[key2] = value2
+			}
+		}
+		pV1PodSpecApplyConfiguration, err := conv_applycorev1_PodSpecApplyConfiguration_To_applycorev1_PodSpecApplyConfiguration((*source).Spec)
+		if err != nil {
+			return nil, err
+		}
+		v1alpha2PodTemplate.Spec = pV1PodSpecApplyConfiguration
+		pV1alpha2PodTemplate = &v1alpha2PodTemplate
+	}
+	return pV1alpha2PodTemplate, nil
+}
+func pV1alpha2PoolConfiguratorToPV1alpha2PoolConfigurator(source *PoolConfigurator) *PoolConfigurator {
+	var pV1alpha2PoolConfigurator *PoolConfigurator
+	if source != nil {
+		var v1alpha2PoolConfigurator PoolConfigurator
+		if (*source).AdditionalCLIArgs != nil {
+			v1alpha2PoolConfigurator.AdditionalCLIArgs = make([]string, len((*source).AdditionalCLIArgs))
+			for i := 0; i < len((*source).AdditionalCLIArgs); i++ {
+				v1alpha2PoolConfigurator.AdditionalCLIArgs[i] = (*source).AdditionalCLIArgs[i]
+			}
+		}
+		pV1alpha2PoolConfigurator = &v1alpha2PoolConfigurator
+	}
+	return pV1alpha2PoolConfigurator
+}
+func pV1alpha2PoolFSValidatorToPV1alpha2PoolFSValidator(source *PoolFSValidator) *PoolFSValidator {
+	var pV1alpha2PoolFSValidator *PoolFSValidator
+	if source != nil {
+		var v1alpha2PoolFSValidator PoolFSValidator
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			v1alpha2PoolFSValidator.Enabled = &xbool
+		}
+		if (*source).ExpectedFS != nil {
+			xstring := *(*source).ExpectedFS
+			v1alpha2PoolFSValidator.ExpectedFS = &xstring
+		}
+		pV1alpha2PoolFSValidator = &v1alpha2PoolFSValidator
+	}
+	return pV1alpha2PoolFSValidator
+}
+func pV1alpha2PoolInitContainersToPV1alpha2PoolInitContainers(source *PoolInitContainers) *PoolInitContainers {
+	var pV1alpha2PoolInitContainers *PoolInitContainers
+	if source != nil {
+		var v1alpha2PoolInitContainers PoolInitContainers
+		v1alpha2PoolInitContainers.FSValidator = pV1alpha2PoolFSValidatorToPV1alpha2PoolFSValidator((*source).FSValidator)
+		v1alpha2PoolInitContainers.SetDataDirOwnership = pV1alpha2PoolSetDataDirOwnershipToPV1alpha2PoolSetDataDirOwnership((*source).SetDataDirOwnership)
+		v1alpha2PoolInitContainers.Configurator = pV1alpha2PoolConfiguratorToPV1alpha2PoolConfigurator((*source).Configurator)
+		pV1alpha2PoolInitContainers = &v1alpha2PoolInitContainers
+	}
+	return pV1alpha2PoolInitContainers
+}
+func pV1alpha2PoolSetDataDirOwnershipToPV1alpha2PoolSetDataDirOwnership(source *PoolSetDataDirOwnership) *PoolSetDataDirOwnership {
+	var pV1alpha2PoolSetDataDirOwnership *PoolSetDataDirOwnership
+	if source != nil {
+		var v1alpha2PoolSetDataDirOwnership PoolSetDataDirOwnership
+		if (*source).Enabled != nil {
+			xbool := *(*source).Enabled
+			v1alpha2PoolSetDataDirOwnership.Enabled = &xbool
+		}
+		pV1alpha2PoolSetDataDirOwnership = &v1alpha2PoolSetDataDirOwnership
+	}
+	return pV1alpha2PoolSetDataDirOwnership
 }
 func pV1alpha2RedpandaAdminAPISecretsToPConsolePartialRedpandaAdminAPISecrets(source *RedpandaAdminAPISecrets) *v3.PartialRedpandaAdminAPISecrets {
 	var pConsolePartialRedpandaAdminAPISecrets *v3.PartialRedpandaAdminAPISecrets
@@ -1368,6 +1665,26 @@ func pV1alpha2RedpandaAdminAPISecretsToPConsolePartialRedpandaAdminAPISecrets(so
 		pConsolePartialRedpandaAdminAPISecrets = &consolePartialRedpandaAdminAPISecrets
 	}
 	return pConsolePartialRedpandaAdminAPISecrets
+}
+func pV1alpha2RedpandaImageToPV1alpha2RedpandaImage(source *RedpandaImage) *RedpandaImage {
+	var pV1alpha2RedpandaImage *RedpandaImage
+	if source != nil {
+		var v1alpha2RedpandaImage RedpandaImage
+		if (*source).Repository != nil {
+			xstring := *(*source).Repository
+			v1alpha2RedpandaImage.Repository = &xstring
+		}
+		if (*source).Tag != nil {
+			xstring2 := *(*source).Tag
+			v1alpha2RedpandaImage.Tag = &xstring2
+		}
+		if (*source).PullPolicy != nil {
+			xstring3 := *(*source).PullPolicy
+			v1alpha2RedpandaImage.PullPolicy = &xstring3
+		}
+		pV1alpha2RedpandaImage = &v1alpha2RedpandaImage
+	}
+	return pV1alpha2RedpandaImage
 }
 func pV1alpha2RedpandaSecretsToPConsolePartialRedpandaSecrets(source *RedpandaSecrets) *v3.PartialRedpandaSecrets {
 	var pConsolePartialRedpandaSecrets *v3.PartialRedpandaSecrets
@@ -1624,6 +1941,9 @@ func v1NodeSelectorTermToV1NodeSelectorTerm(source v1.NodeSelectorTerm) v1.NodeS
 	}
 	return v1NodeSelectorTerm
 }
+func v1PersistentVolumeClaimRetentionPolicyTypeToV1PersistentVolumeClaimRetentionPolicyType(source v12.PersistentVolumeClaimRetentionPolicyType) v12.PersistentVolumeClaimRetentionPolicyType {
+	return v12.PersistentVolumeClaimRetentionPolicyType(source)
+}
 func v1PodAffinityTermToV1PodAffinityTerm(source v1.PodAffinityTerm) v1.PodAffinityTerm {
 	var v1PodAffinityTerm v1.PodAffinityTerm
 	v1PodAffinityTerm.LabelSelector = pV1LabelSelectorToPV1LabelSelector(source.LabelSelector)
@@ -1665,6 +1985,31 @@ func v1ProbeHandlerToV1ProbeHandler(source v1.ProbeHandler) v1.ProbeHandler {
 }
 func v1SeccompProfileTypeToV1SeccompProfileType(source v1.SeccompProfileType) v1.SeccompProfileType {
 	return v1.SeccompProfileType(source)
+}
+func v1ServicePortApplyConfigurationToV1ServicePortApplyConfiguration(source v11.ServicePortApplyConfiguration) v11.ServicePortApplyConfiguration {
+	var v1ServicePortApplyConfiguration v11.ServicePortApplyConfiguration
+	if source.Name != nil {
+		xstring := *source.Name
+		v1ServicePortApplyConfiguration.Name = &xstring
+	}
+	if source.Protocol != nil {
+		v1Protocol := v1.Protocol(*source.Protocol)
+		v1ServicePortApplyConfiguration.Protocol = &v1Protocol
+	}
+	if source.AppProtocol != nil {
+		xstring2 := *source.AppProtocol
+		v1ServicePortApplyConfiguration.AppProtocol = &xstring2
+	}
+	if source.Port != nil {
+		xint32 := *source.Port
+		v1ServicePortApplyConfiguration.Port = &xint32
+	}
+	v1ServicePortApplyConfiguration.TargetPort = pIntstrIntOrStringToPIntstrIntOrString(source.TargetPort)
+	if source.NodePort != nil {
+		xint322 := *source.NodePort
+		v1ServicePortApplyConfiguration.NodePort = &xint322
+	}
+	return v1ServicePortApplyConfiguration
 }
 func v1SysctlToV1SysctlApplyConfiguration(source v1.Sysctl) v11.SysctlApplyConfiguration {
 	var v1SysctlApplyConfiguration v11.SysctlApplyConfiguration

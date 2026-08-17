@@ -53,10 +53,15 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		spec = &redpandav1alpha2.RedpandaClusterSpec{}
 	}
 
+	brokerPools, err := nodePoolsToBrokerPools(cluster.NodePools)
+	if err != nil {
+		return nil, err
+	}
+
 	// NB: No need for real defaults here as the defaults are leveraged only in the stateful set
 	// images and pod command-line args, neither of which are looked at for rendering simple
 	// resources.
-	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, cluster.NodePools)
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, brokerPools)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +147,12 @@ func (m *V2SimpleResourceRenderer) MigratingResources() []client.Object {
 // admin port); a conversion failure returns nil and callers treat a missing
 // endpoint as "cannot verify, do nothing".
 func (m *V2SimpleResourceRenderer) GetAdminAPIEndpoints(cluster *ClusterWithPools) []string {
-	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, cluster.NodePools)
+	brokerPools, err := nodePoolsToBrokerPools(cluster.NodePools)
+	if err != nil {
+		return nil
+	}
+
+	state, err := conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{}, cluster.Redpanda, brokerPools)
 	if err != nil {
 		return nil
 	}

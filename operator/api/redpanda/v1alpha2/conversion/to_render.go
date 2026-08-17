@@ -32,8 +32,8 @@ type V2Defaulters struct {
 	ConfiguratorArgs []string
 }
 
-// ConvertV2ToRenderState converts a v2 Redpanda CRD to a redpanda chart RenderState.
-func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.NodePool) (*redpanda.RenderState, error) {
+// ConvertV2ToRenderState converts a v2 Redpanda CRD and any [redpandav1alpha2.RedpandaBrokerPool]s to a redpanda chart RenderState.
+func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.RedpandaBrokerPool) (*redpanda.RenderState, error) {
 	spec := defaultV2Spec(defaulters, cluster)
 
 	dot, err := redpanda.Chart.Dot(config, helmette.Release{
@@ -53,7 +53,7 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err
 		}
-		renderedPools, err := convertV2NodepoolsToPools(state.Values, pools, defaulters)
+		renderedPools, err := convertBrokerPoolsToPools(state.Values, pools, defaulters)
 		if err != nil {
 			return err
 		}
@@ -199,7 +199,7 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 		values.Statefulset.PodTemplate.Spec.PriorityClassName = spec.PriorityClassName
 	}
 	if spec.TerminationGracePeriodSeconds != nil {
-		values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = ptr.To(int64(*spec.TerminationGracePeriodSeconds))
+		values.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds = new(int64(*spec.TerminationGracePeriodSeconds))
 	}
 
 	// Only materialize probe overrides the CR actually sets; unconditionally
@@ -336,10 +336,10 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	return nil
 }
 
-func convertV2NodepoolsToPools(values redpanda.Values, pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
+func convertBrokerPoolsToPools(values redpanda.Values, pools []*redpandav1alpha2.RedpandaBrokerPool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
 	converted := make([]redpanda.Pool, len(pools))
 	for i, pool := range pools {
-		set, err := convertV2NodepoolToPool(values, pool, defaulters)
+		set, err := convertBrokerPoolToPool(values, pool, defaulters)
 		if err != nil {
 			return nil, err
 		}
@@ -348,7 +348,16 @@ func convertV2NodepoolsToPools(values redpanda.Values, pools []*redpandav1alpha2
 	return converted, nil
 }
 
-func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
+// convertBrokerPoolToPool merges a single BrokerPool over the chart's default
+// Statefulset values to produce a renderable [redpanda.Pool].
+//
+// The merge at the bottom is JSON-based, so the BrokerPool-only fields
+// (clusterDomain, tls, external, listeners, rbac, serviceAccount, monitoring,
+// storage, resources, imagePullSecrets, rackAwareness, logging) are simply
+// absent from redpanda.Statefulset and get dropped. None of them collides with
+// a Statefulset key, so a BrokerPool merges exactly as the equivalent NodePool
+// did. On the v2 path those settings come from the Redpanda CR.
+func convertBrokerPoolToPool(clusterValues redpanda.Values, pool *redpandav1alpha2.RedpandaBrokerPool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
 	// we grab *just* the default values here
 	v, err := redpanda.Chart.LoadValues(map[string]any{})
 	if err != nil {
@@ -366,7 +375,7 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 
 	values := helmette.Unwrap[redpanda.Values](v)
 	defaultSet := values.Statefulset
-	// we adjust some of the defaults that need to be changed in the nodepool context
+	// we adjust some of the defaults that need to be changed in the brokerpool context
 	defaultSet.PodTemplate.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchLabels = map[string]string{
 		`app.kubernetes.io/component`: fmt.Sprintf(`{{ include "redpanda.name" . }}-%s-statefulset`, pool.Name),
 		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
@@ -377,8 +386,8 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 		`app.kubernetes.io/instance`:  `{{ .Release.Name }}`,
 		`app.kubernetes.io/name`:      `{{ include "redpanda.name" . }}`,
 	}
-	// Inherit cluster-level PVC retention policy as the pool default. A NodePool whose
-	// own EmbeddedNodePoolSpec.PersistentVolumeClaimRetentionPolicy is set will override
+	// Inherit cluster-level PVC retention policy as the pool default. A BrokerPool whose
+	// own EmbeddedBrokerPoolSpec.PersistentVolumeClaimRetentionPolicy is set will override
 	// this via the convertJSON merge below.
 	if clusterValues.Statefulset.PersistentVolumeClaimRetentionPolicy != nil {
 		defaultSet.PersistentVolumeClaimRetentionPolicy = clusterValues.Statefulset.PersistentVolumeClaimRetentionPolicy.DeepCopy()
@@ -414,17 +423,17 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
 			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
 
-			container.Image = ptr.To(image)
-			configurator.Image = ptr.To(image)
+			container.Image = new(image)
+			configurator.Image = new(image)
 
 			// here we use clusterValues since we need to look at the cluster-level context
 			if clusterValues.Tuning.TuneAIOEvents {
 				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
-				tuning.Image = ptr.To(image)
+				tuning.Image = new(image)
 			}
 			if values.Statefulset.InitContainers.FSValidator.Enabled {
 				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
-				validator.Image = ptr.To(image)
+				validator.Image = new(image)
 			}
 		}
 	}

@@ -11,12 +11,14 @@ package conversion
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
@@ -29,11 +31,21 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/rapidutil"
 )
 
-func TestNodepoolConversion(t *testing.T) {
+func TestBrokerPoolConversion(t *testing.T) {
+	cfg := rapidutil.Merge(rapidutil.KubernetesTypes, rapid.MakeConfig{
+		Types: map[reflect.Type]*rapid.Generator[any]{
+			reflect.TypeFor[*runtime.RawExtension](): rapid.Just[any](nil),
+		},
+	})
+
 	rapid.Check(t, func(t *rapid.T) {
-		values := rapid.MakeCustom[redpanda.Values](rapidutil.KubernetesTypes).Draw(t, "values")
-		pools := rapid.SliceOf(rapid.MakeCustom[redpandav1alpha2.NodePool](rapidutil.KubernetesTypes)).Draw(t, "pools")
-		_, err := convertV2NodepoolsToPools(values, functional.MapFn(ptr.To, pools), &V2Defaulters{})
+		values := rapid.MakeCustom[redpanda.Values](cfg).Draw(t, "values")
+		pools := rapid.SliceOf(rapid.MakeCustom[*redpandav1alpha2.RedpandaBrokerPool](cfg).Filter(func(bp *redpandav1alpha2.RedpandaBrokerPool) bool {
+			// Force rapid to only select non-nil pools.
+			return bp != nil
+		})).Draw(t, "pools")
+
+		_, err := convertBrokerPoolsToPools(values, pools, &V2Defaulters{})
 		require.NoError(t, err)
 	})
 }
@@ -100,14 +112,14 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 			state := &redpanda.RenderState{Values: values}
 			require.NoError(t, convertV2Fields(state, &state.Values, clusterSpec))
 
-			pool := &redpandav1alpha2.NodePool{
-				Spec: redpandav1alpha2.NodePoolSpec{
-					EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+			pool := &redpandav1alpha2.RedpandaBrokerPool{
+				Spec: redpandav1alpha2.BrokerPoolSpec{
+					EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
 						PersistentVolumeClaimRetentionPolicy: tc.poolSet,
 					},
 				},
 			}
-			converted, err := convertV2NodepoolToPool(state.Values, pool, &V2Defaulters{})
+			converted, err := convertBrokerPoolToPool(state.Values, pool, &V2Defaulters{})
 			require.NoError(t, err)
 			got := converted.Statefulset.PersistentVolumeClaimRetentionPolicy
 			require.NotNil(t, got, "rendered pool should always carry a policy (chart default ensures this)")
