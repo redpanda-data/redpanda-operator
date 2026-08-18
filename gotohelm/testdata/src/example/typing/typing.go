@@ -21,6 +21,7 @@ func Typing(dot *helmette.Dot) map[string]any {
 		"embedding":         embedding(dot),
 		"compileMe":         compileMe(),
 		"typeAliases":       typeAliases(),
+		"aliases":           aliases(),
 		"typeTesting":       typeTesting(dot),
 		"typeAssertions":    typeSwitching(dot),
 		"typeSwitching":     typeSwitching(dot),
