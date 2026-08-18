@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 type PartialValues struct {
@@ -333,9 +334,9 @@ type PartialSASLAuth struct {
 }
 
 type PartialGatewayConfig struct {
-	Enabled        *bool                     "json:\"enabled,omitempty\""
-	ParentRefs     []PartialGatewayParentRef "json:\"parentRefs,omitempty\""
-	AdvertisedPort *int32                    "json:\"advertisedPort,omitempty\""
+	Enabled        *bool                       "json:\"enabled,omitempty\""
+	ParentRefs     []gatewayv1.ParentReference "json:\"parentRefs,omitempty\""
+	AdvertisedPort *int32                      "json:\"advertisedPort,omitempty\""
 }
 
 type PartialListenerConfig[T ~string] struct {
@@ -414,14 +415,6 @@ type PartialSASLUser struct {
 	Name      *string        "json:\"name,omitempty\""
 	Password  *string        "json:\"password,omitempty\""
 	Mechanism *SASLMechanism "json:\"mechanism,omitempty\""
-}
-
-type PartialGatewayParentRef struct {
-	Group       *string "json:\"group,omitempty\""
-	Kind        *string "json:\"kind,omitempty\""
-	Name        *string "json:\"name,omitempty\""
-	Namespace   *string "json:\"namespace,omitempty\""
-	SectionName *string "json:\"sectionName,omitempty\""
 }
 
 type PartialExternalListener[T ~string] struct {

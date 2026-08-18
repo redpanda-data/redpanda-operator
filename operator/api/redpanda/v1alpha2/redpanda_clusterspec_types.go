@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -555,23 +556,9 @@ type GatewayExternalConfig struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Defines which Gateway(s) handle the TLSRoutes. At least one parent reference must be provided.
 	// +kubebuilder:validation:MinItems=1
-	ParentRefs []GatewayParentRefConfig `json:"parentRefs,omitempty"`
+	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 	// The port advertised to clients. Defaults to 443.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
-}
-
-// GatewayParentRefConfig identifies a Gateway (or ListenerSet) that should handle the TLSRoute traffic. Schema mirrors the upstream Gateway API ParentReference.
-type GatewayParentRefConfig struct {
-	// API group of the referent. Defaults to "gateway.networking.k8s.io".
-	Group *string `json:"group,omitempty"`
-	// Kind of the referent. Defaults to "Gateway".
-	Kind *string `json:"kind,omitempty"`
-	// Name of the referent.
-	Name string `json:"name"`
-	// Namespace of the referent.
-	Namespace *string `json:"namespace,omitempty"`
-	// Name of a section within the target resource.
-	SectionName *string `json:"sectionName,omitempty"`
 }
 
 // Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.

@@ -4612,6 +4612,9 @@
                       "namespace": {
                         "type": "string"
                       },
+                      "port": {
+                        "type": "integer"
+                      },
                       "sectionName": {
                         "type": "string"
                       }
