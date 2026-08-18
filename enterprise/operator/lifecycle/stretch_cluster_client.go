@@ -37,7 +37,7 @@ const BrokerPoolGenerationLabel = render.BrokerPoolLabelGeneration
 // deletion. Callers must gate any "no desired counterpart → drain"
 // decision on the observed set so a transient fetch failure on a
 // partitioned peer can't be misread as user intent to remove all pools.
-func (r *ResourceClient[T, U]) FetchExistingBrokerPoolsFromAllClusters(ctx context.Context, cluster U) ([]*BrokerPoolInCluster, map[string]bool, error) {
+func (r *ResourceClient) FetchExistingBrokerPoolsFromAllClusters(ctx context.Context, cluster *StretchClusterWithPools) ([]*BrokerPoolInCluster, map[string]bool, error) {
 	logger := log.FromContext(ctx)
 	var nodePools []*BrokerPoolInCluster
 	observed := map[string]bool{}

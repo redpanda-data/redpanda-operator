@@ -18,7 +18,7 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/tplutil"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // StretchClusterSimpleResourceRenderer represents a simple resource renderer for stretch clusters.
@@ -28,7 +28,7 @@ type StretchClusterSimpleResourceRenderer struct {
 	sideCarImage  Image
 }
 
-var _ SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchClusterSimpleResourceRenderer)(nil)
+var _ SimpleResourceRenderer = (*StretchClusterSimpleResourceRenderer)(nil)
 
 // NewStretchClusterSimpleResourceRenderer returns a StretchClusterSimpleResourceRenderer.
 func NewStretchClusterSimpleResourceRenderer(mgr multicluster.Manager, redpandaImage, sideCarImage Image) *StretchClusterSimpleResourceRenderer {

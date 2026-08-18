@@ -31,7 +31,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 )
 
 // TestIdentityCollision: a broker's (node_id, uuid) collides when its node_id

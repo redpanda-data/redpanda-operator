@@ -71,10 +71,10 @@ func newMulticlusterPod(pod *corev1.Pod, clusterName, canonicalClusterName strin
 }
 
 // NewMulticlusterPod is the exported constructor for MulticlusterPod. It
-// exists so callers outside this package (notably the controllers' shared
-// remediation cores, which convert pods between this package and its
-// enterprise concretization at the boundary) can construct a pod with its
-// unexported cluster-name fields populated.
+// exists so callers outside this package (notably the OSS operator's shared
+// remediation cores, which convert their own lifecycle pods into enterprise
+// ones at the boundary) can construct a pod with its unexported cluster-name
+// fields populated.
 func NewMulticlusterPod(pod *corev1.Pod, clusterName, canonicalClusterName string) *MulticlusterPod {
 	return newMulticlusterPod(pod, clusterName, canonicalClusterName)
 }
@@ -168,12 +168,13 @@ type PoolTracker struct {
 }
 
 // NewPoolTracker creates a new PoolTracker with the given cluster generation.
-// This tracker only manages v2 NodePool-rendered StatefulSets, so the
-// pool-generation label is hardcoded to nodePoolGenerationLabel (the
-// enterprise concretization hardcodes the BrokerPool label instead).
+// The enterprise concretization always tracks RedpandaBrokerPool-rendered
+// StatefulSets, so the pool-generation label is hardcoded to
+// BrokerPoolGenerationLabel (the OSS generic tracker takes a useBrokerPool
+// switch to select between the v2 NodePool and BrokerPool labels).
 func NewPoolTracker(generation int64) *PoolTracker {
 	return &PoolTracker{
-		poolGenerationLabelKey: nodePoolGenerationLabel,
+		poolGenerationLabelKey: BrokerPoolGenerationLabel,
 		latestGeneration:       generation,
 		existingPools:          make(map[ClusterNamespacedName]*poolWithOrdinals),
 		desiredPools:           make(map[ClusterNamespacedName]*poolWithOrdinals),

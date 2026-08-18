@@ -11,7 +11,7 @@ package lifecycle
 
 import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // StretchClusterWithPools serves as an intermediate structure to merge a Cluster with its BrokerPools in v2
@@ -97,21 +97,21 @@ func (s *StretchClusterWithPools) defaultedPoolCopy(pool *redpandav1alpha2.Redpa
 	return out
 }
 
-// V2ResourceManagers is a factory function for tying together all of our v2 interfaces.
+// StretchClusterResourceManagers is a factory function for tying together all of our stretch-cluster interfaces.
 func StretchClusterResourceManagers(redpandaImage, sidecarImage Image, cloudSecrets CloudSecretsFlags) func(mgr multicluster.Manager) (
-	OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools],
-	ClusterStatusUpdater[StretchClusterWithPools, *StretchClusterWithPools],
-	NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools],
-	SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools],
+	OwnershipResolver,
+	ClusterStatusUpdater,
+	NodePoolRenderer,
+	SimpleResourceRenderer,
 ) {
 	return func(mgr multicluster.Manager) (
-		OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools],
-		ClusterStatusUpdater[StretchClusterWithPools, *StretchClusterWithPools],
-		NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools],
-		SimpleResourceRenderer[StretchClusterWithPools, *StretchClusterWithPools],
+		OwnershipResolver,
+		ClusterStatusUpdater,
+		NodePoolRenderer,
+		SimpleResourceRenderer,
 	) {
 		return NewStretchClusterOwnershipResolver(), NewStretchClusterStatusUpdater(), NewStretchBrokerPoolRenderer(mgr, redpandaImage, sidecarImage, cloudSecrets), NewStretchClusterSimpleResourceRenderer(mgr, redpandaImage, sidecarImage)
 	}
 }
 
-var _ MulticlusterResourceManagerFactory[StretchClusterWithPools, *StretchClusterWithPools] = StretchClusterResourceManagers(Image{}, Image{}, CloudSecretsFlags{})
+var _ MulticlusterResourceManagerFactory = StretchClusterResourceManagers(Image{}, Image{}, CloudSecretsFlags{})

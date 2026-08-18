@@ -32,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	entlifecycle "github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
@@ -705,8 +706,14 @@ func TestScaleDownDefersOnAmbiguousBrokerMatch(t *testing.T) {
 	})
 
 	t.Run("StretchCluster MulticlusterReconciler", func(t *testing.T) {
+		// The stretch reconciler is typed on the enterprise lifecycle package,
+		// so it takes an enterprise-typed ScaleDownSet mirroring `set`.
+		entset := &entlifecycle.ScaleDownSet{
+			LastPod:     set.LastPod,
+			StatefulSet: &entlifecycle.MulticlusterStatefulSet{StatefulSet: set.StatefulSet.StatefulSet},
+		}
 		r := &MulticlusterReconciler{}
-		requeue, err := r.scaleDown(t.Context(), nil, &lifecycle.StretchClusterWithPools{}, set, ambiguousMap, map[int]bool{})
+		requeue, err := r.scaleDown(t.Context(), nil, &entlifecycle.StretchClusterWithPools{}, entset, ambiguousMap, map[int]bool{})
 		require.NoError(t, err)
 		assert.True(t, requeue, "an ambiguous match must requeue rather than proceed")
 	})

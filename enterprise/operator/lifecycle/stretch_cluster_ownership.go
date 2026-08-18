@@ -27,7 +27,7 @@ type StretchClusterOwnershipResolver struct {
 	namespaceLabel string
 }
 
-var _ OwnershipResolver[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchClusterOwnershipResolver)(nil)
+var _ OwnershipResolver = (*StretchClusterOwnershipResolver)(nil)
 
 // NewStretchClusterOwnershipResolver returns a StretchClusterOwnershipResolver.
 func NewStretchClusterOwnershipResolver() *StretchClusterOwnershipResolver {

@@ -29,9 +29,9 @@ import (
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/tplutil"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
 // defaultedPoolSpec returns a copy of the RedpandaBrokerPool spec with defaults

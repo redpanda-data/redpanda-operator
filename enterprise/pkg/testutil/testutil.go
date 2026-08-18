@@ -19,6 +19,25 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/redpanda-data/common-go/goldenfile"
+)
+
+// Aliases for the extracted goldenfile library, mirroring the monorepo's
+// pkg/testutil so test files can move between the modules without edits.
+
+type Writer = goldenfile.Writer
+
+const (
+	YAML  = goldenfile.YAML
+	JSON  = goldenfile.JSON
+	Text  = goldenfile.Text
+	Bytes = goldenfile.Bytes
+)
+
+var (
+	AssertGolden = goldenfile.AssertGolden
+	NewTxTar     = goldenfile.NewTxTar
 )
 
 // Context returns a [context.Context] that will cancel 1s before the t's

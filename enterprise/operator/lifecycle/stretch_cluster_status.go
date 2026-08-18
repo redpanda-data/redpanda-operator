@@ -16,7 +16,7 @@ import (
 // StretchClusterStatusUpdater represents a status updater for v2 clusters.
 type StretchClusterStatusUpdater struct{}
 
-var _ ClusterStatusUpdater[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchClusterStatusUpdater)(nil)
+var _ ClusterStatusUpdater = (*StretchClusterStatusUpdater)(nil)
 
 // NewStretchClusterStatusUpdater returns a StretchClusterStatusUpdater.
 func NewStretchClusterStatusUpdater() *StretchClusterStatusUpdater {
@@ -38,8 +38,8 @@ func (m *StretchClusterStatusUpdater) Update(cluster *StretchClusterWithPools, s
 		dirty = true
 	}
 
-	if status.StretchLicenseStatus != nil {
-		cluster.Status.LicenseStatus = status.StretchLicenseStatus
+	if status.LicenseStatus != nil {
+		cluster.Status.LicenseStatus = status.LicenseStatus
 		dirty = true
 	}
 

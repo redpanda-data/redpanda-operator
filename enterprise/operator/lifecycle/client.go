@@ -38,31 +38,17 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
-// Cluster is a generic interface for a pointer to a Kubernetes object
-// that represents a cluster.
-type Cluster[T any] interface {
-	client.Object
-	*T
-}
-
-// NewClusterObject creates a new instance of a typed cluster object.
-func NewClusterObject[T any, U Cluster[T]]() U {
-	var t T
-	return U(&t)
-}
-
-// NewResourceClient creates a new instance of a ResourceClient for managing resources.
-func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
-	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr.GetLocalManager())
-
-	return &ResourceClient[T, U]{
+// NewMulticlusterResourceClient creates a new instance of a ResourceClient
+// bound to StretchClusterWithPools for managing resources across the
+// clusters engaged by the given multicluster manager.
+func NewMulticlusterResourceClient(mgr multicluster.Manager, resourcesFn MulticlusterResourceManagerFactory) *ResourceClient {
+	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr)
+	return &ResourceClient{
 		manager:                mgr,
-		logger:                 mgr.GetLogger().WithName("ResourceClient"),
+		logger:                 mgr.GetLogger().WithName("MulticlusterResourceClient"),
 		ownershipResolver:      ownershipResolver,
 		statusUpdater:          statusUpdater,
 		nodePoolRenderer:       nodePoolRenderer,
@@ -72,32 +58,32 @@ func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesF
 }
 
 // ResourceClient is a client used to manage dependent resources,
-// both simple and node pools, for a given cluster type.
-type ResourceClient[T any, U Cluster[T]] struct {
+// both simple and node pools, for a stretch cluster.
+type ResourceClient struct {
 	manager                multicluster.Manager
 	logger                 logr.Logger
 	traceLogging           bool
-	ownershipResolver      OwnershipResolver[T, U]
-	statusUpdater          ClusterStatusUpdater[T, U]
-	nodePoolRenderer       NodePoolRenderer[T, U]
-	simpleResourceRenderer SimpleResourceRenderer[T, U]
+	ownershipResolver      OwnershipResolver
+	statusUpdater          ClusterStatusUpdater
+	nodePoolRenderer       NodePoolRenderer
+	simpleResourceRenderer SimpleResourceRenderer
 	// brokerPodNodeUnavailableToleration is the operator-flag value
 	// applied to broker pod templates at apply time. See
-	// [resources.MaybeInjectNodeUnavailableTolerations] for the
+	// [MaybeInjectNodeUnavailableTolerations] for the
 	// duration semantics (0=off, positive=seconds, negative=forever).
 	brokerPodNodeUnavailableToleration time.Duration
 }
 
 // WithBrokerPodNodeUnavailableToleration sets the operator-binary-level
 // toleration that the lifecycle client will inject onto broker pod
-// templates at apply time. See [resources.MaybeInjectNodeUnavailableTolerations]
+// templates at apply time. See [MaybeInjectNodeUnavailableTolerations]
 // for the duration semantics (0=off, positive=seconds, negative=forever).
-func (r *ResourceClient[T, U]) WithBrokerPodNodeUnavailableToleration(d time.Duration) *ResourceClient[T, U] {
+func (r *ResourceClient) WithBrokerPodNodeUnavailableToleration(d time.Duration) *ResourceClient {
 	r.brokerPodNodeUnavailableToleration = d
 	return r
 }
 
-func (r *ResourceClient[T, U]) ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
+func (r *ResourceClient) ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
 	cluster, err := r.manager.GetCluster(ctx, clusterName)
 	if err != nil {
 		return nil, err
@@ -112,20 +98,35 @@ func (r *ResourceClient[T, U]) ctl(ctx context.Context, clusterName string) (*ku
 	})
 }
 
-func (r *ResourceClient[T, U]) clusterList(cluster any) []string {
-	// The v2 cluster types this package manages are all single-cluster: every
-	// owner lives on (and owns resources only on) the local cluster. The
-	// multicluster stretch path, whose owners span clusters, lives in the
-	// enterprise module's concretized copy of this client.
-	_ = cluster
-	return []string{mcmanager.LocalCluster}
+func (r *ResourceClient) clusterList(cluster *StretchClusterWithPools) []string {
+	return cluster.GetClusters()
+}
+
+// DeleteStatefulSetForBrokerPool deletes a StatefulSet for a specific node pool, routing to the correct cluster.
+// For remote peer clusters, if the cluster is unreachable the operation is skipped — the
+// cluster's own operator will clean up when it reconnects.
+func (r *ResourceClient) DeleteStatefulSetForBrokerPool(ctx context.Context, set *MulticlusterStatefulSet) error {
+	logger := log.FromContext(ctx)
+	if set.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(set.clusterName) {
+		logger.Info("remote cluster unreachable (probe) in DeleteStatefulSetForNodePool, skipping", "cluster", set.canonicalClusterName)
+		return nil
+	}
+	ctl, err := r.ctl(ctx, set.clusterName)
+	if err != nil {
+		if set.clusterName != mcmanager.LocalCluster {
+			logger.Info("remote cluster unreachable in DeleteStatefulSetForNodePool, skipping", "cluster", set.canonicalClusterName, "error", err)
+			return nil
+		}
+		return err
+	}
+	return ctl.Delete(ctx, set.StatefulSet)
 }
 
 // GetLivePod returns the live Pod matching the snapshot's name/namespace, or
 // (nil, nil) if it no longer exists. Callers re-check the UID before acting
 // destructively: the pod may have been deleted and recreated (same name, new
 // UID) since the pass began.
-func (r *ResourceClient[T, U]) GetLivePod(ctx context.Context, pod *MulticlusterPod) (*corev1.Pod, error) {
+func (r *ResourceClient) GetLivePod(ctx context.Context, pod *MulticlusterPod) (*corev1.Pod, error) {
 	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
 		return nil, nil
 	}
@@ -149,7 +150,7 @@ func (r *ResourceClient[T, U]) GetLivePod(ctx context.Context, pod *Multicluster
 // DeletePod deletes a Pod, routing to the correct cluster.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will clean up when it reconnects.
-func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterPod) error {
+func (r *ResourceClient) DeletePod(ctx context.Context, pod *MulticlusterPod) error {
 	logger := log.FromContext(ctx)
 	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
 		logger.Info("remote cluster unreachable (probe) in DeletePod, skipping", "cluster", pod.GetCanonicalClusterName())
@@ -173,7 +174,7 @@ func (r *ResourceClient[T, U]) DeletePod(ctx context.Context, pod *MulticlusterP
 //
 // For remote peer clusters that are unreachable the operation is skipped — the
 // cluster's own operator will perform the wipe when it reconnects.
-func (r *ResourceClient[T, U]) DeletePVCsForPod(ctx context.Context, pod *MulticlusterPod) error {
+func (r *ResourceClient) DeletePVCsForPod(ctx context.Context, pod *MulticlusterPod) error {
 	logger := log.FromContext(ctx)
 	if pod.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(pod.clusterName) {
 		logger.Info("remote cluster unreachable (probe) in DeletePVCsForPod, skipping", "cluster", pod.GetCanonicalClusterName())
@@ -227,7 +228,7 @@ func (r *ResourceClient[T, U]) DeletePVCsForPod(ctx context.Context, pod *Multic
 // returns an error (callers treat unreadable logs as "evidence unavailable,
 // defer"). The read is bounded by podLogsReadTimeout, independent of the
 // caller's context, so a wedged stream can't park a reconcile worker.
-func (r *ResourceClient[T, U]) GetPodLogs(ctx context.Context, pod *MulticlusterPod, opts *corev1.PodLogOptions) (string, error) {
+func (r *ResourceClient) GetPodLogs(ctx context.Context, pod *MulticlusterPod, opts *corev1.PodLogOptions) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, podLogsReadTimeout)
 	defer cancel()
 	cl, err := r.manager.GetCluster(ctx, pod.clusterName)
@@ -248,7 +249,7 @@ func (r *ResourceClient[T, U]) GetPodLogs(ctx context.Context, pod *Multicluster
 // PatchBrokerPoolSet updates a StatefulSet for a specific node pool.
 // For remote peer clusters, if the cluster is unreachable the operation is skipped — the
 // cluster's own operator will apply the patch when it reconnects.
-func (r *ResourceClient[T, U]) PatchPoolSet(ctx context.Context, owner U, set *MulticlusterStatefulSet) error {
+func (r *ResourceClient) PatchPoolSet(ctx context.Context, owner *StretchClusterWithPools, set *MulticlusterStatefulSet) error {
 	logger := log.FromContext(ctx)
 	if set.clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(set.clusterName) {
 		logger.Info("remote cluster unreachable (probe) in PatchPoolSet, skipping", "cluster", set.canonicalClusterName)
@@ -281,7 +282,7 @@ func (r *ResourceClient[T, U]) PatchPoolSet(ctx context.Context, owner U, set *M
 	// tolerations onto the broker pod template. No-op when the flag
 	// is 0 (the default); user-set tolerations for these keys are
 	// always preserved by the helper.
-	set.Spec.Template.Spec.Tolerations = resources.MaybeInjectNodeUnavailableTolerations(
+	set.Spec.Template.Spec.Tolerations = MaybeInjectNodeUnavailableTolerations(
 		set.Spec.Template.Spec.Tolerations,
 		r.brokerPodNodeUnavailableToleration,
 	)
@@ -290,56 +291,55 @@ func (r *ResourceClient[T, U]) PatchPoolSet(ctx context.Context, owner U, set *M
 }
 
 // SetClusterStatus sets the status of the given cluster.
-func (r *ResourceClient[T, U]) SetClusterStatus(cluster U, status *ClusterStatus) bool {
+func (r *ResourceClient) SetClusterStatus(cluster *StretchClusterWithPools, status *ClusterStatus) bool {
 	return r.statusUpdater.Update(cluster, status)
 }
 
-func (r *ResourceClient[T, U]) GetAdminAPIEndpoints(cluster U) []string {
+func (r *ResourceClient) GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string {
 	return r.simpleResourceRenderer.GetAdminAPIEndpoints(cluster)
 }
 
 // GetOwnerLabels returns the minimal set of labels that identify ownership.
-func (r *ResourceClient[T, U]) GetOwnerLabels(cluster U) map[string]string {
+func (r *ResourceClient) GetOwnerLabels(cluster *StretchClusterWithPools) map[string]string {
 	return r.ownershipResolver.GetOwnerLabels(cluster)
 }
 
 // AddOwnerLabels returns the full set of labels to apply to owned resources.
-func (r *ResourceClient[T, U]) AddOwnerLabels(cluster U) map[string]string {
+func (r *ResourceClient) AddOwnerLabels(cluster *StretchClusterWithPools) map[string]string {
 	return r.ownershipResolver.AddLabels(cluster)
 }
 
 // ResolveOwnerReference resolves the owner for the given cluster and cluster name,
 // returning the owner with the correct UID and GVK for that cluster.
-func (r *ResourceClient[T, U]) ResolveOwnerReference(ctx context.Context, owner U, clusterName string) (U, error) {
+func (r *ResourceClient) ResolveOwnerReference(ctx context.Context, owner *StretchClusterWithPools, clusterName string) (*StretchClusterWithPools, error) {
 	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
-		var zero U
-		return zero, err
+		return nil, err
 	}
 	return r.ownershipResolver.ResolveOwnerReference(ctx, owner, clusterName, ctl)
 }
 
 // Ctl returns a kube.Ctl for the given cluster name.
-func (r *ResourceClient[T, U]) Ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
+func (r *ResourceClient) Ctl(ctx context.Context, clusterName string) (*kube.Ctl, error) {
 	return r.ctl(ctx, clusterName)
 }
 
 // ClusterList returns the list of cluster names for the given owner.
-func (r *ResourceClient[T, U]) ClusterList(owner U) []string {
+func (r *ResourceClient) ClusterList(owner *StretchClusterWithPools) []string {
 	return r.clusterList(owner)
 }
 
-type renderer[T any, U Cluster[T]] struct {
-	SimpleResourceRenderer[T, U]
-	Cluster     U
+type renderer struct {
+	SimpleResourceRenderer
+	Cluster     *StretchClusterWithPools
 	ClusterName string
 }
 
-func (r *renderer[T, U]) Render(ctx context.Context) ([]kube.Object, error) {
+func (r *renderer) Render(ctx context.Context) ([]kube.Object, error) {
 	return r.SimpleResourceRenderer.Render(ctx, r.Cluster, r.ClusterName)
 }
 
-func (r *renderer[T, U]) Types() []kube.Object {
+func (r *renderer) Types() []kube.Object {
 	types := r.SimpleResourceRenderer.WatchedResourceTypes()
 	return slices.DeleteFunc(types, func(o kube.Object) bool {
 		_, ok := o.(*appsv1.StatefulSet)
@@ -347,7 +347,7 @@ func (r *renderer[T, U]) Types() []kube.Object {
 	})
 }
 
-func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName string) (*kube.Syncer, error) {
+func (r *ResourceClient) syncer(ctx context.Context, owner *StretchClusterWithPools, clusterName string) (*kube.Syncer, error) {
 	ctl, err := r.ctl(ctx, clusterName)
 	if err != nil {
 		return nil, err
@@ -374,7 +374,7 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 	return &kube.Syncer{
 		Ctl:       ctl,
 		Namespace: owner.GetNamespace(),
-		Renderer: &renderer[T, U]{
+		Renderer: &renderer{
 			Cluster:                owner,
 			ClusterName:            clusterName,
 			SimpleResourceRenderer: r.simpleResourceRenderer,
@@ -400,7 +400,7 @@ func (r *ResourceClient[T, U]) syncer(ctx context.Context, owner U, clusterName 
 // SyncAll synchronizes the simple resources associated with the given cluster,
 // cleaning up any resources that should no longer exist. It skips clusters
 // where the owner is being deleted or does not exist.
-func (r *ResourceClient[T, U]) SyncAll(ctx context.Context, owner U) error {
+func (r *ResourceClient) SyncAll(ctx context.Context, owner *StretchClusterWithPools) error {
 	var syncErr error
 	logger := log.FromContext(ctx).WithName("SyncAll")
 	var canonicalClusterList []string
@@ -482,24 +482,13 @@ func CallTimeoutFor(clusterName string) time.Duration {
 	return RemoteCallTimeout
 }
 
-// CanonicalClusterName maps the multicluster-runtime's local-cluster sentinel
-// (the empty string) to the manager's canonical local cluster name, leaving
-// any other cluster name untouched.
-func CanonicalClusterName(clusterName string, getLocalClusterName func() string) string {
-	canonicalName := clusterName
-	if canonicalName == mcmanager.LocalCluster {
-		canonicalName = getLocalClusterName()
-	}
-	return canonicalName
-}
-
 // isOwnerDeleting checks if the owner resource is being deleted on a given cluster.
 // Returns true if the owner is being deleted or does not exist.
 // For remote peer clusters (stretch setup), if the cluster is unreachable, returns
 // (true, nil) so that SyncAll skips sync to that cluster — consistent with the
 // documented behavior that reconciliation is not blocked by an unreachable peer.
 // Errors on the local cluster are always propagated.
-func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clusterName string) (bool, error) {
+func (r *ResourceClient) isOwnerDeleting(ctx context.Context, owner *StretchClusterWithPools, clusterName string) (bool, error) {
 	logger := log.FromContext(ctx)
 	// Short-circuit the local cluster: the owner argument IS the local
 	// StretchCluster (it's what triggered this reconcile), so its
@@ -555,7 +544,7 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 // hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
+func (r *ResourceClient) FetchExistingAndDesiredPools(ctx context.Context, cluster *StretchClusterWithPools, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration())
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
@@ -690,7 +679,7 @@ func wrapLoggingHandler[T client.Object](_ T, h handler.TypedEventHandler[T, mcr
 }
 
 // WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
-func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object, clusterNames []string) error {
+func (r *ResourceClient) WatchResources(builder Builder, cluster client.Object, clusterNames []string) error {
 	// NB: we use localcluster here because the RESTMapper and scheme should be identical across all clusters
 	ctl, err := r.ctl(context.Background(), mcmanager.LocalCluster)
 	if err != nil {
@@ -704,7 +693,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 		if r.traceLogging {
 			for _, clusterName := range clusterNames {
 				loggingHandler := wrapLoggingHandler(obj, mchandler.ForCluster(handler.EnqueueRequestForOwner(ctl.Scheme(), ctl.RESTMapper(), cluster, handler.OnlyControllerOwner()), clusterName))
-				builder.Watches(obj, loggingHandler, controller.WatchOptions(clusterName)...)
+				builder.Watches(obj, loggingHandler, WatchOptions(clusterName)...)
 			}
 		} else {
 			builder.Owns(obj)
@@ -751,7 +740,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 						}}
 					}
 					return nil
-				}), clusterName)), controller.WatchOptions(clusterName)...)
+				}), clusterName)), WatchOptions(clusterName)...)
 			} else {
 				builder.Watches(resourceType, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 					if owner := r.ownershipResolver.OwnerForObject(o); owner != nil {
@@ -760,7 +749,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 						}}
 					}
 					return nil
-				}), controller.WatchOptions(clusterName)...)
+				}), WatchOptions(clusterName)...)
 			}
 		}
 	}
@@ -774,7 +763,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 // For remote peer clusters, if the cluster is unreachable the cluster is skipped and
 // allDeleted is set to false so the caller retries — consistent with the documented
 // behavior that reconciliation is not blocked by an unreachable peer.
-func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, error) {
+func (r *ResourceClient) DeleteAll(ctx context.Context, owner *StretchClusterWithPools) (bool, error) {
 	allDeleted := true
 	logger := log.FromContext(ctx)
 
@@ -849,7 +838,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 // (nil, nil) so callers skip it — consistent with the documented behavior that
 // reconciliation is not blocked by an unreachable peer.
 // Errors on the local cluster are always propagated.
-func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string) ([]*poolWithOrdinals, error) {
+func (r *ResourceClient) fetchExistingPools(ctx context.Context, cluster *StretchClusterWithPools, clusterName string) ([]*poolWithOrdinals, error) {
 	logger := log.FromContext(ctx).WithName("fetchExistingPools")
 	canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 	if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {

@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
 // defaultStaleDiskWipeNotReadyThreshold is how long a broker pod must stay
@@ -875,12 +875,12 @@ func (r *RedpandaReconciler) reconcileStaleDiskWipe(ctx context.Context, state *
 	}
 
 	return staleDiskWipe(ctx, staleDiskWipeParams{
-		pods:            state.pools.ExistingPods(),
+		pods:            toEnterprisePods(state.pools.ExistingPods()),
 		endpoints:       state.podEndpoints,
 		dial:            r.podAdminDialer(state),
-		deleter:         r.LifecycleClient,
+		deleter:         ossPodDeleter{client: r.LifecycleClient},
 		threshold:       r.staleDiskWipeThreshold(),
-		logs:            r.LifecycleClient.GetPodLogs,
+		logs:            ossPodLogsReader(r.LifecycleClient),
 		debounce:        &r.staleDiskWipeDebounce,
 		confirmInterval: staleDiskWipeConfirmationInterval,
 		overrideUUIDs:   configuredOverrideUUIDs(clusterSpecConfig(state.cluster.Redpanda.Spec.ClusterSpec)),

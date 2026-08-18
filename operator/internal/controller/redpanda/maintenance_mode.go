@@ -28,7 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 )
 
@@ -626,7 +626,7 @@ func (r *RedpandaReconciler) reconcileMaintenanceMode(ctx context.Context, state
 		return ctrl.Result{}, nil
 	}
 	logger := log.FromContext(ctx).WithName("reconcileMaintenanceMode")
-	err := clearStuckMaintenanceMode(ctx, state.admin, state.pools.ExistingPods(), r.maintenanceModeClearThreshold(), &podIdentityGhostConfig{
+	err := clearStuckMaintenanceMode(ctx, state.admin, toEnterprisePods(state.pools.ExistingPods()), r.maintenanceModeClearThreshold(), &podIdentityGhostConfig{
 		endpoints: state.podEndpoints,
 		dial:      r.podAdminDialer(state),
 	}, logger)

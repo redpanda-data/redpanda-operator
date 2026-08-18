@@ -43,10 +43,10 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -82,7 +82,7 @@ const (
 
 type MulticlusterReconciler struct {
 	Manager         multicluster.Manager
-	LifecycleClient *lifecycle.ResourceClient[lifecycle.StretchClusterWithPools, *lifecycle.StretchClusterWithPools]
+	LifecycleClient *lifecycle.ResourceClient
 
 	// ClientFactory, ConfigSyncer, and Features are the injected seam
 	// implementations (see seam.go); SetupMulticlusterController populates
@@ -1608,7 +1608,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
 			}
 		} else if license != nil {
-			state.status.StretchLicenseStatus = license
+			state.status.LicenseStatus = license
 		}
 		trace.EndSpan(span, err)
 	}()

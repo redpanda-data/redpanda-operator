@@ -7,6 +7,13 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
+// Package lifecycle is the enterprise (stretch-cluster) concretization of the
+// OSS operator's generic lifecycle framework (operator/internal/lifecycle).
+// It is a deliberate one-time fork, de-genericized and hard-bound to
+// [*StretchClusterWithPools]; the OSS package keeps its type parameters and
+// serves the v2 controllers. File and symbol names are kept 1:1 with the OSS
+// originals wherever possible so the two can be diffed; forkledger_test.go
+// pins the OSS ancestors' content so drift is surfaced at test time.
 package lifecycle
 
 import (
@@ -15,11 +22,11 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // ClusterStatus represents a generic status of a cluster
@@ -28,8 +35,8 @@ import (
 type ClusterStatus struct {
 	// Pools contains the status for each of our pools
 	Pools []PoolStatus
-	// Status is a generated status conditions container for single-cluster Redpanda
-	Status *statuses.ClusterStatus
+	// StretchClusterStatus is a generated status conditions container for stretch clusters
+	StretchClusterStatus *statuses.StretchClusterStatus
 	// ConfigVersion is the configuration version from the cluster if one
 	// has been determined this reconciliation loop
 	ConfigVersion *string
@@ -68,10 +75,10 @@ type PoolStatus struct {
 	RunningReplicas int32
 }
 
-// NewClusterStatus creates a cluster status object to be used in reconciliation
-func NewClusterStatus() *ClusterStatus {
+// NewStretchClusterStatus creates a stretch cluster status object to be used in reconciliation
+func NewStretchClusterStatus() *ClusterStatus {
 	return &ClusterStatus{
-		Status: statuses.NewCluster(),
+		StretchClusterStatus: statuses.NewStretchCluster(),
 	}
 }
 
@@ -82,20 +89,20 @@ func NewClusterStatus() *ClusterStatus {
 // created by. Rather than purely using owner references,
 // the labels allow us to "own" both cluster and namespace
 // scoped resources.
-type OwnershipResolver[T any, U Cluster[T]] interface {
+type OwnershipResolver interface {
 	// GetOwnerLabels returns the minimal set of labels that
 	// can identify ownership of an object.
-	GetOwnerLabels(cluster U) map[string]string
+	GetOwnerLabels(cluster *StretchClusterWithPools) map[string]string
 	// AddLabels returns the labels to be applied
 	// to every resource created by the cluster.
-	AddLabels(cluster U) map[string]string
+	AddLabels(cluster *StretchClusterWithPools) map[string]string
 	// OwnerForObject maps an "owned" object back to a
 	// particular cluster. If the object does not map
 	// to a cluster, return nil.
 	OwnerForObject(object client.Object) *types.NamespacedName
 
 	// ResolveOwnerReference
-	ResolveOwnerReference(ctx context.Context, owner U, clusterName string, targetCluster *kube.Ctl) (U, error)
+	ResolveOwnerReference(ctx context.Context, owner *StretchClusterWithPools, clusterName string, targetCluster *kube.Ctl) (*StretchClusterWithPools, error)
 }
 
 // SimpleResourceRenderer handles compilation of all desired
@@ -103,15 +110,15 @@ type OwnershipResolver[T any, U Cluster[T]] interface {
 // be "simple" in nature in that we don't need to manually control
 // their lifecycles and can easily create/update/delete them as
 // necessary.
-type SimpleResourceRenderer[T any, U Cluster[T]] interface {
+type SimpleResourceRenderer interface {
 	// Render returns the list of all simple resources to create
 	// for a given cluster.
-	Render(ctx context.Context, cluster U, kubernetesClusterName string) ([]client.Object, error)
+	Render(ctx context.Context, cluster *StretchClusterWithPools, kubernetesClusterName string) ([]client.Object, error)
 	// WatchedResourceTypes returns a list of all resources that
 	// our controller should watch for changes to trigger reconciliation.
 	WatchedResourceTypes() []client.Object
 	// RenderPoolsServices returns services created for NodePools which are exposing admin API ports (among other ports)
-	GetAdminAPIEndpoints(cluster U) []string
+	GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string
 }
 
 // MigratingRenderer allows an implementation to render resources that they
@@ -124,9 +131,9 @@ type MigratingRenderer interface {
 // These are handled separately from "simple" resources because we need
 // to manage their lifecycle, decommissioning broker nodes and scaling
 // clusters up and down as necessary.
-type NodePoolRenderer[T any, U Cluster[T]] interface {
+type NodePoolRenderer interface {
 	// Render returns the list of node pools to create for a given cluster.
-	Render(ctx context.Context, cluster U, kubernetesClusterName string) ([]*appsv1.StatefulSet, error)
+	Render(ctx context.Context, cluster *StretchClusterWithPools, kubernetesClusterName string) ([]*appsv1.StatefulSet, error)
 	// IsNodePool allows us to distinguish owned resources that are StatefulSets
 	// but not node pools from resources that are. This is important if we
 	// create StatefulSets that we don't need to consider part of a cluster's
@@ -136,11 +143,11 @@ type NodePoolRenderer[T any, U Cluster[T]] interface {
 
 // ClusterStatusUpdater handles back propagating the unified ClusterStatus onto
 // the given cluster.
-type ClusterStatusUpdater[T any, U Cluster[T]] interface {
+type ClusterStatusUpdater interface {
 	// Update updates the internal cluster's status based on the ClusterStatus it
 	// is given. If any fields are updated it should return `true` so that the
 	// status of the cluster can be synced.
-	Update(cluster U, status *ClusterStatus) bool
+	Update(cluster *StretchClusterWithPools, status *ClusterStatus) bool
 }
 
 // Image represents a general docker image repo/tag that can be used for setting
@@ -152,7 +159,7 @@ type Image struct {
 	Tag string
 }
 
-// ResourceManagerFactory bundles together concrete implementations of OwnershipResolver
-// ClusterStatusUpdater, NodePoolRenderer, and SimpleResourceRenderer for our various
-// cluster versions.
-type ResourceManagerFactory[T any, U Cluster[T]] func(mgr ctrl.Manager) (OwnershipResolver[T, U], ClusterStatusUpdater[T, U], NodePoolRenderer[T, U], SimpleResourceRenderer[T, U])
+// MulticlusterResourceManagerFactory bundles together the concrete stretch
+// implementations of OwnershipResolver, ClusterStatusUpdater, NodePoolRenderer,
+// and SimpleResourceRenderer.
+type MulticlusterResourceManagerFactory func(mgr multicluster.Manager) (OwnershipResolver, ClusterStatusUpdater, NodePoolRenderer, SimpleResourceRenderer)

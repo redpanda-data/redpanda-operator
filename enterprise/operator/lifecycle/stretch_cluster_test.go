@@ -28,12 +28,14 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/testutil"
 )
+
+var parentCtx = context.Background()
 
 func TestStretchClusterResourceClient(t *testing.T) {
 	ctx, cancel := context.WithTimeout(parentCtx, 2*time.Minute)
@@ -60,7 +62,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 	logger := testr.NewWithOptions(t, testr.Options{Verbosity: 6})
 
 	manager, err := multicluster.NewSingleClusterManager(config, ctrl.Options{
-		Scheme: controller.MulticlusterScheme,
+		Scheme: operator.MulticlusterScheme,
 		Logger: logger,
 		Metrics: metricsserver.Options{
 			// disable metrics
@@ -114,7 +116,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 
 	require.EqualValues(t, render.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 
-	decoder := serializer.NewCodecFactory(controller.MulticlusterScheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
+	decoder := serializer.NewCodecFactory(operator.MulticlusterScheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
 
 	decode := func(t *testing.T, manifests []byte) (*redpandav1alpha2.StretchCluster, []*redpandav1alpha2.RedpandaBrokerPool) {
 		var cluster *redpandav1alpha2.StretchCluster

@@ -126,7 +126,7 @@ func TestPoolTrackerCheckScale(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0, false)
+			tracker := NewPoolTracker(0)
 			tracker.addExisting(tt.existingPools...)
 			require.Equal(t, tt.canScale, tracker.CheckScale(t.Context()))
 		})
@@ -257,7 +257,7 @@ func TestPoolTrackerToCreate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0, false)
+			tracker := NewPoolTracker(0)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -406,7 +406,7 @@ func TestPoolTrackerToScaleUp(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0, false)
+			tracker := NewPoolTracker(0)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -663,7 +663,7 @@ func TestPoolTrackerRequiresUpdate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(tt.generation, false)
+			tracker := NewPoolTracker(tt.generation)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -818,7 +818,7 @@ func TestPoolTrackerToScaleDown(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(1, false)
+			tracker := NewPoolTracker(1)
 			tracker.addExisting(tt.existingPools...)
 			tracker.addDesired(tt.desiredPools...)
 			tracker.MarkClusterObserved(mcmanager.LocalCluster)
@@ -959,7 +959,7 @@ func TestPoolTrackerToDelete(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0, false)
+			tracker := NewPoolTracker(0)
 
 			pools := []*poolWithOrdinals{}
 			for _, set := range tt.existingPools {
@@ -1149,7 +1149,7 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			tracker := NewPoolTracker(0, false)
+			tracker := NewPoolTracker(0)
 			tracker.addExisting(tt.existingPools...)
 
 			actual := clusterObjectNamespaceNames(tracker.PodsToRoll())
@@ -1176,7 +1176,7 @@ func TestPoolTrackerExistingPods(t *testing.T) {
 		canonicalClusterName: "peer-canonical",
 		StatefulSet:          &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "pool-2"}},
 	}
-	tracker := NewPoolTracker(0, false)
+	tracker := NewPoolTracker(0)
 	tracker.addExisting(
 		&poolWithOrdinals{
 			pods: []*podsWithOrdinals{
@@ -1304,7 +1304,7 @@ func TestHasRecentlyReplacedPods(t *testing.T) {
 				withOrdinals = append(withOrdinals, &podsWithOrdinals{ordinal: i, pod: p})
 			}
 
-			tracker := NewPoolTracker(0, false)
+			tracker := NewPoolTracker(0)
 			tracker.addExisting(&poolWithOrdinals{
 				pods:      withOrdinals,
 				set:       pool,
@@ -1335,12 +1335,12 @@ func TestPoolTrackerScaledUpButNoneReady(t *testing.T) {
 	}
 
 	t.Run("no pools at all -> not awaiting", func(t *testing.T) {
-		tracker := NewPoolTracker(0, false)
+		tracker := NewPoolTracker(0)
 		require.False(t, tracker.ScaledUpButNoneReady())
 	})
 
 	t.Run("scaled up but no ready replica (outage) -> awaiting", func(t *testing.T) {
-		tracker := NewPoolTracker(0, false)
+		tracker := NewPoolTracker(0)
 		tracker.addExisting(&poolWithOrdinals{set: set("pool-1", 2, 0)})
 		tracker.addDesired(set("pool-1", 2, 0))
 		require.True(t, tracker.ScaledUpButNoneReady(),
@@ -1348,14 +1348,14 @@ func TestPoolTrackerScaledUpButNoneReady(t *testing.T) {
 	})
 
 	t.Run("at least one ready replica -> not awaiting", func(t *testing.T) {
-		tracker := NewPoolTracker(0, false)
+		tracker := NewPoolTracker(0)
 		tracker.addExisting(&poolWithOrdinals{set: set("pool-1", 2, 1)})
 		tracker.addDesired(set("pool-1", 2, 1))
 		require.False(t, tracker.ScaledUpButNoneReady())
 	})
 
 	t.Run("all desired scaled to zero -> not awaiting", func(t *testing.T) {
-		tracker := NewPoolTracker(0, false)
+		tracker := NewPoolTracker(0)
 		tracker.addExisting(&poolWithOrdinals{set: set("pool-1", 0, 0)})
 		tracker.addDesired(set("pool-1", 0, 0))
 		require.False(t, tracker.ScaledUpButNoneReady())

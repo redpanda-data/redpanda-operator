@@ -20,7 +20,7 @@ import (
 
 	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // defaultBrokerImage mirrors defaultImage for the enterprise RedpandaImage
@@ -49,7 +49,7 @@ type StretchBrokerPoolRenderer struct {
 	cloudSecrets  CloudSecretsFlags
 }
 
-var _ NodePoolRenderer[StretchClusterWithPools, *StretchClusterWithPools] = (*StretchBrokerPoolRenderer)(nil)
+var _ NodePoolRenderer = (*StretchBrokerPoolRenderer)(nil)
 
 // NewStretchBrokerPoolRenderer returns a StretchNodePoolRenderer.
 func NewStretchBrokerPoolRenderer(mgr multicluster.Manager, redpandaImage, sideCarImage Image, cloudSecrets CloudSecretsFlags) *StretchBrokerPoolRenderer {
