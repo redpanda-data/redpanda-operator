@@ -49,7 +49,7 @@
           # nix commands. e.g. nix copy .#devshell.
           packages.devshell = self'.devShells.default;
 
-          packages.envtest-shim = pkgs.buildGoModule {
+          packages.envtest-shim = (pkgs.buildGoModule.override { go = pkgs.go_1_26_6; }) {
             name = "envtest-shim";
 
             src = ./reaper;
@@ -66,7 +66,7 @@
           devshells.default = {
             env = [
               { name = "CGO_ENABLED"; value = "0"; }
-              { name = "GOROOT"; value = "${pkgs.go_1_26}/share/go"; }
+              { name = "GOROOT"; value = "${pkgs.go_1_26_6}/share/go"; }
               # Prevent go from downloading toolchains other than the one pinned by nix.
               # See https://go.dev/doc/toolchain#select
               { name = "GOTOOLCHAIN"; value = "local"; }
@@ -115,7 +115,7 @@
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
               pkgs.go-tools
-              pkgs.go_1_26
+              pkgs.go_1_26_6
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.gotestsum

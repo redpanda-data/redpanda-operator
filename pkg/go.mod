@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/pkg
 
-go 1.26.5
+go 1.26.6
 
 replace pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 
