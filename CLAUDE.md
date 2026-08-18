@@ -14,6 +14,29 @@ This is a Go monorepo using `go.work` with multiple modules:
 - `gen/` — Code generation tools (partial, schema, pipeline)
 - `harpoon/` — BDD test framework for acceptance tests
 
+## The enterprise/ Module Boundary
+
+`enterprise/` is a separate Go module staging the enterprise-only stretch/
+multicluster feature set for an eventual lift to the operator-enterprise repo.
+**It must never import another module in this monorepo** — only
+`github.com/redpanda-data/common-go/*` and third-party. The dependency
+direction is strictly OSS→enterprise. Enforcement: `task
+lint:enterprise-boundary` (GOWORK=off build), a depguard rule scoped to
+`enterprise/**`, and `enterprise/lint/boundary_test.go`.
+
+Consequences when editing:
+- Anything enterprise code needs from the chart-coupled OSS side is injected
+  through the seams in `enterprise/operator/controller/seam.go`; the OSS
+  implementations live in
+  `operator/internal/controller/redpanda/enterprise_adapters.go`.
+- Small contracts are deliberately duplicated with CI drift guards (see
+  `enterprise/README.md` for the inventory). If a drift test fails, port the
+  change across — don't delete the guard.
+- Enterprise codegen runs via `task enterprise:generate` (part of `task
+  generate`).
+- The stretch envtest/integration suites intentionally stay OSS-hosted in
+  `operator/internal/controller/redpanda` and `operator/pkg/client`.
+
 ## Reconciliation: Idempotency & Quiescence
 
 **Read this before changing controller watch triggers or requeue/rate-limit intervals.**
