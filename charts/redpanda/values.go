@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -277,29 +278,11 @@ type GatewayConfig struct {
 	// ParentRefs defines which Gateway(s) handle the TLSRoutes. At least one
 	// parent reference must be provided. These are passed directly into each
 	// TLSRoute's spec.parentRefs.
-	ParentRefs []GatewayParentRef `json:"parentRefs"`
+	ParentRefs []gatewayv1.ParentReference `json:"parentRefs"`
 	// AdvertisedPort is the port advertised to clients. Defaults to 443
 	// because the actual listening port is configured on the Gateway, not
 	// on the TLSRoute.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
-}
-
-// GatewayParentRef identifies a Gateway (or ListenerSet) that should handle
-// the TLSRoute traffic. The schema mirrors the upstream Gateway API
-// ParentReference so users see familiar field names.
-type GatewayParentRef struct {
-	// Group is the API group of the referent. Defaults to
-	// "gateway.networking.k8s.io".
-	Group *string `json:"group,omitempty"`
-	// Kind is the kind of the referent. Defaults to "Gateway".
-	Kind *string `json:"kind,omitempty"`
-	// Name is the name of the referent.
-	Name string `json:"name"`
-	// Namespace is the namespace of the referent. When unspecified, refers
-	// to the local namespace of the TLSRoute.
-	Namespace *string `json:"namespace,omitempty"`
-	// SectionName is the name of a section within the target resource.
-	SectionName *string `json:"sectionName,omitempty"`
 }
 
 // IsGatewayRequested returns true when the user asked for Gateway API

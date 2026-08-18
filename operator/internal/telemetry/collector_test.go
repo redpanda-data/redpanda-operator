@@ -30,6 +30,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -137,7 +138,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 						Enabled: ptr.To(true),
 						Gateway: &redpandav1alpha2.GatewayExternalConfig{
 							Enabled:    ptr.To(true),
-							ParentRefs: []redpandav1alpha2.GatewayParentRefConfig{{Name: "redpanda-gateway"}},
+							ParentRefs: []gatewayv1.ParentReference{{Name: "redpanda-gateway"}},
 						},
 					},
 					Storage: &redpandav1alpha2.Storage{
@@ -331,7 +332,7 @@ func TestAggregateRedpandas_GatewayCountRequiresParentRefs(t *testing.T) {
 						Enabled: ptr.To(false), // external access off, gateway block ignored.
 						Gateway: &redpandav1alpha2.GatewayExternalConfig{
 							Enabled:    ptr.To(true),
-							ParentRefs: []redpandav1alpha2.GatewayParentRefConfig{{Name: "gw"}},
+							ParentRefs: []gatewayv1.ParentReference{{Name: "gw"}},
 						},
 					},
 				},

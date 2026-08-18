@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
@@ -30,7 +31,7 @@ func TestAdvertisedHostJSONGatewayUsesCurrentListenerConfig(t *testing.T) {
 				Gateway: &GatewayConfig{
 					Enabled:        true,
 					AdvertisedPort: ptr.To[int32](8443),
-					ParentRefs:     []GatewayParentRef{{Name: "shared-gateway"}},
+					ParentRefs:     []gatewayv1.ParentReference{{Name: "shared-gateway"}},
 				},
 			},
 			Statefulset: Statefulset{
@@ -71,7 +72,7 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 				Enabled: true,
 				Gateway: &GatewayConfig{
 					Enabled:        true,
-					ParentRefs:     []GatewayParentRef{{Name: "kafka-gateway"}},
+					ParentRefs:     []gatewayv1.ParentReference{{Name: "kafka-gateway"}},
 					AdvertisedPort: ptr.To[int32](9094),
 				},
 			},
@@ -108,7 +109,7 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 	var poolRouteHost string
 	for _, r := range TLSRoutes(state) {
 		if r.ObjectMeta.Name == "redpanda-kafka-default-2" {
-			poolRouteHost = r.Spec.Hostnames[0]
+			poolRouteHost = string(r.Spec.Hostnames[0])
 		}
 	}
 	require.Equal(t, "redpanda-2.example.com", poolRouteHost)
