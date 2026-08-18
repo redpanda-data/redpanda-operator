@@ -109,7 +109,8 @@ type MulticlusterSetupParams struct {
 
 	// ClientFactory may be nil in tests that never reach the admin-client
 	// paths; the other seams are required (Features in particular gates every
-	// reconcile pass).
+	// reconcile pass) and SetupMulticlusterController validates them at setup
+	// time.
 	ClientFactory ClientFactory
 	ConfigSyncer  ClusterConfigSyncer
 	Features      FeatureGate

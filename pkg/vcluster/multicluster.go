@@ -64,13 +64,6 @@ type MulticlusterOptions struct {
 	// OperatorServiceName is the name of the Service created in front of the
 	// operator's raft gRPC port. Defaults to "multicluster-operator".
 	OperatorServiceName string
-	// OperatorFullname is the helm fullname of the operator deployment on each
-	// cluster (i.e. the Fullname produced by the operator chart for the chosen
-	// release name). Used by BootstrapTLS to derive the TLS secret name
-	// (<OperatorFullname>-multicluster-certificates) so it matches what the
-	// helm chart creates. Defaults to "redpanda-operator", which corresponds
-	// to a helm release named "redpanda" using the operator chart.
-	OperatorFullname string
 	// OperatorChartPath is the path to the operator helm chart. Required for
 	// DeployOperators. Typically "../operator/chart" or similar.
 	OperatorChartPath string
@@ -91,9 +84,6 @@ func (o *MulticlusterOptions) defaults() {
 	if o.OperatorServiceName == "" {
 		o.OperatorServiceName = "multicluster-operator"
 	}
-	if o.OperatorFullname == "" {
-		o.OperatorFullname = "redpanda-operator"
-	}
 	if o.OperatorImage == "" {
 		o.OperatorImage = "localhost/redpanda-operator"
 	}
@@ -106,8 +96,12 @@ func (o *MulticlusterOptions) defaults() {
 // configured with cross-cluster service replication so that operator pods
 // can reach each other via ClusterIP services.
 //
-// Call BootstrapTLS to create TLS secrets, and DeployOperators to install
-// the operator helm chart on each vcluster.
+// Call DeployOperators to install the operator helm chart on each vcluster.
+// TLS bootstrapping (creating the multicluster certificate secrets the
+// operators mount) lives in the enterprise module's
+// pkg/multicluster/bootstrap package, which this package cannot import;
+// callers that need it wire it up themselves (see the acceptance suite's
+// stretch steps).
 func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions) *Multicluster {
 	t.Helper()
 	opts.defaults()

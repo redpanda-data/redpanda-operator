@@ -47,6 +47,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/observability"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/tplutil"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 )
@@ -995,7 +996,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	// Phase 2: if no secret exists anywhere, generate a new password.
 	generated := canonicalPassword == ""
 	if generated {
-		canonicalPassword = randAlphaNum(32)
+		canonicalPassword = tplutil.RandAlphaNum(32)
 		logger.V(log.DebugLevel).Info("generated new bootstrap user password")
 	}
 
@@ -1996,8 +1997,15 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 }
 
 func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, params MulticlusterSetupParams) error {
+	// Validate the required seams up front: a nil seam would otherwise
+	// surface as a reconcile-time panic on a live cluster rather than a
+	// setup-time error. ClientFactory and Wrap are documented as optional
+	// (see MulticlusterSetupParams).
 	if params.Features == nil {
 		return errors.New("MulticlusterSetupParams.Features is required")
+	}
+	if params.ConfigSyncer == nil {
+		return errors.New("MulticlusterSetupParams.ConfigSyncer is required")
 	}
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller

@@ -9,8 +9,11 @@
 
 // Package testutil is the enterprise module's minimal test-helper set,
 // mirroring the handful of helpers its tests need from the monorepo's
-// pkg/testutil (which this module must not import). Keep it small: anything
-// heavier (golden files, k3d, vcluster) belongs to the OSS-hosted suites.
+// pkg/testutil (which this module must not import). The mirrored functions
+// are pinned to their originals by TestTestutilMirrorDrift in
+// operator/internal/enterprisedrift/source_drift_test.go. Keep it small:
+// anything heavier (golden files, k3d, vcluster) belongs to the OSS-hosted
+// suites.
 package testutil
 
 import (

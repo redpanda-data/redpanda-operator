@@ -93,14 +93,17 @@ func SQuote(vs ...any) string {
 	return strings.Join(result, " ")
 }
 
-// RandAlphaNum generates a random alphanumeric string of the given length.
+// RandAlphaNum generates a cryptographically random alphanumeric string of
+// the given length. It is used for secret material (e.g. the bootstrap user
+// password), so a crypto/rand failure panics rather than degrading the
+// output.
 func RandAlphaNum(length int) string {
 	b := make([]byte, length)
+	charCount := big.NewInt(int64(len(alphanumChars)))
 	for i := range b {
-		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(alphanumChars))))
+		n, err := rand.Int(rand.Reader, charCount)
 		if err != nil {
-			// Fallback to zero index on error (should not happen with crypto/rand).
-			n = big.NewInt(0)
+			panic(err)
 		}
 		b[i] = alphanumChars[n.Int64()]
 	}

@@ -23,9 +23,10 @@ import (
 // controller package's originals (operator/internal/controller/redpanda/
 // redpanda_controller.go), which the single-cluster RedpandaReconciler's roll
 // loop keeps using. This module must not import that package, so the helpers
-// are duplicated here; the pure decision functions are pinned to the OSS
-// originals by the drift test in the OSS controller package
-// (operator/internal/controller/redpanda/enterprise_shared_drift_test.go).
+// are duplicated here; every function in this file is pinned to its OSS
+// original by TestRollSafetyHelpersDrift in
+// operator/internal/enterprisedrift/source_drift_test.go (comments excluded,
+// code compared exactly).
 
 // brokerIDForPod resolves the pod to a broker ID in the (dual-keyed)
 // brokerMap. It looks up by pod name first (the common case, when

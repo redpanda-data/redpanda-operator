@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/acceptance/steps"
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/harpoon/providers"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
@@ -100,7 +101,7 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 			// Connect image used by pipeline-crds feature.
 			redpandav1alpha2.PipelineDefaultImage,
 		}...).
-		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install)
+		WithSchemeFunctions(vectorizedv1alpha1.Install, redpandav1alpha1.Install, redpandav1alpha2.Install, entv1alpha2.Install)
 
 	// In multicluster setup mode, skip cert-manager and operator installation
 	// as each vCluster instance manages its own.

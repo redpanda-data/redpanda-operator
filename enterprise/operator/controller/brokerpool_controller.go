@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/otelkube"
 	"github.com/redpanda-data/common-go/otelutil/trace"
@@ -54,6 +55,12 @@ type BrokerPoolReconciler struct {
 }
 
 func SetupWithMultiClusterManager(mgr multicluster.Manager, features FeatureGate, wrap ReconcilerWrapper) error {
+	// Reconcile dereferences the FeatureGate seam unconditionally; fail at
+	// setup time (matching SetupMulticlusterController) rather than panicking
+	// on the first RedpandaBrokerPool event.
+	if features == nil {
+		return errors.New("features is required")
+	}
 	name := "BrokerPool"
 	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info(
 		"registering "+name+" controller",

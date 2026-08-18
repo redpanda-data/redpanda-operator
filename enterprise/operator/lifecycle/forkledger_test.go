@@ -48,6 +48,12 @@ func TestForkLedger(t *testing.T) {
 		"operator/internal/lifecycle/helpers.go":    "1c84b970eedf8321809c4c272f7d386361931c351d09c5d013bf5131f6952d8b",
 		"operator/internal/lifecycle/secrets.go":    "3abff4936c961a0e9edecd5e950a8de985f1c96a25d444139d971f0faf39d328",
 		"operator/internal/lifecycle/constants.go":  "d10c5266ad6e6456550f46bf69bcaae2133b844956cdb9788ed190f9fafaf70e",
+		// isNodePool copied into this package's stretch_shared_helpers.go.
+		"operator/internal/lifecycle/v2_node_pools.go": "d77c356ee0e4347683c43423b335947197b965386d3f7e0c1770bd0df4fa6c1c",
+		// setAndDirtyCheck copied into this package's stretch_shared_helpers.go;
+		// setAndDirtyCheckPools mirrored as setAndDirtyCheckBrokerPools in
+		// stretch_cluster_status.go.
+		"operator/internal/lifecycle/v2_status.go": "01ecee109312ac5e56f7b663b52ab7f63d420e8ce02056644a89169bd6d56c62",
 		// Copied into this package's tolerations.go.
 		"operator/pkg/resources/tolerations.go": "4da432239d905f7fb836add3d28839735746ec26d41e07e0fd54124fbb89da0d",
 		// WatchOptions copied into this package's watches.go.

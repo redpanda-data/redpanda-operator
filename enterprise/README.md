@@ -82,14 +82,16 @@ across (or record an intentional divergence), then update the guard.
 
 | Duplication | Guard |
 |---|---|
-| Forked API value structs (~43) | byte-identical CRD generation (P3 validation); regenerate + diff |
+| Forked API value structs (~43) | source-level type-decl comparison (incl. kubebuilder markers), `operator/internal/enterprisedrift/source_drift_test.go` |
 | `render/hosttuner.go` (7 chart symbols) | `operator/internal/enterprisedrift/drift_test.go` |
-| `render/clusterconfig.go` (Fixup wire contract + CEL names) | same |
+| `render/clusterconfig.go` (Fixup wire contract + CEL names) | same, plus a JSON round-trip of the Fixup wire type |
 | `controller/superusers.go` | behavioral equivalence, `operator/internal/enterprisedrift` |
 | `controller/shared.go` (FinalizerKey, requeue constants) | `operator/internal/controller/redpanda/enterprise_shared_drift_test.go` |
-| Stretch metric names vs chart Prometheus rules | `operator/internal/enterprisedrift/metrics_drift_test.go` |
-| Concretized lifecycle | `operator/lifecycle/forkledger_test.go` (sha256 pins on OSS ancestors) |
+| `controller/roll_helpers.go` (roll-safety decision functions) | source-level function comparison, `operator/internal/enterprisedrift/source_drift_test.go` |
+| Stretch metric names vs chart Prometheus rules | `operator/internal/enterprisedrift/metrics_drift_test.go` (matches names against actual rule expressions) |
+| Concretized lifecycle (incl. `stretch_shared_helpers.go`'s v2 helper copies) | `operator/lifecycle/forkledger_test.go` (sha256 pins on OSS ancestors) |
 | `pkg/multicluster/manager.go` mirror | compile-time assertions in `operator/cmd/multicluster/manager_compat.go` |
+| `pkg/testutil` helper mirror | source-level function comparison, `operator/internal/enterprisedrift/source_drift_test.go` |
 | `ConfigSyncMode` enum | `operator/internal/controller/redpanda/enterprise_adapters_test.go` |
 
 ## Test strategy

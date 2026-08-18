@@ -19,6 +19,7 @@
 package enterprisedrift
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -61,6 +62,31 @@ func TestFixupWireContractDrift(t *testing.T) {
 		require.Equal(t, origField.Type, copyField.Type)
 		require.Equal(t, origField.Tag.Get("json"), copyField.Tag.Get("json"))
 	}
+}
+
+// TestFixupWireRoundTrip exercises the wire contract itself: marshal the
+// enterprise copy, unmarshal with the OSS original, and compare. The
+// field-walk above can't see a custom MarshalJSON/UnmarshalJSON added to
+// either side — this round-trip fails the moment (de)serialization semantics
+// diverge, which is exactly what would corrupt the bootstrap configmap
+// handoff between the enterprise renderer and the OSS sidecar.
+func TestFixupWireRoundTrip(t *testing.T) {
+	entFixup := render.Fixup{
+		Field: "redpanda.advertised_kafka_api",
+		CEL:   `envString("HOST_IP")`,
+	}
+
+	wire, err := json.Marshal(entFixup)
+	require.NoError(t, err)
+
+	var ossFixup clusterconfiguration.Fixup
+	require.NoError(t, json.Unmarshal(wire, &ossFixup))
+	require.Equal(t, entFixup.Field, ossFixup.Field)
+	require.Equal(t, entFixup.CEL, ossFixup.CEL)
+
+	back, err := json.Marshal(ossFixup)
+	require.NoError(t, err)
+	require.JSONEq(t, string(wire), string(back))
 }
 
 // TestCELMacroNameDrift pins the CEL macro-name constants duplicated in
