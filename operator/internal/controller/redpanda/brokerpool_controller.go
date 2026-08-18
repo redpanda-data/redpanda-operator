@@ -34,10 +34,8 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -51,9 +49,11 @@ import (
 // fields and finalizers on the RedpandaBrokerPool objects, rendering of RedpandaBrokerPools takes place within the StretchClusterReconciler.
 type BrokerPoolReconciler struct {
 	Manager multicluster.Manager
+	// Features is the injected feature-flag seam (see seam.go).
+	Features FeatureGate
 }
 
-func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
+func SetupWithMultiClusterManager(mgr multicluster.Manager, features FeatureGate, wrap ReconcilerWrapper) error {
 	name := "BrokerPool"
 	mgr.GetLogger().WithName("SetupWithMultiClusterManager").Info(
 		"registering "+name+" controller",
@@ -104,8 +104,9 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager) error {
 			})
 		}).
 		Complete(
-			observability.Wrap[mcreconcile.Request](
-				&BrokerPoolReconciler{Manager: mgr},
+			applyWrap(
+				wrap,
+				&BrokerPoolReconciler{Manager: mgr, Features: features},
 				name,
 				periodicRequeue,
 			),
@@ -157,7 +158,7 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 
 	logger := log.FromContext(ctx)
 
-	if !feature.V2Managed.Get(ctx, pool) {
+	if !r.Features.V2Managed(ctx, pool) {
 		if controllerutil.RemoveFinalizer(pool, FinalizerKey) {
 			if err := k8sClient.Update(ctx, pool); err != nil {
 				logger.Error(err, "updating cluster finalizer")
@@ -186,7 +187,7 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 	// Update our RedpandaBrokerPool with our finalizer and any default Annotation FFs.
 	// If any changes are made, persist the changes and immediately requeue to
 	// prevent any cache / resource version synchronization issues.
-	if controllerutil.AddFinalizer(pool, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, pool) {
+	if controllerutil.AddFinalizer(pool, FinalizerKey) || r.Features.SetDefaults(ctx, pool) {
 		logger.V(log.TraceLevel).Info("adding finalizer")
 		if err := k8sClient.Update(ctx, pool); err != nil {
 			logger.Error(err, "updating cluster finalizer or Annotation")

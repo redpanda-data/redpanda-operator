@@ -42,15 +42,11 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 )
@@ -87,7 +83,13 @@ const (
 type MulticlusterReconciler struct {
 	Manager         multicluster.Manager
 	LifecycleClient *lifecycle.ResourceClient[lifecycle.StretchClusterWithPools, *lifecycle.StretchClusterWithPools]
-	ClientFactory   internalclient.ClientFactory
+
+	// ClientFactory, ConfigSyncer, and Features are the injected seam
+	// implementations (see seam.go); SetupMulticlusterController populates
+	// them from MulticlusterSetupParams.
+	ClientFactory ClientFactory
+	ConfigSyncer  ClusterConfigSyncer
+	Features      FeatureGate
 
 	// ReconcileTimeout is a defense-in-depth ceiling on the wall time of a
 	// single reconcile pass — the primary mechanism is per-call timeouts
@@ -121,6 +123,27 @@ type MulticlusterReconciler struct {
 	// reconcile passes so the destructive wipe only fires on a re-confirmed
 	// identity (see wipeDebounce). Zero value is ready to use.
 	staleDiskWipeDebounce wipeDebounce
+
+	// isTerminalClientError and isNoRepresentativePoolError classify client
+	// errors; the concrete error types live in the operator's client package,
+	// so the predicates are injected (see seam.go). Nil-safe: nil means the
+	// condition never matches, which is the conservative default for tests
+	// that construct the reconciler directly.
+	isTerminalClientError       func(error) bool
+	isNoRepresentativePoolError func(error) bool
+}
+
+// terminalClientError reports whether err is a terminal client error per the
+// injected classifier; false when no classifier is set.
+func (r *MulticlusterReconciler) terminalClientError(err error) bool {
+	return r.isTerminalClientError != nil && r.isTerminalClientError(err)
+}
+
+// noRepresentativePoolError reports whether err is the client factory's "no
+// representative pool" condition per the injected classifier; false when no
+// classifier is set.
+func (r *MulticlusterReconciler) noRepresentativePoolError(err error) bool {
+	return r.isNoRepresentativePoolError != nil && r.isNoRepresentativePoolError(err)
 }
 
 // reconcileDeadline returns the timeout to apply on the reconcile context.
@@ -220,7 +243,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	defer func() { trace.EndSpan(span, err) }()
 
 	// TODO Should it be removed?
-	if !feature.V2Managed.Get(ctx, stretchCluster) {
+	if !r.Features.V2Managed(ctx, stretchCluster) {
 		if controllerutil.RemoveFinalizer(stretchCluster, FinalizerKey) {
 			if err := k8sClient.Update(ctx, stretchCluster); err != nil {
 				l.Error(err, "updating cluster finalizer")
@@ -289,7 +312,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// Update our StretchCluster with our finalizer and any default Annotation FFs.
 	// If any changes are made, persist the changes and immediately requeue to
 	// prevent any cache / resource version synchronization issues.
-	if controllerutil.AddFinalizer(stretchCluster, FinalizerKey) || feature.SetDefaults(ctx, feature.V2Flags, stretchCluster) {
+	if controllerutil.AddFinalizer(stretchCluster, FinalizerKey) || r.Features.SetDefaults(ctx, stretchCluster) {
 		if err := k8sClient.Update(ctx, stretchCluster); err != nil {
 			l.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
@@ -725,7 +748,7 @@ func (r *MulticlusterReconciler) fetchInitialState(ctx context.Context, sc *redp
 	// so that we can immediately calculate cluster status
 	// from and sync in any subsequent operation that
 	// early returns
-	restartOnConfigChange := feature.RestartOnConfigChange.Get(ctx, sc)
+	restartOnConfigChange := r.Features.RestartOnConfigChange(ctx, sc)
 	injectedConfigVersion := ""
 	if restartOnConfigChange {
 		injectedConfigVersion = sc.Status.ConfigVersion
@@ -972,7 +995,7 @@ func (r *MulticlusterReconciler) syncBootstrapUser(ctx context.Context, state *s
 	// Phase 2: if no secret exists anywhere, generate a new password.
 	generated := canonicalPassword == ""
 	if generated {
-		canonicalPassword = helmette.RandAlphaNum(32)
+		canonicalPassword = randAlphaNum(32)
 		logger.V(log.DebugLevel).Info("generated new bootstrap user password")
 	}
 
@@ -1236,7 +1259,7 @@ func (r *MulticlusterReconciler) reconcileResources(ctx context.Context, state *
 	defer func() {
 		if err != nil {
 			logger.Error(err, "error reconciling resources")
-			if internalclient.IsTerminalClientError(err) {
+			if r.terminalClientError(err) {
 				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
 			} else {
 				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
@@ -1261,7 +1284,7 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	defer func() {
 		if err != nil {
 			logger.Error(err, "error reconciling pools")
-			if internalclient.IsTerminalClientError(err) {
+			if r.terminalClientError(err) {
 				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonTerminalError, err.Error())
 			} else {
 				state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, err.Error())
@@ -1336,7 +1359,7 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 	logger := log.FromContext(ctx)
 	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.StretchCluster)
 	if err != nil {
-		if internalclient.IsNoRepresentativePoolError(err) {
+		if r.noRepresentativePoolError(err) {
 			// it may happen when there's no BrokerPool for this StretchCluster yet available
 			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 		}
@@ -1361,7 +1384,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	defer func() {
 		if err != nil {
 			logger.Error(err, "error decommissioning brokers")
-			if internalclient.IsTerminalClientError(err) {
+			if r.terminalClientError(err) {
 				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonTerminalError, err.Error())
 			} else {
 				state.status.StretchClusterStatus.SetHealthy(statuses.StretchClusterHealthyReasonError, err.Error())
@@ -1579,7 +1602,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 
 	defer func() {
 		if err != nil {
-			if internalclient.IsTerminalClientError(err) {
+			if r.terminalClientError(err) {
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonTerminalError, err.Error())
 			} else {
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
@@ -1677,7 +1700,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 
 	defer func() {
 		if err != nil {
-			if internalclient.IsTerminalClientError(err) {
+			if r.terminalClientError(err) {
 				state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonTerminalError, err.Error())
 			} else {
 				state.status.StretchClusterStatus.SetConfigurationApplied(statuses.StretchClusterConfigurationAppliedReasonError, err.Error())
@@ -1708,10 +1731,9 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 		return ctrl.Result{}, errors.WithStack(err)
 	}
 
-	mode := feature.ClusterConfigSyncMode.Get(ctx, state.cluster.StretchCluster)
+	mode := r.Features.ClusterConfigSyncMode(ctx, state.cluster.StretchCluster)
 
-	syncer := syncclusterconfig.Syncer{Client: state.admin, Mode: mode}
-	configStatus, err := syncer.Sync(ctx, config, superusers)
+	configStatus, err := r.ConfigSyncer.Sync(ctx, state.admin, mode, config, superusers)
 	if err != nil {
 		logger.Error(err, "syncing cluster config")
 		return ctrl.Result{}, errors.WithStack(err)
@@ -1758,7 +1780,7 @@ func (r *MulticlusterReconciler) superusersFor(ctx context.Context, state *stret
 		}
 
 		for filename, userTXT := range users.Data {
-			superusers = append(superusers, syncclusterconfig.LoadUsersFile(ctx, filename, userTXT)...)
+			superusers = append(superusers, loadUsersFile(ctx, filename, userTXT)...)
 		}
 	}
 
@@ -1767,7 +1789,7 @@ func (r *MulticlusterReconciler) superusersFor(ctx context.Context, state *stret
 		superusers = append(superusers, state.bootstrapUser)
 	}
 
-	return syncclusterconfig.NormalizeSuperusers(superusers), nil
+	return normalizeSuperusers(superusers), nil
 }
 
 func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
@@ -1973,7 +1995,10 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, params MulticlusterSetupParams) error {
+	if params.Features == nil {
+		return errors.New("MulticlusterSetupParams.Features is required")
+	}
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -2006,14 +2031,18 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 			})
 		}).
 		Complete(
-			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
+			applyWrap(params.Wrap, &MulticlusterReconciler{
 				Manager:                        mgr,
-				LifecycleClient:                lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
-				ClientFactory:                  factory,
-				ReconcileTimeout:               reconcileTimeout,
-				PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
-				MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
-				StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
+				LifecycleClient:                lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(params.RedpandaImage, params.SidecarImage, params.CloudSecrets)).WithBrokerPodNodeUnavailableToleration(params.BrokerPodNodeUnavailableToleration),
+				ClientFactory:                  params.ClientFactory,
+				ConfigSyncer:                   params.ConfigSyncer,
+				Features:                       params.Features,
+				ReconcileTimeout:               params.ReconcileTimeout,
+				PostRestartCaughtUpPercent:     params.PostRestartCaughtUpPercent,
+				MaintenanceModeClearThreshold:  params.ClearMaintenanceModeAfter,
+				StaleDiskWipeNotReadyThreshold: params.StaleDiskWipeNotReadyThreshold,
+				isTerminalClientError:          params.IsTerminalClientError,
+				isNoRepresentativePoolError:    params.IsNoRepresentativePoolError,
 			}, "StretchCluster", periodicRequeue),
 		)
 }

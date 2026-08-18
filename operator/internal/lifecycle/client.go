@@ -38,7 +38,6 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -1008,58 +1007,6 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 	}
 
 	return existing, nil
-}
-
-// FetchExistingBrokerPoolsFromAllClusters returns the union of BrokerPools
-// referencing the given cluster across every engaged cluster, plus the set of
-// cluster names whose List actually succeeded (vs. being probe-skipped or
-// failing the call). The observed set is load-bearing for downstream
-// scale-down safety: when a cluster's BrokerPool list wasn't observed, the
-// renderer downstream can produce a desiredCount=0 for that cluster purely
-// because we never saw its BrokerPools — indistinguishable from a real
-// deletion. Callers must gate any "no desired counterpart → drain"
-// decision on the observed set so a transient fetch failure on a
-// partitioned peer can't be misread as user intent to remove all pools.
-func (r *ResourceClient[T, U]) FetchExistingBrokerPoolsFromAllClusters(ctx context.Context, cluster U) ([]*BrokerPoolInCluster, map[string]bool, error) {
-	logger := log.FromContext(ctx)
-	var nodePools []*BrokerPoolInCluster
-	observed := map[string]bool{}
-	for _, clusterName := range r.clusterList(cluster) {
-		canonicalName := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
-		if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
-			logger.Info("remote cluster unreachable (probe) in FetchExistingBrokerPoolsFromAllClusters, skipping", "cluster", canonicalName)
-			continue
-		}
-		ctl, err := r.ctl(ctx, clusterName)
-		if err != nil {
-			if clusterName != mcmanager.LocalCluster {
-				logger.Info("remote cluster unreachable in FetchExistingBrokerPoolsFromAllClusters, skipping", "cluster", canonicalName, "error", err)
-				continue
-			}
-			return nil, nil, err
-		}
-		listCtx, listCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
-		allNodePools, err := kube.List[redpandav1alpha2.RedpandaBrokerPoolList](listCtx, ctl, cluster.GetNamespace())
-		listCancel()
-		if err != nil {
-			if clusterName != mcmanager.LocalCluster {
-				logger.Info("could not list BrokerPools on remote cluster, skipping", "cluster", canonicalName, "error", err)
-				continue
-			}
-			return nil, nil, err
-		}
-		observed[clusterName] = true
-		for _, pool := range allNodePools.Items {
-			clusterRef := pool.Spec.ClusterRef
-			if clusterRef.IsStretchCluster() && clusterRef.Name == cluster.GetName() {
-				nodePools = append(nodePools, &BrokerPoolInCluster{
-					cluster:    canonicalName,
-					brokerPool: pool.DeepCopy(),
-				})
-			}
-		}
-	}
-	return nodePools, observed, nil
 }
 
 func setConfigVersionLabels(labels map[string]string, configVersion string) map[string]string {

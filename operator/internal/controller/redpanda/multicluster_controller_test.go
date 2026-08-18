@@ -100,7 +100,14 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		WatchAllNamespaces: true,
 		InstallCertManager: true,
 		SetupFn: func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil, 0, 0, 100 /* post-restart caught-up % */, 5*time.Minute /* clear-maintenance-mode-after */, 0 /* wipe-stale-disk-after (default) */)
+			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpanda.OSSMulticlusterSeams(redpanda.MulticlusterSetupParams{
+				RedpandaImage:              redpandaImage,
+				SidecarImage:               sidecarImage,
+				CloudSecrets:               cloudSecrets,
+				PostRestartCaughtUpPercent: 100,
+				ClearMaintenanceModeAfter:  5 * time.Minute,
+				// StaleDiskWipeNotReadyThreshold left zero: wipe-stale-disk-after default.
+			}, nil /* factory */))
 		},
 	})
 }

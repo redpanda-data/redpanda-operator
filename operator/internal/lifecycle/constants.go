@@ -13,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 )
 
 const (
@@ -27,8 +26,7 @@ const (
 	// GCLabel is applied to out-of-band resources (Endpoints, EndpointSlices)
 	// that should retain ownership labels for tracking but should not be
 	// garbage collected by the syncer.
-	GCLabel                   = "cluster.redpanda.com/gc"
-	fluxNameLabel             = "helm.toolkit.fluxcd.io/name"
-	fluxNamespaceLabel        = "helm.toolkit.fluxcd.io/namespace"
-	BrokerPoolGenerationLabel = multiclusterRenderer.BrokerPoolLabelGeneration
+	GCLabel            = "cluster.redpanda.com/gc"
+	fluxNameLabel      = "helm.toolkit.fluxcd.io/name"
+	fluxNamespaceLabel = "helm.toolkit.fluxcd.io/namespace"
 )

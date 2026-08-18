@@ -109,7 +109,14 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 					return mc.DialContext(ctx, network, address)
 				},
 			)
-			return redpandacontrollers.SetupMulticlusterController(ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, factory, 0, 0, 100 /* post-restart caught-up % */, 5*time.Minute /* clear-maintenance-mode-after */, 0 /* wipe-stale-disk-after (default) */)
+			return redpandacontrollers.SetupMulticlusterController(ctx, mgr, redpandacontrollers.OSSMulticlusterSeams(redpandacontrollers.MulticlusterSetupParams{
+				RedpandaImage:              redpandaImage,
+				SidecarImage:               sidecarImage,
+				CloudSecrets:               cloudSecrets,
+				PostRestartCaughtUpPercent: 100,
+				ClearMaintenanceModeAfter:  5 * time.Minute,
+				// StaleDiskWipeNotReadyThreshold left zero: wipe-stale-disk-after default.
+			}, factory))
 		},
 	})
 	mc = s.mc

@@ -424,7 +424,17 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.ClearMaintenanceModeAfter, opts.StaleDiskWipeNotReadyThreshold); err != nil {
+	multiclusterParams := redpandacontrollers.OSSMulticlusterSeams(redpandacontrollers.MulticlusterSetupParams{
+		RedpandaImage:                      redpandaImage,
+		SidecarImage:                       sidecarImage,
+		CloudSecrets:                       cloudSecrets,
+		ReconcileTimeout:                   opts.ReconcileTimeout,
+		BrokerPodNodeUnavailableToleration: opts.BrokerPodNodeUnavailableToleration,
+		PostRestartCaughtUpPercent:         opts.PostRestartCaughtUpPercent,
+		ClearMaintenanceModeAfter:          opts.ClearMaintenanceModeAfter,
+		StaleDiskWipeNotReadyThreshold:     opts.StaleDiskWipeNotReadyThreshold,
+	}, factory)
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, multiclusterParams); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}
@@ -446,7 +456,7 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupWithMultiClusterManager(manager); err != nil {
+	if err := redpandacontrollers.SetupWithMultiClusterManager(manager, redpandacontrollers.OSSFeatureGate(), redpandacontrollers.OSSReconcilerWrapper()); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 		return err
 	}
