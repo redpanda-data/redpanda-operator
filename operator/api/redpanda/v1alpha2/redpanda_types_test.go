@@ -149,17 +149,6 @@ func TestHelmValuesCompat(t *testing.T) {
 				// Incorrect type (should be a *resource.Quantity) on an anonymous struct in Partial Values.
 				from.Storage.Tiered.PersistentVolume.Size = nil
 			}
-			// GatewayParentRef.Name is `string` (not *string) in the Helm chart
-			// but the partial generator makes it `*string`. Ensure Name is always
-			// non-nil so the partial's JSON includes "name":"" matching the CRD's
-			// required field which always serializes.
-			if from.External != nil && from.External.Gateway != nil {
-				for i := range from.External.Gateway.ParentRefs {
-					if from.External.Gateway.ParentRefs[i].Name == nil {
-						from.External.Gateway.ParentRefs[i].Name = ptr.To("")
-					}
-				}
-			}
 		})
 	}))
 }
@@ -240,7 +229,9 @@ func TestNoMarkdownLinks(t *testing.T) {
 	data, err := os.ReadFile("testdata/crd-docs.adoc")
 	require.NoError(t, err)
 
-	re := regexp.MustCompile(`\[(.+)\]\((.+)\)`)
+	// Bit of a hack. This can erroneously match regexs. Exclude URL unsafe
+	// characters (*) from the link portion.
+	re := regexp.MustCompile(`\[(.+)\]\(([^*]+)\)`)
 
 	matches := re.FindAllSubmatch(data, -1)
 	for _, match := range matches {
