@@ -1,6 +1,6 @@
 module example.com/example
 
-go 1.25.12
+go 1.25.13
 
 require (
 	github.com/redpanda-data/redpanda-operator/gotohelm v0.0.0-00010101000000-000000000000
