@@ -53,6 +53,19 @@ tasks:
         vars: { CHART: redpanda/chart }
       - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
       - actionlint
+      - task: lint:enterprise-boundary
+
+  lint:enterprise-boundary:
+    desc: "Verify the enterprise module builds without the workspace (no monorepo imports)"
+    dir: enterprise
+    env:
+      # Workspace mode would silently resolve sibling-module imports that
+      # enterprise/go.mod (correctly) cannot; GOWORK=off makes any such import
+      # a hard resolution failure. See enterprise/README.md.
+      GOWORK: "off"
+    cmds:
+      - go build ./...
+      - go vet ./...
 
   lint-fix:
     desc: "equivalent to task lint -- --fix"

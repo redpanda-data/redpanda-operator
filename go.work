@@ -6,6 +6,7 @@ use (
 	./charts/connectors
 	./charts/console
 	./charts/redpanda
+	./enterprise
 	./gen
 	./gotohelm
 	./gotohelm/testdata/src/example

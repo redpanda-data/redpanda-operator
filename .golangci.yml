@@ -61,6 +61,17 @@ linters:
             desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
           - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
             desc: 'import specific charts, the overarching charts module is now deprecated'
+        # The enterprise module must not import any other module in this
+        # monorepo: OSS→enterprise is the only allowed dependency direction so
+        # the module can lift-and-shift to the operator-enterprise repo. See
+        # enterprise/README.md. RE2 has no negative lookahead, so the sibling
+        # modules are enumerated explicitly.
+        enterprise-boundary:
+          files:
+          - "**/enterprise/**"
+          deny:
+          - pkg: "^github.com/redpanda-data/redpanda-operator/(operator|pkg|charts|gotohelm|gen|acceptance|harpoon|alias|licensereport|reaper|rpk-k8s-publish)(/.*)?$"
+            desc: 'the enterprise module may only depend on common-go/* and third-party modules; inject OSS machinery through the controller seams instead'
 
     gosec:
       excludes:
