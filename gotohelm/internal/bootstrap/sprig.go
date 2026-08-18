@@ -37,6 +37,10 @@ func Lookup(apiVersion, kind, namespace, name string) map[string]any {
 	panic("not implemented")
 }
 
+func SortAlpha(list any) []string {
+	return sprig.FuncMap()["sortAlpha"].(func(any) []string)(list)
+}
+
 func Empty(any) bool {
 	panic("not implemented")
 }

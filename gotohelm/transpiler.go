@@ -1240,6 +1240,21 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	switch id {
 	case "sort.Strings":
 		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: args}
+	case "slices.Sorted":
+		// sprig has no generic sort. sortAlpha coerces everything it's handed
+		// to a string, so reject anything that isn't already a string rather
+		// than silently mangling values.
+		elem := signature.Results().At(0).Type().(*types.Slice).Elem()
+		if basic, ok := elem.Underlying().(*types.Basic); !ok || basic.Info()&types.IsString == 0 {
+			panic(&Unsupported{
+				Fset: t.Fset,
+				Node: n,
+				Msg:  fmt.Sprintf("slices.Sorted is only supported for strings, got: %v", elem),
+			})
+		}
+		return litCall("_shims.slices_Sorted", args...)
+	case "strings.Join":
+		return &BuiltInCall{Func: Literal("join"), Arguments: []Node{args[1], args[0]}}
 	case "strings.Contains":
 		return &BuiltInCall{Func: Literal("contains"), Arguments: []Node{args[1], args[0]}}
 	case "strings.TrimSuffix":

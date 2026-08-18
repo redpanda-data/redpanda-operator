@@ -89,6 +89,18 @@ func _len(m any) int {
 	return Len(m)
 }
 
+// re-implementation of slices.Sorted.
+//
+// sprig's sortAlpha always returns a list but go's slices.Sorted collects into
+// a nil slice when handed an empty sequence. Normalize to go's behavior so the
+// two domains agree on `null` vs `[]`.
+func slices_Sorted(s any) []string {
+	if Empty(s) {
+		return nil
+	}
+	return SortAlpha(s)
+}
+
 // re-implementation of k8s.io/utils/ptr.Deref.
 func ptr_Deref(ptr, def any) any {
 	if ptr != nil {
