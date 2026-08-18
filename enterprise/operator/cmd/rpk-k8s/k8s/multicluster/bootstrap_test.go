@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster"
 )
 
 func threeClusterYAMLConfig() multicluster.BootstrapConfig {

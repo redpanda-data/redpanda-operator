@@ -12,7 +12,7 @@ package k8s
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster"
 )
 
 func Command() *cobra.Command {

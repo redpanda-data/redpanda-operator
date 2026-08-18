@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
 // bundleWriter wraps a zip.Writer with helpers that serialise the structured

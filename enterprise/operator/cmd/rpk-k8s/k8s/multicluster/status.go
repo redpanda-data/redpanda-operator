@@ -17,7 +17,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
 // StatusConfig holds the configuration for the status command.

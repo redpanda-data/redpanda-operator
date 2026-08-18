@@ -8,9 +8,11 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/cert-manager/cert-manager v1.19.3
 	github.com/cockroachdb/errors v1.12.0
+	github.com/docker/go-units v0.5.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/go-logr/logr v1.4.3
 	github.com/imdario/mergo v0.3.16
+	github.com/mattn/go-isatty v0.0.20
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.89.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
@@ -19,6 +21,7 @@ require (
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260413160920-df1679f86269
 	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/redpanda-data/common-go/rpadmin v0.2.7
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	go.etcd.io/raft/v3 v3.6.0
 	go.opentelemetry.io/otel v1.44.0
@@ -109,7 +112,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-ciede2000 v0.0.0-20170301095244-782e8c62fec3 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/hashstructure v1.1.0 // indirect
@@ -129,7 +131,6 @@ require (
 	github.com/sethgrid/pester v1.2.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.9.2 // indirect
-	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/texttheater/golang-levenshtein v1.0.1 // indirect

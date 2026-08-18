@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
 // fakeLogFetcher is a deterministic logFetcher used by Phase 2 unit tests.

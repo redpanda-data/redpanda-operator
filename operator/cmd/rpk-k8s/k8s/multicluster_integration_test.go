@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package multicluster_test
+package k8s_test
 
 import (
 	"bytes"
@@ -27,14 +27,14 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster"
 	operatorchart "github.com/redpanda-data/redpanda-operator/operator/chart"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )
 
 const (
-	operatorChartPath = "../../../../../operator/chart"
+	operatorChartPath = "../../../../operator/chart"
 	licenseEnvVar     = "REDPANDA_SAMPLE_LICENSE"
 )
 

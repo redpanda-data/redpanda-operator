@@ -35,10 +35,10 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 	mcpkg "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/testutil"
 )
 
 // fastTestChecks is the subset of cluster checks used by bundle tests. It

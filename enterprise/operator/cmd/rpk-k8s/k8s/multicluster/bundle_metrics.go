@@ -27,7 +27,7 @@ import (
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
 // MetricsOptions controls how often /metrics is sampled per cluster. Two

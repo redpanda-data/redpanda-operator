@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/rpk-k8s/k8s/multicluster/checks"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/cmd/rpk-k8s/k8s/multicluster/checks"
 )
 
 // LogsOptions controls per-container log retrieval. Zero values disable the
