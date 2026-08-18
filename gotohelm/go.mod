@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/gotohelm
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/Masterminds/goutils v1.1.1
