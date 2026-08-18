@@ -7,4 +7,4 @@ breaking:
   use:
     - FILE
 modules:
-  - path: pkg/multicluster/leaderelection/proto
+  - path: enterprise/pkg/multicluster/leaderelection/proto

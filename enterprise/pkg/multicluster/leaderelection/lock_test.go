@@ -22,9 +22,9 @@ import (
 	"go.etcd.io/raft/v3"
 	raftpb "go.etcd.io/raft/v3/raftpb"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
-	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
+	transportv1 "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/testutil"
 )
 
 // TestFollowerRejoinsAfterRestart validates that a follower that restarts

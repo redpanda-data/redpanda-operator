@@ -41,10 +41,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
 )

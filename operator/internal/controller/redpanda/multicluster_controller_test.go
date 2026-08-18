@@ -31,6 +31,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -40,7 +41,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 

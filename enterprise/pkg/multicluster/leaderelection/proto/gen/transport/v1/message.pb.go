@@ -457,8 +457,8 @@ const file_transport_v1_message_proto_rawDesc = "" +
 	"\x04Send\x12\x19.transport.v1.SendRequest\x1a\x1a.transport.v1.SendResponse\x12O\n" +
 	"\n" +
 	"Kubeconfig\x12\x1f.transport.v1.KubeconfigRequest\x1a .transport.v1.KubeconfigResponse\x12C\n" +
-	"\x06Status\x12\x1b.transport.v1.StatusRequest\x1a\x1c.transport.v1.StatusResponseB\xe0\x01\n" +
-	"\x10com.transport.v1B\fMessageProtoP\x01Zmgithub.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1;transportv1\xa2\x02\x03TXX\xaa\x02\fTransport.V1\xca\x02\fTransport\\V1\xe2\x02\x18Transport\\V1\\GPBMetadata\xea\x02\rTransport::V1b\x06proto3"
+	"\x06Status\x12\x1b.transport.v1.StatusRequest\x1a\x1c.transport.v1.StatusResponseB\xeb\x01\n" +
+	"\x10com.transport.v1B\fMessageProtoP\x01Zxgithub.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1;transportv1\xa2\x02\x03TXX\xaa\x02\fTransport.V1\xca\x02\fTransport\\V1\xe2\x02\x18Transport\\V1\\GPBMetadata\xea\x02\rTransport::V1b\x06proto3"
 
 var (
 	file_transport_v1_message_proto_rawDescOnce sync.Once

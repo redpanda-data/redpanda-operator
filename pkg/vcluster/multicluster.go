@@ -26,7 +26,6 @@ import (
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 )
 
 // MulticlusterNode wraps a vcluster.Cluster with additional metadata needed
@@ -130,39 +129,6 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 	})
 
 	return env
-}
-
-// BootstrapTLS generates a shared CA and per-node TLS certificates, then
-// distributes them as secrets across all vclusters. Returns the peer list
-// suitable for passing to DeployOperators.
-func (e *Multicluster) BootstrapTLS(t *testing.T, ctx context.Context, opts MulticlusterOptions) []map[string]any {
-	t.Helper()
-	opts.defaults()
-
-	config := bootstrap.BootstrapClusterConfiguration{
-		BootstrapTLS:      true,
-		EnsureNamespace:   true,
-		OperatorNamespace: opts.Namespace,
-	}
-
-	var peers []map[string]any
-	for _, node := range e.Nodes {
-		config.RemoteClusters = append(config.RemoteClusters, bootstrap.RemoteConfiguration{
-			KubeConfig:     node.RESTConfig(),
-			APIServer:      node.APIServer(),
-			ServiceAddress: node.ExternalIP(),
-			Name:           opts.OperatorFullname,
-		})
-		peers = append(peers, map[string]any{
-			"name":    node.Name(),
-			"address": node.ExternalIP(),
-		})
-	}
-
-	t.Log("bootstrapping multicluster TLS")
-	require.NoError(t, bootstrap.BootstrapKubernetesClusters(ctx, "redpanda-multicluster-operator", config))
-
-	return peers
 }
 
 // ValuesFunc builds helm values for a single node. It receives the node so the

@@ -21,7 +21,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/require"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 )
 
 func TestWatcher(t *testing.T) {

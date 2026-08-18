@@ -28,7 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
-	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
+	transportv1 "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 // CheckContext holds shared state for a single cluster, accumulated as

@@ -26,9 +26,9 @@ import (
 	sigs_client "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/testutil"
 )
 
 // bootstrapNode is a single-replica raft node running in bootstrap mode with a

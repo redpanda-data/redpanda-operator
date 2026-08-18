@@ -286,6 +286,7 @@ require (
 	github.com/prometheus/procfs v0.19.2 // indirect
 	github.com/quasilyte/go-ruleguard/dsl v0.3.22 // indirect
 	github.com/redpanda-data/common-go/secrets v0.1.4 // indirect
+	github.com/redpanda-data/redpanda-operator/enterprise v0.0.0-00010101000000-000000000000
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
@@ -377,3 +378,5 @@ replace (
 
 	pgregory.net/rapid => github.com/chrisseto/rapid v0.0.0-20240815210052-cdeef406c65c
 )
+
+replace github.com/redpanda-data/redpanda-operator/enterprise => ../enterprise

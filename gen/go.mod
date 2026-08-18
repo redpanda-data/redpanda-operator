@@ -314,3 +314,5 @@ replace (
 	github.com/redpanda-data/redpanda-operator/gotohelm => ../gotohelm
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 )
+
+replace github.com/redpanda-data/redpanda-operator/enterprise => ../enterprise

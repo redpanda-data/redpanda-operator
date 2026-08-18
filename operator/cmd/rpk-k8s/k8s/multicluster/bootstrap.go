@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 )
 
 // outputYAML is the value of --output that switches the command from

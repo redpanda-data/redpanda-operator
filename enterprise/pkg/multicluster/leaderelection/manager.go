@@ -19,7 +19,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
+	transportv1 "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 type runFactory func(ctx context.Context) error

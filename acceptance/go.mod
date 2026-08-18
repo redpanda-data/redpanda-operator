@@ -241,6 +241,7 @@ require (
 	github.com/redpanda-data/console/backend v0.0.0-20260723153234-2f5c2ee63008 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.9.0 // indirect
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1 // indirect
+	github.com/redpanda-data/redpanda-operator/enterprise v0.0.0-00010101000000-000000000000
 	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a // indirect
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -273,7 +274,6 @@ require (
 	go.etcd.io/etcd/api/v3 v3.6.8 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.6.8 // indirect
 	go.etcd.io/etcd/client/v3 v3.6.8 // indirect
-	go.etcd.io/raft/v3 v3.6.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/collector/featuregate v1.52.0 // indirect
 	go.opentelemetry.io/collector/pdata v1.52.0 // indirect
@@ -348,3 +348,5 @@ replace (
 	github.com/redpanda-data/redpanda-operator/operator => ../operator
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg
 )
+
+replace github.com/redpanda-data/redpanda-operator/enterprise => ../enterprise

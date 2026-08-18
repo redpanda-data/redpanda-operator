@@ -31,6 +31,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/watcher"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
@@ -40,8 +42,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/probes"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/telemetry"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/watcher"
 	"github.com/redpanda-data/redpanda-operator/pkg/pflagutil"
 )
 

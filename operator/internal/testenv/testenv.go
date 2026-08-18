@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
+	entmulticluster "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -298,7 +299,7 @@ func (e *Env) CreateTestNamespace(t *testing.T) *TestNamespace {
 	}
 }
 
-func (e *Env) SetupMulticlusterManager(serviceAccount string, address string, peers []multicluster.RaftCluster, fn func(multicluster.Manager) error) {
+func (e *Env) SetupMulticlusterManager(serviceAccount string, address string, peers []entmulticluster.RaftCluster, fn func(multicluster.Manager) error) {
 	// Bind the managers base config to a ServiceAccount via the "Impersonate"
 	// feature. This ensures that any permissions/RBAC issues get caught by
 	// theses tests as e.config has Admin permissions.
@@ -307,7 +308,7 @@ func (e *Env) SetupMulticlusterManager(serviceAccount string, address string, pe
 		config.Impersonate.UserName = fmt.Sprintf("system:serviceaccount:%s:%s", e.Namespace(), serviceAccount)
 	}
 
-	manager, err := multicluster.NewRaftRuntimeManager(&multicluster.RaftConfiguration{
+	manager, err := entmulticluster.NewRaftRuntimeManager(&entmulticluster.RaftConfiguration{
 		Name:               e.Name,
 		Address:            address,
 		Peers:              peers,

@@ -17,7 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // peerDiscovery is the result of looking up cache Secrets on a starting

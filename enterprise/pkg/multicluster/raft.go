@@ -45,9 +45,9 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 	"sigs.k8s.io/multicluster-runtime/providers/clusters"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection"
-	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection"
+	transportv1 "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 func stringToHash(s string) uint64 {

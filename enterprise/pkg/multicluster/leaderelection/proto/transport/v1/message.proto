@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package transport.v1;
 
-option go_package = "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1;transportv1";
+option go_package = "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1;transportv1";
 
 message CheckRequest {
   bool fromLeader = 1;

@@ -30,6 +30,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	entmulticluster "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -191,9 +192,9 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 		}
 	}
 
-	peers := make([]multicluster.RaftCluster, opts.ClusterSize)
+	peers := make([]entmulticluster.RaftCluster, opts.ClusterSize)
 	for i, env := range envs {
-		peers[i] = multicluster.RaftCluster{
+		peers[i] = entmulticluster.RaftCluster{
 			Name:       env.Name,
 			Address:    fmt.Sprintf("127.0.0.1:%d", ports[i]),
 			Kubeconfig: env.RESTConfig(),

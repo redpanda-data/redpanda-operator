@@ -23,8 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/testutil"
 )
 
 const (

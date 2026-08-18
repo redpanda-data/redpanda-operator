@@ -28,9 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	transportv1 "github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
-	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"
 )
 
 // raftTermStateKey holds the per-vcluster raft term observed before the
