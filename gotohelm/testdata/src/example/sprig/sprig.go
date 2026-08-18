@@ -11,6 +11,8 @@
 package sprig
 
 import (
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -35,6 +37,7 @@ func Sprig(dot *helmette.Dot) map[string]any {
 		"first":           first(),
 		"float":           float(),
 		"hasPrefix":       hasPrefix(),
+		"join":            join(),
 		"keys":            keys(),
 		"len":             lenTest(),
 		"mapIteration":    mapIteration(),
@@ -221,6 +224,15 @@ func stringsFunctions() []string {
 	}
 }
 
+func join() []string {
+	return []string{
+		helmette.Join(",", []string{"a", "b", "c"}),
+		strings.Join([]string{"a", "b", "c"}, ","),
+		strings.Join([]string{}, ","),
+		strings.Join([]string{"solo"}, "-"),
+	}
+}
+
 func keys() [][]string {
 	// .Keys is non-deterministic, must sort to ensure tests always pass.
 	keys := helmette.Keys(map[string]int{"0": 0, "1": 1})
@@ -229,6 +241,12 @@ func keys() [][]string {
 	return [][]string{
 		keys,
 		helmette.Keys(map[string]int{}),
+		helmette.SortedKeys(map[string]int{"1": 1, "0": 0}),
+		slices.Sorted(maps.Keys(map[string]int{"1": 1, "0": 0})),
+		// NB: go's slices.Sorted returns a nil slice for an empty sequence
+		// where sprig's sortAlpha returns an empty list. _shims.slices_Sorted
+		// normalizes helm to go's behavior; this case guards that.
+		slices.Sorted(maps.Keys(map[string]int{})),
 	}
 }
 

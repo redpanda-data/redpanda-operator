@@ -42,6 +42,11 @@ func Lookup(apiVersion, kind, namespace, name string) map[string]any {
 	panic("not implemented")
 }
 
+// +gotohelm:builtin=sortAlpha
+func SortAlpha(list any) []string {
+	panic("not implemented")
+}
+
 // +gotohelm:builtin=empty
 func Empty(any) bool {
 	panic("not implemented")
