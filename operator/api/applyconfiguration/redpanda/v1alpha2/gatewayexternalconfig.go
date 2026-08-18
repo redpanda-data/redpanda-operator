@@ -11,12 +11,16 @@
 
 package v1alpha2
 
+import (
+	v1 "sigs.k8s.io/gateway-api/apis/v1"
+)
+
 // GatewayExternalConfigApplyConfiguration represents a declarative configuration of the GatewayExternalConfig type for use
 // with apply.
 type GatewayExternalConfigApplyConfiguration struct {
-	Enabled        *bool                                      `json:"enabled,omitempty"`
-	ParentRefs     []GatewayParentRefConfigApplyConfiguration `json:"parentRefs,omitempty"`
-	AdvertisedPort *int32                                     `json:"advertisedPort,omitempty"`
+	Enabled        *bool                `json:"enabled,omitempty"`
+	ParentRefs     []v1.ParentReference `json:"parentRefs,omitempty"`
+	AdvertisedPort *int32               `json:"advertisedPort,omitempty"`
 }
 
 // GatewayExternalConfigApplyConfiguration constructs a declarative configuration of the GatewayExternalConfig type for use with
@@ -36,12 +40,9 @@ func (b *GatewayExternalConfigApplyConfiguration) WithEnabled(value bool) *Gatew
 // WithParentRefs adds the given value to the ParentRefs field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ParentRefs field.
-func (b *GatewayExternalConfigApplyConfiguration) WithParentRefs(values ...*GatewayParentRefConfigApplyConfiguration) *GatewayExternalConfigApplyConfiguration {
+func (b *GatewayExternalConfigApplyConfiguration) WithParentRefs(values ...v1.ParentReference) *GatewayExternalConfigApplyConfiguration {
 	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithParentRefs")
-		}
-		b.ParentRefs = append(b.ParentRefs, *values[i])
+		b.ParentRefs = append(b.ParentRefs, values[i])
 	}
 	return b
 }
