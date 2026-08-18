@@ -19,7 +19,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
-	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -41,7 +41,7 @@ func defaultBrokerImage(default_ Image) func(*entv1alpha2.RedpandaImage) *entv1a
 	}
 }
 
-// NodePoolRenderer represents a node pool multiclusterRenderer for stretch clusters.
+// NodePoolRenderer represents a node pool renderer for stretch clusters.
 type StretchBrokerPoolRenderer struct {
 	mgr           multicluster.Manager
 	sideCarImage  Image
@@ -86,7 +86,7 @@ func (m *StretchBrokerPoolRenderer) Render(ctx context.Context, cluster *Stretch
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
 	}
 
-	state, err := multiclusterRenderer.NewRenderState(
+	state, err := render.NewRenderState(
 		cl.GetConfig(),
 		cluster.StretchCluster,
 		inCluster,
@@ -96,7 +96,7 @@ func (m *StretchBrokerPoolRenderer) Render(ctx context.Context, cluster *Stretch
 		return nil, errors.WithStack(err)
 	}
 
-	return multiclusterRenderer.RenderBrokerPools(state)
+	return render.RenderBrokerPools(state)
 }
 
 // IsNodePool returns whether or not the object passed to it should be considered a node pool.

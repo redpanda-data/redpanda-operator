@@ -43,11 +43,11 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
-	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -1139,7 +1139,7 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 	// TLS by default when TLS is nil).
 	defaultedSpec := *sc.Spec.DeepCopy()
 	defaultedSpec.MergeDefaults()
-	managedCerts := rendermulticluster.BootstrappedCertNames(state.cluster.GetAllBrokerPools())
+	managedCerts := render.BootstrappedCertNames(state.cluster.GetAllBrokerPools())
 	if len(managedCerts) == 0 {
 		logger.V(log.TraceLevel).Info("no operator-managed TLS certs, skipping CA sync")
 		return ctrl.Result{}, nil
@@ -1148,7 +1148,7 @@ func (r *MulticlusterReconciler) syncCA(ctx context.Context, state *stretchClust
 	clusterNames := r.Manager.GetClusterNames()
 
 	for _, certName := range managedCerts {
-		secretName := rendermulticluster.CASecretName(sc.Name, certName)
+		secretName := render.CASecretName(sc.Name, certName)
 
 		// Phase 1: scan all clusters for an existing CA secret.
 		var canonicalSecret *corev1.Secret

@@ -1,0 +1,152 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package render
+
+import (
+	"github.com/redpanda-data/common-go/kube"
+	"github.com/redpanda-data/common-go/otelutil/log"
+	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+)
+
+// perPodEndpoints renders Endpoints and EndpointSlices for selector-less
+// per-pod Services in flat network mode, across every pool in every region.
+// Each per-pod Service gets an Endpoints object (for CoreDNS) and an
+// EndpointSlice (for kube-proxy/mesh) pointing to the actual pod IP.
+func perPodEndpoints(state *RenderState) []kube.Object {
+	logger := log.FromContext(state.Context()).WithName("perPodEndpoints")
+	if !state.Spec().Networking.IsFlatNetwork() {
+		logger.V(log.TraceLevel).Info("not flat-network, returning no endpoints")
+		return nil
+	}
+	if len(state.podEndpoints) == 0 {
+		// This is the failure mode that causes the cross-cluster
+		// Endpoints/EndpointSlices to be GC'd by the Syncer — the
+		// renderer produced nothing, so the Syncer sees existing objects
+		// as "not in desired state" and deletes them. If we see this log
+		// fire at reconcile boundaries, the upstream PoolTracker needs
+		// investigation.
+		logger.Info("flat-mode: podEndpoints is empty, rendering no per-pod Endpoints (Syncer will GC existing)")
+		return nil
+	}
+	logger.V(log.TraceLevel).Info(
+		"flat-mode: rendering per-pod Endpoints",
+		"podEndpointsCount", len(state.podEndpoints),
+		"pools", len(state.pools),
+	)
+
+	var objects []kube.Object
+	for _, pool := range state.pools {
+		objects = append(objects, perPodEndpointsForPool(state, pool)...)
+	}
+	logger.V(log.TraceLevel).Info("rendered per-pod endpoints", "objectCount", len(objects))
+
+	return objects
+}
+
+// perPodEndpointsForPool renders Endpoints + EndpointSlice for one pool's
+// replicas. Caller iterates state.Pools(); guards against non-flat networking
+// and empty podEndpoints state should be enforced at the call site (matches
+// the behavior of the umbrella perPodEndpoints) — when called individually,
+// helper returns nil if guards fail.
+func perPodEndpointsForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []kube.Object {
+	if !state.Spec().Networking.IsFlatNetwork() || len(state.podEndpoints) == 0 {
+		return nil
+	}
+	logger := log.FromContext(state.Context()).WithName("perPodEndpointsForPool")
+	ports := perPodServicePorts(&pool.Spec)
+
+	var objects []kube.Object
+	for i := int32(0); i < pool.GetReplicas(); i++ {
+		svcName := PerPodServiceName(state.poolFullname(pool), i)
+
+		var ep PodEndpoint
+		found := false
+		for _, e := range state.podEndpoints {
+			if e.Name == svcName {
+				ep = e
+				found = true
+				break
+			}
+		}
+		if !found {
+			logger.V(log.TraceLevel).Info(
+				"no PodEndpoint entry for per-pod service, skipping (its Endpoints will be GC'd)",
+				"svcName", svcName,
+			)
+			continue
+		}
+
+		objects = append(objects, endpointsForService(state, svcName, ep, ports)...)
+	}
+	return objects
+}
+
+func endpointsForService(state *RenderState, svcName string, ep PodEndpoint, svcPorts []corev1.ServicePort) []kube.Object {
+	labels := state.commonLabels()
+
+	// Endpoints — CoreDNS resolves headless service DNS from this API.
+	var v1Ports []corev1.EndpointPort
+	for _, p := range svcPorts {
+		v1Ports = append(v1Ports, corev1.EndpointPort{
+			Name:     p.Name,
+			Port:     p.Port,
+			Protocol: p.Protocol,
+		})
+	}
+	epObj := &corev1.Endpoints{ //nolint:staticcheck // Endpoints required for CoreDNS headless service resolution
+		TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Endpoints"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      svcName,
+			Namespace: state.namespace,
+			Labels:    labels,
+		},
+		Subsets: []corev1.EndpointSubset{{ //nolint:staticcheck // see above
+			Addresses: []corev1.EndpointAddress{{IP: ep.IP}},
+			Ports:     v1Ports,
+		}},
+	}
+
+	// EndpointSlice — for kube-proxy and service mesh consumers.
+	var slicePorts []discoveryv1.EndpointPort
+	for _, p := range svcPorts {
+		p := p
+		slicePorts = append(slicePorts, discoveryv1.EndpointPort{
+			Name:     &p.Name,
+			Port:     &p.Port,
+			Protocol: &p.Protocol,
+		})
+	}
+	sliceLabels := make(map[string]string, len(labels)+1)
+	for k, v := range labels {
+		sliceLabels[k] = v
+	}
+	sliceLabels[discoveryv1.LabelServiceName] = svcName
+	epSlice := &discoveryv1.EndpointSlice{
+		TypeMeta: metav1.TypeMeta{APIVersion: "discovery.k8s.io/v1", Kind: "EndpointSlice"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      svcName + "-cross-cluster",
+			Namespace: state.namespace,
+			Labels:    sliceLabels,
+		},
+		AddressType: discoveryv1.AddressTypeIPv4,
+		Endpoints: []discoveryv1.Endpoint{{
+			Addresses:  []string{ep.IP},
+			Conditions: discoveryv1.EndpointConditions{Ready: ptr.To(ep.Ready)},
+		}},
+		Ports: slicePorts,
+	}
+
+	return []kube.Object{epObj, epSlice}
+}

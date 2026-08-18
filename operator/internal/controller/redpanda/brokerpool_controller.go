@@ -33,9 +33,9 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -212,8 +212,8 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 
 	var statefulSets appsv1.StatefulSetList
 	if err := k8sClient.List(ctx, &statefulSets, client.MatchingLabels{
-		lifecycle.DefaultNamespaceLabel:          pool.Namespace,
-		multiclusterRenderer.BrokerPoolLabelName: pool.Name,
+		lifecycle.DefaultNamespaceLabel: pool.Namespace,
+		render.BrokerPoolLabelName:      pool.Name,
 	}); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -234,7 +234,7 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 	if sts != nil {
 		stsLabels := sts.GetLabels()
 		if stsLabels != nil {
-			generationString := stsLabels[multiclusterRenderer.BrokerPoolLabelGeneration]
+			generationString := stsLabels[render.BrokerPoolLabelGeneration]
 			if generationString != "" {
 				// if we have a parsing error, just skip the generation propagation
 				if generation, err := strconv.ParseInt(generationString, 10, 0); err == nil {

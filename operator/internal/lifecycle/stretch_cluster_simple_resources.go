@@ -16,12 +16,12 @@ import (
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/tplutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// StretchClusterSimpleResourceRenderer represents a simple resource multiclusterRenderer for stretch clusters.
+// StretchClusterSimpleResourceRenderer represents a simple resource renderer for stretch clusters.
 type StretchClusterSimpleResourceRenderer struct {
 	mgr           multicluster.Manager
 	redpandaImage Image
@@ -63,7 +63,7 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		pool.Spec.SidecarImage = applyDefaultSidecar(pool.Spec.SidecarImage)
 	}
 
-	state, err := multiclusterRenderer.NewRenderState(
+	state, err := render.NewRenderState(
 		cl.GetConfig(),
 		cluster.StretchCluster,
 		inCluster,
@@ -79,9 +79,9 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 
 	// Pass pod endpoints for flat network Endpoints/EndpointSlice rendering.
 	if len(cluster.PodEndpoints) > 0 {
-		renderEndpoints := make([]multiclusterRenderer.PodEndpoint, len(cluster.PodEndpoints))
+		renderEndpoints := make([]render.PodEndpoint, len(cluster.PodEndpoints))
 		for i, ep := range cluster.PodEndpoints {
-			renderEndpoints[i] = multiclusterRenderer.PodEndpoint{
+			renderEndpoints[i] = render.PodEndpoint{
 				Name:    ep.Name,
 				IP:      ep.IP,
 				Cluster: ep.Cluster,
@@ -90,7 +90,7 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 		}
 		state.WithPodEndpoints(renderEndpoints)
 	}
-	resources, err := multiclusterRenderer.RenderClusterResources(state)
+	resources, err := render.RenderClusterResources(state)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -100,14 +100,14 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	// view the per-pool renderers were constructed against, and reusing them
 	// keeps a single deep copy in flight per Render call.
 	for _, pool := range state.InClusterPools() {
-		inPoolResources, err := multiclusterRenderer.RenderInClusterPoolResources(state, pool)
+		inPoolResources, err := render.RenderInClusterPoolResources(state, pool)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 		resources = append(resources, inPoolResources...)
 	}
 	for _, pool := range state.Pools() {
-		eachPoolResources, err := multiclusterRenderer.RenderEachPoolResources(state, pool)
+		eachPoolResources, err := render.RenderEachPoolResources(state, pool)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -120,7 +120,7 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 // WatchedResourceTypes returns the list of all the resources that the cluster
 // controller needs to watch.
 func (m *StretchClusterSimpleResourceRenderer) WatchedResourceTypes() []client.Object {
-	return multiclusterRenderer.Types()
+	return render.Types()
 }
 
 func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *StretchClusterWithPools) []string {
@@ -128,7 +128,7 @@ func (m *StretchClusterSimpleResourceRenderer) GetAdminAPIEndpoints(cluster *Str
 	for _, pool := range cluster.BrokerPools {
 		for i := int32(0); i < pool.brokerPool.GetReplicas(); i++ {
 			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.brokerPool.Suffix()
-			name := multiclusterRenderer.PerPodServiceName(poolFullname, i)
+			name := render.PerPodServiceName(poolFullname, i)
 			adminAPIEndpoints = append(adminAPIEndpoints, fmt.Sprintf("%s.%s:%d", name, pool.brokerPool.GetNamespace(), pool.brokerPool.Spec.AdminPort()))
 		}
 	}

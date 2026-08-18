@@ -29,9 +29,9 @@ import (
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/tplutil"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 
 // defaultedPoolSpec returns a copy of the RedpandaBrokerPool spec with defaults
@@ -340,7 +340,7 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			}
 			for j := int32(0); j < pool.GetReplicas(); j++ {
 				poolFullname := tplutil.CleanForK8s(sc.Name) + pool.Suffix()
-				name := rendermulticluster.PerPodServiceName(poolFullname, j)
+				name := render.PerPodServiceName(poolFullname, j)
 				endpoints = append(endpoints, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port))
 			}
 		}
@@ -385,7 +385,7 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 		caSecretName = poolSpec.TLS.CertServerSecretName(poolFullname, certName)
 		caKey = "ca.crt"
 	default:
-		caSecretName = rendermulticluster.CASecretName(sc.Name, certName)
+		caSecretName = render.CASecretName(sc.Name, certName)
 		caKey = corev1.TLSCertKey
 	}
 
@@ -436,7 +436,7 @@ func (c *Factory) stretchClusterListenerTLSConfig(ctx context.Context, sc *redpa
 // user secret if SASL is enabled. The returned mechanism is the SASL mechanism
 // configured on the cluster (defaulting to SCRAM-SHA-512) — it matches the
 // mechanism Redpanda used to create the bootstrap user's SCRAM credential (see
-// bootstrapUserEnvVars in operator/multicluster/statefulset_redpanda.go) and
+// bootstrapUserEnvVars in enterprise/operator/render/statefulset_redpanda.go) and
 // must be honored by SCRAM clients. When SASL is disabled all returns are
 // empty.
 func (c *Factory) stretchClusterAuth(ctx context.Context, sc *redpandav1alpha2.StretchCluster, k8sClient client.Client) (username, password, mechanism string, _ error) {

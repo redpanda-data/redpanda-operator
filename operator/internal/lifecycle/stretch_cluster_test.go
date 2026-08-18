@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
-	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -68,7 +68,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 		},
 		Client: client.Options{
 			Cache: &client.CacheOptions{
-				DisableFor: append(multiclusterRenderer.Types(), &redpandav1alpha2.StretchCluster{}, &corev1.Namespace{}),
+				DisableFor: append(render.Types(), &redpandav1alpha2.StretchCluster{}, &corev1.Namespace{}),
 			},
 		},
 	})
@@ -112,7 +112,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 
 	resourceClient := NewMulticlusterResourceClient(manager, StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets))
 
-	require.EqualValues(t, multiclusterRenderer.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
+	require.EqualValues(t, render.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 
 	decoder := serializer.NewCodecFactory(controller.MulticlusterScheme).UniversalDecoder(redpandav1alpha2.SchemeGroupVersion)
 
@@ -183,7 +183,7 @@ func TestStretchClusterResourceClient(t *testing.T) {
 			cl, err := manager.GetCluster(ctx, "")
 			require.NoError(t, err)
 
-			state, err := multiclusterRenderer.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetBrokerPoolsForCluster(""), cluster.GetAllBrokerPools(), "")
+			state, err := render.NewRenderState(cl.GetConfig(), cluster.StretchCluster, cluster.GetBrokerPoolsForCluster(""), cluster.GetAllBrokerPools(), "")
 			require.NoError(t, err)
 
 			yamlBytes, err := yaml.Marshal(map[string]any{

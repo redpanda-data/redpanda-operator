@@ -17,7 +17,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
-	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 )
 
 // This file holds the stretch-cluster-only pieces of the resource client so
@@ -25,7 +25,7 @@ import (
 
 // BrokerPoolGenerationLabel is the generation label applied to StatefulSets
 // rendered from RedpandaBrokerPools (the stretch-cluster pool kind).
-const BrokerPoolGenerationLabel = multiclusterRenderer.BrokerPoolLabelGeneration
+const BrokerPoolGenerationLabel = render.BrokerPoolLabelGeneration
 
 // FetchExistingBrokerPoolsFromAllClusters returns the union of BrokerPools
 // referencing the given cluster across every engaged cluster, plus the set of

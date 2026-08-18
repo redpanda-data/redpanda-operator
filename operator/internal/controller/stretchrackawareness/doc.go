@@ -11,7 +11,7 @@
 // the kubebuilder annotations for generating the ClusterRole the operator
 // needs to deploy a StretchCluster with rack awareness enabled. The
 // multicluster renderer creates a per-pool rack-awareness ClusterRole
-// granting nodes get/list/watch (operator/multicluster/rbac.go), and
+// granting nodes get/list/watch (enterprise/operator/render/rbac.go), and
 // Kubernetes RBAC escalation prevention only lets the operator grant verbs
 // it already holds — the plain rack-awareness package above carries `get`
 // only, which is all the non-stretch flow needs.

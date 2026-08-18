@@ -340,7 +340,7 @@ func TestRBACBindings(t *testing.T) {
 
 // TestRBACStretchRackAwarenessScoped asserts that the operator only claims
 // the nodes list/watch grant needed for StretchCluster's per-pool rack
-// awareness ClusterRole (operator/multicluster/rbac.go) on multicluster
+// awareness ClusterRole (enterprise/operator/render/rbac.go) on multicluster
 // installs.
 func TestRBACStretchRackAwarenessScoped(t *testing.T) {
 	multiclusterObjs, err := Chart.Render(nil, helmette.Release{Name: "operator"}, PartialValues{

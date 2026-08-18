@@ -1,0 +1,413 @@
+// Copyright 2026 Redpanda Data, Inc.
+//
+// Use of this software is governed by the Business Source License
+// included in the file licenses/BSL.md
+//
+// As of the Change Date specified in that file, in accordance with
+// the Business Source License, use of this software will be governed
+// by the Apache License, Version 2.0
+
+package render
+
+import (
+	"context"
+	"fmt"
+	"sort"
+	"time"
+
+	"github.com/redpanda-data/common-go/kube"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/utils/ptr"
+
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/tplutil"
+)
+
+// RenderState contains contextual information about the current rendering of
+// stretch cluster resources. Exported methods are limited to those useful for
+// establishing client connections to the cluster.
+// PodEndpoint holds the information needed to create Endpoints/EndpointSlices
+// for a pod in a multicluster stretch cluster.
+type PodEndpoint struct {
+	// Name is the pod name (e.g. "factory-test-pool-0-0").
+	Name string
+	// IP is the pod's IP address.
+	IP string
+	// Cluster is the Kubernetes cluster the pod runs on.
+	Cluster string
+	// Ready indicates whether the pod's readiness probe is passing.
+	Ready bool
+}
+
+type RenderState struct {
+	cluster        *redpandav1alpha2.StretchCluster
+	inClusterPools []*redpandav1alpha2.RedpandaBrokerPool
+	pools          []*redpandav1alpha2.RedpandaBrokerPool
+	podEndpoints   []PodEndpoint
+	clusterName    string
+	releaseName    string
+	namespace      string
+
+	client *kube.Ctl
+
+	// ctx carries reconciliation-scoped values (logger, trace span) so that
+	// render helpers can emit structured logs bound to the reconcile that
+	// invoked them. Set via WithContext(); nil is fine for unit tests and
+	// yields a background-context logger.
+	ctx context.Context
+
+	seedServers          []string
+	bootstrapUserSecret  *corev1.Secret
+	statefulSetPodLabels map[string]string
+	statefulSetSelector  map[string]string
+}
+
+// WithContext stores the reconciliation context so render helpers can emit
+// contextual logs. Safe to call after NewRenderState.
+func (r *RenderState) WithContext(ctx context.Context) *RenderState {
+	r.ctx = ctx
+	return r
+}
+
+// Context returns the stored reconciliation context, falling back to a
+// background context if WithContext was never called (e.g. in tests).
+func (r *RenderState) Context() context.Context {
+	if r.ctx == nil {
+		return context.Background()
+	}
+	return r.ctx
+}
+
+func seedServersFromBrokerPools(cluster *redpandav1alpha2.StretchCluster, pools []*redpandav1alpha2.RedpandaBrokerPool) []string {
+	// In MCS mode, use the clusterset.local domain so DNS resolves via the
+	// MCS controller across cluster boundaries.
+	addressFmt := "%s.%s:%d"
+	if cluster.Spec.Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+
+	var seedServers []string
+	for _, pool := range pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			poolFullname := tplutil.CleanForK8s(cluster.Name) + pool.Suffix()
+			name := PerPodServiceName(poolFullname, i)
+			seedServers = append(seedServers, fmt.Sprintf(addressFmt, name, pool.GetNamespace(), pool.Spec.RPCPort()))
+		}
+	}
+	return seedServers
+}
+
+// NewRenderState constructs a RenderState from a StretchCluster, its BrokerPools,
+// and a cluster name. It uses the provided config for K8s lookups.
+// The cluster and pools are deep-copied so that merging defaults does not
+// mutate the caller's objects.
+func NewRenderState(
+	config *kube.RESTConfig,
+	cluster *redpandav1alpha2.StretchCluster,
+	// inClusterPool is a list of BrokerPools in given cluster
+	inClusterPool []*redpandav1alpha2.RedpandaBrokerPool,
+	// pools is a list of BrokerPools in all K8S clusters
+	pools []*redpandav1alpha2.RedpandaBrokerPool,
+	clusterName string,
+) (*RenderState, error) {
+	// Deep-copy to avoid mutating the caller's CRD objects.
+	cluster = cluster.DeepCopy()
+	copiedInClusterPools := make([]*redpandav1alpha2.RedpandaBrokerPool, len(inClusterPool))
+	for i, p := range inClusterPool {
+		copiedInClusterPools[i] = p.DeepCopy()
+	}
+	copiedPools := make([]*redpandav1alpha2.RedpandaBrokerPool, len(pools))
+	for i, p := range pools {
+		copiedPools[i] = p.DeepCopy()
+	}
+
+	// Sort pools by name for deterministic rendering order.
+	sort.Slice(copiedInClusterPools, func(i, j int) bool {
+		return copiedInClusterPools[i].Name < copiedInClusterPools[j].Name
+	})
+	// Sort pools by name for deterministic rendering order.
+	sort.Slice(copiedPools, func(i, j int) bool {
+		return copiedPools[i].Name < copiedPools[j].Name
+	})
+
+	// Apply Helm-equivalent defaults to nil fields.
+	cluster.Spec.MergeDefaults()
+	// Apply per-pool defaults (TLS, Listeners, External, RBAC, ServiceAccount)
+	// to nil fields on each pool — mirrors the API migration where these
+	// fields moved off StretchClusterSpec onto EmbeddedBrokerPoolSpec. For
+	// Storage / Resources / ImagePullSecrets, MergeFromCluster runs first so
+	// the pool inherits cluster-level values for any subfield it didn't set
+	// itself; MergeDefaults then fills any still-nil pool defaults. This is
+	// idempotent — both MergeFromCluster and MergeDefaults only fill nil
+	// fields — so it's safe even when callers (e.g. lifecycle.defaultedPoolCopy)
+	// have already applied the same pipeline before passing pools in.
+	for _, p := range copiedInClusterPools {
+		p.Spec.MergeFromCluster(&cluster.Spec)
+		p.Spec.MergeDefaults()
+	}
+	for _, p := range copiedPools {
+		p.Spec.MergeFromCluster(&cluster.Spec)
+		p.Spec.MergeDefaults()
+	}
+
+	releaseName := cluster.Name
+
+	var ctl *kube.Ctl
+	if config != nil {
+		var err error
+		ctl, err = kube.FromRESTConfig(config, kube.Options{
+			FieldManager: string(defaultFieldOwner),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("creating kubernetes client: %w", err)
+		}
+	}
+
+	state := &RenderState{
+		cluster:        cluster,
+		pools:          copiedPools,
+		inClusterPools: copiedInClusterPools,
+		clusterName:    clusterName,
+		releaseName:    releaseName,
+		namespace:      cluster.Namespace,
+		client:         ctl,
+		seedServers:    seedServersFromBrokerPools(cluster, copiedPools),
+	}
+
+	if err := state.fetchBootstrapUser(); err != nil {
+		return nil, err
+	}
+	if err := state.fetchStatefulSetPodSelector(); err != nil {
+		return nil, err
+	}
+
+	return state, nil
+}
+
+// WithPodEndpoints sets the pod endpoints on the render state, enabling
+// the renderer to produce Endpoints and EndpointSlices for flat network mode.
+func (r *RenderState) WithPodEndpoints(endpoints []PodEndpoint) *RenderState {
+	r.podEndpoints = endpoints
+	return r
+}
+
+// tplData returns the template context data for Go template expansion.
+// The shape mirrors Helm's built-in objects so that PodTemplate values
+// containing {{ .Release.Name }} etc. continue to work after migration
+// from the Helm chart.
+func (r *RenderState) tplData() map[string]any {
+	return map[string]any{
+		"Release": map[string]any{
+			"Namespace":   r.namespace,
+			"Name":        r.releaseName,
+			"Service":     "Helm",
+			"IsUpgrade":   true,
+			"ClusterName": r.clusterName,
+		},
+		"Name":      r.fullname(),
+		"Namespace": r.namespace,
+	}
+}
+
+// Spec returns the StretchClusterSpec. Exported for test/debugging access.
+func (r *RenderState) Spec() *redpandav1alpha2.StretchClusterSpec {
+	return &r.cluster.Spec
+}
+
+// Pools returns the list of BrokerPools across K8S clusters. Exported for test/debugging access.
+func (r *RenderState) Pools() []*redpandav1alpha2.RedpandaBrokerPool {
+	return r.pools
+}
+
+// InClusterPools returns the list of BrokerPools from single K8S cluster. Exported for test/debugging access.
+func (r *RenderState) InClusterPools() []*redpandav1alpha2.RedpandaBrokerPool {
+	return r.inClusterPools
+}
+
+// isLocalPool returns true if the given pool is in the local cluster.
+func (r *RenderState) isLocalPool(pool *redpandav1alpha2.RedpandaBrokerPool) bool {
+	for _, p := range r.inClusterPools {
+		if p.Name == pool.Name {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *RenderState) fullname() string {
+	return tplutil.CleanForK8s(r.releaseName)
+}
+
+func (r *RenderState) commonLabels() map[string]string {
+	labels := map[string]string{
+		labelNameKey:        labelNameValue,
+		labelInstanceKey:    r.releaseName,
+		labelManagedByKey:   labelManagedByValue,
+		labelComponentKey:   labelNameValue,
+		labelClusterNameKey: r.clusterName,
+	}
+	for k, v := range r.Spec().CommonLabels {
+		labels[k] = v
+	}
+	return labels
+}
+
+func (r *RenderState) clusterPodLabelsSelector() map[string]string {
+	return map[string]string{
+		labelInstanceKey:    r.releaseName,
+		labelNameKey:        labelNameValue,
+		labelClusterNameKey: r.clusterName,
+	}
+}
+
+func (r *RenderState) poolFullname(pool *redpandav1alpha2.RedpandaBrokerPool) string {
+	return fmt.Sprintf("%s%s", r.fullname(), pool.Suffix())
+}
+
+func (r *RenderState) totalReplicas() int32 {
+	var total int32
+	for _, pool := range r.pools {
+		total += pool.GetReplicas()
+	}
+	return total
+}
+
+// --- The three functions below are almost identical, only difference is the port getter per pool. ---
+
+// kafkaApiBrokerList returns a list of broker addresses for the kafkaApi section in the config.
+// For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
+// uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
+// resolves across clusters via the synced per-pod Services.
+func (r *RenderState) kafkaApiBrokerList() []string {
+	addressFmt := "%s.%s:%d"
+	if r.Spec().Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+	var brokers []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			name := PerPodServiceName(r.poolFullname(pool), i)
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, pool.Spec.KafkaPort()))
+		}
+	}
+	return brokers
+}
+
+// adminApiBrokerList returns a list of broker addresses for the adminApi section in the config.
+// For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
+// uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
+// resolves across clusters via the synced per-pod Services.
+func (r *RenderState) adminApiBrokerList() []string {
+	addressFmt := "%s.%s:%d"
+	if r.Spec().Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+	var brokers []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			name := PerPodServiceName(r.poolFullname(pool), i)
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, pool.Spec.AdminPort()))
+		}
+	}
+	return brokers
+}
+
+// schemaRegistryBrokerList returns a list of broker addresses for the schemaRegistry section in the config.
+// For MCS mode, uses the clusterset.local domain. For mesh/flat modes,
+// uses the per-pod service name (<pool>-<ordinal>.<namespace>) which
+// resolves across clusters via the synced per-pod Services.
+func (r *RenderState) schemaRegistryBrokerList() []string {
+	addressFmt := "%s.%s:%d"
+	if r.Spec().Networking.IsMCS() {
+		addressFmt = "%s.%s.svc.clusterset.local:%d"
+	}
+	var brokers []string
+	for _, pool := range r.pools {
+		for i := int32(0); i < pool.GetReplicas(); i++ {
+			name := PerPodServiceName(r.poolFullname(pool), i)
+			brokers = append(brokers, fmt.Sprintf(addressFmt, name, r.namespace, pool.Spec.SchemaRegistryPort()))
+		}
+	}
+	return brokers
+}
+
+// --- ---
+
+// podOrdinalOffset returns the flattened index of the first pod of pool
+// within the local-pool pod list. Lets per-pool helpers index into
+// per-broker config (e.g. External.Addresses) using the same offset they
+// would have under the pre-split single-loop emission order.
+func (r *RenderState) podOrdinalOffset(pool *redpandav1alpha2.RedpandaBrokerPool) int {
+	offset := 0
+	for _, p := range r.inClusterPools {
+		if p.Name == pool.Name {
+			return offset
+		}
+		offset += int(p.GetReplicas())
+	}
+	return offset
+}
+
+// fetchBootstrapUser looks up an existing bootstrap user secret so that we
+// re-emit it with the same password rather than generating a new random one
+// on every reconciliation. If the secret doesn't exist yet, secretBootstrapUser()
+// emits nothing: the secret is created and synced across clusters exclusively by
+// the MulticlusterReconciler's syncBootstrapUser() single writer (K8S-900).
+func (r *RenderState) fetchBootstrapUser() error {
+	if r.client == nil || !r.Spec().Auth.IsSASLEnabled() {
+		return nil
+	}
+
+	sasl := r.Spec().Auth.SASL
+	// If the user explicitly provides a secretKeyRef, they own the secret.
+	if sasl.BootstrapUser != nil && sasl.BootstrapUser.SecretKeyRef != nil {
+		return nil
+	}
+
+	secretName := r.cluster.BootstrapUserSecretName()
+
+	// Bound the Get explicitly. fetchBootstrapUser runs inside NewRenderState
+	// per cluster the renderer iterates; without a deadline a partitioned peer's
+	// apiserver dial would hang the kernel TCP retry (~30–90s) and serialize
+	// across every render call in the reconcile, blowing the partition-detect
+	// SLA. Kept in sync with lifecycle.LocalCallTimeout — duplicated rather
+	// than imported because the OSS operator/internal/lifecycle package lives
+	// outside the enterprise module (and already imports this package).
+	getCtx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	var existing corev1.Secret
+	if err := r.client.Get(getCtx, kube.ObjectKey{Namespace: r.namespace, Name: secretName}, &existing); err != nil {
+		if k8sapierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("fetching bootstrap user secret %s/%s: %w", r.namespace, secretName, err)
+	}
+	existing.Immutable = ptr.To(true)
+	r.bootstrapUserSecret = &existing
+	return nil
+}
+
+// fetchStatefulSetPodSelector preserves the existing StatefulSet's label
+// selector. StatefulSet selectors are immutable after creation, so if the
+// labels were set incorrectly on first deploy, we must continue using them
+// rather than generating new ones that would cause an update rejection.
+// This only applies to the default (unnamed) pool for backward compatibility.
+func (r *RenderState) fetchStatefulSetPodSelector() error {
+	if r.client == nil {
+		return nil
+	}
+	var existing appsv1.StatefulSet
+	if err := r.client.Get(context.Background(), kube.ObjectKey{Namespace: r.namespace, Name: r.fullname()}, &existing); err != nil {
+		if k8sapierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("fetching statefulset %s/%s: %w", r.namespace, r.fullname(), err)
+	}
+	if len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
+		r.statefulSetPodLabels = existing.Spec.Template.ObjectMeta.Labels
+		r.statefulSetSelector = existing.Spec.Selector.MatchLabels
+	}
+	return nil
+}

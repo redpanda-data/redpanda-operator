@@ -33,6 +33,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -40,7 +41,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
-	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -358,7 +358,7 @@ func (s *MulticlusterControllerSuite) TestIssuerRef() {
 
 	// Step 5: Verify that NO operator-managed root-certificate secret was created
 	// for the "default" cert. syncCA should have skipped it.
-	rootCertSecretName := rendermulticluster.CASecretName(scName, "default")
+	rootCertSecretName := render.CASecretName(scName, "default")
 	for i, env := range s.mc.Envs {
 		cl := env.Client()
 		var secret corev1.Secret
@@ -435,7 +435,7 @@ func (s *MulticlusterControllerSuite) TestUserProvidedCA() {
 	// Step 2: Pre-create the CA Secret in just ONE cluster using the well-known
 	// name that syncCA scans for: "{stretchClusterName}-{certName}-root-certificate".
 	// The operator should find it and distribute it to the other clusters.
-	caSecretName := rendermulticluster.CASecretName(scName, "default")
+	caSecretName := render.CASecretName(scName, "default")
 	t.Logf("pre-creating CA secret %q in cluster 0 only", caSecretName)
 
 	caSecret := &corev1.Secret{
