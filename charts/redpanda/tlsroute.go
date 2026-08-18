@@ -15,60 +15,14 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-// Lightweight TLSRoute types that produce the correct YAML for
-// gateway.networking.k8s.io/v1 TLSRoute resources.
-// We define these locally because the upstream Gateway API Go types use type
-// aliases (v1alpha2.X = v1.X) that the gotohelm transpiler cannot handle.
-
-// TLSRoute mirrors the Gateway API TLSRoute resource.
-type TLSRoute struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              TLSRouteSpec `json:"spec"`
-}
-
-// TLSRouteSpec defines the desired state of a TLSRoute.
-type TLSRouteSpec struct {
-	ParentRefs []TLSRouteParentRef `json:"parentRefs"`
-	Hostnames  []string            `json:"hostnames,omitempty"`
-	Rules      []TLSRouteRule      `json:"rules"`
-}
-
-// TLSRouteParentRef identifies a parent resource (typically a Gateway).
-type TLSRouteParentRef struct {
-	Group       *string `json:"group,omitempty"`
-	Kind        *string `json:"kind,omitempty"`
-	Name        string  `json:"name"`
-	Namespace   *string `json:"namespace,omitempty"`
-	SectionName *string `json:"sectionName,omitempty"`
-}
-
-// TLSRouteRule configures a routing rule.
-type TLSRouteRule struct {
-	BackendRefs []TLSRouteBackendRef `json:"backendRefs,omitempty"`
-}
-
-// TLSRouteBackendRef identifies a backend to route traffic to.
-type TLSRouteBackendRef struct {
-	Name string `json:"name"`
-	Port int32  `json:"port"`
-}
-
-// DeepCopyObject implements runtime.Object for TLSRoute to satisfy kube.Object.
-// +gotohelm:ignore=true
-func (t *TLSRoute) DeepCopyObject() runtime.Object {
-	cp := *t
-	return &cp
-}
-
 // TLSRoutes returns Gateway API TLSRoute resources for external access.
-func TLSRoutes(state *RenderState) []*TLSRoute {
+func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 	if !state.Values.External.IsGatewayEnabled() {
 		return nil
 	}
@@ -80,7 +34,7 @@ func TLSRoutes(state *RenderState) []*TLSRoute {
 
 	pods := gatewayPodNames(state)
 
-	var routes []*TLSRoute
+	var routes []*gatewayv1.TLSRoute
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
 		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
@@ -117,17 +71,19 @@ func TLSRoutes(state *RenderState) []*TLSRoute {
 	return routes
 }
 
-func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, parentRefs []TLSRouteParentRef, pods []string, host string, hostTemplate string, name string, listenerTag string, port int32) []*TLSRoute {
+func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, host string, hostTemplate string, name string, listenerTag string, port int32) []*gatewayv1.TLSRoute {
 	// Invariants (host present; kafka multi-broker requires hostTemplate) are
 	// enforced upfront by validateGatewayListeners so misconfigurations surface
 	// as a single clear error before any rendering. By the time we get here the
 	// config is valid; a non-kafka listener without hostTemplate intentionally
 	// emits only the bootstrap route (see validateGatewayListeners for why).
-	var routes []*TLSRoute
+	var routes []*gatewayv1.TLSRoute
 
 	bootstrapSvcName := fmt.Sprintf("%s-gateway-bootstrap", fullname)
 
-	bootstrap := &TLSRoute{
+	bootstrap := &gatewayv1.TLSRoute{
+		// NB: TypeMeta is set explicitly because the upstream type marshals an
+		// empty TypeMeta; helm needs apiVersion/kind in the rendered manifest.
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "gateway.networking.k8s.io/v1",
 			Kind:       "TLSRoute",
@@ -137,15 +93,19 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 			Namespace: namespace,
 			Labels:    labels,
 		},
-		Spec: TLSRouteSpec{
-			ParentRefs: parentRefs,
-			Hostnames:  []string{host},
-			Rules: []TLSRouteRule{
+		Spec: gatewayv1.TLSRouteSpec{
+			CommonRouteSpec: gatewayv1.CommonRouteSpec{
+				ParentRefs: parentRefs,
+			},
+			Hostnames: []gatewayv1.Hostname{gatewayv1.Hostname(host)},
+			Rules: []gatewayv1.TLSRouteRule{
 				{
-					BackendRefs: []TLSRouteBackendRef{
+					BackendRefs: []gatewayv1.BackendRef{
 						{
-							Name: bootstrapSvcName,
-							Port: port,
+							BackendObjectReference: gatewayv1.BackendObjectReference{
+								Name: gatewayv1.ObjectName(bootstrapSvcName),
+								Port: ptr.To(gatewayv1.PortNumber(port)),
+							},
 						},
 					},
 				},
@@ -162,7 +122,7 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 		brokerHost := renderBrokerHost(hostTemplate, i, podname)
 		brokerSvcName := gatewayBrokerServiceName(podname)
 
-		route := &TLSRoute{
+		route := &gatewayv1.TLSRoute{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "gateway.networking.k8s.io/v1",
 				Kind:       "TLSRoute",
@@ -172,15 +132,19 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 				Namespace: namespace,
 				Labels:    labels,
 			},
-			Spec: TLSRouteSpec{
-				ParentRefs: parentRefs,
-				Hostnames:  []string{brokerHost},
-				Rules: []TLSRouteRule{
+			Spec: gatewayv1.TLSRouteSpec{
+				CommonRouteSpec: gatewayv1.CommonRouteSpec{
+					ParentRefs: parentRefs,
+				},
+				Hostnames: []gatewayv1.Hostname{gatewayv1.Hostname(brokerHost)},
+				Rules: []gatewayv1.TLSRouteRule{
 					{
-						BackendRefs: []TLSRouteBackendRef{
+						BackendRefs: []gatewayv1.BackendRef{
 							{
-								Name: brokerSvcName,
-								Port: port,
+								BackendObjectReference: gatewayv1.BackendObjectReference{
+									Name: gatewayv1.ObjectName(brokerSvcName),
+									Port: ptr.To(gatewayv1.PortNumber(port)),
+								},
 							},
 						},
 					},
@@ -193,10 +157,29 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 	return routes
 }
 
-func toTLSRouteParentRefs(refs []GatewayParentRef) []TLSRouteParentRef {
-	var parentRefs []TLSRouteParentRef
+// toTLSRouteParentRefs maps the chart's values type onto the upstream one. It's
+// field by field rather than a struct conversion because upstream gives each
+// field its own named string type (Group, Kind, ObjectName, ...), so
+// GatewayParentRef isn't convertible to ParentReference.
+func toTLSRouteParentRefs(refs []GatewayParentRef) []gatewayv1.ParentReference {
+	var parentRefs []gatewayv1.ParentReference
 	for _, ref := range refs {
-		parentRefs = append(parentRefs, TLSRouteParentRef(ref))
+		converted := gatewayv1.ParentReference{
+			Name: gatewayv1.ObjectName(ref.Name),
+		}
+		if ref.Group != nil {
+			converted.Group = ptr.To(gatewayv1.Group(*ref.Group))
+		}
+		if ref.Kind != nil {
+			converted.Kind = ptr.To(gatewayv1.Kind(*ref.Kind))
+		}
+		if ref.Namespace != nil {
+			converted.Namespace = ptr.To(gatewayv1.Namespace(*ref.Namespace))
+		}
+		if ref.SectionName != nil {
+			converted.SectionName = ptr.To(gatewayv1.SectionName(*ref.SectionName))
+		}
+		parentRefs = append(parentRefs, converted)
 	}
 	return parentRefs
 }

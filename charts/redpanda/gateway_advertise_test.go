@@ -108,7 +108,7 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 	var poolRouteHost string
 	for _, r := range TLSRoutes(state) {
 		if r.ObjectMeta.Name == "redpanda-kafka-default-2" {
-			poolRouteHost = r.Spec.Hostnames[0]
+			poolRouteHost = string(r.Spec.Hostnames[0])
 		}
 	}
 	require.Equal(t, "redpanda-2.example.com", poolRouteHost)
