@@ -57,12 +57,6 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
-		// Use the upstream Gateway API v1 TLSRoute (not the chart's lightweight
-		// TLSRoute struct) so controller-runtime can List/Watch it via the
-		// registered v1 scheme — which provides the required TLSRouteList kind.
-		// TLSRoute is GA (v1) as of Gateway API v1.5; the chart renders the same
-		// wire bytes and the lightweight struct exists only to keep the gotohelm
-		// transpiler happy — it is never used by the operator's controller cache.
 		&gatewayv1.TLSRoute{},
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
@@ -85,11 +79,9 @@ func init() {
 
 // addTLSRouteToScheme registers the Gateway API v1 types (TLSRoute +
 // TLSRouteList) on the supplied scheme so the operator's controller-runtime
-// cache can List/Watch TLSRoutes that this chart renders. The earlier shape —
-// registering only the chart's lightweight TLSRoute kind via
-// AddKnownTypeWithName — was insufficient: controller-runtime needs the
-// matching List kind in the scheme to issue List calls, which it does on every
-// reconcile pass.
+// cache can List/Watch TLSRoutes that this chart renders. Registering only the
+// TLSRoute kind is insufficient: controller-runtime needs the matching List kind
+// in the scheme to issue List calls, which it does on every reconcile pass.
 // +gotohelm:ignore=true
 func addTLSRouteToScheme(s *runtime.Scheme) {
 	must(gatewayv1.Install(s))

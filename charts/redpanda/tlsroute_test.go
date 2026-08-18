@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -23,11 +24,9 @@ import (
 // TestRenderResourcesGatewayTLSRouteMatchesTypes is the operator-path regression
 // for the syncer invariant: every object returned by RenderResources must have a
 // Go type present in Types(), or the operator's kube.Syncer rejects the reconcile
-// (".Render returned %T which isn't present in .Types"). The chart renders
-// TLSRoutes as the lightweight *redpanda.TLSRoute (for gotohelm); the operator
-// path must convert them to the upstream gatewayv1.TLSRoute that Types()
-// declares. The helm/golden tests bypass the syncer, which is why a gateway
-// cluster reconcile previously failed despite passing golden tests.
+// (".Render returned %T which isn't present in .Types"). The helm/golden tests
+// bypass the syncer, which is why a gateway cluster reconcile once failed despite
+// passing golden tests.
 func TestRenderResourcesGatewayTLSRouteMatchesTypes(t *testing.T) {
 	values := map[string]any{
 		"external": map[string]any{
@@ -78,10 +77,7 @@ func TestRenderResourcesGatewayTLSRouteMatchesTypes(t *testing.T) {
 	for _, obj := range resources {
 		require.Truef(t, allowed[reflect.TypeOf(obj)],
 			"RenderResources returned %T which is not in Types(); the operator syncer would reject this reconcile", obj)
-		switch obj.(type) {
-		case *TLSRoute:
-			t.Fatalf("lightweight *redpanda.TLSRoute leaked into RenderResources output; the operator syncer would reject it")
-		case *gatewayv1.TLSRoute:
+		if _, ok := obj.(*gatewayv1.TLSRoute); ok {
 			sawUpstreamTLSRoute = true
 		}
 	}
@@ -146,7 +142,7 @@ func TestTLSRoutesForHTTPListenerAllowsBootstrapOnlyHost(t *testing.T) {
 		"redpanda",
 		"default",
 		map[string]string{"app": "redpanda"},
-		[]TLSRouteParentRef{{Name: "shared-gateway"}},
+		[]gatewayv1.ParentReference{{Name: "shared-gateway"}},
 		[]string{"redpanda-0", "redpanda-1"},
 		"proxy.example.com",
 		"",
@@ -160,5 +156,46 @@ func TestTLSRoutesForHTTPListenerAllowsBootstrapOnlyHost(t *testing.T) {
 		APIVersion: "gateway.networking.k8s.io/v1",
 		Kind:       "TLSRoute",
 	}, routes[0].TypeMeta)
-	require.Equal(t, []string{"proxy.example.com"}, routes[0].Spec.Hostnames)
+	require.Equal(t, []gatewayv1.Hostname{"proxy.example.com"}, routes[0].Spec.Hostnames)
+}
+
+// TestToTLSRouteParentRefs pins the per-field mapping onto the upstream
+// ParentReference. This used to be a whole-struct conversion
+// (TLSRouteParentRef(ref)), which couldn't get an individual field wrong;
+// upstream types each field as its own named string type, so the mapping is now
+// hand written and every optional field needs covering. The template-cases
+// goldens only exercise name/sectionName, so group/kind/namespace would
+// otherwise be untested.
+func TestToTLSRouteParentRefs(t *testing.T) {
+	t.Run("all fields", func(t *testing.T) {
+		refs := toTLSRouteParentRefs([]GatewayParentRef{{
+			Group:       ptr.To("gateway.networking.k8s.io"),
+			Kind:        ptr.To("Gateway"),
+			Name:        "shared-gateway",
+			Namespace:   ptr.To("infra"),
+			SectionName: ptr.To("kafka"),
+		}})
+
+		require.Equal(t, []gatewayv1.ParentReference{{
+			Group:       ptr.To(gatewayv1.Group("gateway.networking.k8s.io")),
+			Kind:        ptr.To(gatewayv1.Kind("Gateway")),
+			Name:        gatewayv1.ObjectName("shared-gateway"),
+			Namespace:   ptr.To(gatewayv1.Namespace("infra")),
+			SectionName: ptr.To(gatewayv1.SectionName("kafka")),
+		}}, refs)
+	})
+
+	// Unset optionals must stay nil rather than becoming pointers to "", which
+	// would render as explicit empty group/kind/namespace fields.
+	t.Run("only required fields", func(t *testing.T) {
+		refs := toTLSRouteParentRefs([]GatewayParentRef{{Name: "shared-gateway"}})
+
+		require.Equal(t, []gatewayv1.ParentReference{{
+			Name: gatewayv1.ObjectName("shared-gateway"),
+		}}, refs)
+	})
+
+	t.Run("nil in nil out", func(t *testing.T) {
+		require.Nil(t, toTLSRouteParentRefs(nil))
+	})
 }

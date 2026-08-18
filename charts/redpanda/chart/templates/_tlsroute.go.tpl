@@ -77,7 +77,7 @@
 {{- $_is_returning := false -}}
 {{- $routes := (coalesce nil) -}}
 {{- $bootstrapSvcName := (printf "%s-gateway-bootstrap" $fullname) -}}
-{{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-bootstrap" $fullname $listenerTag $name) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $host) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $bootstrapSvcName "port" $port)))))))))) -}}
+{{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "parents" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-bootstrap" $fullname $listenerTag $name) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "parentRefs" $parentRefs)) (dict "hostnames" (list (toString $host)) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict "name" "") (dict "name" (toString $bootstrapSvcName) "port" ($port | int))) (dict)))))))))) -}}
 {{- $routes = (concat (default (list) $routes) (list $bootstrap)) -}}
 {{- if (eq $hostTemplate "") -}}
 {{- $_is_returning = true -}}
@@ -87,7 +87,7 @@
 {{- range $i, $podname := $pods -}}
 {{- $brokerHost := (get (fromJson (include "redpanda.renderBrokerHost" (dict "a" (list $hostTemplate $i $podname)))) "r") -}}
 {{- $brokerSvcName := (get (fromJson (include "redpanda.gatewayBrokerServiceName" (dict "a" (list $podname)))) "r") -}}
-{{- $route := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-%d" $fullname $listenerTag $name $i) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $brokerHost) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $brokerSvcName "port" $port)))))))))) -}}
+{{- $route := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "parents" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-%d" $fullname $listenerTag $name $i) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "parentRefs" $parentRefs)) (dict "hostnames" (list (toString $brokerHost)) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict "name" "") (dict "name" (toString $brokerSvcName) "port" ($port | int))) (dict)))))))))) -}}
 {{- $routes = (concat (default (list) $routes) (list $route)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -105,7 +105,20 @@
 {{- $_is_returning := false -}}
 {{- $parentRefs := (coalesce nil) -}}
 {{- range $_, $ref := $refs -}}
-{{- $parentRefs = (concat (default (list) $parentRefs) (list $ref)) -}}
+{{- $converted := (mustMergeOverwrite (dict "name" "") (dict "name" (toString $ref.name))) -}}
+{{- if (ne (toJson $ref.group) "null") -}}
+{{- $_ := (set $converted "group" (toString $ref.group)) -}}
+{{- end -}}
+{{- if (ne (toJson $ref.kind) "null") -}}
+{{- $_ := (set $converted "kind" (toString $ref.kind)) -}}
+{{- end -}}
+{{- if (ne (toJson $ref.namespace) "null") -}}
+{{- $_ := (set $converted "namespace" (toString $ref.namespace)) -}}
+{{- end -}}
+{{- if (ne (toJson $ref.sectionName) "null") -}}
+{{- $_ := (set $converted "sectionName" (toString $ref.sectionName)) -}}
+{{- end -}}
+{{- $parentRefs = (concat (default (list) $parentRefs) (list $converted)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
