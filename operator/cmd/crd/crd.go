@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 )
 
@@ -50,8 +51,8 @@ var (
 		crds.NodePool(),
 	}
 	multiclusterCRDs = []*apiextensionsv1.CustomResourceDefinition{
-		crds.StretchCluster(),
-		crds.RedpandaBrokerPool(),
+		entcrds.StretchCluster(),
+		entcrds.RedpandaBrokerPool(),
 	}
 	schemes = []func(s *runtime.Scheme) error{
 		clientgoscheme.AddToScheme,

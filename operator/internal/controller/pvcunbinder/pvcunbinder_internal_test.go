@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -45,6 +46,9 @@ func newScheme(t *testing.T, withV2, withStretch, withV1 bool) *runtime.Scheme {
 	require.NoError(t, storagev1.AddToScheme(s))
 	if withV2 || withStretch {
 		require.NoError(t, redpandav1alpha2.Install(s))
+	}
+	if withStretch {
+		require.NoError(t, entv1alpha2.Install(s))
 	}
 	if withV1 {
 		require.NoError(t, vectorizedv1alpha1.Install(s))
@@ -2330,7 +2334,7 @@ func TestIsClusterPaused(t *testing.T) {
 
 	t.Run("paused via StretchCluster CR", func(t *testing.T) {
 		s := newScheme(t, true, true, false)
-		sc := &redpandav1alpha2.StretchCluster{
+		sc := &entv1alpha2.StretchCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        "stretch",
 				Namespace:   "ns",

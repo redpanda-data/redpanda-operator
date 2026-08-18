@@ -115,7 +115,7 @@ type StretchClusterStatus struct {
 	// NodePools contains information about the node pools associated
 	// with this cluster.
 	// +optional
-	NodePools []EmbeddedNodePoolStatus `json:"nodePools,omitempty"`
+	NodePools []EmbeddedBrokerPoolStatus `json:"nodePools,omitempty"`
 
 	// ConfigVersion contains the configuration version written in
 	// Redpanda used for restarting broker nodes as necessary.

@@ -38,6 +38,7 @@ includes:
   charts: taskfiles/charts.yml
   ci: taskfiles/ci.yml
   dev: taskfiles/dev.yml
+  enterprise: taskfiles/enterprise.yml
   k8s: taskfiles/k8s.yml
 
 tasks:
@@ -119,6 +120,7 @@ tasks:
       - task: dev:update-licenses
       - task: generate:applyconfig-copy
       - task: k8s:generate
+      - task: enterprise:generate
       - task: dev:update-licenses
       - task: charts:generate
       - task: generate:third-party-licenses-list

@@ -13,9 +13,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 )
 
 // +genclient
@@ -42,7 +39,11 @@ type RedpandaBrokerPoolList struct {
 }
 
 func (s *RedpandaBrokerPoolList) GetItems() []*RedpandaBrokerPool {
-	return functional.MapFn(ptr.To, s.Items)
+	items := make([]*RedpandaBrokerPool, len(s.Items))
+	for i := range s.Items {
+		items[i] = &s.Items[i]
+	}
+	return items
 }
 
 // NodePoolSpec contains the node pool spec for the given node pool.

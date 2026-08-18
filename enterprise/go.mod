@@ -10,6 +10,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
 	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
+	github.com/redpanda-data/common-go/rp-controller-utils v0.0.0-20260109170727-1dd9f5d22ee1
 	github.com/stretchr/testify v1.11.1
 	go.etcd.io/raft/v3 v3.6.0
 	golang.org/x/mod v0.37.0
@@ -17,6 +18,7 @@ require (
 	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
 	k8s.io/api v0.35.1
+	k8s.io/apiextensions-apiserver v0.35.1
 	k8s.io/apimachinery v0.35.1
 	k8s.io/client-go v0.35.1
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
@@ -125,7 +127,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiextensions-apiserver v0.35.1 // indirect
 	k8s.io/apiserver v0.35.1 // indirect
 	k8s.io/component-base v0.35.1 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect

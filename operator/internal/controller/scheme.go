@@ -19,6 +19,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	mcsv1alpha1 "sigs.k8s.io/mcs-api/pkg/apis/v1alpha1"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha1"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -44,12 +45,18 @@ var (
 		gatewayv1.Install,
 		redpandav1alpha1.Install,
 		redpandav1alpha2.Install,
+		// The enterprise API package carries the stretch-cluster kinds
+		// (StretchCluster, RedpandaBrokerPool) in the same group/version;
+		// register it wherever redpandav1alpha2 is registered so resource
+		// controllers, the pvcunbinder, and telemetry can decode them.
+		entv1alpha2.Install,
 	}
 	multiclusterSchemeFns = []func(s *runtime.Scheme) error{
 		apiextensionsv1.AddToScheme,
 		certmanagerv1.AddToScheme,
 		clientgoscheme.AddToScheme,
 		redpandav1alpha2.Install,
+		entv1alpha2.Install,
 		monitoringv1.AddToScheme,
 		// Register gatewayv1 (HTTPRoute) in the multicluster scheme too — the
 		// multicluster Console controller references HTTPRoute exactly like the

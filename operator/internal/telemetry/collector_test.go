@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -48,6 +49,7 @@ func testScheme(t *testing.T) *apimachineryruntime.Scheme {
 	require.NoError(t, corev1.AddToScheme(scheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
 	require.NoError(t, redpandav1alpha2.Install(scheme))
+	require.NoError(t, entv1alpha2.Install(scheme))
 	require.NoError(t, vectorizedv1alpha1.Install(scheme))
 	return scheme
 }
@@ -65,18 +67,18 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 				EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Replicas: ptr.To(int32(2))},
 			},
 		},
-		&redpandav1alpha2.StretchCluster{
+		&entv1alpha2.StretchCluster{
 			ObjectMeta: metav1.ObjectMeta{Name: "sc-1", Namespace: "default"},
-			Spec: redpandav1alpha2.StretchClusterSpec{
-				Tuning: &redpandav1alpha2.StretchTuning{ApplyHostTuners: ptr.To(true)},
+			Spec: entv1alpha2.StretchClusterSpec{
+				Tuning: &entv1alpha2.StretchTuning{ApplyHostTuners: ptr.To(true)},
 			},
 		},
-		&redpandav1alpha2.RedpandaBrokerPool{
+		&entv1alpha2.RedpandaBrokerPool{
 			ObjectMeta: metav1.ObjectMeta{Name: "bp-1", Namespace: "default"},
-			Spec: redpandav1alpha2.BrokerPoolSpec{
-				EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
+			Spec: entv1alpha2.BrokerPoolSpec{
+				EmbeddedBrokerPoolSpec: entv1alpha2.EmbeddedBrokerPoolSpec{
 					Replicas: ptr.To(int32(3)),
-					Resources: &redpandav1alpha2.StretchResources{
+					Resources: &entv1alpha2.StretchResources{
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("8"),
 							corev1.ResourceMemory: resource.MustParse("32Gi"),
@@ -454,7 +456,7 @@ func TestCollect_DegradesOnMissingCRDAndForbidden(t *testing.T) {
 		Reader: base,
 		listErr: func(list client.ObjectList) error {
 			switch l := list.(type) {
-			case *redpandav1alpha2.StretchClusterList:
+			case *entv1alpha2.StretchClusterList:
 				// CRD not installed -> RESTMapper no-match.
 				return &meta.NoKindMatchError{GroupKind: schema.GroupKind{Group: redpandaCRDGroup, Kind: "StretchCluster"}}
 			case *metav1.PartialObjectMetadataList:

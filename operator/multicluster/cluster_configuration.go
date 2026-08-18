@@ -16,8 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
@@ -40,7 +39,7 @@ func clusterConfigurationToConfiguration(cc redpandav1alpha2.ClusterConfiguratio
 	var envVars []corev1.EnvVar
 
 	for _, k := range sortedMapKeys(cc) {
-		v := vectorizedv1alpha1.ClusterConfigValue(cc[k])
+		v := cc[k]
 
 		switch {
 		case v.Repr != nil:

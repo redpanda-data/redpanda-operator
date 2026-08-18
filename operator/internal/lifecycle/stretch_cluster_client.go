@@ -16,7 +16,7 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 )
 

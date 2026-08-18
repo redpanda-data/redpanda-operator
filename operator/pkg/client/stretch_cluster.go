@@ -28,7 +28,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"

@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -667,7 +668,7 @@ func TestCrossNamespaceClusterRefResolution(t *testing.T) {
 	require.NoError(t, c.Create(ctx, &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{Name: "redpanda-source", Namespace: "a"},
 	}))
-	require.NoError(t, c.Create(ctx, &redpandav1alpha2.StretchCluster{
+	require.NoError(t, c.Create(ctx, &entv1alpha2.StretchCluster{
 		ObjectMeta: metav1.ObjectMeta{Name: "stretch-source", Namespace: "a"},
 	}))
 	require.NoError(t, c.Create(ctx, &vectorizedv1alpha1.Cluster{

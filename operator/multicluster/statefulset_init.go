@@ -17,7 +17,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 // statefulSetInitContainers returns the init containers for the StatefulSet.

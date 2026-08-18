@@ -31,13 +31,14 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -95,7 +96,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		Name:               "multicluster",
 		ClusterSize:        3,
 		Scheme:             controller.MulticlusterScheme,
-		CRDs:               crds.All(),
+		CRDs:               append(crds.All(), entcrds.All()...),
 		Logger:             log.FromContext(s.ctx),
 		WatchAllNamespaces: true,
 		InstallCertManager: true,

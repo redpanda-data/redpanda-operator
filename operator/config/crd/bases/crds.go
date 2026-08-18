@@ -133,16 +133,6 @@ func ShadowLink() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("shadowlinks.cluster.redpanda.com"))
 }
 
-// StretchCluster returns the StretchCluster CustomResourceDefinition.
-func StretchCluster() *apiextensionsv1.CustomResourceDefinition {
-	return mustT(ByName("stretchclusters.cluster.redpanda.com"))
-}
-
-// RedpandaBrokerPool returns the RedpandaBrokerPool CustomResourceDefinition.
-func RedpandaBrokerPool() *apiextensionsv1.CustomResourceDefinition {
-	return mustT(ByName("redpandabrokerpools.cluster.redpanda.com"))
-}
-
 // Broker returns the Broker CustomResourceDefinition.
 func Broker() *apiextensionsv1.CustomResourceDefinition {
 	return mustT(ByName("brokers.cluster.redpanda.com"))

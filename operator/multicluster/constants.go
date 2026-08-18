@@ -16,7 +16,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 // Rendering-specific defaults (not inherent to the CRD types).

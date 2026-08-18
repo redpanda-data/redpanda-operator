@@ -18,6 +18,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	entstatuses "github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -32,13 +34,16 @@ type ClusterStatus struct {
 	// Status is a generated status conditions container for single-cluster Redpanda
 	Status *statuses.ClusterStatus
 	// StretchClusterStatus is a generated status conditions container for stretch clusters
-	StretchClusterStatus *statuses.StretchClusterStatus
+	StretchClusterStatus *entstatuses.StretchClusterStatus
 	// ConfigVersion is the configuration version from the cluster if one
 	// has been determined this reconciliation loop
 	ConfigVersion *string
 	// LicenseStatus is the license status from the cluster if one
 	// has been determined this reconciliation loop
 	LicenseStatus *redpandav1alpha2.RedpandaLicenseStatus
+	// StretchLicenseStatus mirrors LicenseStatus for stretch clusters, whose
+	// status carries the enterprise fork of the license status type.
+	StretchLicenseStatus *entv1alpha2.RedpandaLicenseStatus
 }
 
 type PoolStatus struct {
@@ -81,7 +86,7 @@ func NewClusterStatus() *ClusterStatus {
 // NewStretchClusterStatus creates a stretch cluster status object to be used in reconciliation
 func NewStretchClusterStatus() *ClusterStatus {
 	return &ClusterStatus{
-		StretchClusterStatus: statuses.NewStretchCluster(),
+		StretchClusterStatus: entstatuses.NewStretchCluster(),
 	}
 }
 

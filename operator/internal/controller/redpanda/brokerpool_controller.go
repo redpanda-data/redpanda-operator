@@ -32,9 +32,9 @@ import (
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )

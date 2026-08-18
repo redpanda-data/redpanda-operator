@@ -19,8 +19,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 )
 
 // K8S-884: with SASL disabled, syncBootstrapUser used to return before ever

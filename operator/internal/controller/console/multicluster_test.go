@@ -25,6 +25,8 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -71,7 +73,7 @@ func (s *MulticlusterConsoleSuite) SetupSuite() {
 		Name:               "console-mc",
 		ClusterSize:        3,
 		Scheme:             controller.MulticlusterScheme,
-		CRDs:               crds.All(),
+		CRDs:               append(crds.All(), entcrds.All()...),
 		Logger:             log.FromContext(s.ctx),
 		WatchAllNamespaces: true,
 		// Distinct CIDR block keeps this suite from colliding with the
@@ -143,7 +145,7 @@ func (s *MulticlusterConsoleSuite) assertConsoleReconciles(t *testing.T, ctx con
 
 	cl := env.Client()
 
-	require.NoError(t, cl.Create(ctx, &redpandav1alpha2.StretchCluster{
+	require.NoError(t, cl.Create(ctx, &entv1alpha2.StretchCluster{
 		ObjectMeta: metav1.ObjectMeta{Name: stretchName, Namespace: namespace},
 	}))
 
@@ -151,15 +153,15 @@ func (s *MulticlusterConsoleSuite) assertConsoleReconciles(t *testing.T, ctx con
 	// minimal pool so Console's clusterFragment produces plaintext URLs
 	// (the test env doesn't have the cert secrets that TLS-on would
 	// require).
-	require.NoError(t, cl.Create(ctx, &redpandav1alpha2.RedpandaBrokerPool{
+	require.NoError(t, cl.Create(ctx, &entv1alpha2.RedpandaBrokerPool{
 		ObjectMeta: metav1.ObjectMeta{Name: stretchName + "-default", Namespace: namespace},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			ClusterRef: redpandav1alpha2.ClusterRef{
+		Spec: entv1alpha2.BrokerPoolSpec{
+			ClusterRef: entv1alpha2.ClusterRef{
 				Name: stretchName,
-				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+				Kind: ptr.To(entv1alpha2.StretchClusterRefKind),
 			},
-			EmbeddedBrokerPoolSpec: redpandav1alpha2.EmbeddedBrokerPoolSpec{
-				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(false)},
+			EmbeddedBrokerPoolSpec: entv1alpha2.EmbeddedBrokerPoolSpec{
+				TLS: &entv1alpha2.TLS{Enabled: ptr.To(false)},
 			},
 		},
 	}))

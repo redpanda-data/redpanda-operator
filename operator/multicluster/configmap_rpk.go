@@ -18,7 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
 

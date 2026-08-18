@@ -28,7 +28,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/yaml"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"

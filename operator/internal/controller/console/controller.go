@@ -39,6 +39,7 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
@@ -188,7 +189,7 @@ func (c *Controller) SetupWithMulticlusterManager(ctx context.Context, mgr multi
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.StretchCluster{}, stretchHandler, controller.WatchOptions(clusterName)...)
+		builder.Watches(&entv1alpha2.StretchCluster{}, stretchHandler, controller.WatchOptions(clusterName)...)
 	}
 
 	return builder.Complete(c)
@@ -536,7 +537,7 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 		}
 
 		if ref.IsStretchCluster() {
-			var sc redpandav1alpha2.StretchCluster
+			var sc entv1alpha2.StretchCluster
 			if err := r.ctl.Get(ctx, key, &sc); err != nil {
 				return console.PartialRenderValues{}, err
 			}
@@ -592,8 +593,8 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 // K8s cluster as the Console (the local cluster the renderer's r.ctl is
 // scoped to). Returns (nil, nil) if no matching pool exists yet — Console
 // will be re-reconciled via the StretchCluster watch as pools come and go.
-func (r *render) findRepresentativePool(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*redpandav1alpha2.RedpandaBrokerPool, error) {
-	var pools redpandav1alpha2.RedpandaBrokerPoolList
+func (r *render) findRepresentativePool(ctx context.Context, sc *entv1alpha2.StretchCluster) (*entv1alpha2.RedpandaBrokerPool, error) {
+	var pools entv1alpha2.RedpandaBrokerPoolList
 	if err := r.ctl.List(ctx, sc.Namespace, &pools); err != nil {
 		return nil, err
 	}

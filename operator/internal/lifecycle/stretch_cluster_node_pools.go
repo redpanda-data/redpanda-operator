@@ -14,12 +14,32 @@ import (
 
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
+
+// defaultBrokerImage mirrors defaultImage for the enterprise RedpandaImage
+// type carried by RedpandaBrokerPool specs (field-for-field identical to the
+// OSS RedpandaImage).
+func defaultBrokerImage(default_ Image) func(*entv1alpha2.RedpandaImage) *entv1alpha2.RedpandaImage {
+	return func(base *entv1alpha2.RedpandaImage) *entv1alpha2.RedpandaImage {
+		if base == nil {
+			return &entv1alpha2.RedpandaImage{
+				Repository: ptr.To(default_.Repository),
+				Tag:        ptr.To(default_.Tag),
+			}
+		}
+		return &entv1alpha2.RedpandaImage{
+			Repository: ptr.To(ptr.Deref(base.Repository, default_.Repository)),
+			Tag:        ptr.To(ptr.Deref(base.Tag, default_.Tag)),
+		}
+	}
+}
 
 // NodePoolRenderer represents a node pool multiclusterRenderer for stretch clusters.
 type StretchBrokerPoolRenderer struct {
@@ -53,8 +73,8 @@ func (m *StretchBrokerPoolRenderer) Render(ctx context.Context, cluster *Stretch
 	canonicalName := CanonicalClusterName(clusterName, m.mgr.GetLocalClusterName)
 
 	// Apply operator-level default images to pools that don't specify their own.
-	applyDefaultImage := defaultImage(m.redpandaImage)
-	applyDefaultSidecar := defaultImage(m.sideCarImage)
+	applyDefaultImage := defaultBrokerImage(m.redpandaImage)
+	applyDefaultSidecar := defaultBrokerImage(m.sideCarImage)
 	inCluster := cluster.GetBrokerPoolsForCluster(canonicalName)
 	for _, pool := range inCluster {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)

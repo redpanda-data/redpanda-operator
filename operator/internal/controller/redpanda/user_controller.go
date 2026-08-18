@@ -28,6 +28,7 @@ import (
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2ac "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -282,7 +283,7 @@ func SetupUserControllerForMulticluster(ctx context.Context, mgr multicluster.Ma
 		if err != nil {
 			return err
 		}
-		builder.Watches(&redpandav1alpha2.StretchCluster{}, enqueueStretch, controller.ClusterSourceWatchOptions(clusterName)...)
+		builder.Watches(&entv1alpha2.StretchCluster{}, enqueueStretch, controller.ClusterSourceWatchOptions(clusterName)...)
 
 		cluster, err := mgr.GetCluster(ctx, clusterName)
 		if err != nil {

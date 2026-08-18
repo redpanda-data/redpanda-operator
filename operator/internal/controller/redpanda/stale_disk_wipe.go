@@ -28,6 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
@@ -856,7 +857,7 @@ func (r *MulticlusterReconciler) reconcileStaleDiskWipe(ctx context.Context, sta
 		logs:            r.LifecycleClient.GetPodLogs,
 		debounce:        &r.staleDiskWipeDebounce,
 		confirmInterval: staleDiskWipeConfirmationInterval,
-		overrideUUIDs:   configuredOverrideUUIDs(state.cluster.StretchCluster.Spec.Config),
+		overrideUUIDs:   configuredOverrideUUIDsStretch(state.cluster.StretchCluster.Spec.Config),
 	}, logger)
 }
 
@@ -890,6 +891,15 @@ func (r *RedpandaReconciler) reconcileStaleDiskWipe(ctx context.Context, state *
 // cluster's *Config (nil-safe), for the per-identity wipe defer. Shared by both
 // reconcilers so the guard applies to single-cluster AND StretchCluster.
 func configuredOverrideUUIDs(cfg *redpandav1alpha2.Config) map[string]struct{} {
+	if cfg == nil || cfg.Node == nil {
+		return nil
+	}
+	return stagedOverrideUUIDs(cfg.Node.Raw)
+}
+
+// configuredOverrideUUIDsStretch mirrors configuredOverrideUUIDs for the
+// enterprise Config type carried by StretchCluster specs.
+func configuredOverrideUUIDsStretch(cfg *entv1alpha2.Config) map[string]struct{} {
 	if cfg == nil || cfg.Node == nil {
 		return nil
 	}

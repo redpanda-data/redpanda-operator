@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -195,7 +197,7 @@ func TestController(t *testing.T) {
 		},
 	})
 
-	allCRDs := crds.All()
+	allCRDs := append(crds.All(), entcrds.All()...)
 	allCRDs = append(allCRDs, loadGatewayAPICRDs(t)...)
 
 	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
@@ -227,7 +229,7 @@ func TestController(t *testing.T) {
 		},
 	}))
 
-	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.StretchCluster{
+	require.NoError(t, ctl.Apply(t.Context(), &entv1alpha2.StretchCluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-stretch",
 			Namespace: ns.Name,
@@ -238,15 +240,15 @@ func TestController(t *testing.T) {
 	// RedpandaBrokerPool. The Console controller resolves a representative
 	// pool to derive those fields for its connection config (it errors out
 	// otherwise), so create a minimal pool referencing test-stretch.
-	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.RedpandaBrokerPool{
+	require.NoError(t, ctl.Apply(t.Context(), &entv1alpha2.RedpandaBrokerPool{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-stretch-pool",
 			Namespace: ns.Name,
 		},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			ClusterRef: redpandav1alpha2.ClusterRef{
+		Spec: entv1alpha2.BrokerPoolSpec{
+			ClusterRef: entv1alpha2.ClusterRef{
 				Name: "test-stretch",
-				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
+				Kind: ptr.To(entv1alpha2.StretchClusterRefKind),
 			},
 		},
 	}))

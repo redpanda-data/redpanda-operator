@@ -31,6 +31,7 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
@@ -93,7 +94,7 @@ type ClientFactory interface {
 	// StretchCluster broker pod's admin endpoint (address:port, no scheme), reusing the
 	// StretchCluster's discovered TLS config and auth. Used to read a not-ready
 	// (decommissioned-rejoin) broker's self identity directly. Callers should Close the client.
-	RedpandaAdminClientForStretchPod(ctx context.Context, sc *redpandav1alpha2.StretchCluster, endpoint string) (*rpadmin.AdminAPI, error)
+	RedpandaAdminClientForStretchPod(ctx context.Context, sc *entv1alpha2.StretchCluster, endpoint string) (*rpadmin.AdminAPI, error)
 
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
@@ -223,7 +224,7 @@ func (c *Factory) KafkaClientForCluster(ctx context.Context, obj any, clusterNam
 		return c.kafkaForCluster(ctx, cluster, clusterName, opts...)
 	}
 
-	if sc, ok := obj.(*redpandav1alpha2.StretchCluster); ok {
+	if sc, ok := obj.(*entv1alpha2.StretchCluster); ok {
 		return c.kafkaForStretchCluster(ctx, sc, clusterName, opts...)
 	}
 
@@ -285,7 +286,7 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 	}
 
 	// if we pass in a StretchCluster, use the multicluster path
-	if sc, ok := obj.(*redpandav1alpha2.StretchCluster); ok {
+	if sc, ok := obj.(*entv1alpha2.StretchCluster); ok {
 		return c.redpandaAdminForStretchCluster(ctx, sc, clusterName)
 	}
 
@@ -351,7 +352,7 @@ func (c *Factory) SchemaRegistryClientForCluster(ctx context.Context, obj any, c
 		return c.schemaRegistryForCluster(ctx, cluster, clusterName)
 	}
 
-	if sc, ok := obj.(*redpandav1alpha2.StretchCluster); ok {
+	if sc, ok := obj.(*entv1alpha2.StretchCluster); ok {
 		return c.schemaRegistryForStretchCluster(ctx, sc, clusterName)
 	}
 
@@ -717,7 +718,7 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 // referenced cluster CR is a StretchCluster rather than a Redpanda CR.
 // clusterName must be the cluster on which obj itself lives so the lookup
 // targets the right peer Kubernetes API.
-func (c *Factory) getStretchCluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.StretchCluster, error) {
+func (c *Factory) getStretchCluster(ctx context.Context, obj client.Object, clusterName string) (*entv1alpha2.StretchCluster, error) {
 	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
 	if !ok {
 		return nil, nil
@@ -725,7 +726,7 @@ func (c *Factory) getStretchCluster(ctx context.Context, obj client.Object, clus
 
 	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
 		if ref := source.GetClusterRef(); ref != nil && ref.IsStretchCluster() {
-			var cluster redpandav1alpha2.StretchCluster
+			var cluster entv1alpha2.StretchCluster
 
 			client, err := c.GetClient(ctx, clusterName)
 			if err != nil {

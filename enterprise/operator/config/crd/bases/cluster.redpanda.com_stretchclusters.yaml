@@ -915,8 +915,8 @@ spec:
                   NodePools contains information about the node pools associated
                   with this cluster.
                 items:
-                  description: EmbeddedNodePoolStatus defines the observed state of
-                    any node pools tied to this cluster
+                  description: EmbeddedBrokerPoolStatus defines the observed state
+                    of any node pools tied to this cluster
                   properties:
                     condemnedReplicas:
                       description: |-

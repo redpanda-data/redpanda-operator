@@ -42,11 +42,11 @@ import (
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -1608,7 +1608,7 @@ func (r *MulticlusterReconciler) reconcileLicense(ctx context.Context, state *st
 				state.status.StretchClusterStatus.SetLicenseValid(statuses.StretchClusterLicenseValidReasonError, err.Error())
 			}
 		} else if license != nil {
-			state.status.LicenseStatus = license
+			state.status.StretchLicenseStatus = license
 		}
 		trace.EndSpan(span, err)
 	}()

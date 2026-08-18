@@ -35,6 +35,7 @@ import (
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -1159,7 +1160,7 @@ func (r *Controller) isClusterPaused(ctx context.Context, pod *corev1.Pod) (bool
 		return false, err
 	}
 
-	var sc redpandav1alpha2.StretchCluster
+	var sc entv1alpha2.StretchCluster
 	if err := r.Client.Get(ctx, key, &sc); err == nil {
 		if sc.GetAnnotations()[PauseAnnotation] == "true" {
 			return true, nil

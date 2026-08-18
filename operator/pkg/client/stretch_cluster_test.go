@@ -36,12 +36,13 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -88,7 +89,7 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 		Name:               "sc-factory",
 		ClusterSize:        3,
 		Scheme:             controller.MulticlusterScheme,
-		CRDs:               crds.All(),
+		CRDs:               append(crds.All(), entcrds.All()...),
 		Namespace:          "sc-factory",
 		Logger:             log.FromContext(ctx),
 		WatchAllNamespaces: true,

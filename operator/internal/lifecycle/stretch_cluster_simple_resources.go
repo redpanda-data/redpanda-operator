@@ -50,8 +50,8 @@ func (m *StretchClusterSimpleResourceRenderer) Render(ctx context.Context, clust
 	// of which operator instance (local vs remote) performs the reconciliation.
 	canonicalName := CanonicalClusterName(clusterName, m.mgr.GetLocalClusterName)
 
-	applyDefaultImage := defaultImage(m.redpandaImage)
-	applyDefaultSidecar := defaultImage(m.sideCarImage)
+	applyDefaultImage := defaultBrokerImage(m.redpandaImage)
+	applyDefaultSidecar := defaultBrokerImage(m.sideCarImage)
 	inCluster := cluster.GetBrokerPoolsForCluster(canonicalName)
 	for _, pool := range inCluster {
 		pool.Spec.Image = applyDefaultImage(pool.Spec.Image)

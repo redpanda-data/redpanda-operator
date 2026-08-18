@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -129,7 +130,7 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 		}
 
 		// Dump StretchCluster objects.
-		var scList redpandav1alpha2.StretchClusterList
+		var scList entv1alpha2.StretchClusterList
 		if err := node.List(diagCtx, &scList); err != nil {
 			t.Logf("[multicluster-diagnostics] failed to list StretchClusters: %v", err)
 		} else {
@@ -143,7 +144,7 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 		}
 
 		// Dump RedpandaBrokerPools.
-		var poolList redpandav1alpha2.RedpandaBrokerPoolList
+		var poolList entv1alpha2.RedpandaBrokerPoolList
 		if err := node.List(diagCtx, &poolList); err != nil {
 			t.Logf("[multicluster-diagnostics] failed to list RedpandaBrokerPools: %v", err)
 		} else {
@@ -664,7 +665,7 @@ func checkMulticlusterFinalizers(ctx context.Context, t framework.TestingT, clus
 	// After the finalizer is set, the reconciler should have also set SpecSynced=True.
 	for _, node := range nodes {
 		require.Eventually(t, func() bool {
-			var sc redpandav1alpha2.StretchCluster
+			var sc entv1alpha2.StretchCluster
 			if err := node.Get(ctx, nn, &sc); err != nil {
 				t.Logf("error fetching StretchCluster from %s: %v", node.Name(), err)
 				return false
@@ -727,7 +728,7 @@ func extractConditions(o client.Object) []metav1.Condition {
 		return v.Status.Conditions
 	case *redpandav1alpha2.ShadowLink:
 		return v.Status.Conditions
-	case *redpandav1alpha2.StretchCluster:
+	case *entv1alpha2.StretchCluster:
 		return v.Status.Conditions
 	case *redpandav1alpha2.NodePool:
 		return v.Status.Conditions
@@ -1279,7 +1280,7 @@ func expectBrokerPoolsBoundAndDeployed(ctx context.Context, t framework.TestingT
 	require.Eventually(t, func() bool {
 		boundAndDeployed := int32(0)
 		for _, node := range nodes {
-			var pools redpandav1alpha2.RedpandaBrokerPoolList
+			var pools entv1alpha2.RedpandaBrokerPoolList
 			if err := node.List(ctx, &pools, client.InNamespace("default")); err != nil {
 				t.Logf("error listing RedpandaBrokerPools in %s: %v", node.Name(), err)
 				return false

@@ -14,7 +14,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 // statefulSetRedpandaEnv returns the environment variables shared by

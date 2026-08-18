@@ -1,0 +1,15 @@
+version: '3'
+
+tasks:
+  generate:
+    desc: "[re]generate the enterprise module's generated files"
+    dir: 'enterprise/operator'
+    cmds:
+      - register-gen --go-header-file "../../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/...
+      - |
+        controller-gen \
+          object:headerFile="../../licenses/boilerplate.go.txt" \
+          paths='./...' \
+          crd \
+          output:crd:artifacts:config=config/crd/bases
+      - rp-controller-gen status --output-directory ./statuses --statuses-file ./statuses.yaml --base-package github.com/redpanda-data/redpanda-operator/enterprise/operator --rewrite-comments

@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -134,7 +135,7 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 	rpSizing.into(&payload.Redpanda.TotalCPUCores, &payload.Redpanda.TotalMemoryGiB, &payload.Redpanda.BrokerSizes)
 
-	var stretchClusters redpandav1alpha2.StretchClusterList
+	var stretchClusters entv1alpha2.StretchClusterList
 	if ok, err := c.list(ctx, &stretchClusters); err != nil {
 		return nil, err
 	} else if ok {
@@ -148,7 +149,7 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 
 	// Stretch/multicluster broker sizing lives on RedpandaBrokerPool CRs.
-	var brokerPools redpandav1alpha2.RedpandaBrokerPoolList
+	var brokerPools entv1alpha2.RedpandaBrokerPoolList
 	if ok, err := c.list(ctx, &brokerPools); err != nil {
 		return nil, err
 	} else if ok {

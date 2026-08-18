@@ -30,8 +30,8 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 

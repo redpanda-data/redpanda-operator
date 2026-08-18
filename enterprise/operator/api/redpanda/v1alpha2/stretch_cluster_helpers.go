@@ -307,11 +307,6 @@ func (t *TrustStore) VolumeProjection() corev1.VolumeProjection {
 // --- Tuning ---
 
 // IsTuneAioEventsEnabled returns whether AIO event tuning is enabled. Safe to call on nil receiver.
-func (t *Tuning) IsTuneAioEventsEnabled() bool {
-	return t != nil && ptr.Deref(t.TuneAioEvents, false)
-}
-
-// IsTuneAioEventsEnabled returns whether AIO event tuning is enabled. Safe to call on nil receiver.
 func (t *StretchTuning) IsTuneAioEventsEnabled() bool {
 	return t != nil && ptr.Deref(t.TuneAioEvents, false)
 }
@@ -483,28 +478,6 @@ func (i *RedpandaImage) AtLeast(version string) bool {
 		}
 	}
 	return true
-}
-
-// --- FsValidator ---
-
-// IsEnabled returns whether the FS validator init container is enabled. Safe to call on nil receiver.
-func (f *FsValidator) IsEnabled() bool {
-	return f != nil && ptr.Deref(f.Enabled, false)
-}
-
-// GetExpectedFS returns the expected filesystem, defaulting to "xfs".
-func (f *FsValidator) GetExpectedFS() string {
-	if f != nil && f.ExpectedFS != nil {
-		return *f.ExpectedFS
-	}
-	return DefaultExpectedFS
-}
-
-// --- SetDataDirOwnership ---
-
-// IsEnabled returns whether the set-datadir-ownership init container is enabled. Safe to call on nil receiver.
-func (s *SetDataDirOwnership) IsEnabled() bool {
-	return s != nil && ptr.Deref(s.Enabled, false)
 }
 
 // --- PoolFSValidator ---

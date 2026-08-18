@@ -20,6 +20,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 
+	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 )
 
@@ -36,7 +37,7 @@ func (e *RedpandaTestEnv) StartRedpandaTestEnv(withWebhook bool) (*rest.Config, 
 		return nil, fmt.Errorf("unable to lookup path of calling function: %w", err)
 	}
 
-	e.CRDInstallOptions.CRDs = crds.All()
+	e.CRDInstallOptions.CRDs = append(crds.All(), entcrds.All()...)
 
 	if withWebhook {
 		e.WebhookInstallOptions = envtest.WebhookInstallOptions{

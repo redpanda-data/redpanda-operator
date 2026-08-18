@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"

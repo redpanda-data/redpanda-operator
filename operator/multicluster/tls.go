@@ -20,7 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 // TLSConfig constructs a tls.Config for the given TLS certificate name using

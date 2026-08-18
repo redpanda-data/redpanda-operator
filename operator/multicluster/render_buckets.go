@@ -12,7 +12,7 @@ package multicluster
 import (
 	"github.com/redpanda-data/common-go/kube"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 // RenderClusterResources returns the resources whose name and content are

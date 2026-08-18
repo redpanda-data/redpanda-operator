@@ -20,7 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 func rawJSON(v any) *runtime.RawExtension {
@@ -1826,58 +1826,6 @@ func ptrQuantity(s string) *resource.Quantity {
 }
 
 func TestInitContainerFlags(t *testing.T) {
-	t.Run("FsValidator", func(t *testing.T) {
-		t.Run("IsEnabled", func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    *redpandav1alpha2.FsValidator
-				expected bool
-			}{
-				{"nil receiver", nil, false},
-				{"zero value", &redpandav1alpha2.FsValidator{}, false},
-				{"enabled", &redpandav1alpha2.FsValidator{Enabled: ptr.To(true)}, true},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					assert.Equal(t, tt.expected, tt.input.IsEnabled())
-				})
-			}
-		})
-
-		t.Run("GetExpectedFS", func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    *redpandav1alpha2.FsValidator
-				expected string
-			}{
-				{"nil receiver", nil, "xfs"},
-				{"zero value", &redpandav1alpha2.FsValidator{}, "xfs"},
-				{"custom", &redpandav1alpha2.FsValidator{ExpectedFS: ptr.To("ext4")}, "ext4"},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					assert.Equal(t, tt.expected, tt.input.GetExpectedFS())
-				})
-			}
-		})
-	})
-
-	t.Run("SetDataDirOwnership", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			input    *redpandav1alpha2.SetDataDirOwnership
-			expected bool
-		}{
-			{"nil receiver", nil, false},
-			{"enabled", &redpandav1alpha2.SetDataDirOwnership{Enabled: ptr.To(true)}, true},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, tt.expected, tt.input.IsEnabled())
-			})
-		}
-	})
-
 	t.Run("PoolFSValidator", func(t *testing.T) {
 		tests := []struct {
 			name     string

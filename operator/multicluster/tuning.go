@@ -12,7 +12,7 @@ package multicluster
 import (
 	"errors"
 
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 )
 
 // validateTuning rejects tuning combinations that would render config no
