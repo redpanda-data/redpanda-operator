@@ -1390,6 +1390,39 @@ listeners:
         type: tlsroute
         host: schema.example.com
 
+-- gateway-parentref-all-fields --
+# Every optional field of external.gateway.parentRefs populated. The Go->upstream
+# ParentReference mapping (toTLSRouteParentRefs) is hand written per field, so
+# this pins the rendered spec.parentRefs for group/kind/namespace, which the
+# other gateway cases leave unset. See TestToTLSRouteParentRefs for the Go side.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: shared-gateway
+      namespace: infra
+      sectionName: kafka
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tlsroute
+        host: redpanda.example.com
+        hostTemplate: redpanda-$POD_ORDINAL.example.com
+        tls:
+          cert: default
+
 -- bug-cloud-storage --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
