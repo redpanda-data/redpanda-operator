@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"bufio"
@@ -20,13 +20,14 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 )
 
-// Pure superuser helpers, inlined from the syncclusterconfig package (which is
-// otherwise chart/admin-coupled and stays behind when the stretch controllers
-// move to the enterprise module). Behavioral equivalence with the originals is
-// asserted by superusers_drift_test.go.
+// Pure superuser helpers, inlined from the OSS operator's syncclusterconfig
+// package (which is chart/admin-coupled and lives in a monorepo module this
+// module must not import). Exported so the OSS-side equivalence tests in
+// operator/internal/enterprisedrift/superusers_drift_test.go can pin them to
+// the syncclusterconfig originals.
 
-// normalizeSuperusers de-duplicates and sorts the superusers.
-func normalizeSuperusers(entries []string) []string {
+// NormalizeSuperusers de-duplicates and sorts the superusers.
+func NormalizeSuperusers(entries []string) []string {
 	if len(entries) == 0 {
 		return []string{}
 	}
@@ -44,9 +45,9 @@ func normalizeSuperusers(entries []string) []string {
 	return sorted
 }
 
-// loadUsersFile parses a superusers file (Format:
+// LoadUsersFile parses a superusers file (Format:
 // USER_NAME:PASSWORD:SASL_MECHANISM_TYPE) and returns the list of user names.
-func loadUsersFile(ctx context.Context, filename string, usersFile []byte) []string {
+func LoadUsersFile(ctx context.Context, filename string, usersFile []byte) []string {
 	scanner := bufio.NewScanner(bytes.NewReader(usersFile))
 
 	users := []string{}

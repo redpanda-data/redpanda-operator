@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -28,15 +28,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
-	entv1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
-	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// defaultStaleDiskWipeNotReadyThreshold is how long a broker pod must stay
+// DefaultStaleDiskWipeNotReadyThreshold is how long a broker pod must stay
 // not-Ready before the wipe may destroy its disk. It must exceed normal startup
 // and recovery so a transiently unready but healthy broker is never wiped.
-const defaultStaleDiskWipeNotReadyThreshold = 5 * time.Minute
+const DefaultStaleDiskWipeNotReadyThreshold = 5 * time.Minute
 
 // identityCollision reports whether a sick broker's self-reported (node_id,
 // uuid) collides with the cluster-authoritative node_id->uuid map. A collision
@@ -93,21 +92,21 @@ func podAdminEndpoint(endpoints []string, podName string) (endpoint string, ambi
 	return endpoint, false
 }
 
-// staleDiskWipeConfirmationInterval is the minimum age of a retired-identity
+// StaleDiskWipeConfirmationInterval is the minimum age of a retired-identity
 // observation before a re-observation may authorize the wipe (see
-// wipeDebounce). It outlives the transient membership windows in which an
+// WipeDebounce). It outlives the transient membership windows in which an
 // identity can look retired without being so (e.g. an assigned id whose
 // registration hasn't yet reached the queried peer). Those resolve in seconds;
 // a genuine bad_rejoin is permanent, so the delay only defers real wipes by
 // about one requeue.
-const staleDiskWipeConfirmationInterval = 30 * time.Second
+const StaleDiskWipeConfirmationInterval = 30 * time.Second
 
-// wipeDebounce requires the wipe to observe the SAME retired identity on a pod
-// across two passes at least staleDiskWipeConfirmationInterval apart before
+// WipeDebounce requires the wipe to observe the SAME retired identity on a pod
+// across two passes at least StaleDiskWipeConfirmationInterval apart before
 // acting: a transient false-collision changes between observations while a real
 // bad_rejoin identity is immutable. In-memory only; an operator restart just
 // restarts the window, which is fail-safe (delays, never authorizes).
-type wipeDebounce struct {
+type WipeDebounce struct {
 	mu   sync.Mutex
 	seen map[string]wipeObservation
 }
@@ -126,7 +125,7 @@ type wipeObservation struct {
 // inter-pass timing is unbounded (error backoff), so a time-based restart would
 // keep a slow-but-real bad_rejoin from ever converging. A recovered identity is
 // instead dropped by the caller's forget-on-member-read.
-func (d *wipeDebounce) confirm(key string, nodeID int, uuid string, now time.Time, interval time.Duration) (bool, string) {
+func (d *WipeDebounce) confirm(key string, nodeID int, uuid string, now time.Time, interval time.Duration) (bool, string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.seen == nil {
@@ -145,7 +144,7 @@ func (d *wipeDebounce) confirm(key string, nodeID int, uuid string, now time.Tim
 
 // forget drops the pod's observation after a wipe (or when the pod is gone)
 // so a future incarnation starts a fresh confirmation window.
-func (d *wipeDebounce) forget(key string) {
+func (d *WipeDebounce) forget(key string) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	delete(d.seen, key)
@@ -156,7 +155,7 @@ func wipeDebounceKey(pod *lifecycle.MulticlusterPod) string {
 	return pod.GetCanonicalClusterName() + "/" + pod.GetNamespace() + "/" + pod.GetName()
 }
 
-// stagedOverrideUUIDs returns the uuids named by the cluster's
+// StagedOverrideUUIDs returns the uuids named by the cluster's
 // node_id_overrides config. Such an entry is a data-preserving identity
 // migration: until the broker restarts and adopts its new identity it still
 // boots its OLD uuid and can look exactly like a bad_rejoin, so wiping it would
@@ -167,7 +166,7 @@ func wipeDebounceKey(pod *lifecycle.MulticlusterPod) string {
 // the key are collected (both current_uuid and new_uuid) to stay robust to
 // field-name drift; a mid-migration broker's on-disk uuid is current_uuid,
 // which is always present.
-func stagedOverrideUUIDs(rawNode []byte) map[string]struct{} {
+func StagedOverrideUUIDs(rawNode []byte) map[string]struct{} {
 	out := map[string]struct{}{}
 	if len(rawNode) == 0 {
 		return out
@@ -266,9 +265,9 @@ func unwipeableDataDir(pod *lifecycle.MulticlusterPod) string {
 	return "pod has no datadir volume to reset"
 }
 
-// podDeleter is the subset of the lifecycle client the wipe needs to destroy a
+// PodDeleter is the subset of the lifecycle client the wipe needs to destroy a
 // broker's stale state; both ResourceClient instantiations satisfy it.
-type podDeleter interface {
+type PodDeleter interface {
 	DeletePVCsForPod(ctx context.Context, pod *lifecycle.MulticlusterPod) error
 	DeletePod(ctx context.Context, pod *lifecycle.MulticlusterPod) error
 	// GetLivePod returns the live pod (nil if gone), so the wipe can confirm it
@@ -276,11 +275,11 @@ type podDeleter interface {
 	GetLivePod(ctx context.Context, pod *lifecycle.MulticlusterPod) (*corev1.Pod, error)
 }
 
-// podLogsReader reads one container's logs via the Kubernetes API, which is
+// PodLogsReader reads one container's logs via the Kubernetes API, which is
 // kubelet-attributed to exactly that pod and so cannot be misdirected by stale
 // DNS or pod-IP reuse (unlike a dial). Satisfied by ResourceClient.GetPodLogs;
 // nil disables the log-evidence fallback below.
-type podLogsReader func(ctx context.Context, pod *lifecycle.MulticlusterPod, opts *corev1.PodLogOptions) (string, error)
+type PodLogsReader func(ctx context.Context, pod *lifecycle.MulticlusterPod, opts *corev1.PodLogOptions) (string, error)
 
 // The log-evidence fallback exists because a bad_rejoin broker cannot answer
 // its admin API at all: Redpanda binds it only after cluster discovery, and a
@@ -348,7 +347,7 @@ func bootIdentityOverridden(logs string) bool {
 // unreadable, stale, or unparseable state returns ok=false with a reason
 // (callers defer). Both reads target the current container instance so identity
 // and refusal verdict describe the same boot.
-func readBadRejoinEvidence(ctx context.Context, read podLogsReader, pod *lifecycle.MulticlusterPod) (uuid string, reason string, ok bool) {
+func readBadRejoinEvidence(ctx context.Context, read PodLogsReader, pod *lifecycle.MulticlusterPod) (uuid string, reason string, ok bool) {
 	container := "redpanda"
 
 	// Freshness read: a live loop always has retries inside the window.
@@ -400,7 +399,7 @@ func readBadRejoinEvidence(ctx context.Context, read podLogsReader, pod *lifecyc
 // unresolvable/unreachable/ambiguous leader) means callers must DEFER all
 // destructive work — deferring is the safe outcome and the work is never
 // time-critical.
-func leaderAdmin(ctx context.Context, pods []*lifecycle.MulticlusterPod, endpoints []string, dial podIdentityDialer, now time.Time, logger logr.Logger) (*rpadmin.AdminAPI, string, bool) {
+func leaderAdmin(ctx context.Context, pods []*lifecycle.MulticlusterPod, endpoints []string, dial PodIdentityDialer, now time.Time, logger logr.Logger) (*rpadmin.AdminAPI, string, bool) {
 	boot, bootPod, ok := authorityAdmin(ctx, pods, endpoints, dial, now, logger)
 	if !ok {
 		return nil, "", false
@@ -525,7 +524,7 @@ func errString(err error) string {
 // probe is load-bearing: the dialers only construct a client (no request), so
 // without it an unreachable Ready pod would be pinned forever. ok=false means
 // no reachable Ready pod this pass.
-func authorityAdmin(ctx context.Context, pods []*lifecycle.MulticlusterPod, endpoints []string, dial podIdentityDialer, now time.Time, logger logr.Logger) (*rpadmin.AdminAPI, string, bool) {
+func authorityAdmin(ctx context.Context, pods []*lifecycle.MulticlusterPod, endpoints []string, dial PodIdentityDialer, now time.Time, logger logr.Logger) (*rpadmin.AdminAPI, string, bool) {
 	sorted := make([]*lifecycle.MulticlusterPod, len(pods))
 	copy(sorted, pods)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].GetName() < sorted[j].GetName() })
@@ -553,26 +552,26 @@ func authorityAdmin(ctx context.Context, pods []*lifecycle.MulticlusterPod, endp
 	return nil, "", false
 }
 
-// staleDiskWipeParams carries the shared wipe core's dependencies; both
+// StaleDiskWipeParams carries the shared wipe core's dependencies; both
 // reconcilers populate it from their own state and clients.
-type staleDiskWipeParams struct {
-	pods      []*lifecycle.MulticlusterPod
-	endpoints lazyEndpoints
-	dial      podIdentityDialer
-	deleter   podDeleter
-	threshold time.Duration
-	// logs enables the bad_rejoin log-evidence fallback; nil disables it.
-	logs podLogsReader
-	// debounce + confirmInterval require the same retired identity across passes
-	// before any destruction (see wipeDebounce).
-	debounce        *wipeDebounce
-	confirmInterval time.Duration
-	// overrideUUIDs name staged node_id_overrides migration targets; a candidate
+type StaleDiskWipeParams struct {
+	Pods      []*lifecycle.MulticlusterPod
+	Endpoints LazyEndpoints
+	Dial      PodIdentityDialer
+	Deleter   PodDeleter
+	Threshold time.Duration
+	// Logs enables the bad_rejoin log-evidence fallback; nil disables it.
+	Logs PodLogsReader
+	// Debounce + ConfirmInterval require the same retired identity across passes
+	// before any destruction (see WipeDebounce).
+	Debounce        *WipeDebounce
+	ConfirmInterval time.Duration
+	// OverrideUUIDs name staged node_id_overrides migration targets; a candidate
 	// whose on-disk uuid is in this set is deferred per-identity, never wiped.
-	overrideUUIDs map[string]struct{}
+	OverrideUUIDs map[string]struct{}
 }
 
-// staleDiskWipe recovers a decommissioned-broker bad_rejoin crashloop
+// StaleDiskWipe recovers a decommissioned-broker bad_rejoin crashloop
 // (K8S-843): a broker whose data directory outlived its decommission boots the
 // stale state, claims a retired identity, is rejected, and crashloops. This
 // finds such a pod (persistently not-Ready, on-disk identity colliding with the
@@ -589,16 +588,16 @@ type staleDiskWipeParams struct {
 // --wipe-stale-disk-after=-1s, needed before manual recovery surgery that
 // discards data cluster-side or stages an override outside the CR (both of
 // which the operator otherwise cannot see).
-func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logger) (ctrl.Result, error) {
+func StaleDiskWipe(ctx context.Context, p StaleDiskWipeParams, logger logr.Logger) (ctrl.Result, error) {
 	now := time.Now()
 
 	// Cheapest gate first: collect candidates before any endpoint rendering or
 	// network read, so a quiesced cluster pays for neither.
 	var candidates []*lifecycle.MulticlusterPod
-	for _, pod := range p.pods {
+	for _, pod := range p.Pods {
 		// A Ready pod reports zero not-ready duration, so the (always positive)
 		// threshold skips healthy pods.
-		if podNotReadyFor(pod.Pod, now) < p.threshold {
+		if podNotReadyFor(pod.Pod, now) < p.Threshold {
 			continue
 		}
 		// A pod already being deleted needs no wipe. Without this gate the wipe
@@ -606,8 +605,8 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 		// since identity evidence stays re-confirmable until the disk is gone.
 		if pod.GetDeletionTimestamp() != nil {
 			logger.Info("pod is already being deleted; skipping stale-disk wipe candidate", "pod", pod.GetName())
-			if p.debounce != nil {
-				p.debounce.forget(wipeDebounceKey(pod))
+			if p.Debounce != nil {
+				p.Debounce.forget(wipeDebounceKey(pod))
 			}
 			continue
 		}
@@ -617,7 +616,7 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 		return ctrl.Result{}, nil
 	}
 
-	endpoints := p.endpoints()
+	endpoints := p.Endpoints()
 	if len(endpoints) == 0 {
 		// Endpoint rendering failed or produced nothing; skip loudly since it
 		// costs bad_rejoin recovery coverage until rendering recovers.
@@ -628,7 +627,7 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 	// Authoritative view (membership, uuids, health) comes from the controller
 	// leader, which cannot lag its committed membership (see leaderAdmin). No
 	// reachable leader -> defer the whole pass.
-	authority, authorityPod, ok := leaderAdmin(ctx, p.pods, endpoints, p.dial, now, logger)
+	authority, authorityPod, ok := leaderAdmin(ctx, p.Pods, endpoints, p.Dial, now, logger)
 	if !ok {
 		logger.Info("controller leader unavailable to serve authoritative cluster reads; deferring stale-disk wipe this pass",
 			"candidates", len(candidates))
@@ -678,7 +677,7 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 		var collision bool
 		var collisionReason string
 		dialedID, dialedUUID, advertisedHost, dialErr := func() (int, string, string, error) {
-			selfAdmin, err := p.dial(ctx, endpoint)
+			selfAdmin, err := p.Dial(ctx, endpoint)
 			if err != nil {
 				return -1, "", "", err
 			}
@@ -698,11 +697,11 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 			}
 			nodeID, uuid = dialedID, dialedUUID
 			collision, collisionReason = identityCollision(clusterUUIDs, nodeID, uuid)
-		case p.logs != nil:
+		case p.Logs != nil:
 			// Log-evidence fallback: a bad_rejoin broker never binds its admin
 			// API, so the dial above can never reach it, but its logs carry the
 			// same identity plus the refusal verdict (see the anchor constants).
-			logUUID, why, ok := readBadRejoinEvidence(ctx, p.logs, pod)
+			logUUID, why, ok := readBadRejoinEvidence(ctx, p.Logs, pod)
 			if !ok {
 				logger.Info("could not read self identity of not-ready broker, deferring stale-disk wipe",
 					"pod", pod.GetName(), "dialError", dialErr.Error(), "logEvidence", why)
@@ -735,19 +734,19 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 		// its data must be preserved for the reassignment; defer this candidate
 		// only (per-identity, so unrelated bad_rejoins are unaffected).
 		if collision {
-			if _, staged := p.overrideUUIDs[canonicalUUID(uuid)]; staged {
+			if _, staged := p.OverrideUUIDs[canonicalUUID(uuid)]; staged {
 				logger.Info("on-disk identity is the target of a staged node_id_overrides migration; deferring stale-disk wipe to preserve its data",
 					"pod", pod.GetName(), "nodeID", nodeID, "uuid", uuid)
 				continue
 			}
 		}
-		if !collision && p.debounce != nil {
+		if !collision && p.Debounce != nil {
 			// Read as a legitimate member (or unconfirmable): drop any window so
 			// an old retired-identity sighting can't chain forward and shortcut
 			// the debounce.
-			p.debounce.forget(wipeDebounceKey(pod))
+			p.Debounce.forget(wipeDebounceKey(pod))
 		}
-		wipe, decision := decideStaleDiskWipe(collision, notReadyFor, p.threshold, health.IsHealthy, downNodes)
+		wipe, decision := decideStaleDiskWipe(collision, notReadyFor, p.Threshold, health.IsHealthy, downNodes)
 		logger.V(log.DebugLevel).Info("stale-disk wipe decision",
 			"pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName(),
 			"nodeID", nodeID, "uuid", uuid, "collision", collision, "collisionReason", collisionReason,
@@ -768,7 +767,7 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 		// Only an identity still the same retired (node_id, uuid) a confirmation
 		// interval later is acted on (a mid-registration collision is transient).
 		key := wipeDebounceKey(pod)
-		confirmed, why := p.debounce.confirm(key, nodeID, uuid, time.Now(), p.confirmInterval)
+		confirmed, why := p.Debounce.confirm(key, nodeID, uuid, time.Now(), p.ConfirmInterval)
 		if !confirmed {
 			logger.Info("stale-disk wipe pending re-confirmation", "pod", pod.GetName(), "nodeID", nodeID, "reason", why)
 			pendingConfirmation = true
@@ -792,39 +791,39 @@ func staleDiskWipe(ctx context.Context, p staleDiskWipeParams, logger logr.Logge
 		// if it was deleted and recreated (same name, new UID) meanwhile, the
 		// by-name deletes would hit the innocent replacement and its fresh PVC.
 		// A UID mismatch (or vanished pod) aborts and restarts the window.
-		live, err := p.deleter.GetLivePod(ctx, pod)
+		live, err := p.Deleter.GetLivePod(ctx, pod)
 		if err != nil {
 			logger.Info("could not confirm pod identity before stale-disk wipe; deferring", "pod", pod.GetName(), "error", err)
 			continue
 		}
 		if live == nil || live.GetUID() != pod.GetUID() {
 			logger.Info("pod changed since it was evaluated (deleted/recreated); skipping stale-disk wipe", "pod", pod.GetName())
-			p.debounce.forget(key)
+			p.Debounce.forget(key)
 			continue
 		}
 
 		logger.Info("wiping stale disk of decommissioned broker stuck in bad_rejoin; deleting PVCs (if any) + pod for clean reschedule",
 			"pod", pod.GetName(), "cluster", pod.GetCanonicalClusterName(), "nodeID", nodeID, "uuid", uuid, "reason", decision)
 
-		if err := p.deleter.DeletePVCsForPod(ctx, pod); err != nil {
+		if err := p.Deleter.DeletePVCsForPod(ctx, pod); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting PVCs for broker pod")
 		}
-		if err := p.deleter.DeletePod(ctx, pod); err != nil {
+		if err := p.Deleter.DeletePod(ctx, pod); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "deleting broker pod after stale-disk wipe")
 		}
-		p.debounce.forget(key)
+		p.Debounce.forget(key)
 
 		// One wipe per pass; requeue to let the replacement come up first.
-		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 	}
 
-	if pendingConfirmation && p.confirmInterval > 0 {
-		return ctrl.Result{RequeueAfter: p.confirmInterval}, nil
+	if pendingConfirmation && p.ConfirmInterval > 0 {
+		return ctrl.Result{RequeueAfter: p.ConfirmInterval}, nil
 	}
 	return ctrl.Result{}, nil
 }
 
-// reconcileStaleDiskWipe (StretchCluster) — see staleDiskWipe.
+// reconcileStaleDiskWipe (StretchCluster) — see StaleDiskWipe.
 func (r *MulticlusterReconciler) reconcileStaleDiskWipe(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
 	logger := log.FromContext(ctx).WithName("reconcileStaleDiskWipe")
 
@@ -848,77 +847,35 @@ func (r *MulticlusterReconciler) reconcileStaleDiskWipe(ctx context.Context, sta
 		return ctrl.Result{}, nil
 	}
 
-	return staleDiskWipe(ctx, staleDiskWipeParams{
-		pods:            state.pools.ExistingPods(),
-		endpoints:       state.podEndpoints,
-		dial:            r.podAdminDialer(state),
-		deleter:         r.LifecycleClient,
-		threshold:       r.staleDiskWipeThreshold(),
-		logs:            r.LifecycleClient.GetPodLogs,
-		debounce:        &r.staleDiskWipeDebounce,
-		confirmInterval: staleDiskWipeConfirmationInterval,
-		overrideUUIDs:   configuredOverrideUUIDsStretch(state.cluster.StretchCluster.Spec.Config),
+	return StaleDiskWipe(ctx, StaleDiskWipeParams{
+		Pods:            state.pools.ExistingPods(),
+		Endpoints:       state.podEndpoints,
+		Dial:            r.podAdminDialer(state),
+		Deleter:         r.LifecycleClient,
+		Threshold:       r.staleDiskWipeThreshold(),
+		Logs:            r.LifecycleClient.GetPodLogs,
+		Debounce:        &r.staleDiskWipeDebounce,
+		ConfirmInterval: StaleDiskWipeConfirmationInterval,
+		OverrideUUIDs:   configuredOverrideUUIDsStretch(state.cluster.StretchCluster.Spec.Config),
 	}, logger)
 }
 
-// reconcileStaleDiskWipe (single-cluster Redpanda) — see staleDiskWipe.
-func (r *RedpandaReconciler) reconcileStaleDiskWipe(ctx context.Context, state *clusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
-	logger := log.FromContext(ctx).WithName("reconcileStaleDiskWipe")
-
-	if r.staleDiskWipeDisabled() {
-		logger.V(log.TraceLevel).Info("stale-disk wipe disabled via non-positive threshold; skipping")
-		return ctrl.Result{}, nil
-	}
-
-	if state.pools.AllZero() || state.admin == nil {
-		return ctrl.Result{}, nil
-	}
-
-	return staleDiskWipe(ctx, staleDiskWipeParams{
-		pods:            toEnterprisePods(state.pools.ExistingPods()),
-		endpoints:       state.podEndpoints,
-		dial:            r.podAdminDialer(state),
-		deleter:         ossPodDeleter{client: r.LifecycleClient},
-		threshold:       r.staleDiskWipeThreshold(),
-		logs:            ossPodLogsReader(r.LifecycleClient),
-		debounce:        &r.staleDiskWipeDebounce,
-		confirmInterval: staleDiskWipeConfirmationInterval,
-		overrideUUIDs:   configuredOverrideUUIDs(clusterSpecConfig(state.cluster.Redpanda.Spec.ClusterSpec)),
-	}, logger)
-}
-
-// configuredOverrideUUIDs extracts the staged node_id_overrides uuids from a
-// cluster's *Config (nil-safe), for the per-identity wipe defer. Shared by both
-// reconcilers so the guard applies to single-cluster AND StretchCluster.
-func configuredOverrideUUIDs(cfg *redpandav1alpha2.Config) map[string]struct{} {
+// configuredOverrideUUIDsStretch extracts the staged node_id_overrides uuids
+// from a StretchCluster spec's *Config (nil-safe), for the per-identity wipe
+// defer. The single-cluster RedpandaReconciler applies the same guard with its
+// own (OSS-typed) helper before calling StaleDiskWipe.
+func configuredOverrideUUIDsStretch(cfg *redpandav1alpha2.Config) map[string]struct{} {
 	if cfg == nil || cfg.Node == nil {
 		return nil
 	}
-	return stagedOverrideUUIDs(cfg.Node.Raw)
-}
-
-// configuredOverrideUUIDsStretch mirrors configuredOverrideUUIDs for the
-// enterprise Config type carried by StretchCluster specs.
-func configuredOverrideUUIDsStretch(cfg *entv1alpha2.Config) map[string]struct{} {
-	if cfg == nil || cfg.Node == nil {
-		return nil
-	}
-	return stagedOverrideUUIDs(cfg.Node.Raw)
-}
-
-// clusterSpecConfig returns the *Config from a (possibly nil) RedpandaClusterSpec.
-func clusterSpecConfig(cs *redpandav1alpha2.RedpandaClusterSpec) *redpandav1alpha2.Config {
-	if cs == nil {
-		return nil
-	}
-	return cs.Config
+	return StagedOverrideUUIDs(cfg.Node.Raw)
 }
 
 func (r *MulticlusterReconciler) staleDiskWipeThreshold() time.Duration {
 	if r.StaleDiskWipeNotReadyThreshold > 0 {
 		return r.StaleDiskWipeNotReadyThreshold
 	}
-	return defaultStaleDiskWipeNotReadyThreshold
+	return DefaultStaleDiskWipeNotReadyThreshold
 }
 
 // staleDiskWipeDisabled reports whether the wipe is off. Zero or negative
@@ -926,18 +883,6 @@ func (r *MulticlusterReconciler) staleDiskWipeThreshold() time.Duration {
 // positive value tunes the not-ready threshold. Defaults differ: StretchCluster
 // 5m (on), single-cluster 0 (off, opt-in).
 func (r *MulticlusterReconciler) staleDiskWipeDisabled() bool {
-	return r.StaleDiskWipeNotReadyThreshold <= 0
-}
-
-func (r *RedpandaReconciler) staleDiskWipeThreshold() time.Duration {
-	if r.StaleDiskWipeNotReadyThreshold > 0 {
-		return r.StaleDiskWipeNotReadyThreshold
-	}
-	return defaultStaleDiskWipeNotReadyThreshold
-}
-
-// staleDiskWipeDisabled — see the MulticlusterReconciler counterpart.
-func (r *RedpandaReconciler) staleDiskWipeDisabled() bool {
 	return r.StaleDiskWipeNotReadyThreshold <= 0
 }
 

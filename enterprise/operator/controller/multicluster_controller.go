@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"bytes"
@@ -44,11 +44,11 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/observability"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/bootstrap"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
 const (
@@ -94,7 +94,7 @@ type MulticlusterReconciler struct {
 	// ReconcileTimeout is a defense-in-depth ceiling on the wall time of a
 	// single reconcile pass — the primary mechanism is per-call timeouts
 	// on individual downstream clients. Zero (the default) applies
-	// defaultReconcileTimeout; ops may override via the operator's
+	// DefaultReconcileTimeout; ops may override via the operator's
 	// --reconcile-timeout flag, and tests may inject shorter values to
 	// exercise the deadline path without real latency.
 	ReconcileTimeout time.Duration
@@ -108,21 +108,21 @@ type MulticlusterReconciler struct {
 	// MaintenanceModeClearThreshold is how long a broker must be down (pod
 	// not-Ready) while stuck in maintenance mode before the operator clears the
 	// maintenance flag so the partition balancer can auto-decommission it. Zero
-	// applies defaultClearMaintenanceModeAfter (30m); set via the
+	// applies DefaultClearMaintenanceModeAfter (30m); set via the
 	// --clear-maintenance-mode-after flag.
 	MaintenanceModeClearThreshold time.Duration
 
 	// StaleDiskWipeNotReadyThreshold is how long a broker pod must remain
 	// not-Ready before reconcileStaleDiskWipe is allowed to destroy its data
 	// disk to recover a decommissioned-broker bad_rejoin (K8S-843). Zero
-	// applies defaultStaleDiskWipeNotReadyThreshold; a negative value disables
+	// applies DefaultStaleDiskWipeNotReadyThreshold; a negative value disables
 	// the stale-disk wipe entirely. Set via the --wipe-stale-disk-after flag.
 	StaleDiskWipeNotReadyThreshold time.Duration
 
 	// staleDiskWipeDebounce carries retired-identity observations across
 	// reconcile passes so the destructive wipe only fires on a re-confirmed
-	// identity (see wipeDebounce). Zero value is ready to use.
-	staleDiskWipeDebounce wipeDebounce
+	// identity (see WipeDebounce). Zero value is ready to use.
+	staleDiskWipeDebounce WipeDebounce
 
 	// isTerminalClientError and isNoRepresentativePoolError classify client
 	// errors; the concrete error types live in the operator's client package,
@@ -153,7 +153,7 @@ func (r *MulticlusterReconciler) reconcileDeadline() time.Duration {
 	if r.ReconcileTimeout > 0 {
 		return r.ReconcileTimeout
 	}
-	return defaultReconcileTimeout
+	return DefaultReconcileTimeout
 }
 
 type stretchClusterReconciliationState struct {
@@ -167,7 +167,7 @@ type stretchClusterReconciliationState struct {
 	// podEndpoints lazily renders the cluster's per-pod admin endpoints
 	// (memoized: at most one render per pass, and none when no remediation
 	// step needs an endpoint). Set alongside admin by initAdminClient.
-	podEndpoints lazyEndpoints
+	podEndpoints LazyEndpoints
 
 	// unobservedBrokerPoolClusters lists the configured clusters whose
 	// RedpandaBrokerPool list could not be fetched this pass (unreachable
@@ -197,7 +197,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	// defense is per-call timeouts on each downstream (admin API, peer K8s
 	// API, etc.); this wrapper catches anything we've missed. Healthy
 	// reconciles finish in well under a second, so the default 2-minute
-	// budget does not affect normal operation. See defaultReconcileTimeout
+	// budget does not affect normal operation. See DefaultReconcileTimeout
 	// for sizing rationale.
 	ctx, cancel := context.WithTimeout(ctx, r.reconcileDeadline())
 	defer cancel()
@@ -232,7 +232,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 			return
 		}
 
-		result.RequeueAfter = periodicRequeue
+		result.RequeueAfter = PeriodicRequeue
 	}()
 
 	ctx, span := trace.Start(otelkube.Extract(ctx, stretchCluster), "Reconcile", trace.WithAttributes(
@@ -285,7 +285,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 			state.status.StretchClusterStatus.SetResourcesSynced(
 				statuses.StretchClusterResourcesSyncedReasonError, msg,
 			)
-			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: requeueTimeout}, nil)
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: RequeueTimeout}, nil)
 		}
 
 		// All clusters are deleting — safe to proceed with cleanup.
@@ -317,7 +317,7 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 			l.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
 		}
-		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
+		return ctrl.Result{RequeueAfter: FinalizerRequeueTimeout}, nil
 	}
 
 	// syncCA (Phase 1) and both Phase 2 reconcilers derive pool-scoped
@@ -405,8 +405,8 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	case poolViewIncomplete:
 		pollResult = poolViewResult
 	case state.pools.ScaledUpButNoneReady() || !state.pools.CheckScale(ctx):
-		l.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
-		pollResult.RequeueAfter = requeueTimeout
+		l.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", RequeueTimeout)
+		pollResult.RequeueAfter = RequeueTimeout
 	}
 	l.V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, pollResult, nil)
@@ -511,7 +511,7 @@ func (r *MulticlusterReconciler) checkBrokerPoolViewComplete(ctx context.Context
 	)
 	l.Info(msg)
 	state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonError, msg)
-	return true, ctrl.Result{RequeueAfter: requeueTimeout}
+	return true, ctrl.Result{RequeueAfter: RequeueTimeout}
 }
 
 // checkSpecConsistency fetches the StretchCluster from every reachable cluster
@@ -648,7 +648,7 @@ func (r *MulticlusterReconciler) checkSpecConsistency(ctx context.Context, state
 	l.Info(msg)
 
 	state.status.StretchClusterStatus.SetSpecSynced(statuses.StretchClusterSpecSyncedReasonDriftDetected, msg)
-	return true, ctrl.Result{RequeueAfter: requeueTimeout}
+	return true, ctrl.Result{RequeueAfter: RequeueTimeout}
 }
 
 // specDiffFields returns the top-level JSON field names of StretchClusterSpec
@@ -1361,7 +1361,7 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 	if err != nil {
 		if r.noRepresentativePoolError(err) {
 			// it may happen when there's no BrokerPool for this StretchCluster yet available
-			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+			return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 		}
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err
@@ -1369,7 +1369,7 @@ func (r *MulticlusterReconciler) initAdminClient(ctx context.Context, state *str
 	state.admin = admin
 	// Deferred + memoized so a pass renders the per-pod endpoint list at most
 	// once, and only when a remediation step actually needs an endpoint.
-	state.podEndpoints = memoizeEndpoints(func() []string {
+	state.podEndpoints = MemoizeEndpoints(func() []string {
 		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
 	})
 	return ctrl.Result{}, nil
@@ -1476,7 +1476,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap, downNodes)
 		result := ctrl.Result{}
 		if requeue {
-			result.RequeueAfter = requeueTimeout
+			result.RequeueAfter = RequeueTimeout
 		}
 		//nolint:staticcheck // SA4004 this is intentionally early terminated
 		return result, err
@@ -1510,7 +1510,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// normal reconciliation when a pod is unready for unrelated reasons.
 	if len(rollSet) > 0 && state.pools.HasRecentlyReplacedPods() {
 		logger.V(log.DebugLevel).Info("recently replaced pods not ready, deferring rolling restart")
-		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 	}
 
 	// Post-restart recovery gate (Redpanda 25.1+), mirroring RedpandaReconciler:
@@ -1530,10 +1530,10 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 			// risk rolling the next broker mid-recovery. (Bounded retry/backoff
 			// for transient errors is handled by the rpadmin client.)
 			logger.V(log.DebugLevel).Info("post-restart probe error, deferring rolling restart", "error", err)
-			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+			return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 		case recovering:
 			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
-			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+			return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 		}
 	}
 
@@ -1580,7 +1580,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		if !continueExecution {
 			// requeue since we just rolled a pod
 			// and we want for the system to stabilize
-			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+			return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 		}
 	}
 
@@ -1588,7 +1588,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		// here we're in a state where we can't currently roll any
 		// pods but we need to, therefore we just reschedule rather
 		// than marking the cluster as quiesced.
-		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		return ctrl.Result{RequeueAfter: RequeueTimeout}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -1756,7 +1756,7 @@ func (r *MulticlusterReconciler) reconcileClusterConfig(ctx context.Context, sta
 	result := ctrl.Result{}
 	if didConfigChange && state.restartOnConfigChange {
 		logger.Info("config version changed, requeuing for rolling restart")
-		result.RequeueAfter = requeueTimeout
+		result.RequeueAfter = RequeueTimeout
 	}
 
 	return result, nil
@@ -1780,7 +1780,7 @@ func (r *MulticlusterReconciler) superusersFor(ctx context.Context, state *stret
 		}
 
 		for filename, userTXT := range users.Data {
-			superusers = append(superusers, loadUsersFile(ctx, filename, userTXT)...)
+			superusers = append(superusers, LoadUsersFile(ctx, filename, userTXT)...)
 		}
 	}
 
@@ -1789,7 +1789,7 @@ func (r *MulticlusterReconciler) superusersFor(ctx context.Context, state *stret
 		superusers = append(superusers, state.bootstrapUser)
 	}
 
-	return normalizeSuperusers(superusers), nil
+	return NormalizeSuperusers(superusers), nil
 }
 
 func (r *MulticlusterReconciler) syncStatus(ctx context.Context, _ cluster.Cluster, state *stretchClusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
@@ -2043,6 +2043,6 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 				StaleDiskWipeNotReadyThreshold: params.StaleDiskWipeNotReadyThreshold,
 				isTerminalClientError:          params.IsTerminalClientError,
 				isNoRepresentativePoolError:    params.IsNoRepresentativePoolError,
-			}, "StretchCluster", periodicRequeue),
+			}, "StretchCluster", PeriodicRequeue),
 		)
 }

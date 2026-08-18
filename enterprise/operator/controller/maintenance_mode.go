@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -29,10 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/observability"
 )
 
-// defaultClearMaintenanceModeAfter is how long a broker must be down (pod
+// DefaultClearMaintenanceModeAfter is how long a broker must be down (pod
 // not-Ready) while stuck in maintenance mode before the operator clears the
 // flag. Maintenance-mode brokers are excluded from the partition balancer's
 // auto-decommission, so a never-cleared flag blocks decommission forever. The
@@ -40,7 +40,7 @@ import (
 // from a deliberate long maintenance window, so the threshold trades
 // responsiveness against clearing a broker still expected to return. Tune via
 // --clear-maintenance-mode-after.
-const defaultClearMaintenanceModeAfter = 30 * time.Minute
+const DefaultClearMaintenanceModeAfter = 30 * time.Minute
 
 // podNotReadyFor returns how long the pod's Ready condition has been False; a
 // Ready pod reports zero, which never reaches the (always positive) threshold.
@@ -226,19 +226,19 @@ func decideGhostClearByPodIdentity(drainerNodeID, podNodeID int) (bool, string) 
 	}
 }
 
-// podIdentityDialer returns an admin client scoped to exactly the one broker
+// PodIdentityDialer returns an admin client scoped to exactly the one broker
 // pod behind endpoint ("<pod-dns-name>:<admin-port>"), inheriting the cluster
 // client's TLS and auth. The caller Closes the returned client.
-type podIdentityDialer func(ctx context.Context, endpoint string) (*rpadmin.AdminAPI, error)
+type PodIdentityDialer func(ctx context.Context, endpoint string) (*rpadmin.AdminAPI, error)
 
-// lazyEndpoints resolves the per-pod admin endpoint list on first use.
+// LazyEndpoints resolves the per-pod admin endpoint list on first use.
 // Rendering it requires the full chart render state, so a healthy cluster must
 // never pay for it — only when a candidate needs an endpoint.
-type lazyEndpoints func() []string
+type LazyEndpoints func() []string
 
-// memoizeEndpoints wraps an endpoint-rendering function so it runs at most once
+// MemoizeEndpoints wraps an endpoint-rendering function so it runs at most once
 // per reconcile pass, no matter how many candidates the steps examine.
-func memoizeEndpoints(f func() []string) lazyEndpoints {
+func MemoizeEndpoints(f func() []string) LazyEndpoints {
 	var once sync.Once
 	var endpoints []string
 	return func() []string {
@@ -254,12 +254,20 @@ func firstDNSLabel(host string) string {
 	return strings.SplitN(host, ".", 2)[0]
 }
 
-// podIdentityGhostConfig carries what rule B needs to ask a pod which broker
+// PodIdentityGhostConfig carries what rule B needs to ask a pod which broker
 // identity it is running: the per-pod admin endpoints and a dialer. A nil
 // config disables rule B; the broker-list-only rule A still runs.
-type podIdentityGhostConfig struct {
-	endpoints lazyEndpoints
-	dial      podIdentityDialer
+type PodIdentityGhostConfig struct {
+	endpoints LazyEndpoints
+	dial      PodIdentityDialer
+}
+
+// NewPodIdentityGhostConfig constructs a PodIdentityGhostConfig from the
+// per-pod admin endpoint renderer and pod dialer. Exported for the OSS
+// operator's single-cluster RedpandaReconciler, whose thin remediation
+// wrapper injects its own endpoint rendering and dialing.
+func NewPodIdentityGhostConfig(endpoints LazyEndpoints, dial PodIdentityDialer) *PodIdentityGhostConfig {
+	return &PodIdentityGhostConfig{endpoints: endpoints, dial: dial}
 }
 
 // podLocalIdentity dials the pod's own admin API and returns the node id its
@@ -268,7 +276,7 @@ type podIdentityGhostConfig struct {
 // booting, crashlooping, unreachable) and callers must defer. The raw response
 // is used, not the typed NodeConfig, so a missing node_id decodes to the -1
 // sentinel and not to 0, which is a real identity that would fabricate evidence.
-func (c *podIdentityGhostConfig) podLocalIdentity(ctx context.Context, endpoint string) (nodeID int, advertisedHost string, err error) {
+func (c *PodIdentityGhostConfig) podLocalIdentity(ctx context.Context, endpoint string) (nodeID int, advertisedHost string, err error) {
 	scoped, err := c.dial(ctx, endpoint)
 	if err != nil {
 		return -1, "", err
@@ -360,7 +368,7 @@ func maintenanceWorkPending(brokers []rpadmin.Broker) bool {
 	return false
 }
 
-// clearStuckMaintenanceMode clears maintenance mode on three classes of broker,
+// ClearStuckMaintenanceMode clears maintenance mode on three classes of broker,
 // and is shared by the single-cluster and StretchCluster reconcilers:
 //   - rule-A ghosts (ghostBrokersInMaintenance), cleared immediately;
 //   - rule-B unclaimed drainers (clearGhostsByPodIdentity), cleared immediately
@@ -370,7 +378,7 @@ func maintenanceWorkPending(brokers []rpadmin.Broker) bool {
 // It uses the full broker list (which includes down brokers) so a stuck broker
 // can be matched to its pod. A pod name matching more than one broker is skipped
 // rather than guessed.
-func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pods []*lifecycle.MulticlusterPod, threshold time.Duration, podIdentity *podIdentityGhostConfig, logger logr.Logger) error {
+func ClearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pods []*lifecycle.MulticlusterPod, threshold time.Duration, podIdentity *PodIdentityGhostConfig, logger logr.Logger) error {
 	// Cheap detection read to preserve quiescence: a healthy cluster returns
 	// here without rendering endpoints or dialing. This read is unpinned, but it
 	// only gates WHETHER we pin the leader, never a write — a stale view that
@@ -509,7 +517,7 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 // identity, unresolvable or ambiguous endpoint, or an answer not attributable
 // to the pod (responderMatchesPod) — defers rather than guesses. The endpoint
 // list is rendered only once a drainer exists, so a healthy cluster never pays.
-func clearGhostsByPodIdentity(ctx context.Context, admin *rpadmin.AdminAPI, brokers []rpadmin.Broker, podsByName, podsByIP map[string][]*lifecycle.MulticlusterPod, podIdentity *podIdentityGhostConfig, logger logr.Logger) error {
+func clearGhostsByPodIdentity(ctx context.Context, admin *rpadmin.AdminAPI, brokers []rpadmin.Broker, podsByName, podsByIP map[string][]*lifecycle.MulticlusterPod, podIdentity *PodIdentityGhostConfig, logger logr.Logger) error {
 	drainers := unclaimedDrainersInMaintenance(brokers)
 	if len(drainers) == 0 {
 		return nil
@@ -590,23 +598,23 @@ func clearGhostsByPodIdentity(ctx context.Context, admin *rpadmin.AdminAPI, brok
 }
 
 // reconcileMaintenanceMode (StretchCluster) clears maintenance mode on brokers
-// that have been down past the threshold — see clearStuckMaintenanceMode.
+// that have been down past the threshold — see ClearStuckMaintenanceMode.
 func (r *MulticlusterReconciler) reconcileMaintenanceMode(ctx context.Context, state *stretchClusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
 	if state.pools.AllZero() || state.admin == nil {
 		return ctrl.Result{}, nil
 	}
 	logger := log.FromContext(ctx).WithName("reconcileMaintenanceMode")
-	err := clearStuckMaintenanceMode(ctx, state.admin, state.pools.ExistingPods(), r.maintenanceModeClearThreshold(), &podIdentityGhostConfig{
+	err := ClearStuckMaintenanceMode(ctx, state.admin, state.pools.ExistingPods(), r.maintenanceModeClearThreshold(), &PodIdentityGhostConfig{
 		endpoints: state.podEndpoints,
 		dial:      r.podAdminDialer(state),
 	}, logger)
 	return ctrl.Result{}, err
 }
 
-// podAdminDialer returns a podIdentityDialer for one StretchCluster broker pod,
+// podAdminDialer returns a PodIdentityDialer for one StretchCluster broker pod,
 // reusing the stale-disk wipe's per-pod client construction
 // (RedpandaAdminClientForStretchPod derives TLS/auth from the pool spec).
-func (r *MulticlusterReconciler) podAdminDialer(state *stretchClusterReconciliationState) podIdentityDialer {
+func (r *MulticlusterReconciler) podAdminDialer(state *stretchClusterReconciliationState) PodIdentityDialer {
 	return func(ctx context.Context, endpoint string) (*rpadmin.AdminAPI, error) {
 		return r.ClientFactory.RedpandaAdminClientForStretchPod(ctx, state.cluster.StretchCluster, endpoint)
 	}
@@ -616,35 +624,5 @@ func (r *MulticlusterReconciler) maintenanceModeClearThreshold() time.Duration {
 	if r.MaintenanceModeClearThreshold > 0 {
 		return r.MaintenanceModeClearThreshold
 	}
-	return defaultClearMaintenanceModeAfter
-}
-
-// reconcileMaintenanceMode (single-cluster Redpanda) clears maintenance mode on
-// brokers that have been down past the threshold — see clearStuckMaintenanceMode.
-func (r *RedpandaReconciler) reconcileMaintenanceMode(ctx context.Context, state *clusterReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
-	if state.pools.AllZero() || state.admin == nil {
-		return ctrl.Result{}, nil
-	}
-	logger := log.FromContext(ctx).WithName("reconcileMaintenanceMode")
-	err := clearStuckMaintenanceMode(ctx, state.admin, toEnterprisePods(state.pools.ExistingPods()), r.maintenanceModeClearThreshold(), &podIdentityGhostConfig{
-		endpoints: state.podEndpoints,
-		dial:      r.podAdminDialer(state),
-	}, logger)
-	return ctrl.Result{}, err
-}
-
-// podAdminDialer returns a podIdentityDialer for one single-cluster broker pod:
-// the cluster-wide admin client scoped to the pod's endpoint via ForHost, the
-// same pattern the per-broker restart probes use.
-func (r *RedpandaReconciler) podAdminDialer(state *clusterReconciliationState) podIdentityDialer {
-	return func(_ context.Context, endpoint string) (*rpadmin.AdminAPI, error) {
-		return state.admin.ForHost(endpoint)
-	}
-}
-
-func (r *RedpandaReconciler) maintenanceModeClearThreshold() time.Duration {
-	if r.MaintenanceModeClearThreshold > 0 {
-		return r.MaintenanceModeClearThreshold
-	}
-	return defaultClearMaintenanceModeAfter
+	return DefaultClearMaintenanceModeAfter
 }

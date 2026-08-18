@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	entlifecycle "github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
 
@@ -687,10 +686,10 @@ func TestBrokerIDForPod(t *testing.T) {
 // for a StretchCluster with identically-named BrokerPools across member
 // clusters (a StatefulSet/pod name has no member-cluster component), would
 // either decommission the wrong broker or orphan a live one instead of
-// deferring to a future reconcile. Both reconcilers share the same
-// brokerIDForPod-based decision, so both are pinned here without needing a
-// real admin API or Kubernetes client — the ambiguous branch returns before
-// either is touched.
+// deferring to a future reconcile. The ambiguous branch returns before a real
+// admin API or Kubernetes client is touched, so neither is needed here. (The
+// StretchCluster MulticlusterReconciler's identical decision is pinned by the
+// same test in the enterprise controller package.)
 func TestScaleDownDefersOnAmbiguousBrokerMatch(t *testing.T) {
 	ambiguousMap := map[string][]int{"redpanda-default-0": {0, 7}}
 	set := &lifecycle.ScaleDownSet{
@@ -698,23 +697,8 @@ func TestScaleDownDefersOnAmbiguousBrokerMatch(t *testing.T) {
 		StatefulSet: &lifecycle.MulticlusterStatefulSet{StatefulSet: &appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: "redpanda-default"}}},
 	}
 
-	t.Run("single-cluster RedpandaReconciler", func(t *testing.T) {
-		r := &RedpandaReconciler{}
-		requeue, err := r.scaleDown(t.Context(), nil, &lifecycle.ClusterWithPools{}, set, ambiguousMap)
-		require.NoError(t, err)
-		assert.True(t, requeue, "an ambiguous match must requeue rather than proceed")
-	})
-
-	t.Run("StretchCluster MulticlusterReconciler", func(t *testing.T) {
-		// The stretch reconciler is typed on the enterprise lifecycle package,
-		// so it takes an enterprise-typed ScaleDownSet mirroring `set`.
-		entset := &entlifecycle.ScaleDownSet{
-			LastPod:     set.LastPod,
-			StatefulSet: &entlifecycle.MulticlusterStatefulSet{StatefulSet: set.StatefulSet.StatefulSet},
-		}
-		r := &MulticlusterReconciler{}
-		requeue, err := r.scaleDown(t.Context(), nil, &entlifecycle.StretchClusterWithPools{}, entset, ambiguousMap, map[int]bool{})
-		require.NoError(t, err)
-		assert.True(t, requeue, "an ambiguous match must requeue rather than proceed")
-	})
+	r := &RedpandaReconciler{}
+	requeue, err := r.scaleDown(t.Context(), nil, &lifecycle.ClusterWithPools{}, set, ambiguousMap)
+	require.NoError(t, err)
+	assert.True(t, requeue, "an ambiguous match must requeue rather than proceed")
 }

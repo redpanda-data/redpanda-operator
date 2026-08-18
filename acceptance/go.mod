@@ -26,6 +26,8 @@ require (
 	sigs.k8s.io/yaml v1.6.0
 )
 
+require go.etcd.io/raft/v3 v3.6.0 // indirect
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260209202127-80ab13bee0bf.1 // indirect
 	buf.build/gen/go/grpc-ecosystem/grpc-gateway/protocolbuffers/go v1.36.10-20221127060915-a1ecdc58eccd.1 // indirect

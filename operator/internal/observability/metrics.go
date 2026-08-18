@@ -15,10 +15,13 @@ import (
 )
 
 // This file is the single source of truth for every Prometheus metric
-// exported by the operator (except the multicluster raft metrics, which
-// live in `pkg/multicluster/leaderelection/metrics.go` — a different Go
-// module). Recorder helper functions that set these metrics live in
-// sibling files in this package.
+// exported by the OSS operator (except the multicluster raft metrics, which
+// live in `pkg/multicluster/leaderelection/metrics.go`, and the
+// stretch/maintenance-remediation metrics, which live in
+// `enterprise/operator/observability` — both different Go modules; all
+// register into the same controller-runtime default registry). Recorder
+// helper functions that set these metrics live in sibling files in this
+// package.
 //
 // Metric naming follows the existing `operator_<subsystem>_<name>`
 // convention for operator-internal metrics; the resource-state Redpanda
@@ -32,7 +35,6 @@ import (
 const (
 	metricsNamespace = "operator"
 	metricsSubsystem = "controller"
-	stretchSubsystem = "stretchcluster"
 )
 
 // ====================================================================
@@ -116,116 +118,16 @@ var (
 		Help:      "PVCUnbinder reconciles that proceeded past the pvc-rebinding gate because all unbound claims were exempted as stuck-Pod claims.",
 	})
 
-	// MaintenanceModeCleared counts brokers whose stuck maintenance-mode flag
-	// the operator cleared because the broker had been down (pod not-Ready)
-	// past the configured threshold. A broker left in maintenance mode is
-	// excluded from the partition balancer's auto-decommission, so this
-	// remediation unblocks recovery. Labeled by the broker's cluster (member)
-	// name (empty for the single-cluster Redpanda reconciler).
-	MaintenanceModeCleared = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "maintenance_mode_cleared_total",
-		Help:      "Brokers whose stuck maintenance-mode flag was cleared by the operator after being down past the threshold, labeled by cluster.",
-	}, []string{"cluster"})
-
-	// MaintenanceModeGhostCleared counts ghost brokers whose leaked
-	// maintenance-mode flag the operator cleared: broker ids proven superseded
-	// at their own advertised address (a pod that lost its data directory and
-	// re-registered under a fresh id), left in maintenance mode by the pod's
-	// preStop hook (redpanda-data/redpanda-operator#1674). Supersession is
-	// proven either by a live registered broker sharing the ghost's address
-	// under a different id, or — when the successor cannot register at all,
-	// the leader-restart deadlock of redpanda#31057 — by the pod at that
-	// address self-reporting a different node id via its local admin API. Such
-	// a ghost occupies the cluster's single maintenance-mode slot and is
-	// excluded from the partition balancer's auto-decommission until cleared.
-	// Labeled by the broker's cluster (member) name (empty for the
-	// single-cluster Redpanda reconciler).
-	MaintenanceModeGhostCleared = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "maintenance_mode_ghost_cleared_total",
-		Help:      "Ghost brokers (proven superseded at their own advertised address) whose leaked maintenance-mode flag was cleared by the operator, labeled by cluster.",
-	}, []string{"cluster"})
-
-	// MaintenanceModeClearSkippedAmbiguous counts pods whose long-down state
-	// would otherwise gate a maintenance-mode clear, but whose pod name matched
-	// more than one broker (e.g. a StretchCluster with identically-named
-	// BrokerPools in two member clusters) and was therefore skipped rather than
-	// guessed. A sustained non-zero rate means a broker may be permanently stuck
-	// in maintenance mode because its pod name is ambiguous; the BrokerPool name
-	// collision must be resolved to unblock it. Labeled by the pod's cluster
-	// (member) name (empty for the single-cluster Redpanda reconciler).
-	MaintenanceModeClearSkippedAmbiguous = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metricsNamespace,
-		Subsystem: metricsSubsystem,
-		Name:      "maintenance_mode_clear_skipped_ambiguous_total",
-		Help:      "Pods that satisfied the maintenance-mode clear threshold but whose pod name ambiguously matched more than one broker, so no clear was attempted, labeled by cluster.",
-	}, []string{"cluster"})
+	// NOTE: the maintenance-mode remediation counters
+	// (operator_controller_maintenance_mode_*) and the StretchCluster-level
+	// gauges (operator_stretchcluster_*) moved to
+	// enterprise/operator/observability alongside the shared remediation
+	// cores and stretch controllers that record them. They register into
+	// this same controller-runtime default registry.
 )
 
 // ====================================================================
-// Group 2 — StretchCluster-level resource-state gauges.
-//
-// Set by the MulticlusterReconciler. Helper functions for these gauges
-// live in stretch_recorder.go.
-// ====================================================================
-
-var (
-	// StretchClusterMemberReachable is 1 when the multicluster manager
-	// considers a member cluster reachable, 0 otherwise.
-	StretchClusterMemberReachable = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Subsystem: stretchSubsystem,
-		Name:      "member_reachable",
-		Help:      "Whether each StretchCluster member cluster is reachable from this operator (1 = reachable, 0 = unreachable).",
-	}, []string{"stretchcluster", "member"})
-
-	// StretchClusterBrokers is the desired broker count per member,
-	// summed across all NodePools that point at that member. A healthy
-	// converged cluster has `brokers == brokers_ready` on every member.
-	StretchClusterBrokers = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Subsystem: stretchSubsystem,
-		Name:      "brokers",
-		Help:      "Desired broker count per StretchCluster member, summed across NodePools.",
-	}, []string{"stretchcluster", "member"})
-
-	// StretchClusterBrokersReady is the ready broker count per member.
-	// Pair with `brokers` to detect partial outages (a member where
-	// brokers > brokers_ready).
-	StretchClusterBrokersReady = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Subsystem: stretchSubsystem,
-		Name:      "brokers_ready",
-		Help:      "Ready broker count per StretchCluster member, summed across NodePools (sum of NodePool.status.readyReplicas).",
-	}, []string{"stretchcluster", "member"})
-
-	// StretchClusterReplicationHealth is 1 when the admin API reports
-	// the cluster as healthy, 0 otherwise. Recorded after the existing
-	// health check that reconcileDecommission already runs.
-	StretchClusterReplicationHealth = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Subsystem: stretchSubsystem,
-		Name:      "replication_health",
-		Help:      "Cluster-wide replication health from the admin API (1 = healthy, 0 = unhealthy).",
-	}, []string{"stretchcluster"})
-
-	// StretchClusterSpecDrift is 1 when a member's local
-	// StretchCluster.spec diverges from this operator's locally-observed
-	// spec, 0 otherwise. Set inside the existing checkSpecConsistency
-	// routine.
-	StretchClusterSpecDrift = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metricsNamespace,
-		Subsystem: stretchSubsystem,
-		Name:      "spec_drift",
-		Help:      "Whether each member's StretchCluster spec differs from this operator's locally-observed spec (1 = drift detected, 0 = aligned).",
-	}, []string{"stretchcluster", "member"})
-)
-
-// ====================================================================
-// Group 3 — Redpanda CR resource-state gauges (v2 only).
+// Group 2 — Redpanda CR resource-state gauges (v2 only).
 //
 // Set by RedpandaMetricsReconciler in operator/internal/controller/
 // redpanda/metric_controller.go. The reconciler recomputes totals from
@@ -267,18 +169,8 @@ func init() {
 		ReconcileLastSuccessTimestampSeconds,
 		PVCUnbinderGateDeferred,
 		PVCUnbinderGateExempted,
-		MaintenanceModeCleared,
-		MaintenanceModeGhostCleared,
-		MaintenanceModeClearSkippedAmbiguous,
 
-		// Group 2 — StretchCluster member status.
-		StretchClusterMemberReachable,
-		StretchClusterBrokers,
-		StretchClusterBrokersReady,
-		StretchClusterReplicationHealth,
-		StretchClusterSpecDrift,
-
-		// Group 3 — Redpanda CR resource-state (v2 only; v1 lives next
+		// Group 2 — Redpanda CR resource-state (v2 only; v1 lives next
 		// to its legacy reconciler in operator/internal/controller/vectorized/).
 		Redpandas,
 		RedpandaDesiredNodes,

@@ -14,6 +14,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	entlifecycle "github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
@@ -21,10 +22,10 @@ import (
 // This file is the type seam between the OSS lifecycle package (the generic
 // framework backing the v2 RedpandaReconciler) and its enterprise
 // concretization (which backs the stretch MulticlusterReconciler). The shared
-// remediation cores — clearStuckMaintenanceMode in maintenance_mode.go and
-// staleDiskWipe in stale_disk_wipe.go — are typed on the enterprise
-// lifecycle's MulticlusterPod, so the RedpandaReconciler's thin entry points
-// convert their OSS-typed pods at the boundary using the helpers below.
+// remediation cores — entcontroller.ClearStuckMaintenanceMode and
+// entcontroller.StaleDiskWipe — are typed on the enterprise lifecycle's
+// MulticlusterPod, so the RedpandaReconciler's thin entry points convert
+// their OSS-typed pods at the boundary using the helpers below.
 // The two MulticlusterPod types are field-for-field identical; conversion is
 // a pure re-wrap that preserves the pod pointer and both cluster names.
 
@@ -44,12 +45,12 @@ func fromEnterprisePod(pod *entlifecycle.MulticlusterPod) *lifecycle.Multicluste
 }
 
 // ossPodDeleter adapts the OSS lifecycle ResourceClient to the
-// enterprise-typed podDeleter interface consumed by the stale-disk wipe core.
+// enterprise-typed PodDeleter interface consumed by the stale-disk wipe core.
 type ossPodDeleter struct {
 	client *lifecycle.ResourceClient[lifecycle.ClusterWithPools, *lifecycle.ClusterWithPools]
 }
 
-var _ podDeleter = ossPodDeleter{}
+var _ entcontroller.PodDeleter = ossPodDeleter{}
 
 func (d ossPodDeleter) DeletePVCsForPod(ctx context.Context, pod *entlifecycle.MulticlusterPod) error {
 	return d.client.DeletePVCsForPod(ctx, fromEnterprisePod(pod))
@@ -64,8 +65,8 @@ func (d ossPodDeleter) GetLivePod(ctx context.Context, pod *entlifecycle.Multicl
 }
 
 // ossPodLogsReader adapts the OSS lifecycle ResourceClient's GetPodLogs to the
-// enterprise-typed podLogsReader consumed by the stale-disk wipe core.
-func ossPodLogsReader(client *lifecycle.ResourceClient[lifecycle.ClusterWithPools, *lifecycle.ClusterWithPools]) podLogsReader {
+// enterprise-typed PodLogsReader consumed by the stale-disk wipe core.
+func ossPodLogsReader(client *lifecycle.ResourceClient[lifecycle.ClusterWithPools, *lifecycle.ClusterWithPools]) entcontroller.PodLogsReader {
 	return func(ctx context.Context, pod *entlifecycle.MulticlusterPod, opts *corev1.PodLogOptions) (string, error) {
 		return client.GetPodLogs(ctx, fromEnterprisePod(pod), opts)
 	}

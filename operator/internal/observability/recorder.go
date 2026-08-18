@@ -15,9 +15,11 @@
 //   - Whether a controller is reaching steady state vs spinning.
 //   - The distribution of requested re-queue intervals.
 //   - When each controller last reached steady state.
-//   - StretchCluster-level member reachability, broker counts,
-//     replication health, and spec drift.
 //   - Redpanda CR resource-state counts (v1 + v2).
+//
+// (The StretchCluster-level gauges and the maintenance-mode remediation
+// counters live in enterprise/operator/observability, next to the
+// stretch controllers and shared remediation cores that record them.)
 //
 // Layout of the package:
 //
@@ -26,8 +28,6 @@
 //     Prometheus registry.
 //   - wrapper.go — Wrap() middleware that records the per-reconcile
 //     metrics around every controller invocation.
-//   - stretch_recorder.go — RecordStretchCluster* helper functions
-//     for the StretchCluster gauges.
 //
 // Metric naming follows the existing `operator_<subsystem>_<name>`
 // convention. All metric labels have closed vocabularies — no per-pod

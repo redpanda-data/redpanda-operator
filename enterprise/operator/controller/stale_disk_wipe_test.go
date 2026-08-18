@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -384,32 +384,11 @@ func TestStaleDiskWipeForPendingPodWithNoReadyCondition(t *testing.T) {
 	})
 }
 
-// TestRedpandaStaleDiskWipeThresholdAndDisable pins the same
-// --wipe-stale-disk-after disable/tune semantics on the RedpandaReconciler.
-func TestRedpandaStaleDiskWipeThresholdAndDisable(t *testing.T) {
-	cases := []struct {
-		name          string
-		threshold     time.Duration
-		wantDisabled  bool
-		wantThreshold time.Duration // only checked when not disabled
-	}{
-		{name: "zero disables (explicit operator off switch)", threshold: 0, wantDisabled: true},
-		{name: "positive tunes the threshold", threshold: 12 * time.Minute, wantDisabled: false, wantThreshold: 12 * time.Minute},
-		{name: "negative disables entirely", threshold: -1 * time.Second, wantDisabled: true},
-	}
+// (TestRedpandaStaleDiskWipeThresholdAndDisable, the RedpandaReconciler
+// counterpart of TestStaleDiskWipeThresholdAndDisable above, lives in the OSS
+// controller package next to that reconciler's thin wipe wrapper.)
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			r := &RedpandaReconciler{StaleDiskWipeNotReadyThreshold: tc.threshold}
-			assert.Equal(t, tc.wantDisabled, r.staleDiskWipeDisabled())
-			if !tc.wantDisabled {
-				assert.Equal(t, tc.wantThreshold, r.staleDiskWipeThreshold())
-			}
-		})
-	}
-}
-
-// fakePodDeleter records the destructive lifecycle calls staleDiskWipe makes,
+// fakePodDeleter records the destructive lifecycle calls StaleDiskWipe makes,
 // in order.
 type fakePodDeleter struct {
 	mu    sync.Mutex
@@ -450,7 +429,7 @@ func (f *fakePodDeleter) recorded() []string {
 	return append([]string{}, f.calls...)
 }
 
-// staleDiskWipeFixture drives the shared staleDiskWipe core against a
+// staleDiskWipeFixture drives the shared StaleDiskWipe core against a
 // bad_rejoin candidate (node 6) whose retired identity lives in its pod's
 // emptyDir, alongside healthy members 1, 2 and 3. /v1/broker_uuids retains the
 // retired {6, uuid-6} entry, so membership must come from /v1/brokers.
@@ -491,7 +470,7 @@ type staleDiskWipeFixture struct {
 	overrideUUIDs map[string]struct{}
 }
 
-// wipePass is the cumulative deleter state and result after one staleDiskWipe
+// wipePass is the cumulative deleter state and result after one StaleDiskWipe
 // pass.
 type wipePass struct {
 	calls  []string
@@ -499,8 +478,8 @@ type wipePass struct {
 	err    error
 }
 
-// run drives staleDiskWipe for the given number of passes against one shared
-// wipeDebounce and returns the per-pass snapshots.
+// run drives StaleDiskWipe for the given number of passes against one shared
+// WipeDebounce and returns the per-pass snapshots.
 func (f staleDiskWipeFixture) run(t *testing.T, passes int) []wipePass {
 	t.Helper()
 	ctx := t.Context()
@@ -618,7 +597,7 @@ func (f staleDiskWipeFixture) run(t *testing.T, passes int) []wipePass {
 		}
 	}
 
-	var logs podLogsReader
+	var logs PodLogsReader
 	if f.podLogs != "" || f.logsErr != nil {
 		logs = func(_ context.Context, pod *lifecycle.MulticlusterPod, opts *corev1.PodLogOptions) (string, error) {
 			assert.Equal(t, "redpanda-0", pod.GetName(), "only the candidate pod's logs may be read")
@@ -636,21 +615,21 @@ func (f staleDiskWipeFixture) run(t *testing.T, passes int) []wipePass {
 			"redpanda-0": {ObjectMeta: metav1.ObjectMeta{Name: "redpanda-0", UID: "uid-redpanda-0-REPLACED"}},
 		}
 	}
-	debounce := &wipeDebounce{}
+	debounce := &WipeDebounce{}
 	results := make([]wipePass, 0, passes)
 	for range passes {
-		result, runErr := staleDiskWipe(ctx, staleDiskWipeParams{
-			pods: pods,
-			endpoints: func() []string {
+		result, runErr := StaleDiskWipe(ctx, StaleDiskWipeParams{
+			Pods: pods,
+			Endpoints: func() []string {
 				return []string{"redpanda-0.redpanda:9644", "redpanda-1.redpanda:9644"}
 			},
-			dial:            dial,
-			deleter:         deleter,
-			threshold:       threshold,
-			logs:            logs,
-			debounce:        debounce,
-			confirmInterval: f.confirmInterval,
-			overrideUUIDs:   f.overrideUUIDs,
+			Dial:            dial,
+			Deleter:         deleter,
+			Threshold:       threshold,
+			Logs:            logs,
+			Debounce:        debounce,
+			ConfirmInterval: f.confirmInterval,
+			OverrideUUIDs:   f.overrideUUIDs,
 		}, testr.New(t))
 		results = append(results, wipePass{calls: deleter.recorded(), result: result, err: runErr})
 	}
@@ -673,7 +652,7 @@ func TestStaleDiskWipeDeletesBadRejoinPodWithoutPVCs(t *testing.T) {
 	require.NoError(t, passes[1].err)
 	assert.Equal(t, []string{"pvcs:redpanda-0", "pod:redpanda-0"}, passes[1].calls,
 		"a re-confirmed retired-identity bad_rejoin on a healthy cluster must have its pod's storage (a no-op without PVCs) and pod deleted, in that order")
-	assert.Equal(t, requeueTimeout, passes[1].result.RequeueAfter, "one wipe per pass: must requeue for the replacement")
+	assert.Equal(t, RequeueTimeout, passes[1].result.RequeueAfter, "one wipe per pass: must requeue for the replacement")
 }
 
 // TestStaleDiskWipeDefersWhileNodesDown: a bad_rejoin candidate must never be
@@ -793,7 +772,7 @@ func TestReadBadRejoinEvidence(t *testing.T) {
 	pod := &lifecycle.MulticlusterPod{Pod: &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "redpanda-0"}}}
 	u6 := testUUID(6)
 
-	reader := func(content string, err error) podLogsReader {
+	reader := func(content string, err error) PodLogsReader {
 		return func(_ context.Context, _ *lifecycle.MulticlusterPod, opts *corev1.PodLogOptions) (string, error) {
 			// The freshness read must be server-side bounded.
 			if opts.SinceSeconds != nil {
@@ -872,7 +851,7 @@ func TestStaleDiskWipeBadRejoinLogFallback(t *testing.T) {
 	require.NoError(t, passes[1].err)
 	assert.Equal(t, []string{"pvcs:redpanda-0", "pod:redpanda-0"}, passes[1].calls,
 		"a re-confirmed log-evidenced bad_rejoin on a healthy cluster must be wiped")
-	assert.Equal(t, requeueTimeout, passes[1].result.RequeueAfter)
+	assert.Equal(t, RequeueTimeout, passes[1].result.RequeueAfter)
 }
 
 // TestStaleDiskWipeLogFallbackGuards: the log path authorizes only a live
@@ -998,17 +977,17 @@ func TestStaleDiskWipeDefersHostPathDataDir(t *testing.T) {
 // the migration-target identity.
 func TestStagedOverrideUUIDs(t *testing.T) {
 	u6, u7 := testUUID(6), testUUID(7)
-	assert.Empty(t, stagedOverrideUUIDs(nil), "no node config")
-	assert.Empty(t, stagedOverrideUUIDs([]byte(`{}`)), "empty node config")
-	assert.Empty(t, stagedOverrideUUIDs([]byte(`{"node_id_overrides": []}`)), "empty override list")
-	assert.Empty(t, stagedOverrideUUIDs([]byte(`{"developer_mode": true}`)), "unrelated node config")
+	assert.Empty(t, StagedOverrideUUIDs(nil), "no node config")
+	assert.Empty(t, StagedOverrideUUIDs([]byte(`{}`)), "empty node config")
+	assert.Empty(t, StagedOverrideUUIDs([]byte(`{"node_id_overrides": []}`)), "empty override list")
+	assert.Empty(t, StagedOverrideUUIDs([]byte(`{"developer_mode": true}`)), "unrelated node config")
 	// The real core schema: {current_uuid, new_uuid, new_id}. Both uuids are
 	// collected (canonical dash-less form); new_id (an int) is ignored.
-	got := stagedOverrideUUIDs([]byte(`{"node_id_overrides": [{"current_uuid": "` + u6 + `", "new_uuid": "` + u7 + `", "new_id": 7}]}`))
+	got := StagedOverrideUUIDs([]byte(`{"node_id_overrides": [{"current_uuid": "` + u6 + `", "new_uuid": "` + u7 + `", "new_id": 7}]}`))
 	assert.Contains(t, got, canonicalUUID(u6), "the pre-migration (on-disk) uuid must be collected")
 	assert.Contains(t, got, canonicalUUID(u7))
 	assert.Len(t, got, 2)
-	assert.Empty(t, stagedOverrideUUIDs([]byte(`not json`)), "unparseable config collects nothing")
+	assert.Empty(t, StagedOverrideUUIDs([]byte(`not json`)), "unparseable config collects nothing")
 
 	// An override uuid in a non-canonical form (uppercase / brace-wrapped /
 	// dash-less), all accepted by core, must still canonicalize to match the
@@ -1022,7 +1001,7 @@ func TestStagedOverrideUUIDs(t *testing.T) {
 		strings.ReplaceAll(lower, "-", ""), // dash-less
 		"{" + strings.ToUpper(strings.ReplaceAll(lower, "-", "")) + "}", // all three
 	} {
-		got := stagedOverrideUUIDs([]byte(`{"node_id_overrides": [{"current_uuid": "` + form + `"}]}`))
+		got := StagedOverrideUUIDs([]byte(`{"node_id_overrides": [{"current_uuid": "` + form + `"}]}`))
 		assert.Contains(t, got, canon, "override uuid %q must canonicalize to %q", form, canon)
 	}
 }
@@ -1235,7 +1214,7 @@ func TestLeaderAdmin(t *testing.T) {
 func TestWipeDebounceConfirm(t *testing.T) {
 	const interval = 30 * time.Second
 	t0 := time.Date(2026, 7, 29, 12, 0, 0, 0, time.UTC)
-	d := &wipeDebounce{}
+	d := &WipeDebounce{}
 
 	ok, why := d.confirm("ns/redpanda-0", 6, "uuid-6", t0, interval)
 	assert.False(t, ok, "first observation must never confirm: %s", why)
@@ -1259,14 +1238,14 @@ func TestWipeDebounceConfirm(t *testing.T) {
 	// A long gap between sightings must not restart the debounce (inter-pass
 	// time is unbounded), so the same still-retired identity confirms once its
 	// age passes the interval; recovery is detected by content, not elapsed time.
-	d2 := &wipeDebounce{}
+	d2 := &WipeDebounce{}
 	ok, _ = d2.confirm("ns/redpanda-0", 6, "uuid-6", t0, interval)
 	require.False(t, ok)
 	ok, why = d2.confirm("ns/redpanda-0", 6, "uuid-6", t0.Add(20*time.Minute), interval)
 	assert.True(t, ok, "a still-retired identity re-observed after a long gap must confirm, not restart: %s", why)
 
 	// A change of identity still restarts the window even across a long gap.
-	d3 := &wipeDebounce{}
+	d3 := &WipeDebounce{}
 	ok, _ = d3.confirm("ns/redpanda-0", 6, "uuid-6", t0, interval)
 	require.False(t, ok)
 	ok, why = d3.confirm("ns/redpanda-0", 7, "uuid-7", t0.Add(20*time.Minute), interval)

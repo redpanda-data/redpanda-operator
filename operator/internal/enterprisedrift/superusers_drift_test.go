@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package enterprisedrift
 
 import (
 	"fmt"
@@ -17,14 +17,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 )
 
-// These tests pin the inlined superusers helpers (superusers.go) to the
+// These tests pin the superusers helpers inlined into the enterprise
+// controller package (enterprise/operator/controller/superusers.go) to the
 // syncclusterconfig originals. They exist because the helpers are duplicated
-// on purpose: the stretch controllers move to the enterprise module, which
-// must not import syncclusterconfig. If one of these fails, port the
-// syncclusterconfig change into superusers.go (or vice versa).
+// on purpose: the enterprise module must not import syncclusterconfig. If one
+// of these fails, port the syncclusterconfig change into the enterprise copy
+// (or vice versa).
 
 func TestNormalizeSuperusersMatchesSyncClusterConfig(t *testing.T) {
 	cases := [][]string{
@@ -47,7 +49,7 @@ func TestNormalizeSuperusersMatchesSyncClusterConfig(t *testing.T) {
 	}
 
 	for _, entries := range cases {
-		require.Equal(t, syncclusterconfig.NormalizeSuperusers(entries), normalizeSuperusers(entries), "input: %v", entries)
+		require.Equal(t, syncclusterconfig.NormalizeSuperusers(entries), entcontroller.NormalizeSuperusers(entries), "input: %v", entries)
 	}
 }
 
@@ -68,7 +70,7 @@ func TestLoadUsersFileMatchesSyncClusterConfig(t *testing.T) {
 	for _, contents := range cases {
 		require.Equal(t,
 			syncclusterconfig.LoadUsersFile(ctx, "users.txt", []byte(contents)),
-			loadUsersFile(ctx, "users.txt", []byte(contents)),
+			entcontroller.LoadUsersFile(ctx, "users.txt", []byte(contents)),
 			"input: %q", contents)
 	}
 }

@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -20,7 +20,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // K8S-891: a leadership change can leave the new leader's health probe not
@@ -77,7 +77,7 @@ func TestCheckBrokerPoolViewComplete_IncompleteObservationDefers(t *testing.T) {
 
 	incomplete, result := r.checkBrokerPoolViewComplete(context.Background(), state)
 	require.True(t, incomplete, "an unobserved peer must defer resource rendering")
-	require.Equal(t, requeueTimeout, result.RequeueAfter)
+	require.Equal(t, RequeueTimeout, result.RequeueAfter)
 
 	sc := &redpandav1alpha2.StretchCluster{}
 	state.status.StretchClusterStatus.UpdateConditions(sc)
@@ -167,7 +167,7 @@ func TestBrokerPoolViewGate_ReconcileRacingPeerRegistrationDefers(t *testing.T) 
 	}
 	incomplete, result := r.checkBrokerPoolViewComplete(context.Background(), state)
 	require.True(t, incomplete, "reconciliation racing peer registration must defer pool-derived rendering")
-	require.Equal(t, requeueTimeout, result.RequeueAfter)
+	require.Equal(t, RequeueTimeout, result.RequeueAfter)
 
 	// Once the peer's registration completes and its BrokerPool list is
 	// observed, the same computation must open the gate.

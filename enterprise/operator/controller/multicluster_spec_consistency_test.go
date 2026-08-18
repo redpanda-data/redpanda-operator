@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // specConsistencyCluster is a fake cluster.Cluster whose only useful behaviour

@@ -54,14 +54,6 @@ type NodePoolReconciler struct {
 	Manager multicluster.Manager
 }
 
-func createCanonicalClusterNameList(mgr multicluster.Manager) []string {
-	var canonicalClusterList []string
-	for _, clusterName := range mgr.GetClusterNames() {
-		canonicalClusterList = append(canonicalClusterList, lifecycle.CanonicalClusterName(clusterName, mgr.GetLocalClusterName))
-	}
-	return canonicalClusterList
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{

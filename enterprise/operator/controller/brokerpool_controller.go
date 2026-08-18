@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -36,7 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 )
 
 // brokerpool resources
@@ -108,7 +108,7 @@ func SetupWithMultiClusterManager(mgr multicluster.Manager, features FeatureGate
 				wrap,
 				&BrokerPoolReconciler{Manager: mgr, Features: features},
 				name,
-				periodicRequeue,
+				PeriodicRequeue,
 			),
 		)
 }
@@ -147,7 +147,7 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 			return
 		}
 
-		result.RequeueAfter = periodicRequeue
+		result.RequeueAfter = PeriodicRequeue
 	}()
 
 	ctx, span := trace.Start(otelkube.Extract(ctx, pool), "Reconcile", trace.WithAttributes(
@@ -193,7 +193,7 @@ func (r *BrokerPoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Re
 			logger.Error(err, "updating cluster finalizer or Annotation")
 			return ignoreConflict(err)
 		}
-		return ctrl.Result{RequeueAfter: finalizerRequeueTimeout}, nil
+		return ctrl.Result{RequeueAfter: FinalizerRequeueTimeout}, nil
 	}
 
 	var status statuses.RedpandaBrokerPoolStatus

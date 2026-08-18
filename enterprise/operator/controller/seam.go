@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -23,10 +23,12 @@ import (
 )
 
 // This file defines the seam between the stretch/multicluster controllers and
-// the chart-coupled client/config-sync machinery in the rest of the operator.
-// The operator constructs concrete implementations (see enterprise_adapters.go)
-// and injects them at controller setup time, keeping the stretch controllers
-// free of the chart stack so they can move to the enterprise module.
+// the chart-coupled client/config-sync machinery in the OSS operator. The OSS
+// operator constructs concrete implementations (see OSSMulticlusterSeams in
+// operator/internal/controller/redpanda/enterprise_adapters.go) and injects
+// them at controller setup time, keeping the stretch controllers free of the
+// chart stack — which is what lets them live in this module without importing
+// any monorepo sibling.
 
 // ClientFactory is the subset of the admin-client factory that the stretch
 // controllers need. The returned *rpadmin.AdminAPI is chart-free (common-go);

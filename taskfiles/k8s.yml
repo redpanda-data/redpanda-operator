@@ -12,11 +12,15 @@ tasks:
       - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/... ./api/vectorized/...
 
       # Generate the full RBAC bundle for kustomize and the operator chart, CRD
-      # manifests, and deep copy methods.
+      # manifests, and deep copy methods. The enterprise controller package is
+      # included explicitly: the stretch controllers' RBAC markers live there
+      # (a sibling module resolved via the go.work workspace), and the
+      # manager-role bundle must keep carrying their rules.
       - |
         controller-gen \
           object:headerFile="../licenses/boilerplate.go.txt" \
           paths='./...' \
+          paths='../enterprise/operator/controller' \
           crd \
           webhook \
           rbac:roleName=manager-role \
@@ -31,6 +35,11 @@ tasks:
       # isolated rbac bundle. These are used by the helm charts to check
       # whether or not permissions are correctly in sync. As we allow VERY
       # granular toggling at the moment it's critical to upkeep this bookkeeping.
+      #
+      # EXTRA_PATH adds a second package to a bundle. v2-manager keeps carrying
+      # the stretch controllers' rules even though those controllers moved to
+      # the enterprise module (resolved via the go.work workspace), so the
+      # rendered chart RBAC is unchanged by the carve-out.
       - for:
         - NAME: rpk-debug-bundle
           PATH: ./internal/controller/rpkdebugbundle
@@ -44,6 +53,7 @@ tasks:
           PATH: ./internal/controller/pvcunbinder
         - NAME: v2-manager
           PATH: ./internal/controller/redpanda
+          EXTRA_PATH: ../enterprise/operator/controller
         - NAME: console
           PATH: ./internal/controller/console
         - NAME: pipeline
@@ -63,7 +73,8 @@ tasks:
         cmd: |
           controller-gen \
             paths={{ .ITEM.PATH }} \
-            rbac:roleName={{ .ITEM.NAME }} \
+            {{ if .ITEM.EXTRA_PATH }}paths={{ .ITEM.EXTRA_PATH }} \
+            {{ end }}rbac:roleName={{ .ITEM.NAME }} \
             output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
 
       # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
@@ -115,6 +126,7 @@ tasks:
           paths=./cmd/run \
           paths=./cmd/multicluster \
           paths=./internal/controller/redpanda \
+          paths=../enterprise/operator/controller \
           paths=./internal/controller/rackawareness \
           paths=./internal/controller/rpkdebugbundle \
           paths=./internal/controller/olddecommission \

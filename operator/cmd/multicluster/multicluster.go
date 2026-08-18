@@ -31,6 +31,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/enterprise/pkg/multicluster/watcher"
@@ -424,7 +425,7 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	multiclusterParams := redpandacontrollers.OSSMulticlusterSeams(redpandacontrollers.MulticlusterSetupParams{
+	multiclusterParams := redpandacontrollers.OSSMulticlusterSeams(entcontroller.MulticlusterSetupParams{
 		RedpandaImage:                      redpandaImage,
 		SidecarImage:                       sidecarImage,
 		CloudSecrets:                       cloudSecrets,
@@ -434,7 +435,7 @@ func Run(
 		ClearMaintenanceModeAfter:          opts.ClearMaintenanceModeAfter,
 		StaleDiskWipeNotReadyThreshold:     opts.StaleDiskWipeNotReadyThreshold,
 	}, factory)
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, multiclusterParams); err != nil {
+	if err := entcontroller.SetupMulticlusterController(ctx, manager, multiclusterParams); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}
@@ -456,7 +457,7 @@ func Run(
 		}
 	}
 
-	if err := redpandacontrollers.SetupWithMultiClusterManager(manager, redpandacontrollers.OSSFeatureGate(), redpandacontrollers.OSSReconcilerWrapper()); err != nil {
+	if err := entcontroller.SetupWithMultiClusterManager(manager, redpandacontrollers.OSSFeatureGate(), redpandacontrollers.OSSReconcilerWrapper()); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 		return err
 	}

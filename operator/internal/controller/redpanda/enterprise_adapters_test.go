@@ -14,6 +14,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	syncclusterconfig "github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 )
 
@@ -21,7 +22,7 @@ import (
 // syncclusterconfig.SyncerMode: the adapters convert between them by simple
 // integer conversion, which is only valid while the values line up 1:1.
 func TestConfigSyncModeMatchesSyncerMode(t *testing.T) {
-	require.EqualValues(t, syncclusterconfig.SyncerModeAdditive, ConfigSyncModeAdditive)
-	require.EqualValues(t, syncclusterconfig.SyncerModeDeclarative, ConfigSyncModeDeclarative)
-	require.EqualValues(t, syncclusterconfig.SyncerModeDisabled, ConfigSyncModeDisabled)
+	require.EqualValues(t, syncclusterconfig.SyncerModeAdditive, entcontroller.ConfigSyncModeAdditive)
+	require.EqualValues(t, syncclusterconfig.SyncerModeDeclarative, entcontroller.ConfigSyncModeDeclarative)
+	require.EqualValues(t, syncclusterconfig.SyncerModeDisabled, entcontroller.ConfigSyncModeDisabled)
 }

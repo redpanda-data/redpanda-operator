@@ -7,7 +7,7 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-package redpanda
+package controller
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
+	"github.com/redpanda-data/redpanda-operator/enterprise/operator/observability"
 )
 
 // TestPodNotReadyFor: the not-ready duration comes from the pod's Ready
@@ -142,7 +142,7 @@ func TestBrokersByPodNameIgnoresEmptyAddress(t *testing.T) {
 	assert.Equal(t, 4, m["redpanda-default-0"][0].NodeID)
 }
 
-// TestClearStuckMaintenanceModeIntegration drives clearStuckMaintenanceMode
+// TestClearStuckMaintenanceModeIntegration drives ClearStuckMaintenanceMode
 // against a real rpadmin client: only the broker that is in maintenance,
 // not-alive, and past the not-Ready threshold is cleared; any broker failing a
 // single gate is left untouched.
@@ -209,7 +209,7 @@ func TestClearStuckMaintenanceModeIntegration(t *testing.T) {
 		notReady("redpanda-rp-central-0", 2*time.Minute), // node 4: under threshold -> skip
 	}
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -272,7 +272,7 @@ func TestClearStuckMaintenanceModeClearsPendingPodWithNoReadyCondition(t *testin
 		}},
 	}
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -339,7 +339,7 @@ func TestClearStuckMaintenanceModeSkipsAmbiguousPodName(t *testing.T) {
 
 	skippedBefore := testutil.ToFloat64(observability.MaintenanceModeClearSkippedAmbiguous.WithLabelValues(""))
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -405,7 +405,7 @@ func TestClearStuckMaintenanceModeIgnoresEmptyPodIP(t *testing.T) {
 		}},
 	}
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -553,7 +553,7 @@ func TestClearStuckMaintenanceModeClearsGhostWithNoObservedPod(t *testing.T) {
 		Status:     corev1.PodStatus{Conditions: []corev1.PodCondition{{Type: corev1.PodReady, Status: corev1.ConditionTrue, LastTransitionTime: metav1.NewTime(now.Add(-time.Hour))}}},
 	}}}
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 	mu.Lock()
 	defer mu.Unlock()
 	assert.Equal(t, []int{0}, disabled, "a ghost with a live successor must clear even when no operator pod matches its address (0 matches != ambiguity)")
@@ -634,7 +634,7 @@ func TestClearStuckMaintenanceModeClearsFlatNetworkDrainer(t *testing.T) {
 		readyIP("redpanda-1", "10.1.0.6"), // node 1, the controller leader
 		readyIP("redpanda-2", "10.1.0.7"), // node 2
 	}
-	podIdentity := &podIdentityGhostConfig{
+	podIdentity := &PodIdentityGhostConfig{
 		endpoints: func() []string {
 			return []string{"redpanda-0.redpanda:9644", "redpanda-1.redpanda:9644", "redpanda-2.redpanda:9644"}
 		},
@@ -651,7 +651,7 @@ func TestClearStuckMaintenanceModeClearsFlatNetworkDrainer(t *testing.T) {
 		},
 	}
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, podIdentity, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, podIdentity, testr.New(t)))
 	mu.Lock()
 	defer mu.Unlock()
 	assert.Equal(t, []int{0}, disabled, "a flat-network drainer superseded by a different node id at its IP must be cleared via the pod-identity rule")
@@ -720,7 +720,7 @@ func TestClearStuckMaintenanceModeClearsGhostBroker(t *testing.T) {
 
 	clearedBefore := testutil.ToFloat64(observability.MaintenanceModeGhostCleared.WithLabelValues(""))
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -805,7 +805,7 @@ func TestClearStuckMaintenanceModeToleratesGhostClearRace(t *testing.T) {
 
 	clearedBefore := testutil.ToFloat64(observability.MaintenanceModeGhostCleared.WithLabelValues(""))
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)),
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)),
 		"losing the ghost-clear race (400 not-in-maintenance) must not fail the reconcile step")
 
 	mu.Lock()
@@ -872,7 +872,7 @@ func TestClearStuckMaintenanceModeLowThresholdLeavesHealthyClusterAlone(t *testi
 
 	// With every broker alive there are no unclaimed drainers, so the
 	// pod-identity rule must neither render endpoints nor dial any pod.
-	podIdentity := &podIdentityGhostConfig{
+	podIdentity := &PodIdentityGhostConfig{
 		endpoints: func() []string {
 			t.Fatal("a healthy cluster must never render per-pod admin endpoints for ghost identity checks")
 			return nil
@@ -883,7 +883,7 @@ func TestClearStuckMaintenanceModeLowThresholdLeavesHealthyClusterAlone(t *testi
 		},
 	}
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, podIdentity, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, podIdentity, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -948,7 +948,7 @@ func TestClearStuckMaintenanceModeGhostAmbiguousPodNameDefers(t *testing.T) {
 
 	clearedBefore := testutil.ToFloat64(observability.MaintenanceModeGhostCleared.WithLabelValues(""))
 
-	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
+	require.NoError(t, ClearStuckMaintenanceMode(ctx, client, pods, threshold, nil, testr.New(t)))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -1054,7 +1054,7 @@ func TestUnclaimedDrainersInMaintenance(t *testing.T) {
 	})
 }
 
-// leaderRestartGhostFixture drives clearStuckMaintenanceMode against a
+// leaderRestartGhostFixture drives ClearStuckMaintenanceMode against a
 // leader-restart wedge (issue #31057): the old leader id (node 0, at
 // redpanda-0) is dead and draining with no live owner of its address, while
 // nodes 1, 2 are alive. Only the pod-identity rule can resolve it.
@@ -1085,7 +1085,7 @@ type leaderRestartGhostFixture struct {
 }
 
 // run returns the node ids whose maintenance DELETE reached the cluster API and
-// the error from clearStuckMaintenanceMode. The redpanda-0 pod is only briefly
+// the error from ClearStuckMaintenanceMode. The redpanda-0 pod is only briefly
 // not-Ready (30s, under the 5m threshold), so any clear is attributable to the
 // thresholdless pod-identity rule, never the stuck path.
 func (f leaderRestartGhostFixture) run(t *testing.T) ([]int, error) {
@@ -1192,7 +1192,7 @@ func (f leaderRestartGhostFixture) run(t *testing.T) ([]int, error) {
 	if f.noEndpoints {
 		endpoints = nil
 	}
-	podIdentity := &podIdentityGhostConfig{
+	podIdentity := &PodIdentityGhostConfig{
 		endpoints: func() []string { return endpoints },
 		dial: func(_ context.Context, endpoint string) (*rpadmin.AdminAPI, error) {
 			switch endpoint {
@@ -1213,7 +1213,7 @@ func (f leaderRestartGhostFixture) run(t *testing.T) ([]int, error) {
 		},
 	}
 
-	runErr := clearStuckMaintenanceMode(ctx, client, pods, threshold, podIdentity, testr.New(t))
+	runErr := ClearStuckMaintenanceMode(ctx, client, pods, threshold, podIdentity, testr.New(t))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -1436,28 +1436,12 @@ func indexOfReconcilerStep(stepNames []string, methodName string) int {
 	return -1
 }
 
-// TestRedpandaReconcilerRunsMaintenanceModeBeforeDecommission:
+// TestMulticlusterReconcilerRunsMaintenanceModeBeforeDecommission:
 // reconcileMaintenanceMode must precede reconcileDecommission, or a broker
 // stuck in maintenance can never be unblocked — reconcileDecommission requeues
 // and aborts the chain while a decommission it started is not yet Finished, and
-// the partition balancer refuses to drain a maintenance-mode node.
-func TestRedpandaReconcilerRunsMaintenanceModeBeforeDecommission(t *testing.T) {
-	r := &RedpandaReconciler{}
-	chain := r.clusterReconcilers()
-	names := make([]string, len(chain))
-	for i, fn := range chain {
-		names[i] = reconcilerStepName(fn)
-	}
-	maintenanceIdx := indexOfReconcilerStep(names, "reconcileMaintenanceMode")
-	decommissionIdx := indexOfReconcilerStep(names, "reconcileDecommission")
-	require.GreaterOrEqual(t, maintenanceIdx, 0, "reconcileMaintenanceMode not found in chain: %v", names)
-	require.GreaterOrEqual(t, decommissionIdx, 0, "reconcileDecommission not found in chain: %v", names)
-	assert.Less(t, maintenanceIdx, decommissionIdx,
-		"reconcileMaintenanceMode must run before reconcileDecommission, or a broker stuck in maintenance mode can never be unblocked")
-}
-
-// TestMulticlusterReconcilerRunsMaintenanceModeBeforeDecommission pins the same
-// ordering on the MulticlusterReconciler chain.
+// the partition balancer refuses to drain a maintenance-mode node. (The OSS
+// RedpandaReconciler's chain is pinned the same way in its own package.)
 func TestMulticlusterReconcilerRunsMaintenanceModeBeforeDecommission(t *testing.T) {
 	r := &MulticlusterReconciler{}
 	chain := r.clusterReconcilers()
@@ -1493,53 +1477,21 @@ func TestMulticlusterReconcilerRunsStaleDiskWipeBeforeDecommission(t *testing.T)
 		"reconcileStaleDiskWipe must run before reconcileDecommission, or a bad_rejoin broker's stale disk can never be wiped (reconcileDecommission requeues on not-ready recently-replaced pods and aborts the chain)")
 }
 
-// TestRedpandaReconcilerRunsStaleDiskWipeBeforeDecommission pins the same
-// ordering on the RedpandaReconciler chain, whose reconcileDecommission has the
-// identical HasRecentlyReplacedPods requeue.
-func TestRedpandaReconcilerRunsStaleDiskWipeBeforeDecommission(t *testing.T) {
-	r := &RedpandaReconciler{}
+// TestMulticlusterReconcilerRunsMaintenanceModeBeforeStaleDiskWipe: the
+// non-destructive maintenance clear (removes a leaked flag) must be attempted
+// before the destructive stale-disk wipe (deletes storage and the pod). (The
+// OSS RedpandaReconciler's chain is pinned the same way in its own package.)
+func TestMulticlusterReconcilerRunsMaintenanceModeBeforeStaleDiskWipe(t *testing.T) {
+	r := &MulticlusterReconciler{}
 	chain := r.clusterReconcilers()
 	names := make([]string, len(chain))
 	for i, fn := range chain {
 		names[i] = reconcilerStepName(fn)
 	}
+	maintenanceIdx := indexOfReconcilerStep(names, "reconcileMaintenanceMode")
 	staleDiskWipeIdx := indexOfReconcilerStep(names, "reconcileStaleDiskWipe")
-	decommissionIdx := indexOfReconcilerStep(names, "reconcileDecommission")
+	require.GreaterOrEqual(t, maintenanceIdx, 0, "reconcileMaintenanceMode not found in chain: %v", names)
 	require.GreaterOrEqual(t, staleDiskWipeIdx, 0, "reconcileStaleDiskWipe not found in chain: %v", names)
-	require.GreaterOrEqual(t, decommissionIdx, 0, "reconcileDecommission not found in chain: %v", names)
-	assert.Less(t, staleDiskWipeIdx, decommissionIdx,
-		"reconcileStaleDiskWipe must run before reconcileDecommission, or a bad_rejoin broker's stale disk can never be wiped (reconcileDecommission requeues on not-ready recently-replaced pods and aborts the chain)")
-}
-
-// TestReconcilersRunMaintenanceModeBeforeStaleDiskWipe: on both reconcilers the
-// non-destructive maintenance clear (removes a leaked flag) must be attempted
-// before the destructive stale-disk wipe (deletes storage and the pod).
-func TestReconcilersRunMaintenanceModeBeforeStaleDiskWipe(t *testing.T) {
-	chains := map[string][]string{}
-	{
-		r := &RedpandaReconciler{}
-		chain := r.clusterReconcilers()
-		names := make([]string, len(chain))
-		for i, fn := range chain {
-			names[i] = reconcilerStepName(fn)
-		}
-		chains["RedpandaReconciler"] = names
-	}
-	{
-		r := &MulticlusterReconciler{}
-		chain := r.clusterReconcilers()
-		names := make([]string, len(chain))
-		for i, fn := range chain {
-			names[i] = reconcilerStepName(fn)
-		}
-		chains["MulticlusterReconciler"] = names
-	}
-	for name, names := range chains {
-		maintenanceIdx := indexOfReconcilerStep(names, "reconcileMaintenanceMode")
-		staleDiskWipeIdx := indexOfReconcilerStep(names, "reconcileStaleDiskWipe")
-		require.GreaterOrEqual(t, maintenanceIdx, 0, "%s: reconcileMaintenanceMode not found in chain: %v", name, names)
-		require.GreaterOrEqual(t, staleDiskWipeIdx, 0, "%s: reconcileStaleDiskWipe not found in chain: %v", name, names)
-		assert.Less(t, maintenanceIdx, staleDiskWipeIdx,
-			"%s: the non-destructive maintenance clear must be attempted before the destructive stale-disk wipe", name)
-	}
+	assert.Less(t, maintenanceIdx, staleDiskWipeIdx,
+		"the non-destructive maintenance clear must be attempted before the destructive stale-disk wipe")
 }

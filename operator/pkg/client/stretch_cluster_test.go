@@ -38,6 +38,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -110,7 +111,7 @@ func (s *StretchClusterFactorySuite) SetupSuite() {
 					return mc.DialContext(ctx, network, address)
 				},
 			)
-			return redpandacontrollers.SetupMulticlusterController(ctx, mgr, redpandacontrollers.OSSMulticlusterSeams(redpandacontrollers.MulticlusterSetupParams{
+			return entcontroller.SetupMulticlusterController(ctx, mgr, redpandacontrollers.OSSMulticlusterSeams(entcontroller.MulticlusterSetupParams{
 				RedpandaImage:              redpandaImage,
 				SidecarImage:               sidecarImage,
 				CloudSecrets:               cloudSecrets,

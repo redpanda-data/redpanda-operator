@@ -43,6 +43,7 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -125,8 +126,8 @@ type RedpandaReconciler struct {
 
 	// staleDiskWipeDebounce carries retired-identity observations across
 	// reconcile passes so the destructive wipe only fires on a re-confirmed
-	// identity (see wipeDebounce). Zero value is ready to use.
-	staleDiskWipeDebounce wipeDebounce
+	// identity (see entcontroller.WipeDebounce). Zero value is ready to use.
+	staleDiskWipeDebounce entcontroller.WipeDebounce
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -203,7 +204,7 @@ type clusterReconciliationState struct {
 	// podEndpoints lazily renders the cluster's per-pod admin endpoints
 	// (memoized: at most one render per pass, and none when no remediation
 	// step needs an endpoint). Set alongside admin by initAdminClient.
-	podEndpoints lazyEndpoints
+	podEndpoints entcontroller.LazyEndpoints
 }
 
 func (s *clusterReconciliationState) cleanup() {
@@ -558,7 +559,7 @@ func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *cluster
 	// Rendering the per-pod admin endpoints builds the full chart render
 	// state, so it is deferred until a remediation step actually needs an
 	// endpoint and shared (memoized) across every step of this pass.
-	state.podEndpoints = memoizeEndpoints(func() []string {
+	state.podEndpoints = entcontroller.MemoizeEndpoints(func() []string {
 		return r.LifecycleClient.GetAdminAPIEndpoints(state.cluster)
 	})
 	return ctrl.Result{}, nil

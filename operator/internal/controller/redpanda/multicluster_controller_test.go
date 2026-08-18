@@ -33,6 +33,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/enterprise/operator/api/redpanda/v1alpha2"
 	entcrds "github.com/redpanda-data/redpanda-operator/enterprise/operator/config/crd/bases"
+	entcontroller "github.com/redpanda-data/redpanda-operator/enterprise/operator/controller"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/render"
 	"github.com/redpanda-data/redpanda-operator/enterprise/operator/statuses"
@@ -101,7 +102,7 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		WatchAllNamespaces: true,
 		InstallCertManager: true,
 		SetupFn: func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpanda.OSSMulticlusterSeams(redpanda.MulticlusterSetupParams{
+			return entcontroller.SetupMulticlusterController(s.ctx, mgr, redpanda.OSSMulticlusterSeams(entcontroller.MulticlusterSetupParams{
 				RedpandaImage:              redpandaImage,
 				SidecarImage:               sidecarImage,
 				CloudSecrets:               cloudSecrets,
