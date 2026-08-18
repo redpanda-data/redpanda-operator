@@ -662,7 +662,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		// TODO: Need to filter out zero value fields that are explicitly
 		// provided.
 
-		typ := t.typeOf(n)
+		typ := types.Unalias(t.typeOf(n))
 		if p, ok := typ.(*types.Pointer); ok {
 			typ = p.Elem()
 		}
@@ -821,7 +821,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		case *types.Var:
 			// If our selector is a variable, we're probably accessing a field
 			// on a struct.
-			typ := t.typeOf(n.X)
+			typ := types.Unalias(t.typeOf(n.X))
 			if p, ok := typ.(*types.Pointer); ok {
 				typ = p.Elem()
 			}
@@ -1167,11 +1167,11 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		receiver = t.transpileExpr(n.Fun.(*ast.SelectorExpr).X)
 
 		receiverName := ""
-		switch x := recv.Type().(type) {
+		switch x := types.Unalias(recv.Type()).(type) {
 		case *types.Named:
 			receiverName = x.Obj().Name()
 		case *types.Pointer:
-			receiverName = "*" + x.Elem().(*types.Named).Obj().Name()
+			receiverName = "*" + types.Unalias(x.Elem()).(*types.Named).Obj().Name()
 		}
 		// Try to make a string that looks like something from reflect.
 		id = callee.Pkg().Path() + ".(" + receiverName + ")." + callee.Name()
@@ -1304,7 +1304,8 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// Type params are difficult to work with so its easiest to extract the
 		// return value (Which it a generic in Lookup) of the "instance" of the
 		// function signature.
-		k8sType := signature.Results().At(0).Type().(*types.Pointer).Elem().(*types.Named).Obj()
+		returns := types.Unalias(signature.Results().At(0).Type()).(*types.Pointer)
+		k8sType := types.Unalias(returns.Elem()).(*types.Named).Obj()
 
 		// Step through the client set's Scheme to automatically infer the
 		// APIVersion and Kind of objects. We don't want any accidental typos
@@ -1445,12 +1446,12 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		}
 	} else {
 		// Otherwise, if there is a receiver, we need to emulate a method call.
-		typ := r.Type()
+		typ := types.Unalias(r.Type())
 
 		mutable := false
 		switch t := typ.(type) {
 		case *types.Pointer:
-			typ = t.Elem()
+			typ = types.Unalias(t.Elem())
 			mutable = true
 		}
 
@@ -1606,6 +1607,12 @@ func (t *Transpiler) typeOf(expr ast.Expr) types.Type {
 }
 
 func (t *Transpiler) zeroOf(typ types.Type) Node {
+	// NB: The special cases below are keyed off the type's string, which for an
+	// alias is the alias' own name. Unalias so `type MyTime = metav1.Time`
+	// still gets metav1.Time's treatment instead of falling through to the
+	// json.Marshaler check below and panicking.
+	typ = types.Unalias(typ)
+
 	// Special cases.
 	switch typ.String() {
 	case "k8s.io/apimachinery/pkg/apis/meta/v1.Time":
@@ -1714,7 +1721,11 @@ func (t *Transpiler) getFields(root *types.Struct) []structField {
 			// details), merge the embedded struct into our list of fields to
 			// support direct access thereof, just list go.
 			if field.JSONInline() {
-				embeddedType := field.Field.Type().(*types.Named).Underlying().(*types.Struct)
+				// NB: .Underlying() rather than asserting to *types.Named
+				// first: an embedded field may be an alias (type A =
+				// otherpkg.B), which is a *types.Alias, not a *types.Named.
+				// Both resolve to the same struct through .Underlying().
+				embeddedType := field.Field.Type().Underlying().(*types.Struct)
 				_, embeddedSpec := t.getStructType(embeddedType)
 				typs = append(typs, embeddedType)
 				specs = append(specs, embeddedSpec)
@@ -1863,10 +1874,13 @@ func (t *Transpiler) funcNameFor(fn *types.Func) string {
 	//
 	// func (e *Example) MethodExample() {} => {{- define "example.Example.MethodExample" -}}
 	if recv := fn.Type().(*types.Signature).Recv(); recv != nil {
-		rtyp := recv.Type()
+		// NB: A method may be declared on an alias to a type in the same
+		// package (type A = B; func (A) M()). go/types reports the receiver as
+		// the *types.Alias, so unalias to get at the defined type it names.
+		rtyp := types.Unalias(recv.Type())
 
 		if ptr, ok := rtyp.(*types.Pointer); ok {
-			rtyp = ptr.Elem()
+			rtyp = types.Unalias(ptr.Elem())
 		}
 
 		fnName = fmt.Sprintf("%s.%s", rtyp.(*types.Named).Obj().Name(), fnName)
@@ -1880,6 +1894,11 @@ func (t *Transpiler) funcNameFor(fn *types.Func) string {
 // omitemptyRespected return true if the `omitempty` JSON tag would be
 // respected by [[json.Marshal]] for the given type.
 func omitemptyRespected(typ types.Type) bool {
+	// An alias is invisible to json.Marshal, so it must be invisible here too.
+	// Without this, a field typed as an alias to a basic type would be included
+	// in zero values that go's json.Marshal omits.
+	typ = types.Unalias(typ)
+
 	switch typ.(type) {
 	case *types.Basic, *types.Pointer, *types.Slice, *types.Map:
 		return true
@@ -1972,7 +1991,7 @@ func (f *structField) IncludeInZero() bool {
 		return false
 	}
 	// special-case for modern versions where this isn't included by default
-	if f.Field.Type().String() == "k8s.io/apimachinery/pkg/apis/meta/v1.Time" {
+	if types.Unalias(f.Field.Type()).String() == "k8s.io/apimachinery/pkg/apis/meta/v1.Time" {
 		return false
 	}
 	return true

@@ -1,0 +1,4 @@
+project: gotohelm
+kind: Fixed
+body: Aliased types (`var x = corev1.Pod`) are now processed correctly.
+time: 2026-08-18T09:20:35.889657-04:00
