@@ -13,6 +13,7 @@ import (
 	"context"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redpanda-data/common-go/otelutil/log"
@@ -21,6 +22,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,12 +49,18 @@ import (
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools/finalizers,verbs=update
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=brokers,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 
 // NodePoolReconciler reconciles a NodePool object. This reconciler in particular should only update status
 // fields and finalizers on the NodePool objects, rendering of NodePools takes place within the RedpandaReconciler.
 type NodePoolReconciler struct {
 	Manager multicluster.Manager
+	// BrokerCREnabled mirrors the operator's broker-controller flag. When
+	// set, pools without a StatefulSet fall back to deriving their status
+	// from Broker CRs; when unset the Broker CRD may not even be installed,
+	// so the Broker watch and lookups are skipped entirely.
+	BrokerCREnabled bool
 }
 
 func createCanonicalClusterNameList(mgr multicluster.Manager) []string {
@@ -91,6 +100,21 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 				},
 			}}
 		}))
+	if r.BrokerCREnabled {
+		builder = builder.Watches(&redpandav1alpha2.Broker{}, mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+			name := o.GetLabels()[redpandav1alpha2.NodePoolLabel]
+			if name == "" || strings.EqualFold(name, redpandav1alpha2.DefaultNodePoolName) {
+				return nil
+			}
+
+			return []reconcile.Request{{
+				NamespacedName: types.NamespacedName{
+					Namespace: o.GetNamespace(),
+					Name:      name,
+				},
+			}}
+		}))
+	}
 	for _, clusterName := range mgr.GetClusterNames() {
 		enqueueNodePoolFromCluster, err := controller.RegisterClusterSourceIndex(ctx, mgr, "pool", clusterName, &redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{})
 		if err != nil {
@@ -200,7 +224,22 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		sts = &statefulSets.Items[0]
 	}
 
-	if sts == nil {
+	// In broker mode the pool has no StatefulSet: its pods are managed by
+	// Broker CRs. Fall back to deriving status from those. A live
+	// StatefulSet stays authoritative (mid-migration shadow Brokers are
+	// inert), matching lifecycle's broker-backed pool accounting.
+	var brokers []redpandav1alpha2.Broker
+	if sts == nil && r.BrokerCREnabled {
+		var brokerList redpandav1alpha2.BrokerList
+		if err := k8sClient.List(ctx, &brokerList, client.InNamespace(pool.Namespace), client.MatchingLabels{
+			redpandav1alpha2.NodePoolLabel: pool.Name,
+		}); err != nil {
+			return ctrl.Result{}, err
+		}
+		brokers = brokerList.Items
+	}
+
+	if sts == nil && len(brokers) == 0 {
 		status.SetDeployed(statuses.NodePoolDeployedReasonNotDeployed)
 	}
 
@@ -244,6 +283,15 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		}
 	}
 
+	if sts == nil && len(brokers) > 0 {
+		embedded, deployedGeneration, reason := brokerBackedPoolStatus(pool, brokers)
+		if deployedGeneration >= 0 {
+			pool.Status.DeployedGeneration = deployedGeneration
+		}
+		status.SetDeployed(reason)
+		pool.Status.EmbeddedNodePoolStatus = embedded
+	}
+
 	if err := r.getRedpandaCluster(ctx, req, pool, k8sClient); err != nil {
 		if apierrors.IsNotFound(err) {
 			status.SetBound(statuses.NodePoolBoundReasonNotBound)
@@ -261,6 +309,70 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// brokerBackedPoolStatus synthesizes the pool's status from its Broker CRs —
+// the broker-mode analog of the StatefulSet-derived status, computed from
+// Broker statuses alone (no pod reads). Field mapping:
+//   - Replicas: brokers whose pod exists (PodScheduled reason is not
+//     PodMissing; Unknown means not yet reconciled and does not count)
+//   - ReadyReplicas / RunningReplicas: brokers with Ready=True (pod-liveness
+//     based, deliberately independent of the cluster-health-coupled
+//     Kubernetes readiness probe that StatefulSet ReadyReplicas reflects)
+//   - UpToDateReplicas: brokers with ConfigSynced=True (pod matches the
+//     desired pod template across all rotation keys)
+//   - CondemnedReplicas: brokers marked for decommission
+//
+// deployedGeneration is the minimum NodePoolLabelGeneration across the
+// brokers (conservative during a metadata sync), or -1 when no broker
+// carries the label yet.
+func brokerBackedPoolStatus(pool *redpandav1alpha2.NodePool, brokers []redpandav1alpha2.Broker) (embedded redpandav1alpha2.EmbeddedNodePoolStatus, deployedGeneration int64, reason statuses.NodePoolDeployedCondition) {
+	desiredReplicas := ptr.Deref(pool.Spec.Replicas, 3)
+
+	deployedGeneration = -1
+	var replicas, ready, upToDate, condemned int32
+	for i := range brokers {
+		b := &brokers[i]
+		if b.IsDiskLost() {
+			// A dead incarnation awaiting cleanup is not a live replica —
+			// its replacement (same network index) carries the pool state.
+			continue
+		}
+		if generationString := b.Labels[redpanda.NodePoolLabelGeneration]; generationString != "" {
+			if generation, err := strconv.ParseInt(generationString, 10, 0); err == nil && (deployedGeneration < 0 || generation < deployedGeneration) {
+				deployedGeneration = generation
+			}
+		}
+		if c := apimeta.FindStatusCondition(b.Status.Conditions, statuses.BrokerPodScheduled); c != nil &&
+			c.Status != metav1.ConditionUnknown && c.Reason != string(statuses.BrokerPodScheduledReasonPodMissing) {
+			replicas++
+		}
+		if apimeta.IsStatusConditionTrue(b.Status.Conditions, statuses.BrokerReady) {
+			ready++
+		}
+		if apimeta.IsStatusConditionTrue(b.Status.Conditions, statuses.BrokerConfigSynced) {
+			upToDate++
+		}
+		if b.Spec.Decommission {
+			condemned++
+		}
+	}
+
+	reason = statuses.NodePoolDeployedReasonScaling
+	if desiredReplicas == replicas {
+		reason = statuses.NodePoolDeployedReasonDeployed
+	}
+
+	return redpandav1alpha2.EmbeddedNodePoolStatus{
+		Name:              pool.Name,
+		Replicas:          replicas,
+		DesiredReplicas:   desiredReplicas,
+		ReadyReplicas:     ready,
+		RunningReplicas:   ready,
+		UpToDateReplicas:  upToDate,
+		OutOfDateReplicas: replicas - upToDate,
+		CondemnedReplicas: condemned,
+	}, deployedGeneration, reason
 }
 
 func (r *NodePoolReconciler) getRedpandaCluster(

@@ -112,6 +112,10 @@ func NewBrokerSet(
 	}
 }
 
+// Key exists solely to satisfy the [Resource] interface (BrokerSetResource
+// is stored in the cluster controller's attachedResources map). The name is
+// synthetic — no API object is ever created under it — and nothing calls
+// this method directly.
 func (r *BrokerSetResource) Key() types.NamespacedName {
 	return types.NamespacedName{
 		Name:      fmt.Sprintf("brokerset-%s", r.nodePool.Name),
@@ -148,38 +152,53 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 		ClusterSelector:   clusterLabels.AsClientSelector(),
 		PodSelector:       poolLabels.AsClientSelectorForNodePool(),
 		ConfigChecksumKey: ConfigMapHashAnnotationKey,
-		IsClusterHealthy:  r.stsResource.isClusterHealthy,
-		OnQuiesced: func(ctx context.Context) error {
-			// A completed roll-out means a restart-requiring config change
-			// (if one was pending) has reached every pod. Clear the CLUSTER-
-			// level Restarting flag directly: broker mode never sets the
-			// per-pool flag (that is STS-mode runUpdate's doing, and broker-
-			// mode reportStatus rebuilds pool statuses from scratch, erasing
-			// it anyway), so updateRestartingStatus's per-pool change guard
-			// would no-op forever — leaving Restarting stuck true and every
-			// future restart-requiring config change gated off.
-			if !r.pandaCluster.Status.IsRestarting() {
-				return nil
-			}
-			r.pandaCluster.Status.SetRestarting(false)
-			if err := r.Status().Update(ctx, r.pandaCluster); err != nil {
-				return fmt.Errorf("clearing restarting status: %w", err)
-			}
-			return nil
-		},
-		MigrationBlockedReason: func(context.Context) (string, error) {
-			if r.pandaCluster.Status.IsRestarting() {
-				return "cluster is restarting", nil
-			}
-			if r.pandaCluster.Status.DecommissioningNode != nil {
-				return fmt.Sprintf("decommission of node_id=%d in progress", *r.pandaCluster.Status.DecommissioningNode), nil
-			}
-			return "", nil
-		},
-		Reporter:    r.reporter,
-		Arbitration: r.arbitration,
-		Logger:      l,
+		Hooks:             r,
+		Reporter:          r.reporter,
+		Arbitration:       r.arbitration,
+		Logger:            l,
 	}
+}
+
+// brokerset.OwnerHooks implementation — the V1 Cluster owner's view of
+// cluster state, backed by Cluster.Status and the StatefulSet resource's
+// admin health check.
+var _ brokerset.OwnerHooks = (*BrokerSetResource)(nil)
+
+// IsClusterHealthy gates roll-grants and the migration's destructive step on
+// the admin API's health overview.
+func (r *BrokerSetResource) IsClusterHealthy(ctx context.Context) error {
+	return r.stsResource.isClusterHealthy(ctx)
+}
+
+// OnQuiesced clears Status.Restarting: a completed roll-out means a
+// restart-requiring config change (if one was pending) has reached every
+// pod. The CLUSTER-level flag is cleared directly: broker mode never sets
+// the per-pool flag (that is STS-mode runUpdate's doing, and broker-mode
+// reportStatus rebuilds pool statuses from scratch, erasing it anyway), so
+// updateRestartingStatus's per-pool change guard would no-op forever —
+// leaving Restarting stuck true and every future restart-requiring config
+// change gated off.
+func (r *BrokerSetResource) OnQuiesced(ctx context.Context) error {
+	if !r.pandaCluster.Status.IsRestarting() {
+		return nil
+	}
+	r.pandaCluster.Status.SetRestarting(false)
+	if err := r.Status().Update(ctx, r.pandaCluster); err != nil {
+		return fmt.Errorf("clearing restarting status: %w", err)
+	}
+	return nil
+}
+
+// MigrationBlockedReason blocks the migration while the cluster's status
+// records an in-flight restart or decommission.
+func (r *BrokerSetResource) MigrationBlockedReason(context.Context) (string, error) {
+	if r.pandaCluster.Status.IsRestarting() {
+		return "cluster is restarting", nil
+	}
+	if r.pandaCluster.Status.DecommissioningNode != nil {
+		return fmt.Sprintf("decommission of node_id=%d in progress", *r.pandaCluster.Status.DecommissioningNode), nil
+	}
+	return "", nil
 }
 
 func (r *BrokerSetResource) Ensure(ctx context.Context) error {
@@ -256,7 +275,7 @@ func MarkBrokersForRestart(ctx context.Context, c k8sclient.Client, cluster *vec
 // RollbackBrokerCRs cleans up Broker CRs when the migration annotation is
 // removed, allowing the StatefulSet to re-adopt pods.
 func RollbackBrokerCRs(ctx context.Context, c k8sclient.Client, scheme *runtime.Scheme, cluster *vectorizedv1alpha1.Cluster, l logr.Logger) error {
-	return brokerset.Rollback(ctx, brokerset.RollbackConfig{
+	_, err := brokerset.Rollback(ctx, brokerset.RollbackConfig{
 		Client:          c,
 		Scheme:          scheme,
 		Owner:           cluster,
@@ -268,6 +287,7 @@ func RollbackBrokerCRs(ctx context.Context, c k8sclient.Client, scheme *runtime.
 		},
 		Logger: l,
 	})
+	return err
 }
 
 // NewMigrationPoolReporter returns the migration reporter for one node pool:

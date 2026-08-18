@@ -590,7 +590,12 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 // hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
+// FetchExistingAndDesiredPools assembles the PoolTracker from the world's
+// existing pool state and the rendered desired state. brokerCRs enables
+// broker mode: pools whose StatefulSet is gone (broker migration completed)
+// are synthesized from Broker CRs and their pods so the tracker's
+// status/readiness/scale accounting keeps working — see fetchBrokerBackedPools.
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool, brokerCRs bool) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration(), r.useBrokerPoolCRD)
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
@@ -607,7 +612,7 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 			continue
 		}
 
-		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
+		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName, brokerCRs)
 		if err != nil {
 			return nil, fmt.Errorf("fetching existing pools: %w", err)
 		}
@@ -856,7 +861,11 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 			}
 		}
 
-		pools, err := r.fetchExistingPools(ctx, owner, clusterName)
+		// STS-only view (brokerCRs=false): broker-backed pools have no
+		// StatefulSet to delete here. Their Broker CRs are owner-referenced
+		// and cascade via GC once the owner's finalizer is removed; pod/PVC
+		// fate is the Broker controller's deletion-policy handling.
+		pools, err := r.fetchExistingPools(ctx, owner, clusterName, false)
 		if err != nil {
 			return false, err
 		}
@@ -884,7 +893,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 // (nil, nil) so callers skip it — consistent with the documented behavior that
 // reconciliation is not blocked by an unreachable peer.
 // Errors on the local cluster are always propagated.
-func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string) ([]*poolWithOrdinals, error) {
+func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string, brokerCRs bool) ([]*poolWithOrdinals, error) {
 	logger := log.FromContext(ctx).WithName("fetchExistingPools")
 	canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 	if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
@@ -1005,6 +1014,26 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			revisions: sortRevisions(ownedRevisions),
 			pods:      withOrdinals,
 		})
+	}
+
+	if brokerCRs {
+		// Pools that migrated to Broker CRs no longer have a StatefulSet —
+		// synthesize their pool state from the Broker CRs and their pods.
+		// Pools that still have a live STS (pre- or mid-migration) keep the
+		// STS as the authoritative view.
+		stsBacked := map[string]bool{}
+		for _, pool := range existing {
+			stsBacked[pool.set.Name] = true
+		}
+		brokerPools, err := r.fetchBrokerBackedPools(ctx, ctl, cluster, clusterName, canonical, stsBacked)
+		if err != nil {
+			if clusterName != mcmanager.LocalCluster {
+				logger.Info("could not list Broker CRs on remote cluster in fetchExistingPools, treating as empty", "cluster", canonical, "error", err)
+				return existing, nil
+			}
+			return nil, err
+		}
+		existing = append(existing, brokerPools...)
 	}
 
 	return existing, nil

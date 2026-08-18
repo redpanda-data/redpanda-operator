@@ -34,6 +34,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -68,6 +69,7 @@ func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) multiclust
 	require.NoError(t, scheme.AddToScheme(runtimeScheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(runtimeScheme))
 	require.NoError(t, AddToScheme(runtimeScheme))
+	require.NoError(t, redpandav1alpha2.Install(runtimeScheme))
 
 	opts := []zap.Opts{
 		zap.UseDevMode(true), zap.Level(zapcore.DebugLevel),
@@ -565,7 +567,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 			ctx, cancel := setupContext()
 			defer cancel()
 
-			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil)
+			tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil, false)
 			if tt.nodePoolsRenderError != nil {
 				require.Error(t, err)
 				require.ErrorIs(t, err, tt.nodePoolsRenderError)
@@ -586,7 +588,7 @@ func TestClientFetchExistingAndDesiredPools(t *testing.T) {
 				require.NoError(t, instances.checkObject(ctx, t, pool.StatefulSet))
 			}
 
-			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil)
+			tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil, false)
 			require.NoError(t, err)
 			require.ElementsMatch(t, pools, tracker.ExistingStatefulSets())
 			require.ElementsMatch(t, pools, tracker.DesiredStatefulSets())

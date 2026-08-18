@@ -131,7 +131,10 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *
 }
 
 // Rollback cleans up Broker CRs when the migration annotation is removed,
-// allowing the StatefulSet to re-adopt pods.
+// allowing the StatefulSet to re-adopt pods. It returns true when it acted —
+// i.e. Broker CRs existed and were rolled back this pass — so callers can
+// hold off on StatefulSet mutations computed from a pre-rollback view of the
+// world.
 //
 // Rollback is resumable at any point: a transient error aborts the pass and
 // bubbles out of the owning Reconcile, which requeues; the retry re-derives
@@ -141,7 +144,7 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *
 // interrupted after the last Broker CR was deleted still finishes the
 // restore-and-verify phase on the next reconcile (finalizeRollback keys on
 // the ConfigMap's existence, not on Broker CRs remaining).
-func Rollback(ctx context.Context, cfg RollbackConfig) error {
+func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 	c, l := cfg.Client, cfg.Logger
 
 	var brokerList redpandav1alpha2.BrokerList
@@ -149,10 +152,11 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 		LabelSelector: cfg.ClusterSelector,
 		Namespace:     cfg.Owner.GetNamespace(),
 	}); err != nil {
-		return err
+		return false, err
 	}
 
-	if len(brokerList.Items) > 0 {
+	acted := len(brokerList.Items) > 0
+	if acted {
 		// Rollback is gated on LOCAL state only — never on admin-API health.
 		// It is the escape hatch and must stay available on a degraded
 		// cluster; it is blocked only while another disruptive operation is
@@ -162,7 +166,7 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 			if errors.As(err, &requeueErr) {
 				cfg.report(ctx, corev1.ConditionFalse, MigrationReasonBlocked, requeueErr.Msg)
 			}
-			return err
+			return acted, err
 		}
 
 		l.Info("rollback: cleaning up Broker CRs", "count", len(brokerList.Items))
@@ -177,12 +181,12 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 			b := &brokerList.Items[i]
 			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: b.PodName(), Namespace: cfg.Owner.GetNamespace()}}
 			if err := stripOwnerRef(ctx, c, pod, b.UID); err != nil {
-				return errors.Wrapf(err, "stripping Broker ownerRef from pod %s", pod.Name)
+				return acted, errors.Wrapf(err, "stripping Broker ownerRef from pod %s", pod.Name)
 			}
 			for _, ec := range b.Spec.Storage.ExistingClaims {
 				pvc := &corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: ec.Name, Namespace: cfg.Owner.GetNamespace()}}
 				if err := stripOwnerRef(ctx, c, pvc, b.UID); err != nil {
-					return errors.Wrapf(err, "stripping Broker ownerRef from PVC %s", ec.Name)
+					return acted, errors.Wrapf(err, "stripping Broker ownerRef from PVC %s", ec.Name)
 				}
 			}
 		}
@@ -210,7 +214,7 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 				}
 				l.Info("rollback: deleting Broker CR", "name", b.Name)
 				if err := c.Delete(ctx, b, k8sclient.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !apierrors.IsNotFound(err) {
-					return errors.Wrapf(err, "deleting Broker CR %s", b.Name)
+					return acted, errors.Wrapf(err, "deleting Broker CR %s", b.Name)
 				}
 				continue
 			}
@@ -227,16 +231,16 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 				controllerutil.RemoveFinalizer(stripped, BrokerDecommissionFinalizer)
 				patch, err := json.Marshal(map[string]any{"metadata": map[string]any{"finalizers": stripped.Finalizers}})
 				if err != nil {
-					return err
+					return acted, err
 				}
 				if err := c.Patch(ctx, b, k8sclient.RawPatch(types.MergePatchType, patch)); err != nil && !apierrors.IsNotFound(err) {
-					return errors.Wrapf(err, "stripping finalizer from Broker CR %s", b.Name)
+					return acted, errors.Wrapf(err, "stripping finalizer from Broker CR %s", b.Name)
 				}
 			}
 		}
 	}
 
-	return finalizeRollback(ctx, cfg, len(brokerList.Items) > 0)
+	return acted, finalizeRollback(ctx, cfg, acted)
 }
 
 // finalizeRollback restores the pre-migration StatefulSets from the backup

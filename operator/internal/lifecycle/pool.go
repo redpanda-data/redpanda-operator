@@ -83,6 +83,14 @@ type poolWithOrdinals struct {
 	pods      []*podsWithOrdinals
 	set       *MulticlusterStatefulSet
 	revisions []*appsv1.ControllerRevision
+	// brokerBacked marks a pool whose set is a synthesized facade built from
+	// Broker CRs (see fetchBrokerBackedPools) rather than a live StatefulSet.
+	// Such pools participate in status/readiness/scale accounting but are
+	// excluded from every StatefulSet mutation planner (ToScaleUp,
+	// RequiresUpdate, ToScaleDown, ToDelete) and from the revision-based roll
+	// helpers (PodsToRoll, HasRecentlyReplacedPods) — their lifecycle belongs
+	// to the brokerset machinery.
+	brokerBacked bool
 }
 
 // ScaleDownSet holds a reference to a pod in need of decommissioning
@@ -287,6 +295,42 @@ func (p *PoolTracker) DesiredStatefulSets() []string {
 	return sets
 }
 
+// DesiredPools returns a deep copy of every desired pool's rendered
+// StatefulSet. In broker mode these renders are the canonical pod templates
+// that get converted into Broker CRs (copies, because the brokerset migration
+// machinery mutates the desired spec's replica count).
+func (p *PoolTracker) DesiredPools() []*MulticlusterStatefulSet {
+	sets := []*MulticlusterStatefulSet{}
+	for _, pool := range p.desiredPools {
+		mcset := pool.set
+		sets = append(sets, newMulticlusterStatefulSet(mcset.DeepCopy(), mcset.clusterName, mcset.canonicalClusterName))
+	}
+	return sortByNameAndCluster(sets)
+}
+
+// BrokerBackedPoolsWithoutDesired returns the facade StatefulSets of
+// broker-backed pools that have no desired counterpart — i.e. node pools whose
+// Broker CRs still exist but which the user removed from the spec. Gated on
+// cluster observation exactly like ToScaleDown: absence caused by a fetch
+// failure must never read as intent to drain.
+func (p *PoolTracker) BrokerBackedPoolsWithoutDesired() []*MulticlusterStatefulSet {
+	sets := []*MulticlusterStatefulSet{}
+	for nn, existing := range p.existingPools {
+		if !existing.brokerBacked {
+			continue
+		}
+		if _, ok := p.desiredPools[nn]; ok {
+			continue
+		}
+		if !p.observedClusters[nn.Cluster] {
+			continue
+		}
+		mcset := existing.set
+		sets = append(sets, newMulticlusterStatefulSet(mcset.DeepCopy(), mcset.clusterName, mcset.canonicalClusterName))
+	}
+	return sortByNameAndCluster(sets)
+}
+
 // CheckScale checks if scaling operations can proceed based on the current state of pools.
 // It returns true if scaling is allowed (i.e. no scaling operation is currently in progress).
 func (p *PoolTracker) CheckScale(ctx context.Context) bool {
@@ -343,6 +387,9 @@ func (p *PoolTracker) ToScaleUp() []*MulticlusterStatefulSet {
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn, existing := range p.existingPools {
+		if existing.brokerBacked {
+			continue
+		}
 		if desired, ok := p.desiredPools[nn]; ok {
 			existingReplicas := ptr.Deref(existing.set.Spec.Replicas, 0)
 			desiredReplicas := ptr.Deref(desired.set.Spec.Replicas, 0)
@@ -371,6 +418,9 @@ func (p *PoolTracker) RequiresUpdate() []*MulticlusterStatefulSet {
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn, existing := range p.existingPools {
+		if existing.brokerBacked {
+			continue
+		}
 		desired, ok := p.desiredPools[nn]
 		if !ok {
 			continue
@@ -414,6 +464,9 @@ func (p *PoolTracker) ToScaleDown() []*ScaleDownSet {
 	generation := strconv.FormatInt(p.latestGeneration, 10)
 
 	for nn := range p.existingPools {
+		if p.existingPools[nn].brokerBacked {
+			continue
+		}
 		if _, ok := p.desiredPools[nn]; !ok {
 			existing := p.existingPools[nn]
 
@@ -478,6 +531,9 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 	sets := []*MulticlusterStatefulSet{}
 
 	for nn, existing := range p.existingPools {
+		if existing.brokerBacked {
+			continue
+		}
 		if _, ok := p.desiredPools[nn]; !ok {
 			// Same observation guard as ToScaleDown: never delete a
 			// StatefulSet for a cluster we didn't observe — "no desired
@@ -513,6 +569,9 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 // Redpanda health API has not yet caught up.
 func (p *PoolTracker) HasRecentlyReplacedPods() bool {
 	for _, pool := range p.existingPools {
+		if pool.brokerBacked {
+			continue
+		}
 		latestRevision := ""
 		if len(pool.revisions) > 0 {
 			latestRevision = pool.revisions[len(pool.revisions)-1].Name
@@ -574,6 +633,9 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 	pods := []*MulticlusterPod{}
 
 	for _, existing := range p.existingPools {
+		if existing.brokerBacked {
+			continue
+		}
 		for _, withOrdinals := range existing.pods {
 			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
 			if len(existing.revisions) == 0 {

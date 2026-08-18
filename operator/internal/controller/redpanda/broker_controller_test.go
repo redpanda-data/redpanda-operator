@@ -133,6 +133,11 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
+			// Enables the annotation-driven V2 migration/rollback tests.
+			// Inert for the manually-choreographed tests: their clusters are
+			// paused (cluster.redpanda.com/managed=false) before Broker CRs
+			// are hand-built, so the reconciler never sees them.
+			BrokerCREnabled: true,
 		}).SetupWithManager(ctx, mgr, ""))
 
 		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)
@@ -1080,4 +1085,81 @@ func (s *BrokerControllerSuite) applyAndWait(t testing.TB, ctx context.Context, 
 			t.Fatalf("unhandled object %T in applyAndWait", obj)
 		}
 	}
+}
+
+// TestOrphanedPodAdoptionIsEventDriven pins the adoption trigger: when a
+// Broker's pod loses its foreign controller (the STS→Broker handover's
+// orphan-delete, where kube GC strips the StatefulSet ownerRef), the Broker
+// must adopt it promptly — driven by the orphaning EVENT, not by winning a
+// race against the post-creation reconcile flurry and not by the periodic
+// requeue. Owns(Pod) cannot deliver that event (an ownerless pod maps to no
+// Broker), which stalled real re-migrations for a full periodicRequeue: the
+// Broker sat Pending for 3 minutes with its pod adoptable the whole time.
+func (s *BrokerControllerSuite) TestOrphanedPodAdoptionIsEventDriven() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
+	target := brokers[0]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+	// A live foreign owner for the pod. A ConfigMap suffices as a controller
+	// reference and, unlike a synthetic StatefulSet UID, it exists — so the
+	// garbage collector has no reason to delete the pod mid-test.
+	fakeOwner := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "fake-group-controller", Namespace: target.Namespace},
+	}
+	require.NoError(t, c.Create(ctx, fakeOwner))
+
+	// Re-enter shadow mode: hand the pod to the foreign controller. This
+	// update event still reaches the Broker (the OLD object carried its
+	// ownerRef), which is exactly how it learns to stand down.
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	p := client.MergeFrom(pod.DeepCopy())
+	pod.OwnerReferences = []metav1.OwnerReference{{
+		APIVersion:         "v1",
+		Kind:               "ConfigMap",
+		Name:               fakeOwner.Name,
+		UID:                fakeOwner.UID,
+		Controller:         ptr.To(true),
+		BlockOwnerDeletion: ptr.To(true),
+	}}
+	require.NoError(t, c.Patch(ctx, &pod, p))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var b redpandav1alpha2.Broker
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(target), &b)) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhasePending, b.Status.Phase,
+			"foreign-owned pod should park the Broker in shadow mode")
+	}, time.Minute, time.Second)
+
+	// Let the event flurry from the ownership change drain completely, so
+	// adoption below can only be triggered by the orphaning event itself.
+	time.Sleep(10 * time.Second)
+
+	// The handover moment: the pod becomes ownerless (what GC does after the
+	// StatefulSet's orphan-delete).
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	p = client.MergeFrom(pod.DeepCopy())
+	pod.OwnerReferences = nil
+	require.NoError(t, c.Patch(ctx, &pod, p))
+
+	// Adoption must be event-driven: well under the 3-minute periodic
+	// requeue that a missed event would fall back to.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var adopted corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &adopted)) {
+			return
+		}
+		owner := metav1.GetControllerOf(&adopted)
+		if !assert.NotNil(ct, owner, "pod should have been adopted") {
+			return
+		}
+		assert.Equal(ct, "Broker", owner.Kind)
+		assert.Equal(ct, target.Name, owner.Name)
+	}, time.Minute, time.Second,
+		"orphaned pod was not adopted within a minute — adoption is waiting for the periodic requeue instead of the orphaning event")
 }
