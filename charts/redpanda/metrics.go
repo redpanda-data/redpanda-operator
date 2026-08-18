@@ -79,7 +79,7 @@ func MetricsEnvironmentVariables(state *RenderState, pool Pool) []corev1.EnvVar 
 		})
 	}
 
-	if !helmette.Empty(state.CloudEnvironment) {
+	if len(state.CloudEnvironment) != 0 {
 		envvars = append(envvars, corev1.EnvVar{
 			Name:  MetricsEnvVarKubernetesEnvironment,
 			Value: state.CloudEnvironment,

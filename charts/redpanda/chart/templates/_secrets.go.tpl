@@ -334,8 +334,8 @@ echo "passed"`) -}}
 {{- $_is_returning := false -}}
 {{- $eaa := "${SERVICE_NAME}" -}}
 {{- $externalDomainTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
-{{- $expanded := (tpl $externalDomainTemplate $state.Dot) -}}
-{{- if (not (empty $expanded)) -}}
+{{- $expanded := (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $externalDomainTemplate))))) "r") -}}
+{{- if (ne ((get (fromJson (include "_shims.len" (dict "a" (list $expanded)))) "r") | int) (0 | int)) -}}
 {{- $eaa = (printf "%s.%s" "${SERVICE_NAME}" $expanded) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -370,7 +370,7 @@ echo "passed"`) -}}
 {{- end -}}
 {{- $domain_5 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
 {{- if (ne $domain_5 "") -}}
-{{- $hostMap = (dict "name" $name "address" (printf "%s.%s" $address (tpl $domain_5 $state.Dot)) "port" $port) -}}
+{{- $hostMap = (dict "name" $name "address" (printf "%s.%s" $address (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $domain_5))))) "r")) "port" $port) -}}
 {{- else -}}
 {{- $hostMap = (dict "name" $name "address" $address "port" $port) -}}
 {{- end -}}

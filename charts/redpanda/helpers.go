@@ -284,7 +284,7 @@ func cleanForK8s(in string) string {
 }
 
 // StructuredTpl (inefficiently) recurses through all fields of T and expands
-// any string fields containing template delimiters with [helmette.Tpl].
+// any string fields containing template delimiters with [RenderState.Template].
 func StructuredTpl[T any](state *RenderState, in T) T {
 	untyped := helmette.UnmarshalInto[map[string]any](in)
 	expanded := recursiveTpl(state, untyped)
@@ -313,7 +313,7 @@ func recursiveTpl(state *RenderState, data any) any {
 	} else if kind == "string" && helmette.Contains("{{", data.(string)) {
 		// Tpl is quite slow, so we gate this on template delimiters for a
 		// little speed up.
-		return helmette.Tpl(state.Dot, data.(string), state.Dot)
+		return state.Template(data.(string))
 	}
 
 	return data

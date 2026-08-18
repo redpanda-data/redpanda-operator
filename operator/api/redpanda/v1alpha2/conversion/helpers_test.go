@@ -28,10 +28,11 @@ func TestYAMLConversion(t *testing.T) {
 	}, struct{}{})
 	require.NoError(t, err)
 
+	state, err := redpanda.RenderStateFromDot(dot)
+	require.NoError(t, err)
+
 	var mounts []applycorev1.VolumeMountApplyConfiguration
-	require.NoError(t, convertAndAppendYAMLNotNil(&redpanda.RenderState{
-		Dot: dot,
-	}, ptr.To(`- name: foo
+	require.NoError(t, convertAndAppendYAMLNotNil(state, ptr.To(`- name: foo
   mountPath: foo`), &mounts))
 
 	require.GreaterOrEqual(t, 1, len(mounts))

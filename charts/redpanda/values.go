@@ -13,6 +13,8 @@ package redpanda
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -734,10 +736,10 @@ func (s *Storage) GetTieredStorageConfig() TieredStorageConfig {
 // was: storage-tiered-hostpath
 func (s *Storage) GetTieredStorageHostPath() string {
 	hp := s.TieredStorageHostPath
-	if helmette.Empty(hp) {
+	if len(hp) == 0 {
 		hp = s.Tiered.HostPath
 	}
-	if helmette.Empty(hp) {
+	if len(hp) == 0 {
 		panic(fmt.Sprintf(`storage.tiered.mountType is "%s" but storage.tiered.hostPath is empty`,
 			s.Tiered.MountType,
 		))
@@ -767,10 +769,10 @@ func (s *Storage) TieredMountType() string {
 	if s.TieredStoragePersistentVolume != nil && s.TieredStoragePersistentVolume.Enabled {
 		return "persistentVolume"
 	}
-	if !helmette.Empty(s.TieredStorageHostPath) {
-		// XXX type is declared as string, but it's being used as a bool
-		// This needs some care since transpilation fails with a `!= ""` check,
-		// missing null values.
+	if len(s.TieredStorageHostPath) != 0 {
+		// XXX type is declared as string, but it's being used as a bool.
+		// NB: len() rather than `!= ""` as the former transpiles to a
+		// null-safe shim. `ne $x ""` is true for helm's untyped nil.
 		return "hostPath"
 	}
 	return s.Tiered.MountType
@@ -1115,7 +1117,7 @@ func (l *Listeners) InUseServerCerts(tls *TLS) []string {
 		}
 	}
 
-	return helmette.SortedKeys(certs)
+	return slices.Sorted(maps.Keys(certs))
 }
 
 func (l *Listeners) InUseClientCerts(tls *TLS) []string {
@@ -1139,7 +1141,7 @@ func (l *Listeners) InUseClientCerts(tls *TLS) []string {
 		certs[listener.TLS.Cert] = true
 	}
 
-	return helmette.SortedKeys(certs)
+	return slices.Sorted(maps.Keys(certs))
 }
 
 func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain string) []map[string]any {
@@ -1174,7 +1176,7 @@ func (l *Listeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
 
 	var sources []corev1.VolumeProjection
 
-	for _, name := range helmette.SortedKeys(cmSources) {
+	for _, name := range slices.Sorted(maps.Keys(cmSources)) {
 		keys := cmSources[name]
 		sources = append(sources, corev1.VolumeProjection{
 			ConfigMap: &corev1.ConfigMapProjection{
@@ -1186,7 +1188,7 @@ func (l *Listeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
 		})
 	}
 
-	for _, name := range helmette.SortedKeys(secretSources) {
+	for _, name := range slices.Sorted(maps.Keys(secretSources)) {
 		keys := secretSources[name]
 		sources = append(sources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
@@ -1892,7 +1894,7 @@ func (l *ListenerConfig[T]) TrustStores(tls *TLS) []*TrustStore {
 		tss = append(tss, l.TLS.TrustStore)
 	}
 
-	for _, key := range helmette.SortedKeys(l.External) {
+	for _, key := range slices.Sorted(maps.Keys(l.External)) {
 		lis := l.External[key]
 		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
 			continue
@@ -2128,7 +2130,7 @@ func (sr *SecretRef) AsSource() *corev1.EnvVarSource {
 // IsValid confirms whether EnvVarSource could be built from
 // SecretRef.
 func (sr *SecretRef) IsValid() bool {
-	return sr != nil && !helmette.Empty(sr.Key) && !helmette.Empty(sr.Name)
+	return sr != nil && len(sr.Key) != 0 && len(sr.Name) != 0
 }
 
 type TieredStorageCredentials struct {
@@ -2202,7 +2204,7 @@ func (c TieredStorageConfig) Translate(creds *TieredStorageCredentials) (map[str
 	// `envsubst` in an initcontainer.
 	var fixups []clusterconfiguration.Fixup
 	for _, envvar := range creds.AsEnvVars(c) {
-		key := helmette.Lower(envvar.Name[len("REDPANDA_"):])
+		key := strings.ToLower(envvar.Name[len("REDPANDA_"):])
 		// NB: No string + string support in gotohelm.
 		fixups = append(fixups, clusterconfiguration.Fixup{
 			Field: key,

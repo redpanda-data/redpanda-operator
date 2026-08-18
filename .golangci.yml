@@ -20,7 +20,7 @@ linters:
   default: none
   enable:
   - depguard
-#  - errcheck
+  - forbidigo
   - gosec
   - govet
   - importas
@@ -61,6 +61,12 @@ linters:
             desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
           - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
             desc: 'import specific charts, the overarching charts module is now deprecated'
+
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: helmette.Tpl
+          msg: ".Tpl may not be used in helm-free packages"
 
     gosec:
       excludes:
@@ -120,3 +126,10 @@ linters:
       - gosec
       - wrapcheck
       path: '(.+)_test\.go'
+
+      # Linter configuration to help keep helmette helpers out of shared go
+      # code.
+    - path-except: 'charts/(redpanda|console)/[^/]+\.go'
+      text: 'helmette'
+      linters:
+        - forbidigo

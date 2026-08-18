@@ -97,7 +97,7 @@ func TestCertificates(t *testing.T) {
 				certMap[c.CertificateName] = *c.Cert
 			}
 
-			dot, err := Chart.Dot(nil, helmette.Release{
+			state, err := newRenderState(nil, helmette.Release{
 				Name:      "redpanda",
 				Namespace: "redpanda",
 				Service:   "Helm",
@@ -106,8 +106,6 @@ func TestCertificates(t *testing.T) {
 					Certs: certMap,
 				},
 			})
-			require.NoError(t, err)
-			state, err := RenderStateFromDot(dot)
 			require.NoError(t, err)
 
 			actualRootCertName, actualRootCertKey, actualClientCertName := certificatesFor(state, c.CertificateName)
@@ -143,12 +141,19 @@ func TestFetchBootstrapUser(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	makeState := func(sasl *SASLAuth) *RenderState {
-		return &RenderState{
-			Release: &helmette.Release{Name: "redpanda", Namespace: namespace},
-			Values:  Values{Auth: Auth{SASL: sasl}},
-			Dot:     &helmette.Dot{KubeConfig: ctl.RestConfig()},
-		}
+	makeState := func(t *testing.T, sasl *SASLAuth) *RenderState {
+		state, err := newRenderState(ctl.RestConfig(), helmette.Release{
+			Name:      "redpanda",
+			Namespace: namespace,
+		}, Values{Auth: Auth{SASL: sasl}})
+		require.NoError(t, err)
+
+		// newRenderState already fetched the bootstrap user; reset so the
+		// assertions below only observe the explicit fetch under test.
+		state.BootstrapUserSecret = nil
+		state.BootstrapUserPassword = ""
+
+		return state
 	}
 
 	cases := map[string]struct {
@@ -207,7 +212,7 @@ func TestFetchBootstrapUser(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			state := makeState(tc.sasl)
+			state := makeState(t, tc.sasl)
 			state.FetchBootstrapUser()
 
 			require.Equal(t, tc.wantPassword, state.BootstrapUserPassword)

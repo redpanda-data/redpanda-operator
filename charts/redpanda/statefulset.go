@@ -944,7 +944,7 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 //     don't poison container lifecycle on transient hook issues. The TIMEOUT
 //     marker above is the diagnostic signal operators grep for.
 func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
-	wrapped := helmette.Join(" ", cmd)
+	wrapped := strings.Join(cmd, " ")
 	script := fmt.Sprintf(
 		`timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1`+"\n"+
 			`ec=${PIPESTATUS[0]}`+"\n"+
@@ -993,7 +993,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 					Command: []string{
 						`/bin/sh`,
 						`-c`,
-						helmette.Join("\n", []string{
+						strings.Join([]string{
 							`set -e`,
 							fmt.Sprintf(`RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")`,
 								adminTLSCurlFlags(state),
@@ -1003,7 +1003,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 							`echo $RESULT`,
 							`echo $RESULT | grep ready`,
 							``,
-						}),
+						}, "\n"),
 					},
 				},
 			},
@@ -1053,7 +1053,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			// ]
 			// ... which is equivalent to the above check
 			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("admin-%.8s", helmette.Lower(externalName)),
+				Name:          fmt.Sprintf("admin-%.8s", strings.ToLower(externalName)),
 				ContainerPort: external.Port,
 			})
 		}
@@ -1065,7 +1065,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 	for externalName, external := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("http-%.8s", helmette.Lower(externalName)),
+				Name:          fmt.Sprintf("http-%.8s", strings.ToLower(externalName)),
 				ContainerPort: external.Port,
 			})
 		}
@@ -1077,7 +1077,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 	for externalName, external := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("kafka-%.8s", helmette.Lower(externalName)),
+				Name:          fmt.Sprintf("kafka-%.8s", strings.ToLower(externalName)),
 				ContainerPort: external.Port,
 			})
 		}
@@ -1093,7 +1093,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 	for externalName, external := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
 		if external.IsEnabled() {
 			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("schema-%.8s", helmette.Lower(externalName)),
+				Name:          fmt.Sprintf("schema-%.8s", strings.ToLower(externalName)),
 				ContainerPort: external.Port,
 			})
 		}
@@ -1370,7 +1370,7 @@ func statefulSetChecksumAnnotation(state *RenderState, pool Pool) string {
 	dependencies = append(dependencies, RedpandaConfigFile(state, false, pool))
 	if state.Values.External.Enabled {
 		dependencies = append(dependencies, ptr.Deref(state.Values.External.Domain, ""))
-		if helmette.Empty(state.Values.External.Addresses) {
+		if len(state.Values.External.Addresses) == 0 {
 			dependencies = append(dependencies, "")
 		} else {
 			dependencies = append(dependencies, state.Values.External.Addresses)
@@ -1409,7 +1409,7 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 		},
 	}
 
-	if !helmette.Empty(state.Values.Storage.PersistentVolume.StorageClass) {
+	if len(state.Values.Storage.PersistentVolume.StorageClass) != 0 {
 		if state.Values.Storage.PersistentVolume.StorageClass == "-" {
 			pvc.Spec.StorageClassName = ptr.To("")
 		} else {
@@ -1452,7 +1452,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 
 	if sc := state.Values.Storage.TieredPersistentVolumeStorageClass(); sc == "-" {
 		pvc.Spec.StorageClassName = ptr.To("")
-	} else if !helmette.Empty(sc) {
+	} else if len(sc) != 0 {
 		pvc.Spec.StorageClassName = ptr.To(sc)
 	}
 

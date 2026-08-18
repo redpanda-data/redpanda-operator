@@ -333,7 +333,7 @@
 {{- break -}}
 {{- else -}}{{- if (and (eq $kind "string") (contains "{{" (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data)))) "r"))) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (tpl (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data)))) "r") $state.Dot)) | toJson -}}
+{{- (dict "r" (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $data)))) "r")))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

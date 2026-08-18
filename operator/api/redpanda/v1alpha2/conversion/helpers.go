@@ -41,7 +41,7 @@ func convertYAMLArrayNotNil[T any](state *redpanda.RenderState, from *string, to
 		}
 	}()
 
-	result := helmette.Tpl(state.Dot, *from, state.Dot)
+	result := state.Template(*from)
 	return yaml.Unmarshal([]byte(result), to)
 }
 

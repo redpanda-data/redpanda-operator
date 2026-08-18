@@ -692,7 +692,7 @@ chroot /host /bin/bash -c '
 {{- $dependencies = (concat (default (list) $dependencies) (list (get (fromJson (include "redpanda.RedpandaConfigFile" (dict "a" (list $state false $pool)))) "r"))) -}}
 {{- if $state.Values.external.enabled -}}
 {{- $dependencies = (concat (default (list) $dependencies) (list (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r"))) -}}
-{{- if (empty $state.Values.external.addresses) -}}
+{{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.external.addresses)))) "r") | int) (0 | int)) -}}
 {{- $dependencies = (concat (default (list) $dependencies) (list "")) -}}
 {{- else -}}
 {{- $dependencies = (concat (default (list) $dependencies) (list $state.Values.external.addresses)) -}}
@@ -714,7 +714,7 @@ chroot /host /bin/bash -c '
 {{- break -}}
 {{- end -}}
 {{- $pvc := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "resources" (dict)) "status" (dict)) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" "datadir" "labels" (merge (dict) (dict `app.kubernetes.io/name` (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") `app.kubernetes.io/instance` $state.Release.Name `app.kubernetes.io/component` (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r")) $state.Values.storage.persistentVolume.labels $state.Values.commonLabels) "annotations" (default (coalesce nil) $state.Values.storage.persistentVolume.annotations))) "spec" (mustMergeOverwrite (dict "resources" (dict)) (dict "accessModes" (list "ReadWriteOnce") "resources" (mustMergeOverwrite (dict) (dict "requests" (dict "storage" $state.Values.storage.persistentVolume.size))))))) -}}
-{{- if (not (empty $state.Values.storage.persistentVolume.storageClass)) -}}
+{{- if (ne ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.storage.persistentVolume.storageClass)))) "r") | int) (0 | int)) -}}
 {{- if (eq $state.Values.storage.persistentVolume.storageClass "-") -}}
 {{- $_ := (set $pvc.spec "storageClassName" "") -}}
 {{- else -}}
@@ -740,7 +740,7 @@ chroot /host /bin/bash -c '
 {{- $sc_11 := (get (fromJson (include "redpanda.Storage.TieredPersistentVolumeStorageClass" (dict "a" (list $state.Values.storage)))) "r") -}}
 {{- if (eq $sc_11 "-") -}}
 {{- $_ := (set $pvc.spec "storageClassName" "") -}}
-{{- else -}}{{- if (not (empty $sc_11)) -}}
+{{- else -}}{{- if (ne ((get (fromJson (include "_shims.len" (dict "a" (list $sc_11)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $pvc.spec "storageClassName" $sc_11) -}}
 {{- end -}}
 {{- end -}}

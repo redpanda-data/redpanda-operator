@@ -54,7 +54,7 @@
 {{- $prefix = (index $state.Values.external.addresses $i) -}}
 {{- end -}}
 {{- end -}}
-{{- $address := (printf "%s.%s" $prefix (tpl $state.Values.external.domain $state.Dot)) -}}
+{{- $address := (printf "%s.%s" $prefix (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $state.Values.external.domain))))) "r")) -}}
 {{- $_ := (set $annotations "external-dns.alpha.kubernetes.io/hostname" $address) -}}
 {{- end -}}
 {{- $podSelector := (dict) -}}

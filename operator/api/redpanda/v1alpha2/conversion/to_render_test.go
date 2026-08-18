@@ -87,17 +87,29 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 		},
 	}
 
+	dot, err := redpanda.Chart.Dot(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "redpanda",
+		Service:   "Helm",
+	}, struct{}{})
+	require.NoError(t, err)
+
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Run convertV2Fields to populate the cluster-level value into state.Values,
 			// mirroring what ConvertV2ToRenderState does before per-pool conversion.
-			values := redpanda.Values{}
 			clusterSpec := &redpandav1alpha2.RedpandaClusterSpec{
 				Statefulset: &redpandav1alpha2.Statefulset{
 					PersistentVolumeClaimRetentionPolicy: tc.clusterSet,
 				},
 			}
-			state := &redpanda.RenderState{Values: values}
+			// NB: Values are zeroed so that this test exercises only the
+			// precedence chain, not the chart's defaults.
+			state, err := redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
+				state.Values = redpanda.Values{}
+				return nil
+			})
+			require.NoError(t, err)
 			require.NoError(t, convertV2Fields(state, &state.Values, clusterSpec))
 
 			pool := &redpandav1alpha2.NodePool{
@@ -132,7 +144,9 @@ func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
 	}, struct{}{})
 	require.NoError(t, err)
 
-	state := &redpanda.RenderState{Dot: dot}
+	state, err := redpanda.RenderStateFromDot(dot)
+	require.NoError(t, err)
+
 	values := redpanda.Values{}
 	spec := &redpandav1alpha2.Statefulset{
 		ExtraVolumeMounts: ptr.To("- name: io-config\n  mountPath: /etc/redpanda-io-config"),
@@ -309,6 +323,13 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 }
 
 func TestConvertV2Fields(t *testing.T) {
+	dot, err := redpanda.Chart.Dot(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "redpanda",
+		Service:   "Helm",
+	}, struct{}{})
+	require.NoError(t, err)
+
 	rapid.Check(t, func(t *rapid.T) {
 		partialValues := rapid.MakeCustom[redpanda.PartialValues](fuzzing.ClusterSpecConfig()).Draw(t, "values")
 		if partialValues.Storage != nil && partialValues.Storage.Tiered != nil && partialValues.Storage.Tiered.PersistentVolume != nil {
@@ -326,10 +347,14 @@ func TestConvertV2Fields(t *testing.T) {
 
 		require.NoError(t, json.Unmarshal(marshaled, clusterSpec))
 		require.NoError(t, json.Unmarshal(marshaled, &values))
-		state := &redpanda.RenderState{
-			Values: values,
-		}
-		err = convertV2Fields(state, &state.Values, clusterSpec)
+		// NB: Values are replaced outright so that only the drawn values are
+		// under test, not the chart's defaults merged with them.
+		state, err := redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
+			state.Values = values
+			return nil
+		})
 		require.NoError(t, err)
+
+		require.NoError(t, convertV2Fields(state, &state.Values, clusterSpec))
 	})
 }

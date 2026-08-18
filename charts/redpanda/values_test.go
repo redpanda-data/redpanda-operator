@@ -752,7 +752,7 @@ func TestInUseServerCerts(t *testing.T) {
 					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
-			Expected: []string{},
+			Expected: nil,
 		},
 		"customer scenario: global TLS on, all internal off, kafka external on with secretRef cert": {
 			TLS: TLS{
@@ -871,7 +871,7 @@ func TestInUseServerCerts(t *testing.T) {
 					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
-			Expected: []string{},
+			Expected: nil,
 		},
 	}
 

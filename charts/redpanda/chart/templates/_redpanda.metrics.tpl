@@ -32,7 +32,7 @@
 {{- if $ok -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_CLUSTER_ID" "value" (toString $namespace.metadata.uid))))) -}}
 {{- end -}}
-{{- if (not (empty $state.CloudEnvironment)) -}}
+{{- if (ne ((get (fromJson (include "_shims.len" (dict "a" (list $state.CloudEnvironment)))) "r") | int) (0 | int)) -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_METRICS_K8S_ENVIRONMENT" "value" $state.CloudEnvironment)))) -}}
 {{- else -}}
 {{- if (contains "-gke" $state.Dot.Capabilities.KubeVersion.Version) -}}

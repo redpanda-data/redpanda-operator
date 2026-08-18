@@ -42,8 +42,7 @@
 {{- if (and $state.Values.external.enabled (eq $state.Values.external.type "LoadBalancer")) -}}
 {{- $notes = (concat (default (list) $notes) (list `` `If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:` `` (printf `  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')` (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Release.Namespace $state.Release.Namespace))) -}}
 {{- end -}}
-{{- $profiles := (keys $state.Values.listeners.kafka.external) -}}
-{{- $_ := (sortAlpha $profiles) -}}
+{{- $profiles := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $state.Values.listeners.kafka.external))))) "r") -}}
 {{- $profileName := (index $profiles (0 | int)) -}}
 {{- $notes = (concat (default (list) $notes) (list `` `Set up rpk for access to your external listeners:`)) -}}
 {{- $profile := (ternary (index $state.Values.listeners.kafka.external $profileName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $state.Values.listeners.kafka.external $profileName)) -}}

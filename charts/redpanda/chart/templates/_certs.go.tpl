@@ -12,7 +12,7 @@
 {{- $certs := (coalesce nil) -}}
 {{- range $_, $name := (get (fromJson (include "redpanda.Listeners.InUseServerCerts" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r") -}}
 {{- $data := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $name)))) "r") -}}
-{{- if (not (empty $data.secretRef)) -}}
+{{- if (ne (toJson $data.secretRef) "null") -}}
 {{- continue -}}
 {{- end -}}
 {{- $names := (coalesce nil) -}}
@@ -31,8 +31,8 @@
 {{- $names = (concat (default (list) $names) (list (printf "*.%s.%s" $service $ns))) -}}
 {{- end -}}
 {{- if (ne (toJson $state.Values.external.domain) "null") -}}
-{{- $names = (concat (default (list) $names) (list (tpl $state.Values.external.domain $state.Dot))) -}}
-{{- $names = (concat (default (list) $names) (list (printf "*.%s" (tpl $state.Values.external.domain $state.Dot)))) -}}
+{{- $names = (concat (default (list) $names) (list (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $state.Values.external.domain))))) "r"))) -}}
+{{- $names = (concat (default (list) $names) (list (printf "*.%s" (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $state.Values.external.domain))))) "r")))) -}}
 {{- end -}}
 {{- $names = (concat (default (list) $names) (default (list) (get (fromJson (include "redpanda.gatewayServerCertDNSNames" (dict "a" (list $state $name)))) "r"))) -}}
 {{- $duration := (default "43800h" $data.duration) -}}

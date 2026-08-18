@@ -111,13 +111,17 @@ func must(err error) {
 func render(dot *helmette.Dot) []kube.Object {
 	// NB: we need to do this inline here to avoid a return that would
 	// otherwise jsonify the entire struct and make it impossible to pass
-	// in templates.
+	// in templates. That applies to both Dot and Template, which closes over
+	// Dot. Every other caller should use newRenderState.
+	templater := &templater{Dot: dot}
+
 	state := &RenderState{
-		Release: &dot.Release,
-		Files:   &dot.Files,
-		Chart:   &dot.Chart,
-		Values:  helmette.Unwrap[Values](dot.Values),
-		Dot:     dot,
+		Release:  &dot.Release,
+		Files:    &dot.Files,
+		Chart:    &dot.Chart,
+		Values:   helmette.Unwrap[Values](dot.Values),
+		Dot:      dot,
+		Template: templater.Template,
 	}
 	state.FetchBootstrapUser()
 	state.FetchStatefulSetPodSelector()

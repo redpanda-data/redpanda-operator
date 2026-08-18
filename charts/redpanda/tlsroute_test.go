@@ -59,11 +59,7 @@ func TestRenderResourcesGatewayTLSRouteMatchesTypes(t *testing.T) {
 		},
 	}
 
-	helmValues, err := Chart.LoadValues(values)
-	require.NoError(t, err)
-	dot, err := Chart.Dot(nil, helmette.Release{Name: "rp", Namespace: "rp", Service: "Helm"}, helmValues)
-	require.NoError(t, err)
-	state, err := RenderStateFromDot(dot)
+	state, err := newRenderState(nil, helmette.Release{Name: "rp", Namespace: "rp", Service: "Helm"}, values)
 	require.NoError(t, err)
 
 	resources, err := RenderResources(state)

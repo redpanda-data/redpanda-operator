@@ -19,25 +19,23 @@ import (
 )
 
 func TestAdvertisedHostJSONGatewayUsesCurrentListenerConfig(t *testing.T) {
-	state := &RenderState{
-		Release: &helmette.Release{
-			Name:      "redpanda",
-			Namespace: "default",
-		},
-		Values: Values{
-			External: ExternalConfig{
-				Enabled: true,
-				Gateway: &GatewayConfig{
-					Enabled:        true,
-					AdvertisedPort: ptr.To[int32](8443),
-					ParentRefs:     []GatewayParentRef{{Name: "shared-gateway"}},
-				},
-			},
-			Statefulset: Statefulset{
-				Replicas: 2,
+	state, err := newRenderState(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "default",
+	}, Values{
+		External: ExternalConfig{
+			Enabled: true,
+			Gateway: &GatewayConfig{
+				Enabled:        true,
+				AdvertisedPort: ptr.To[int32](8443),
+				ParentRefs:     []GatewayParentRef{{Name: "shared-gateway"}},
 			},
 		},
-	}
+		Statefulset: Statefulset{
+			Replicas: 2,
+		},
+	})
+	require.NoError(t, err)
 
 	host := advertisedHostJSON(
 		state,
@@ -63,36 +61,35 @@ func TestAdvertisedHostJSONGatewayUsesCurrentListenerConfig(t *testing.T) {
 // routes to it — previously it advertised the local-ordinal host (e.g. -0),
 // which matched no TLSRoute / a different broker's service.
 func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
-	state := &RenderState{
-		Release: &helmette.Release{Name: "redpanda", Namespace: "default"},
-		Chart:   &helmette.Chart{Name: "redpanda", Version: "0.0.0"},
-		Values: Values{
-			External: ExternalConfig{
-				Enabled: true,
-				Gateway: &GatewayConfig{
-					Enabled:        true,
-					ParentRefs:     []GatewayParentRef{{Name: "kafka-gateway"}},
-					AdvertisedPort: ptr.To[int32](9094),
-				},
+	state, err := newRenderState(nil, helmette.Release{Name: "redpanda", Namespace: "default"}, Values{
+		External: ExternalConfig{
+			Enabled: true,
+			Gateway: &GatewayConfig{
+				Enabled:        true,
+				ParentRefs:     []GatewayParentRef{{Name: "kafka-gateway"}},
+				AdvertisedPort: ptr.To[int32](9094),
 			},
-			Statefulset: Statefulset{Replicas: 2},
-			Listeners: Listeners{
-				Kafka: ListenerConfig[KafkaAuthenticationMethod]{
-					Port: 9094,
-					External: map[string]ExternalListener[KafkaAuthenticationMethod]{
-						"default": {
-							Port:         9094,
-							Type:         ptr.To("tlsroute"),
-							Host:         ptr.To("redpanda.example.com"),
-							HostTemplate: ptr.To("redpanda-$POD_ORDINAL.example.com"),
-						},
+		},
+		Statefulset: Statefulset{Replicas: 2},
+		Listeners: Listeners{
+			Kafka: ListenerConfig[KafkaAuthenticationMethod]{
+				Port: 9094,
+				External: map[string]ExternalListener[KafkaAuthenticationMethod]{
+					"default": {
+						Port:         9094,
+						Type:         ptr.To("tlsroute"),
+						Host:         ptr.To("redpanda.example.com"),
+						HostTemplate: ptr.To("redpanda-$POD_ORDINAL.example.com"),
 					},
 				},
 			},
 		},
+	}, func(state *RenderState) error {
 		// One additional node pool with a single broker.
-		Pools: []Pool{{Name: "np", Statefulset: Statefulset{Replicas: 1}}},
-	}
+		state.Pools = []Pool{{Name: "np", Statefulset: Statefulset{Replicas: 1}}}
+		return nil
+	})
+	require.NoError(t, err)
 
 	// Global pod order: main STS (2) then the pool (1).
 	require.Equal(t, []string{"redpanda-0", "redpanda-1", "redpanda-np-0"}, gatewayPodNames(state))

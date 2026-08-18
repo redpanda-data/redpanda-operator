@@ -52,6 +52,11 @@ type RenderState struct {
 	// TODO: remove this eventually once we get templating figured out.
 	Dot *helmette.Dot
 
+	// Template expands a user provided Go template string, mirroring helm's
+	// `tpl`. It's injected so that render functions don't need a handle to
+	// [helmette.Dot] just to expand templated values.
+	Template func(string) string
+
 	// ViaOperator is a flag that says that this rendering function is being
 	// called via an operator.
 	ViaOperator bool
@@ -63,6 +68,32 @@ type RenderState struct {
 	// OperatorVersion is the version of the operator deploying this chart.
 	// When set, it overrides Chart.Version for metrics reporting.
 	OperatorVersion string
+}
+
+// templater abstracts out the global `tpl` function so that render functions
+// accept a `func(string) string` instead of a [helmette.Dot].
+//
+// NB: Dot serves two distinct purposes here. In go, [helmette.Tpl] needs it to
+// locate the chart's templates (the transpiler clips that argument entirely).
+// In both go and helm it's also the template context, which is what preserves
+// helm's historical `tpl <value> .`
+//
+// Passing the live Dot as the context only works because [RenderState] is
+// never returned across a gotohelm JSON boundary; see the NB in [render]. Were
+// it returned, Dot would be flattened by toJson, [helmette.Chart]'s json tags
+// would downcase its fields, and template contexts would break. The console
+// chart works around that with a FauxDot (charts/console/chart/chart.go); we
+// deliberately don't, as the ci/36-* template case expands
+// `include "redpanda.Name"` against the real dot.
+type templater struct {
+	Dot *helmette.Dot
+}
+
+func (t *templater) Template(tpl string) string {
+	// This is the one sanctioned call to helmette.Tpl in this chart; everything
+	// else goes through [RenderState.Template].
+	//nolint:forbidigo // See above.
+	return helmette.Tpl(t.Dot, tpl, t.Dot)
 }
 
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in

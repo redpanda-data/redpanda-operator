@@ -12,8 +12,9 @@ package redpanda
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
-	"golang.org/x/exp/maps"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -62,8 +63,7 @@ func Notes(state *RenderState) []string {
 			),
 		)
 	}
-	profiles := maps.Keys(state.Values.Listeners.Kafka.External)
-	helmette.SortAlpha(profiles)
+	profiles := slices.Sorted(maps.Keys(state.Values.Listeners.Kafka.External))
 	profileName := profiles[0]
 	notes = append(notes,
 		``,

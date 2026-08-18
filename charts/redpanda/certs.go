@@ -35,7 +35,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 		data := state.Values.TLS.Certs.MustGet(name)
 
 		// Don't generate server Certificates if a secret is provided.
-		if !helmette.Empty(data.SecretRef) {
+		if data.SecretRef != nil {
 			continue
 		}
 
@@ -56,8 +56,8 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 		}
 
 		if state.Values.External.Domain != nil {
-			names = append(names, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
-			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
+			names = append(names, state.Template(*state.Values.External.Domain))
+			names = append(names, fmt.Sprintf("*.%s", state.Template(*state.Values.External.Domain)))
 		}
 
 		// Gateway API: a TLS-passthrough listener presents this managed cert

@@ -1230,7 +1230,9 @@ func TestPostInstallUpgradeJobIndex(t *testing.T) {
 	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, map[string]any{})
 	require.NoError(t, err)
 
-	state := &redpandachart.RenderState{Dot: dot, Values: helmette.Unwrap[redpandachart.Values](dot.Values), Chart: &dot.Chart, Files: &dot.Files, Release: &dot.Release}
+	state, err := redpandachart.RenderStateFromDot(dot)
+	require.NoError(t, err)
+
 	job := redpandachart.PostInstallUpgradeJob(state)
 
 	// Assert that index 0 is the envsubst container as that's what

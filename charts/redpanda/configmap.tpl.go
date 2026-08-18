@@ -12,6 +12,8 @@ package redpanda
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -283,9 +285,7 @@ func advertisedKafkaPort(state *RenderState, i int32) int {
 }
 
 func advertisedAdminPort(state *RenderState, i int32) int {
-	keys := helmette.Keys(state.Values.Listeners.Admin.External)
-
-	helmette.SortAlpha(keys)
+	keys := slices.Sorted(maps.Keys(state.Values.Listeners.Admin.External))
 
 	externalAdminListenerName := helmette.First(keys)
 
@@ -307,9 +307,7 @@ func advertisedAdminPort(state *RenderState, i int32) int {
 }
 
 func advertisedSchemaPort(state *RenderState, i int32) int {
-	keys := helmette.Keys(state.Values.Listeners.SchemaRegistry.External)
-
-	helmette.SortAlpha(keys)
+	keys := slices.Sorted(maps.Keys(state.Values.Listeners.SchemaRegistry.External))
 
 	externalSchemaListenerName := helmette.First(keys)
 
@@ -333,7 +331,7 @@ func advertisedSchemaPort(state *RenderState, i int32) int {
 func advertisedHost(state *RenderState, i int32) string {
 	address := fmt.Sprintf("%s-%d", Fullname(state), int(i))
 	if ptr.Deref(state.Values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
+		address = fmt.Sprintf("%s.%s", address, state.Template(*state.Values.External.Domain))
 	}
 
 	if len(state.Values.External.Addresses) <= 0 {
@@ -347,16 +345,14 @@ func advertisedHost(state *RenderState, i int32) string {
 	}
 
 	if ptr.Deref(state.Values.External.Domain, "") != "" {
-		address = fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
+		address = fmt.Sprintf("%s.%s", address, state.Template(*state.Values.External.Domain))
 	}
 
 	return address
 }
 
 func getFirstExternalKafkaListener(state *RenderState) string {
-	keys := helmette.Keys(state.Values.Listeners.Kafka.External)
-
-	helmette.SortAlpha(keys)
+	keys := slices.Sorted(maps.Keys(state.Values.Listeners.Kafka.External))
 
 	return helmette.First(keys).(string)
 }
@@ -708,8 +704,7 @@ func RedpandaAdditionalStartFlags(values *Values, pool Pool) (bool, bool, []stri
 	}
 
 	// Deterministically order out list and add in values supplied flags.
-	keys := helmette.Keys(flags)
-	keys = helmette.SortAlpha(keys)
+	keys := slices.Sorted(maps.Keys(flags))
 
 	var rendered []string
 	for _, key := range keys {

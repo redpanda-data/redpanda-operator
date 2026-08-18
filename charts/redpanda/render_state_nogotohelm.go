@@ -99,24 +99,31 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 	return
 }
 
-// RenderStateFromDot constructs a [RenderState] from the provided [helmette.Dot].
-func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(state *RenderState) error) (*RenderState, error) {
-	state, err := renderStateFromDot(dot)
+// newRenderState constructs a [RenderState] from chart values, building the
+// backing [helmette.Dot] itself. values may be a [Values], a [PartialValues],
+// or anything else [gotohelm.GoChart.Dot] accepts; it's merged over the
+// chart's defaults.
+//
+// Prefer this over [RenderStateFromDot] unless a [helmette.Dot] is already in
+// hand.
+func newRenderState(config *kube.RESTConfig, release helmette.Release, values any, migrateFNs ...func(state *RenderState) error) (*RenderState, error) {
+	dot, err := Chart.Dot(config, release, values)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
-	for _, fn := range migrateFNs {
-		if err := fn(state); err != nil {
-			return nil, err
-		}
-	}
-
-	return state, nil
+	return RenderStateFromDot(dot, migrateFNs...)
 }
 
-// renderStateFromDot constructs a [RenderState] from the provided [helmette.Dot]
-func renderStateFromDot(dot *helmette.Dot) (state *RenderState, err error) {
+// RenderStateFromDot constructs a [RenderState] from the provided [helmette.Dot].
+//
+// This is the sole constructor of [RenderState]. Don't hand roll RenderState
+// literals; its fields are load bearing (notably Template, which panics when
+// nil) and a literal is how one gets forgotten.
+//
+// The one permitted exception is [render], which must inline its literal to
+// stay on the go side of gotohelm's JSON return boundary.
+func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(state *RenderState) error) (state *RenderState, err error) {
 	defer func() {
 		switch r := recover().(type) {
 		case nil:
@@ -127,15 +134,24 @@ func renderStateFromDot(dot *helmette.Dot) (state *RenderState, err error) {
 		}
 	}()
 
+	templater := &templater{Dot: dot}
+
 	state = &RenderState{
-		Release: &dot.Release,
-		Files:   &dot.Files,
-		Chart:   &dot.Chart,
-		Values:  helmette.Unwrap[Values](dot.Values),
-		Dot:     dot,
+		Release:  &dot.Release,
+		Files:    &dot.Files,
+		Chart:    &dot.Chart,
+		Values:   helmette.Unwrap[Values](dot.Values),
+		Dot:      dot,
+		Template: templater.Template,
 	}
 	state.FetchBootstrapUser()
 	state.FetchStatefulSetPodSelector()
+
+	for _, fn := range migrateFNs {
+		if err := fn(state); err != nil {
+			return nil, err
+		}
+	}
 
 	return
 }

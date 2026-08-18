@@ -71,7 +71,7 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		StringData: map[string]string{},
 	}
 	adminCurlFlags := adminTLSCurlFlags(state)
-	secret.StringData["common.sh"] = helmette.Join("\n", []string{
+	secret.StringData["common.sh"] = strings.Join([]string{
 		`#!/usr/bin/env bash`,
 		``,
 		`# the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME`,
@@ -92,7 +92,7 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		`# the address this pod's broker advertises to the rest of the cluster,`,
 		`# i.e. the internal_rpc_address its broker registers under`,
 		fmt.Sprintf(`POD_FQDN="${SERVICE_NAME}.%s"`, InternalDomain(state)),
-	})
+	}, "\n")
 
 	postStartSh := []string{
 		`#!/usr/bin/env bash`,
@@ -169,7 +169,7 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		`postStartHook`,
 		`true`,
 	}
-	secret.StringData["postStart.sh"] = helmette.Join("\n", postStartSh)
+	secret.StringData["postStart.sh"] = strings.Join(postStartSh, "\n")
 
 	preStopSh := []string{
 		`#!/usr/bin/env bash`,
@@ -250,7 +250,7 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 	preStopSh = append(preStopSh,
 		`true`,
 	)
-	secret.StringData["preStop.sh"] = helmette.Join("\n", preStopSh)
+	secret.StringData["preStop.sh"] = strings.Join(preStopSh, "\n")
 	return secret
 }
 
@@ -281,7 +281,7 @@ func SecretSASLUsers(state *RenderState) *corev1.Secret {
 			mechanism := ptr.Deref(user.Mechanism, defaultMechanism)
 			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
-		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)
+		secret.StringData["users.txt"] = strings.Join(usersTxt, "\n")
 		return secret
 	} else if state.Values.Auth.SASL.Enabled && state.Values.Auth.SASL.SecretRef == "" {
 		panic("auth.sasl.secretRef cannot be empty when auth.sasl.enabled=true")
@@ -444,7 +444,7 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 			`rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`,
 		)
 	}
-	secret.StringData["configurator.sh"] = helmette.Join("\n", configuratorSh)
+	secret.StringData["configurator.sh"] = strings.Join(configuratorSh, "\n")
 	return secret
 }
 
@@ -638,8 +638,8 @@ func adminTLSCurlFlags(state *RenderState) string {
 func externalAdvertiseAddress(state *RenderState) string {
 	eaa := "${SERVICE_NAME}"
 	externalDomainTemplate := ptr.Deref(state.Values.External.Domain, "")
-	expanded := helmette.Tpl(state.Dot, externalDomainTemplate, state.Dot)
-	if !helmette.Empty(expanded) {
+	expanded := state.Template(externalDomainTemplate)
+	if len(expanded) != 0 {
 		eaa = fmt.Sprintf("%s.%s", "${SERVICE_NAME}", expanded)
 	}
 	return eaa
@@ -674,7 +674,7 @@ func advertisedHostJSON(state *RenderState, name string, port int32, replicaInde
 		if domain := ptr.Deref(state.Values.External.Domain, ""); domain != "" {
 			hostMap = map[string]any{
 				"name":    name,
-				"address": fmt.Sprintf("%s.%s", address, helmette.Tpl(state.Dot, domain, state.Dot)),
+				"address": fmt.Sprintf("%s.%s", address, state.Template(domain)),
 				"port":    port,
 			}
 		} else {
