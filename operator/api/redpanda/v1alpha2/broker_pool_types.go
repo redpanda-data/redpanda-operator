@@ -45,7 +45,7 @@ func (s *RedpandaBrokerPoolList) GetItems() []*RedpandaBrokerPool {
 	return functional.MapFn(ptr.To, s.Items)
 }
 
-// NodePoolSpec contains the node pool spec for the given node pool.
+// BrokerPoolSpec contains the node pool spec for the given node pool.
 // Note that the defaulting behavior comes from the underlying Redpanda
 // chart renderer, the attributes specified here will get merged in and
 // override the defaults.
