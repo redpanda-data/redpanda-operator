@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: The sidecar's user watcher now updates the `superusers` cluster property once per sync with the union of every users file, instead of once per file with only that file's users. Previously every sidecar start and every users-secret update transiently replaced the superusers list with a partial one — kubelet's `..data` symlink even parsed as an empty users file — momentarily revoking superuser status from connected clients (K8S-924).
+time: 2026-08-20T12:00:00.000000000-07:00
