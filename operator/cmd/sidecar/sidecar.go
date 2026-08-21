@@ -70,6 +70,7 @@ func Command() *cobra.Command {
 		runUnbinder                bool
 		unbinderTimeout            time.Duration
 		unbinderDisableExemption   bool
+		unbinderDisableNodeCorrob  bool
 		selector                   pflagutil.LabelSelectorValue
 		panicAfter                 time.Duration
 	)
@@ -104,6 +105,7 @@ func Command() *cobra.Command {
 				runUnbinder,
 				unbinderTimeout,
 				unbinderDisableExemption,
+				unbinderDisableNodeCorrob,
 				selector.Selector,
 				panicAfter,
 			)
@@ -149,6 +151,7 @@ func Command() *cobra.Command {
 	cmd.Flags().BoolVar(&runUnbinder, "run-pvc-unbinder", false, "Specifies if the PVC unbinder should be run.")
 	cmd.Flags().DurationVar(&unbinderTimeout, "pvc-unbinder-timeout", 60*time.Second, "The time period to wait before removing any unbound PVCs.")
 	cmd.Flags().BoolVar(&unbinderDisableExemption, "disable-pvc-rebinding-gate-exemption", false, "Escape hatch: turn off the PVC unbinder's stuck-claim exemption so its pvc-rebinding gate defers on every unbound claim (the pre-exemption behavior).")
+	cmd.Flags().BoolVar(&unbinderDisableNodeCorrob, "disable-unbinder-node-corroboration", false, "Escape hatch: turn off the PVCUnbinder's node-state gate so unbinds proceed on the scheduling-failure message and timeout alone (the pre-corroboration behavior). Use if the gate's mis-pin proof chain cannot evaluate in your environment (for example, unusual local-PV node-affinity shapes); unlike the pause annotation it keeps the rest of the unbinder running.")
 
 	// Internal use flags.
 	cmd.Flags().DurationVar(&panicAfter, "panic-after", 0, "If non-zero, will trigger an unhandled panic after the specified time resulting in a process crash.")
@@ -181,6 +184,7 @@ func Run(
 	runUnbinder bool,
 	unbinderTimeout time.Duration,
 	unbinderDisableExemption bool,
+	unbinderDisableNodeCorrob bool,
 	selector labels.Selector,
 	panicAfter time.Duration,
 ) error {
@@ -278,6 +282,7 @@ func Run(
 			Timeout:                    unbinderTimeout,
 			Selector:                   selector,
 			DisableStuckClaimExemption: unbinderDisableExemption,
+			DisableNodeCorroboration:   unbinderDisableNodeCorrob,
 		}).SetupWithManager(mgr.GetLocalManager()); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err

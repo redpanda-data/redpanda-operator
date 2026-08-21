@@ -58,7 +58,7 @@ const PauseAnnotation = "operator.redpanda.com/pause-pvc-unbinder"
 // gate defers an unbind.
 const requeueDuringDisruption = 30 * time.Second
 
-// The unbinder runs five safety gates before it deletes anything.
+// The unbinder runs six safety gates before it deletes anything.
 // Each gate can defer (postpone) the unbind. In order:
 //
 //   - Gate 0 "in-flight": a previous unbind in this cluster has not
@@ -73,6 +73,10 @@ const requeueDuringDisruption = 30 * time.Second
 //     [Controller.stuckClaimNames]).
 //   - Gate 4 "freed-pv": a PV freed by --allow-pv-rebinding is still
 //     floating and could pair with the wrong claim. Wait.
+//   - Gate 5 "node-state": no bound claim pins the Pod to a node that
+//     is provably unusable (deleted, cordoned, NotReady, or occupied
+//     by an anti-affinity-conflicting pod). A scheduling failure
+//     message alone is not dead-node evidence. Wait.
 //
 // These names are the label values on the
 // `..._pvc_unbinder_gate_deferred_total` metric and appear in the
@@ -83,6 +87,7 @@ const (
 	gateMultiNode    = "multi-node"
 	gatePVCRebinding = "pvc-rebinding"
 	gateFreedPV      = "freed-pv"
+	gateNodeState    = "node-state"
 )
 
 // The unbinder stores its progress as annotations on the PVs it works
@@ -186,6 +191,14 @@ type Controller struct {
 	// node-affinity shapes). Unlike the pause annotation, it keeps the
 	// rest of the unbinder running.
 	DisableStuckClaimExemption bool
+	// DisableNodeCorroboration turns off Gate 5's node-state
+	// corroboration and restores the pre-gate behavior: unbind on the
+	// scheduling-failure message and timeout alone. It is an escape
+	// hatch for environments where the mis-pin proof chain cannot
+	// evaluate (for example, unusual local-PV node-affinity shapes,
+	// which [pvPinnedHostnames] refuses to interpret). Unlike the
+	// pause annotation, it keeps the rest of the unbinder running.
+	DisableNodeCorroboration bool
 	// ClusterName disambiguates cluster keys in multicluster mode.
 	// Empty for single-cluster operation.
 	ClusterName string
@@ -228,6 +241,7 @@ type MulticlusterController struct {
 	Selector                   labels.Selector
 	AllowRebinding             bool
 	DisableStuckClaimExemption bool
+	DisableNodeCorroboration   bool
 }
 
 // claimListForEvent renders a claim-name list for an Event note,
@@ -301,6 +315,7 @@ func (r *MulticlusterController) Reconcile(ctx context.Context, req mcreconcile.
 		Selector:                   r.Selector,
 		AllowRebinding:             r.AllowRebinding,
 		DisableStuckClaimExemption: r.DisableStuckClaimExemption,
+		DisableNodeCorroboration:   r.DisableNodeCorroboration,
 		ClusterName:                req.ClusterName,
 		Recorder:                   k8sCluster.GetEventRecorder("pvc-unbinder"),
 		Reader:                     k8sCluster.GetAPIReader(),
@@ -474,6 +489,12 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Under --allow-pv-rebinding there is NO exemption: freed PVs
 	// float as binding candidates, and acting while any claim is
 	// unbound could pair it with the wrong disk (INC-2818).
+	// nodeStateProven records whether this reconcile has live-confirmed
+	// the pod's own mis-pin proof. Gate 3's exemption path establishes it
+	// when unbound claims exist; Gate 5 requires it before anything
+	// destructive and computes it itself when Gate 3 never ran the chain.
+	nodeStateProven := false
+
 	clusterPVCsByName, err := r.listClusterPVCsByName(ctx, r.Client, &pod)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -597,6 +618,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.recordGateDeferred(&pod, gatePVCRebinding, fmt.Sprintf("unbound claims %s are exempted, but the reconciled Pod no longer holds its own mis-pin proof; deferring", claimListForEvent(liveExempted)))
 			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 		}
+		// The proof above was re-confirmed against the live API server
+		// in this reconcile — exactly the fact Gate 5 needs.
+		nodeStateProven = true
 		// A safety gate is being overridden. Leave the same paper
 		// trail a deferral gets: metric, Event, and log, naming the
 		// exempted claims. Recorded only when the reconcile really
@@ -627,6 +651,40 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		logger.Info(msg, "name", pod.Name)
 		r.recordGateDeferred(&pod, gateFreedPV, msg)
 		return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+	}
+
+	// Gate 5 "node-state": the message check in [Controller.ShouldRemediate]
+	// is deliberately weak — any "0/N nodes are available" total failure
+	// matches, including plain resource pressure (Insufficient memory/cpu)
+	// on a perfectly healthy node. Deleting claims is only justified when
+	// the pod is pinned to a node it can never run on, so require the
+	// pod's own mis-pin proof (see [claimMispinnedForPod]): some Bound
+	// claim's PV pins it to a node that is deleted, cordoned, NotReady
+	// (judged through the pod's tolerations), or occupied by an
+	// anti-affinity-conflicting pod. When Gate 3's exemption path already
+	// live-confirmed that proof this reconcile, it is reused rather than
+	// recomputed. Evidence read failures defer conservatively — the same
+	// fail-safe direction as Gate 3's chain — with context cancellation
+	// surfacing as an error.
+	if !r.DisableNodeCorroboration && !pvGates.ownUnbindInFlight {
+		if !nodeStateProven {
+			proven, err := r.podHasMispinnedBoundClaim(ctx, &pod)
+			if err != nil {
+				if ctxErr := ctx.Err(); ctxErr != nil {
+					return ctrl.Result{}, ctxErr
+				}
+				logger.Error(err, "failed to corroborate node state; keeping the conservative deferral", "name", pod.Name)
+				r.recordGateDeferred(&pod, gateNodeState, "node-state evidence read failed; deferring")
+				return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+			}
+			nodeStateProven = proven
+		}
+		if !nodeStateProven {
+			const msg = "no bound claim pins the Pod to an unusable node (deleted, cordoned, NotReady, or occupied by a conflicting pod); the scheduling failure alone is not dead-node evidence; deferring"
+			logger.Info(msg, "name", pod.Name)
+			r.recordGateDeferred(&pod, gateNodeState, msg)
+			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+		}
 	}
 
 	// NB: We denote PVCs that are deleted as a nil entry within this map. If a
@@ -850,6 +908,14 @@ func (r *Controller) maybeRecyclePersistentVolume(ctx context.Context, pv *corev
 type pvGateState struct {
 	unbindInFlight    bool
 	freedPVUnresolved bool
+	// ownUnbindInFlight reports that the reconciled pod's OWN unbind
+	// is the one in flight (its claims are recorded in the in-flight
+	// annotations). Gate 0 lets such a reconcile proceed so the
+	// idempotent pipeline can finish; Gate 5 must equally stand down —
+	// the claims are already deleted, so no mis-pin proof can exist,
+	// and demanding one would strand the half-done unbind (and with it
+	// Gate 0's hold on the whole cluster) forever.
+	ownUnbindInFlight bool
 }
 
 // checkPVGates evaluates Gates 0 and 4 in one uncached pass over the
@@ -918,6 +984,7 @@ func (r *Controller) checkPVGates(ctx context.Context, clusterKey string, pod *c
 			case r.inFlightClaimOwnedBy(pv, ownClaims):
 				// This pod's own unfinished unbind — let the reconcile
 				// proceed so the idempotent pipeline can complete it.
+				state.ownUnbindInFlight = true
 			default:
 				state.unbindInFlight = true
 			}
@@ -1090,8 +1157,9 @@ func (r *Controller) ShouldRemediate(ctx context.Context, pod *corev1.Pod) (bool
 	// naming volume node affinity in the message somewhere between
 	// K8s 1.21 and 1.28 (exact version never tracked down), so we
 	// accept either an explicit mention or any "0/N nodes are
-	// available" total failure. Stronger proof comes later, from the
-	// exemption evidence chain, not from message text.
+	// available" total failure. Stronger proof comes later, from
+	// Gate 5's node-state corroboration (and Gate 3's exemption
+	// evidence chain), not from message text.
 	if !SchedulingFailureRE.MatchString(cond.Message) {
 		log.FromContext(ctx).Info("scheduling failure does not appear to indicate volume affinity issues; skipping", "name", pod.Name, "condition", cond)
 		return false, 0

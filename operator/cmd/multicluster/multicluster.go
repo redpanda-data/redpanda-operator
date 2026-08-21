@@ -97,6 +97,7 @@ type MulticlusterOptions struct {
 	UnbindPVCsAfter                    time.Duration
 	AllowPVRebinding                   bool
 	DisablePVCRebindingGateExemption   bool
+	DisableUnbinderNodeCorroboration   bool
 	UnbinderSelector                   pflagutil.LabelSelectorValue
 	BrokerPodNodeUnavailableToleration time.Duration
 
@@ -233,6 +234,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.AllowPVRebinding, "allow-pv-rebinding", false, "DEPRECATED. When the PVCUnbinder fires, also clear the freed PV's ClaimRef so the disk can be reused if the node returns. Risks cross-broker disk swap when multiple PVs are cleared concurrently. Leave at false (the default) — the unbinder's pause-annotation, multi-pod auto-detect, and per-cluster serialization gates make this flag unnecessary in practice and unsafe in the cases where it would have been useful.")
 	_ = cmd.Flags().MarkDeprecated("allow-pv-rebinding", "the gating checks added to the PVCUnbinder (pause annotation, multi-pod auto-detect, per-cluster serialization) supersede this flag; see the PVCUnbinder controller godoc")
 	cmd.Flags().BoolVar(&o.DisablePVCRebindingGateExemption, "disable-pvc-rebinding-gate-exemption", false, "Escape hatch: turn off the PVCUnbinder's stuck-claim exemption so its pvc-rebinding gate defers on every unbound claim (the pre-exemption behavior). Use if the exemption's proof chain misfires in your environment; unlike the pause annotation it keeps the rest of the unbinder running.")
+	cmd.Flags().BoolVar(&o.DisableUnbinderNodeCorroboration, "disable-unbinder-node-corroboration", false, "Escape hatch: turn off the PVCUnbinder's node-state gate so unbinds proceed on the scheduling-failure message and timeout alone (the pre-corroboration behavior). Use if the gate's mis-pin proof chain cannot evaluate in your environment (for example, unusual local-PV node-affinity shapes); unlike the pause annotation it keeps the rest of the unbinder running.")
 	cmd.Flags().Var(&o.UnbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().DurationVar(&o.BrokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
@@ -513,6 +515,7 @@ func Run(
 			Selector:                   opts.UnbinderSelector.Selector,
 			AllowRebinding:             opts.AllowPVRebinding,
 			DisableStuckClaimExemption: opts.DisablePVCRebindingGateExemption,
+			DisableNodeCorroboration:   opts.DisableUnbinderNodeCorroboration,
 		}).SetupWithMultiClusterManager(); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "PVCUnbinder")
 			return err
