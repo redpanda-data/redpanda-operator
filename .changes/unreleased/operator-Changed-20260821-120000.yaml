@@ -1,0 +1,19 @@
+project: operator
+kind: Changed
+body: |-
+    Improved the PVCUnbinder: it now corroborates node state before deleting anything (a new "node-state" safety gate).
+
+      Previously any total scheduling failure qualified a Pending Pod for
+      remediation once `--unbind-pvcs-after` elapsed — for example a
+      misconfigured broker memory request producing "0/N nodes are available:
+      ... Insufficient memory" while every node stays healthy — after which the
+      unbinder deleted the broker's PVCs and left its Retained
+      PersistentVolumes (and their data) stranded. The unbinder now also
+      requires proof that a Bound claim pins the Pod to a node that is truly
+      unusable: deleted, cordoned, NotReady/unreachable (judged through the
+      Pod's tolerations), or occupied by a pod matching the Pod's required
+      anti-affinity. Without that proof it defers and retries every 30s,
+      visible on the `..._pvc_unbinder_gate_deferred_total{gate="node-state"}`
+      metric and as a `PVCUnbinderDeferred` event on the Pod.
+      `--disable-unbinder-node-corroboration` restores the previous behavior.
+time: 2026-08-21T12:00:00.000000+02:00

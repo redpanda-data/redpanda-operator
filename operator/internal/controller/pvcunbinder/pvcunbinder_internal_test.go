@@ -1507,35 +1507,52 @@ func TestReconcileGate3StuckClaimExemption(t *testing.T) {
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC), "nothing may be deleted when the evidence chain is unavailable")
 	})
 
-	t.Run("evidence reads are skipped entirely when no claim is unbound", func(t *testing.T) {
-		// The unbinder's original scenario — node dead, ALL claims
-		// Bound — must not depend on the exemption evidence chain at
-		// all: with zero unbound claims Gate 3 has nothing to defer
-		// on, so the (broken, per the interceptor) nodes LIST must
-		// never run and remediation must proceed exactly as it did
-		// before the exemption existed.
+	t.Run("all-claims-bound path defers conservatively when the evidence chain is unavailable", func(t *testing.T) {
+		// Historically the all-claims-bound path proceeded without any
+		// node evidence at all — with zero unbound claims Gate 3 had
+		// nothing to defer on, so remediation ran on the scheduling
+		// message and timeout alone. That hole let a healthy node's
+		// "Insufficient memory" failure — a misconfigured broker
+		// memory request is enough — delete data, and
+		// Gate 5 closes it: node corroboration now runs on every
+		// destructive path, so a broken nodes LIST (here: RBAC version
+		// skew, per the interceptor) downgrades to the conservative
+		// deferral instead of proceeding blind.
+		brokenNodeList := interceptor.Funcs{
+			List: func(ctx context.Context, cl client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
+				if _, ok := list.(*corev1.NodeList); ok {
+					return apierrors.NewForbidden(schema.GroupResource{Resource: "nodes"}, "", fmt.Errorf("RBAC version skew"))
+				}
+				return cl.List(ctx, list, opts...)
+			},
+		}
 		pod := withPVC(podWithVolumeAffinityFailure("rp-1", "ns", "redpanda"), "datadir-rp-1")
 		mispinned := newPVC("datadir-rp-1", "ns", "redpanda", "pv-data-1")
 		pv := boundHostPathPV("pv-data-1", "datadir-rp-1", "node-a")
 		c := fake.NewClientBuilder().WithScheme(s).
 			WithObjects(wffc, pod, mispinned, pv).
-			WithInterceptorFuncs(interceptor.Funcs{
-				List: func(ctx context.Context, cl client.WithWatch, list client.ObjectList, opts ...client.ListOption) error {
-					if _, ok := list.(*corev1.NodeList); ok {
-						return apierrors.NewForbidden(schema.GroupResource{Resource: "nodes"}, "", fmt.Errorf("RBAC version skew"))
-					}
-					return cl.List(ctx, list, opts...)
-				},
-			}).Build()
+			WithInterceptorFuncs(brokenNodeList).Build()
 		r := &Controller{Client: c}
 
 		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
-		require.NoError(t, err, "the all-claims-bound path must not touch the evidence chain")
-		require.Zero(t, res.RequeueAfter)
+		require.NoError(t, err, "an evidence-read failure must not fail the reconcile")
+		require.Equal(t, requeueDuringDisruption, res.RequeueAfter, "Gate 5 must fall back to the conservative deferral")
 
 		var gotPVC corev1.PersistentVolumeClaim
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-rp-1"}, &gotPVC), "nothing may be deleted when the evidence chain is unavailable")
+
+		// The pre-Gate-5 behavior — proceed with zero node evidence —
+		// remains reachable only through the explicit escape hatch.
+		c = fake.NewClientBuilder().WithScheme(s).
+			WithObjects(wffc, withPVC(podWithVolumeAffinityFailure("rp-1", "ns", "redpanda"), "datadir-rp-1"), newPVC("datadir-rp-1", "ns", "redpanda", "pv-data-1"), boundHostPathPV("pv-data-1", "datadir-rp-1", "node-a")).
+			WithInterceptorFuncs(brokenNodeList).Build()
+		r = &Controller{Client: c, DisableNodeCorroboration: true}
+
+		res, err = r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err, "with the escape hatch set, the broken evidence chain must not be consulted")
+		require.Zero(t, res.RequeueAfter)
 		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-rp-1"}, &gotPVC)
-		require.True(t, apierrors.IsNotFound(err), "the mis-pinned bound claim must be deleted despite the broken nodes LIST")
+		require.True(t, apierrors.IsNotFound(err), "the escape hatch must restore the uncorroborated unbind")
 	})
 
 	t.Run("reconciled Pod is re-qualified on the uncached Reader before evidence or destruction", func(t *testing.T) {
@@ -3061,4 +3078,184 @@ func TestLostDiskClaimsResolvesNodeByHostnameLabel(t *testing.T) {
 	lost, err = LostDiskClaims(ctx, c, unbound)
 	require.NoError(t, err)
 	require.Empty(t, lost, "network-attached storage is never disk-loss proof")
+}
+
+// TestReconcileGate5NodeStateCorroboration exercises the node-state
+// gate: before anything destructive, the reconciled Pod must hold its
+// own mis-pin proof — a Bound claim pinned to a node that is deleted,
+// cordoned, NotReady, or occupied by an anti-affinity-conflicting pod.
+// A total scheduling failure alone (e.g. "Insufficient memory" on a
+// perfectly healthy node, as a misconfigured broker memory request
+// produces) matches
+// SchedulingFailureRE but is NOT evidence of a dead node, and must
+// defer instead of deleting data.
+func TestReconcileGate5NodeStateCorroboration(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+
+	boundHostPathPV := func(name, claimName, hostname string) *corev1.PersistentVolume {
+		pv := newPVWithAffinity(name, "ns", claimName, hostname)
+		pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
+		}
+		pv.Status.Phase = corev1.VolumeBound
+		return pv
+	}
+
+	// memoryStarvedMsg is the scheduler message a memory-starved pod
+	// gets (e.g. after a misconfigured broker memory request): a
+	// total failure that matches SchedulingFailureRE's "^0/N nodes
+	// are available" alternative without any volume-affinity or
+	// dead-node content.
+	const memoryStarvedMsg = "0/6 nodes are available: 5 node(s) had untolerated taint {redpanda-node: true}, 1 Insufficient memory."
+
+	// boundBroker models a broker whose BOTH claims are Bound to
+	// HostPath PVs pinned to hostname, Pending on a scheduling
+	// failure. Whether the unbind may proceed depends solely on the
+	// pinned node's state.
+	boundBroker := func(name, hostname string) (*corev1.Pod, []client.Object) {
+		pod := withPVC(withPVC(newPod(name, "ns", "redpanda"), "datadir-"+name), "shadow-index-cache-"+name)
+		pod.Status.Conditions = []corev1.PodCondition{{
+			Type:    corev1.PodScheduled,
+			Status:  corev1.ConditionFalse,
+			Reason:  "Unschedulable",
+			Message: memoryStarvedMsg,
+		}}
+		datadir := newPVC("datadir-"+name, "ns", "redpanda", "pv-data-"+name)
+		shadow := newPVC("shadow-index-cache-"+name, "ns", "redpanda", "pv-shadow-"+name)
+		pvData := boundHostPathPV("pv-data-"+name, "datadir-"+name, hostname)
+		pvShadow := boundHostPathPV("pv-shadow-"+name, "shadow-index-cache-"+name, hostname)
+		return pod, []client.Object{pod, datadir, shadow, pvData, pvShadow}
+	}
+
+	// requireUnbound asserts the full destructive pipeline ran: both
+	// claims deleted, both PVs Retained and annotated in-flight, and
+	// the pod deleted.
+	requireUnbound := func(t *testing.T, r *Controller, name string) {
+		t.Helper()
+		var gotPVC corev1.PersistentVolumeClaim
+		err := r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-" + name}, &gotPVC)
+		require.True(t, apierrors.IsNotFound(err), "the datadir claim must be deleted")
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-" + name}, &gotPVC)
+		require.True(t, apierrors.IsNotFound(err), "the shadow-index-cache claim must be deleted")
+		var gotPV corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-data-" + name}, &gotPV))
+		require.Equal(t, corev1.PersistentVolumeReclaimRetain, gotPV.Spec.PersistentVolumeReclaimPolicy)
+		require.Equal(t, "/ns/redpanda", gotPV.Annotations[InFlightAnnotation])
+		var gotPod corev1.Pod
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: name}, &gotPod)
+		require.True(t, apierrors.IsNotFound(err), "the pod must be deleted to re-trigger PVC creation")
+	}
+
+	t.Run("healthy pinned node defers instead of unbinding", func(t *testing.T) {
+		pod, objs := boundBroker("rp-1", "node-a")
+		recorder := &events.FakeRecorder{Events: make(chan string, 8)}
+		r := newController(t, s, append(objs, newNode("node-a"))...)
+		r.Recorder = recorder
+
+		deferredBefore := promtestutil.ToFloat64(observability.PVCUnbinderGateDeferred.WithLabelValues(gateNodeState))
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Equal(t, requeueDuringDisruption, res.RequeueAfter, "a healthy pinned node is not dead-node evidence; the gate must defer")
+		require.Equal(t, deferredBefore+1, promtestutil.ToFloat64(observability.PVCUnbinderGateDeferred.WithLabelValues(gateNodeState)), "the deferral must be visible on the gate metric")
+
+		select {
+		case ev := <-recorder.Events:
+			require.Contains(t, ev, eventReasonGateDeferred)
+			require.Contains(t, ev, gateNodeState)
+		default:
+			t.Fatal("expected a PVCUnbinderDeferred event naming the node-state gate")
+		}
+
+		// Nothing destructive happened: claims alive, PV reclaim
+		// policy and annotations untouched, pod alive.
+		var gotPVC corev1.PersistentVolumeClaim
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-rp-1"}, &gotPVC))
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC))
+		var gotPV corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-data-rp-1"}, &gotPV))
+		require.NotEqual(t, corev1.PersistentVolumeReclaimRetain, gotPV.Spec.PersistentVolumeReclaimPolicy, "the PV reclaim policy must not be flipped when the gate defers")
+		require.NotContains(t, gotPV.Annotations, InFlightAnnotation)
+		var gotPod corev1.Pod
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod))
+	})
+
+	t.Run("deleted pinned node proceeds with the unbind", func(t *testing.T) {
+		pod, objs := boundBroker("rp-1", "node-gone")
+		r := newController(t, s, objs...) // no Node object: the node is gone
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter, "a deleted node is the strongest dead-node proof; the unbind must proceed")
+		requireUnbound(t, r, "rp-1")
+	})
+
+	t.Run("cordoned pinned node proceeds with the unbind", func(t *testing.T) {
+		pod, objs := boundBroker("rp-1", "node-a")
+		node := newNode("node-a")
+		node.Spec.Unschedulable = true
+		r := newController(t, s, append(objs, node)...)
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter, "a cordoned node cannot host the pod; the unbind must proceed")
+		requireUnbound(t, r, "rp-1")
+	})
+
+	t.Run("NotReady pinned node proceeds with the unbind", func(t *testing.T) {
+		pod, objs := boundBroker("rp-1", "node-a")
+		node := newNode("node-a")
+		node.Status.Conditions = []corev1.NodeCondition{{
+			Type:   corev1.NodeReady,
+			Status: corev1.ConditionFalse,
+		}}
+		r := newController(t, s, append(objs, node)...)
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter, "a NotReady node is dead-node evidence (absent an unconditional toleration); the unbind must proceed")
+		requireUnbound(t, r, "rp-1")
+	})
+
+	t.Run("escape hatch restores the uncorroborated behavior", func(t *testing.T) {
+		pod, objs := boundBroker("rp-1", "node-a")
+		r := newController(t, s, append(objs, newNode("node-a"))...)
+		r.DisableNodeCorroboration = true
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter, "with the escape hatch set, the gate must not run")
+		requireUnbound(t, r, "rp-1")
+	})
+
+	t.Run("own in-flight unbind resumes without corroboration", func(t *testing.T) {
+		// Crash-interrupted unbind: the PVCs are already deleted and a
+		// PV carries the in-flight annotations, but the pod delete
+		// never happened. The resume must complete (delete the pod)
+		// even though no bound claim exists to prove anything —
+		// otherwise Gate 0 holds the whole cluster forever.
+		pod := withPVC(withPVC(newPod("rp-1", "ns", "redpanda"), "datadir-rp-1"), "shadow-index-cache-rp-1")
+		pod.Status.Conditions = []corev1.PodCondition{{
+			Type:    corev1.PodScheduled,
+			Status:  corev1.ConditionFalse,
+			Reason:  "Unschedulable",
+			Message: memoryStarvedMsg,
+		}}
+		pv := boundHostPathPV("pv-data-rp-1", "datadir-rp-1", "node-a")
+		pv.Status.Phase = corev1.VolumeReleased
+		pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
+		pv.Annotations = map[string]string{
+			InFlightAnnotation:      "/ns/redpanda",
+			InFlightClaimAnnotation: "ns/datadir-rp-1/1111-2222",
+		}
+		r := newController(t, s, pod, pv, newNode("node-a")) // node healthy
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter, "the pod's own half-done unbind must be allowed to finish")
+
+		var gotPod corev1.Pod
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod)
+		require.True(t, apierrors.IsNotFound(err), "the resume must delete the pod to complete the interrupted unbind")
+	})
 }
