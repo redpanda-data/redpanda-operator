@@ -1,0 +1,13 @@
+# -diff: Diff suppression of noisy / generated files. Override with `git diff --text`
+# -merge: Don't perform merges.
+# See: https://git-scm.com/docs/gitattributes
+
+# gotohelm files
+charts/*/templates/* text -diff -merge
+charts/*/chart/templates/* text -diff -merge
+gotohelm/testdata/src/example/*.tpl text -diff -merge
+
+# Lock files
+go.sum text -diff
+go.work.sum text -diff
+flake.lock text -diff
