@@ -17,6 +17,10 @@ ignore:
   - match: .+\.rewritten\.go$
   # Ignore go files from genpartial, they utilize a -header flag.
   - match: .+\.gen\.go$
+  # Ignore protobuf files. Generating and license appending end up racing.
+  - match: .+\.pb\.go$
+  # Prevent the updater from recursing into claude's worktrees.
+  - directory: .claude
 files:
   - name: ../licenses/boilerplate.go.txt
     type: go
