@@ -12,7 +12,9 @@ package configwatcher
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"slices"
@@ -32,6 +34,36 @@ import (
 const (
 	defaultConfigPath     = "/var/lib/redpanda.yaml"
 	defaultUsersDirectory = "/etc/secret/users"
+
+	// syncRetryBase/syncRetryMax bound the retry of an incomplete sync pass.
+	// kubelet's AtomicWriter fires the `..data` CREATE event *before* it
+	// removes the symlinks of deleted secret keys and the old payload
+	// directory, so a pass triggered by that event can catch a dangling
+	// symlink and come up incomplete — and the cleanup emits only REMOVE
+	// events, which nothing handles. Without a retry, the withheld superusers
+	// patch would be withheld forever. The race window is milliseconds, so the
+	// first retry nearly always completes; the cap keeps a persistently
+	// unreadable file from hammering the admin API while still guaranteeing
+	// eventual convergence.
+	syncRetryBase = 250 * time.Millisecond
+	syncRetryMax  = time.Minute
+
+	// writeDebounce coalesces direct-write bursts to users files. A WRITE
+	// event can be observed mid-write; syncing immediately would compute the
+	// union from a truncated read and transiently revoke the file's remaining
+	// users. Waiting out a quiet period makes a torn read vastly less likely
+	// (and the equality check in setSuperusers makes the coalesced passes
+	// idempotent). kubelet secret updates don't take this path: the `..data`
+	// swap is atomic and only happens after the payload is fully written, so
+	// those sync immediately.
+	writeDebounce = 500 * time.Millisecond
+
+	// maxUsersFileLineSize is the scanner's line-length ceiling. Any
+	// legitimate user:password[:mechanism] line is orders of magnitude
+	// smaller; a longer line means the key holds something other than a users
+	// file (a certificate, a JSON blob, ...) and is treated as content-level
+	// malformation rather than a read failure — see syncUsersFile.
+	maxUsersFileLineSize = 1 << 20
 )
 
 type Option func(c *ConfigWatcher)
@@ -125,9 +157,9 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 
 	close(w.initialized)
 
-	w.SyncAll(ctx)
+	complete := w.SyncAll(ctx)
 
-	return w.watchFilesystem(ctx)
+	return w.watchFilesystem(ctx, complete)
 }
 
 // SyncAll synchronizes the SCRAM users of every users file in the users
@@ -139,11 +171,21 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 // list with a subset, which transiently revokes superuser status from every
 // user in any file not yet processed (K8S-924). For the same reason, the
 // patch is skipped entirely whenever any users file can't be read.
-func (w *ConfigWatcher) SyncAll(ctx context.Context) {
+//
+// The returned bool reports whether the pass was complete — i.e. whether
+// every users file was read and the superusers decision (patch, or the
+// deliberate skips below) was made from the directory's full contents. An
+// incomplete pass withheld the patch and MUST be retried: the missing file's
+// users stay in (or out of) the superusers list until a complete pass runs
+// (watchFilesystem re-arms one with backoff). Only read failures make a pass
+// incomplete; malformed file *content* never does — a users secret can carry
+// non-users keys indefinitely, and treating those as failures would wedge
+// superusers management forever.
+func (w *ConfigWatcher) SyncAll(ctx context.Context) bool {
 	entries, err := afero.ReadDir(w.fs, w.usersDirectory)
 	if err != nil {
 		w.log.Error(err, "unable to get user directory files")
-		return
+		return false
 	}
 
 	// sync our internal superuser first
@@ -165,6 +207,21 @@ func (w *ConfigWatcher) SyncAll(ctx context.Context) {
 		// resolving the symlinked users files themselves.
 		info, err := w.fs.Stat(filePath)
 		if err != nil {
+			// Distinguish a dangling symlink from an entry that vanished
+			// outright. When the entry itself is gone (Lstat reports not-exist
+			// too), it was removed between ReadDir and now — kubelet's
+			// AtomicWriter deleting the old payload directory mid-pass. A
+			// retried pass wouldn't list it either, so skip it rather than
+			// withholding the patch. A symlink that still exists but doesn't
+			// resolve (Stat fails, Lstat succeeds) is the dangerous half of
+			// the same race — its target file's users are unknown — and keeps
+			// the pass incomplete.
+			if lstater, ok := w.fs.(afero.Lstater); ok {
+				if _, _, lerr := lstater.LstatIfPossible(filePath); errors.Is(lerr, fs.ErrNotExist) {
+					w.log.Info("skipping users directory entry removed mid-pass", "file", filePath)
+					continue
+				}
+			}
 			w.log.Error(err, "unable to stat users file", "file", filePath)
 			complete = false
 			continue
@@ -190,19 +247,27 @@ func (w *ConfigWatcher) SyncAll(ctx context.Context) {
 
 	if !complete {
 		w.log.Info("not setting superusers: some users files could not be read and a partial list would revoke superuser status from the missing users")
-		return
+		return false
 	}
 
 	// Don't reduce superusers down to just the internal user when the
-	// directory holds no users files at all.
+	// directory holds no users files at all. Deliberate — deleting the whole
+	// users secret shouldn't demote every user — but worth a trace: any
+	// superusers the cluster still has are now stale.
 	if synced == 0 {
-		return
+		w.log.Info("not setting superusers: the users directory holds no users files; leaving the cluster's current list untouched")
+		return true
 	}
 
 	w.setSuperusers(ctx, users)
+	return true
 }
 
-func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
+// watchFilesystem re-runs SyncAll on filesystem events until ctx is done.
+// initialSyncComplete reports whether the initial pass run by Start was
+// complete; an incomplete one is retried here just like an incomplete
+// event-triggered pass.
+func (w *ConfigWatcher) watchFilesystem(ctx context.Context, initialSyncComplete bool) error {
 	if !w.watch {
 		<-ctx.Done()
 		return nil
@@ -218,6 +283,29 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 		return err
 	}
 
+	// retry is armed whenever the most recent sync pass was incomplete. An
+	// incomplete pass withholds the superusers patch, and the filesystem
+	// events that would resolve it may never come: kubelet's AtomicWriter
+	// fires the handled `..data` CREATE *before* its cleanup steps, and the
+	// cleanup emits only unhandled REMOVE events. A nil channel blocks
+	// forever, so the retry case only fires while armed.
+	var retry <-chan time.Time
+	backoff := syncRetryBase
+	rearm := func(complete bool) {
+		if complete {
+			retry = nil
+			backoff = syncRetryBase
+			return
+		}
+		w.log.Info("scheduling retry of incomplete users sync", "after", backoff.String())
+		retry = time.After(backoff)
+		backoff = min(2*backoff, syncRetryMax)
+	}
+	rearm(initialSyncComplete)
+
+	// debounce is armed by direct writes to users files; see writeDebounce.
+	var debounce <-chan time.Time
+
 	for {
 		select {
 		case err := <-watcher.Errors:
@@ -228,20 +316,30 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 		case event := <-watcher.Events:
 			// Kubernete updates secrets by swapping a symlink named `..data`.
 			// We must watch for the CREATE event on this specific symlink.
+			// The swap is atomic and happens only after the new payload is
+			// fully written, so this syncs immediately, without debouncing.
 			if event.Name == w.defaultK8sUserSymlink && event.Has(fsnotify.Create) {
 				w.log.Info("Kubernetes secret update detected, synchronizing users", "event", event.String())
-				w.SyncAll(ctx)
+				rearm(w.SyncAll(ctx))
 				continue
 			}
 
-			// The original logic in case there is direct file writes.
+			// The original logic in case there is direct file writes. The
+			// sync is debounced — each write pushes it out — so a writer
+			// mid-file doesn't produce a pass computed from a torn read.
 			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".txt") {
-				w.log.Info("Direct file write detected, synchronizing users", "event", event.String())
-				// Resync the whole directory: superusers must always be
-				// computed from the union of every users file, never from a
-				// single file.
-				w.SyncAll(ctx)
+				w.log.Info("Direct file write detected, scheduling users synchronization", "event", event.String())
+				debounce = time.After(writeDebounce)
 			}
+		case <-debounce:
+			debounce = nil
+			// Resync the whole directory: superusers must always be
+			// computed from the union of every users file, never from a
+			// single file.
+			rearm(w.SyncAll(ctx))
+		case <-retry:
+			w.log.Info("retrying incomplete users sync")
+			rearm(w.SyncAll(ctx))
 		case <-ctx.Done():
 			return nil
 		}
@@ -251,6 +349,12 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 // syncUsersFile creates or updates the SCRAM credentials of every user in the
 // given users file and returns their names. Users files hold one
 // user:password[:mechanism] entry per line.
+//
+// A non-nil error means the file could not be *read* and the caller's pass is
+// incomplete. Content problems — malformed lines, or a line so long it can't
+// be a users entry — are logged and skipped but never returned as errors:
+// they'd recur on every retry, and the users secret is user-managed, so a
+// single odd key must not wedge superusers management indefinitely.
 func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]string, error) {
 	file, err := w.fs.Open(path)
 	if err != nil {
@@ -263,6 +367,7 @@ func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]strin
 	var users []string
 
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, bufio.MaxScanTokenSize), maxUsersFileLineSize)
 	for line := 1; scanner.Scan(); line++ {
 		tokens := strings.SplitN(scanner.Text(), ":", 3)
 		if len(tokens) != 3 && len(tokens) != 2 {
@@ -288,7 +393,19 @@ func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]strin
 
 	// A read error on an open file (e.g. EISDIR when the "file" is really a
 	// symlink to a directory) surfaces here rather than at Open time.
-	return users, scanner.Err()
+	if err := scanner.Err(); err != nil {
+		// ErrTooLong is a content-level problem, not a read failure: no
+		// legitimate users line approaches maxUsersFileLineSize, so this key
+		// holds something else entirely. Stop parsing it (the scanner can't
+		// resynchronize past the oversized line anyway) but report the file
+		// as processed, like any other malformed content.
+		if errors.Is(err, bufio.ErrTooLong) {
+			w.log.Info("skipping rest of users file: line too long to be a users entry; not a users file?", "file", path, "limit", maxUsersFileLineSize)
+			return users, nil
+		}
+		return users, err
+	}
+	return users, nil
 }
 
 func (w *ConfigWatcher) setSuperusers(ctx context.Context, users []string) {

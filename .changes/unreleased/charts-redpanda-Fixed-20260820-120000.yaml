@@ -1,4 +1,27 @@
 project: charts/redpanda
 kind: Fixed
-body: The sidecar's user watcher now updates the `superusers` cluster property once per sync with the union of every users file, instead of once per file with only that file's users. Previously every sidecar start and every users-secret update transiently replaced the superusers list with a partial one — kubelet's `..data` symlink even parsed as an empty users file — momentarily revoking superuser status from connected clients (K8S-924).
+body: |-
+    The sidecar's user watcher now updates the `superusers` cluster property once per sync pass, with the union of every users file, instead of once per file with only that file's users.
+
+      Previously every sidecar start and every users-secret update transiently
+      replaced the superusers list with a partial one — kubelet's `..data`
+      symlink even parsed as an empty users file — momentarily revoking
+      superuser status from connected clients. This only affected
+      helm-chart deployments; the operator deploys the sidecar with
+      `--no-set-superusers`.
+
+      Details of the new sync-pass semantics, for anyone debugging around them:
+      the property is written only when the computed list differs from the
+      cluster's current value, so sidecar restarts no longer bump the cluster
+      config version. When any users file can't be read, the patch is withheld
+      (a partial list would revoke the unread file's users) and the pass is
+      retried with backoff until it completes — covering kubelet's
+      symlink-swap window during secret updates. Unparseable file *content*
+      (malformed lines, or a non-users blob stored under another key of the
+      secret) is skipped without withholding the patch, so an odd key can't
+      wedge superusers management. Direct writes to users files are briefly
+      debounced so a mid-write file isn't read torn. Deleting the last users
+      file deliberately leaves `superusers` untouched (now logged). Malformed
+      users-file lines, which can contain passwords, are no longer echoed into
+      the sidecar log — only the file name and line number are.
 time: 2026-08-20T12:00:00.000000000-07:00

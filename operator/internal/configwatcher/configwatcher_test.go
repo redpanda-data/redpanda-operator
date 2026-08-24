@@ -17,6 +17,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -234,6 +235,225 @@ func TestSyncAllPatchesSuperusersOncePerPass(t *testing.T) {
 	watcher.SyncAll(ctx)
 	require.Len(t, admin.superuserPatches(), 3)
 	require.ElementsMatch(t, append(union, "dave", "erin"), admin.superuserPatches()[2])
+
+	cancel()
+	<-done
+}
+
+// TestWatchRecoversFromIncompleteSyncPass is a regression test for the
+// fail-closed half of the K8S-924 fix: a sync pass that can't read every
+// users file withholds the superusers patch — and must then be *retried*,
+// because the filesystem events that would re-trigger it may never come.
+// kubelet's AtomicWriter fires the handled `..data` CREATE event before it
+// removes the symlinks of deleted secret keys and the old payload directory,
+// so the pass it triggers can catch a dangling symlink, and the subsequent
+// cleanup emits only REMOVE events, which the watch loop ignores. Without the
+// watch loop's retry, a secret update that revokes a superuser would leave
+// that user privileged until the next update or a pod restart.
+//
+// The test runs the watcher with watch=true and drives the exact AtomicWriter
+// sequence: swap `..data`, then clean up stale symlinks. Recovery must come
+// from the watcher itself — the only events the cleanup emits are unhandled —
+// so an eventual patch proves the retry path. A dangling symlink present from
+// the start makes the initial pass incomplete deterministically.
+func TestWatchRecoversFromIncompleteSyncPass(t *testing.T) {
+	// The watch loop's platform contract is inotify's: fsnotify's kqueue
+	// backend (darwin) opens every directory entry at Add time — a dangling
+	// symlink fails the whole Add — and a rename over an existing name emits
+	// no CREATE. Production sidecars run on Linux, as does CI.
+	if runtime.GOOS != "linux" {
+		t.Skipf("the fsnotify watch loop relies on inotify semantics; GOOS=%s uses kqueue", runtime.GOOS)
+	}
+
+	const bootstrapUser = "admin-bootstrap"
+	const password = "password"
+	const saslMechanism = "SCRAM-SHA-512"
+
+	logger := testr.New(t)
+	ctx := log.IntoContext(context.Background(), logger)
+
+	admin := newFakeAdminAPI()
+	server := httptest.NewServer(admin)
+	t.Cleanup(server.Close)
+
+	t.Setenv("RPK_USER", bootstrapUser)
+	t.Setenv("RPK_PASS", password)
+	t.Setenv("RPK_SASL_MECHANISM", saslMechanism)
+
+	// kubelet AtomicWriter layout, plus a users file written directly into the
+	// directory (local.txt) and a dangling symlink that keeps every pass
+	// incomplete until it is removed.
+	usersDir := t.TempDir()
+	dataDir := filepath.Join(usersDir, "..2026_08_20_11_42_32.0123456789")
+	require.NoError(t, os.Mkdir(dataDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dataDir, "users.txt"), []byte(createUserLine("alice", password, "SCRAM-SHA-512")+"\n"+createUserLine("bob", password, "SCRAM-SHA-256")), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(dataDir, "more-users.txt"), []byte(createUserLine("carol", password, "SCRAM-SHA-512")), 0o644))
+	require.NoError(t, os.Symlink(filepath.Base(dataDir), filepath.Join(usersDir, "..data")))
+	require.NoError(t, os.Symlink(filepath.Join("..data", "users.txt"), filepath.Join(usersDir, "users.txt")))
+	require.NoError(t, os.Symlink(filepath.Join("..data", "more-users.txt"), filepath.Join(usersDir, "more-users.txt")))
+	require.NoError(t, os.Symlink(filepath.Join("..data", "missing.txt"), filepath.Join(usersDir, "dangling.txt")))
+	require.NoError(t, os.WriteFile(filepath.Join(usersDir, "local.txt"), []byte(createUserLine("dana", password, "SCRAM-SHA-512")), 0o644))
+
+	configPath := filepath.Join(t.TempDir(), "redpanda.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(createRedpandaYaml(server.URL, bootstrapUser, password, saslMechanism)), 0o644))
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	initialized := make(chan struct{})
+	watcher := configwatcher.NewConfigWatcher(
+		logger,
+		true,
+		configwatcher.WithFs(afero.NewOsFs()),
+		configwatcher.WithRedpandaConfigPath(configPath),
+		configwatcher.WithUsersDirectory(usersDir),
+		configwatcher.WithInitializedSignal(initialized),
+	)
+
+	errCh := make(chan error, 1)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if err := watcher.Start(ctx); err != nil {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-initialized:
+	case err := <-errCh:
+		require.NoError(t, err)
+	}
+
+	// The dangling symlink makes the initial pass — and every retry of it —
+	// incomplete: the patch stays withheld.
+	time.Sleep(600 * time.Millisecond)
+	select {
+	case err := <-errCh:
+		require.NoError(t, err, "watcher exited instead of watching")
+	default:
+	}
+	require.Empty(t, admin.superuserPatches())
+
+	// Replay AtomicWriter's steps for a secret update that deletes the
+	// more-users.txt key (revoking carol): write the new payload, atomically
+	// swap `..data` (the only creation event the watch loop handles, and it
+	// arrives while stale symlinks still dangle), then clean up. The cleanup
+	// emits only REMOVE events, so only the retry can deliver the patch.
+	newDataDir := filepath.Join(usersDir, "..2026_08_20_11_45_00.9876543210")
+	require.NoError(t, os.Mkdir(newDataDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(newDataDir, "users.txt"), []byte(createUserLine("alice", password, "SCRAM-SHA-512")+"\n"+createUserLine("bob", password, "SCRAM-SHA-256")), 0o644))
+	require.NoError(t, os.Symlink(filepath.Base(newDataDir), filepath.Join(usersDir, "..data_tmp")))
+	require.NoError(t, os.Rename(filepath.Join(usersDir, "..data_tmp"), filepath.Join(usersDir, "..data")))
+	// Hold the AtomicWriter window open long enough that the CREATE-triggered
+	// pass deterministically runs against the dangling symlinks (kubelet's
+	// window is milliseconds; the ordering is what matters). Without this the
+	// cleanup below can race ahead of the event and hand a complete directory
+	// to the event-triggered pass, which would let a retry-less watch loop
+	// pass the test.
+	time.Sleep(300 * time.Millisecond)
+	require.NoError(t, os.Remove(filepath.Join(usersDir, "more-users.txt")))
+	require.NoError(t, os.RemoveAll(dataDir))
+	require.NoError(t, os.Remove(filepath.Join(usersDir, "dangling.txt")))
+
+	// The first complete pass patches the post-update union — carol revoked,
+	// nobody else touched. Every recorded patch must carry exactly that union:
+	// a partial list must never have been written along the way.
+	union := []string{bootstrapUser, "alice", "bob", "dana"}
+	require.Eventually(t, func() bool { return len(admin.superuserPatches()) > 0 }, 15*time.Second, 25*time.Millisecond,
+		"no superusers patch arrived: an incomplete sync pass was never retried")
+	for _, patch := range admin.superuserPatches() {
+		require.ElementsMatch(t, union, patch)
+	}
+
+	// Direct writes are debounced and then synced. Two back-to-back writes
+	// still produce exactly one additional patch: either the debounce
+	// coalesces them or the second pass hits the equality skip.
+	require.NoError(t, os.WriteFile(filepath.Join(usersDir, "local.txt"), []byte(createUserLine("dana", password, "SCRAM-SHA-512")+"\n"+createUserLine("erin", password, "SCRAM-SHA-512")), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(usersDir, "local.txt"), []byte(createUserLine("dana", password, "SCRAM-SHA-512")+"\n"+createUserLine("erin", password, "SCRAM-SHA-512")), 0o644))
+	require.Eventually(t, func() bool { return len(admin.superuserPatches()) >= 2 }, 15*time.Second, 25*time.Millisecond,
+		"direct file write never triggered a sync")
+	time.Sleep(700 * time.Millisecond)
+	require.Len(t, admin.superuserPatches(), 2)
+	require.ElementsMatch(t, append(union, "erin"), admin.superuserPatches()[1])
+
+	cancel()
+	<-done
+}
+
+// TestSyncAllToleratesNonUsersFileBlobs pins the error classification of a
+// sync pass: content that merely fails to parse — including a line too long
+// to be a users entry, e.g. a certificate or JSON blob stored under another
+// key of the same user-managed secret — must not mark the pass incomplete.
+// An incomplete pass withholds the superusers patch, and a blob key would
+// stay unparseable on every retry, wedging superusers management forever
+// while SCRAM credentials keep syncing.
+func TestSyncAllToleratesNonUsersFileBlobs(t *testing.T) {
+	const bootstrapUser = "admin-bootstrap"
+	const password = "password"
+	const saslMechanism = "SCRAM-SHA-512"
+
+	logger := testr.New(t)
+	ctx := log.IntoContext(context.Background(), logger)
+
+	admin := newFakeAdminAPI()
+	server := httptest.NewServer(admin)
+	t.Cleanup(server.Close)
+
+	t.Setenv("RPK_USER", bootstrapUser)
+	t.Setenv("RPK_PASS", password)
+	t.Setenv("RPK_SASL_MECHANISM", saslMechanism)
+
+	usersDir := t.TempDir()
+	// users.txt carries one valid user plus an oversized-but-parseable
+	// malformed line (needs the enlarged scanner buffer to even be read past).
+	require.NoError(t, os.WriteFile(filepath.Join(usersDir, "users.txt"), []byte(
+		createUserLine("alice", password, "SCRAM-SHA-512")+"\n"+strings.Repeat("b", 100_000)+"\n"+createUserLine("bob", password, "SCRAM-SHA-256"),
+	), 0o644))
+	// A single line longer than any conceivable users entry: scanning stops
+	// with bufio.ErrTooLong, which must count as malformed content, not as a
+	// read failure.
+	require.NoError(t, os.WriteFile(filepath.Join(usersDir, "cert.blob"), []byte(strings.Repeat("a", 1<<20+1)), 0o644))
+
+	configPath := filepath.Join(t.TempDir(), "redpanda.yaml")
+	require.NoError(t, os.WriteFile(configPath, []byte(createRedpandaYaml(server.URL, bootstrapUser, password, saslMechanism)), 0o644))
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	initialized := make(chan struct{})
+	watcher := configwatcher.NewConfigWatcher(
+		logger,
+		false,
+		configwatcher.WithFs(afero.NewOsFs()),
+		configwatcher.WithRedpandaConfigPath(configPath),
+		configwatcher.WithUsersDirectory(usersDir),
+		configwatcher.WithInitializedSignal(initialized),
+	)
+
+	errCh := make(chan error, 1)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if err := watcher.Start(ctx); err != nil {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-initialized:
+	case err := <-errCh:
+		require.NoError(t, err)
+	}
+
+	require.Eventually(t, func() bool { return len(admin.superuserPatches()) > 0 }, 10*time.Second, 10*time.Millisecond,
+		"the blob key wedged the sync pass: superusers were never patched")
+	require.ElementsMatch(t, []string{bootstrapUser, "alice", "bob"}, admin.superuserPatches()[0])
+
+	// The pass reports complete — nothing needs retrying — and a rerun over
+	// unchanged input hits the equality skip.
+	require.True(t, watcher.SyncAll(ctx))
+	require.Len(t, admin.superuserPatches(), 1)
 
 	cancel()
 	<-done
