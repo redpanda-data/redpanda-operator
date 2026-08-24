@@ -78044,29 +78044,29 @@ spec:
       - emptyDir: {}
         name: config
 -- testdata/TestTemplate/default-v22.1.0-0.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Error: The Redpanda version (22.1.0) is no longer supported 
+execution error at (redpanda/templates/entry-point.yaml:18:4): Error: The Redpanda version (22.1.0) is no longer supported 
 To accept this risk, run the upgrade again adding `--force=true`
 
 -- testdata/TestTemplate/default-v22.1.0-1.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Error: The Redpanda version (22.1.0) is no longer supported 
+execution error at (redpanda/templates/entry-point.yaml:18:4): Error: The Redpanda version (22.1.0) is no longer supported 
 To accept this risk, run the upgrade again adding `--force=true`
 
 -- testdata/TestTemplate/default-v22.1.0-2.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Error: The Redpanda version (22.1.0) is no longer supported 
+execution error at (redpanda/templates/entry-point.yaml:18:4): Error: The Redpanda version (22.1.0) is no longer supported 
 To accept this risk, run the upgrade again adding `--force=true`
 
 -- testdata/TestTemplate/default-v22.2.0-0.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.2.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.2.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.2.0-1.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.2.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.2.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.2.0-2.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.2.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.2.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.3.0-0.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.3.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.3.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.3.0-1.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.3.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.3.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.3.0-2.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.3.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.3.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.3.14-0.yaml.golden --
 ---
 # Source: redpanda/templates/entry-point.yaml
@@ -82804,17 +82804,17 @@ spec:
       - emptyDir: {}
         name: config
 -- testdata/TestTemplate/default-v22.4.0-0.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.4.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.4.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.4.0-1.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.4.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.4.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v22.4.0-2.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v22.4.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v22.4.0 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v23.1.1-0.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v23.1.1 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v23.1.1 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v23.1.1-1.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v23.1.1 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v23.1.1 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v23.1.1-2.yaml.golden --
-execution error at (redpanda/templates/entry-point.yaml:17:4): Redpanda version v23.1.1 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
+execution error at (redpanda/templates/entry-point.yaml:18:4): Redpanda version v23.1.1 does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.
 -- testdata/TestTemplate/default-v23.1.2-0.yaml.golden --
 ---
 # Source: redpanda/templates/entry-point.yaml
