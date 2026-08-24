@@ -10,9 +10,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/fs"
 	"os"
-	"path"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
@@ -22,10 +23,11 @@ import (
 
 func main() {
 	var out string
+	var noClean bool
 	var bundled []string
 
 	cmd := cobra.Command{
-		Use:  "gotohelm <package to transpile> [--bundle package/to/bundle] [subcharts...]",
+		Use:  "gotohelm <package to transpile> [--no-clean] [--bundle package/to/bundle] [subcharts...]",
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			cwd, _ := os.Getwd()
@@ -46,7 +48,7 @@ func main() {
 			if out == "-" {
 				writeToStdout(chart)
 			} else {
-				if err := writeToDir(chart, out); err != nil {
+				if err := writeToDir(chart, out, !noClean); err != nil {
 					panic(err)
 				}
 			}
@@ -55,6 +57,7 @@ func main() {
 
 	cmd.Flags().StringArrayVarP(&bundled, "bundle", "b", []string{}, "dependency packages that will be bundled into the final output")
 	cmd.Flags().StringVarP(&out, "write", "w", "-", "The directory to write the transpiled templates to or - to write them to standard out")
+	cmd.Flags().BoolVarP(&noClean, "no-clean", "c", false, "Clear files not containing gotohelm:keep from the output directory before writing files")
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Printf("%+v\n", err)
@@ -70,9 +73,47 @@ func writeToStdout(chart *gotohelm.Chart) {
 	}
 }
 
-func writeToDir(chart *gotohelm.Chart, dir string) error {
+func writeToDir(chart *gotohelm.Chart, dir string, clean bool) error {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return err
+	}
+
+	defer root.Close()
+
+	files := map[string]bool{}
 	for _, f := range chart.Files {
-		file, err := os.OpenFile(path.Join(dir, f.Name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) //nolint:gosec
+		files[f.Name] = true
+	}
+
+	if clean {
+		if err := fs.WalkDir(root.FS(), ".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			// Skip directories and files that will be overwritten anyways.
+			if d.IsDir() || files[path] {
+				return nil
+			}
+
+			contents, err := root.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			if bytes.Contains(contents, []byte(`gotohelm:keep`)) {
+				return nil
+			}
+
+			return root.Remove(path)
+		}); err != nil {
+			return err
+		}
+	}
+
+	for _, f := range chart.Files {
+		file, err := root.OpenFile(f.Name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644) //nolint:gosec
 		if err != nil {
 			return err
 		}
@@ -83,5 +124,6 @@ func writeToDir(chart *gotohelm.Chart, dir string) error {
 			return err
 		}
 	}
-	return nil
+
+	return root.Close()
 }

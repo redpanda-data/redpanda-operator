@@ -1,3 +1,5 @@
+{{- /* gotohelm:keep */ -}}
+
 {{- define "console.Name" -}}
 {{- (dict "r" (get (fromJson (include "chart.Name" .)) "r")) | toJson -}}
 {{- end -}}
