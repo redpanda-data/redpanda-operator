@@ -35,7 +35,7 @@
 {{- $names = (concat (default (list) $names) (list (printf "*.%s" (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $state.Values.external.domain))))) "r")))) -}}
 {{- end -}}
 {{- $names = (concat (default (list) $names) (default (list) (get (fromJson (include "redpanda.gatewayServerCertDNSNames" (dict "a" (list $state $name)))) "r"))) -}}
-{{- $duration := (default "43800h" $data.duration) -}}
+{{- $duration := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $data.duration "43800h")))) "r") -}}
 {{- $issuerRef := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $data.issuerRef (mustMergeOverwrite (dict "name" "") (dict "kind" "Issuer" "group" "cert-manager.io" "name" (printf "%s-%s-root-issuer" $fullname $name))))))) "r") -}}
 {{- $certs = (concat (default (list) $certs) (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "secretName" "" "issuerRef" (dict "name" "")) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "cert-manager.io/v1" "kind" "Certificate")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-cert" $fullname $name) "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace)) "spec" (mustMergeOverwrite (dict "secretName" "" "issuerRef" (dict "name" "")) (dict "dnsNames" $names "duration" (get (fromJson (include "_shims.time_Duration_String" (dict "a" (list (get (fromJson (include "_shims.time_ParseDuration" (dict "a" (list $duration)))) "r"))))) "r") "isCA" false "issuerRef" $issuerRef "secretName" (get (fromJson (include "redpanda.TLSCert.ServerSecretName" (dict "a" (list $data $state $name)))) "r") "privateKey" (mustMergeOverwrite (dict) (dict "algorithm" "ECDSA" "size" (256 | int))))))))) -}}
 {{- end -}}
@@ -55,7 +55,7 @@
 {{- $issuerRef = $data.issuerRef -}}
 {{- $_ := (set $issuerRef "group" "cert-manager.io") -}}
 {{- end -}}
-{{- $duration := (default "43800h" $data.duration) -}}
+{{- $duration := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $data.duration "43800h")))) "r") -}}
 {{- $certs = (concat (default (list) $certs) (list (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "secretName" "" "issuerRef" (dict "name" "")) "status" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "cert-manager.io/v1" "kind" "Certificate")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-client" $fullname $name) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "spec" (mustMergeOverwrite (dict "secretName" "" "issuerRef" (dict "name" "")) (dict "commonName" (printf "%s--%s-client" $fullname $name) "duration" (get (fromJson (include "_shims.time_Duration_String" (dict "a" (list (get (fromJson (include "_shims.time_ParseDuration" (dict "a" (list $duration)))) "r"))))) "r") "isCA" false "secretName" (get (fromJson (include "redpanda.TLSCert.ClientSecretName" (dict "a" (list $data $state $name)))) "r") "privateKey" (mustMergeOverwrite (dict) (dict "algorithm" "ECDSA" "size" (256 | int))) "issuerRef" $issuerRef)))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}

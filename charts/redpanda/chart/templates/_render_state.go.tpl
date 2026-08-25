@@ -85,7 +85,7 @@
 {{- end -}}
 {{- $adminSpec := (mustMergeOverwrite (dict "urls" (coalesce nil)) (dict "tls" $adminTLS "sasl" $adminAuth "urls" (list (printf "%s://%s:%d" $adminSchema (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $r)))) "r") ($r.Values.listeners.admin.port | int))))) -}}
 {{- $schemaRegistrySpec := (coalesce nil) -}}
-{{- if $r.Values.listeners.schemaRegistry.enabled -}}
+{{- if (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $r.Values.listeners.schemaRegistry.enabled false)))) "r") -}}
 {{- $schemaTLS := (coalesce nil) -}}
 {{- $schemaSchema := "http" -}}
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $r.Values.listeners.schemaRegistry.tls $r.Values.tls)))) "r") -}}

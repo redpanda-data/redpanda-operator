@@ -98,7 +98,7 @@ func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmana
 					Labels:    FullLabels(state),
 				},
 				Spec: certmanagerv1.CertificateSpec{
-					Duration:   helmette.MustDuration(helmette.Default("43800h", data.Duration)),
+					Duration:   helmette.MustDuration(ptr.Deref(data.Duration, "43800h")),
 					IsCA:       true,
 					CommonName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
 					SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),

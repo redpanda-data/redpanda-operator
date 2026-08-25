@@ -29,7 +29,7 @@ type PartialValues struct {
 	FullnameOverride *string                     "json:\"fullnameOverride,omitempty\""
 	ClusterDomain    *string                     "json:\"clusterDomain,omitempty\""
 	CommonLabels     map[string]string           "json:\"commonLabels,omitempty\""
-	Image            *PartialImage               "json:\"image,omitempty\" jsonschema:\"required,description=Values used to define the container image to be used for Redpanda\""
+	Image            *PartialImage               "json:\"image,omitempty\" jsonschema:\"description=Values used to define the container image to be used for Redpanda\""
 	Service          *PartialService             "json:\"service,omitempty\""
 	LicenseKey       *string                     "json:\"license_key,omitempty\" jsonschema:\"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$\""
 	AuditLogging     *PartialAuditLogging        "json:\"auditLogging,omitempty\""
@@ -58,8 +58,8 @@ type PartialValues struct {
 }
 
 type PartialImage struct {
-	Repository *string "json:\"repository,omitempty\" jsonschema:\"required\""
-	Tag        *string "json:\"tag,omitempty\" jsonschema:\"required\""
+	Repository *string "json:\"repository,omitempty\""
+	Tag        *string "json:\"tag,omitempty\""
 }
 
 type PartialAuditLogging struct {
@@ -81,24 +81,24 @@ type PartialEnterprise struct {
 }
 
 type PartialRackAwareness struct {
-	Enabled        *bool   "json:\"enabled,omitempty\" jsonschema:\"required\""
-	NodeAnnotation *string "json:\"nodeAnnotation,omitempty\" jsonschema:\"required\""
+	Enabled        *bool   "json:\"enabled,omitempty\""
+	NodeAnnotation *string "json:\"nodeAnnotation,omitempty\""
 }
 
 type PartialAuth struct {
-	SASL *PartialSASLAuth "json:\"sasl,omitempty\" jsonschema:\"required\""
+	SASL *PartialSASLAuth "json:\"sasl,omitempty\""
 }
 
 type PartialTLS struct {
-	Enabled *bool             "json:\"enabled,omitempty\" jsonschema:\"required\""
-	Certs   PartialTLSCertMap "json:\"certs,omitempty\" jsonschema:\"required\""
+	Enabled *bool             "json:\"enabled,omitempty\""
+	Certs   PartialTLSCertMap "json:\"certs,omitempty\""
 }
 
 type PartialExternalConfig struct {
 	Addresses      []string              "json:\"addresses,omitempty\""
 	Annotations    map[string]string     "json:\"annotations,omitempty\""
 	Domain         *string               "json:\"domain,omitempty\""
-	Enabled        *bool                 "json:\"enabled,omitempty\" jsonschema:\"required\""
+	Enabled        *bool                 "json:\"enabled,omitempty\""
 	Type           *corev1.ServiceType   "json:\"type,omitempty\" jsonschema:\"pattern=^(LoadBalancer|NodePort)$\""
 	PrefixTemplate *string               "json:\"prefixTemplate,omitempty\""
 	SourceRanges   []string              "json:\"sourceRanges,omitempty\""
@@ -108,16 +108,16 @@ type PartialExternalConfig struct {
 }
 
 type PartialLogging struct {
-	LogLevel   *string "json:\"logLevel,omitempty\" jsonschema:\"required,pattern=^(error|warn|info|debug|trace)$\""
+	LogLevel   *string "json:\"logLevel,omitempty\" jsonschema:\"pattern=^(error|warn|info|debug|trace)$\""
 	UsageStats *struct {
-		Enabled   *bool   "json:\"enabled,omitempty\" jsonschema:\"required\""
+		Enabled   *bool   "json:\"enabled,omitempty\""
 		ClusterID *string "json:\"clusterId,omitempty\""
-	} "json:\"usageStats,omitempty\" jsonschema:\"required\""
+	} "json:\"usageStats,omitempty\""
 }
 
 type PartialMonitoring struct {
-	Enabled        *bool                   "json:\"enabled,omitempty\" jsonschema:\"required\""
-	ScrapeInterval *monitoringv1.Duration  "json:\"scrapeInterval,omitempty\" jsonschema:\"required\""
+	Enabled        *bool                   "json:\"enabled,omitempty\""
+	ScrapeInterval *monitoringv1.Duration  "json:\"scrapeInterval,omitempty\""
 	Labels         map[string]string       "json:\"labels,omitempty\""
 	TLSConfig      *monitoringv1.TLSConfig "json:\"tlsConfig,omitempty\""
 	EnableHTTP2    *bool                   "json:\"enableHttp2,omitempty\""
@@ -127,40 +127,40 @@ type PartialRedpandaResources struct {
 	Limits   *corev1.ResourceList "json:\"limits,omitempty\""
 	Requests *corev1.ResourceList "json:\"requests,omitempty\""
 	CPU      *struct {
-		Cores           *resource.Quantity "json:\"cores,omitempty\" jsonschema:\"required\""
+		Cores           *resource.Quantity "json:\"cores,omitempty\""
 		Overprovisioned *bool              "json:\"overprovisioned,omitempty\""
-	} "json:\"cpu,omitempty\" jsonschema:\"required\""
+	} "json:\"cpu,omitempty\""
 	Memory *struct {
 		EnableMemoryLocking *bool "json:\"enable_memory_locking,omitempty\""
 		Container           *struct {
 			Min *resource.Quantity "json:\"min,omitempty\""
-			Max *resource.Quantity "json:\"max,omitempty\" jsonschema:\"required\""
-		} "json:\"container,omitempty\" jsonschema:\"required\""
+			Max *resource.Quantity "json:\"max,omitempty\""
+		} "json:\"container,omitempty\""
 		Redpanda *struct {
 			Memory        *resource.Quantity "json:\"memory,omitempty\""
 			ReserveMemory *resource.Quantity "json:\"reserveMemory,omitempty\""
 		} "json:\"redpanda,omitempty\""
-	} "json:\"memory,omitempty\" jsonschema:\"required\""
+	} "json:\"memory,omitempty\""
 }
 
 type PartialStorage struct {
-	HostPath         *string        "json:\"hostPath,omitempty\" jsonschema:\"required\""
-	Tiered           *PartialTiered "json:\"tiered,omitempty\" jsonschema:\"required\""
+	HostPath         *string        "json:\"hostPath,omitempty\""
+	Tiered           *PartialTiered "json:\"tiered,omitempty\""
 	PersistentVolume *struct {
-		Annotations   map[string]string  "json:\"annotations,omitempty\" jsonschema:\"required\""
-		Enabled       *bool              "json:\"enabled,omitempty\" jsonschema:\"required\""
-		Labels        map[string]string  "json:\"labels,omitempty\" jsonschema:\"required\""
-		Size          *resource.Quantity "json:\"size,omitempty\" jsonschema:\"required\""
-		StorageClass  *string            "json:\"storageClass,omitempty\" jsonschema:\"required\""
+		Annotations   map[string]string  "json:\"annotations,omitempty\""
+		Enabled       *bool              "json:\"enabled,omitempty\""
+		Labels        map[string]string  "json:\"labels,omitempty\""
+		Size          *resource.Quantity "json:\"size,omitempty\""
+		StorageClass  *string            "json:\"storageClass,omitempty\""
 		NameOverwrite *string            "json:\"nameOverwrite,omitempty\""
-	} "json:\"persistentVolume,omitempty\" jsonschema:\"required,deprecated\""
+	} "json:\"persistentVolume,omitempty\" jsonschema:\"deprecated\""
 	TieredConfig                  PartialTieredStorageConfig "json:\"tieredConfig,omitempty\" jsonschema:\"deprecated\""
 	TieredStorageHostPath         *string                    "json:\"tieredStorageHostPath,omitempty\" jsonschema:\"deprecated\""
 	TieredStoragePersistentVolume *struct {
-		Annotations  map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
-		Enabled      *bool             "json:\"enabled,omitempty\" jsonschema:\"required\""
-		Labels       map[string]string "json:\"labels,omitempty\" jsonschema:\"required\""
-		StorageClass *string           "json:\"storageClass,omitempty\" jsonschema:\"required\""
+		Annotations  map[string]string "json:\"annotations,omitempty\""
+		Enabled      *bool             "json:\"enabled,omitempty\""
+		Labels       map[string]string "json:\"labels,omitempty\""
+		StorageClass *string           "json:\"storageClass,omitempty\""
 	} "json:\"tieredStoragePersistentVolume,omitempty\" jsonschema:\"deprecated\""
 }
 
@@ -172,22 +172,22 @@ type PartialPostInstallJob struct {
 }
 
 type PartialStatefulset struct {
-	AdditionalSelectorLabels             map[string]string                                       "json:\"additionalSelectorLabels,omitempty\" jsonschema:\"required\""
-	Replicas                             *int32                                                  "json:\"replicas,omitempty\" jsonschema:\"required\""
-	UpdateStrategy                       *appsv1.StatefulSetUpdateStrategy                       "json:\"updateStrategy,omitempty\" jsonschema:\"required\""
+	AdditionalSelectorLabels             map[string]string                                       "json:\"additionalSelectorLabels,omitempty\""
+	Replicas                             *int32                                                  "json:\"replicas,omitempty\""
+	UpdateStrategy                       *appsv1.StatefulSetUpdateStrategy                       "json:\"updateStrategy,omitempty\""
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy "json:\"persistentVolumeClaimRetentionPolicy,omitempty\""
 	AdditionalRedpandaCmdFlags           []string                                                "json:\"additionalRedpandaCmdFlags,omitempty\""
-	PodTemplate                          *PartialPodTemplate                                     "json:\"podTemplate,omitempty\" jsonschema:\"required\""
+	PodTemplate                          *PartialPodTemplate                                     "json:\"podTemplate,omitempty\""
 	Budget                               *struct {
-		MaxUnavailable *int32 "json:\"maxUnavailable,omitempty\" jsonschema:\"required\""
-	} "json:\"budget,omitempty\" jsonschema:\"required\""
+		MaxUnavailable *int32 "json:\"maxUnavailable,omitempty\""
+	} "json:\"budget,omitempty\""
 	PodAntiAffinity *struct {
-		TopologyKey *string        "json:\"topologyKey,omitempty\" jsonschema:\"required\""
-		Type        *string        "json:\"type,omitempty\" jsonschema:\"required,pattern=^(hard|soft|custom)$\""
-		Weight      *int32         "json:\"weight,omitempty\" jsonschema:\"required\""
+		TopologyKey *string        "json:\"topologyKey,omitempty\""
+		Type        *string        "json:\"type,omitempty\" jsonschema:\"pattern=^(hard|soft|custom)$\""
+		Weight      *int32         "json:\"weight,omitempty\""
 		Custom      map[string]any "json:\"custom,omitempty\""
-	} "json:\"podAntiAffinity,omitempty\" jsonschema:\"required\""
-	SideCars       *PartialSidecars "json:\"sideCars,omitempty\" jsonschema:\"required\""
+	} "json:\"podAntiAffinity,omitempty\""
+	SideCars       *PartialSidecars "json:\"sideCars,omitempty\""
 	InitContainers *struct {
 		FSValidator *struct {
 			Enabled    *bool   "json:\"enabled,omitempty\""
@@ -207,16 +207,16 @@ type PartialStatefulset struct {
 }
 
 type PartialServiceAccountCfg struct {
-	Annotations                            map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
-	Create                                 *bool             "json:\"create,omitempty\" jsonschema:\"required\""
-	Name                                   *string           "json:\"name,omitempty\" jsonschema:\"required\""
+	Annotations                            map[string]string "json:\"annotations,omitempty\""
+	Create                                 *bool             "json:\"create,omitempty\""
+	Name                                   *string           "json:\"name,omitempty\""
 	DeprecatedAutomountServiceAccountToken *bool             "json:\"automountServiceAccountToken,omitempty\""
 }
 
 type PartialRBAC struct {
-	Enabled        *bool             "json:\"enabled,omitempty\" jsonschema:\"required\""
-	RPKDebugBundle *bool             "json:\"rpkDebugBundle,omitempty\" jsonschema:\"required\""
-	Annotations    map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
+	Enabled        *bool             "json:\"enabled,omitempty\""
+	RPKDebugBundle *bool             "json:\"rpkDebugBundle,omitempty\""
+	Annotations    map[string]string "json:\"annotations,omitempty\""
 }
 
 type PartialTuning struct {
@@ -230,29 +230,29 @@ type PartialTuning struct {
 }
 
 type PartialListeners struct {
-	Admin          *PartialListenerConfig[NoAuth]                    "json:\"admin,omitempty\" jsonschema:\"required\""
-	HTTP           *PartialListenerConfig[HTTPAuthenticationMethod]  "json:\"http,omitempty\" jsonschema:\"required\""
-	Kafka          *PartialListenerConfig[KafkaAuthenticationMethod] "json:\"kafka,omitempty\" jsonschema:\"required\""
-	SchemaRegistry *PartialListenerConfig[NoAuth]                    "json:\"schemaRegistry,omitempty\" jsonschema:\"required\""
+	Admin          *PartialListenerConfig[NoAuth]                    "json:\"admin,omitempty\""
+	HTTP           *PartialListenerConfig[HTTPAuthenticationMethod]  "json:\"http,omitempty\""
+	Kafka          *PartialListenerConfig[KafkaAuthenticationMethod] "json:\"kafka,omitempty\""
+	SchemaRegistry *PartialListenerConfig[NoAuth]                    "json:\"schemaRegistry,omitempty\""
 	RPC            *struct {
-		Port *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-		TLS  *PartialInternalTLS "json:\"tls,omitempty\" jsonschema:\"required\""
-	} "json:\"rpc,omitempty\" jsonschema:\"required\""
+		Port *int32              "json:\"port,omitempty\""
+		TLS  *PartialInternalTLS "json:\"tls,omitempty\""
+	} "json:\"rpc,omitempty\""
 }
 
 type PartialConfig struct {
-	Cluster                   PartialClusterConfig         "json:\"cluster,omitempty\" jsonschema:\"required\""
+	Cluster                   PartialClusterConfig         "json:\"cluster,omitempty\""
 	ExtraClusterConfiguration PartialClusterConfiguration  "json:\"extraClusterConfiguration,omitempty\""
-	Node                      PartialNodeConfig            "json:\"node,omitempty\" jsonschema:\"required\""
+	Node                      PartialNodeConfig            "json:\"node,omitempty\""
 	RPK                       map[string]any               "json:\"rpk,omitempty\""
 	SchemaRegistryClient      *PartialSchemaRegistryClient "json:\"schema_registry_client,omitempty\""
 	PandaProxyClient          *PartialPandaProxyClient     "json:\"pandaproxy_client,omitempty\""
-	Tunable                   PartialTunableConfig         "json:\"tunable,omitempty\" jsonschema:\"required\""
+	Tunable                   PartialTunableConfig         "json:\"tunable,omitempty\""
 }
 
 type PartialPodTemplate struct {
-	Labels      map[string]string                      "json:\"labels,omitempty\" jsonschema:\"required\""
-	Annotations map[string]string                      "json:\"annotations,omitempty\" jsonschema:\"required\""
+	Labels      map[string]string                      "json:\"labels,omitempty\""
+	Annotations map[string]string                      "json:\"annotations,omitempty\""
 	Spec        *applycorev1.PodSpecApplyConfiguration "json:\"spec,omitempty\""
 }
 
@@ -266,21 +266,21 @@ type PartialService struct {
 type PartialTLSCertMap map[string]PartialTLSCert
 
 type PartialEnableable struct {
-	Enabled *bool "json:\"enabled,omitempty\" jsonschema:\"required\""
+	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialTiered struct {
 	CredentialsSecretRef *PartialTieredStorageCredentials "json:\"credentialsSecretRef,omitempty\""
 	Config               PartialTieredStorageConfig       "json:\"config,omitempty\""
 	HostPath             *string                          "json:\"hostPath,omitempty\""
-	MountType            *string                          "json:\"mountType,omitempty\" jsonschema:\"required,pattern=^(none|hostPath|emptyDir|persistentVolume)$\""
+	MountType            *string                          "json:\"mountType,omitempty\" jsonschema:\"pattern=^(none|hostPath|emptyDir|persistentVolume)$\""
 	PersistentVolume     *struct {
-		Annotations   map[string]string "json:\"annotations,omitempty\" jsonschema:\"required\""
+		Annotations   map[string]string "json:\"annotations,omitempty\""
 		Enabled       *bool             "json:\"enabled,omitempty\""
-		Labels        map[string]string "json:\"labels,omitempty\" jsonschema:\"required\""
+		Labels        map[string]string "json:\"labels,omitempty\""
 		NameOverwrite *string           "json:\"nameOverwrite,omitempty\""
 		Size          *string           "json:\"size,omitempty\""
-		StorageClass  *string           "json:\"storageClass,omitempty\" jsonschema:\"required\""
+		StorageClass  *string           "json:\"storageClass,omitempty\""
 	} "json:\"persistentVolume,omitempty\""
 }
 
@@ -325,7 +325,7 @@ type PartialNodeConfig map[string]any
 type PartialTunableConfig map[string]any
 
 type PartialSASLAuth struct {
-	Enabled       *bool                 "json:\"enabled,omitempty\" jsonschema:\"required\""
+	Enabled       *bool                 "json:\"enabled,omitempty\""
 	Mechanism     *SASLMechanism        "json:\"mechanism,omitempty\""
 	SecretRef     *string               "json:\"secretRef,omitempty\""
 	Users         []PartialSASLUser     "json:\"users,omitempty\""
@@ -341,16 +341,16 @@ type PartialGatewayConfig struct {
 type PartialListenerConfig[T ~string] struct {
 	Enabled              *bool                                 "json:\"enabled,omitempty\""
 	External             map[string]PartialExternalListener[T] "json:\"external,omitempty\""
-	Port                 *int32                                "json:\"port,omitempty\" jsonschema:\"required\""
-	TLS                  *PartialInternalTLS                   "json:\"tls,omitempty\" jsonschema:\"required\""
+	Port                 *int32                                "json:\"port,omitempty\""
+	TLS                  *PartialInternalTLS                   "json:\"tls,omitempty\""
 	AppProtocol          *string                               "json:\"appProtocol,omitempty\""
 	AuthenticationMethod *T                                    "json:\"authenticationMethod,omitempty\""
 }
 
 type PartialInternalTLS struct {
 	Enabled           *bool              "json:\"enabled,omitempty\""
-	Cert              *string            "json:\"cert,omitempty\" jsonschema:\"required\""
-	RequireClientAuth *bool              "json:\"requireClientAuth,omitempty\" jsonschema:\"required\""
+	Cert              *string            "json:\"cert,omitempty\""
+	RequireClientAuth *bool              "json:\"requireClientAuth,omitempty\""
 	TrustStore        *PartialTrustStore "json:\"trustStore,omitempty\""
 }
 
@@ -382,7 +382,7 @@ type PartialPandaProxyClient struct {
 
 type PartialTLSCert struct {
 	Enabled               *bool                        "json:\"enabled,omitempty\""
-	CAEnabled             *bool                        "json:\"caEnabled,omitempty\" jsonschema:\"required\""
+	CAEnabled             *bool                        "json:\"caEnabled,omitempty\""
 	ApplyInternalDNSNames *bool                        "json:\"applyInternalDNSNames,omitempty\""
 	Duration              *string                      "json:\"duration,omitempty\" jsonschema:\"pattern=.*[smh]$\""
 	IssuerRef             *cmmetav1.ObjectReference    "json:\"issuerRef,omitempty\""
@@ -427,7 +427,7 @@ type PartialGatewayParentRef struct {
 type PartialExternalListener[T ~string] struct {
 	Enabled              *bool               "json:\"enabled,omitempty\""
 	AdvertisedPorts      []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32              "json:\"port,omitempty\" jsonschema:\"required\""
+	Port                 *int32              "json:\"port,omitempty\""
 	NodePort             *int32              "json:\"nodePort,omitempty\""
 	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
 	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""

@@ -212,7 +212,7 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 
 	// Schema Registry configuration (if enabled)
 	var schemaRegistrySpec *ir.SchemaRegistrySpec
-	if r.Values.Listeners.SchemaRegistry.Enabled {
+	if ptr.Deref(r.Values.Listeners.SchemaRegistry.Enabled, false) {
 		var schemaTLS *ir.CommonTLS
 		schemaSchema := "http"
 		if r.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&r.Values.TLS) {

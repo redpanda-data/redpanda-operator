@@ -25,6 +25,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
@@ -215,7 +216,7 @@ func renderResources(state *RenderState) []kube.Object {
 }
 
 func checkVersion(state *RenderState) {
-	if !RedpandaAtLeast_22_2_0(state) && !state.Values.Force {
+	if !RedpandaAtLeast_22_2_0(state) && !ptr.Deref(state.Values.Force, false) {
 		sv := semver(state)
 		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
 	}

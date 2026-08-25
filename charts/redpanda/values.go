@@ -89,14 +89,14 @@ type Values struct {
 	NameOverride     string                     `json:"nameOverride"`
 	FullnameOverride string                     `json:"fullnameOverride"`
 	ClusterDomain    string                     `json:"clusterDomain"`
-	CommonLabels     map[string]string          `json:"commonLabels"`
-	Image            Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service                   `json:"service"`
-	LicenseKey       string                     `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	CommonLabels     map[string]string          `json:"commonLabels,omitempty"`
+	Image            Image                      `json:"image" jsonschema:"description=Values used to define the container image to be used for Redpanda"`
+	Service          *Service                   `json:"service,omitempty"`
+	LicenseKey       *string                    `json:"license_key,omitempty" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
 	AuditLogging     AuditLogging               `json:"auditLogging"`
 	Enterprise       Enterprise                 `json:"enterprise"`
 	RackAwareness    RackAwareness              `json:"rackAwareness"`
-	Console          consolechart.PartialValues `json:"console,omitempty"`
+	Console          consolechart.PartialValues `json:"console"`
 	Auth             Auth                       `json:"auth"`
 	TLS              TLS                        `json:"tls"`
 	External         ExternalConfig             `json:"external"`
@@ -111,16 +111,16 @@ type Values struct {
 	Tuning           Tuning                     `json:"tuning"`
 	Listeners        Listeners                  `json:"listeners"`
 	Config           Config                     `json:"config"`
-	Tests            *struct {
+	Tests            struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
-	Force       bool        `json:"force"`
+	Force       *bool       `json:"force,omitempty"`
 	PodTemplate PodTemplate `json:"podTemplate"`
 }
 
 type Image struct {
-	Repository string `json:"repository" jsonschema:"required"`
-	Tag        string `json:"tag" jsonschema:"required"`
+	Repository string `json:"repository"`
+	Tag        string `json:"tag"`
 }
 
 // +gotohelm:ignore=true
@@ -133,9 +133,9 @@ func (Image) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type Service struct {
-	Name     *string `json:"name"`
+	Name     *string `json:"name,omitempty"`
 	Internal struct {
-		Annotations map[string]string `json:"annotations"`
+		Annotations map[string]string `json:"annotations,omitempty"`
 	} `json:"internal"`
 }
 
@@ -143,18 +143,18 @@ type AuditLogging struct {
 	Enabled                    bool     `json:"enabled"`
 	Listener                   string   `json:"listener"`
 	Partitions                 int      `json:"partitions"`
-	EnabledEventTypes          []string `json:"enabledEventTypes"`
-	ExcludedTopics             []string `json:"excludedTopics"`
-	ExcludedPrincipals         []string `json:"excludedPrincipals"`
+	EnabledEventTypes          []string `json:"enabledEventTypes,omitempty"`
+	ExcludedTopics             []string `json:"excludedTopics,omitempty"`
+	ExcludedPrincipals         []string `json:"excludedPrincipals,omitempty"`
 	ClientMaxBufferSize        int      `json:"clientMaxBufferSize"`
 	QueueDrainIntervalMS       int      `json:"queueDrainIntervalMs"`
 	QueueMaxBufferSizeperShard int      `json:"queueMaxBufferSizePerShard"`
-	ReplicationFactor          int      `json:"replicationFactor"`
+	ReplicationFactor          *int     `json:"replicationFactor,omitempty"`
 }
 
 // +gotohelm:ignore=true
 func (AuditLogging) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "replicationFactor", "enabledEventTypes", "excludedPrincipals", "excludedTopics")
+	makeNullable(schema, "replicationFactor")
 }
 
 func (a *AuditLogging) Translate(state *RenderState, isSASLEnabled bool) map[string]any {
@@ -186,7 +186,7 @@ func (a *AuditLogging) Translate(state *RenderState, isSASLEnabled bool) map[str
 		result["audit_log_num_partitions"] = a.Partitions
 	}
 
-	if a.ReplicationFactor != 0 {
+	if ptr.Deref(a.ReplicationFactor, 0) != 0 {
 		result["audit_log_replication_factor"] = a.ReplicationFactor
 	}
 
@@ -216,12 +216,12 @@ func (Enterprise) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type RackAwareness struct {
-	Enabled        bool   `json:"enabled" jsonschema:"required"`
-	NodeAnnotation string `json:"nodeAnnotation" jsonschema:"required"`
+	Enabled        bool   `json:"enabled"`
+	NodeAnnotation string `json:"nodeAnnotation"`
 }
 
 type Auth struct {
-	SASL *SASLAuth `json:"sasl" jsonschema:"required"`
+	SASL *SASLAuth `json:"sasl,omitempty"`
 }
 
 func (a *Auth) IsSASLEnabled() bool {
@@ -248,20 +248,20 @@ func (a *Auth) Translate(isSASLEnabled bool) map[string]any {
 }
 
 type TLS struct {
-	Enabled bool       `json:"enabled" jsonschema:"required"`
-	Certs   TLSCertMap `json:"certs" jsonschema:"required"`
+	Enabled bool       `json:"enabled"`
+	Certs   TLSCertMap `json:"certs,omitempty"`
 }
 
 type ExternalConfig struct {
-	Addresses      []string           `json:"addresses"`
-	Annotations    map[string]string  `json:"annotations"`
-	Domain         *string            `json:"domain"`
-	Enabled        bool               `json:"enabled" jsonschema:"required"`
+	Addresses      []string           `json:"addresses,omitempty"`
+	Annotations    map[string]string  `json:"annotations,omitempty"`
+	Domain         *string            `json:"domain,omitempty"`
+	Enabled        bool               `json:"enabled"`
 	Type           corev1.ServiceType `json:"type" jsonschema:"pattern=^(LoadBalancer|NodePort)$"`
-	PrefixTemplate string             `json:"prefixTemplate"`
-	SourceRanges   []string           `json:"sourceRanges"`
+	PrefixTemplate *string            `json:"prefixTemplate,omitempty"`
+	SourceRanges   []string           `json:"sourceRanges,omitempty"`
 	Service        Enableable         `json:"service"`
-	ExternalDNS    *Enableable        `json:"externalDns"`
+	ExternalDNS    *Enableable        `json:"externalDns,omitempty"`
 	// Gateway configures Gateway API TLSRoute-based external access.
 	// When enabled, ClusterIP services and TLSRoute resources are created
 	// instead of NodePort/LoadBalancer services. The Gateway itself must be
@@ -279,7 +279,7 @@ type GatewayConfig struct {
 	// ParentRefs defines which Gateway(s) handle the TLSRoutes. At least one
 	// parent reference must be provided. These are passed directly into each
 	// TLSRoute's spec.parentRefs.
-	ParentRefs []GatewayParentRef `json:"parentRefs"`
+	ParentRefs []GatewayParentRef `json:"parentRefs,omitempty"`
 	// AdvertisedPort is the port advertised to clients. Defaults to 443
 	// because the actual listening port is configured on the Gateway, not
 	// on the TLSRoute.
@@ -346,15 +346,15 @@ func (g *GatewayConfig) GatewayAdvertisedPort() int32 {
 }
 
 type Enableable struct {
-	Enabled bool `json:"enabled" jsonschema:"required"`
+	Enabled bool `json:"enabled"`
 }
 
 type Logging struct {
-	LogLevel   string `json:"logLevel" jsonschema:"required,pattern=^(error|warn|info|debug|trace)$"`
+	LogLevel   string `json:"logLevel" jsonschema:"pattern=^(error|warn|info|debug|trace)$"`
 	UsageStats struct {
-		Enabled   bool    `json:"enabled" jsonschema:"required"`
-		ClusterID *string `json:"clusterId"`
-	} `json:"usageStats" jsonschema:"required"`
+		Enabled   bool    `json:"enabled"`
+		ClusterID *string `json:"clusterId,omitempty"`
+	} `json:"usageStats"`
 }
 
 func (l *Logging) Translate() map[string]any {
@@ -368,11 +368,11 @@ func (l *Logging) Translate() map[string]any {
 }
 
 type Monitoring struct {
-	Enabled        bool                    `json:"enabled" jsonschema:"required"`
-	ScrapeInterval monitoringv1.Duration   `json:"scrapeInterval" jsonschema:"required"`
-	Labels         map[string]string       `json:"labels"`
-	TLSConfig      *monitoringv1.TLSConfig `json:"tlsConfig"`
-	EnableHTTP2    *bool                   `json:"enableHttp2"`
+	Enabled        bool                    `json:"enabled"`
+	ScrapeInterval monitoringv1.Duration   `json:"scrapeInterval"`
+	Labels         map[string]string       `json:"labels,omitempty"`
+	TLSConfig      *monitoringv1.TLSConfig `json:"tlsConfig,omitempty"`
+	EnableHTTP2    *bool                   `json:"enableHttp2,omitempty"`
 }
 
 // RedpandaResources encapsulates the calculation of the redpanda container's
@@ -401,16 +401,16 @@ type RedpandaResources struct {
 	Requests *corev1.ResourceList `json:"requests,omitempty"`
 
 	CPU struct {
-		Cores           resource.Quantity `json:"cores" jsonschema:"required"`
-		Overprovisioned *bool             `json:"overprovisioned"`
-	} `json:"cpu" jsonschema:"required"`
+		Cores           resource.Quantity `json:"cores"`
+		Overprovisioned *bool             `json:"overprovisioned,omitempty"`
+	} `json:"cpu"`
 	// Memory resources
 	// For details,
 	// see the [Pod resources documentation](https://docs.redpanda.com/docs/manage/kubernetes/manage-resources/#configure-memory-resources).
 	Memory struct {
 		// Enables memory locking.
 		// For production, set to `true`.
-		EnableMemoryLocking *bool `json:"enable_memory_locking"`
+		EnableMemoryLocking *bool `json:"enable_memory_locking,omitempty"`
 		// It is recommended to have at least 2Gi of memory per core for the Redpanda binary.
 		// This memory is taken from the total memory given to each container.
 		// The Helm chart allocates 80% of the container's memory to Redpanda, leaving the rest for
@@ -431,12 +431,12 @@ type RedpandaResources struct {
 			// If omitted, the `min` value is equal to the `max` value (requested resources defaults to limits).
 			// This setting is equivalent to `resources.requests.memory`.
 			// For production, use 10Gi or greater.
-			Min *resource.Quantity `json:"min"`
+			Min *resource.Quantity `json:"min,omitempty"`
 			// Maximum memory count for each Redpanda broker.
 			// Equivalent to `resources.limits.memory`.
 			// For production, use `10Gi` or greater.
-			Max resource.Quantity `json:"max" jsonschema:"required"`
-		} `json:"container" jsonschema:"required"`
+			Max resource.Quantity `json:"max"`
+		} `json:"container"`
 		// This optional `redpanda` object allows you to specify the memory size for both the Redpanda
 		// process and the underlying reserved memory used by Seastar.
 		// This section is omitted by default, and memory sizes are calculated automatically
@@ -449,14 +449,14 @@ type RedpandaResources struct {
 			// resources.memory.container.max).
 			// Equivalent to --memory.
 			// For production, use 8Gi or greater.
-			Memory *resource.Quantity `json:"memory"`
+			Memory *resource.Quantity `json:"memory,omitempty"`
 			// Memory reserved for the Seastar subsystem.
 			// Any value above 1Gi will provide diminishing performance benefits.
 			// Equivalent to --reserve-memory.
 			// For production, use 1Gi.
-			ReserveMemory *resource.Quantity `json:"reserveMemory"`
-		} `json:"redpanda"`
-	} `json:"memory" jsonschema:"required"`
+			ReserveMemory *resource.Quantity `json:"reserveMemory,omitempty"`
+		} `json:"redpanda,omitempty"`
+	} `json:"memory"`
 }
 
 func (rr *RedpandaResources) GetResourceRequirements() corev1.ResourceRequirements {
@@ -698,24 +698,24 @@ func (rr *RedpandaResources) containerMemory() MebiBytes {
 }
 
 type Storage struct {
-	HostPath         string `json:"hostPath" jsonschema:"required"`
-	Tiered           Tiered `json:"tiered" jsonschema:"required"`
+	HostPath         string `json:"hostPath"`
+	Tiered           Tiered `json:"tiered"`
 	PersistentVolume *struct {
-		Annotations   map[string]string `json:"annotations" jsonschema:"required"`
-		Enabled       bool              `json:"enabled" jsonschema:"required"`
-		Labels        map[string]string `json:"labels" jsonschema:"required"`
-		Size          resource.Quantity `json:"size" jsonschema:"required"`
-		StorageClass  string            `json:"storageClass" jsonschema:"required"`
+		Annotations   map[string]string `json:"annotations,omitempty"`
+		Enabled       bool              `json:"enabled"`
+		Labels        map[string]string `json:"labels,omitempty"`
+		Size          resource.Quantity `json:"size"`
+		StorageClass  string            `json:"storageClass"`
 		NameOverwrite string            `json:"nameOverwrite"`
-	} `json:"persistentVolume" jsonschema:"required,deprecated"`
-	TieredConfig                  TieredStorageConfig `json:"tieredConfig" jsonschema:"deprecated"`
-	TieredStorageHostPath         string              `json:"tieredStorageHostPath" jsonschema:"deprecated"`
+	} `json:"persistentVolume,omitempty" jsonschema:"deprecated"`
+	TieredConfig                  TieredStorageConfig `json:"tieredConfig,omitempty" jsonschema:"deprecated"`
+	TieredStorageHostPath         *string             `json:"tieredStorageHostPath,omitempty" jsonschema:"deprecated"`
 	TieredStoragePersistentVolume *struct {
-		Annotations  map[string]string `json:"annotations" jsonschema:"required"`
-		Enabled      bool              `json:"enabled" jsonschema:"required"`
-		Labels       map[string]string `json:"labels" jsonschema:"required"`
-		StorageClass string            `json:"storageClass" jsonschema:"required"`
-	} `json:"tieredStoragePersistentVolume" jsonschema:"deprecated"`
+		Annotations  map[string]string `json:"annotations,omitempty"`
+		Enabled      bool              `json:"enabled"`
+		Labels       map[string]string `json:"labels,omitempty"`
+		StorageClass string            `json:"storageClass"`
+	} `json:"tieredStoragePersistentVolume,omitempty" jsonschema:"deprecated"`
 }
 
 func (s *Storage) IsTieredStorageEnabled() bool {
@@ -735,7 +735,7 @@ func (s *Storage) GetTieredStorageConfig() TieredStorageConfig {
 
 // was: storage-tiered-hostpath
 func (s *Storage) GetTieredStorageHostPath() string {
-	hp := s.TieredStorageHostPath
+	hp := ptr.Deref(s.TieredStorageHostPath, "")
 	if len(hp) == 0 {
 		hp = s.Tiered.HostPath
 	}
@@ -769,7 +769,7 @@ func (s *Storage) TieredMountType() string {
 	if s.TieredStoragePersistentVolume != nil && s.TieredStoragePersistentVolume.Enabled {
 		return "persistentVolume"
 	}
-	if len(s.TieredStorageHostPath) != 0 {
+	if len(ptr.Deref(s.TieredStorageHostPath, "")) != 0 {
 		// XXX type is declared as string, but it's being used as a bool.
 		// NB: len() rather than `!= ""` as the former transpiles to a
 		// null-safe shim. `ne $x ""` is true for helm's untyped nil.
@@ -826,14 +826,14 @@ func (s *Storage) StorageMinFreeBytes() int64 {
 
 type PostInstallJob struct {
 	Enabled     bool              `json:"enabled"`
-	Labels      map[string]string `json:"labels"`
-	Annotations map[string]string `json:"annotations"`
+	Labels      map[string]string `json:"labels,omitempty"`
+	Annotations map[string]string `json:"annotations,omitempty"`
 	PodTemplate PodTemplate       `json:"podTemplate"`
 }
 
 type PodTemplate struct {
-	Labels      map[string]string                      `json:"labels,omitempty" jsonschema:"required"`
-	Annotations map[string]string                      `json:"annotations,omitempty" jsonschema:"required"`
+	Labels      map[string]string                      `json:"labels,omitempty"`
+	Annotations map[string]string                      `json:"annotations,omitempty"`
 	Spec        *applycorev1.PodSpecApplyConfiguration `json:"spec,omitempty"`
 }
 
@@ -852,22 +852,22 @@ func (n Pool) Suffix() string {
 }
 
 type Statefulset struct {
-	AdditionalSelectorLabels             map[string]string                                       `json:"additionalSelectorLabels" jsonschema:"required"`
-	Replicas                             int32                                                   `json:"replicas" jsonschema:"required"`
-	UpdateStrategy                       appsv1.StatefulSetUpdateStrategy                        `json:"updateStrategy" jsonschema:"required"`
+	AdditionalSelectorLabels             map[string]string                                       `json:"additionalSelectorLabels,omitempty"`
+	Replicas                             int32                                                   `json:"replicas"`
+	UpdateStrategy                       appsv1.StatefulSetUpdateStrategy                        `json:"updateStrategy"`
 	PersistentVolumeClaimRetentionPolicy *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy `json:"persistentVolumeClaimRetentionPolicy,omitempty"`
-	AdditionalRedpandaCmdFlags           []string                                                `json:"additionalRedpandaCmdFlags"`
-	PodTemplate                          PodTemplate                                             `json:"podTemplate" jsonschema:"required"`
+	AdditionalRedpandaCmdFlags           []string                                                `json:"additionalRedpandaCmdFlags,omitempty"`
+	PodTemplate                          PodTemplate                                             `json:"podTemplate"`
 	Budget                               struct {
-		MaxUnavailable int32 `json:"maxUnavailable" jsonschema:"required"`
-	} `json:"budget" jsonschema:"required"`
+		MaxUnavailable int32 `json:"maxUnavailable"`
+	} `json:"budget"`
 	PodAntiAffinity struct {
-		TopologyKey string         `json:"topologyKey" jsonschema:"required"`
-		Type        string         `json:"type" jsonschema:"required,pattern=^(hard|soft|custom)$"`
-		Weight      int32          `json:"weight" jsonschema:"required"`
-		Custom      map[string]any `json:"custom"`
-	} `json:"podAntiAffinity" jsonschema:"required"`
-	SideCars       Sidecars `json:"sideCars" jsonschema:"required"`
+		TopologyKey string         `json:"topologyKey"`
+		Type        string         `json:"type" jsonschema:"pattern=^(hard|soft|custom)$"`
+		Weight      int32          `json:"weight"`
+		Custom      map[string]any `json:"custom,omitempty"`
+	} `json:"podAntiAffinity"`
+	SideCars       Sidecars `json:"sideCars"`
 	InitContainers struct {
 		FSValidator struct {
 			Enabled    bool   `json:"enabled"`
@@ -887,9 +887,9 @@ type Statefulset struct {
 }
 
 type ServiceAccountCfg struct {
-	Annotations map[string]string `json:"annotations" jsonschema:"required"`
-	Create      bool              `json:"create" jsonschema:"required"`
-	Name        string            `json:"name" jsonschema:"required"`
+	Annotations map[string]string `json:"annotations,omitempty"`
+	Create      bool              `json:"create"`
+	Name        string            `json:"name"`
 
 	// DeprecatedAutomountServiceAccountToken is an unused value that will be
 	// removed in an upcoming release. It is unused and is only present to keep
@@ -898,18 +898,18 @@ type ServiceAccountCfg struct {
 }
 
 type RBAC struct {
-	Enabled        bool              `json:"enabled" jsonschema:"required"`
-	RPKDebugBundle bool              `json:"rpkDebugBundle" jsonschema:"required"`
-	Annotations    map[string]string `json:"annotations" jsonschema:"required"`
+	Enabled        bool              `json:"enabled"`
+	RPKDebugBundle bool              `json:"rpkDebugBundle"`
+	Annotations    map[string]string `json:"annotations,omitempty"`
 }
 
 type Tuning struct {
-	TuneAIOEvents   bool   `json:"tune_aio_events,omitempty"`
-	TuneClocksource bool   `json:"tune_clocksource,omitempty"`
-	TuneBallastFile bool   `json:"tune_ballast_file,omitempty"`
-	BallastFilePath string `json:"ballast_file_path,omitempty"`
-	BallastFileSize string `json:"ballast_file_size,omitempty"`
-	WellKnownIO     string `json:"well_known_io,omitempty"`
+	TuneAIOEvents   *bool   `json:"tune_aio_events,omitempty"`
+	TuneClocksource *bool   `json:"tune_clocksource,omitempty"`
+	TuneBallastFile *bool   `json:"tune_ballast_file,omitempty"`
+	BallastFilePath *string `json:"ballast_file_path,omitempty"`
+	BallastFileSize *string `json:"ballast_file_size,omitempty"`
+	WellKnownIO     *string `json:"well_known_io,omitempty"`
 	// ApplyHostTuners enables the chroot-based tuning path. When true, the
 	// tuning init container builds a chroot to the host filesystem and runs
 	// `rpk redpanda tune all` in the host's network namespace, so tuners
@@ -970,7 +970,7 @@ type Tuning struct {
 	// This setting must NOT be combined with running multiple Redpanda
 	// pods per node — concurrent tuners will race on the same kernel
 	// parameters. Use a pod anti-affinity rule that disallows co-location.
-	ApplyHostTuners bool `json:"apply_host_tuners,omitempty"`
+	ApplyHostTuners *bool `json:"apply_host_tuners,omitempty"`
 }
 
 func (t *Tuning) Translate() map[string]any {
@@ -981,7 +981,7 @@ func (t *Tuning) Translate() map[string]any {
 	// instead of shipping config that silently does nothing. Translate
 	// runs on every render (via rpkNodeConfig), so this is the render's
 	// choke point for the check.
-	if t.ApplyHostTuners && !t.TuneAIOEvents {
+	if ptr.Deref(t.ApplyHostTuners, false) && !ptr.Deref(t.TuneAIOEvents, false) {
 		panic("tuning.apply_host_tuners requires tuning.tune_aio_events=true: the host-mode tuning init container is gated on tune_aio_events, so this combination would render tuner config that nothing ever applies")
 	}
 
@@ -1037,7 +1037,7 @@ func HostTunerDefaults() map[string]any {
 
 type Sidecars struct {
 	Image       Image    `json:"image"`
-	Args        []string `json:"args"`
+	Args        []string `json:"args,omitempty"`
 	PVCUnbinder struct {
 		Enabled     bool   `json:"enabled"`
 		UnbindAfter string `json:"unbindAfter"`
@@ -1061,7 +1061,7 @@ type Sidecars struct {
 		Enabled bool `json:"enabled"`
 	} `json:"rpkProfileWatcher"`
 	Controllers struct {
-		DeprecatedImage *Image `json:"image"`
+		DeprecatedImage *Image `json:"image,omitempty"`
 		// Enabled use to act as a global toggle for sidecar controllers. It
 		// was confusing and is no longer used.
 		// Deprecated.
@@ -1072,19 +1072,19 @@ type Sidecars struct {
 		PprofAddress       string `json:"pprofAddress"`
 		// Run used to be a string list of additional controllers to run. It is no longer used.
 		// Deprecated.
-		Run []string `json:"run"`
+		Run []string `json:"run,omitempty"`
 	} `json:"controllers"`
 }
 
 type Listeners struct {
-	Admin          ListenerConfig[NoAuth]                    `json:"admin" jsonschema:"required"`
-	HTTP           ListenerConfig[HTTPAuthenticationMethod]  `json:"http" jsonschema:"required"`
-	Kafka          ListenerConfig[KafkaAuthenticationMethod] `json:"kafka" jsonschema:"required"`
-	SchemaRegistry ListenerConfig[NoAuth]                    `json:"schemaRegistry" jsonschema:"required"`
+	Admin          ListenerConfig[NoAuth]                    `json:"admin"`
+	HTTP           ListenerConfig[HTTPAuthenticationMethod]  `json:"http"`
+	Kafka          ListenerConfig[KafkaAuthenticationMethod] `json:"kafka"`
+	SchemaRegistry ListenerConfig[NoAuth]                    `json:"schemaRegistry"`
 	RPC            struct {
-		Port int32       `json:"port" jsonschema:"required"`
-		TLS  InternalTLS `json:"tls" jsonschema:"required"`
-	} `json:"rpc" jsonschema:"required"`
+		Port int32       `json:"port"`
+		TLS  InternalTLS `json:"tls"`
+	} `json:"rpc"`
 }
 
 // InUseServerCerts returns a set of names (As a sorted slice) of all TLS
@@ -1244,13 +1244,13 @@ func (l *Listeners) TrustStores(tls *TLS) []*TrustStore {
 }
 
 type Config struct {
-	Cluster                   ClusterConfig         `json:"cluster" jsonschema:"required"`
-	ExtraClusterConfiguration ClusterConfiguration  `json:"extraClusterConfiguration"`
-	Node                      NodeConfig            `json:"node" jsonschema:"required"`
-	RPK                       map[string]any        `json:"rpk"`
-	SchemaRegistryClient      *SchemaRegistryClient `json:"schema_registry_client"`
-	PandaProxyClient          *PandaProxyClient     `json:"pandaproxy_client"`
-	Tunable                   TunableConfig         `json:"tunable" jsonschema:"required"`
+	Cluster                   ClusterConfig         `json:"cluster,omitempty"`
+	ExtraClusterConfiguration ClusterConfiguration  `json:"extraClusterConfiguration,omitempty"`
+	Node                      NodeConfig            `json:"node,omitempty"`
+	RPK                       map[string]any        `json:"rpk,omitempty"`
+	SchemaRegistryClient      *SchemaRegistryClient `json:"schema_registry_client,omitempty"`
+	PandaProxyClient          *PandaProxyClient     `json:"pandaproxy_client,omitempty"`
+	Tunable                   TunableConfig         `json:"tunable,omitempty"`
 }
 
 func (c *Config) CreateRPKConfiguration() map[string]any {
@@ -1311,7 +1311,7 @@ type ClusterConfigValue struct {
 	// and to consider the external value verbatim (ie, if it's already in an appropriate serialized form
 	// for use in the bootstrap configuration), set useRawValue to true.
 	// In particular, this value should be set to `true` if your external source contains a numeric value.
-	UseRawValue bool `json:"useRawValue,omitempty"`
+	UseRawValue *bool `json:"useRawValue,omitempty"`
 }
 
 // ExternalSecretKeySelector selects a key of an external Secret.
@@ -1347,7 +1347,7 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 			// insertion into a bootstrap template.
 			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
 			// then the user can specify that explicitly.
-			if v.UseRawValue {
+			if ptr.Deref(v.UseRawValue, false) {
 				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)})
 			} else {
 				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
@@ -1364,7 +1364,7 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 			// insertion into a bootstrap template.
 			// If that's not the case, and the referred value's octets should be injected into the template verbatim,
 			// then the user can specify that explicitly.
-			if v.UseRawValue {
+			if ptr.Deref(v.UseRawValue, false) {
 				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)})
 			} else {
 				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
@@ -1376,7 +1376,7 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 			// then the user can specify that explicitly.
 			// We wrap the returned value in `errorToWarning` in the case where the key is marked as optional.
 			fixup := fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELExternalSecretRef, v.ExternalSecretRefSelector.Name)
-			if !v.UseRawValue {
+			if !ptr.Deref(v.UseRawValue, false) {
 				fixup = fmt.Sprintf(`%s(%s)`, clusterconfiguration.CELRepr, fixup)
 			}
 			if ptr.Deref(v.ExternalSecretRefSelector.Optional, false) {
@@ -1393,40 +1393,40 @@ func keyToEnvVar(k string) string {
 }
 
 type SchemaRegistryClient struct {
-	Retries                     int `json:"retries"`
-	RetryBaseBackoffMS          int `json:"retry_base_backoff_ms"`
-	ProduceBatchRecordCount     int `json:"produce_batch_record_count"`
-	ProduceBatchSizeBytes       int `json:"produce_batch_size_bytes"`
-	ProduceBatchDelayMS         int `json:"produce_batch_delay_ms"`
-	ConsumerRequestTimeoutMS    int `json:"consumer_request_timeout_ms"`
-	ConsumerRequestMaxBytes     int `json:"consumer_request_max_bytes"`
-	ConsumerSessionTimeoutMS    int `json:"consumer_session_timeout_ms"`
-	ConsumerRebalanceTimeoutMS  int `json:"consumer_rebalance_timeout_ms"`
-	ConsumerHeartbeatIntervalMS int `json:"consumer_heartbeat_interval_ms"`
+	Retries                     *int `json:"retries,omitempty"`
+	RetryBaseBackoffMS          *int `json:"retry_base_backoff_ms,omitempty"`
+	ProduceBatchRecordCount     *int `json:"produce_batch_record_count,omitempty"`
+	ProduceBatchSizeBytes       *int `json:"produce_batch_size_bytes,omitempty"`
+	ProduceBatchDelayMS         *int `json:"produce_batch_delay_ms,omitempty"`
+	ConsumerRequestTimeoutMS    *int `json:"consumer_request_timeout_ms,omitempty"`
+	ConsumerRequestMaxBytes     *int `json:"consumer_request_max_bytes,omitempty"`
+	ConsumerSessionTimeoutMS    *int `json:"consumer_session_timeout_ms,omitempty"`
+	ConsumerRebalanceTimeoutMS  *int `json:"consumer_rebalance_timeout_ms,omitempty"`
+	ConsumerHeartbeatIntervalMS *int `json:"consumer_heartbeat_interval_ms,omitempty"`
 }
 
 type PandaProxyClient struct {
-	Retries                     int `json:"retries"`
-	RetryBaseBackoffMS          int `json:"retry_base_backoff_ms"`
-	ProduceBatchRecordCount     int `json:"produce_batch_record_count"`
-	ProduceBatchSizeBytes       int `json:"produce_batch_size_bytes"`
-	ProduceBatchDelayMS         int `json:"produce_batch_delay_ms"`
-	ConsumerRequestTimeoutMS    int `json:"consumer_request_timeout_ms"`
-	ConsumerRequestMaxBytes     int `json:"consumer_request_max_bytes"`
-	ConsumerSessionTimeoutMS    int `json:"consumer_session_timeout_ms"`
-	ConsumerRebalanceTimeoutMS  int `json:"consumer_rebalance_timeout_ms"`
-	ConsumerHeartbeatIntervalMS int `json:"consumer_heartbeat_interval_ms"`
+	Retries                     *int `json:"retries,omitempty"`
+	RetryBaseBackoffMS          *int `json:"retry_base_backoff_ms,omitempty"`
+	ProduceBatchRecordCount     *int `json:"produce_batch_record_count,omitempty"`
+	ProduceBatchSizeBytes       *int `json:"produce_batch_size_bytes,omitempty"`
+	ProduceBatchDelayMS         *int `json:"produce_batch_delay_ms,omitempty"`
+	ConsumerRequestTimeoutMS    *int `json:"consumer_request_timeout_ms,omitempty"`
+	ConsumerRequestMaxBytes     *int `json:"consumer_request_max_bytes,omitempty"`
+	ConsumerSessionTimeoutMS    *int `json:"consumer_session_timeout_ms,omitempty"`
+	ConsumerRebalanceTimeoutMS  *int `json:"consumer_rebalance_timeout_ms,omitempty"`
+	ConsumerHeartbeatIntervalMS *int `json:"consumer_heartbeat_interval_ms,omitempty"`
 }
 
 type TLSCert struct {
 	// Enabled should be interpreted as `true` if not set.
-	Enabled               *bool                        `json:"enabled"`
-	CAEnabled             bool                         `json:"caEnabled" jsonschema:"required"`
-	ApplyInternalDNSNames *bool                        `json:"applyInternalDNSNames"`
-	Duration              string                       `json:"duration" jsonschema:"pattern=.*[smh]$"`
-	IssuerRef             *cmmetav1.ObjectReference    `json:"issuerRef"`
-	SecretRef             *corev1.LocalObjectReference `json:"secretRef"`
-	ClientSecretRef       *corev1.LocalObjectReference `json:"clientSecretRef"`
+	Enabled               *bool                        `json:"enabled,omitempty"`
+	CAEnabled             bool                         `json:"caEnabled"`
+	ApplyInternalDNSNames *bool                        `json:"applyInternalDNSNames,omitempty"`
+	Duration              *string                      `json:"duration,omitempty" jsonschema:"pattern=.*[smh]$"`
+	IssuerRef             *cmmetav1.ObjectReference    `json:"issuerRef,omitempty"`
+	SecretRef             *corev1.LocalObjectReference `json:"secretRef,omitempty"`
+	ClientSecretRef       *corev1.LocalObjectReference `json:"clientSecretRef,omitempty"`
 }
 
 func (c *TLSCert) ServerVolumeName(name string) string {
@@ -1517,9 +1517,9 @@ func (m TLSCertMap) MustGet(name string) *TLSCert {
 }
 
 type BootstrapUser struct {
-	Name         *string                   `json:"name"`
-	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef"`
-	Password     *string                   `json:"password"`
+	Name         *string                   `json:"name,omitempty"`
+	SecretKeyRef *corev1.SecretKeySelector `json:"secretKeyRef,omitempty"`
+	Password     *string                   `json:"password,omitempty"`
 	Mechanism    SASLMechanism             `json:"mechanism"`
 }
 
@@ -1575,20 +1575,20 @@ func (b *BootstrapUser) SecretKeySelector(fullname string) *corev1.SecretKeySele
 type SASLUser struct {
 	Name      string         `json:"name"`
 	Password  string         `json:"password"`
-	Mechanism *SASLMechanism `json:"mechanism"`
+	Mechanism *SASLMechanism `json:"mechanism,omitempty"`
 }
 
 type SASLAuth struct {
-	Enabled       bool          `json:"enabled" jsonschema:"required"`
+	Enabled       bool          `json:"enabled"`
 	Mechanism     SASLMechanism `json:"mechanism"`
 	SecretRef     string        `json:"secretRef"`
-	Users         []SASLUser    `json:"users"`
+	Users         []SASLUser    `json:"users,omitempty"`
 	BootstrapUser BootstrapUser `json:"bootstrapUser"`
 }
 
 type TrustStore struct {
-	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef"`
-	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef"`
+	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef,omitempty"`
+	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef,omitempty"`
 }
 
 // +gotohelm:ignore=true
@@ -1641,10 +1641,10 @@ func (t *TrustStore) VolumeProjection() corev1.VolumeProjection {
 // TODO Unify this struct with ExternalTLS and/or remove the concept of
 // internal and external listeners all together.
 type InternalTLS struct {
-	Enabled           *bool       `json:"enabled"`
-	Cert              string      `json:"cert" jsonschema:"required"`
-	RequireClientAuth bool        `json:"requireClientAuth" jsonschema:"required"`
-	TrustStore        *TrustStore `json:"trustStore"`
+	Enabled           *bool       `json:"enabled,omitempty"`
+	Cert              string      `json:"cert"`
+	RequireClientAuth bool        `json:"requireClientAuth"`
+	TrustStore        *TrustStore `json:"trustStore,omitempty"`
 }
 
 // IsEnabled reports the value of [InternalTLS.Enabled], falling back to
@@ -1773,10 +1773,10 @@ type ExternalTLS struct {
 	// Enabled, when `false`, indicates that this struct should treated as if
 	// it was not specified. If `nil`, defaults to [InternalTLS.Enabled].
 	// Prefer to use `IsEnabled` rather than checking this field directly.
-	Enabled           *bool       `json:"enabled"`
-	Cert              *string     `json:"cert"`
-	RequireClientAuth *bool       `json:"requireClientAuth"`
-	TrustStore        *TrustStore `json:"trustStore"`
+	Enabled           *bool       `json:"enabled,omitempty"`
+	Cert              *string     `json:"cert,omitempty"`
+	RequireClientAuth *bool       `json:"requireClientAuth,omitempty"`
+	TrustStore        *TrustStore `json:"trustStore,omitempty"`
 }
 
 func (t *ExternalTLS) GetCert(i *InternalTLS, tls *TLS) *TLSCert {
@@ -1811,10 +1811,10 @@ func (t *ExternalTLS) IsEnabled(i *InternalTLS, tls *TLS) bool {
 }
 
 type ListenerConfig[T ~string] struct {
-	Enabled  bool                           `json:"enabled"`
-	External map[string]ExternalListener[T] `json:"external"`
-	Port     int32                          `json:"port" jsonschema:"required"`
-	TLS      InternalTLS                    `json:"tls" jsonschema:"required"`
+	Enabled  *bool                          `json:"enabled,omitempty"`
+	External map[string]ExternalListener[T] `json:"external,omitempty"`
+	Port     int32                          `json:"port"`
+	TLS      InternalTLS                    `json:"tls"`
 
 	AppProtocol          *string `json:"appProtocol,omitempty"`
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
@@ -1975,12 +1975,12 @@ func (l *ListenerConfig[T]) ListenersTLS(tls *TLS) []map[string]any {
 }
 
 type ExternalListener[T ~string] struct {
-	Enabled         *bool   `json:"enabled"`
-	AdvertisedPorts []int32 `json:"advertisedPorts" jsonschema:"minItems=1"`
-	Port            int32   `json:"port" jsonschema:"required"`
+	Enabled         *bool   `json:"enabled,omitempty"`
+	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty" jsonschema:"minItems=1"`
+	Port            int32   `json:"port"`
 	// TODO CHECK NODE PORT USAGE
-	NodePort *int32       `json:"nodePort"`
-	TLS      *ExternalTLS `json:"tls"`
+	NodePort *int32       `json:"nodePort,omitempty"`
+	TLS      *ExternalTLS `json:"tls,omitempty"`
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
@@ -2113,16 +2113,16 @@ func (c *ClusterConfig) Translate() map[string]any {
 
 type SecretRef struct {
 	// ConfigurationKey is never read.
-	ConfigurationKey string `json:"configurationKey"`
-	Key              string `json:"key"`
-	Name             string `json:"name"`
+	ConfigurationKey string  `json:"configurationKey"`
+	Key              *string `json:"key,omitempty"`
+	Name             *string `json:"name,omitempty"`
 }
 
 func (sr *SecretRef) AsSource() *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{Name: sr.Name},
-			Key:                  sr.Key,
+			LocalObjectReference: corev1.LocalObjectReference{Name: ptr.Deref(sr.Name, "")},
+			Key:                  ptr.Deref(sr.Key, ""),
 		},
 	}
 }
@@ -2130,12 +2130,12 @@ func (sr *SecretRef) AsSource() *corev1.EnvVarSource {
 // IsValid confirms whether EnvVarSource could be built from
 // SecretRef.
 func (sr *SecretRef) IsValid() bool {
-	return sr != nil && len(sr.Key) != 0 && len(sr.Name) != 0
+	return sr != nil && len(ptr.Deref(sr.Key, "")) != 0 && len(ptr.Deref(sr.Name, "")) != 0
 }
 
 type TieredStorageCredentials struct {
-	AccessKey *SecretRef `json:"accessKey"`
-	SecretKey *SecretRef `json:"secretKey"`
+	AccessKey *SecretRef `json:"accessKey,omitempty"`
+	SecretKey *SecretRef `json:"secretKey,omitempty"`
 }
 
 func (tsc *TieredStorageCredentials) AsEnvVars(config TieredStorageConfig) []corev1.EnvVar {
@@ -2281,15 +2281,15 @@ func (TieredStorageConfig) JSONSchema() *jsonschema.Schema {
 
 type Tiered struct {
 	CredentialsSecretRef TieredStorageCredentials `json:"credentialsSecretRef"`
-	Config               TieredStorageConfig      `json:"config"`
+	Config               TieredStorageConfig      `json:"config,omitempty"`
 	HostPath             string                   `json:"hostPath"`
-	MountType            string                   `json:"mountType" jsonschema:"required,pattern=^(none|hostPath|emptyDir|persistentVolume)$"`
+	MountType            string                   `json:"mountType" jsonschema:"pattern=^(none|hostPath|emptyDir|persistentVolume)$"`
 	PersistentVolume     struct {
-		Annotations   map[string]string `json:"annotations" jsonschema:"required"`
-		Enabled       bool              `json:"enabled"`
-		Labels        map[string]string `json:"labels" jsonschema:"required"`
-		NameOverwrite string            `json:"nameOverwrite"`
-		Size          string            `json:"size"`
-		StorageClass  string            `json:"storageClass" jsonschema:"required"`
+		Annotations   map[string]string `json:"annotations,omitempty"`
+		Enabled       *bool             `json:"enabled,omitempty"`
+		Labels        map[string]string `json:"labels,omitempty"`
+		NameOverwrite *string           `json:"nameOverwrite,omitempty"`
+		Size          *string           `json:"size,omitempty"`
+		StorageClass  string            `json:"storageClass"`
 	} `json:"persistentVolume"`
 }

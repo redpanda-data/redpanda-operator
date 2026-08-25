@@ -30,10 +30,6 @@ import (
 // exception being --skip-schema-validation.
 func TestLintValues(t *testing.T) {
 	for pkg, values := range schemas {
-		if !usesOmitEmpty[pkg] {
-			continue
-		}
-
 		root := reflect.TypeOf(values).Elem()
 		t.Run(pkg, func(t *testing.T) {
 			walkType(root, func(typ reflect.Type, path []string) bool {

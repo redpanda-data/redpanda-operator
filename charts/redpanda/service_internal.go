@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
@@ -48,7 +49,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 		TargetPort:  intstr.FromInt32(state.Values.Listeners.Admin.Port),
 	})
 
-	if state.Values.Listeners.HTTP.Enabled {
+	if ptr.Deref(state.Values.Listeners.HTTP.Enabled, false) {
 		ports = append(ports, corev1.ServicePort{
 			Name:       InternalPandaProxyPortName,
 			Protocol:   "TCP",
@@ -68,7 +69,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 		Port:       state.Values.Listeners.RPC.Port,
 		TargetPort: intstr.FromInt32(state.Values.Listeners.RPC.Port),
 	})
-	if state.Values.Listeners.SchemaRegistry.Enabled {
+	if ptr.Deref(state.Values.Listeners.SchemaRegistry.Enabled, false) {
 		ports = append(ports, corev1.ServicePort{
 			Name:       InternalSchemaRegistryPortName,
 			Protocol:   "TCP",

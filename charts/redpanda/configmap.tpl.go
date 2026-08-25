@@ -428,7 +428,7 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	// values.tuning nor the user's config.rpk set explicitly. An operator
 	// writing `config.rpk.tune_fstrim: false` keeps that opt-out even
 	// with apply_host_tuners enabled.
-	if state.Values.Tuning.ApplyHostTuners {
+	if ptr.Deref(state.Values.Tuning.ApplyHostTuners, false) {
 		result = helmette.Merge(result, HostTunerDefaults())
 	}
 

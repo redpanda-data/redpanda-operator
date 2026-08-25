@@ -32,8 +32,8 @@
 {{- if (ne (($a.partitions | int) | int) (12 | int)) -}}
 {{- $_ := (set $result "audit_log_num_partitions" ($a.partitions | int)) -}}
 {{- end -}}
-{{- if (ne ($a.replicationFactor | int) (0 | int)) -}}
-{{- $_ := (set $result "audit_log_replication_factor" ($a.replicationFactor | int)) -}}
+{{- if (ne ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $a.replicationFactor (0 | int))))) "r") | int) (0 | int)) -}}
+{{- $_ := (set $result "audit_log_replication_factor" $a.replicationFactor) -}}
 {{- end -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $a.enabledEventTypes)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $result "audit_enabled_event_types" $a.enabledEventTypes) -}}
@@ -378,7 +378,7 @@
 {{- $s := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $hp := $s.tieredStorageHostPath -}}
+{{- $hp := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $s.tieredStorageHostPath "")))) "r") -}}
 {{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $hp)))) "r") | int) (0 | int)) -}}
 {{- $hp = $s.tiered.hostPath -}}
 {{- end -}}
@@ -428,7 +428,7 @@
 {{- (dict "r" "persistentVolume") | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if (ne ((get (fromJson (include "_shims.len" (dict "a" (list $s.tieredStorageHostPath)))) "r") | int) (0 | int)) -}}
+{{- if (ne ((get (fromJson (include "_shims.len" (dict "a" (list (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $s.tieredStorageHostPath "")))) "r"))))) "r") | int) (0 | int)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "hostPath") | toJson -}}
 {{- break -}}
@@ -519,7 +519,7 @@
 {{- $t := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (and $t.apply_host_tuners (not $t.tune_aio_events)) -}}
+{{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $t.apply_host_tuners false)))) "r") (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $t.tune_aio_events false)))) "r"))) -}}
 {{- $_ := (fail "tuning.apply_host_tuners requires tuning.tune_aio_events=true: the host-mode tuning init container is gated on tune_aio_events, so this combination would render tuner config that nothing ever applies") -}}
 {{- end -}}
 {{- $result := (dict) -}}
@@ -747,7 +747,7 @@
 {{- else -}}{{- if (ne (toJson $v.configMapKeyRef) "null") -}}
 {{- $envName := (get (fromJson (include "redpanda.keyToEnvVar" (dict "a" (list $k)))) "r") -}}
 {{- $envVars = (concat (default (list) $envVars) (list (mustMergeOverwrite (dict "name" "") (dict "name" $envName "valueFrom" (mustMergeOverwrite (dict) (dict "configMapKeyRef" $v.configMapKeyRef)))))) -}}
-{{- if $v.useRawValue -}}
+{{- if (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $v.useRawValue false)))) "r") -}}
 {{- $fixups = (concat (default (list) $fixups) (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" $k "cel" (printf `%s("%s")` "envString" $envName))))) -}}
 {{- else -}}
 {{- $fixups = (concat (default (list) $fixups) (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" $k "cel" (printf `%s(%s("%s"))` "repr" "envString" $envName))))) -}}
@@ -755,14 +755,14 @@
 {{- else -}}{{- if (ne (toJson $v.secretKeyRef) "null") -}}
 {{- $envName := (get (fromJson (include "redpanda.keyToEnvVar" (dict "a" (list $k)))) "r") -}}
 {{- $envVars = (concat (default (list) $envVars) (list (mustMergeOverwrite (dict "name" "") (dict "name" $envName "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" $v.secretKeyRef)))))) -}}
-{{- if $v.useRawValue -}}
+{{- if (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $v.useRawValue false)))) "r") -}}
 {{- $fixups = (concat (default (list) $fixups) (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" $k "cel" (printf `%s("%s")` "envString" $envName))))) -}}
 {{- else -}}
 {{- $fixups = (concat (default (list) $fixups) (list (mustMergeOverwrite (dict "field" "" "cel" "") (dict "field" $k "cel" (printf `%s(%s("%s"))` "repr" "envString" $envName))))) -}}
 {{- end -}}
 {{- else -}}{{- if (ne (toJson $v.externalSecretRefSelector) "null") -}}
 {{- $fixup := (printf `%s("%s")` "externalSecretRef" $v.externalSecretRefSelector.name) -}}
-{{- if (not $v.useRawValue) -}}
+{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $v.useRawValue false)))) "r")) -}}
 {{- $fixup = (printf `%s(%s)` "repr" $fixup) -}}
 {{- end -}}
 {{- if (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $v.externalSecretRefSelector.optional false)))) "r") -}}
@@ -909,7 +909,7 @@
 {{- $name := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1515_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "enabled" (coalesce nil) "caEnabled" false "applyInternalDNSNames" (coalesce nil) "duration" "" "issuerRef" (coalesce nil) "secretRef" (coalesce nil) "clientSecretRef" (coalesce nil)))))) "r") -}}
+{{- $_1515_cert_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m $name (dict "caEnabled" false))))) "r") -}}
 {{- $cert := (index $_1515_cert_ok 0) -}}
 {{- $ok := (index $_1515_cert_ok 1) -}}
 {{- if (not $ok) -}}
@@ -1222,7 +1222,7 @@
 {{- $auth = $authAStr -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "enabled" false "external" (coalesce nil) "port" 0 "tls" (dict "enabled" (coalesce nil) "cert" "" "requireClientAuth" false "trustStore" (coalesce nil))) (dict "enabled" $l.enabled "external" $ext "port" ($l.port | int) "tls" $l.tls "appProtocol" $l.appProtocol "authenticationMethod" $auth))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "port" 0 "tls" (dict "cert" "" "requireClientAuth" false)) (dict "enabled" $l.enabled "external" $ext "port" ($l.port | int) "tls" $l.tls "appProtocol" $l.appProtocol "authenticationMethod" $auth))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -1263,7 +1263,7 @@
 {{- $tss = (concat (default (list) $tss) (list $l.tls.trustStore)) -}}
 {{- end -}}
 {{- range $_, $key := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $l.external))))) "r") -}}
-{{- $lis := (ternary (index $l.external $key) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $l.external $key)) -}}
+{{- $lis := (ternary (index $l.external $key) (dict "port" 0) (hasKey $l.external $key)) -}}
 {{- if (or (or (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $lis)))) "r")) (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $lis.tls $l.tls $tls)))) "r"))) (eq (toJson $lis.tls.trustStore) "null")) -}}
 {{- continue -}}
 {{- end -}}
@@ -1347,7 +1347,7 @@
 {{- $auth = $authAStr -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (dict "enabled" $l.enabled "advertisedPorts" $l.advertisedPorts "port" ($l.port | int) "nodePort" $l.nodePort "tls" $l.tls "authenticationMethod" $auth "prefixTemplate" $l.prefixTemplate "type" $l.type "host" $l.host "hostTemplate" $l.hostTemplate))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "port" 0) (dict "enabled" $l.enabled "advertisedPorts" $l.advertisedPorts "port" ($l.port | int) "nodePort" $l.nodePort "tls" $l.tls "authenticationMethod" $auth "prefixTemplate" $l.prefixTemplate "type" $l.type "host" $l.host "hostTemplate" $l.hostTemplate))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -1456,7 +1456,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $sr.name)) (dict "key" $sr.key))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $sr.name "")))) "r"))) (dict "key" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $sr.key "")))) "r")))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -1466,7 +1466,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (and (and (ne (toJson $sr) "null") (ne ((get (fromJson (include "_shims.len" (dict "a" (list $sr.key)))) "r") | int) (0 | int))) (ne ((get (fromJson (include "_shims.len" (dict "a" (list $sr.name)))) "r") | int) (0 | int)))) | toJson -}}
+{{- (dict "r" (and (and (ne (toJson $sr) "null") (ne ((get (fromJson (include "_shims.len" (dict "a" (list (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $sr.key "")))) "r"))))) "r") | int) (0 | int))) (ne ((get (fromJson (include "_shims.len" (dict "a" (list (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $sr.name "")))) "r"))))) "r") | int) (0 | int)))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

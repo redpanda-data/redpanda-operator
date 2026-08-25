@@ -506,7 +506,7 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalO
 				prefixTemplate := ptr.Deref(externalVals.PrefixTemplate, "")
 				if prefixTemplate == "" {
 					// Required because the values might not specify this, it'll ensur we see "" if it's missing.
-					prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
+					prefixTemplate = ptr.Deref(state.Values.External.PrefixTemplate, "")
 				}
 				snippet = append(snippet,
 					``,
@@ -592,7 +592,7 @@ func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset, ordinalOf
 				prefixTemplate := ptr.Deref(externalVals.PrefixTemplate, "")
 				if prefixTemplate == "" {
 					// Required because the values might not specify this, it'll ensur we see "" if it's missing.
-					prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
+					prefixTemplate = ptr.Deref(state.Values.External.PrefixTemplate, "")
 				}
 				snippet = append(snippet,
 					``,

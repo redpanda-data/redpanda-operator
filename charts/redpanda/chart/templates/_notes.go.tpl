@@ -45,7 +45,7 @@
 {{- $profiles := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $state.Values.listeners.kafka.external))))) "r") -}}
 {{- $profileName := (index $profiles (0 | int)) -}}
 {{- $notes = (concat (default (list) $notes) (list `` `Set up rpk for access to your external listeners:`)) -}}
-{{- $profile := (ternary (index $state.Values.listeners.kafka.external $profileName) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $state.Values.listeners.kafka.external $profileName)) -}}
+{{- $profile := (ternary (index $state.Values.listeners.kafka.external $profileName) (dict "port" 0) (hasKey $state.Values.listeners.kafka.external $profileName)) -}}
 {{- if (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $profile.tls $state.Values.listeners.kafka.tls $state.Values.tls)))) "r") -}}
 {{- $external := "" -}}
 {{- if (and (ne (toJson $profile.tls) "null") (ne (toJson $profile.tls.cert) "null")) -}}

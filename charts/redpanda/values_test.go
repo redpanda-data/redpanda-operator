@@ -542,8 +542,8 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 			Creds: TieredStorageCredentials{
 				AccessKey: &SecretRef{},
 				SecretKey: &SecretRef{
-					Key:  "some-key",
-					Name: "some-secret",
+					Key:  new("some-key"),
+					Name: new("some-secret"),
 				},
 			},
 			Expected: []corev1.EnvVar{{
@@ -560,8 +560,8 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 			Name:   "standard-secrets",
 			Config: TieredStorageConfig{},
 			Creds: TieredStorageCredentials{
-				AccessKey: &SecretRef{Name: "access-secret", Key: "access-key"},
-				SecretKey: &SecretRef{Name: "secret-secret", Key: "secret-key"},
+				AccessKey: &SecretRef{Name: new("access-secret"), Key: new("access-key")},
+				SecretKey: &SecretRef{Name: new("secret-secret"), Key: new("secret-key")},
 			},
 			Expected: []corev1.EnvVar{{
 				Name: "REDPANDA_CLOUD_STORAGE_ACCESS_KEY",
@@ -590,8 +590,8 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 				"cloud_storage_azure_storage_account": "fake-storage-account",
 			},
 			Creds: TieredStorageCredentials{
-				AccessKey: &SecretRef{Name: "access-secret", Key: "access-key"},
-				SecretKey: &SecretRef{Name: "secret-secret", Key: "secret-key"},
+				AccessKey: &SecretRef{Name: new("access-secret"), Key: new("access-key")},
+				SecretKey: &SecretRef{Name: new("secret-secret"), Key: new("secret-key")},
 			},
 		},
 		{
@@ -601,8 +601,8 @@ func TestTieredStorageConfigCreds(t *testing.T) {
 				"cloud_storage_secret_key": "SECRET_KEY",
 			},
 			Creds: TieredStorageCredentials{
-				AccessKey: &SecretRef{Name: "access-secret", Key: "access-key"},
-				SecretKey: &SecretRef{Name: "secret-secret", Key: "secret-key"},
+				AccessKey: &SecretRef{Name: new("access-secret"), Key: new("access-key")},
+				SecretKey: &SecretRef{Name: new("secret-secret"), Key: new("secret-key")},
 			},
 		},
 	}
@@ -647,8 +647,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Cert: "default"}},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Cert: "default"}},
 			},
 			Expected: []string{"default"},
@@ -683,8 +683,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{"external"},
@@ -719,8 +719,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Cert: "default"}},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Cert: "default"}},
 			},
 			Expected: []string{"default", "external"},
@@ -748,8 +748,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: nil,
@@ -793,8 +793,8 @@ func TestInUseServerCerts(t *testing.T) {
 					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
 				},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{"external"},
@@ -840,8 +840,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{"admin-ext", "kafka-ext"},
@@ -867,8 +867,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Port int32       `json:"port" jsonschema:"required"`
-					TLS  InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port"`
+					TLS  InternalTLS `json:"tls"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: nil,
