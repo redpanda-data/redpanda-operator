@@ -13,7 +13,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"context"
 	"embed"
 	"fmt"
 	"io"
@@ -21,6 +20,7 @@ import (
 	"iter"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -46,6 +46,14 @@ import (
 //go:embed testdata/subchart/*/templates
 var subchartsFS embed.FS
 
+func subFS(dir string) fs.FS {
+	sub, err := fs.Sub(subchartsFS, "testdata/subchart/"+dir)
+	if err != nil {
+		panic(err)
+	}
+	return sub
+}
+
 var getTestCharts = sync.OnceValue(func() []*GoChart {
 	// Build deps of all our charts before loading them.
 	for _, chartPath := range []string{
@@ -64,14 +72,6 @@ var getTestCharts = sync.OnceValue(func() []*GoChart {
 		if _, err := exec.Command("helm", "dep", "build", chartPath, "--skip-refresh").CombinedOutput(); err != nil {
 			panic(err)
 		}
-	}
-
-	subFS := func(dir string) fs.FS {
-		sub, err := fs.Sub(subchartsFS, "testdata/subchart/"+dir)
-		if err != nil {
-			panic(err)
-		}
-		return sub
 	}
 
 	// The chart dependency graph
@@ -109,34 +109,60 @@ var getTestCharts = sync.OnceValue(func() []*GoChart {
 })
 
 func TestDependencyChainRender(t *testing.T) {
-	charts := getTestCharts()
-	root := charts[0]
+	requireRenderParity(t, "testdata/subchart/root", "input-val.yaml", getTestCharts()[0])
+}
 
+// TestExplicitNullValueParity pins gotohelm's values loading to helm's handling
+// of caller supplied `null`s: the key is DELETED, and the chart's default is
+// not restored in its place, so `.Values.someString` reads back as nil.
+//
+// The chart renders its loaded values verbatim into a ConfigMap, so any
+// divergence between the two loaders shows up as a diff.
+func TestExplicitNullValueParity(t *testing.T) {
+	requireRenderParity(t, "testdata/subchart/explicit-nulls", "input-val.yaml", MustLoad(subFS("explicit-nulls"), renderConfigMap))
+}
+
+// TestExplicitNullValueSubchartParity is [TestExplicitNullValueParity] for the
+// subchart machinery.
+//
+// helm doesn't prune a null the moment it sees one. A null in a stanza owned by
+// a subchart survives the parent's pass (chartutil.childChartMergeTrue) and is
+// pruned only when that subchart coalesces its own defaults. Pruning earlier
+// would delete the key before the chart owning the default ever saw it, which
+// -- as the default is never restored -- reads as "reset" instead of "removed".
+func TestExplicitNullValueSubchartParity(t *testing.T) {
+	requireRenderParity(t, "testdata/subchart/root", "input-val-nulls.yaml", getTestCharts()[0])
+}
+
+// requireRenderParity asserts that rendering chartPath with helm and rendering
+// chart (its gotohelm equivalent) with the same `input-val.yaml` produce
+// identical outputs.
+func requireRenderParity(t *testing.T, chartPath, valuesFile string, chart *GoChart) {
 	helmCli, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
 	require.NoError(t, err)
 
-	inputVal, err := os.ReadFile("testdata/subchart/root/input-val.yaml")
+	contents, err := os.ReadFile(filepath.Join(chartPath, valuesFile))
 	require.NoError(t, err)
 
-	inputValues := map[string]any{}
+	var inputValues map[string]any
+	require.NoError(t, yaml.Unmarshal(contents, &inputValues))
 
-	err = yaml.Unmarshal(inputVal, &inputValues)
-	require.NoError(t, err)
-
-	expected, err := helmCli.Template(context.Background(), "testdata/subchart/root", helm.TemplateOptions{
+	release := helmette.Release{
 		Name:      "subchart",
 		Namespace: "test-namespace",
+		IsInstall: true,
+		Service:   "Helm",
+	}
+
+	expected, err := helmCli.Template(t.Context(), chartPath, helm.TemplateOptions{
+		Name:      release.Name,
+		Namespace: release.Namespace,
 		Values:    inputValues,
 		Version:   "0.0.1",
 	})
 	require.NoError(t, err)
 
-	actual, err := root.Render(nil, helmette.Release{
-		Name:      "subchart",
-		Namespace: "test-namespace",
-		IsInstall: true,
-		Service:   "Helm",
-	}, inputValues)
+	actual, err := chart.Render(nil, release, inputValues)
 	require.NoError(t, err)
 
 	actualByte := convertToString(actual)
@@ -164,9 +190,7 @@ func TestDependencyChainRender(t *testing.T) {
 		ytbx.InputFile{Documents: expectedDocuments},
 		ytbx.InputFile{Documents: actualDocuments},
 	)
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
 
 	if len(report.Diffs) > 0 {
 		hr := dyff.HumanReport{Report: report, OmitHeader: true}
