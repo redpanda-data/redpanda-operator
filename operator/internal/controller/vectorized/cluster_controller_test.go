@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -136,7 +137,31 @@ func TestClusterControllerGolden(t *testing.T) {
 
 // createTestReconciler creates a standard test reconciler with mock admin API
 func createTestReconciler(t *testing.T, mgr manager.Manager) *ClusterReconciler {
-	adminAPIs := map[string]*admin.MockAdminAPI{}
+	reconciler, _ := createTestReconcilerWithAdminAPIs(t, mgr)
+	return reconciler
+}
+
+// mockAdminAPIRegistry holds the per-cluster mock admin APIs a test reconciler
+// hands out, so a test can reach in and change how the "cluster" behaves
+// mid-test (see SetUnavailable, SetClusterHealth).
+type mockAdminAPIRegistry struct {
+	mu   sync.Mutex
+	apis map[string]*admin.MockAdminAPI
+}
+
+// Get returns the mock built for the named cluster, or nil if the reconciler
+// hasn't asked for one yet.
+func (r *mockAdminAPIRegistry) Get(name string) *admin.MockAdminAPI {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.apis[name]
+}
+
+// createTestReconcilerWithAdminAPIs is createTestReconciler with the mock admin
+// API registry returned as well.
+func createTestReconcilerWithAdminAPIs(t *testing.T, mgr manager.Manager) (*ClusterReconciler, *mockAdminAPIRegistry) {
+	registry := &mockAdminAPIRegistry{apis: map[string]*admin.MockAdminAPI{}}
+	adminAPIs := registry.apis
 
 	return (&ClusterReconciler{
 		Client:                   mgr.GetClient(),
@@ -147,6 +172,9 @@ func createTestReconciler(t *testing.T, mgr manager.Manager) *ClusterReconciler 
 		Timeout:                  10 * time.Second,
 		CloudSecretsExpander:     &secrets.CloudExpander{},
 		AdminAPIClientFactory: func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (admin.AdminAPIClient, error) {
+			registry.mu.Lock()
+			defer registry.mu.Unlock()
+
 			if api, ok := adminAPIs[redpandaCluster.Name]; ok {
 				return api, nil
 			}
@@ -169,7 +197,7 @@ func createTestReconciler(t *testing.T, mgr manager.Manager) *ClusterReconciler 
 		skipNameValidation: true,
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
 		ImagePullPolicy: corev1.PullIfNotPresent,
-	})
+	}), registry
 }
 
 func minimalClusterDef() *vectorizedv1alpha1.Cluster {
