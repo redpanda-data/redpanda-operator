@@ -19,13 +19,13 @@ import (
 )
 
 type RenderValues struct {
-	ReplicaCount                 int32                             `json:"replicaCount"`
-	NameOverride                 string                            `json:"nameOverride"`
+	ReplicaCount                 *int32                            `json:"replicaCount,omitempty"`
+	NameOverride                 *string                           `json:"nameOverride,omitempty"`
 	CommonLabels                 map[string]string                 `json:"commonLabels"`
-	FullnameOverride             string                            `json:"fullnameOverride"`
+	FullnameOverride             *string                           `json:"fullnameOverride,omitempty"`
 	Image                        Image                             `json:"image"`
 	ImagePullSecrets             []corev1.LocalObjectReference     `json:"imagePullSecrets"`
-	AutomountServiceAccountToken bool                              `json:"automountServiceAccountToken"`
+	AutomountServiceAccountToken *bool                             `json:"automountServiceAccountToken,omitempty"`
 	ServiceAccount               ServiceAccountConfig              `json:"serviceAccount"`
 	Annotations                  map[string]string                 `json:"annotations"`
 	PodAnnotations               map[string]string                 `json:"podAnnotations"`
@@ -41,7 +41,7 @@ type RenderValues struct {
 	Tolerations                  []corev1.Toleration               `json:"tolerations"`
 	Affinity                     corev1.Affinity                   `json:"affinity"`
 	TopologySpreadConstraints    []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints"`
-	PriorityClassName            string                            `json:"priorityClassName"`
+	PriorityClassName            *string                           `json:"priorityClassName,omitempty"`
 	// Config is a partial/fragment of console's configuration. There are two
 	// possible sources of the types of depending on whether or not an
 	// enterprise build is used. For simplicity, we opt to NOT types this
@@ -97,12 +97,12 @@ type IngressConfig struct {
 
 type IngressHost struct {
 	Host  string        `json:"host"`
-	Paths []IngressPath `json:"paths"`
+	Paths []IngressPath `json:"paths,omitempty"`
 }
 
 type IngressPath struct {
 	Path     string                 `json:"path"`
-	PathType *networkingv1.PathType `json:"pathType"`
+	PathType *networkingv1.PathType `json:"pathType,omitempty"`
 }
 
 type GatewayConfig struct {
@@ -124,19 +124,19 @@ type AutoScaling struct {
 	Enabled                           bool   `json:"enabled"`
 	MinReplicas                       int32  `json:"minReplicas"`
 	MaxReplicas                       int32  `json:"maxReplicas"`
-	TargetCPUUtilizationPercentage    *int32 `json:"targetCPUUtilizationPercentage"`
+	TargetCPUUtilizationPercentage    *int32 `json:"targetCPUUtilizationPercentage,omitempty"`
 	TargetMemoryUtilizationPercentage *int32 `json:"targetMemoryUtilizationPercentage,omitempty"`
 }
 
 type InitContainers struct {
-	ExtraInitContainers *string `json:"extraInitContainers"` // XXX Templated YAML
+	ExtraInitContainers *string `json:"extraInitContainers,omitempty"` // XXX Templated YAML
 }
 
 type SecretConfig struct {
 	Create         bool                  `json:"create"`
 	Kafka          KafkaSecrets          `json:"kafka"`
 	Authentication AuthenticationSecrets `json:"authentication"`
-	License        string                `json:"license"`
+	License        *string               `json:"license,omitempty"`
 	Redpanda       RedpandaSecrets       `json:"redpanda"`
 	Serde          SerdeSecrets          `json:"serde"`
 	SchemaRegistry SchemaRegistrySecrets `json:"schemaRegistry"`
@@ -147,7 +147,7 @@ type SecretMount struct {
 	SecretName  string  `json:"secretName"`
 	Path        string  `json:"path"`
 	SubPath     *string `json:"subPath,omitempty"`
-	DefaultMode *int32  `json:"defaultMode"`
+	DefaultMode *int32  `json:"defaultMode,omitempty"`
 }
 
 type KafkaSecrets struct {
@@ -208,7 +208,7 @@ type Image struct {
 }
 
 type MonitoringConfig struct {
-	Enabled        bool                  `json:"enabled"`
-	ScrapeInterval monitoringv1.Duration `json:"scrapeInterval"`
-	Labels         map[string]string     `json:"labels"`
+	Enabled        bool                   `json:"enabled"`
+	ScrapeInterval *monitoringv1.Duration `json:"scrapeInterval,omitempty"`
+	Labels         map[string]string      `json:"labels"`
 }

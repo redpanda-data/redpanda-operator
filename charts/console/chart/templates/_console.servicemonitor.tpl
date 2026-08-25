@@ -10,7 +10,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $endpoint := (mustMergeOverwrite (dict) (dict "interval" $state.Values.monitoring.scrapeInterval "path" "/admin/metrics" "port" "http" "scheme" (toString "http"))) -}}
+{{- $endpoint := (mustMergeOverwrite (dict) (dict "interval" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.monitoring.scrapeInterval "")))) "r") "path" "/admin/metrics" "port" "http" "scheme" (toString "http"))) -}}
 {{- $tlsCertFilepath := (dig "server" "tls" "certFilepath" "" $state.Values.config) -}}
 {{- $tlsKeyFilepath := (dig "server" "tls" "keyFilepath" "" $state.Values.config) -}}
 {{- $tlsEnabled := (dig "server" "tls" "enabled" false $state.Values.config) -}}

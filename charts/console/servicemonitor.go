@@ -27,7 +27,7 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 	// `spec.endpoints[0].scheme: Unsupported value`. Lowercase works on every
 	// version. See redpanda-operator#1511.
 	endpoint := monitoringv1.Endpoint{
-		Interval: state.Values.Monitoring.ScrapeInterval,
+		Interval: ptr.Deref(state.Values.Monitoring.ScrapeInterval, ""),
 		Path:     "/admin/metrics",
 		Port:     servicePortName,
 		Scheme:   ptr.To(monitoringv1.Scheme("http")),

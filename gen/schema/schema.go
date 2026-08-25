@@ -37,6 +37,14 @@ var schemas = map[string]any{
 	"operator": &operator.Values{},
 }
 
+// usesOmitEmpty controls the RequiredFromJSONSchemaTags on a per schema basis
+// while the migration is in flight.
+var usesOmitEmpty = map[string]bool{
+	"console":  true,
+	"redpanda": false,
+	"operator": false,
+}
+
 func Cmd() *cobra.Command {
 	return &cobra.Command{
 		Use: "schema",
@@ -52,6 +60,8 @@ func Must[T any](value T, err error) T {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	schemaName := append(args, "")[0]
+
 	r := &jsonschema.Reflector{
 		//  These values are set to minimize the diff between the
 		// handwritten jsonschema and the generated jsonschema.
@@ -63,36 +73,10 @@ func run(cmd *cobra.Command, args []string) {
 		// release.
 		AllowAdditionalProperties: false,
 
-		// jsonschema, by default, will rely on omitempty flags to determine if
-		// a value is required or not. This has too much of an impact on how
-		// the underlying JSON is shaped and marshalled/unmarshalled. Instead,
-		// rely on explicitly set required tags.
-		RequiredFromJSONSchemaTags: true,
-
-		AdditionalFields: func(t reflect.Type) []reflect.StructField {
-			// HACK: Helm's `global` field is injected into values and
-			// therefore checked against the schema. As console's going through
-			// a major upgrade and connectors integration is slated to be
-			// dropped, it's difficult to properly get the "Global" field set on them.
-			// Instead, we'll look for all Values and PartialValues types and
-			// inject the Global field from redpanda.
-			// This can be removed once all charts  and dependencies thereof
-			// have been updated.
-			if !strings.HasPrefix(t.PkgPath(), "github.com/redpanda-data/redpanda-operator") {
-				return nil
-			}
-
-			if !(t.Name() == "Values" || t.Name() == "PartialValues") {
-				return nil
-			}
-
-			global, ok := reflect.TypeFor[redpanda.Values]().FieldByName("Global")
-			if !ok {
-				panic("Couldn't find field Global on redpanda.Values")
-			}
-
-			return []reflect.StructField{global}
-		},
+		// Explicitly rely on omitempty to inform whether or not a field is
+		// required. This gives us the closest match between helm and go behavior
+		// when it comes to working with zero values.
+		RequiredFromJSONSchemaTags: !usesOmitEmpty[schemaName],
 
 		// Builtin Kubernetes types can generate a JSON schema but it's a built
 		// difficult to do so as all the information is stored in kubebuilder
@@ -142,7 +126,7 @@ func run(cmd *cobra.Command, args []string) {
 		},
 	}
 
-	val, exists := schemas[append(args, "")[0]]
+	val, exists := schemas[schemaName]
 	if !exists {
 		acceptable := strings.Join(slices.Collect(maps.Keys(schemas)), "|")
 		fmt.Printf("schema %q does not exist\nusage: %s <%s>\n", args[0], cmd.CalledAs(), acceptable)
