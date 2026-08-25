@@ -26,13 +26,11 @@ import (
 // values merged over the chart defaults.
 func renderDeployment(t *testing.T, partial map[string]any) *appsv1.Deployment {
 	t.Helper()
-	values, err := Chart.LoadValues(partial)
-	require.NoError(t, err)
 	dot, err := Chart.Dot(nil, helmette.Release{
 		Name:      "rp-op",
 		Namespace: "redpanda-operator",
 		Service:   "Helm",
-	}, values)
+	}, partial)
 	require.NoError(t, err)
 	return Deployment(dot)
 }

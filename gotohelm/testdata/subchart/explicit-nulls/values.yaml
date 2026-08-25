@@ -1,0 +1,26 @@
+# Every key here is set to an explicit `null` by input-val.yaml. helm's
+# coalescing DELETES a nulled key (the default is not restored) but only along
+# paths present in this file.
+
+# Scalars: the `x != ""` hazard.
+stringWithDefault: default-value
+stringEmptyDefault: ""
+intWithDefault: 42
+boolWithDefault: true
+
+# Nulls nested in tables that exist here are pruned...
+nested:
+  stringWithDefault: nested-default
+  deeper:
+    stringWithDefault: deeper-default
+
+# ...but the prune loop iterates THIS file's keys, so a null under a map key
+# absent from it is never visited and survives.
+extensible:
+  known:
+    stringWithDefault: known-default
+
+# Arrays are replaced wholesale and never traversed, so nulls inside an element
+# survive too.
+list:
+- stringWithDefault: list-default

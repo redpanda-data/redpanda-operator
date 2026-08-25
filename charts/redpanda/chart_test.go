@@ -1085,14 +1085,11 @@ func TestLabels(t *testing.T) {
 			Console: &consolechart.PartialValues{Enabled: ptr.To(false)},
 		}
 
-		helmValues, err := redpanda.Chart.LoadValues(values)
-		require.NoError(t, err)
-
 		dot, err := redpanda.Chart.Dot(nil, helmette.Release{
 			Name:      "redpanda",
 			Namespace: "redpanda",
 			Service:   "Helm",
-		}, helmValues)
+		}, values)
 		require.NoError(t, err)
 
 		state, err := redpanda.RenderStateFromDot(dot)
