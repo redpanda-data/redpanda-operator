@@ -42,7 +42,7 @@ var schemas = map[string]any{
 var usesOmitEmpty = map[string]bool{
 	"console":  true,
 	"redpanda": false,
-	"operator": false,
+	"operator": true,
 }
 
 func Cmd() *cobra.Command {
