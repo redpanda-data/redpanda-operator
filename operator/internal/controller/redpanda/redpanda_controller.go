@@ -62,6 +62,12 @@ import (
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
+// errBrokerModeFlagOff names the operator misconfiguration where a
+// broker-mode cluster is reconciled without --enable-broker; used only for
+// logging (the reconcile does not error — it refuses pool mutations and
+// keeps the recovery chain running).
+var errBrokerModeFlagOff = errors.New("broker mode requires --enable-broker")
+
 const (
 	FinalizerKey = "operator.redpanda.com/finalizer"
 
@@ -603,6 +609,25 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 		trace.EndSpan(span, err)
 	}()
 
+	if !r.BrokerCREnabled && feature.V2UseBrokerCR.Get(ctx, state.cluster.Redpanda) {
+		// The cluster is in Broker CR mode but this operator runs without
+		// --enable-broker (a downgrade, or a values regression). Its pods
+		// are controller-owned by Broker CRs, which are invisible to the
+		// pool tracker without the flag — proceeding would create a
+		// fresh-render StatefulSet that fights the Broker controller for
+		// the pods and rolls the fleet. Refuse every pool mutation until
+		// the flag is restored or the cluster is rolled back; the check is
+		// annotation-only so it works even when the Broker CRD itself is
+		// not installed. The non-zero RequeueAfter deliberately aborts the
+		// rest of the chain: the downstream steps can't do useful work
+		// against a pool view that is blind to the broker pods, and their
+		// deferred status writes would double-set ResourcesSynced.
+		msg := "cluster is managed via Broker CRs (use-broker-cr annotation) but the operator is running without --enable-broker; pool management suspended — restore the flag, or roll back to StatefulSet mode before downgrading"
+		logger.Error(errBrokerModeFlagOff, "refusing pool mutations", "cluster", client.ObjectKeyFromObject(state.cluster.Redpanda).String())
+		state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, msg)
+		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+	}
+
 	if r.BrokerCREnabled && !state.brokerMode {
 		// The operator supports Broker CRs but this cluster is not (or no
 		// longer) opted in: roll any leftover Broker CRs back to StatefulSet
@@ -798,6 +823,11 @@ func (r *RedpandaReconciler) reconcileBrokerPools(ctx context.Context, state *cl
 func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster, set *lifecycle.MulticlusterStatefulSet) (*brokerset.BrokerSet, error) {
 	rp := state.cluster.Redpanda
 
+	var configVersion string
+	if state.restartOnConfigChange {
+		configVersion = rp.Status.ConfigVersion
+	}
+
 	poolName := set.Labels[redpanda.NodePoolLabelName]
 	if poolName == "" {
 		// Broker-backed facades (no desired render — the drain path for
@@ -879,10 +909,15 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		ClusterSelector:   k8slabels.SelectorFromSet(ownerLabels),
 		PodSelector:       podSelector,
 		ConfigChecksumKey: redpandav1alpha2.BrokerConfigChecksumAnnotation,
-		Hooks:             &v2OwnerHooks{r: r, state: state},
-		Reporter:          state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
-		Arbitration:       state.arbitration,
-		Logger:            log.FromContext(ctx),
+		// Pods must be BORN carrying the current restart marker or the next
+		// MarkForRestart stamp rolls them for no config change — same
+		// persisted source and gate as StatefulSet mode's injected
+		// config-version label (see fetchInitialState).
+		ClusterConfigVersion: configVersion,
+		Hooks:                &v2OwnerHooks{r: r, state: state},
+		Reporter:             state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
+		Arbitration:          state.arbitration,
+		Logger:               log.FromContext(ctx),
 	}, nil
 }
 

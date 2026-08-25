@@ -419,19 +419,21 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// Owned pods created before pod-template-hash tracking existed lack the
-	// hash annotation; treating them as outdated would roll the whole fleet
-	// on operator upgrade. Backfill the desired hash instead — template
-	// drift predating the hash is undetectable either way, and every future
-	// template change rotates through the freshly stamped value.
-	if _, ok := pod.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]; !ok {
-		if backfillRotationKeys(broker, pod) {
-			l.Info("backfilling pod-template-hash on pre-hash pod", "name", podName)
-			if err := k8sClient.Update(ctx, pod); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+	// Owned pods may lack rotation keys that post-date their creation: the
+	// pod-template hash on pods from before hash tracking existed (operator
+	// upgrade), or the cluster-config version on pods born before the first
+	// MarkForRestart stamp (bootstrap, or a pod created off a cache-lagged
+	// unstamped template). Treating a MISSING key as outdated would roll the
+	// whole fleet for no actual change — backfill the desired value instead:
+	// drift predating the key is undetectable either way, and every future
+	// change rotates through the freshly stamped value. A pod carrying a
+	// DIFFERENT value is a genuine pending rotation and is never touched.
+	if backfillRotationKeys(broker, pod) {
+		l.Info("backfilling missing rotation keys on pod", "name", podName)
+		if err := k8sClient.Update(ctx, pod); err != nil {
+			return ctrl.Result{}, err
 		}
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -439,14 +441,14 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 
 // backfillRotationKeys copies each desired rotation annotation onto the pod
 // when the pod carries none, reporting whether anything was stamped. It
-// never overwrites a live value.
+// never overwrites a live value — a DIFFERING value is a genuine pending
+// rotation and stays untouched. It must cover EVERY rotation-identity key:
+// a skipped key leaves the pod outdated the moment the template holds a
+// value for it, queueing a pointless rotation (for the cluster-config
+// version, a pointless serialized fleet restart).
 func backfillRotationKeys(broker *redpandav1alpha2.Broker, pod *corev1.Pod) bool {
-	keys := []string{
-		redpandav1alpha2.BrokerPodTemplateHashAnnotation,
-		redpandav1alpha2.BrokerConfigChecksumAnnotation,
-	}
 	stamped := false
-	for _, key := range keys {
+	for _, key := range redpandav1alpha2.RotationAnnotations {
 		if _, ok := pod.Annotations[key]; ok {
 			continue
 		}

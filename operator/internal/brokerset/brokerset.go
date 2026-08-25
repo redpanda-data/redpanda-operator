@@ -165,6 +165,17 @@ type BrokerSet struct {
 	// Its value is copied to BrokerConfigChecksumAnnotation — one of the three
 	// rotation-identity keys.
 	ConfigChecksumKey string
+	// ClusterConfigVersion is the owner's last-synced restart-requiring
+	// cluster-config version (V2: Redpanda.Status.ConfigVersion, the same
+	// persisted source StatefulSet mode injects as a pod label). When set,
+	// RenderBrokers stamps it into pod templates so pods are BORN carrying
+	// the current version: MarkForRestart re-stamps the version whenever it
+	// is computed — not only on change, for crash safety — and a pod born
+	// from an unstamped template would be marked outdated by that first
+	// stamp, rolling the fleet for no config change. Optional; owners with
+	// no persisted version (V1) rely on the Broker controller backfilling
+	// missing rotation keys instead.
+	ClusterConfigVersion string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.
 	Hooks OwnerHooks
@@ -571,6 +582,9 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
+		if s.ClusterConfigVersion != "" {
+			podAnnotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = s.ClusterConfigVersion
+		}
 
 		brokerLabels := maps.Clone(s.BrokerLabels)
 		brokerLabels[NetworkIndexLabelKey] = fmt.Sprintf("%d", i)
@@ -710,17 +724,18 @@ func (s *BrokerSet) createBroker(ctx context.Context, l logr.Logger, stsName str
 // UpdateBroker syncs the desired pod template (and propagated annotations)
 // onto an existing Broker CR, skipping no-op writes.
 func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, desired *redpandav1alpha2.Broker) error {
-	// Preserve the restart marker: it is stamped by MarkForRestart, not by
-	// the renderer, and must survive PodTemplate syncs until the restart has
-	// rolled through.
+	// Preserve the restart marker: on a LIVE CR, MarkForRestart is the only
+	// writer of this key. The renderer's value (ClusterConfigVersion) seeds
+	// pods born current at CREATION only — it comes from the owner's
+	// persisted status, which trails MarkForRestart within a pass (and
+	// indefinitely if a status write is lost), so letting it overwrite here
+	// would regress a fresh stamp and roll pods for no change.
 	restartKey := redpandav1alpha2.BrokerClusterConfigVersionAnnotation
 	if v, ok := existing.Spec.PodTemplate.Annotations[restartKey]; ok {
 		if desired.Spec.PodTemplate.Annotations == nil {
 			desired.Spec.PodTemplate.Annotations = map[string]string{}
 		}
-		if _, set := desired.Spec.PodTemplate.Annotations[restartKey]; !set {
-			desired.Spec.PodTemplate.Annotations[restartKey] = v
-		}
+		desired.Spec.PodTemplate.Annotations[restartKey] = v
 	}
 
 	policyKey := feature.BrokerDeletionPolicy.Key
@@ -728,9 +743,22 @@ func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, d
 	existingPolicy, existingPolicySet := existing.Annotations[policyKey]
 	policyChanged := desiredPolicy != existingPolicy || desiredPolicySet != existingPolicySet
 
+	// Rendered CR labels are synced by merge: only keys the render sets are
+	// (re)stamped, keys added by anyone else are left alone, and nothing is
+	// ever removed. The NodePool generation label lives here — creation-time
+	// labels frozen forever would freeze NodePool.Status.DeployedGeneration
+	// at the pool's first generation.
+	labelsChanged := false
+	for k, v := range desired.Labels {
+		if existing.Labels[k] != v {
+			labelsChanged = true
+			break
+		}
+	}
+
 	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) &&
 		equality.Semantic.DeepEqual(existing.Spec.ClusterRef, desired.Spec.ClusterRef) &&
-		!policyChanged {
+		!policyChanged && !labelsChanged {
 		return nil
 	}
 	// Spec.Decommission is deliberately not synced: decommission intent is
@@ -743,6 +771,12 @@ func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, d
 	// re-parents Brokers when the ownership model evolves.
 	existing.Spec.ClusterRef = desired.Spec.ClusterRef
 	existing.Spec.PodTemplate = desired.Spec.PodTemplate
+	if existing.Labels == nil && len(desired.Labels) > 0 {
+		existing.Labels = map[string]string{}
+	}
+	for k, v := range desired.Labels {
+		existing.Labels[k] = v
+	}
 	if desiredPolicySet {
 		if existing.Annotations == nil {
 			existing.Annotations = map[string]string{}

@@ -59,6 +59,10 @@ type BrokerControllerSuite struct {
 
 	env           *testenv.Env
 	clientFactory internalclient.ClientFactory
+	// mgr is the shared testenv's multicluster manager; tests that need a
+	// reconciler with DIFFERENT flags than the suite's (e.g. the flag-off
+	// downgrade scenario) construct one around it and drive Reconcile by hand.
+	mgr multicluster.Manager
 }
 
 var _ suite.SetupAllSuite = (*BrokerControllerSuite)(nil)
@@ -77,7 +81,7 @@ func (s *BrokerControllerSuite) setupNamespace(t *testing.T) (*testing.T, contex
 
 func (s *BrokerControllerSuite) SetupSuite() {
 	t := s.T()
-	s.env, s.clientFactory = s.newEnv(t, "")
+	s.env, s.clientFactory, s.mgr = s.newEnv(t, "")
 }
 
 // newEnv builds a testenv (shared k3d cluster when clusterName is empty, a
@@ -85,7 +89,7 @@ func (s *BrokerControllerSuite) SetupSuite() {
 // RBAC set up. Tests that disrupt cluster infrastructure (node deletion) use
 // a dedicated cluster so concurrently-running test PACKAGES sharing the
 // default cluster don't lose pods and node-pinned PVCs.
-func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*testenv.Env, internalclient.ClientFactory) {
+func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*testenv.Env, internalclient.ClientFactory, multicluster.Manager) {
 	ctx := trace.Test(t)
 
 	importImages := []string{
@@ -115,13 +119,19 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 	})
 
 	var clientFactory internalclient.ClientFactory
+	var manager multicluster.Manager
 
 	env.SetupManager(s.setupRBAC(ctx, env), func(mgr multicluster.Manager) error {
+		manager = mgr
 		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
 		clientFactory = internalclient.NewFactory(mgr, nil).WithDialer(dialer.DialContext)
 
 		require.NoError(t, (&redpanda.NodePoolReconciler{
 			Manager: mgr,
+			// Matches the production wiring (run.go): with --enable-broker,
+			// NodePool status is derived from Broker CRs for pools that have
+			// no StatefulSet.
+			BrokerCREnabled: true,
 		}).SetupWithManager(ctx, mgr, ""))
 
 		require.NoError(t, (&redpanda.RedpandaReconciler{
@@ -143,7 +153,7 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)
 	})
 
-	return env, clientFactory
+	return env, clientFactory, manager
 }
 
 func (s *BrokerControllerSuite) setupRBAC(ctx context.Context, env *testenv.Env) string {
@@ -735,7 +745,7 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 	// this suite is not enough — test PACKAGES run concurrently and other
 	// packages' testenvs share the default cluster; their pods and
 	// node-pinned PVCs would be stranded by the deletion.
-	env, _ := s.newEnv(t, "broker-pv-"+strings.ToLower(testenv.RandString(4)))
+	env, _, _ := s.newEnv(t, "broker-pv-"+strings.ToLower(testenv.RandString(4)))
 	ns := env.CreateTestNamespace(t)
 	c := ns.Client
 

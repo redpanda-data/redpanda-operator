@@ -26,8 +26,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 )
@@ -342,6 +347,123 @@ func (s *BrokerControllerSuite) TestV2NodePoolBrokers() {
 			assert.True(ct, apierrors.IsNotFound(err), "drained pool's pod %q should be gone", name)
 		}
 	}, 10*time.Minute, 5*time.Second)
+}
+
+// TestV2BrokerModeFlagOffOperatorDoesNotCreateStatefulSet pins the downgrade
+// safety of broker mode: a reconciler running WITHOUT --enable-broker (an
+// operator downgrade, or a values regression) must never start managing a
+// broker-mode cluster's pods through StatefulSets. Without a guard, the
+// broker-backed pools are invisible to the flag-off tracker, its plain path
+// renders a fresh StatefulSet against pods the Broker CRs own, and the roll
+// loop then fights the Broker controller over them — a silent unrequested
+// fleet restart.
+func (s *BrokerControllerSuite) TestV2BrokerModeFlagOffOperatorDoesNotCreateStatefulSet() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(1)
+	s.applyAndWait(t, ctx, c, rp)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 1) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, brokers[0].Status.Phase)
+	}, 5*time.Minute, 5*time.Second)
+	uids := s.brokerPodUIDs(t, ctx, c, rp, 1)
+
+	// The downgraded operator: identical wiring, --enable-broker off.
+	flagOff := &redpanda.RedpandaReconciler{
+		Manager:       s.mgr,
+		ClientFactory: s.clientFactory,
+		LifecycleClient: lifecycle.NewResourceClient(s.mgr, lifecycle.V2ResourceManagers(
+			lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
+			lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
+			lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
+		)),
+		UseNodePools:    true,
+		BrokerCREnabled: false,
+	}
+	req := mcreconcile.Request{
+		Request:     reconcile.Request{NamespacedName: client.ObjectKeyFromObject(rp)},
+		ClusterName: mcmanager.LocalCluster,
+	}
+	for range 3 {
+		if _, err := flagOff.Reconcile(ctx, req); err != nil {
+			// Errors are acceptable (refusing loudly is a valid guard);
+			// creating a StatefulSet is not.
+			t.Logf("flag-off reconcile returned error: %v", err)
+		}
+	}
+
+	var sts appsv1.StatefulSet
+	err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)
+	require.Truef(t, apierrors.IsNotFound(err),
+		"a reconciler without --enable-broker created StatefulSet %q for a broker-mode cluster; it would fight the Broker controller for the pods", rp.Name)
+	for name, uid := range uids {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod))
+		require.Equal(t, uid, pod.UID, "pod %q must survive flag-off reconciles untouched", name)
+	}
+}
+
+// TestV2NodePoolDeployedGenerationAdvances pins broker-mode NodePool rollout
+// tracking: after a NodePool spec change converges, Status.DeployedGeneration
+// must catch up to metadata.generation — consumers (the cloud control plane)
+// gate rollout completion on exactly that equality. The broker-mode status is
+// derived from the Broker CRs, so whatever carries the generation there has
+// to advance when the desired state is synced, not only at Broker creation.
+func (s *BrokerControllerSuite) TestV2NodePoolDeployedGenerationAdvances() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(1)
+
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "pool-" + testenv.RandString(6),
+			Annotations: make(map[string]string),
+		},
+		Spec: redpandav1alpha2.MinimalNodePoolSpec(rp),
+	}
+	pool.Spec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+	pool.Spec.Replicas = ptr.To(int32(1))
+	require.NoError(t, c.Create(ctx, pool))
+
+	s.applyAndWait(t, ctx, c, rp)
+
+	// Baseline: the pool converges and reports its creation generation.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(pool), pool)) {
+			return
+		}
+		assert.Equal(ct, int32(1), pool.Status.Replicas)
+		assert.Equal(ct, pool.Generation, pool.Status.DeployedGeneration)
+	}, 5*time.Minute, 5*time.Second)
+
+	// A metadata-only spec change: bumps the generation; the Broker
+	// controller syncs it to the pod in place, no rotation involved.
+	patch := client.MergeFrom(pool.DeepCopy())
+	pool.Spec.PodTemplate = &redpandav1alpha2.PodTemplate{
+		Annotations: map[string]string{"test.redpanda.com/deployed-generation-bump": "yes"},
+	}
+	require.NoError(t, c.Patch(ctx, pool, patch))
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pool), pool))
+	bumped := pool.Generation
+	require.Greater(t, bumped, int64(1), "the spec patch must bump the generation")
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(pool), pool)) {
+			return
+		}
+		assert.Equal(ct, bumped, pool.Status.DeployedGeneration,
+			"DeployedGeneration must advance once the new generation's desired state is synced")
+	}, 3*time.Minute, 5*time.Second)
 }
 
 func (s *BrokerControllerSuite) brokerPodUIDs(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda, replicas int) map[string]types.UID {
