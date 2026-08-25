@@ -25,6 +25,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 	"sigs.k8s.io/yaml"
 
@@ -119,8 +120,8 @@ func NewRenderState(namespace, name string, labels map[string]string, values Par
 // Previously known as "console.Name"
 func (s *RenderState) ChartName() string {
 	name := ChartName
-	if s.Values.NameOverride != "" {
-		name = s.Values.NameOverride
+	if override := ptr.Deref(s.Values.NameOverride, ""); override != "" {
+		name = override
 	}
 	return cleanForK8s(name)
 }
@@ -130,8 +131,8 @@ func (s *RenderState) ChartName() string {
 //
 // Previously known as "console.Fullname"
 func (s *RenderState) FullName() string {
-	if s.Values.FullnameOverride != "" {
-		return cleanForK8s(s.Values.FullnameOverride)
+	if override := ptr.Deref(s.Values.FullnameOverride, ""); override != "" {
+		return cleanForK8s(override)
 	}
 
 	name := s.ChartName()

@@ -6,8 +6,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $name := "console" -}}
-{{- if (ne $s.Values.nameOverride "") -}}
-{{- $name = $s.Values.nameOverride -}}
+{{- $override_3 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $s.Values.nameOverride "")))) "r") -}}
+{{- if (ne $override_3 "") -}}
+{{- $name = $override_3 -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (get (fromJson (include "console.cleanForK8s" (dict "a" (list $name)))) "r")) | toJson -}}
@@ -19,9 +20,10 @@
 {{- $s := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (ne $s.Values.fullnameOverride "") -}}
+{{- $override_4 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $s.Values.fullnameOverride "")))) "r") -}}
+{{- if (ne $override_4 "") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "console.cleanForK8s" (dict "a" (list $s.Values.fullnameOverride)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "console.cleanForK8s" (dict "a" (list $override_4)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $name := (get (fromJson (include "console.RenderState.ChartName" (dict "a" (list $s)))) "r") -}}

@@ -66,7 +66,7 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 
 	if license := state.Values.Enterprise.License; license != "" && !ptr.Deref(state.Values.Console.Secret.Create, false) {
 		consoleState.Values.Secret.Create = true
-		consoleState.Values.Secret.License = license
+		consoleState.Values.Secret.License = &license
 	}
 
 	// NB: This slice may contain nil interfaces!
