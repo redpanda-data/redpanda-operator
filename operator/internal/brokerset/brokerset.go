@@ -197,7 +197,7 @@ type OwnerHooks interface {
 	// to the migration preconditions (V1: cluster restarting, decommission
 	// recorded in status). Return a non-empty human-readable reason to
 	// block the migration this pass.
-	MigrationBlockedReason(ctx context.Context) (string, error)
+	MigrationBlockedReason(ctx context.Context) string
 }
 
 // NopHooks is an always-healthy, never-blocked OwnerHooks with no
@@ -208,7 +208,7 @@ func (NopHooks) IsClusterHealthy(context.Context) error { return nil }
 
 func (NopHooks) OnQuiesced(context.Context) error { return nil }
 
-func (NopHooks) MigrationBlockedReason(context.Context) (string, error) { return "", nil }
+func (NopHooks) MigrationBlockedReason(context.Context) string { return "" }
 
 // report is the nil-safe Reporter.Report.
 func (s *BrokerSet) report(ctx context.Context, status corev1.ConditionStatus, reason, message string) {

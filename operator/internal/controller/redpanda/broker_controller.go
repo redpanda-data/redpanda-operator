@@ -215,7 +215,7 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, k8sClient client.Clie
 	// (post-handover orphans) are ours to reason about and adopt.
 	if state.pod != nil {
 		if owner := metav1.GetControllerOf(state.pod); owner != nil &&
-			owner.Kind == "Broker" &&
+			owner.Kind == redpandav1alpha2.BrokerKind &&
 			owner.APIVersion == redpandav1alpha2.GroupVersion.String() &&
 			owner.UID != broker.UID {
 			state.pod = nil
@@ -1396,7 +1396,7 @@ func (r *BrokerReconciler) ownerTearingDown(ctx context.Context, l logr.Logger, 
 	switch {
 	case owner.Kind == "Cluster" && strings.HasPrefix(owner.APIVersion, "redpanda.vectorized.io/"):
 		ownerObj = &vectorizedv1alpha1.Cluster{}
-	case owner.Kind == "Redpanda" && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
+	case owner.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
 		ownerObj = &redpandav1alpha2.Redpanda{}
 	default:
 		return false

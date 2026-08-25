@@ -47,9 +47,22 @@ Feature: Broker CRD migration from StatefulSet (V2 Redpanda)
     Then cluster "broker-v2-migrate" should eventually have 3 Broker CRs
     And cluster "broker-v2-migrate" admin API should show 3 brokers
     And pods for cluster "broker-v2-migrate" should have the same UIDs as the snapshot
+    And pods for cluster "broker-v2-migrate" should have no container restarts
     # Rollback
     When I remove annotation "operator.redpanda.com/use-broker-cr" from Redpanda "broker-v2-migrate"
     Then a StatefulSet should eventually exist for cluster "broker-v2-migrate"
     And cluster "broker-v2-migrate" should eventually have 0 Broker CRs
     And cluster "broker-v2-migrate" admin API should show 3 brokers
     And pods for cluster "broker-v2-migrate" should have the same UIDs as the snapshot
+    And pods for cluster "broker-v2-migrate" should have no container restarts
+    # Re-migrate: opting back in after a rollback must adopt the restored
+    # pods in place again — promptly, not after waiting out a periodic
+    # requeue — leaving the original pods untouched through the whole
+    # migrate -> rollback -> migrate cycle.
+    When I set annotation "operator.redpanda.com/use-broker-cr" to "true" on Redpanda "broker-v2-migrate"
+    Then cluster "broker-v2-migrate" should have 3 Broker CRs
+    And no StatefulSet should eventually exist for cluster "broker-v2-migrate"
+    And all Broker CRs for cluster "broker-v2-migrate" should be Running
+    And cluster "broker-v2-migrate" admin API should show 3 brokers
+    And pods for cluster "broker-v2-migrate" should have the same UIDs as the snapshot
+    And pods for cluster "broker-v2-migrate" should have no container restarts

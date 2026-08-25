@@ -641,6 +641,27 @@ func snapshotPodUIDs(ctx context.Context, t framework.TestingT, clusterName stri
 	return context.WithValue(ctx, podUIDSnapshotKey{clusterName}, uids)
 }
 
+// podsShouldHaveNoContainerRestarts asserts that no container of any of the
+// cluster's pods has ever restarted. It complements the pod-UID checks: UID
+// stability proves no pod was recreated, but a pod can keep its UID while a
+// container inside it crash-loops — and conversely a recreated pod starts
+// back at zero restarts, so neither check subsumes the other.
+func podsShouldHaveNoContainerRestarts(ctx context.Context, t framework.TestingT, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	var pods corev1.PodList
+	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+		"app.kubernetes.io/instance": clusterName,
+		"app.kubernetes.io/name":     "redpanda",
+	}))
+	require.NotEmpty(t, pods.Items, "no pods found for cluster %q", clusterName)
+	for _, p := range pods.Items {
+		for _, cs := range p.Status.ContainerStatuses {
+			require.Zerof(t, cs.RestartCount, "container %q of pod %q restarted %d time(s)", cs.Name, p.Name, cs.RestartCount)
+		}
+	}
+	t.Logf("All containers of %d pods for cluster %q have zero restarts", len(pods.Items), clusterName)
+}
+
 func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, clusterName string) {
 	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
 	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)

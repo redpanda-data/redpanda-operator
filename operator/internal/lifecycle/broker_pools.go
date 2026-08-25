@@ -98,6 +98,11 @@ func (r *ResourceClient[T, U]) fetchBrokerBackedPools(ctx context.Context, ctl *
 				// lifecycle can run for it.
 				continue
 			}
+			// A decommissioning broker leaves the scale intent but its pod
+			// keeps counting below — spec < status is how CheckScale reports
+			// the scale-down as in flight, and CondemnedReplicas surfaces the
+			// pod. Skipping the whole broker here would make an in-flight
+			// decommission look converged.
 			if !b.Spec.Decommission {
 				specReplicas++
 			}
@@ -105,10 +110,10 @@ func (r *ResourceClient[T, U]) fetchBrokerBackedPools(ctx context.Context, ctl *
 			getCtx, getCancel := context.WithTimeout(ctx, CallTimeoutFor(clusterName))
 			pod, err := kube.Get[corev1.Pod](getCtx, ctl, kube.ObjectKey{Namespace: b.Namespace, Name: b.PodName()})
 			getCancel()
+			if apierrors.IsNotFound(err) {
+				continue
+			}
 			if err != nil {
-				if apierrors.IsNotFound(err) {
-					continue
-				}
 				return nil, fmt.Errorf("getting pod for Broker %s: %w", b.Name, err)
 			}
 			pods = append(pods, pod)
@@ -179,7 +184,9 @@ func (r *ResourceClient[T, U]) fetchBrokerBackedPools(ctx context.Context, ctl *
 
 // brokerPodNameBase derives the pod-name prefix shared by a Broker's pool —
 // the name the pool's StatefulSet had (or would have had). It strips the
-// network-index suffix from the Broker's deterministic pod name.
+// network-index suffix from the Broker's deterministic pod name. It returns
+// "" for a Broker without a network index (no pod name is derivable);
+// callers must skip such Brokers rather than group them.
 func brokerPodNameBase(b *redpandav1alpha2.Broker) string {
 	if b.Spec.NetworkIndex == nil {
 		return ""

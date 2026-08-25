@@ -192,14 +192,14 @@ func (r *BrokerSetResource) OnQuiesced(ctx context.Context) error {
 
 // MigrationBlockedReason blocks the migration while the cluster's status
 // records an in-flight restart or decommission.
-func (r *BrokerSetResource) MigrationBlockedReason(context.Context) (string, error) {
+func (r *BrokerSetResource) MigrationBlockedReason(context.Context) string {
 	if r.pandaCluster.Status.IsRestarting() {
-		return "cluster is restarting", nil
+		return "cluster is restarting"
 	}
 	if r.pandaCluster.Status.DecommissioningNode != nil {
-		return fmt.Sprintf("decommission of node_id=%d in progress", *r.pandaCluster.Status.DecommissioningNode), nil
+		return fmt.Sprintf("decommission of node_id=%d in progress", *r.pandaCluster.Status.DecommissioningNode)
 	}
-	return "", nil
+	return ""
 }
 
 func (r *BrokerSetResource) Ensure(ctx context.Context) error {

@@ -175,9 +175,7 @@ func (s *BrokerSet) VerifyMigrationPreconditions(ctx context.Context, l logr.Log
 		}
 	}
 
-	if reason, err := s.Hooks.MigrationBlockedReason(ctx); err != nil {
-		return err
-	} else if reason != "" {
+	if reason := s.Hooks.MigrationBlockedReason(ctx); reason != "" {
 		return block(reason)
 	}
 

@@ -219,6 +219,7 @@ func init() {
 	framework.RegisterStep(`^Broker "([^"]*)" should have condition "([^"]*)" as "([^"]*)"$`, brokerShouldHaveCondition)
 	framework.RegisterStep(`^I snapshot pod UIDs for cluster "([^"]*)"$`, snapshotPodUIDs)
 	framework.RegisterStep(`^pods for cluster "([^"]*)" should have the same UIDs as the snapshot$`, podUIDsShouldBeUnchanged)
+	framework.RegisterStep(`^pods for cluster "([^"]*)" should have no container restarts$`, podsShouldHaveNoContainerRestarts)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

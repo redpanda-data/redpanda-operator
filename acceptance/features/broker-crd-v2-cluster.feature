@@ -65,3 +65,12 @@ Feature: Broker CRD with V2 Redpanda
     Then pods for cluster "broker-v2" should roll one at a time
     And all Broker CRs for cluster "broker-v2" should be Running
     And cluster "broker-v2" admin API should show 3 brokers
+    # Condemn a specific broker by setting spec.decommission on its Broker
+    # CR: the operator decommissions it and replaces it in place — same pod
+    # name, fresh node identity. A StatefulSet can only ever remove the
+    # highest ordinal; with Broker CRs any broker can be replaced.
+    When I set decommission on the Broker with index 0 of cluster "broker-v2"
+    Then the Broker with index 0 of cluster "broker-v2" should be replaced
+    And cluster "broker-v2" should eventually have 3 Broker CRs
+    And all Broker CRs for cluster "broker-v2" should be Running
+    And cluster "broker-v2" admin API should show 3 brokers
