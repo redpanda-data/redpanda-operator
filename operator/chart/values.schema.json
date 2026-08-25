@@ -49,6 +49,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -70,6 +74,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -81,6 +89,10 @@
                         "type": "integer"
                       }
                     },
+                    "required": [
+                      "weight",
+                      "preference"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -116,6 +128,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -137,6 +153,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -152,6 +172,9 @@
                   ]
                 }
               },
+              "required": [
+                "nodeSelectorTerms"
+              ],
               "type": "object"
             }
           },
@@ -189,6 +212,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -234,6 +261,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -257,12 +288,19 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "topologyKey"
+                        ],
                         "type": "object"
                       },
                       "weight": {
                         "type": "integer"
                       }
                     },
+                    "required": [
+                      "weight",
+                      "podAffinityTerm"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -298,6 +336,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -343,6 +385,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -366,6 +412,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "topologyKey"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -410,6 +459,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -455,6 +508,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -478,12 +535,19 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "topologyKey"
+                        ],
                         "type": "object"
                       },
                       "weight": {
                         "type": "integer"
                       }
                     },
+                    "required": [
+                      "weight",
+                      "podAffinityTerm"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -519,6 +583,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -564,6 +632,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -587,6 +659,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "topologyKey"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -636,6 +711,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "healthProbeBindAddress"
+          ],
           "type": "object"
         },
         "kind": {
@@ -651,6 +729,10 @@
               "type": "string"
             }
           },
+          "required": [
+            "leaderElect",
+            "resourceName"
+          ],
           "type": "object"
         },
         "metrics": {
@@ -660,6 +742,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "bindAddress"
+          ],
           "type": "object"
         },
         "webhook": {
@@ -669,9 +754,20 @@
               "type": "integer"
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         }
       },
+      "required": [
+        "apiVersion",
+        "kind",
+        "health",
+        "metrics",
+        "webhook",
+        "leaderElection"
+      ],
       "type": "object"
     },
     "connectController": {
@@ -690,6 +786,10 @@
               "type": "string"
             }
           },
+          "required": [
+            "repository",
+            "tag"
+          ],
           "type": "object"
         },
         "monitoring": {
@@ -708,9 +808,16 @@
               "type": "string"
             }
           },
+          "required": [
+            "enabled"
+          ],
           "type": "object"
         }
       },
+      "required": [
+        "enabled",
+        "monitoring"
+      ],
       "type": "object"
     },
     "controllers": {
@@ -723,6 +830,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "interval"
+          ],
           "type": "object"
         },
         "role": {
@@ -732,6 +842,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "interval"
+          ],
           "type": "object"
         },
         "schema": {
@@ -741,6 +854,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "interval"
+          ],
           "type": "object"
         },
         "shadowLink": {
@@ -750,6 +866,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "interval"
+          ],
           "type": "object"
         },
         "topic": {
@@ -759,6 +878,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "interval"
+          ],
           "type": "object"
         },
         "user": {
@@ -768,9 +890,20 @@
               "type": "string"
             }
           },
+          "required": [
+            "interval"
+          ],
           "type": "object"
         }
       },
+      "required": [
+        "topic",
+        "user",
+        "group",
+        "schema",
+        "role",
+        "shadowLink"
+      ],
       "type": "object"
     },
     "crds": {
@@ -783,6 +916,10 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "enabled",
+        "experimental"
+      ],
       "type": "object"
     },
     "enterprise": {
@@ -801,6 +938,9 @@
               "type": "boolean"
             }
           },
+          "required": [
+            "key"
+          ],
           "type": "object"
         }
       },
@@ -828,6 +968,7 @@
         }
       },
       "required": [
+        "repository",
         "pullPolicy"
       ],
       "type": "object"
@@ -886,6 +1027,10 @@
               "type": "string"
             }
           },
+          "required": [
+            "port",
+            "service"
+          ],
           "type": "object"
         },
         "httpGet": {
@@ -907,6 +1052,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "name",
+                      "value"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -933,6 +1082,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "initialDelaySeconds": {
@@ -961,6 +1113,9 @@
               ]
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "terminationGracePeriodSeconds": {
@@ -1009,6 +1164,12 @@
           "type": "string"
         }
       },
+      "required": [
+        "enabled",
+        "rulesEnabled",
+        "labels",
+        "scrapeInterval"
+      ],
       "type": "object"
     },
     "multicluster": {
@@ -1092,9 +1253,23 @@
               "type": "string"
             }
           },
+          "required": [
+            "enabled",
+            "type",
+            "annotations",
+            "mesh",
+            "mcs"
+          ],
           "type": "object"
         }
       },
+      "required": [
+        "enabled",
+        "service",
+        "name",
+        "apiServerExternalAddress",
+        "peers"
+      ],
       "type": "object"
     },
     "nameOverride": {
@@ -5478,40 +5653,6 @@
                                     },
                                     "type": "object"
                                   },
-                                  "managedFields": {
-                                    "items": {
-                                      "additionalProperties": false,
-                                      "properties": {
-                                        "apiVersion": {
-                                          "type": "string"
-                                        },
-                                        "fieldsType": {
-                                          "type": "string"
-                                        },
-                                        "fieldsV1": {
-                                          "additionalProperties": false,
-                                          "properties": {},
-                                          "type": "object"
-                                        },
-                                        "manager": {
-                                          "type": "string"
-                                        },
-                                        "operation": {
-                                          "type": "string"
-                                        },
-                                        "subresource": {
-                                          "type": "string"
-                                        },
-                                        "time": {
-                                          "additionalProperties": false,
-                                          "properties": {},
-                                          "type": "object"
-                                        }
-                                      },
-                                      "type": "object"
-                                    },
-                                    "type": "array"
-                                  },
                                   "name": {
                                     "type": "string"
                                   },
@@ -5546,9 +5687,6 @@
                                     "type": "array"
                                   },
                                   "resourceVersion": {
-                                    "type": "string"
-                                  },
-                                  "selfLink": {
                                     "type": "string"
                                   },
                                   "uid": {
@@ -6376,6 +6514,7 @@
         }
       },
       "required": [
+        "metadata",
         "spec"
       ],
       "type": "object"
@@ -6393,6 +6532,10 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "create",
+        "createAdditionalControllerCRs"
+      ],
       "type": "object"
     },
     "readinessProbe": {
@@ -6430,6 +6573,10 @@
               "type": "string"
             }
           },
+          "required": [
+            "port",
+            "service"
+          ],
           "type": "object"
         },
         "httpGet": {
@@ -6451,6 +6598,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "name",
+                      "value"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -6477,6 +6628,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "initialDelaySeconds": {
@@ -6505,6 +6659,9 @@
               ]
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "terminationGracePeriodSeconds": {
@@ -6535,6 +6692,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "name"
+                ],
                 "type": "object"
               },
               "type": "array"
@@ -6594,6 +6754,9 @@
           "type": "string"
         }
       },
+      "required": [
+        "create"
+      ],
       "type": "object"
     },
     "strategy": {
@@ -6638,6 +6801,9 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "enabled"
+      ],
       "type": "object"
     },
     "tolerations": {
@@ -6678,6 +6844,9 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "enabled"
+      ],
       "type": "object"
     },
     "webhook": {
@@ -6687,11 +6856,45 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "enabled"
+      ],
       "type": "object"
     },
     "webhookSecretName": {
       "type": "string"
     }
   },
+  "required": [
+    "nameOverride",
+    "fullnameOverride",
+    "replicaCount",
+    "clusterDomain",
+    "image",
+    "config",
+    "imagePullSecrets",
+    "logLevel",
+    "rbac",
+    "webhook",
+    "serviceAccount",
+    "resources",
+    "nodeSelector",
+    "tolerations",
+    "priorityClassName",
+    "strategy",
+    "podAnnotations",
+    "podLabels",
+    "additionalCmdFlags",
+    "commonLabels",
+    "monitoring",
+    "webhookSecretName",
+    "crds",
+    "vectorizedControllers",
+    "commonAnnotations",
+    "connectController",
+    "controllers",
+    "multicluster",
+    "telemetry"
+  ],
   "type": "object"
 }

@@ -16,9 +16,11 @@ package operator
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 type PartialValues struct {
+	Global                map[string]any                "json:\"global,omitempty\""
 	Enterprise            *PartialEnterprise            "json:\"enterprise,omitempty\""
 	NameOverride          *string                       "json:\"nameOverride,omitempty\""
 	FullnameOverride      *string                       "json:\"fullnameOverride,omitempty\""
@@ -58,7 +60,7 @@ type PartialValues struct {
 
 type PartialImage struct {
 	Repository *string            "json:\"repository,omitempty\""
-	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
+	PullPolicy *corev1.PullPolicy "json:\"pullPolicy,omitempty\" jsonschema:\"pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy.\""
 	Tag        *string            "json:\"tag,omitempty\""
 }
 
@@ -136,8 +138,8 @@ type PartialEnterprise struct {
 }
 
 type PartialPodTemplateSpec struct {
-	Metadata *PartialMetadata "json:\"metadata,omitempty\""
-	Spec     *corev1.PodSpec  "json:\"spec,omitempty\" jsonschema:\"required\""
+	Metadata *PartialMetadata                       "json:\"metadata,omitempty\""
+	Spec     *applycorev1.PodSpecApplyConfiguration "json:\"spec,omitempty\""
 }
 
 type PartialHealthConfig struct {
@@ -192,7 +194,7 @@ type PartialConnectControllerImage struct {
 }
 
 type PartialPeer struct {
-	Name        *string           "json:\"name,omitempty\" jsonschema:\"required\""
-	Address     *string           "json:\"address,omitempty\" jsonschema:\"required\""
+	Name        *string           "json:\"name,omitempty\""
+	Address     *string           "json:\"address,omitempty\""
 	Annotations map[string]string "json:\"annotations,omitempty\""
 }

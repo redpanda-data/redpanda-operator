@@ -59,7 +59,7 @@ func MulticlusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 					Labels:      values.PodTemplate.Metadata.Labels,
 					Annotations: values.PodTemplate.Metadata.Annotations,
 				},
-				Spec: values.PodTemplate.Spec,
+				Spec: helmette.MergeTo[corev1.PodSpec](values.PodTemplate.Spec),
 			},
 				corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{

@@ -81,7 +81,7 @@ func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 					Labels:      values.PodTemplate.Metadata.Labels,
 					Annotations: values.PodTemplate.Metadata.Annotations,
 				},
-				Spec: values.PodTemplate.Spec,
+				Spec: helmette.MergeTo[corev1.PodSpec](values.PodTemplate.Spec),
 			},
 				corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
@@ -369,8 +369,9 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--connect-monitoring-enabled":    fmt.Sprintf("%t", values.ConnectController.Monitoring.Enabled),
 	}
 
-	if values.ConnectController.Monitoring.ScrapeInterval != "" {
-		defaults["--connect-monitoring-scrape-interval"] = values.ConnectController.Monitoring.ScrapeInterval
+	scrapeInternal := ptr.Deref(values.ConnectController.Monitoring.ScrapeInterval, "")
+	if scrapeInternal != "" {
+		defaults["--connect-monitoring-scrape-interval"] = scrapeInternal
 	}
 
 	if values.ConnectController.Image != nil &&
