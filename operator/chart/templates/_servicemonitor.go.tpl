@@ -15,6 +15,20 @@
 {{- if (ne $values.monitoring.scrapeInterval "") -}}
 {{- $_ := (set $endpoint "interval" (toString $values.monitoring.scrapeInterval)) -}}
 {{- end -}}
+{{- if $values.monitoring.clusterLabel.enabled -}}
+{{- $labelName := $values.monitoring.clusterLabel.name -}}
+{{- if (eq $labelName "") -}}
+{{- $labelName = "redpanda_k8s_cluster" -}}
+{{- end -}}
+{{- $labelValue := $values.monitoring.clusterLabel.value -}}
+{{- if (eq $labelValue "") -}}
+{{- $labelValue = $values.multicluster.name -}}
+{{- end -}}
+{{- if (eq $labelValue "") -}}
+{{- $_ := (fail "monitoring.clusterLabel.value must be set when multicluster.name is empty") -}}
+{{- end -}}
+{{- $_ := (set $endpoint "relabelings" (concat (default (list) $endpoint.relabelings) (list (mustMergeOverwrite (dict) (dict "targetLabel" $labelName "replacement" $labelValue))))) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "endpoints" (coalesce nil) "selector" (dict) "namespaceSelector" (dict))) (mustMergeOverwrite (dict) (dict "kind" "ServiceMonitor" "apiVersion" "monitoring.coreos.com/v1")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "metrics-monitor")))) "r") "labels" (merge (dict) (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") $values.monitoring.labels) "namespace" $dot.Release.Namespace "annotations" $values.annotations)) "spec" (mustMergeOverwrite (dict "endpoints" (coalesce nil) "selector" (dict) "namespaceSelector" (dict)) (dict "endpoints" (list $endpoint) "namespaceSelector" (mustMergeOverwrite (dict) (dict "matchNames" (list $dot.Release.Namespace))) "selector" (mustMergeOverwrite (dict) (dict "matchLabels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r")))))))) | toJson -}}
 {{- break -}}

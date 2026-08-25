@@ -271,4 +271,32 @@ type MonitoringConfig struct {
 	RulesEnabled   bool              `json:"rulesEnabled"`
 	Labels         map[string]string `json:"labels"`
 	ScrapeInterval string            `json:"scrapeInterval"`
+	ClusterLabel   ClusterLabel      `json:"clusterLabel"`
+}
+
+// ClusterLabel configures an opt-in scrape-time label identifying which
+// Kubernetes cluster a series came from.
+//
+// It exists for stretch clusters. One StretchCluster spans several Kubernetes
+// clusters, each running its own operator, and diagnosing it means querying
+// across all of them — so the operator metrics have to be aggregated into one
+// Prometheus-compatible backend (remote_write to Mimir/Thanos, or a Thanos
+// Querier fanning out). Once they are, nothing in the scraped series says which
+// cluster produced it: job, namespace, service and pod names are identical in
+// every cluster, and identical by design when the deployment follows the
+// documented pattern of one release name per cluster. The series then collide.
+//
+// Off by default: a single-cluster install has nothing to disambiguate, and
+// adding a label to everyone's metrics would churn existing dashboards and
+// recording rules.
+type ClusterLabel struct {
+	// Enabled adds the label to every series scraped from this operator.
+	Enabled bool `json:"enabled"`
+	// Name is the label to set. Defaults to "redpanda_k8s_cluster".
+	Name string `json:"name"`
+	// Value is the label's value. Defaults to `multicluster.name`, which is
+	// already the cluster's identity in the operator's raft group, so a stretch
+	// deployment needs no extra configuration. Required when multicluster is
+	// disabled, since there is no name to fall back to.
+	Value string `json:"value"`
 }

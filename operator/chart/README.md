@@ -285,8 +285,36 @@ Configuration for monitoring.
 **Default:**
 
 ```
-{"enabled":false,"labels":{},"rulesEnabled":false,"scrapeInterval":""}
+{"clusterLabel":{"enabled":false,"name":"","value":""},"enabled":false,"labels":{},"rulesEnabled":false,"scrapeInterval":""}
 ```
+
+### [monitoring.clusterLabel](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.clusterLabel)
+
+Adds a scrape-time label identifying which Kubernetes cluster a series came from. For stretch clusters, whose operator metrics have to be aggregated into one Prometheus-compatible backend to be queryable together — without it, series from every cluster collide, since job, namespace, service and pod names are identical in each. Off by default: a single-cluster install has nothing to disambiguate.
+
+**Default:**
+
+```
+{"enabled":false,"name":"","value":""}
+```
+
+### [monitoring.clusterLabel.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.clusterLabel.enabled)
+
+Adds the label to every series scraped from this operator.
+
+**Default:** `false`
+
+### [monitoring.clusterLabel.name](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.clusterLabel.name)
+
+The label to set. Empty uses `redpanda_k8s_cluster`.
+
+**Default:** `""`
+
+### [monitoring.clusterLabel.value](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.clusterLabel.value)
+
+The label's value. Empty uses `multicluster.name`, so a stretch deployment needs nothing further. Required when multicluster is disabled.
+
+**Default:** `""`
 
 ### [monitoring.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.enabled)
 

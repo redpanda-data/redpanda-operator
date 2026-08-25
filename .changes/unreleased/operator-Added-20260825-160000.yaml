@@ -1,0 +1,26 @@
+project: operator
+kind: Added
+body: |-
+    The operator chart can add a scrape-time label identifying which Kubernetes cluster a metrics series came from, via `monitoring.clusterLabel`. Off by default.
+
+      This is for stretch clusters. One StretchCluster spans several Kubernetes
+      clusters, each running its own operator, and the questions you ask of it are
+      inherently cross-cluster — which operator holds raft leadership, which region
+      is behind — so the operator metrics have to be aggregated into a single
+      Prometheus-compatible backend to be queryable together. Once they are,
+      nothing in the scraped series says which cluster produced it: job, namespace,
+      service and pod names are identical in every cluster, and identical by design
+      when the deployment follows the documented pattern. The series collide.
+
+      Setting `monitoring.clusterLabel.enabled=true` renders a relabeling on the
+      ServiceMonitor endpoint that stamps `redpanda_k8s_cluster` onto every series
+      from that operator, defaulting its value to `multicluster.name` — so a
+      stretch deployment needs no further configuration. `monitoring.clusterLabel.name`
+      and `.value` override the label and its value; the value is required when
+      multicluster is disabled, and the render fails rather than emitting an empty
+      label.
+
+      Off by default because a single-cluster install has nothing to disambiguate,
+      and adding a label to everyone's series would churn existing dashboards and
+      recording rules.
+time: 2026-08-25T16:00:00.000000000-07:00

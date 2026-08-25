@@ -267,3 +267,27 @@ connectController:
     scrapeInterval: "30s"
     labels:
       team: platform
+-- monitoring-cluster-label-explicit --
+monitoring:
+  enabled: true
+  clusterLabel:
+    enabled: true
+    name: k8s_cluster
+    value: prod-eu-west-1
+
+-- monitoring-cluster-label-from-multicluster --
+monitoring:
+  enabled: true
+  clusterLabel:
+    enabled: true
+multicluster:
+  enabled: true
+  name: rp-us-east-1
+  apiServerExternalAddress: https://ABCD.gr7.us-east-1.eks.amazonaws.com
+  peers:
+  - name: rp-us-east-1
+    address: a.us-east-1.elb.amazonaws.com
+  - name: rp-us-west-2
+    address: b.us-west-2.elb.amazonaws.com
+  - name: rp-eu-west-1
+    address: c.eu-west-1.elb.amazonaws.com

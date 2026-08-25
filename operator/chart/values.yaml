@@ -226,6 +226,20 @@ monitoring:
   scrapeInterval: ""
   # -- Additional labels to add to the ServiceMonitor metadata.
   labels: {}
+  # -- Adds a scrape-time label identifying which Kubernetes cluster a series
+  # came from. For stretch clusters, whose operator metrics have to be
+  # aggregated into one Prometheus-compatible backend to be queryable together —
+  # without it, series from every cluster collide, since job, namespace, service
+  # and pod names are identical in each. Off by default: a single-cluster
+  # install has nothing to disambiguate.
+  clusterLabel:
+    # -- Adds the label to every series scraped from this operator.
+    enabled: false
+    # -- The label to set. Empty uses `redpanda_k8s_cluster`.
+    name: ""
+    # -- The label's value. Empty uses `multicluster.name`, so a stretch
+    # deployment needs nothing further. Required when multicluster is disabled.
+    value: ""
 
 # Sets the name of the Secret in which to store the self-signed TLS certificate for the Webhooks when `webhook.enabled` is `true`.
 webhookSecretName: webhook-server-cert
