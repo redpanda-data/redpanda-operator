@@ -279,7 +279,7 @@ func convertStatefulsetInitContainersV2Fields(state *redpanda.RenderState, value
 	}
 
 	// NB: we need to check if the following containers are enabled first, otherwise we wind up with a badly merged pod template spec.
-	if values.Tuning.TuneAIOEvents {
+	if ptr.Deref(values.Tuning.TuneAIOEvents, false) {
 		if err := convertInitContainer(state, values, redpanda.RedpandaTuningContainerName, spec.Tuning); err != nil {
 			return err
 		}
@@ -418,7 +418,7 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 			configurator.Image = ptr.To(image)
 
 			// here we use clusterValues since we need to look at the cluster-level context
-			if clusterValues.Tuning.TuneAIOEvents {
+			if ptr.Deref(clusterValues.Tuning.TuneAIOEvents, false) {
 				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
 				tuning.Image = ptr.To(image)
 			}

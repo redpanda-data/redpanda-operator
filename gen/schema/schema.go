@@ -37,14 +37,6 @@ var schemas = map[string]any{
 	"operator": &operator.Values{},
 }
 
-// usesOmitEmpty controls the RequiredFromJSONSchemaTags on a per schema basis
-// while the migration is in flight.
-var usesOmitEmpty = map[string]bool{
-	"console":  true,
-	"redpanda": false,
-	"operator": true,
-}
-
 func Cmd() *cobra.Command {
 	return &cobra.Command{
 		Use: "schema",
@@ -76,7 +68,7 @@ func run(cmd *cobra.Command, args []string) {
 		// Explicitly rely on omitempty to inform whether or not a field is
 		// required. This gives us the closest match between helm and go behavior
 		// when it comes to working with zero values.
-		RequiredFromJSONSchemaTags: !usesOmitEmpty[schemaName],
+		RequiredFromJSONSchemaTags: false,
 
 		// Builtin Kubernetes types can generate a JSON schema but it's a built
 		// difficult to do so as all the information is stored in kubebuilder

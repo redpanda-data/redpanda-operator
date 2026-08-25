@@ -205,7 +205,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 
 	volumes = append(volumes, kubeTokenAPIVolume(ServiceAccountVolumeName))
 
-	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
+	if ptr.Deref(state.Values.Tuning.TuneAIOEvents, false) && ptr.Deref(state.Values.Tuning.ApplyHostTuners, false) {
 		volumes = append(volumes, HostTunerVolumes()...)
 	}
 
@@ -397,7 +397,7 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 		)
 	}
 
-	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
+	if ptr.Deref(state.Values.Tuning.TuneAIOEvents, false) && ptr.Deref(state.Values.Tuning.ApplyHostTuners, false) {
 		mounts = append(mounts, HostTunerStateVolumeMount())
 	}
 
@@ -451,11 +451,11 @@ func HostTunerDirs() []string {
 const HostTunerStateFilePath = "/var/run/redpanda_node_tuner_state.yaml"
 
 func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
-	if !state.Values.Tuning.TuneAIOEvents {
+	if !ptr.Deref(state.Values.Tuning.TuneAIOEvents, false) {
 		return nil
 	}
 
-	if state.Values.Tuning.ApplyHostTuners {
+	if ptr.Deref(state.Values.Tuning.ApplyHostTuners, false) {
 		return statefulSetInitContainerTuningOnHost(state)
 	}
 
