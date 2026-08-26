@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/license"
 	"github.com/redpanda-data/common-go/otelutil/log"
@@ -79,6 +80,7 @@ type MulticlusterOptions struct {
 	BaseTag                string
 	HealthProbeBindAddress string
 	MetricsBindAddress     string
+	MetricsSecure          bool
 	MetricsCertPath        string
 	MetricsKeyPath         string
 	WebhookCertPath        string
@@ -203,6 +205,69 @@ func peerFromFlag(value string) (RaftCluster, error) {
 	}, nil
 }
 
+// disableHTTP2 prevents us from being vulnerable to the HTTP/2 Stream
+// Cancellation and Rapid Reset CVEs. For more information see:
+// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
+// - https://github.com/advisories/GHSA-4374-p667-p6c8
+func disableHTTP2(c *tls.Config) {
+	c.NextProtos = []string{"http/1.1"}
+}
+
+// metricsOptions builds the metrics server configuration, or nil when
+// --metrics-bind-address wasn't given (no metrics server).
+//
+// Secure serving defaults to on, matching the `run` command: the chart's
+// ServiceMonitor scrapes the metrics port over https with
+// insecureSkipVerify, and controller-runtime generates a self-signed
+// certificate when no --metrics-cert-path is supplied. Serving plain HTTP
+// here — which is what happened before secure serving got a default — meant
+// every scrape died in the TLS handshake, so the metrics of a multicluster
+// deployment were simply never collected.
+func (o *MulticlusterOptions) metricsOptions(ctx context.Context, setupLog logr.Logger) (*metricsserver.Options, error) {
+	if o.MetricsBindAddress == "" {
+		return nil, nil
+	}
+
+	options := &metricsserver.Options{
+		BindAddress: o.MetricsBindAddress,
+		// FilterProvider is used to protect the metrics endpoint with authn/authz.
+		// These configurations ensure that only authorized users and service accounts
+		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
+		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.4/pkg/metrics/filters#WithAuthenticationAndAuthorization
+		//
+		// NB: unlike `run`, the filter stays on even with
+		// --metrics-secure=false. Opting out of TLS shouldn't also opt out
+		// of authentication.
+		FilterProvider: filters.WithAuthenticationAndAuthorization,
+		// An explicit certificate implies secure serving, as the flag help says.
+		SecureServing: o.MetricsSecure || o.MetricsCertPath != "" || o.MetricsKeyPath != "",
+	}
+
+	if !options.SecureServing {
+		return options, nil
+	}
+
+	options.TLSOpts = []func(*tls.Config){disableHTTP2}
+
+	if o.MetricsCertPath != "" || o.MetricsKeyPath != "" {
+		// Set up all of the certificate watching code
+		metricsCertWatcher, err := certwatcher.New(o.MetricsCertPath, o.MetricsKeyPath)
+		if err != nil {
+			setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
+			return nil, err
+		}
+		go func() {
+			setupLog.Error(metricsCertWatcher.Start(ctx), "metrics cert watcher exited")
+		}()
+
+		options.TLSOpts = append(options.TLSOpts, func(config *tls.Config) {
+			config.GetCertificate = metricsCertWatcher.GetCertificate
+		})
+	}
+
+	return options, nil
+}
+
 func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.Name, "name", "", "raft node name")
 	cmd.Flags().StringVar(&o.Address, "raft-address", "", "raft node address")
@@ -221,6 +286,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "address for binding health check endpoint")
 	cmd.Flags().StringVar(&o.BaseImage, "base-image", "", "base image for sidecars and init containers")
 	cmd.Flags().StringVar(&o.BaseTag, "base-tag", "", "base image tag for sidecars and init containers")
+	cmd.Flags().BoolVar(&o.MetricsSecure, "metrics-secure", true, "If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	cmd.Flags().StringVar(&o.MetricsCertPath, "metrics-cert-path", "", "The path to the metrics server certificate file, implies secure serving of metrics")
 	cmd.Flags().StringVar(&o.MetricsKeyPath, "metrics-key-path", "", "The path to the metrics server key file, implies secure serving of metrics.")
 	cmd.Flags().StringVar(&o.LicenseFilePath, "license-file-path", "", "The path to the Redpanda License.")
@@ -326,43 +392,11 @@ func Run(
 		},
 	}
 
-	// Disabling http/2 is to
-	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and
-	// Rapid Reset CVEs. For more information see:
-	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
-	// - https://github.com/advisories/GHSA-4374-p667-p6c8
-	disableHTTP2 := func(c *tls.Config) {
-		c.NextProtos = []string{"http/1.1"}
+	metrics, err := opts.metricsOptions(ctx, setupLog)
+	if err != nil {
+		return err
 	}
-
-	if opts.MetricsBindAddress != "" {
-		config.Metrics = &metricsserver.Options{
-			BindAddress: opts.MetricsBindAddress,
-			// FilterProvider is used to protect the metrics endpoint with authn/authz.
-			// These configurations ensure that only authorized users and service accounts
-			// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
-			// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.4/pkg/metrics/filters#WithAuthenticationAndAuthorization
-			FilterProvider: filters.WithAuthenticationAndAuthorization,
-		}
-
-		if opts.MetricsCertPath != "" || opts.MetricsKeyPath != "" {
-			// Set up all of the certificate watching code
-			metricsCertWatcher, err := certwatcher.New(opts.MetricsCertPath, opts.MetricsKeyPath)
-			if err != nil {
-				setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
-				return err
-			}
-			go func() {
-				setupLog.Error(metricsCertWatcher.Start(ctx), "metrics cert watcher exited")
-			}()
-			fetchCertificates := func(config *tls.Config) {
-				config.GetCertificate = metricsCertWatcher.GetCertificate
-			}
-
-			config.Metrics.SecureServing = true
-			config.Metrics.TLSOpts = []func(*tls.Config){disableHTTP2, fetchCertificates}
-		}
-	}
+	config.Metrics = metrics
 
 	if opts.WebhookCertPath != "" || opts.WebhookKeyPath != "" {
 		// Set up all of the certificate watching code
