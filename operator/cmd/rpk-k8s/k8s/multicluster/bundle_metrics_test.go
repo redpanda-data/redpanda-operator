@@ -87,7 +87,7 @@ func TestCollectClusterMetrics_HappyPath(t *testing.T) {
 
 	// One scrape, against the right pod and port.
 	require.Len(t, fetcher.calls, 1)
-	assert.Equal(t, metricsCall{Namespace: "redpanda", PodName: "operator-0", Scheme: "http", Port: 8443}, fetcher.calls[0])
+	assert.Equal(t, metricsCall{Namespace: "redpanda", PodName: "operator-0", Scheme: "https", Port: 8443}, fetcher.calls[0])
 
 	// t0_metrics.txt must contain the canned body verbatim.
 	files := readZipFilesInternal(t, buf.Bytes())
@@ -235,6 +235,76 @@ func TestCollectClusterMetrics_ErrorIsRecorded(t *testing.T) {
 	}
 }
 
+// schemeAwareFetcher answers only over `serves` and records every attempt,
+// standing in for an operator whose actual TLS mode disagrees with what its
+// deployment args imply.
+type schemeAwareFetcher struct {
+	serves  string
+	schemes []string
+}
+
+func (f *schemeAwareFetcher) Metrics(_ context.Context, _, _, scheme string, _ int) ([]byte, error) {
+	f.schemes = append(f.schemes, scheme)
+	if scheme != f.serves {
+		// Name the scheme so a caller that tried both can be shown to report both.
+		return nil, fmt.Errorf("tls: first record does not look like a TLS handshake (%s)", scheme)
+	}
+	return []byte("ok"), nil
+}
+
+// TestCollectClusterMetrics_FallsBackToOtherScheme covers scraping an operator
+// old enough to serve plain HTTP for args that now imply HTTPS. The args say
+// https, the server speaks http, and the bundle must still get its samples —
+// with the working scheme reused rather than re-probed for every sample.
+func TestCollectClusterMetrics_FallsBackToOtherScheme(t *testing.T) {
+	cc := &checks.CheckContext{
+		Context:    "self",
+		Namespace:  "redpanda",
+		Pod:        &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "operator-0", Namespace: "redpanda"}},
+		DeployArgs: []string{"--metrics-bind-address=:8443"},
+	}
+	fetcher := &schemeAwareFetcher{serves: "http"}
+
+	var buf bytes.Buffer
+	bw := newBundleWriter(&buf)
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, MetricsOptions{Samples: 2, Interval: time.Millisecond}, nil)
+	require.NoError(t, bw.Close())
+	require.Empty(t, errs)
+
+	assert.Equal(t, []string{"https", "http", "http"}, fetcher.schemes)
+
+	files := readZipFilesInternal(t, buf.Bytes())
+	assert.Contains(t, files, "clusters/self/metrics/t0_metrics.txt")
+	assert.Contains(t, files, "clusters/self/metrics/t1_metrics.txt")
+}
+
+// TestCollectClusterMetrics_FallbackDoesNotMaskRealErrors pins that the
+// fallback is a one-shot scheme probe, not a blanket retry: an authorization
+// failure still surfaces, and once a scheme is known to work a later failure
+// isn't re-probed.
+func TestCollectClusterMetrics_FallbackDoesNotMaskRealErrors(t *testing.T) {
+	cc := &checks.CheckContext{
+		Context:    "self",
+		Namespace:  "redpanda",
+		Pod:        &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "operator-0", Namespace: "redpanda"}},
+		DeployArgs: []string{"--metrics-bind-address=:8443"},
+	}
+	fetcher := &schemeAwareFetcher{serves: "neither"}
+
+	var buf bytes.Buffer
+	bw := newBundleWriter(&buf)
+	errs := collectClusterMetrics(context.Background(), bw, cc, fetcher, singleSampleOpts, nil)
+	require.NoError(t, bw.Close())
+
+	require.Len(t, errs, 1, "a scheme that never answers must still be reported once")
+	assert.Contains(t, errs[0].Error(), "TLS handshake")
+	assert.Equal(t, []string{"https", "http"}, fetcher.schemes, "exactly one fallback attempt")
+	// Both attempts are accounted for, so the report can't be mistaken for a
+	// single-scheme failure.
+	assert.Contains(t, errs[0].Error(), "(https)", "the args-implied scheme's failure")
+	assert.Contains(t, errs[0].Error(), "(http)", "the fallback's failure")
+}
+
 func TestParseMetricsPort(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
@@ -258,9 +328,22 @@ func TestParseMetricsPort(t *testing.T) {
 }
 
 func TestMetricsScheme(t *testing.T) {
-	assert.Equal(t, "http", metricsScheme([]string{"--metrics-bind-address=:8443"}))
+	// --metrics-secure defaults to true in both `run` and `multicluster`, so
+	// bare args mean TLS with a self-signed certificate.
+	assert.Equal(t, "https", metricsScheme([]string{"--metrics-bind-address=:8443"}))
 	assert.Equal(t, "https", metricsScheme([]string{
 		"--metrics-bind-address=:8443",
+		"--metrics-cert-path=/tls/tls.crt",
+	}))
+	assert.Equal(t, "http", metricsScheme([]string{
+		"--metrics-bind-address=:8443",
+		"--metrics-secure=false",
+	}))
+	// An explicit certificate wins over --metrics-secure=false, matching the
+	// server: a cert path implies secure serving.
+	assert.Equal(t, "https", metricsScheme([]string{
+		"--metrics-bind-address=:8443",
+		"--metrics-secure=false",
 		"--metrics-cert-path=/tls/tls.crt",
 	}))
 }

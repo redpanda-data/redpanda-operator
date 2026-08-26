@@ -244,6 +244,16 @@ func collectClusterMetrics(
 		return nil
 	}
 	scheme := metricsScheme(cc.DeployArgs)
+	// The deployment args only tell us what the operator was *asked* to do,
+	// and the default flipped: builds before secure serving was defaulted on
+	// served plain HTTP for the same args that now mean HTTPS. Rather than
+	// version-sniff the image, fall back to the other scheme once and keep
+	// whichever one answers.
+	fallback := "http"
+	if scheme == "http" {
+		fallback = "https"
+	}
+	schemeConfirmed := false
 
 	if opts.Samples < 1 {
 		opts.Samples = 1
@@ -266,11 +276,25 @@ func collectClusterMetrics(
 			progress("[%s] /metrics sample %d/%d", cc.Context, i+1, opts.Samples)
 		}
 		data, err := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, scheme, port)
+		if err != nil && !schemeConfirmed {
+			fallbackData, fallbackErr := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, fallback, port)
+			if fallbackErr == nil {
+				scheme, data, err = fallback, fallbackData, nil
+			} else {
+				// Both schemes failed. Keep the args-implied scheme as the
+				// primary cause but carry the fallback's error too: dropping it
+				// makes the bundle look like only one scheme was ever tried,
+				// which is the opposite of what happened and sends whoever
+				// reads it looking for a scheme bug that isn't there.
+				err = fmt.Errorf("%w (fallback %s: %w)", err, fallback, fallbackErr)
+			}
+		}
 		if err != nil {
 			errs = append(errs, fmt.Errorf("scraping metrics from %s/%s sample %d/%d (%s://:%d): %w",
 				cc.Pod.Namespace, cc.Pod.Name, i+1, opts.Samples, scheme, port, err))
 			continue
 		}
+		schemeConfirmed = true
 		entry := path.Join("clusters", cc.Context, "metrics", fmt.Sprintf("t%d_metrics.txt", i))
 		if werr := bw.writeBytes(entry, data); werr != nil {
 			errs = append(errs, werr)
@@ -308,13 +332,24 @@ func parseMetricsPort(args []string) (int, bool) {
 	return port, true
 }
 
-// metricsScheme returns "https" when the deployment was started with
-// --metrics-cert-path / --metrics-key-path (controller-runtime turns on
-// SecureServing in that case), and "http" otherwise. Used by the
-// apiserver pod-proxy URL builder.
+// metricsScheme returns the scheme the operator's metrics server is expected
+// to speak, read off the deployment's container args.
+//
+// Both `run` and `multicluster` default --metrics-secure to true, so HTTPS is
+// the default answer: controller-runtime serves TLS with a self-signed
+// certificate when no --metrics-cert-path is given. Only an explicit
+// --metrics-secure=false means plain HTTP.
+//
+// This is a best guess, not a contract — see collectClusterMetrics, which
+// retries with the other scheme. Multicluster deployments from before secure
+// serving was defaulted on served plain HTTP with no --metrics-secure flag in
+// their args at all.
 func metricsScheme(args []string) string {
 	if checks.ExtractFlag(args, "--metrics-cert-path") != "" {
 		return "https"
 	}
-	return "http"
+	if checks.ExtractFlag(args, "--metrics-secure") == "false" {
+		return "http"
+	}
+	return "https"
 }
