@@ -277,8 +277,16 @@ func collectClusterMetrics(
 		}
 		data, err := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, scheme, port)
 		if err != nil && !schemeConfirmed {
-			if fallbackData, fallbackErr := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, fallback, port); fallbackErr == nil {
+			fallbackData, fallbackErr := fetcher.Metrics(ctx, cc.Namespace, cc.Pod.Name, fallback, port)
+			if fallbackErr == nil {
 				scheme, data, err = fallback, fallbackData, nil
+			} else {
+				// Both schemes failed. Keep the args-implied scheme as the
+				// primary cause but carry the fallback's error too: dropping it
+				// makes the bundle look like only one scheme was ever tried,
+				// which is the opposite of what happened and sends whoever
+				// reads it looking for a scheme bug that isn't there.
+				err = fmt.Errorf("%w (fallback %s: %w)", err, fallback, fallbackErr)
 			}
 		}
 		if err != nil {

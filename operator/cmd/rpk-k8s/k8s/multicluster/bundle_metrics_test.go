@@ -246,7 +246,8 @@ type schemeAwareFetcher struct {
 func (f *schemeAwareFetcher) Metrics(_ context.Context, _, _, scheme string, _ int) ([]byte, error) {
 	f.schemes = append(f.schemes, scheme)
 	if scheme != f.serves {
-		return nil, fmt.Errorf("tls: first record does not look like a TLS handshake")
+		// Name the scheme so a caller that tried both can be shown to report both.
+		return nil, fmt.Errorf("tls: first record does not look like a TLS handshake (%s)", scheme)
 	}
 	return []byte("ok"), nil
 }
@@ -298,6 +299,10 @@ func TestCollectClusterMetrics_FallbackDoesNotMaskRealErrors(t *testing.T) {
 	require.Len(t, errs, 1, "a scheme that never answers must still be reported once")
 	assert.Contains(t, errs[0].Error(), "TLS handshake")
 	assert.Equal(t, []string{"https", "http"}, fetcher.schemes, "exactly one fallback attempt")
+	// Both attempts are accounted for, so the report can't be mistaken for a
+	// single-scheme failure.
+	assert.Contains(t, errs[0].Error(), "(https)", "the args-implied scheme's failure")
+	assert.Contains(t, errs[0].Error(), "(http)", "the fallback's failure")
 }
 
 func TestParseMetricsPort(t *testing.T) {

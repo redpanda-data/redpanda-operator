@@ -10,7 +10,6 @@
 package multicluster
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
@@ -90,7 +89,7 @@ func TestMetricsOptionsFlagDefault(t *testing.T) {
 }
 
 func TestMetricsOptions(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	logger := testr.New(t)
 
 	// nextProtos reports the ALPN protocols the built TLSOpts settle on,
