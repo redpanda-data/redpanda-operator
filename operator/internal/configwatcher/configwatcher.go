@@ -12,7 +12,9 @@ package configwatcher
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path"
 	"slices"
@@ -32,6 +34,29 @@ import (
 const (
 	defaultConfigPath     = "/var/lib/redpanda.yaml"
 	defaultUsersDirectory = "/etc/secret/users"
+
+	// syncRetryBase/syncRetryMax bound the retry of an incomplete sync pass.
+	// A pass that can't read every users file withholds the superusers patch
+	// (see SyncAll) and must be retried, because the events that would
+	// resolve it may never come: kubelet's AtomicWriter fires the `..data`
+	// CREATE *before* it removes the symlinks of deleted secret keys, and
+	// that cleanup emits only REMOVE events, which nothing handles.
+	syncRetryBase = 250 * time.Millisecond
+	syncRetryMax  = time.Minute
+
+	// writeDebounce coalesces direct-write bursts to users files. A WRITE
+	// event can be observed mid-write, and syncing from a truncated read
+	// would transiently revoke the file's remaining users. kubelet secret
+	// updates don't take this path: the `..data` swap is atomic and happens
+	// only after the payload is fully written, so those sync immediately.
+	writeDebounce = 500 * time.Millisecond
+
+	// maxUsersFileLineSize is the scanner's line-length ceiling. Any
+	// legitimate user:password[:mechanism] line is orders of magnitude
+	// smaller, so a longer line means the key holds something else entirely
+	// (a certificate, a JSON blob, ...) and is treated as malformed content
+	// rather than a read failure — see syncUsersFile.
+	maxUsersFileLineSize = 1 << 20
 )
 
 type Option func(c *ConfigWatcher)
@@ -125,33 +150,93 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 
 	close(w.initialized)
 
-	w.syncInitial(ctx)
-
-	return w.watchFilesystem(ctx)
-}
-
-func (w *ConfigWatcher) syncInitial(ctx context.Context) {
-	files, err := os.ReadDir(w.usersDirectory)
-	if err != nil {
-		w.log.Error(err, "unable to get user directory files")
-		return
-	}
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		filePath := path.Join(w.usersDirectory, file.Name())
-		w.SyncUsers(ctx, filePath)
-	}
-}
-
-func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 	if !w.watch {
+		w.SyncAll(ctx)
 		<-ctx.Done()
 		return nil
 	}
 
+	return w.watchFilesystem(ctx)
+}
+
+// SyncAll synchronizes the SCRAM users of every users file in the users
+// directory and then updates the superusers cluster configuration once, with
+// the union of all files' users.
+//
+// The superusers property can only be replaced wholesale, so it must only
+// ever be written with the complete set. Patching it per file replaces the
+// list with a subset, which transiently revokes superuser status from every
+// user in any file not yet processed (K8S-924). For the same reason, a pass
+// that can't read a users file gives up without patching.
+//
+// The returned bool reports whether the pass got far enough to make the
+// superusers decision from the directory's full contents. A false return
+// means the patch was withheld and the pass MUST be retried
+// (watchFilesystem re-arms one with backoff), otherwise the unread file's
+// users stay in (or out of) the superusers list indefinitely. Only read
+// failures give up; malformed file *content* never does — a users secret can
+// carry non-users keys forever, and treating those as failures would wedge
+// superusers management just as long.
+func (w *ConfigWatcher) SyncAll(ctx context.Context) bool {
+	entries, err := afero.ReadDir(w.fs, w.usersDirectory)
+	if err != nil {
+		w.log.Error(err, "unable to get user directory files")
+		return false
+	}
+
+	// sync our internal superuser first
+	internalSuperuser, password, mechanism := getInternalUser()
+	// the internal user should only ever be created once, so don't
+	// update its password ever.
+	w.syncUser(ctx, internalSuperuser, password, mechanism, false)
+
+	users := map[string]struct{}{internalSuperuser: {}}
+	synced := 0
+
+	for _, entry := range entries {
+		filePath := path.Join(w.usersDirectory, entry.Name())
+
+		// entry.IsDir is lstat-based and therefore false for symlinks, but
+		// kubelet secret mounts contain a `..data` symlink that points at a
+		// directory. Stat follows symlinks, so it skips `..data` while still
+		// resolving the symlinked users files themselves.
+		info, err := w.fs.Stat(filePath)
+		if err != nil {
+			w.log.Error(err, "unable to stat users file; not setting superusers this pass", "file", filePath)
+			return false
+		}
+		if info.IsDir() {
+			continue
+		}
+
+		fileUsers, err := w.syncUsersFile(ctx, filePath)
+		if err != nil {
+			w.log.Error(err, "unable to synchronize users file; not setting superusers this pass", "file", filePath)
+			return false
+		}
+
+		synced++
+		for _, user := range fileUsers {
+			users[user] = struct{}{}
+		}
+	}
+
+	// Don't reduce superusers down to just the internal user when the
+	// directory holds no users files at all. Deliberate — deleting the whole
+	// users secret shouldn't demote every user — but worth a log line: any
+	// superusers the cluster still has are now stale.
+	if synced == 0 {
+		w.log.Info("not setting superusers: the users directory holds no users files; leaving the cluster's current list untouched")
+		return true
+	}
+
+	w.setSuperusers(ctx, users)
+	return true
+}
+
+// watchFilesystem runs the initial sync pass and then re-runs it on
+// filesystem events until ctx is done.
+func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
@@ -162,58 +247,87 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 		return err
 	}
 
+	// resync schedules the next pass. It is armed by a pass that came up
+	// incomplete (retried with backoff; see syncRetryBase) and by direct
+	// writes to users files (debounced; see writeDebounce). A nil channel
+	// blocks forever, so it only fires while a pass is actually pending.
+	var resync <-chan time.Time
+	backoff := syncRetryBase
+
+	sync := func() {
+		if w.SyncAll(ctx) {
+			resync, backoff = nil, syncRetryBase
+			return
+		}
+		w.log.Info("scheduling retry of incomplete users sync", "after", backoff.String())
+		resync, backoff = time.After(backoff), min(2*backoff, syncRetryMax)
+	}
+
+	sync()
+
 	for {
 		select {
+		case <-ctx.Done():
+			return nil
+
 		case err := <-watcher.Errors:
 			// here we don't return as that'd crash the broker, instead
 			// just log the error and move on after some sleep time.
 			w.log.Error(err, "watcher returned an error")
 			time.Sleep(5 * time.Second)
-		case event := <-watcher.Events:
-			// Kubernete updates secrets by swapping a symlink named `..data`.
-			// We must watch for the CREATE event on this specific symlink.
-			if event.Name == w.defaultK8sUserSymlink && event.Has(fsnotify.Create) {
-				w.log.Info("Kubernetes secret update detected, synchronizing users", "event", event.String())
-				// use syncInital to re-read entire Directory
-				w.syncInitial(ctx)
-				continue
-			}
 
-			// The original logic in case there is direct file writes,
-			if event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".txt") {
-				w.log.Info("Direct file write detected, synchronizing users", "event", event.String())
-				w.SyncUsers(ctx, event.Name)
+		case <-resync:
+			sync()
+
+		case event := <-watcher.Events:
+			switch {
+			// Kubernetes updates secrets by swapping a symlink named `..data`.
+			// We must watch for the CREATE event on this specific symlink. The
+			// swap is atomic and happens only after the new payload is fully
+			// written, so this syncs immediately, without debouncing.
+			case event.Name == w.defaultK8sUserSymlink && event.Has(fsnotify.Create):
+				w.log.Info("Kubernetes secret update detected, synchronizing users", "event", event.String())
+				sync()
+
+			// The original logic in case there is direct file writes. Each
+			// write pushes the pass out, so a writer mid-file doesn't produce
+			// a pass computed from a torn read.
+			case event.Has(fsnotify.Write) && strings.HasSuffix(event.Name, ".txt"):
+				w.log.Info("Direct file write detected, scheduling users synchronization", "event", event.String())
+				resync = time.After(writeDebounce)
 			}
-		case <-ctx.Done():
-			return nil
 		}
 	}
 }
 
-func (w *ConfigWatcher) SyncUsers(ctx context.Context, path string) {
+// syncUsersFile creates or updates the SCRAM credentials of every user in the
+// given users file and returns their names. Users files hold one
+// user:password[:mechanism] entry per line.
+//
+// A non-nil error means the file could not be *read* and the caller's pass is
+// incomplete. Content problems — malformed lines, or a line so long it can't
+// be a users entry — are logged and skipped but never returned as errors:
+// they'd recur on every retry, and the users secret is user-managed, so a
+// single odd key must not wedge superusers management indefinitely.
+func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]string, error) {
 	file, err := w.fs.Open(path)
 	if err != nil {
-		w.log.Error(err, "unable to open superusers file", "file", path)
-		return
+		return nil, err
 	}
 	defer file.Close()
 
 	w.log.Info("synchronizing users in file", "file", path)
 
-	// sync our internal superuser first
-	internalSuperuser, password, mechanism := getInternalUser()
-	// the internal user should only ever be created once, so don't
-	// update its password ever.
-	w.syncUser(ctx, internalSuperuser, password, mechanism, false)
-
-	users := []string{internalSuperuser}
+	var users []string
 
 	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.SplitN(line, ":", 3)
+	scanner.Buffer(make([]byte, 0, bufio.MaxScanTokenSize), maxUsersFileLineSize)
+	for line := 1; scanner.Scan(); line++ {
+		tokens := strings.SplitN(scanner.Text(), ":", 3)
 		if len(tokens) != 3 && len(tokens) != 2 {
-			w.log.Error(err, "malformed line: %s", line)
+			// NB: only the line number is logged; the line itself contains a
+			// password.
+			w.log.Info("skipping malformed users file line", "file", path, "line", line)
 			continue
 		}
 
@@ -224,25 +338,60 @@ func (w *ConfigWatcher) SyncUsers(ctx context.Context, path string) {
 			mechanism = tokens[2]
 		}
 
-		if !slices.Contains(users, user) {
-			users = append(users, user)
-		}
+		// NB: not de-duplicated; SyncAll collects users into a set.
+		users = append(users, user)
 
 		w.syncUser(ctx, user, password, mechanism, true)
 	}
 
-	w.setSuperusers(ctx, users)
+	// A read error on an open file (e.g. EISDIR when the "file" is really a
+	// symlink to a directory) surfaces here rather than at Open time.
+	if err := scanner.Err(); err != nil {
+		// ErrTooLong is a content-level problem, not a read failure: no
+		// legitimate users line approaches maxUsersFileLineSize, so this key
+		// holds something else entirely. Stop parsing it (the scanner can't
+		// resynchronize past the oversized line anyway) but report the file
+		// as processed, like any other malformed content.
+		if errors.Is(err, bufio.ErrTooLong) {
+			w.log.Info("skipping rest of users file: line too long to be a users entry; not a users file?", "file", path, "limit", maxUsersFileLineSize)
+			return users, nil
+		}
+		return users, err
+	}
+	return users, nil
 }
 
-func (w *ConfigWatcher) setSuperusers(ctx context.Context, users []string) {
+func (w *ConfigWatcher) setSuperusers(ctx context.Context, users map[string]struct{}) {
 	if w.noSetSuperusers {
 		return
 	}
 
-	w.log.Info("setting superusers", "users", users)
+	// Sorted, like the post-install/upgrade job writes the property.
+	desired := slices.Sorted(maps.Keys(users))
+
+	// Skip patching when the cluster already has exactly this list, so
+	// sidecar restarts don't needlessly bump the cluster config version.
+	// Errors are ignored: failing to read the current value must never
+	// prevent setting the desired one.
+	if current, err := w.adminClient.Config(ctx, false); err == nil {
+		if existing, ok := current["superusers"].([]any); ok {
+			existingUsers := make([]string, 0, len(existing))
+			for _, user := range existing {
+				if name, ok := user.(string); ok {
+					existingUsers = append(existingUsers, name)
+				}
+			}
+			if len(existingUsers) == len(existing) && slices.Equal(slices.Compact(slices.Sorted(slices.Values(existingUsers))), desired) {
+				w.log.Info("superusers already up to date", "users", desired)
+				return
+			}
+		}
+	}
+
+	w.log.Info("setting superusers", "users", desired)
 
 	if _, err := w.adminClient.PatchClusterConfig(ctx, map[string]any{
-		"superusers": users,
+		"superusers": desired,
 	}, []string{}); err != nil {
 		w.log.Error(err, "could not set superusers")
 	}
