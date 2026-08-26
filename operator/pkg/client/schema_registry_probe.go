@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
@@ -54,10 +55,10 @@ func redpandaSchemaRegistryEnabled(rp *redpandav1alpha2.Redpanda) bool {
 		return true
 	}
 	listeners := rp.Spec.ClusterSpec.Listeners
-	if listeners == nil || listeners.SchemaRegistry == nil || listeners.SchemaRegistry.Enabled == nil {
+	if listeners == nil || listeners.SchemaRegistry == nil {
 		return true
 	}
-	return *listeners.SchemaRegistry.Enabled
+	return ptr.Deref(listeners.SchemaRegistry.Enabled, true)
 }
 
 // srProbeConfig is the slice of a stretch broker pool's Schema Registry

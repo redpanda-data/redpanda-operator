@@ -454,14 +454,6 @@ func hostOverwrite(pod *corev1.Pod, headlessServiceWithPort string) string {
 	return fmt.Sprintf("%s.%s", pod.Name, headlessServiceWithPort)
 }
 
-// WaitForSchemaRegistrySync gates the rolling update on each rolled broker's
-// Schema Registry store having caught up on _schemas (GET /status/ready on
-// the internal SR listener) before the roll proceeds to the next pod, so
-// overlapping SR replay windows can't leave the cluster without a consistent
-// Schema Registry endpoint mid-upgrade (INC-2903). Set from the operator's
-// --wait-for-schema-registry-sync flag.
-var WaitForSchemaRegistrySync = true
-
 // SchemaRegistryClientsFactory builds one Schema Registry client per broker
 // pod of a v1 Cluster for the rolling-update sync gate. Mirrors
 // adminutils.NodePoolAdminAPIClientFactory: implemented by
@@ -484,11 +476,12 @@ type SchemaRegistryClientsFactory func(
 // broker's SR store has replayed _schemas). The updatePods loop treats a
 // returned error as "requeue before rolling the next pod", serializing the
 // roll against SR sync the same way evaluateUnderReplicatedPartitions
-// serializes it against partition recovery. Returns nil immediately when the
-// gate is disabled, no client factory was injected (tests), or the cluster
+// serializes it against partition recovery. Returns nil immediately when no
+// client factory was injected — how the gate is disabled: the run command
+// wires nil when --wait-for-schema-registry-sync=false — or when the cluster
 // has no internal SR listener (schemaregistry.ErrDisabled).
 func (r *StatefulSetResource) waitOnSchemaRegistrySync(ctx context.Context) error {
-	if !WaitForSchemaRegistrySync || r.schemaRegistryClientFactory == nil {
+	if r.schemaRegistryClientFactory == nil {
 		return nil
 	}
 

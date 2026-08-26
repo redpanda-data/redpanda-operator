@@ -746,15 +746,6 @@ func Test_sortPodList(t *testing.T) {
 	}
 }
 
-// srGateEnabled toggles the schema-registry gate package flag for a test and
-// restores it on cleanup.
-func srGateEnabled(t *testing.T, enabled bool) {
-	t.Helper()
-	prev := WaitForSchemaRegistrySync
-	WaitForSchemaRegistrySync = enabled
-	t.Cleanup(func() { WaitForSchemaRegistrySync = prev })
-}
-
 // stubSRClientsFactory returns a SchemaRegistryClientsFactory serving one
 // per-broker client per given base URL, with a short HTTP timeout so a
 // blocking /status/ready handler (the "store still replaying" signal) fails
@@ -781,8 +772,6 @@ func TestWaitOnSchemaRegistrySyncReady(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
-	srGateEnabled(t, true)
-
 	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, nil, ts.URL)}
 	require.NoError(t, ssres.waitOnSchemaRegistrySync(context.Background()))
 }
@@ -798,8 +787,6 @@ func TestWaitOnSchemaRegistrySyncReplaying(t *testing.T) {
 		}
 	}))
 	defer ts.Close()
-	srGateEnabled(t, true)
-
 	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, nil, ts.URL)}
 	require.Error(t, ssres.waitOnSchemaRegistrySync(context.Background()))
 }
@@ -809,21 +796,14 @@ func TestWaitOnSchemaRegistrySyncNotReadyStatus(t *testing.T) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}))
 	defer ts.Close()
-	srGateEnabled(t, true)
-
 	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, nil, ts.URL)}
 	require.Error(t, ssres.waitOnSchemaRegistrySync(context.Background()))
 }
 
 func TestWaitOnSchemaRegistrySyncSkips(t *testing.T) {
-	// Gate disabled: the factory must never be invoked.
-	srGateEnabled(t, false)
-	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, assert.AnError)}
-	require.NoError(t, ssres.waitOnSchemaRegistrySync(context.Background()))
-
-	// No factory injected (tests, or wiring without pkg/client): skipped.
-	srGateEnabled(t, true)
-	ssres = StatefulSetResource{}
+	// No factory injected — how the gate is disabled
+	// (--wait-for-schema-registry-sync=false wires nil): skipped.
+	ssres := StatefulSetResource{}
 	require.NoError(t, ssres.waitOnSchemaRegistrySync(context.Background()))
 
 	// Schema Registry disabled on the cluster: the factory reports
@@ -835,7 +815,6 @@ func TestWaitOnSchemaRegistrySyncSkips(t *testing.T) {
 func TestWaitOnSchemaRegistrySyncFailsClosed(t *testing.T) {
 	// A factory error other than ErrDisabled means we cannot confirm sync —
 	// the gate must error (the roll loop requeues).
-	srGateEnabled(t, true)
 	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, assert.AnError)}
 	require.Error(t, ssres.waitOnSchemaRegistrySync(context.Background()))
 }

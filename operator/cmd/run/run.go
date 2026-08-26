@@ -147,6 +147,7 @@ type RunOptions struct {
 	enableGhostBrokerDecommissioner     bool
 	ghostBrokerDecommissionerSyncPeriod time.Duration
 	postRestartCaughtUpPercent          int
+	waitForSchemaRegistrySync           bool
 	clearMaintenanceModeAfter           time.Duration
 	wipeStaleDiskAfter                  time.Duration
 	cloudSecretsEnabled                 bool
@@ -234,7 +235,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 	cmd.Flags().IntVar(&o.postRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
-	cmd.Flags().BoolVar(&resources.WaitForSchemaRegistrySync, "wait-for-schema-registry-sync", true, "During a rolling restart, wait for each broker's Schema Registry store to report caught up on _schemas (GET /status/ready on the SR listener) before the next broker is rolled, so overlapping SR replay windows can't leave the cluster without a consistent Schema Registry endpoint mid-upgrade. Applies to both the V1 (Cluster) and V2 (Redpanda) controllers; skipped on clusters without a Schema Registry listener. Set to false to roll without waiting on Schema Registry.")
+	cmd.Flags().BoolVar(&o.waitForSchemaRegistrySync, "wait-for-schema-registry-sync", true, "During a rolling restart, wait for each broker's Schema Registry store to report caught up on _schemas (GET /status/ready on the SR listener) before the next broker is rolled, so overlapping SR replay windows can't leave the cluster without a consistent Schema Registry endpoint mid-upgrade. Applies to both the V1 (Cluster) and V2 (Redpanda) controllers; skipped on clusters without a Schema Registry listener. Set to false to roll without waiting on Schema Registry.")
 	cmd.Flags().DurationVar(&o.clearMaintenanceModeAfter, "clear-maintenance-mode-after", 30*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the Redpanda partition balancer can auto-decommission it. A broker left in maintenance mode is excluded from auto-decommission. There's no signal distinguishing a stuck broker from one intentionally in a longer planned maintenance window, so raise this if your maintenance windows commonly run longer. This threshold does not apply to ghost brokers — dead broker ids superseded at their own advertised address, either by a live registered broker under a different id or by the pod itself reporting that it runs a different broker identity — whose leaked maintenance flag is cleared immediately since they can never rejoin. Default 30m.")
 	cmd.Flags().DurationVar(&o.wipeStaleDiskAfter, "wipe-stale-disk-after", 0, "How long a broker pod must stay not-Ready with a stale on-disk identity (a decommissioned-broker bad_rejoin, K8S-843) before the operator wipes it — deleting the pod's data-dir PVC (if any) and the pod so it reschedules with a fresh identity. Destructive but heavily guarded. Opt-in on the single-cluster operator: 0 (the default) disables, a positive duration enables.")
 
@@ -513,7 +514,7 @@ func Run(
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
 			PostRestartCaughtUpPercent:     opts.postRestartCaughtUpPercent,
-			WaitForSchemaRegistrySync:      resources.WaitForSchemaRegistrySync,
+			WaitForSchemaRegistrySync:      opts.waitForSchemaRegistrySync,
 			MaintenanceModeClearThreshold:  opts.clearMaintenanceModeAfter,
 			StaleDiskWipeNotReadyThreshold: opts.wipeStaleDiskAfter,
 		}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
@@ -873,12 +874,20 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 
 	adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
 
+	// A nil factory disables the rolling-update schema registry sync gate —
+	// pkg/resources cannot see the flag, so the flag is applied here by
+	// withholding the injected client factory.
+	var schemaRegistryClientFactory resources.SchemaRegistryClientsFactory
+	if opts.waitForSchemaRegistrySync {
+		schemaRegistryClientFactory = internalclient.NodePoolSchemaRegistryBrokerClients
+	}
+
 	if err := (&vectorizedcontrollers.ClusterReconciler{
 		Client:                             mgr.GetClient(),
 		Log:                                ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
 		Scheme:                             mgr.GetScheme(),
 		AdminAPIClientFactory:              adminAPIClientFactory,
-		SchemaRegistryClientFactory:        internalclient.NodePoolSchemaRegistryBrokerClients,
+		SchemaRegistryClientFactory:        schemaRegistryClientFactory,
 		DecommissionWaitInterval:           opts.decommissionWaitInterval,
 		MetricsTimeout:                     opts.metricsTimeout,
 		RestrictToRedpandaVersion:          opts.restrictToRedpandaVersion,
