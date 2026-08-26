@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Rolling restarts now wait for each broker''s Schema Registry store to catch up on _schemas (via the auth-exempt GET /status/ready probe) before rolling the next broker, so overlapping SR replay windows can no longer leave a cluster without a consistent Schema Registry endpoint mid-upgrade. The gate applies to the V1 (Cluster), V2 (Redpanda), and multicluster (StretchCluster) controllers, is skipped on clusters without a Schema Registry listener, and can be disabled with --wait-for-schema-registry-sync=false.'
+time: 2026-08-26T14:00:00.000000000-04:00
