@@ -51,13 +51,6 @@ var (
 		clientgoscheme.AddToScheme,
 		redpandav1alpha2.Install,
 		monitoringv1.AddToScheme,
-		// The multicluster command does not reconcile the legacy vectorized
-		// Cluster API, but the telemetry collector lists it to count legacy
-		// clusters (internal/telemetry/collector.go). Registering the type keeps
-		// that list a NoMatch when the CRD is absent — which the collector
-		// tolerates — instead of a NotRegistered error, and lets a multicluster
-		// install report legacy clusters that do exist alongside it.
-		vectorizedv1alpha1.Install,
 		// Register gatewayv1 (HTTPRoute) in the multicluster scheme too — the
 		// multicluster Console controller references HTTPRoute exactly like the
 		// v2 controller. The Gateway API CRDs are optional: skipWatchIfNotInstalled
