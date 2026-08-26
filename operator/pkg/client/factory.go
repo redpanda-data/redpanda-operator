@@ -35,6 +35,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
@@ -99,6 +100,12 @@ type ClientFactory interface {
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
 	SchemaRegistryClient(ctx context.Context, object any) (*sr.Client, error)
+	// SchemaRegistryBrokerClients returns one Schema Registry client per broker
+	// endpoint of the given cluster object, each scoped to a single broker URL
+	// so callers can hold each broker to its own verdict (the aggregate client
+	// fails over across URLs internally). Returns schemaregistry.ErrDisabled
+	// when the cluster's Schema Registry listener is explicitly disabled.
+	SchemaRegistryBrokerClients(ctx context.Context, object any) ([]schemaregistry.Broker, error)
 	// SchemaRegistryClientForCluster is the same as SchemaRegistryClient but it takes a kubernetes cluster name.
 	SchemaRegistryClientForCluster(ctx context.Context, object any, clusterName string) (*sr.Client, error)
 
