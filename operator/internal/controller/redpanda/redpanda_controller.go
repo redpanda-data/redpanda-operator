@@ -86,6 +86,14 @@ type RedpandaReconciler struct {
 	ClientFactory        internalclient.ClientFactory
 	CloudSecretsExpander *pkgsecrets.CloudExpander
 	UseNodePools         bool
+	// WaitForSchemaRegistrySync gates the rolling restart on every broker's
+	// Schema Registry store having caught up on _schemas (GET /status/ready
+	// on the SR listener) before the next broker is rolled, so overlapping
+	// SR replay windows can't leave the cluster without a consistent Schema
+	// Registry endpoint mid-upgrade (INC-2903). Set via the
+	// --wait-for-schema-registry-sync flag; skipped when the cluster's SR
+	// listener is disabled.
+	WaitForSchemaRegistrySync bool
 }
 
 // Any resource that the Redpanda helm chart creates and needs to reconcile.
@@ -541,6 +549,26 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 	if len(rollSet) > 0 && state.pools.HasRecentlyReplacedPods() {
 		logger.V(log.DebugLevel).Info("recently replaced pods not ready, deferring rolling restart")
 		return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+	}
+
+	// Third gate: a rolled broker serves Kafka as soon as it restarts, but
+	// its Schema Registry store replays _schemas before it answers
+	// consistently — on large _schemas topics that window runs ~13 minutes
+	// (INC-2903). Rolling the next broker while the previous one is still
+	// replaying stacks stale-SR windows until, in the worst case, no broker
+	// has a consistent SR store mid-upgrade. Core's /status/ready blocks
+	// until the store is caught up (and is auth-exempt, present since
+	// v23.1), so probing every broker's SR listener — timeout == still
+	// replaying — serializes the roll against SR sync the same way the
+	// post-restart probe serializes it against partition recovery.
+	// Skipped when the cluster disables its SR listener
+	// (ErrSchemaRegistryDisabled, handled inside the gate helper).
+	// Escape hatch: --wait-for-schema-registry-sync=false.
+	if len(rollSet) > 0 && r.WaitForSchemaRegistrySync {
+		satisfied := schemaRegistryReady(ctx, r.ClientFactory, state.cluster.Redpanda, logger)
+		if !satisfied {
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
 	}
 
 	rolled := false

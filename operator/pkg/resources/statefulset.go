@@ -109,11 +109,16 @@ type StatefulSetResource struct {
 	serviceAccountName     string
 	configuratorSettings   ConfiguratorSettings
 	// The configuration object is pushed in in order to pull out hashes of configuration.
-	cfg                      *clusterconfiguration.CombinedCfg
-	adminAPIClientFactory    adminutils.NodePoolAdminAPIClientFactory
-	decommissionWaitInterval time.Duration
-	logger                   logr.Logger
-	metricsTimeout           time.Duration
+	cfg                   *clusterconfiguration.CombinedCfg
+	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory
+	// schemaRegistryClientFactory builds per-broker Schema Registry clients
+	// for the rolling-update sync gate (waitOnSchemaRegistrySync). Injected
+	// (internalclient.NodePoolSchemaRegistryBrokerClients in production)
+	// because pkg/client imports this package; nil disables the gate.
+	schemaRegistryClientFactory SchemaRegistryClientsFactory
+	decommissionWaitInterval    time.Duration
+	logger                      logr.Logger
+	metricsTimeout              time.Duration
 
 	LastObservedState *appsv1.StatefulSet
 	nodePool          vectorizedv1alpha1.NodePoolSpecWithDeleted
@@ -141,6 +146,7 @@ func NewStatefulSet(
 	configuratorSettings ConfiguratorSettings,
 	cfg *clusterconfiguration.CombinedCfg,
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
+	schemaRegistryClientFactory SchemaRegistryClientsFactory,
 	dialer redpanda.DialContextFunc,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
@@ -149,26 +155,27 @@ func NewStatefulSet(
 	autoDeletePVCs bool,
 ) *StatefulSetResource {
 	ssr := &StatefulSetResource{
-		Client:                   client,
-		scheme:                   scheme,
-		pandaCluster:             pandaCluster,
-		serviceFQDN:              serviceFQDN,
-		serviceName:              serviceName,
-		nodePortName:             nodePortName,
-		nodePortSvc:              corev1.Service{},
-		volumeProvider:           volumeProvider,
-		adminTLSConfigProvider:   adminTLSConfigProvider,
-		serviceAccountName:       serviceAccountName,
-		configuratorSettings:     configuratorSettings,
-		cfg:                      cfg,
-		adminAPIClientFactory:    adminAPIClientFactory,
-		dialer:                   dialer,
-		decommissionWaitInterval: decommissionWaitInterval,
-		logger:                   logger.WithName("StatefulSetResource"),
-		metricsTimeout:           defaultAdminAPITimeout,
-		LastObservedState:        nil,
-		nodePool:                 nodePool,
-		autoDeletePVCs:           autoDeletePVCs,
+		Client:                      client,
+		scheme:                      scheme,
+		pandaCluster:                pandaCluster,
+		serviceFQDN:                 serviceFQDN,
+		serviceName:                 serviceName,
+		nodePortName:                nodePortName,
+		nodePortSvc:                 corev1.Service{},
+		volumeProvider:              volumeProvider,
+		adminTLSConfigProvider:      adminTLSConfigProvider,
+		serviceAccountName:          serviceAccountName,
+		configuratorSettings:        configuratorSettings,
+		cfg:                         cfg,
+		adminAPIClientFactory:       adminAPIClientFactory,
+		dialer:                      dialer,
+		decommissionWaitInterval:    decommissionWaitInterval,
+		logger:                      logger.WithName("StatefulSetResource"),
+		metricsTimeout:              defaultAdminAPITimeout,
+		LastObservedState:           nil,
+		nodePool:                    nodePool,
+		autoDeletePVCs:              autoDeletePVCs,
+		schemaRegistryClientFactory: schemaRegistryClientFactory,
 	}
 
 	if metricsTimeout != 0 {

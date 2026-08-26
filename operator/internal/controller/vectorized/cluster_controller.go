@@ -69,11 +69,15 @@ var (
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	Log                            logr.Logger
-	configuratorSettings           resources.ConfiguratorSettings
-	clusterDomain                  string
-	Scheme                         *runtime.Scheme
-	AdminAPIClientFactory          adminutils.NodePoolAdminAPIClientFactory
+	Log                   logr.Logger
+	configuratorSettings  resources.ConfiguratorSettings
+	clusterDomain         string
+	Scheme                *runtime.Scheme
+	AdminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory
+	// SchemaRegistryClientFactory builds per-broker Schema Registry clients
+	// for the rolling-update sync gate; nil disables the gate. Injected from
+	// the run command (internalclient.NodePoolSchemaRegistryBrokerClients).
+	SchemaRegistryClientFactory    resources.SchemaRegistryClientsFactory
 	ConfigurationReassertionPeriod time.Duration
 	DecommissionWaitInterval       time.Duration
 	MetricsTimeout                 time.Duration

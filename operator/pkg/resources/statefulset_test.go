@@ -194,6 +194,7 @@ func TestEnsure(t *testing.T) {
 					adminAPI.SetClusterHealth(health)
 					return adminAPI, nil
 				},
+				nil, // schema registry clients factory (gate skipped)
 				nil,
 				time.Second,
 				ctrl.Log.WithName("test"),
@@ -684,6 +685,7 @@ func TestCurrentVersion(t *testing.T) {
 				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
 					return nil, nil
 				},
+				nil, // schema registry clients factory (gate skipped)
 				nil,
 				time.Second,
 				ctrl.Log.WithName("test"),
@@ -998,6 +1000,7 @@ func TestStatefulSetPorts_AdditionalListeners(t *testing.T) {
 				nil,
 				"",
 				resources.ConfiguratorSettings{},
+				nil,
 				nil,
 				nil,
 				nil,
@@ -1386,6 +1389,7 @@ func TestStatefulSetEnv_AdditionalListeners(t *testing.T) {
 				nil,
 				"",
 				resources.ConfiguratorSettings{},
+				nil,
 				nil,
 				nil,
 				nil,

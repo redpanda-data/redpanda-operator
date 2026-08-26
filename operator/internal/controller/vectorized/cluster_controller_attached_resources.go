@@ -429,6 +429,7 @@ func (a *attachedResources) statefulSet(cfg *clusterconfiguration.CombinedCfg) e
 			a.reconciler.configuratorSettings,
 			cfg,
 			a.reconciler.AdminAPIClientFactory,
+			a.reconciler.SchemaRegistryClientFactory,
 			a.reconciler.Dialer,
 			a.reconciler.DecommissionWaitInterval,
 			a.log,

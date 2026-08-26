@@ -113,6 +113,7 @@ type RunOptions struct {
 	metricsCertKey                      string
 	enableGhostBrokerDecommissioner     bool
 	ghostBrokerDecommissionerSyncPeriod time.Duration
+	waitForSchemaRegistrySync           bool
 	cloudSecretsEnabled                 bool
 	cloudSecretsPrefix                  string
 	cloudSecretsConfig                  pkgsecrets.ExpanderCloudConfiguration
@@ -162,6 +163,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
+	cmd.Flags().BoolVar(&o.waitForSchemaRegistrySync, "wait-for-schema-registry-sync", true, "During a rolling restart, wait for each broker's Schema Registry store to report caught up on _schemas (GET /status/ready on the SR listener) before the next broker is rolled, so overlapping SR replay windows can't leave the cluster without a consistent Schema Registry endpoint mid-upgrade. Applies to both the V1 (Cluster) and V2 (Redpanda) controllers; skipped on clusters without a Schema Registry listener. Set to false to roll without waiting on Schema Registry.")
 
 	// Secret store related flags.
 	cmd.Flags().BoolVar(&o.cloudSecretsEnabled, "enable-cloud-secrets", false, "Set to true if config values can reference secrets from cloud secret store")
@@ -397,11 +399,12 @@ func Run(
 	if v2Controllers {
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
-			Manager:              mcmanager,
-			LifecycleClient:      lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
-			ClientFactory:        factory,
-			CloudSecretsExpander: cloudExpander,
-			UseNodePools:         opts.enableV2NodepoolController,
+			Manager:                   mcmanager,
+			LifecycleClient:           lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)),
+			ClientFactory:             factory,
+			CloudSecretsExpander:      cloudExpander,
+			UseNodePools:              opts.enableV2NodepoolController,
+			WaitForSchemaRegistrySync: opts.waitForSchemaRegistrySync,
 		}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "Redpanda")
 			return err
@@ -576,18 +579,27 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 
 	adminAPIClientFactory := adminutils.CachedNodePoolAdminAPIClientFactory(adminutils.NewNodePoolInternalAdminAPI)
 
+	// A nil factory disables the rolling-update schema registry sync gate —
+	// pkg/resources cannot see the flag, so the flag is applied here by
+	// withholding the injected client factory.
+	var schemaRegistryClientFactory resources.SchemaRegistryClientsFactory
+	if opts.waitForSchemaRegistrySync {
+		schemaRegistryClientFactory = internalclient.NodePoolSchemaRegistryBrokerClients
+	}
+
 	if err := (&vectorizedcontrollers.ClusterReconciler{
-		Client:                    mgr.GetClient(),
-		Log:                       ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
-		Scheme:                    mgr.GetScheme(),
-		AdminAPIClientFactory:     adminAPIClientFactory,
-		DecommissionWaitInterval:  opts.decommissionWaitInterval,
-		MetricsTimeout:            opts.metricsTimeout,
-		RestrictToRedpandaVersion: opts.restrictToRedpandaVersion,
-		GhostDecommissioning:      opts.ghostbuster,
-		AutoDeletePVCs:            opts.autoDeletePVCs,
-		CloudSecretsExpander:      cloudExpander,
-		Timeout:                   opts.rpClientTimeout,
+		Client:                      mgr.GetClient(),
+		Log:                         ctrl.Log.WithName("controllers").WithName("redpanda").WithName("Cluster"),
+		Scheme:                      mgr.GetScheme(),
+		AdminAPIClientFactory:       adminAPIClientFactory,
+		DecommissionWaitInterval:    opts.decommissionWaitInterval,
+		MetricsTimeout:              opts.metricsTimeout,
+		RestrictToRedpandaVersion:   opts.restrictToRedpandaVersion,
+		GhostDecommissioning:        opts.ghostbuster,
+		AutoDeletePVCs:              opts.autoDeletePVCs,
+		CloudSecretsExpander:        cloudExpander,
+		Timeout:                     opts.rpClientTimeout,
+		SchemaRegistryClientFactory: schemaRegistryClientFactory,
 	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {
 		log.Error(ctx, err, "Unable to create controller", "controller", "Cluster")
 		return err
