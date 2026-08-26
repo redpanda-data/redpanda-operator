@@ -21,6 +21,19 @@ type Payload struct {
 	// clusters correlate to an account. Absent (omitted) for OSS/unlicensed
 	// installs, keeping those reports anonymous.
 	IDHash string `json:"id_hash,omitempty"`
+	// ClusterLicenses describes where IDHash came from when it was derived from
+	// the managed clusters rather than the operator's own license file, and is
+	// how an empty IDHash is told apart from an unlicensed install: Licensed>0
+	// with Distinct>1 means the fleet holds several licenses and no single
+	// checksum represents it.
+	ClusterLicenses struct {
+		// Licensed counts clusters carrying a valid, unexpired enterprise
+		// license (Redpanda .spec.clusterSpec.enterprise, legacy
+		// Cluster .spec.licenseRef).
+		Licensed int `json:"licensed"`
+		// Distinct counts the distinct license checksums among them.
+		Distinct int `json:"distinct"`
+	} `json:"clusterLicenses"`
 
 	NodePools struct {
 		Enabled bool `json:"enabled"`

@@ -28,6 +28,8 @@ import (
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/license"
+
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -66,6 +68,12 @@ type Collector struct {
 	// the reported version tracks in-place cluster upgrades. Optional: when nil,
 	// kubeVersion is omitted from the payload.
 	Discovery discovery.ServerVersionInterface
+	// ParseLicense parses a raw license token, defaulting to
+	// license.ParseLicense. It exists as a seam only because a license cannot be
+	// minted in a test: the parser verifies an RSA signature against a public
+	// key embedded in common-go, and committing a real token to satisfy it is
+	// not an option.
+	ParseLicense func([]byte) (license.RedpandaLicense, error)
 	// ConnectDefaultImage is the operator-level Connect image override (the
 	// --connect-default-image flag / connectController.image chart values).
 	// Needed to resolve the effective image of Pipelines that don't pin
@@ -197,6 +205,22 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 				}
 			}
 			vec.into(&payload.VectorizedClusters.TotalCPUCores, &payload.VectorizedClusters.TotalMemoryGiB, &payload.VectorizedClusters.BrokerSizes)
+		}
+	}
+
+	// Licensing of the managed clusters. c.IDHash, when set, is the operator's
+	// own license and stays authoritative; otherwise a single license across the
+	// fleet is reported as id_hash, which is the shape of nearly every install.
+	// With several distinct licenses no one checksum represents the install, so
+	// id_hash is left empty and the counts below say why.
+	licenses := c.clusterLicenses(ctx, redpandas.Items, vectorized.Items)
+	for _, clusters := range licenses {
+		payload.ClusterLicenses.Licensed += clusters
+	}
+	payload.ClusterLicenses.Distinct = len(licenses)
+	if payload.IDHash == "" && len(licenses) == 1 {
+		for checksum := range licenses {
+			payload.IDHash = checksum
 		}
 	}
 
