@@ -6,6 +6,8 @@ README.md.gotmpl
 # Common VCS dirs
 .git/
 .gitignore
+# Placeholder that keeps charts/ tracked in git.
+.gitkeep
 .bzr/
 .bzrignore
 .hg/
