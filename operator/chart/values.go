@@ -277,18 +277,25 @@ type MonitoringConfig struct {
 // ClusterLabel configures an opt-in scrape-time label identifying which
 // Kubernetes cluster a series came from.
 //
-// It exists for stretch clusters. One StretchCluster spans several Kubernetes
-// clusters, each running its own operator, and diagnosing it means querying
-// across all of them — so the operator metrics have to be aggregated into one
-// Prometheus-compatible backend (remote_write to Mimir/Thanos, or a Thanos
-// Querier fanning out). Once they are, nothing in the scraped series says which
-// cluster produced it: job, namespace, service and pod names are identical in
-// every cluster, and identical by design when the deployment follows the
-// documented pattern of one release name per cluster. The series then collide.
+// It applies whenever operator metrics from more than one Kubernetes cluster
+// end up in the same Prometheus-compatible backend — whether that is several
+// independent single-cluster installs remote_writing to a shared Mimir/Thanos,
+// or one StretchCluster spanning clusters. In either case nothing in the
+// scraped series says which cluster produced it: job, namespace, service and
+// pod names are identical in every cluster, and identical by design when each
+// install uses the same release name. The series collide, and a graph sums
+// clusters together without saying so.
 //
-// Off by default: a single-cluster install has nothing to disambiguate, and
-// adding a label to everyone's metrics would churn existing dashboards and
-// recording rules.
+// Stretch clusters are the case that forces it, because a StretchCluster is one
+// logical cluster and the questions asked of it — which operator holds raft
+// leadership, which region is behind — cannot be answered from any single
+// cluster's metrics. There the value defaults to multicluster.name, so only the
+// toggle is needed. A single-cluster install must supply Value itself, since
+// there is no cluster identity to inherit.
+//
+// Off by default: one cluster reporting to its own Prometheus has nothing to
+// disambiguate, and adding a label to everyone's metrics would churn existing
+// dashboards and recording rules.
 type ClusterLabel struct {
 	// Enabled adds the label to every series scraped from this operator.
 	Enabled bool `json:"enabled"`

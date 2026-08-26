@@ -290,7 +290,7 @@ Configuration for monitoring.
 
 ### [monitoring.clusterLabel](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.clusterLabel)
 
-Adds a scrape-time label identifying which Kubernetes cluster a series came from. For stretch clusters, whose operator metrics have to be aggregated into one Prometheus-compatible backend to be queryable together — without it, series from every cluster collide, since job, namespace, service and pod names are identical in each. Off by default: a single-cluster install has nothing to disambiguate.
+Adds a scrape-time label identifying which Kubernetes cluster a series came from. Use it whenever operator metrics from more than one Kubernetes cluster land in the same Prometheus-compatible backend — several independent installs remote_writing to a shared Mimir/Thanos, or one stretch cluster spanning clusters. Without it the series collide, since job, namespace, service and pod names are identical in each. Stretch clusters inherit the value from `multicluster.name`; a single-cluster install supplies `value` itself. Off by default: one cluster reporting to its own Prometheus has nothing to disambiguate.
 
 **Default:**
 
@@ -312,7 +312,7 @@ The label to set. Empty uses `redpanda_k8s_cluster`.
 
 ### [monitoring.clusterLabel.value](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=monitoring.clusterLabel.value)
 
-The label's value. Empty uses `multicluster.name`, so a stretch deployment needs nothing further. Required when multicluster is disabled.
+The label's value. Empty uses `multicluster.name`, so a stretch deployment needs nothing further. Required for a single-cluster install, which has no `multicluster.name` to inherit; the render fails rather than emitting an empty label.
 
 **Default:** `""`
 
