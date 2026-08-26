@@ -1,0 +1,32 @@
+project: operator
+kind: Added
+body: |-
+    Rolling restarts now wait for a just-restarted broker's Schema Registry to finish replaying `_schemas` before rolling the next broker, so an upgrade cannot leave every broker's Schema Registry replaying at once. Controlled by `--schema-registry-roll-gate`, on by default.
+
+      After a broker restarts, Redpanda serves Kafka immediately but Schema
+      Registry replays `_schemas` before its store is consistent — around 13
+      minutes on a large `_schemas` topic — returning errors (50005, 429) the whole
+      time while the broker stays in traffic rotation. Nothing gated on that, so an
+      upgrade walked the fleet faster than Schema Registry could catch up and the
+      replay windows overlapped, at worst leaving no consistent Schema Registry
+      endpoint anywhere in the cluster.
+
+      The gate reads core's `GET /status/ready` on each broker's Schema Registry
+      listener, which blocks until `_schemas` is caught up. It is asked via the
+      sidecar, which already runs in the pod, so no per-broker addressing or
+      listener TLS is reproduced operator-side.
+
+      This does not make Schema Registry requests reliable. A replaying broker is
+      still published and still serving errors for its own window; only the overlap
+      is prevented. It also makes upgrades slower, by up to the replay time per
+      broker — on healthy clusters replay is fast and the gate is close to a no-op.
+
+      Unaffected: clusters with no Schema Registry listener, and Redpanda older than
+      v23.1 (which has no `/status/ready`). Both read as "nothing to gate on" and
+      roll exactly as before. Sidecars predating this change also read that way, so
+      an operator upgraded ahead of its sidecars degrades to the old behaviour
+      rather than stalling.
+
+      Set `--schema-registry-roll-gate=false` if a persistently unhealthy Schema
+      Registry is blocking rolls; via the chart, use `additionalCmdFlags`.
+time: 2026-08-26T10:00:00.000000000-07:00

@@ -23,6 +23,8 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/plain"
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
+
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 )
 
 // this roughly implements https://github.com/redpanda-data/redpanda/blob/f5a7a13f7fca3f69a4380f0bbfa8fbc3e7f899d6/src/go/rpk/pkg/adminapi/admin.go#L46
@@ -84,6 +86,50 @@ func normalizeSchemaRegistryURLs(profile *rpkconfig.RpkProfile) ([]string, error
 	return urls, nil
 }
 
+// SchemaRegistryStatusClientForRPKProfile returns an HTTP client and the
+// normalized Schema Registry base URLs for the given RPK profile.
+//
+// It exists because franz-go's sr.Client deliberately exposes only the Schema
+// Registry *API*, while callers sometimes need SR's status surface — notably
+// GET /status/ready, which blocks until the broker has finished replaying
+// _schemas and is therefore the signal for "this broker's SR is consistent".
+// Sharing the profile's URL normalization and TLS with schemaRegistryForRPKProfile
+// keeps the two from drifting: a status probe that trusted different TLS than
+// the API client would be worse than no probe at all.
+func (c *Factory) SchemaRegistryStatusClientForRPKProfile(profile *rpkconfig.RpkProfile) (*http.Client, []string, error) {
+	urls, err := normalizeSchemaRegistryURLs(profile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	httpClient, err := c.schemaRegistryHTTPClientForRPKProfile(profile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return httpClient, urls, nil
+}
+
+// schemaRegistryHTTPClientForRPKProfile builds the HTTP client both the Schema
+// Registry API client and the status-endpoint client use, so the two cannot
+// drift in TLS or transport settings.
+func (c *Factory) schemaRegistryHTTPClientForRPKProfile(profile *rpkconfig.RpkProfile) (*http.Client, error) {
+	tls, err := profile.SR.TLS.Config(c.fs)
+	if err != nil {
+		return nil, err
+	}
+
+	transport := schemaRegistryTransport(c.dialer)
+	if tls != nil {
+		transport.TLSClientConfig = tls
+	}
+
+	return &http.Client{
+		Timeout:   5 * time.Second,
+		Transport: transport,
+	}, nil
+}
+
 // schemaRegistryForRPKProfile returns a simple sr.Client able to communicate with a cluster based on the given RPK profile.
 func (c *Factory) schemaRegistryForRPKProfile(profile *rpkconfig.RpkProfile) (*sr.Client, error) {
 	urls, err := normalizeSchemaRegistryURLs(profile)
@@ -96,26 +142,7 @@ func (c *Factory) schemaRegistryForRPKProfile(profile *rpkconfig.RpkProfile) (*s
 		return nil, err
 	}
 
-	// These transport values come from the TLS client options found here:
-	// https://github.com/twmb/franz-go/blob/cea7aa5d803781e5f0162187795482ba1990c729/pkg/sr/clientopt.go#L48-L68
-	transport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		ForceAttemptHTTP2:     true,
-		MaxIdleConns:          100,
-		MaxIdleConnsPerHost:   100,
-		DialContext:           c.dialer,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
-
-	if c.dialer == nil {
-		transport.DialContext = (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext
-	}
-
+	transport := schemaRegistryTransport(c.dialer)
 	if tls != nil {
 		transport.TLSClientConfig = tls
 	}
@@ -210,4 +237,31 @@ func (c *Factory) kafkaForRPKProfile(profile *rpkconfig.RpkProfile, opts ...kgo.
 	}
 
 	return kgo.NewClient(kopts...)
+}
+
+// schemaRegistryTransport returns the HTTP transport used for every Schema
+// Registry connection the factory makes.
+//
+// These transport values come from franz-go's own TLS client options:
+// https://github.com/twmb/franz-go/blob/cea7aa5d803781e5f0162187795482ba1990c729/pkg/sr/clientopt.go#L48-L68
+func schemaRegistryTransport(dialer redpanda.DialContextFunc) *http.Transport {
+	transport := &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   100,
+		DialContext:           dialer,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	if dialer == nil {
+		transport.DialContext = (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext
+	}
+
+	return transport
 }

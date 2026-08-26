@@ -109,6 +109,13 @@ type RedpandaReconciler struct {
 	// probes.DefaultPostRestartCaughtUpPercent (100); set lower to accept
 	// partial recovery at the gate.
 	PostRestartCaughtUpPercent int
+	// SchemaRegistryRollGate makes the roll wait for a just-restarted broker's
+	// Schema Registry to finish replaying _schemas before the next broker is
+	// rolled. Without it an upgrade can put every broker's SR into replay at
+	// once, leaving no consistent SR endpoint (INC-2903). Defaults to enabled;
+	// disable it with --schema-registry-roll-gate=false if a persistently
+	// unhealthy SR is blocking rolls.
+	SchemaRegistryRollGate bool
 	// MaintenanceModeClearThreshold is how long a broker must be down (pod
 	// not-Ready) while stuck in maintenance mode before the operator clears the
 	// maintenance flag so the partition balancer can auto-decommission it. Zero
@@ -694,6 +701,39 @@ func (r *RedpandaReconciler) reconcileDecommission(ctx context.Context, state *c
 			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 		case recovering:
 			logger.V(log.DebugLevel).Info("a broker is still post-restart recovering, deferring rolling restart")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
+	// Third gate: Schema Registry. A broker serves Kafka the moment it is up,
+	// but its Schema Registry replays _schemas first and returns errors until
+	// that finishes. The post-restart probe above says nothing about it — it
+	// answers a partition-recovery question — so without this gate an upgrade
+	// walks the fleet faster than SR can catch up and the replay windows
+	// overlap until no consistent SR endpoint is left (K8S-908, INC-2903).
+	//
+	// Nothing to gate on (no SR listener, or Redpanda older than v23.1) reads
+	// as "proceed", so clusters without Schema Registry roll exactly as before.
+	if r.SchemaRegistryRollGate && len(rollSet) > 0 {
+		// ExistingPods, not PodsToRoll: the broker whose SR we most need to wait
+		// for is the one just rolled, and it leaves the roll set as soon as its
+		// revision matches — long before its Schema Registry has caught up.
+		existing := state.pools.ExistingPods()
+		pods := make([]*corev1.Pod, 0, len(existing))
+		for _, p := range existing {
+			pods = append(pods, p.Pod)
+		}
+
+		replaying, err := schemaRegistryStillReplaying(ctx, pods, SchemaRegistryGateSidecarPort, logger)
+		switch {
+		case err != nil:
+			// Fail closed, like the post-restart gate above: an SR we cannot
+			// reach is an SR whose state we do not know, and rolling into that
+			// is what caused the incident.
+			logger.V(log.DebugLevel).Info("schema registry probe error, deferring rolling restart", "error", err)
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		case replaying:
+			logger.V(log.DebugLevel).Info("a broker's schema registry is still replaying, deferring rolling restart")
 			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
 		}
 	}

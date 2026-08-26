@@ -102,6 +102,10 @@ type MulticlusterReconciler struct {
 	// loop proceeds to the next broker. Mirrors RedpandaReconciler; defaults
 	// to probes.DefaultPostRestartCaughtUpPercent (100).
 	PostRestartCaughtUpPercent int
+	// SchemaRegistryRollGate makes the roll wait for a just-restarted broker's
+	// Schema Registry to finish replaying _schemas. See the same field on
+	// RedpandaReconciler.
+	SchemaRegistryRollGate bool
 
 	// MaintenanceModeClearThreshold is how long a broker must be down (pod
 	// not-Ready) while stuck in maintenance mode before the operator clears the
@@ -1514,6 +1518,29 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		}
 	}
 
+	// Third gate: Schema Registry replay. Same rationale as the single-cluster
+	// reconciler (K8S-908, INC-2903) and it matters more here: a stretch
+	// cluster's brokers sit in different regions, so a cross-region _schemas
+	// replay is slower still, and there are fewer brokers per region to absorb
+	// the loss of one SR endpoint.
+	if r.SchemaRegistryRollGate && len(rollSet) > 0 {
+		existing := state.pools.ExistingPods()
+		pods := make([]*corev1.Pod, 0, len(existing))
+		for _, p := range existing {
+			pods = append(pods, p.Pod)
+		}
+
+		replaying, err := schemaRegistryStillReplaying(ctx, pods, SchemaRegistryGateSidecarPort, logger)
+		switch {
+		case err != nil:
+			logger.V(log.DebugLevel).Info("schema registry probe error, deferring rolling restart", "error", err)
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		case replaying:
+			logger.V(log.DebugLevel).Info("a broker's schema registry is still replaying, deferring rolling restart")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
+	}
+
 	rolled := false
 	for _, pod := range rollSet {
 		// Same roll-safety decision as the single-cluster RedpandaReconciler:
@@ -1973,7 +2000,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration, schemaRegistryRollGate bool) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -2012,6 +2039,7 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 				ClientFactory:                  factory,
 				ReconcileTimeout:               reconcileTimeout,
 				PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
+				SchemaRegistryRollGate:         schemaRegistryRollGate,
 				MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
 				StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
 			}, "StretchCluster", periodicRequeue),

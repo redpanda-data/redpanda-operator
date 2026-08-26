@@ -11,6 +11,7 @@ package client
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -99,6 +100,11 @@ type ClientFactory interface {
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
 	SchemaRegistryClient(ctx context.Context, object any) (*sr.Client, error)
+	// SchemaRegistryStatusClientForRPKProfile returns an HTTP client and the
+	// normalized Schema Registry base URLs for an RPK profile, for callers that
+	// need SR's status surface (GET /status/ready) rather than the schema
+	// registry API that sr.Client exposes.
+	SchemaRegistryStatusClientForRPKProfile(profile *rpkconfig.RpkProfile) (*http.Client, []string, error)
 	// SchemaRegistryClientForCluster is the same as SchemaRegistryClient but it takes a kubernetes cluster name.
 	SchemaRegistryClientForCluster(ctx context.Context, object any, clusterName string) (*sr.Client, error)
 

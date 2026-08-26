@@ -106,6 +106,9 @@ type MulticlusterOptions struct {
 	// PostRestartCaughtUpPercent gates the rolling restart on the per-broker
 	// post-restart probe; mirrors the `run` command's flag of the same name.
 	PostRestartCaughtUpPercent int
+	// SchemaRegistryRollGate gates the roll on Schema Registry replay; see the
+	// --schema-registry-roll-gate flag.
+	SchemaRegistryRollGate bool
 
 	// ClearMaintenanceModeAfter is how long a broker may stay down (pod
 	// not-Ready) while stuck in maintenance mode before the operator clears the
@@ -237,6 +240,7 @@ func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.BrokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
 	cmd.Flags().DurationVar(&o.ClusterConnectionTimeout, "cluster-connection-timeout", 10*time.Second, "Timeout for internal clients used to connect to Redpanda clusters (admin API in particular)")
 	cmd.Flags().DurationVar(&o.ReconcileTimeout, "reconcile-timeout", 2*time.Minute, "Defense-in-depth ceiling on a single reconcile pass; on deadline the reconcile aborts with context.DeadlineExceeded and is requeued with backoff. Primary bounding should still come from per-call timeouts on downstream clients")
+	cmd.Flags().BoolVar(&o.SchemaRegistryRollGate, "schema-registry-roll-gate", true, "Gate the rolling restart on Schema Registry replay: wait for a just-restarted broker's SR to finish replaying _schemas before rolling the next one, so an upgrade cannot leave every broker's SR replaying at once. Clusters without Schema Registry, and Redpanda older than v23.1, are unaffected. Disable if a persistently unhealthy SR is blocking rolls.")
 	cmd.Flags().IntVar(&o.PostRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
 	cmd.Flags().DurationVar(&o.ClearMaintenanceModeAfter, "clear-maintenance-mode-after", 30*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the Redpanda partition balancer can auto-decommission it. There's no signal distinguishing a stuck broker from one intentionally in a longer planned maintenance window, so raise this if your maintenance windows commonly run longer. This threshold does not apply to ghost brokers — dead broker ids superseded at their own advertised address, either by a live registered broker under a different id or by the pod itself reporting that it runs a different broker identity — whose leaked maintenance flag is cleared immediately since they can never rejoin. Default 30m.")
 	cmd.Flags().DurationVar(&o.StaleDiskWipeNotReadyThreshold, "wipe-stale-disk-after", 5*time.Minute, "How long a broker pod must stay not-Ready with a stale on-disk identity (a decommissioned-broker bad_rejoin, K8S-843) before the operator wipes it — deleting the pod's data-dir PVC (if any) and the pod so it reschedules with a fresh identity. Destructive but heavily guarded. Defaults to 5m; 0 or a negative duration disables.")
@@ -424,7 +428,7 @@ func Run(
 
 	factory := internalclient.NewFactory(manager, nil).WithAdminClientTimeout(opts.ClusterConnectionTimeout)
 
-	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.ClearMaintenanceModeAfter, opts.StaleDiskWipeNotReadyThreshold); err != nil {
+	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.ClearMaintenanceModeAfter, opts.StaleDiskWipeNotReadyThreshold, opts.SchemaRegistryRollGate); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
 		return err
 	}

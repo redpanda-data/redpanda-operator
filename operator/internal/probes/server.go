@@ -19,6 +19,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+// DefaultBrokerProbePort is the port the sidecar's broker probe server listens
+// on. It backs the chart's pod readiness probe and, since it is the only
+// unauthenticated per-pod HTTP surface the operator can reach, the
+// rolling-restart gate's Schema Registry check as well.
+const DefaultBrokerProbePort = 8093
+
 type Server struct {
 	prober *Prober
 	url    string
@@ -68,6 +74,12 @@ func NewServer(config Config) (*Server, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", server.HandleHealthyCheck)
 	mux.HandleFunc("/readyz", server.HandleReadyCheck)
+	// Deliberately NOT wired into pod readiness. Pod readiness is the wrong
+	// lever for Schema Registry: the broker discovery Service sets
+	// publishNotReadyAddresses because raft needs it, so failing readiness
+	// wouldn't remove the pod from the Service anyway. This endpoint exists for
+	// the operator's rolling-restart gate to consult per broker.
+	mux.HandleFunc("/schema-registry/ready", server.HandleSchemaRegistryReadyCheck)
 
 	server.server = &http.Server{
 		Addr:    address,
@@ -153,4 +165,32 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	return err
+}
+
+// HandleSchemaRegistryReadyCheck reports whether this broker's Schema Registry
+// has finished replaying _schemas.
+//
+// The status codes are a contract with the operator's roll gate:
+//
+//	200 — SR is caught up; rolling the next broker is fine.
+//	503 — SR is still replaying; the roll must wait.
+//	404 — there is nothing to gate on: either this broker has no Schema
+//	      Registry listener, or Redpanda is older than v23.1 and has no
+//	      /status/ready. The operator treats this as "proceed", so a cluster
+//	      without SR is never blocked by a gate meant to protect it.
+//	500 — the check itself failed. The operator fails closed on this and defers
+//	      the roll, because an unknown SR state is not a safe one to roll into.
+func (s *Server) HandleSchemaRegistryReadyCheck(w http.ResponseWriter, r *http.Request) {
+	ready, configured, err := s.prober.SchemaRegistryReady(r.Context())
+	switch {
+	case err != nil:
+		s.logger.Error(err, "checking schema registry readiness")
+		w.WriteHeader(http.StatusInternalServerError)
+	case !configured:
+		w.WriteHeader(http.StatusNotFound)
+	case !ready:
+		w.WriteHeader(http.StatusServiceUnavailable)
+	default:
+		w.WriteHeader(http.StatusOK)
+	}
 }
