@@ -355,8 +355,11 @@ const (
 	// CRs instead of a StatefulSet. Setting it on a StatefulSet-managed
 	// cluster triggers the migration; the annotation then stays for the
 	// resource's lifetime (removing it rolls back to StatefulSet
-	// management). Not exposed in public docs — intended for internal/cloud
-	// use only.
+	// management). Experimental: it requires the operator to run with
+	// --enable-broker and the Broker CRD to be installed (operator chart
+	// value crds.experimental: true, or `redpanda-operator crd
+	// --experimental`); progress is reported via the BrokerMigration
+	// condition.
 	AnnotationUseBrokerCR = "operator.redpanda.com/use-broker-cr"
 
 	// BrokerMigrationConditionType tracks StatefulSet→Broker CR migration
