@@ -35,9 +35,12 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
+	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -399,6 +402,13 @@ func (r *StatefulSetResource) updatePods(ctx context.Context, l logr.Logger, upd
 				Msg:          fmt.Sprintf("broker reported under replicated partitions: %v", err),
 			}
 		}
+
+		if err = r.waitOnSchemaRegistrySync(ctx); err != nil {
+			return &RequeueAfterError{
+				RequeueAfter: RequeueDuration,
+				Msg:          fmt.Sprintf("wait for schema registry store to catch up: %v", err),
+			}
+		}
 	}
 
 	log.V(logger.DebugLevel).Info("rollingUpdate completed")
@@ -442,6 +452,62 @@ func hostOverwrite(pod *corev1.Pod, headlessServiceWithPort string) string {
 		return UnderReplicatedPartitionsHostOverwrite
 	}
 	return fmt.Sprintf("%s.%s", pod.Name, headlessServiceWithPort)
+}
+
+// WaitForSchemaRegistrySync gates the rolling update on each rolled broker's
+// Schema Registry store having caught up on _schemas (GET /status/ready on
+// the internal SR listener) before the roll proceeds to the next pod, so
+// overlapping SR replay windows can't leave the cluster without a consistent
+// Schema Registry endpoint mid-upgrade (INC-2903). Set from the operator's
+// --wait-for-schema-registry-sync flag.
+var WaitForSchemaRegistrySync = true
+
+// SchemaRegistryClientsFactory builds one Schema Registry client per broker
+// pod of a v1 Cluster for the rolling-update sync gate. Mirrors
+// adminutils.NodePoolAdminAPIClientFactory: implemented by
+// internalclient.NodePoolSchemaRegistryBrokerClients and injected here
+// because pkg/client imports this package. Implementations return
+// schemaregistry.ErrDisabled when the cluster has no internal SR listener.
+type SchemaRegistryClientsFactory func(
+	ctx context.Context,
+	k8sClient k8sclient.Client,
+	cluster *vectorizedv1alpha1.Cluster,
+	fqdn string,
+	tlsProvider resourcetypes.AdminTLSConfigProvider,
+	dialer redpanda.DialContextFunc,
+	pods ...string,
+) ([]schemaregistry.Broker, error)
+
+// waitOnSchemaRegistrySync gates the roll on every broker's Schema Registry
+// store having caught up on _schemas via the shared schemaregistry.Synced
+// probe (GET /status/ready — auth-exempt in core and blocking until the
+// broker's SR store has replayed _schemas). The updatePods loop treats a
+// returned error as "requeue before rolling the next pod", serializing the
+// roll against SR sync the same way evaluateUnderReplicatedPartitions
+// serializes it against partition recovery. Returns nil immediately when the
+// gate is disabled, no client factory was injected (tests), or the cluster
+// has no internal SR listener (schemaregistry.ErrDisabled).
+func (r *StatefulSetResource) waitOnSchemaRegistrySync(ctx context.Context) error {
+	if !WaitForSchemaRegistrySync || r.schemaRegistryClientFactory == nil {
+		return nil
+	}
+
+	brokers, err := r.schemaRegistryClientFactory(ctx, r, r.pandaCluster, r.serviceFQDN, r.adminTLSConfigProvider, r.dialer)
+	if errors.Is(err, schemaregistry.ErrDisabled) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("building schema registry clients: %w", err)
+	}
+
+	synced, err := schemaregistry.Synced(ctx, brokers, r.logger)
+	if !synced {
+		// A probe timeout means the store is still replaying (see
+		// schemaregistry.ProbeTimeout); a connection error means a listener
+		// isn't up yet. Both are "not synced" — requeue and re-probe.
+		return fmt.Errorf("schema registry not confirmed synced: %w", err)
+	}
+	return nil
 }
 
 func (r *StatefulSetResource) podEviction(ctx context.Context, pod, artificialPod *corev1.Pod, newVolumes map[string]interface{}) error {

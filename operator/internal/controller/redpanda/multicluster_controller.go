@@ -103,6 +103,16 @@ type MulticlusterReconciler struct {
 	// to probes.DefaultPostRestartCaughtUpPercent (100).
 	PostRestartCaughtUpPercent int
 
+	// WaitForSchemaRegistrySync gates the roll loop on every broker's Schema
+	// Registry store having caught up on _schemas (GET /status/ready on the
+	// SR listener) before the next broker is rolled, so overlapping SR
+	// replay windows can't leave the stretch cluster without a consistent
+	// Schema Registry endpoint mid-upgrade. Mirrors RedpandaReconciler; set
+	// via the --wait-for-schema-registry-sync flag. Skipped when the pools'
+	// SR listener configs would make the probe unsound (explicit disable, or
+	// heterogeneous port/TLS) — see stretchSchemaRegistryGateApplies.
+	WaitForSchemaRegistrySync bool
+
 	// MaintenanceModeClearThreshold is how long a broker must be down (pod
 	// not-Ready) while stuck in maintenance mode before the operator clears the
 	// maintenance flag so the partition balancer can auto-decommission it. Zero
@@ -1514,6 +1524,30 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 		}
 	}
 
+	// Schema Registry sync gate, mirroring RedpandaReconciler: a rolled
+	// broker serves Kafka as soon as it restarts, but its SR store replays
+	// _schemas before answering consistently (INC-2903: ~13 minutes on large
+	// topics). Probing every broker's SR listener via /status/ready —
+	// auth-exempt, blocking until the store is caught up — serializes the
+	// roll against SR sync the same way the post-restart probe serializes it
+	// against partition recovery. The factory discovers per-broker SR
+	// endpoints across all member clusters, so the probe covers remote pools
+	// too. Fail closed like the gate above; escape hatch:
+	// --wait-for-schema-registry-sync=false. Skipped when the pools' SR
+	// listener configs would make per-broker probing unsound — see
+	// internalclient.SchemaRegistryProbeUniform. The uniformity check runs
+	// on the reconciler's cached pool state rather than re-listing pools.
+	if len(rollSet) > 0 && r.WaitForSchemaRegistrySync {
+		if uniform, reason := internalclient.SchemaRegistryProbeUniform(state.cluster.GetAllBrokerPools()); !uniform {
+			logger.V(log.DebugLevel).Info("skipping schema registry sync roll gate", "reason", reason)
+		} else {
+			satisfied := schemaRegistryReady(ctx, r.ClientFactory, state.cluster.StretchCluster, logger)
+			if !satisfied {
+				return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+			}
+		}
+	}
+
 	rolled := false
 	for _, pod := range rollSet {
 		// Same roll-safety decision as the single-cluster RedpandaReconciler:
@@ -1973,7 +2007,7 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 	return nil
 }
 
-func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
+func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, waitForSchemaRegistrySync bool, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
@@ -2012,6 +2046,7 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 				ClientFactory:                  factory,
 				ReconcileTimeout:               reconcileTimeout,
 				PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
+				WaitForSchemaRegistrySync:      waitForSchemaRegistrySync,
 				MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
 				StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
 			}, "StretchCluster", periodicRequeue),

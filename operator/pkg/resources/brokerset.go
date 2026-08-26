@@ -81,6 +81,7 @@ func NewBrokerSet(
 	configuratorSettings ConfiguratorSettings,
 	cfg *clusterconfiguration.CombinedCfg,
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
+	schemaRegistryClientFactory SchemaRegistryClientsFactory,
 	dialer redpanda.DialContextFunc,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
@@ -96,7 +97,7 @@ func NewBrokerSet(
 		serviceFQDN, serviceName, nodePortName,
 		volumeProvider, adminTLSConfigProvider,
 		serviceAccountName, configuratorSettings, cfg,
-		adminAPIClientFactory, dialer, decommissionWaitInterval,
+		adminAPIClientFactory, schemaRegistryClientFactory, dialer, decommissionWaitInterval,
 		logger, metricsTimeout, nodePool, autoDeletePVCs,
 		brokerPodNodeUnavailableToleration,
 	)

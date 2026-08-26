@@ -106,6 +106,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 		},
 		cfg,
 		adminutils.NewNodePoolInternalAdminAPI,
+		nil, // schema registry clients factory (gate skipped)
 		nil,
 		time.Second,
 		ctrl.Log.WithName("test"),
