@@ -484,6 +484,36 @@ func TestCollect_DegradesOnMissingCRDAndForbidden(t *testing.T) {
 	require.Equal(t, 0, raw.Resources.Users)
 }
 
+func TestCollect_ToleratesTypeMissingFromScheme(t *testing.T) {
+	// A scheme that never registered vectorized/v1alpha1 — exactly what the
+	// multicluster command builds, since it does not reconcile the legacy
+	// Cluster API. The client then fails that one List with a NotRegistered
+	// error, which must not discard the rest of the document.
+	scheme := apimachineryruntime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&redpandav1alpha2.StretchCluster{ObjectMeta: metav1.ObjectMeta{Name: "sc-1", Namespace: "default"}},
+	).Build()
+
+	// Guard the premise: the List really does fail, and with NotRegistered.
+	err := c.List(t.Context(), &vectorizedv1alpha1.ClusterList{})
+	require.Error(t, err)
+	require.True(t, apimachineryruntime.IsNotRegisteredError(err), "expected NotRegistered, got %v", err)
+
+	collector := &Collector{Reader: c, ID: "id", OperatorVersion: "v26.2.2"}
+	raw, err := collector.Collect(t.Context())
+	require.NoError(t, err) // tolerated, document still sent
+
+	require.Equal(t, "id", raw.ID)
+	require.True(t, raw.StretchCluster.Enabled)
+	require.Equal(t, 1, raw.StretchCluster.Count)
+	// The unregistered type degrades to its zero value.
+	require.Equal(t, 0, raw.VectorizedClusters.Count)
+}
+
 func TestCollect_PropagatesUnexpectedError(t *testing.T) {
 	scheme := testScheme(t)
 	base := fake.NewClientBuilder().WithScheme(scheme).Build()

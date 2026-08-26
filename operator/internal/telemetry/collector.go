@@ -23,6 +23,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -529,14 +530,22 @@ func (c *Collector) count(ctx context.Context, listGVK schema.GroupVersionKind, 
 	return nil
 }
 
-// list reads a resource list, tolerating the two permanent, install-specific
+// list reads a resource list, tolerating the three permanent, install-specific
 // conditions that would otherwise discard the whole telemetry document: a
-// missing CRD (NoMatch) and missing RBAC (Forbidden). It returns ok=false (with
-// a nil error) in those cases so the caller leaves the field at its zero value
-// and continues; any other error is returned for the caller to propagate.
+// missing CRD (NoMatch), missing RBAC (Forbidden), and a type the running
+// command never registered in its scheme (NotRegistered). It returns ok=false
+// (with a nil error) in those cases so the caller leaves the field at its zero
+// value and continues; any other error is returned for the caller to propagate.
+//
+// NotRegistered is not hypothetical: each command builds its own scheme
+// (internal/controller/scheme.go), and the multicluster command deliberately
+// omits vectorized/v1alpha1 because it does not reconcile the legacy Cluster
+// API. A collector that treats that as fatal reports nothing at all, which is
+// strictly worse than reporting every other field, so it is tolerated here
+// rather than only fixed in the scheme.
 func (c *Collector) list(ctx context.Context, list client.ObjectList, opts ...client.ListOption) (bool, error) {
 	if err := c.Reader.List(ctx, list, opts...); err != nil {
-		if meta.IsNoMatchError(err) || apierrors.IsForbidden(err) {
+		if meta.IsNoMatchError(err) || apierrors.IsForbidden(err) || k8sruntime.IsNotRegisteredError(err) {
 			return false, nil
 		}
 		return false, err

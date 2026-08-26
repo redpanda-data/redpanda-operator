@@ -1,0 +1,16 @@
+project: operator
+kind: Fixed
+body: |-
+    The multicluster operator now reports telemetry instead of dropping every report.
+
+      The telemetry collector lists the legacy `vectorized.io/v1alpha1` `Cluster`
+      API, which `multiclusterSchemeFns` deliberately does not register (the
+      multicluster command does not reconcile it). The resulting
+      `no kind is registered for the type v1alpha1.ClusterList` is neither a
+      NoMatch nor a Forbidden, so it propagated out of `Collect` and the reporter
+      discarded the whole document on every cycle — no stretch/multicluster
+      install has ever reported, in any release. The collector now tolerates a
+      type that is missing from the scheme the same way it tolerates a missing
+      CRD, and the multicluster scheme registers the type so legacy clusters
+      alongside a multicluster install are counted.
+time: 2026-08-26T10:15:00.000000-07:00
