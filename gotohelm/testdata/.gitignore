@@ -1,4 +1,10 @@
 pkg/
 
 # After helm dep update/build the work tree will consist of depedent charts.
-*/**/charts/
+# The charts/ directories themselves are checked in (.gitkeep): CI runs these
+# tests inside a container that writes as root while the buildkite agent owns
+# the checkout, and unlinking a root-owned file only needs group write on the
+# *containing* directory. A directory the container creates itself is
+# root-owned and 755, which wedges every later checkout on that agent host.
+*/**/charts/*
+!*/**/charts/.gitkeep
