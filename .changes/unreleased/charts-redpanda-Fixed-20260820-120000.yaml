@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    The sidecar's user watcher now sets the `superusers` cluster property once per sync pass, with the union of every users file, instead of once per file with only that file's users.
+      Previously every sidecar start and every users-secret update transiently replaced the list with a partial one — kubelet's `..data` symlink even parsed as an empty users file — momentarily revoking superuser status from connected clients. Only helm-chart deployments were affected; the operator deploys the sidecar with `--no-set-superusers`.
+      The property is now written only when the list actually changes, so sidecar restarts no longer bump the cluster config version; when a users file can't be read, the patch is withheld and the pass retried with backoff instead of writing a partial list; and malformed users-file lines, which can contain passwords, are no longer echoed into the sidecar log.
+time: 2026-08-20T12:00:00.000000000-07:00
