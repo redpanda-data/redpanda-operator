@@ -267,6 +267,16 @@ connectController:
     scrapeInterval: "30s"
     labels:
       team: platform
+-- monitoring-cluster-label-single-cluster --
+# Not a stretch cluster: one standalone install remote_writing to a central
+# Prometheus alongside others. No multicluster, so the value is supplied here
+# and the label name is left at its default.
+monitoring:
+  enabled: true
+  clusterLabel:
+    enabled: true
+    value: prod-us-east-1
+
 -- monitoring-cluster-label-explicit --
 monitoring:
   enabled: true
