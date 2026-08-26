@@ -21,11 +21,11 @@
 {{- $labelName = "redpanda_k8s_cluster" -}}
 {{- end -}}
 {{- $labelValue := $values.monitoring.clusterLabel.value -}}
-{{- if (eq $labelValue "") -}}
+{{- if (and (eq $labelValue "") $values.multicluster.enabled) -}}
 {{- $labelValue = $values.multicluster.name -}}
 {{- end -}}
 {{- if (eq $labelValue "") -}}
-{{- $_ := (fail "monitoring.clusterLabel.value must be set when multicluster.name is empty") -}}
+{{- $_ := (fail "monitoring.clusterLabel.value must be set unless multicluster.enabled is true and multicluster.name is non-empty") -}}
 {{- end -}}
 {{- $_ := (set $endpoint "relabelings" (concat (default (list) $endpoint.relabelings) (list (mustMergeOverwrite (dict) (dict "targetLabel" $labelName "replacement" $labelValue))))) -}}
 {{- end -}}

@@ -143,11 +143,32 @@ func TestServiceMonitorClusterLabel(t *testing.T) {
 	// An empty replacement would stamp an empty label, which reads as data
 	// rather than as missing configuration, so the render fails instead.
 	t.Run("no value and no multicluster.name fails the render", func(t *testing.T) {
-		assert.PanicsWithValue(t, "monitoring.clusterLabel.value must be set when multicluster.name is empty", func() {
+		assert.PanicsWithValue(t, "monitoring.clusterLabel.value must be set unless multicluster.enabled is true and multicluster.name is non-empty", func() {
 			renderServiceMonitor(t, map[string]any{
 				"monitoring": map[string]any{
 					"enabled":      true,
 					"clusterLabel": map[string]any{"enabled": true},
+				},
+			})
+		})
+	})
+
+	// The fallback is gated on multicluster mode being ENABLED, not merely on
+	// multicluster.name being non-empty. That name is a plain string settable
+	// with multicluster.enabled false, where it configures nothing else — so
+	// inheriting it there would turn a stale or aspirational name into a metric
+	// label with nothing pointing at the connection. Raised in review on #1758.
+	t.Run("multicluster.name is not inherited when multicluster is disabled", func(t *testing.T) {
+		assert.PanicsWithValue(t, "monitoring.clusterLabel.value must be set unless multicluster.enabled is true and multicluster.name is non-empty", func() {
+			renderServiceMonitor(t, map[string]any{
+				"monitoring": map[string]any{
+					"enabled":      true,
+					"clusterLabel": map[string]any{"enabled": true},
+				},
+				// Set, but multicluster mode is off.
+				"multicluster": map[string]any{
+					"enabled": false,
+					"name":    "rp-us-east-1",
 				},
 			})
 		})

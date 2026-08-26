@@ -17,11 +17,14 @@ body: |-
       from that operator. `monitoring.clusterLabel.name` and `.value` override the
       label and its value.
 
-      For a **stretch cluster** the value defaults to `multicluster.name`, which is
-      already the cluster's identity in the operator's raft group, so only the
-      toggle is needed. For a **single-cluster** install there is no cluster
-      identity to inherit, so `.value` is required; the render fails rather than
-      emitting an empty label, since an empty label looks like data.
+      When `multicluster.enabled` is true the value defaults to
+      `multicluster.name`, which is already the cluster's identity in the
+      operator's raft group, so a stretch deployment needs only the toggle.
+      Otherwise `.value` is required — including when `multicluster.name` happens
+      to be set but multicluster mode is off, since that name configures nothing
+      else there and inheriting it would turn a stale value into a metric label.
+      The render fails rather than emitting an empty label, since an empty label
+      looks like data.
 
       Off by default because one cluster reporting to its own Prometheus has nothing
       to disambiguate, and adding a label to everyone's series would churn existing

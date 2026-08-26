@@ -63,16 +63,22 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 			labelName = "redpanda_k8s_cluster"
 		}
 
+		// Inherit multicluster.name only when multicluster mode is actually
+		// enabled. The value is a plain string that can be set with
+		// multicluster.enabled false, where it configures nothing else — so
+		// falling back to it unconditionally would let a stale or aspirational
+		// name silently become a metric label, which is the kind of action at a
+		// distance nobody goes looking for.
 		labelValue := values.Monitoring.ClusterLabel.Value
-		if labelValue == "" {
+		if labelValue == "" && values.Multicluster.Enabled {
 			labelValue = values.Multicluster.Name
 		}
 
-		// With multicluster disabled and no explicit value there is nothing
-		// meaningful to stamp, and an empty replacement would silently produce
-		// an empty label. Fail the render instead of shipping that.
+		// Nothing meaningful to stamp. An empty replacement would produce an
+		// empty label, which reads as data rather than as absence, so fail the
+		// render instead of shipping it.
 		if labelValue == "" {
-			panic("monitoring.clusterLabel.value must be set when multicluster.name is empty")
+			panic("monitoring.clusterLabel.value must be set unless multicluster.enabled is true and multicluster.name is non-empty")
 		}
 
 		endpoint.RelabelConfigs = append(endpoint.RelabelConfigs, monitoringv1.RelabelConfig{

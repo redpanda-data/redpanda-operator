@@ -301,9 +301,15 @@ type ClusterLabel struct {
 	Enabled bool `json:"enabled"`
 	// Name is the label to set. Defaults to "redpanda_k8s_cluster".
 	Name string `json:"name"`
-	// Value is the label's value. Defaults to `multicluster.name`, which is
-	// already the cluster's identity in the operator's raft group, so a stretch
-	// deployment needs no extra configuration. Required when multicluster is
-	// disabled, since there is no name to fall back to.
+	// Value is the label's value. When `multicluster.enabled` is true it
+	// defaults to `multicluster.name`, which is already the cluster's identity
+	// in the operator's raft group, so a stretch deployment needs no extra
+	// configuration.
+	//
+	// Required otherwise. The fallback is deliberately gated on multicluster
+	// mode being enabled rather than merely on `multicluster.name` being set:
+	// that value configures nothing else when multicluster is disabled, so
+	// inheriting it there would turn a stale or aspirational name into a metric
+	// label with nothing pointing at the connection.
 	Value string `json:"value"`
 }
