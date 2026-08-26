@@ -515,13 +515,23 @@ func TestRollbackRestoresStatefulSetFromBackup(t *testing.T) {
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-migration-backup", Namespace: "test"}, &kept),
 		"backup ConfigMap must survive until the pods are adopted")
 
-	// Simulate the StatefulSet controller adopting the pod, then finish.
+	// Simulate the StatefulSet controller adopting the pod and publishing
+	// its revision, then finish.
 	var pod corev1.Pod
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
 	require.NoError(t, controllerutil.SetControllerReference(&restored, &pod, r.scheme))
 	require.NoError(t, c.Update(ctx, &pod))
+	restored.Status.UpdateRevision = "rp-restored-revision"
+	require.NoError(t, c.Status().Update(ctx, &restored))
 
 	require.NoError(t, RollbackBrokerCRs(ctx, c, r.scheme, r.pandaCluster, ctrl.Log))
+
+	// Broker-created pods carry no controller-revision-hash; the handover
+	// must stamp the restored StatefulSet's revision so the revision-based
+	// roll planners don't restart the fleet right after rollback.
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
+	assert.Equal(t, "rp-restored-revision", pod.Labels[appsv1.StatefulSetRevisionLabel],
+		"adopted pod must be handed over as current")
 
 	var gone corev1.ConfigMap
 	err = c.Get(ctx, types.NamespacedName{Name: "rp-migration-backup", Namespace: "test"}, &gone)

@@ -155,13 +155,25 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 		return false, err
 	}
 
-	acted := len(brokerList.Items) > 0
+	// Rollback strips ownerRefs and DELETES what it matches, and it runs on
+	// every reconcile pass of every non-annotated cluster: the label
+	// selector alone (name-based, mutable, copyable labels) is not a safe
+	// gate for that blast radius. Act only on Broker CRs this owner
+	// controls, like every steady-state listing does.
+	var brokers []redpandav1alpha2.Broker
+	for i := range brokerList.Items {
+		if metav1.IsControlledBy(&brokerList.Items[i], cfg.Owner) {
+			brokers = append(brokers, brokerList.Items[i])
+		}
+	}
+
+	acted := len(brokers) > 0
 	if acted {
 		// Rollback is gated on LOCAL state only — never on admin-API health.
 		// It is the escape hatch and must stay available on a degraded
 		// cluster; it is blocked only while another disruptive operation is
 		// mid-flight.
-		if err := VerifyRollbackPreconditions(l, brokerList.Items); err != nil {
+		if err := VerifyRollbackPreconditions(l, brokers); err != nil {
 			var requeueErr *RequeueAfterError
 			if errors.As(err, &requeueErr) {
 				cfg.report(ctx, corev1.ConditionFalse, MigrationReasonBlocked, requeueErr.Msg)
@@ -169,7 +181,7 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 			return acted, err
 		}
 
-		l.Info("rollback: cleaning up Broker CRs", "count", len(brokerList.Items))
+		l.Info("rollback: cleaning up Broker CRs", "count", len(brokers))
 
 		// Strip Broker CR ownerRefs from pods and PVCs so the STS can
 		// re-adopt. A strategic-merge $patch:delete keyed on the Broker's
@@ -177,8 +189,8 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 		// unlike a read-modify-Update it cannot conflict with concurrent
 		// writers (the Broker controller keeps reconciling until its CR is
 		// deleted below).
-		for i := range brokerList.Items {
-			b := &brokerList.Items[i]
+		for i := range brokers {
+			b := &brokers[i]
 			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: b.PodName(), Namespace: cfg.Owner.GetNamespace()}}
 			if err := stripOwnerRef(ctx, c, pod, b.UID); err != nil {
 				return acted, errors.Wrapf(err, "stripping Broker ownerRef from pod %s", pod.Name)
@@ -201,8 +213,8 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 		// rollback for minutes. Orphan propagation prevents the GC from
 		// cascade-deleting pods that the Broker controller re-adopted between
 		// our ownerRef strip above and the delete here.
-		for i := range brokerList.Items {
-			b := &brokerList.Items[i]
+		for i := range brokers {
+			b := &brokers[i]
 			if b.DeletionTimestamp.IsZero() {
 				if b.IsDiskLost() && b.Status.BrokerID != nil {
 					// The tombstone's dead-id decommission will never run now.
@@ -299,12 +311,82 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 	}); err != nil {
 		return err
 	}
+	revisions := map[string]string{}
 	for i := range pods.Items {
-		owner := metav1.GetControllerOf(&pods.Items[i])
+		pod := &pods.Items[i]
+		// The Broker controller can RE-adopt a pod between Rollback's
+		// ownerRef strip and its CR's deletion (a reconcile of the live CR
+		// is usually in flight). When that write lands after the GC's
+		// orphaning pass, the pod — and the claims the Broker controller
+		// created — are left referencing a CR that no longer exists, and
+		// the garbage collector deletes such dangling dependents silently:
+		// no event, no operator log, just a recreated pod. Keep re-stripping
+		// Broker ownerRefs until the StatefulSet holds the pod; the backup
+		// ConfigMap keeps this loop resumable.
+		if owner := metav1.GetControllerOf(pod); owner != nil && owner.Kind == redpandav1alpha2.BrokerKind {
+			l.Info("rollback: re-stripping Broker ownerRef from re-adopted pod", "pod", pod.Name)
+			if err := stripOwnerRef(ctx, c, pod, owner.UID); err != nil {
+				return errors.Wrapf(err, "re-stripping Broker ownerRef from pod %s", pod.Name)
+			}
+		}
+		for _, vol := range pod.Spec.Volumes {
+			if vol.PersistentVolumeClaim == nil {
+				continue
+			}
+			var pvc corev1.PersistentVolumeClaim
+			if err := c.Get(ctx, types.NamespacedName{Name: vol.PersistentVolumeClaim.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return errors.Wrapf(err, "checking claim %s for Broker ownerRefs", vol.PersistentVolumeClaim.ClaimName)
+			}
+			if owner := metav1.GetControllerOf(&pvc); owner != nil && owner.Kind == redpandav1alpha2.BrokerKind {
+				l.Info("rollback: re-stripping Broker ownerRef from claim", "pvc", pvc.Name)
+				if err := stripOwnerRef(ctx, c, &pvc, owner.UID); err != nil {
+					return errors.Wrapf(err, "re-stripping Broker ownerRef from claim %s", pvc.Name)
+				}
+			}
+		}
+		owner := metav1.GetControllerOf(pod)
 		if owner == nil || owner.Kind != "StatefulSet" {
-			msg := fmt.Sprintf("waiting for the StatefulSet to adopt pod %s", pods.Items[i].Name)
+			msg := fmt.Sprintf("waiting for the StatefulSet to adopt pod %s", pod.Name)
 			cfg.report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, msg)
 			return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "rollback: " + msg}
+		}
+		// Pods the BROKER controller created (rotations, decommission
+		// replacements) carry no controller-revision-hash — only the
+		// StatefulSet controller stamps it, and under OnDelete it never
+		// re-labels adopted pods — so the revision-based roll planners would
+		// treat every such pod as outdated and restart the fleet right after
+		// rollback. Hand them over as CURRENT by stamping the restored
+		// StatefulSet's revision: the backup is the state being rolled back
+		// TO, and any genuine drift from the next render re-rolls through
+		// the ordinary health-gated flow. Stamped before the backup
+		// ConfigMap is deleted, so an interrupted pass resumes here.
+		if pod.Labels[appsv1.StatefulSetRevisionLabel] == "" {
+			rev, ok := revisions[owner.Name]
+			if !ok {
+				var sts appsv1.StatefulSet
+				if err := c.Get(ctx, types.NamespacedName{Name: owner.Name, Namespace: cfg.Owner.GetNamespace()}, &sts); err != nil {
+					return errors.Wrapf(err, "fetching restored StatefulSet %s for revision stamping", owner.Name)
+				}
+				rev = sts.Status.UpdateRevision
+				revisions[owner.Name] = rev
+			}
+			if rev == "" {
+				msg := fmt.Sprintf("waiting for the restored StatefulSet %s to publish its revision", owner.Name)
+				cfg.report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, msg)
+				return &RequeueAfterError{RequeueAfter: RequeueDuration, Msg: "rollback: " + msg}
+			}
+			podPatch := k8sclient.MergeFrom(pod.DeepCopy())
+			if pod.Labels == nil {
+				pod.Labels = map[string]string{}
+			}
+			pod.Labels[appsv1.StatefulSetRevisionLabel] = rev
+			l.Info("rollback: stamping restored StatefulSet revision onto Broker-created pod", "pod", pod.Name, "revision", rev)
+			if err := c.Patch(ctx, pod, podPatch); err != nil {
+				return errors.Wrapf(err, "stamping revision label on pod %s", pod.Name)
+			}
 		}
 	}
 

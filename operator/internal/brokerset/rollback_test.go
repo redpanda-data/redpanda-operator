@@ -19,8 +19,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -45,6 +48,56 @@ func (r *recordingReporter) NeedsCompletion(context.Context) bool {
 
 func (r *recordingReporter) NeedsRollback(context.Context) bool {
 	return r.reason != "" && r.reason != MigrationReasonRolledBack
+}
+
+// TestRollbackTouchesOnlyOwnedBrokers pins rollback's blast radius to the
+// owner's own Broker CRs. Rollback lists by label selector — name-based,
+// mutable, copyable labels — and then strips pod/PVC ownerRefs and DELETES
+// every match; every steady-state path (listBrokers, MarkForRestart, the
+// pool facades) additionally requires metav1.IsControlledBy, and rollback
+// runs on every reconcile pass of every non-annotated cluster once
+// --enable-broker is on, so a label-matching Broker owned by someone else
+// would be continuously exposed to deletion by the wrong owner.
+func TestRollbackTouchesOnlyOwnedBrokers(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+
+	owner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test", UID: "owner-uid"}}
+	foreignOwner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "other-cluster", Namespace: "test", UID: "foreign-uid"}}
+
+	foreign := &redpandav1alpha2.Broker{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "other-cluster-broker-0",
+			Namespace: "test",
+			// Labels that match the rollback's selector (Everything() here;
+			// in production: copyable name-based owner labels).
+			Labels: map[string]string{"app": "redpanda"},
+		},
+		Spec: redpandav1alpha2.BrokerSpec{
+			ClusterRef:   redpandav1alpha2.ClusterRef{Name: "other-cluster"},
+			NetworkIndex: ptr.To(int32(0)),
+		},
+	}
+	require.NoError(t, controllerutil.SetControllerReference(foreignOwner, foreign, scheme))
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(owner, foreignOwner, foreign).Build()
+
+	acted, err := Rollback(ctx, RollbackConfig{
+		Client:          c,
+		Scheme:          scheme,
+		Owner:           owner,
+		ClusterSelector: k8slabels.Everything(),
+		Logger:          logr.Discard(),
+	})
+	require.NoError(t, err)
+	require.False(t, acted, "a foreign Broker must not count as this owner's rollback work")
+
+	var still redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: foreign.Name, Namespace: "test"}, &still),
+		"rollback deleted a Broker CR controlled by a different owner")
+	require.Zero(t, still.DeletionTimestamp, "rollback must not delete a Broker CR it does not own")
 }
 
 // TestRollbackRederivesLostTerminalReport pins the terminal RolledBack report

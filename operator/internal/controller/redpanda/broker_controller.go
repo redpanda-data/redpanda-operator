@@ -249,7 +249,7 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 			}
 		}
 	} else {
-		return r.reconcileDelete(ctx, l, k8sClient, req.ClusterName, &broker, broker.PodName())
+		return r.reconcileDelete(ctx, l, k8sClient, k8sCluster.GetAPIReader(), req.ClusterName, &broker, broker.PodName())
 	}
 
 	// A NodePool-referenced Broker without the cluster-name label cannot
@@ -398,6 +398,11 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 	}
 	if ownerRef == nil {
+		if adoptionBarredByRollback(ctx, cluster.GetAPIReader(), broker) {
+			l.Info("owning cluster left broker mode; leaving orphaned pod for the StatefulSet to adopt", "name", podName)
+			state.phase = redpandav1alpha2.BrokerPhasePending
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
 		l.Info("adopting orphaned pod", "name", podName)
 		if pod.Annotations == nil {
 			pod.Annotations = map[string]string{}
@@ -437,6 +442,45 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// adoptionBarredByRollback reports whether the Broker's owning cluster has
+// LEFT broker mode — the use-broker-cr annotation removed, which is the one
+// and only rollback trigger. While that holds, adopting an ownerless pod or
+// claim would re-own the very object rollback just released; worse, an
+// adoption written after the garbage collector's orphaning pass (or by a
+// reconcile still holding an already-deleted CR from a stale cache) leaves
+// the object referencing a nonexistent owner, and the GC deletes it —
+// silently. The owner is read UNCACHED: a cached answer only narrows this
+// race, and adoption is rare enough that one direct read costs nothing.
+// Rollback only deletes Broker CRs after observing the annotation removal,
+// so by the time any dangerous adoption could fire, the uncached read is
+// guaranteed to see the annotation gone.
+//
+// Only a POSITIVE "this is a cluster that opted out" bars adoption: Brokers
+// owned by anything unrecognized (or by nothing) keep adopting as before.
+func adoptionBarredByRollback(ctx context.Context, apiReader client.Reader, broker *redpandav1alpha2.Broker) bool {
+	owner := metav1.GetControllerOf(broker)
+	if owner == nil {
+		return false
+	}
+	switch {
+	case owner.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
+		var rp redpandav1alpha2.Redpanda
+		if err := apiReader.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, &rp); err != nil {
+			// Uncertainty bars adoption: the write is cheap to retry, the
+			// dangling ref it could create is not.
+			return true
+		}
+		return !feature.V2UseBrokerCR.Get(ctx, &rp)
+	case owner.Kind == "Cluster" && strings.HasPrefix(owner.APIVersion, "redpanda.vectorized.io/"):
+		var cluster vectorizedv1alpha1.Cluster
+		if err := apiReader.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, &cluster); err != nil {
+			return true
+		}
+		return !feature.V1UseBrokerCR.Get(ctx, &cluster)
+	}
+	return false
 }
 
 // backfillRotationKeys copies each desired rotation annotation onto the pod
@@ -485,6 +529,10 @@ func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brok
 		}
 		if metav1.GetControllerOf(&pvc) != nil {
 			continue
+		}
+		if adoptionBarredByRollback(ctx, cluster.GetAPIReader(), broker) {
+			l.Info("owning cluster left broker mode; leaving claim unowned", "name", ec.Name)
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
 		}
 		if err := controllerutil.SetControllerReference(broker, &pvc, scheme); err != nil {
 			return ctrl.Result{}, err
@@ -1270,13 +1318,21 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 //     deletion policy decides: "cascade" (default) lets the GC delete pod and
 //     PVCs with the CR — whole-cluster teardown, decommission is pointless —
 //     while "orphan" releases them.
-func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
+func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
 	if !controllerutil.ContainsFinalizer(broker, brokerFinalizerName) {
 		return ctrl.Result{}, nil
 	}
 
+	// The pod MUST be read uncached: every branch below decides whether the
+	// finalizer may be removed, and once it is, any ownerRef still pointing
+	// at this CR is dangling — the garbage collector then deletes the pod
+	// (and the CR-owned PVCs) silently. The informer cache can miss both a
+	// pod this controller created moments ago and its own just-made
+	// adoption (rollback strips the ownerRef, a racing reconcile of the
+	// still-live CR re-adopts, and THIS pass must see that write to release
+	// the pod instead of abandoning it).
 	var pod corev1.Pod
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
+	err := apiReader.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
 	switch {
 	case apierrors.IsNotFound(err):
 		// The pod is already gone (e.g. deleted out of band), but the PVCs
