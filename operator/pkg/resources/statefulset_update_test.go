@@ -23,7 +23,9 @@ import (
 	"time"
 
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/twmb/franz-go/pkg/sr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -36,6 +38,7 @@ import (
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
@@ -637,4 +640,77 @@ func Test_sortPodList(t *testing.T) {
 			}
 		})
 	}
+}
+
+// stubSRClientsFactory returns a SchemaRegistryClientsFactory serving one
+// per-broker client per given base URL, with a short HTTP timeout so a
+// blocking /status/ready handler (the "store still replaying" signal) fails
+// fast in tests. A non-nil err is returned instead when set.
+func stubSRClientsFactory(t *testing.T, err error, urls ...string) SchemaRegistryClientsFactory {
+	t.Helper()
+	return func(context.Context, client.Client, *vectorizedv1alpha1.Cluster, string, types.AdminTLSConfigProvider, redpanda.DialContextFunc, ...string) ([]schemaregistry.Broker, error) {
+		if err != nil {
+			return nil, err
+		}
+		brokers := make([]schemaregistry.Broker, 0, len(urls))
+		for _, u := range urls {
+			client, cerr := sr.NewClient(sr.URLs(u), sr.HTTPClient(&http.Client{Timeout: 150 * time.Millisecond}))
+			require.NoError(t, cerr)
+			brokers = append(brokers, schemaregistry.Broker{URL: u, Client: client})
+		}
+		return brokers, nil
+	}
+}
+
+func TestWaitOnSchemaRegistrySyncReady(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/status/ready", r.URL.Path)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, nil, ts.URL)}
+	require.NoError(t, ssres.waitOnSchemaRegistrySync(context.Background()))
+}
+
+func TestWaitOnSchemaRegistrySyncReplaying(t *testing.T) {
+	// Mirrors core's read_sync() await: /status/ready blocks while the SR
+	// store replays _schemas. The gate must treat the resulting timeout as
+	// "not synced".
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-r.Context().Done():
+		case <-time.After(5 * time.Second):
+		}
+	}))
+	defer ts.Close()
+	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, nil, ts.URL)}
+	require.Error(t, ssres.waitOnSchemaRegistrySync(context.Background()))
+}
+
+func TestWaitOnSchemaRegistrySyncNotReadyStatus(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer ts.Close()
+	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, nil, ts.URL)}
+	require.Error(t, ssres.waitOnSchemaRegistrySync(context.Background()))
+}
+
+func TestWaitOnSchemaRegistrySyncSkips(t *testing.T) {
+	// No factory injected — how the gate is disabled
+	// (--wait-for-schema-registry-sync=false wires nil): skipped.
+	ssres := StatefulSetResource{}
+	require.NoError(t, ssres.waitOnSchemaRegistrySync(context.Background()))
+
+	// Schema Registry disabled on the cluster: the factory reports
+	// schemaregistry.ErrDisabled and the gate skips.
+	ssres = StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, schemaregistry.ErrDisabled)}
+	require.NoError(t, ssres.waitOnSchemaRegistrySync(context.Background()))
+}
+
+func TestWaitOnSchemaRegistrySyncFailsClosed(t *testing.T) {
+	// A factory error other than ErrDisabled means we cannot confirm sync —
+	// the gate must error (the roll loop requeues).
+	ssres := StatefulSetResource{schemaRegistryClientFactory: stubSRClientsFactory(t, assert.AnError)}
+	require.Error(t, ssres.waitOnSchemaRegistrySync(context.Background()))
 }
