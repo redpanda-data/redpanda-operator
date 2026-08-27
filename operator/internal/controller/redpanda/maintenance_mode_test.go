@@ -1543,3 +1543,43 @@ func TestReconcilersRunMaintenanceModeBeforeStaleDiskWipe(t *testing.T) {
 			"%s: the non-destructive maintenance clear must be attempted before the destructive stale-disk wipe", name)
 	}
 }
+
+// TestClearStuckMaintenanceModeDefersOnBrokerListFailure pins the contract that
+// an unreadable broker list defers the pass instead of aborting the reconcile
+// chain.
+//
+// reconcileMaintenanceMode is the FIRST step in both the single-cluster and
+// StretchCluster chains, and any error it returns aborts every later step for
+// that pass — including reconcileDecommission and reconcileClusterConfig (the
+// ordering the *RunsMaintenanceModeBeforeDecommission tests pin). The cluster
+// admin client resolves through the internal service, so it can dial a broker
+// whose pod is already gone: mid-roll, mid-decommission, or a BrokerPool being
+// deleted.
+// Those are exactly the states the later steps exist to resolve, so returning
+// the error deadlocks — the pass that would remove the unreachable broker never
+// runs, so the broker stays unreachable and every subsequent pass aborts the
+// same way.
+func TestClearStuckMaintenanceModeDefersOnBrokerListFailure(t *testing.T) {
+	ctx := t.Context()
+
+	// An already-closed server: every request fails to dial, the same shape as a
+	// broker whose pod no longer exists.
+	srv := httptest.NewServer(http.NewServeMux())
+	addr := srv.URL
+	srv.Close()
+
+	client, err := rpadmin.NewAdminAPI([]string{addr}, new(rpadmin.NopAuth), nil)
+	require.NoError(t, err)
+	defer client.Close()
+
+	pods := []*lifecycle.MulticlusterPod{{Pod: &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "redpanda-rp-east-0"},
+		Status: corev1.PodStatus{Conditions: []corev1.PodCondition{{
+			Type: corev1.PodReady, Status: corev1.ConditionFalse,
+			LastTransitionTime: metav1.NewTime(time.Now().Add(-10 * time.Minute)),
+		}}},
+	}}}
+
+	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, 5*time.Minute, nil, testr.New(t)),
+		"an unreadable broker list must defer the pass, not abort the reconcile chain")
+}
