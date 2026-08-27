@@ -1,0 +1,25 @@
+project: operator
+kind: Fixed
+body: |-
+    The StretchCluster admin client no longer offers brokers whose pod cannot be reached, so a broker pool deletion and a restart-requiring config change no longer stall on the broker they are about to remove or restart.
+
+      The admin client's host list was built purely from each
+      RedpandaBrokerPool's declared replica count, so it offered every broker
+      the spec asked for — including ones deliberately absent: a pool that was
+      just deleted, or the broker being rolled during a config change that
+      requires a restart. Whichever host a reconcile happened to pick, an absent
+      one failed the call, and the steps that gate on it made no progress as a
+      result. `reconcileDecommission` could not read cluster health, so it never
+      deleted the removed pool's StatefulSet; the maintenance-mode pass deferred
+      on an unreadable broker list instead of advancing the roll. Neither
+      recovered on its own while the host list kept offering the same absent
+      broker, so both surfaced as intermittent stalls that cleared only once the
+      pod happened to come back.
+
+      Endpoints are now filtered to pods that can accept a connection: present,
+      not terminating, and with an address assigned. Readiness is deliberately
+      not part of the test, since the operator reads a rejoining broker's
+      identity from an unready pod on purpose. When no pod looks reachable — a
+      whole-cluster outage — the full declared list is still returned, so that
+      case behaves exactly as it did before.
+time: 2026-08-27T12:00:00.000000000-07:00
