@@ -23,6 +23,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -71,6 +72,14 @@ type Collector struct {
 	// .spec.image — without it, fleets running the chart default would be
 	// misreported as running the binary-baked constant.
 	ConnectDefaultImage string
+	// SkipV1Collection omits the legacy v1 (vectorized.io/v1alpha1) Cluster
+	// list. Set it on commands that do not reconcile that API — the
+	// multicluster command — where the type is deliberately absent from the
+	// scheme (internal/controller/scheme.go), so the list could only ever fail.
+	// Skipping is declarative and saves an API server round trip per cycle;
+	// vectorizedClusters then reports its zero value, the same as when the CRD
+	// is not installed.
+	SkipV1Collection bool
 }
 
 // Collect builds a Payload describing the current shape of the cluster.
@@ -162,29 +171,33 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 		sc.into(&payload.StretchCluster.TotalCPUCores, &payload.StretchCluster.TotalMemoryGiB, &payload.StretchCluster.BrokerSizes)
 	}
 
-	var vectorized vectorizedv1alpha1.ClusterList
-	if ok, err := c.list(ctx, &vectorized); err != nil {
-		return nil, err
-	} else if ok {
-		payload.VectorizedClusters.Count = len(vectorized.Items)
-		var vec sizing
-		for i := range vectorized.Items {
-			spec := vectorized.Items[i].Spec
-			// Either the legacy single pool (spec.replicas) or explicit nodePools,
-			// not both — avoid double counting.
-			if len(spec.NodePools) == 0 {
-				replicas := derefInt32(spec.Replicas)
-				payload.VectorizedClusters.BrokerCount += replicas
-				vec.add(spec.Resources.ResourceRequirements, replicas)
-			} else {
-				for _, np := range spec.NodePools {
-					replicas := derefInt32(np.Replicas)
+	// Legacy v1 clusters, unless the running command declares it does not
+	// reconcile that API (SkipV1Collection).
+	if !c.SkipV1Collection {
+		var vectorized vectorizedv1alpha1.ClusterList
+		if ok, err := c.list(ctx, &vectorized); err != nil {
+			return nil, err
+		} else if ok {
+			payload.VectorizedClusters.Count = len(vectorized.Items)
+			var vec sizing
+			for i := range vectorized.Items {
+				spec := vectorized.Items[i].Spec
+				// Either the legacy single pool (spec.replicas) or explicit nodePools,
+				// not both — avoid double counting.
+				if len(spec.NodePools) == 0 {
+					replicas := derefInt32(spec.Replicas)
 					payload.VectorizedClusters.BrokerCount += replicas
-					vec.add(np.Resources.ResourceRequirements, replicas)
+					vec.add(spec.Resources.ResourceRequirements, replicas)
+				} else {
+					for _, np := range spec.NodePools {
+						replicas := derefInt32(np.Replicas)
+						payload.VectorizedClusters.BrokerCount += replicas
+						vec.add(np.Resources.ResourceRequirements, replicas)
+					}
 				}
 			}
+			vec.into(&payload.VectorizedClusters.TotalCPUCores, &payload.VectorizedClusters.TotalMemoryGiB, &payload.VectorizedClusters.BrokerSizes)
 		}
-		vec.into(&payload.VectorizedClusters.TotalCPUCores, &payload.VectorizedClusters.TotalMemoryGiB, &payload.VectorizedClusters.BrokerSizes)
 	}
 
 	// Supporting CR-type counts. Metadata-only lists: we only need len(), so
@@ -529,14 +542,25 @@ func (c *Collector) count(ctx context.Context, listGVK schema.GroupVersionKind, 
 	return nil
 }
 
-// list reads a resource list, tolerating the two permanent, install-specific
+// list reads a resource list, tolerating the three permanent, install-specific
 // conditions that would otherwise discard the whole telemetry document: a
-// missing CRD (NoMatch) and missing RBAC (Forbidden). It returns ok=false (with
-// a nil error) in those cases so the caller leaves the field at its zero value
-// and continues; any other error is returned for the caller to propagate.
+// missing CRD (NoMatch), missing RBAC (Forbidden), and a type the running
+// command never registered in its scheme (NotRegistered). It returns ok=false
+// (with a nil error) in those cases so the caller leaves the field at its zero
+// value and continues; any other error is returned for the caller to propagate.
+//
+// NotRegistered is the backstop, not the mechanism. Each command builds its own
+// scheme (internal/controller/scheme.go), so a type this collector lists can be
+// absent from the scheme the process is running with. The one case known today —
+// the multicluster command and vectorized/v1alpha1 — is handled declaratively by
+// SkipV1Collection, which is preferable: it states the intent and spends no API
+// call. This tolerance exists for the case nobody anticipated, because the
+// alternative failure mode is the whole telemetry document being discarded, in a
+// debug-level log, for the life of the process. One unregistered type should
+// cost one field.
 func (c *Collector) list(ctx context.Context, list client.ObjectList, opts ...client.ListOption) (bool, error) {
 	if err := c.Reader.List(ctx, list, opts...); err != nil {
-		if meta.IsNoMatchError(err) || apierrors.IsForbidden(err) {
+		if meta.IsNoMatchError(err) || apierrors.IsForbidden(err) || k8sruntime.IsNotRegisteredError(err) {
 			return false, nil
 		}
 		return false, err
