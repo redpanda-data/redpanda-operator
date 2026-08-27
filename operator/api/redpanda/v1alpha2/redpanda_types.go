@@ -40,6 +40,9 @@ type ChartRef struct {
 	// Specifies the name of the chart to deploy.
 	ChartName string `json:"chartName,omitempty"`
 	// Defines the version of the Redpanda Helm chart to deploy.
+	//
+	// Deprecated: FluxCD-based reconciliation was removed. The operator rejects
+	// reconciliation of any Redpanda resource that sets this field; unset it.
 	ChartVersion string `json:"chartVersion,omitempty"`
 	// Defines the chart repository to use. Defaults to `redpanda` if not defined.
 	HelmRepositoryName string `json:"helmRepositoryName,omitempty"`
@@ -52,22 +55,9 @@ type ChartRef struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Defines how to handle upgrades, including failures.
 	Upgrade *runtime.RawExtension `json:"upgrade,omitempty"`
-	// Setting the `useFlux` flag to `false` disables the Helm controller's reconciliation of the Helm chart.
-	// This ties the operator to a specific version of the Go-based Redpanda Helm chart, causing all other
-	// ChartRef fields to be ignored.
-	//
-	// Before disabling `useFlux`, ensure that your `chartVersion` is aligned with `5.9.21` or the corresponding
-	// version of the Redpanda chart.
-	//
-	// Note: When `useFlux` is set to `false`, `RedpandaStatus` may become inaccurate if the HelmRelease is
-	// manually deleted.
-	//
-	// To dynamically switch Flux controllers (HelmRelease and HelmRepository), setting `useFlux` to `false`
-	// will suspend these resources instead of removing them.
-	//
-	// References:
-	// - https://fluxcd.io/flux/components/helm/helmreleases/#suspend
-	// - https://fluxcd.io/flux/components/source/helmrepositories/#suspend
+	// Deprecated: FluxCD-based reconciliation was removed. The operator rejects
+	// reconciliation of any Redpanda resource that sets this field to true; unset
+	// it or set it to false. All other ChartRef fields are ignored.
 	//
 	// +optional
 	UseFlux *bool `json:"useFlux,omitempty"`
