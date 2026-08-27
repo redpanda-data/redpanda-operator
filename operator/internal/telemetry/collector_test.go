@@ -650,7 +650,7 @@ func TestCollect_IDHashFromClusterLicense(t *testing.T) {
 
 	require.Equal(t, "sum-a", raw.IDHash)
 	require.Equal(t, 2, raw.ClusterLicenses.Licensed)
-	require.Equal(t, 1, raw.ClusterLicenses.Distinct)
+	require.Equal(t, []string{"sum-a"}, raw.ClusterLicenses.Checksums)
 }
 
 func TestCollect_OperatorLicenseWinsOverClusterLicense(t *testing.T) {
@@ -670,6 +670,9 @@ func TestCollect_OperatorLicenseWinsOverClusterLicense(t *testing.T) {
 
 	require.Equal(t, "operator-sum", raw.IDHash)
 	require.Equal(t, 1, raw.ClusterLicenses.Licensed)
+	// The cluster's own license is still reported, so a fleet whose operator and
+	// clusters are licensed to different accounts is not silently collapsed.
+	require.Equal(t, []string{"sum-a"}, raw.ClusterLicenses.Checksums)
 }
 
 func TestCollect_SeveralLicensesLeaveIDHashEmpty(t *testing.T) {
@@ -689,11 +692,12 @@ func TestCollect_SeveralLicensesLeaveIDHashEmpty(t *testing.T) {
 	raw, err := collector.Collect(t.Context())
 	require.NoError(t, err)
 
-	// No single checksum represents this install, so id_hash stays empty and the
-	// counts are what tell it apart from an unlicensed one.
+	// No single checksum represents this install, so id_hash stays empty — but
+	// every checksum is still reported, sorted, so the fleet correlates to both
+	// accounts rather than to none.
 	require.Empty(t, raw.IDHash)
 	require.Equal(t, 2, raw.ClusterLicenses.Licensed)
-	require.Equal(t, 2, raw.ClusterLicenses.Distinct)
+	require.Equal(t, []string{"sum-a", "sum-b"}, raw.ClusterLicenses.Checksums)
 }
 
 func TestCollect_UnresolvableAndExpiredLicensesAreSkipped(t *testing.T) {
@@ -737,7 +741,7 @@ func TestCollect_UnresolvableAndExpiredLicensesAreSkipped(t *testing.T) {
 
 	require.Empty(t, raw.IDHash)
 	require.Equal(t, 0, raw.ClusterLicenses.Licensed)
-	require.Equal(t, 0, raw.ClusterLicenses.Distinct)
+	require.Empty(t, raw.ClusterLicenses.Checksums)
 	require.Equal(t, 5, raw.Redpanda.Count)
 }
 
@@ -766,6 +770,73 @@ func TestCollect_IDHashFromLegacyClusterLicense(t *testing.T) {
 
 	require.Equal(t, "sum-a", raw.IDHash)
 	require.Equal(t, 1, raw.ClusterLicenses.Licensed)
+	require.Equal(t, []string{"sum-a"}, raw.ClusterLicenses.Checksums)
+}
+
+// TestCollect_ChecksumsDedupedAndSorted pins the two things the checksum list
+// does that a bare count could not: it deduplicates (several clusters commonly
+// share one license, which is why Licensed is kept alongside it) and it is
+// sorted, so the field does not churn between cycles on Go's map ordering.
+func TestCollect_ChecksumsDedupedAndSorted(t *testing.T) {
+	scheme := testScheme(t)
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		// Two clusters on one license, one on another. Tokens are introduced in
+		// reverse checksum order so a missing sort would show.
+		licensedRedpanda("rp-1", "default", &redpandav1alpha2.Enterprise{License: ptr.To("token-z")}),
+		licensedRedpanda("rp-2", "default", &redpandav1alpha2.Enterprise{License: ptr.To("token-a")}),
+		licensedRedpanda("rp-3", "default", &redpandav1alpha2.Enterprise{License: ptr.To("token-a")}),
+	).Build()
+
+	collector := &Collector{
+		Reader: c,
+		ParseLicense: stubParser(map[string]*license.V1RedpandaLicense{
+			"token-z": enterpriseLicense("sum-z"),
+			"token-a": enterpriseLicense("sum-a"),
+		}),
+	}
+	raw, err := collector.Collect(t.Context())
+	require.NoError(t, err)
+
+	require.Equal(t, []string{"sum-a", "sum-z"}, raw.ClusterLicenses.Checksums, "distinct and sorted")
+	require.Equal(t, 3, raw.ClusterLicenses.Licensed, "counts clusters, not licenses")
+	require.Empty(t, raw.IDHash, "more than one license, so no single representative")
+}
+
+// TestCollect_SkipV1CollectionSkipsLegacyLicenses covers the interaction with
+// SkipV1Collection: a command that does not reconcile the legacy v1 API does not
+// list those clusters, so it does not report their licenses either. Their
+// Secrets are readable — the point is that the clusters are never enumerated.
+func TestCollect_SkipV1CollectionSkipsLegacyLicenses(t *testing.T) {
+	scheme := testScheme(t)
+	objs := []client.Object{
+		&vectorizedv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "legacy", Namespace: "default"},
+			Spec: vectorizedv1alpha1.ClusterSpec{
+				LicenseRef: &vectorizedv1alpha1.SecretKeyRef{Name: "legacy-license", Namespace: "default"},
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "legacy-license", Namespace: "default"},
+			Data:       map[string][]byte{"license": []byte("token-a")},
+		},
+	}
+	parse := stubParser(map[string]*license.V1RedpandaLicense{"token-a": enterpriseLicense("sum-a")})
+
+	// Baseline: without the flag, the legacy license is found (this is
+	// TestCollect_IDHashFromLegacyClusterLicense's shape).
+	base := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
+	raw, err := (&Collector{Reader: base, ParseLicense: parse}).Collect(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, []string{"sum-a"}, raw.ClusterLicenses.Checksums)
+
+	// With the flag, the legacy clusters are never listed, so neither is their
+	// license.
+	skipped := fake.NewClientBuilder().WithScheme(scheme).WithObjects(objs...).Build()
+	raw, err = (&Collector{Reader: skipped, ParseLicense: parse, SkipV1Collection: true}).Collect(t.Context())
+	require.NoError(t, err)
+	require.Empty(t, raw.ClusterLicenses.Checksums)
+	require.Equal(t, 0, raw.ClusterLicenses.Licensed)
+	require.Empty(t, raw.IDHash)
 }
 
 func TestSizing(t *testing.T) {

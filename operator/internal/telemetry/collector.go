@@ -179,9 +179,12 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 
 	// Legacy v1 clusters, unless the running command declares it does not
-	// reconcile that API (SkipV1Collection).
+	// reconcile that API (SkipV1Collection). Declared outside the guard so the
+	// license pass below sees an empty list rather than nothing when skipped —
+	// a command that does not manage those clusters does not own their licenses
+	// either.
+	var vectorized vectorizedv1alpha1.ClusterList
 	if !c.SkipV1Collection {
-		var vectorized vectorizedv1alpha1.ClusterList
 		if ok, err := c.list(ctx, &vectorized); err != nil {
 			return nil, err
 		} else if ok {
@@ -211,15 +214,20 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	// own license and stays authoritative; otherwise a single license across the
 	// fleet is reported as id_hash, which is the shape of nearly every install.
 	// With several distinct licenses no one checksum represents the install, so
-	// id_hash is left empty and the counts below say why.
+	// id_hash is left empty and clusterLicenses.checksums carries them all —
+	// such a fleet still correlates to every account it belongs to.
 	licenses := c.clusterLicenses(ctx, redpandas.Items, vectorized.Items)
-	for _, clusters := range licenses {
-		payload.ClusterLicenses.Licensed += clusters
-	}
-	payload.ClusterLicenses.Distinct = len(licenses)
-	if payload.IDHash == "" && len(licenses) == 1 {
-		for checksum := range licenses {
-			payload.IDHash = checksum
+	if len(licenses) > 0 {
+		checksums := make([]string, 0, len(licenses))
+		for checksum, clusters := range licenses {
+			checksums = append(checksums, checksum)
+			payload.ClusterLicenses.Licensed += clusters
+		}
+		sort.Strings(checksums)
+		payload.ClusterLicenses.Checksums = checksums
+
+		if payload.IDHash == "" && len(checksums) == 1 {
+			payload.IDHash = checksums[0]
 		}
 	}
 
