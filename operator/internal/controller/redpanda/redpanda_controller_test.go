@@ -1226,16 +1226,38 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 	}
 }
 
-func TestPostInstallUpgradeJobIndex(t *testing.T) {
-	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, map[string]any{})
-	require.NoError(t, err)
+// TestBootstrapYamlTemplaterOnStatefulSet asserts the invariant `clusterConfigFor`
+// relies on: the bootstrap-yaml-envsubst init container is always present on the
+// rendered StatefulSet and findable by name, whatever `post_install_job.enabled`
+// is set to.
+//
+// `clusterConfigFor` used to read this container off PostInstallUpgradeJob, which
+// returns nil when the job is disabled — nil dereferencing and silently wedging
+// cluster configuration for the whole cluster.
+// See https://github.com/redpanda-data/redpanda-operator/issues/1021
+func TestBootstrapYamlTemplaterOnStatefulSet(t *testing.T) {
+	for name, values := range map[string]map[string]any{
+		"chart defaults":            {},
+		"post_install_job enabled":  {"post_install_job": map[string]any{"enabled": true}},
+		"post_install_job disabled": {"post_install_job": map[string]any{"enabled": false}},
+	} {
+		t.Run(name, func(t *testing.T) {
+			dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, values)
+			require.NoError(t, err)
 
-	state := &redpandachart.RenderState{Dot: dot, Values: helmette.Unwrap[redpandachart.Values](dot.Values), Chart: &dot.Chart, Files: &dot.Files, Release: &dot.Release}
-	job := redpandachart.PostInstallUpgradeJob(state)
+			state, err := redpandachart.RenderStateFromDot(dot)
+			require.NoError(t, err)
 
-	// Assert that index 0 is the envsubst container as that's what
-	// `clusterConfigfor` utilizes.
-	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
+			sts := redpandachart.StatefulSet(state, redpandachart.Pool{Statefulset: state.Values.Statefulset})
+			names := make([]string, 0, len(sts.Spec.Template.Spec.InitContainers))
+			for _, c := range sts.Spec.Template.Spec.InitContainers {
+				names = append(names, c.Name)
+			}
+
+			require.Contains(t, names, redpandachart.BootstrapYamlTemplaterContainerName,
+				"the StatefulSet must always carry the bootstrap templater; got init containers %v", names)
+		})
+	}
 }
 
 // TestControllerRBAC asserts that the declared Roles and ClusterRoles of the
