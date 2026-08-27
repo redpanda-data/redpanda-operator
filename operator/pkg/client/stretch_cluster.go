@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
@@ -300,7 +301,10 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 // across all clusters known to the manager, and builds per-pod endpoint addresses
 // for the given port.
 func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alpha2.StretchCluster, port int32) ([]string, error) {
-	var endpoints []string
+	// declared is every endpoint the pool specs ask for; dialable is the subset
+	// whose backing pod can currently accept a connection. See the return for
+	// why both are tracked.
+	var declared, dialable []string
 
 	for _, clusterName := range c.mgr.GetClusterNames() {
 		// Skip peers the probe has marked unreachable. Without this the List
@@ -332,6 +336,16 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			return nil, errors.Wrapf(err, "listing RedpandaBrokerPools in cluster %s", clusterName)
 		}
 
+		servable, podsErr := dialablePodNames(ctx, k8sClient, sc.Namespace)
+		podsKnown := podsErr == nil
+		if !podsKnown {
+			// Losing the pod list costs us only the filter. Offer this
+			// cluster's endpoints unfiltered rather than fail a client
+			// construction that never needed pod state before.
+			log.FromContext(ctx).V(log.DebugLevel).Info("pod list unavailable; not filtering admin endpoints for this cluster",
+				"cluster", clusterName, "error", podsErr.Error())
+		}
+
 		for i := range brokerPoolList.Items {
 			pool := &brokerPoolList.Items[i]
 			ref := pool.Spec.ClusterRef
@@ -341,11 +355,75 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			for j := int32(0); j < pool.GetReplicas(); j++ {
 				poolFullname := tplutil.CleanForK8s(sc.Name) + pool.Suffix()
 				name := rendermulticluster.PerPodServiceName(poolFullname, j)
-				endpoints = append(endpoints, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port))
+				endpoint := fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port)
+				declared = append(declared, endpoint)
+				// A per-pod Service and its backing Pod share a name, so the
+				// endpoint host is the pod to look up.
+				if !podsKnown || servable[name] {
+					dialable = append(dialable, endpoint)
+				}
 			}
 		}
 	}
-	return endpoints, nil
+
+	// Prefer brokers that can answer. Falling back to the declared list when
+	// none look dialable keeps a whole-cluster outage behaving as it did
+	// before, rather than failing earlier with a different error: the caller
+	// treats an empty list as fatal, and "every broker is down" is a state the
+	// admin client is expected to be built in and fail against.
+	if len(dialable) > 0 {
+		return dialable, nil
+	}
+	return declared, nil
+}
+
+// dialablePodNames returns the names of pods in ns that can currently accept a
+// connection. A non-nil error means the pod state is unknown, which the caller
+// treats as "do not filter" rather than as a failure.
+//
+// The admin client's host list is otherwise built purely from each
+// RedpandaBrokerPool's declared replica count, so it offers every broker the
+// spec asks for, including ones that are deliberately absent: a pool that was
+// just deleted, or the broker being rolled during a restart-requiring config
+// change. Whichever host a reconcile happens to pick, an absent one fails the
+// call, and the steps that gate on it make no progress as a result --
+// reconcileDecommission cannot read cluster health, so it never deletes the
+// removed pool's StatefulSet, and the maintenance-mode pass defers on an
+// unreadable broker list instead of advancing the roll. Neither recovers on its
+// own while the host list keeps offering the same absent broker.
+func dialablePodNames(ctx context.Context, k8sClient client.Client, ns string) (map[string]bool, error) {
+	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
+	defer listCancel()
+
+	var pods corev1.PodList
+	if err := k8sClient.List(listCtx, &pods, client.InNamespace(ns)); err != nil {
+		return nil, errors.Wrapf(err, "listing pods in namespace %s", ns)
+	}
+
+	dialable := make(map[string]bool, len(pods.Items))
+	for i := range pods.Items {
+		if podDialable(&pods.Items[i]) {
+			dialable[pods.Items[i].Name] = true
+		}
+	}
+	return dialable, nil
+}
+
+// podDialable reports whether a connection to pod can be established at all.
+//
+// Readiness is deliberately not part of this. The operator talks to unready
+// brokers on purpose -- reconcileStaleDiskWipe reads a rejoining broker's
+// identity through RedpandaAdminClientForStretchPod -- so only pods that cannot
+// accept a connection are excluded: ones that are terminating, have finished,
+// or have no address yet.
+func podDialable(pod *corev1.Pod) bool {
+	if pod.DeletionTimestamp != nil {
+		return false
+	}
+	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+		return false
+	}
+	return pod.Status.PodIP != ""
 }
 
 // stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS
