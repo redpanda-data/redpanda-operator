@@ -54,10 +54,13 @@ func TestUnifiedSchemeRecognizesTelemetryTypes(t *testing.T) {
 // each command actually installs, so nobody has to work out what is installed
 // versus what is merely registered with the client.
 //
-// The collector lists that type anyway, and gets a NotRegistered error here.
-// That is safe only because Collector.list tolerates NotRegistered alongside
-// NoMatch and Forbidden — see TestCollect_ToleratesTypeMissingFromScheme in
-// internal/telemetry, which is the test that makes this omission survivable.
+// The telemetry collector therefore does not list that type when running under
+// this command: cmd/multicluster sets telemetry.Options.SkipV1Collection, so the
+// list is skipped outright rather than attempted and tolerated — see
+// TestCollect_SkipV1CollectionIssuesNoV1List in internal/telemetry. (Collector.list
+// also tolerates NotRegistered as a backstop for a type nobody thought to gate,
+// but that is not what keeps this omission safe.)
+//
 // The visible consequence is that legacy vectorized Clusters running alongside a
 // multicluster install are not counted in telemetry; they are not managed by
 // that command either.

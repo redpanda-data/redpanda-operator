@@ -3,21 +3,25 @@ kind: Fixed
 body: |-
     The multicluster operator now reports telemetry instead of dropping every report.
 
-      The telemetry collector lists the legacy `vectorized.io/v1alpha1` `Cluster`
-      API, which the multicluster command's scheme does not register because it
-      does not reconcile that API. The resulting
+      The telemetry collector listed the legacy `vectorized.io/v1alpha1` `Cluster`
+      API unconditionally, which the multicluster command's scheme does not
+      register because it does not reconcile that API. The resulting
       `no kind is registered for the type v1alpha1.ClusterList` is neither a
       NoMatch nor a Forbidden, so it propagated out of `Collect` and the reporter
       discarded the whole document on every cycle — no stretch or multicluster
       install has ever reported telemetry, in any release.
 
-      The collector now tolerates a type that is missing from the running
-      command's scheme the same way it already tolerated a missing CRD or missing
-      RBAC: that field degrades to its zero value and every other field is still
-      reported.
+      The `multicluster` command now declares that it does not collect the legacy
+      v1 API, so that list is skipped outright rather than attempted against a
+      scheme that cannot serialize it. This keeps each command's scheme matching
+      the CRDs it actually installs and saves an API server round trip per
+      reporting cycle. As a backstop for any future type a command's scheme
+      omits, the collector also tolerates a not-registered type the same way it
+      already tolerated a missing CRD or missing RBAC: that one field degrades to
+      its zero value and every other field is still reported, instead of the
+      whole install vanishing from the dataset.
 
       One consequence worth knowing: legacy `vectorized.io/v1alpha1` clusters
-      running alongside a multicluster install are reported as zero, because the
-      multicluster command never registers that type. Those clusters are not
-      managed by that command either.
+      running alongside a multicluster install are reported as zero. Those
+      clusters are not managed by that command either.
 time: 2026-08-26T10:15:00.000000-07:00
