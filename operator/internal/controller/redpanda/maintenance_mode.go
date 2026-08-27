@@ -376,9 +376,22 @@ func clearStuckMaintenanceMode(ctx context.Context, admin *rpadmin.AdminAPI, pod
 	// only gates WHETHER we pin the leader, never a write — a stale view that
 	// hides work defers to a later pass, and one that invents work is caught by
 	// the leader-pinned re-read below that keys every actual clear.
+	//
+	// A failed read defers the pass rather than aborting it. This step is FIRST
+	// in both reconcile chains, and an error from it aborts every later step for
+	// that pass — including reconcileDecommission and reconcileClusterConfig. The
+	// cluster admin client resolves through the internal service
+	// (PublishNotReadyAddresses), so it can dial a broker whose pod is already
+	// gone: mid-roll, mid-decommission, or a BrokerPool being deleted. Those are
+	// exactly the states the later steps exist to resolve, so propagating the
+	// error deadlocks — the pass that would remove the unreachable broker never
+	// runs, which keeps it unreachable. Deferring costs at most one pass of
+	// maintenance-mode clearing, and no clear is possible without a readable
+	// broker list anyway.
 	brokers, err := admin.Brokers(ctx)
 	if err != nil {
-		return errors.Wrap(err, "listing brokers for maintenance-mode reconcile")
+		logger.Info("broker list unavailable; deferring maintenance-mode reconcile this pass", "error", err.Error())
+		return nil
 	}
 	if !maintenanceWorkPending(brokers) {
 		return nil
