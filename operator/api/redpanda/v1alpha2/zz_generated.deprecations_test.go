@@ -7,6 +7,8 @@ package v1alpha2
 // this package:
 //
 // - Redpanda:
+//   - ChartRef.ChartVersion
+//   - ChartRef.UseFlux
 //   - ClusterSpec.Console
 //   - ClusterSpec.Connectors
 //   - ClusterSpec.Connectors.Test.Enabled
