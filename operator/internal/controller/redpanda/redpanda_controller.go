@@ -1433,13 +1433,19 @@ func ignoreConflict(err error) (ctrl.Result, error) {
 	return ctrl.Result{}, err
 }
 
+// validateClusterParameters rejects Redpanda resources that still carry
+// FluxCD-era settings.
+//
+// The deprecated reads below are the point of this function, not an oversight:
+// rejecting a field is the one thing that has to keep looking at it. They stay
+// until the fields themselves are removed from the API.
 func validateClusterParameters(rp *redpandav1alpha2.Redpanda) error {
 	// Upgrade checks. Don't reconcile if UseFlux is true or if ChartRef is set.
-	if rp.Spec.ChartRef.UseFlux != nil && *rp.Spec.ChartRef.UseFlux {
+	if rp.Spec.ChartRef.UseFlux != nil && *rp.Spec.ChartRef.UseFlux { //nolint:staticcheck // SA1019: deprecated on purpose — this check exists to reject it
 		return errors.New("useFlux: true is no longer supported. Please downgrade or unset `useFlux`")
 	}
 
-	if rp.Spec.ChartRef.ChartVersion != "" {
+	if rp.Spec.ChartRef.ChartVersion != "" { //nolint:staticcheck // SA1019: deprecated on purpose — this check exists to reject it
 		return errors.New("Specifying chartVersion is no longer supported. Please downgrade or unset `chartRef.chartVersion`")
 	}
 
