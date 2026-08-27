@@ -308,6 +308,12 @@ func (o *RunOptions) ControllerEnabled(controller Controller) bool {
 // uncached API reader, so only "list" (not "watch") is required.
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=list
 // +kubebuilder:rbac:groups=apps,namespace=default,resources=replicasets,verbs=get
+// Telemetry also reads the Secrets referenced by a cluster's enterprise license
+// (Redpanda .spec.clusterSpec.enterprise.licenseSecretRef, legacy
+// Cluster .spec.licenseRef) to report the license checksum as id_hash. That
+// needs no marker of its own: the manager already holds get on secrets
+// cluster-wide, and a Forbidden read is tolerated — the install simply reports
+// no id_hash.
 
 func Command() *cobra.Command {
 	var options RunOptions

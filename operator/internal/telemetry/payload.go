@@ -21,6 +21,23 @@ type Payload struct {
 	// clusters correlate to an account. Absent (omitted) for OSS/unlicensed
 	// installs, keeping those reports anonymous.
 	IDHash string `json:"id_hash,omitempty"`
+	// ClusterLicenses describes the enterprise licenses configured on the
+	// managed clusters. It is also how an empty IDHash is told apart from an
+	// unlicensed install: len(Checksums)>1 means the fleet holds several
+	// licenses and no single one represents it, so IDHash is left empty and the
+	// correlation is done from this list instead.
+	ClusterLicenses struct {
+		// Checksums are the distinct license checksums found across the managed
+		// clusters, sorted. Same value Redpanda core reports as id_hash, so a
+		// multi-license fleet still correlates to every account it belongs to
+		// rather than to none.
+		Checksums []string `json:"checksums,omitempty"`
+		// Licensed counts clusters carrying a valid, unexpired enterprise
+		// license (Redpanda .spec.clusterSpec.enterprise, legacy
+		// Cluster .spec.licenseRef). Not derivable from Checksums, which is
+		// deduplicated: several clusters commonly share one license.
+		Licensed int `json:"licensed"`
+	} `json:"clusterLicenses"`
 
 	NodePools struct {
 		Enabled bool `json:"enabled"`

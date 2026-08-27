@@ -1,0 +1,27 @@
+project: operator
+kind: Added
+body: |-
+    Telemetry now reports `id_hash` for clusters licensed through their CR, not only for operators given their own license file.
+
+      `id_hash` was previously derived solely from the operator's own
+      `--license-file-path` (operator chart `enterprise.licenseSecretRef`), which
+      deployers set only for the Connect controller or multicluster — so every
+      install that licensed Redpanda the usual way, on the CR, reported no
+      `id_hash` and could not be correlated to an account. The collector now
+      resolves the license configured on each managed cluster
+      (`Redpanda .spec.clusterSpec.enterprise.license`/`licenseSecretRef` and
+      legacy `Cluster .spec.licenseRef`) and reports its checksum.
+
+      The operator's own license stays authoritative when present. A new
+      `clusterLicenses.checksums` field carries the distinct license checksums
+      found across the managed clusters, sorted, so a fleet holding several
+      licenses still correlates to every account it belongs to instead of to
+      none; `id_hash` itself is left empty in that case, since no single checksum
+      represents the install. `clusterLicenses.licensed` counts the clusters
+      carrying a valid license, which the deduplicated checksum list cannot
+      express — several clusters commonly share one license.
+
+      Licenses that are expired, non-enterprise, or unreadable are skipped rather
+      than failing the report, and commands that do not reconcile the legacy v1
+      API do not report those clusters' licenses.
+time: 2026-08-26T11:30:00.000000-07:00
