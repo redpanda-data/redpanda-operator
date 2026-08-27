@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redpanda-data/common-go/license"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -66,6 +67,12 @@ type Collector struct {
 	// the reported version tracks in-place cluster upgrades. Optional: when nil,
 	// kubeVersion is omitted from the payload.
 	Discovery discovery.ServerVersionInterface
+	// ParseLicense parses a raw license token, defaulting to
+	// license.ParseLicense. It exists as a seam only because a license cannot be
+	// minted in a test: the parser verifies an RSA signature against a public
+	// key embedded in common-go, and committing a real token to satisfy it is
+	// not an option.
+	ParseLicense func([]byte) (license.RedpandaLicense, error)
 	// ConnectDefaultImage is the operator-level Connect image override (the
 	// --connect-default-image flag / connectController.image chart values).
 	// Needed to resolve the effective image of Pipelines that don't pin
@@ -172,9 +179,12 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 
 	// Legacy v1 clusters, unless the running command declares it does not
-	// reconcile that API (SkipV1Collection).
+	// reconcile that API (SkipV1Collection). Declared outside the guard so the
+	// license pass below sees an empty list rather than nothing when skipped —
+	// a command that does not manage those clusters does not own their licenses
+	// either.
+	var vectorized vectorizedv1alpha1.ClusterList
 	if !c.SkipV1Collection {
-		var vectorized vectorizedv1alpha1.ClusterList
 		if ok, err := c.list(ctx, &vectorized); err != nil {
 			return nil, err
 		} else if ok {
@@ -197,6 +207,27 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 				}
 			}
 			vec.into(&payload.VectorizedClusters.TotalCPUCores, &payload.VectorizedClusters.TotalMemoryGiB, &payload.VectorizedClusters.BrokerSizes)
+		}
+	}
+
+	// Licensing of the managed clusters. c.IDHash, when set, is the operator's
+	// own license and stays authoritative; otherwise a single license across the
+	// fleet is reported as id_hash, which is the shape of nearly every install.
+	// With several distinct licenses no one checksum represents the install, so
+	// id_hash is left empty and clusterLicenses.checksums carries them all —
+	// such a fleet still correlates to every account it belongs to.
+	licenses := c.clusterLicenses(ctx, redpandas.Items, vectorized.Items)
+	if len(licenses) > 0 {
+		checksums := make([]string, 0, len(licenses))
+		for checksum, clusters := range licenses {
+			checksums = append(checksums, checksum)
+			payload.ClusterLicenses.Licensed += clusters
+		}
+		sort.Strings(checksums)
+		payload.ClusterLicenses.Checksums = checksums
+
+		if payload.IDHash == "" && len(checksums) == 1 {
+			payload.IDHash = checksums[0]
 		}
 	}
 
