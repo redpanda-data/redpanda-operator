@@ -978,6 +978,21 @@
     "monitoring": {
       "additionalProperties": false,
       "properties": {
+        "clusterLabel": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "name": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
         "enabled": {
           "type": "boolean"
         },

@@ -88,10 +88,11 @@ type PartialServiceAccountConfig struct {
 }
 
 type PartialMonitoringConfig struct {
-	Enabled        *bool             "json:\"enabled,omitempty\""
-	RulesEnabled   *bool             "json:\"rulesEnabled,omitempty\""
-	Labels         map[string]string "json:\"labels,omitempty\""
-	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
+	Enabled        *bool                "json:\"enabled,omitempty\""
+	RulesEnabled   *bool                "json:\"rulesEnabled,omitempty\""
+	Labels         map[string]string    "json:\"labels,omitempty\""
+	ScrapeInterval *string              "json:\"scrapeInterval,omitempty\""
+	ClusterLabel   *PartialClusterLabel "json:\"clusterLabel,omitempty\""
 }
 
 type PartialCRDs struct {
@@ -154,6 +155,12 @@ type PartialWebhookConfig struct {
 type PartialLeaderElectionConfig struct {
 	LeaderElect  *bool   "json:\"leaderElect,omitempty\""
 	ResourceName *string "json:\"resourceName,omitempty\""
+}
+
+type PartialClusterLabel struct {
+	Enabled *bool   "json:\"enabled,omitempty\""
+	Name    *string "json:\"name,omitempty\""
+	Value   *string "json:\"value,omitempty\""
 }
 
 type PartialConnectMonitoringConfig struct {

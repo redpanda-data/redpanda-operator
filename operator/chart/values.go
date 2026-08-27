@@ -271,4 +271,45 @@ type MonitoringConfig struct {
 	RulesEnabled   bool              `json:"rulesEnabled"`
 	Labels         map[string]string `json:"labels"`
 	ScrapeInterval string            `json:"scrapeInterval"`
+	ClusterLabel   ClusterLabel      `json:"clusterLabel"`
+}
+
+// ClusterLabel configures an opt-in scrape-time label identifying which
+// Kubernetes cluster a series came from.
+//
+// It applies whenever operator metrics from more than one Kubernetes cluster
+// end up in the same Prometheus-compatible backend — whether that is several
+// independent single-cluster installs remote_writing to a shared Mimir/Thanos,
+// or one StretchCluster spanning clusters. In either case nothing in the
+// scraped series says which cluster produced it: job, namespace, service and
+// pod names are identical in every cluster, and identical by design when each
+// install uses the same release name. The series collide, and a graph sums
+// clusters together without saying so.
+//
+// Stretch clusters are the case that forces it, because a StretchCluster is one
+// logical cluster and the questions asked of it — which operator holds raft
+// leadership, which region is behind — cannot be answered from any single
+// cluster's metrics. There the value defaults to multicluster.name, so only the
+// toggle is needed. A single-cluster install must supply Value itself, since
+// there is no cluster identity to inherit.
+//
+// Off by default: one cluster reporting to its own Prometheus has nothing to
+// disambiguate, and adding a label to everyone's metrics would churn existing
+// dashboards and recording rules.
+type ClusterLabel struct {
+	// Enabled adds the label to every series scraped from this operator.
+	Enabled bool `json:"enabled"`
+	// Name is the label to set. Defaults to "redpanda_k8s_cluster".
+	Name string `json:"name"`
+	// Value is the label's value. When `multicluster.enabled` is true it
+	// defaults to `multicluster.name`, which is already the cluster's identity
+	// in the operator's raft group, so a stretch deployment needs no extra
+	// configuration.
+	//
+	// Required otherwise. The fallback is deliberately gated on multicluster
+	// mode being enabled rather than merely on `multicluster.name` being set:
+	// that value configures nothing else when multicluster is disabled, so
+	// inheriting it there would turn a stale or aspirational name into a metric
+	// label with nothing pointing at the connection.
+	Value string `json:"value"`
 }

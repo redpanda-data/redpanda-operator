@@ -50,6 +50,43 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 		endpoint.Interval = monitoringv1.Duration(values.Monitoring.ScrapeInterval)
 	}
 
+	// Stamp the source cluster onto every series, for deployments that
+	// aggregate several clusters' operator metrics into one backend. See the
+	// ClusterLabel godoc for why this is off by default.
+	//
+	// A relabeling with a targetLabel and a replacement but no sourceLabels is
+	// the standard way to set a static label at scrape time; `action` defaults
+	// to "replace".
+	if values.Monitoring.ClusterLabel.Enabled {
+		labelName := values.Monitoring.ClusterLabel.Name
+		if labelName == "" {
+			labelName = "redpanda_k8s_cluster"
+		}
+
+		// Inherit multicluster.name only when multicluster mode is actually
+		// enabled. The value is a plain string that can be set with
+		// multicluster.enabled false, where it configures nothing else — so
+		// falling back to it unconditionally would let a stale or aspirational
+		// name silently become a metric label, which is the kind of action at a
+		// distance nobody goes looking for.
+		labelValue := values.Monitoring.ClusterLabel.Value
+		if labelValue == "" && values.Multicluster.Enabled {
+			labelValue = values.Multicluster.Name
+		}
+
+		// Nothing meaningful to stamp. An empty replacement would produce an
+		// empty label, which reads as data rather than as absence, so fail the
+		// render instead of shipping it.
+		if labelValue == "" {
+			panic("monitoring.clusterLabel.value must be set unless multicluster.enabled is true and multicluster.name is non-empty")
+		}
+
+		endpoint.RelabelConfigs = append(endpoint.RelabelConfigs, monitoringv1.RelabelConfig{
+			TargetLabel: labelName,
+			Replacement: ptr.To(labelValue),
+		})
+	}
+
 	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceMonitor",
