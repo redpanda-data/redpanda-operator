@@ -484,6 +484,93 @@ func TestCollect_DegradesOnMissingCRDAndForbidden(t *testing.T) {
 	require.Equal(t, 0, raw.Resources.Users)
 }
 
+// TestCollect_ToleratesTypeMissingFromScheme covers the backstop rather than the
+// mechanism: SkipV1Collection is how the multicluster command avoids this
+// specific list (see TestCollect_SkipV1CollectionIssuesNoV1List). This asserts
+// what happens when some future collected type is missing from some command's
+// scheme with no flag guarding it — one field degrades, the document still goes
+// out. Without the tolerance in Collector.list, that case silently discards
+// every report for the life of the process.
+func TestCollect_ToleratesTypeMissingFromScheme(t *testing.T) {
+	// A scheme that never registered vectorized/v1alpha1, with the skip flag
+	// deliberately left unset so the List is actually attempted and fails with
+	// a NotRegistered error.
+	scheme := apimachineryruntime.NewScheme()
+	require.NoError(t, corev1.AddToScheme(scheme))
+	require.NoError(t, apiextensionsv1.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&redpandav1alpha2.StretchCluster{ObjectMeta: metav1.ObjectMeta{Name: "sc-1", Namespace: "default"}},
+	).Build()
+
+	// Guard the premise: the List really does fail, and with NotRegistered.
+	err := c.List(t.Context(), &vectorizedv1alpha1.ClusterList{})
+	require.Error(t, err)
+	require.True(t, apimachineryruntime.IsNotRegisteredError(err), "expected NotRegistered, got %v", err)
+
+	collector := &Collector{Reader: c, ID: "id", OperatorVersion: "v26.2.2"}
+	raw, err := collector.Collect(t.Context())
+	require.NoError(t, err) // tolerated, document still sent
+
+	require.Equal(t, "id", raw.ID)
+	require.True(t, raw.StretchCluster.Enabled)
+	require.Equal(t, 1, raw.StretchCluster.Count)
+	// The unregistered type degrades to its zero value.
+	require.Equal(t, 0, raw.VectorizedClusters.Count)
+}
+
+// TestCollect_SkipV1CollectionIssuesNoV1List asserts that SkipV1Collection is a
+// real skip and not merely error tolerance: the legacy v1 Cluster list must
+// never be issued, so a command whose scheme omits the type spends no API server
+// round trip on it. This is the mechanism the multicluster command relies on.
+func TestCollect_SkipV1CollectionIssuesNoV1List(t *testing.T) {
+	// A full scheme, so a vectorized List would actually succeed here. The
+	// assertion is that it is never attempted.
+	scheme := testScheme(t)
+	base := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&redpandav1alpha2.StretchCluster{ObjectMeta: metav1.ObjectMeta{Name: "sc-1", Namespace: "default"}},
+		&vectorizedv1alpha1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "legacy-1", Namespace: "default"}},
+	).Build()
+
+	var v1Listed bool
+	reader := stubReader{
+		Reader: base,
+		listErr: func(list client.ObjectList) error {
+			if _, ok := list.(*vectorizedv1alpha1.ClusterList); ok {
+				v1Listed = true
+			}
+			return nil
+		},
+	}
+
+	collector := &Collector{Reader: reader, ID: "id", OperatorVersion: "v26.2.2", SkipV1Collection: true}
+	raw, err := collector.Collect(t.Context())
+	require.NoError(t, err)
+
+	require.False(t, v1Listed, "SkipV1Collection must not issue the legacy v1 Cluster list")
+	// Skipped, so the field reports its zero value even though a legacy Cluster
+	// exists — the same shape as an install without the v1 CRD.
+	require.Equal(t, 0, raw.VectorizedClusters.Count)
+	// Everything else is still collected.
+	require.True(t, raw.StretchCluster.Enabled)
+	require.Equal(t, 1, raw.StretchCluster.Count)
+}
+
+// TestCollect_V1CollectedByDefault is the counterpart: with the flag unset (the
+// `run` command), legacy clusters are listed and counted as before.
+func TestCollect_V1CollectedByDefault(t *testing.T) {
+	scheme := testScheme(t)
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&vectorizedv1alpha1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "legacy-1", Namespace: "default"}},
+	).Build()
+
+	collector := &Collector{Reader: c, ID: "id", OperatorVersion: "v26.2.2"}
+	raw, err := collector.Collect(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, 1, raw.VectorizedClusters.Count)
+}
+
 func TestCollect_PropagatesUnexpectedError(t *testing.T) {
 	scheme := testScheme(t)
 	base := fake.NewClientBuilder().WithScheme(scheme).Build()
