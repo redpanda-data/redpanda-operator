@@ -601,6 +601,12 @@ func Run(
 			IDHash:   telemetry.LicenseChecksum(l),
 			Features: features,
 			Period:   opts.telemetryPeriod,
+			// This command does not reconcile the legacy v1
+			// (vectorized.io/v1alpha1) Cluster API, so that type is not in its
+			// scheme and listing it could only ever fail. Declining the
+			// collection explicitly keeps the scheme matching the CRDs this
+			// command installs and saves an API server round trip per cycle.
+			SkipV1Collection: true,
 		})
 		if err != nil {
 			setupLog.Error(err, "unable to build telemetry runnable")
