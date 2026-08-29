@@ -11,6 +11,8 @@
 package operator
 
 import (
+	"fmt"
+
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -38,12 +40,33 @@ import (
 //     reconcile errors.
 //   - The alert thresholds are conservative defaults; operators can
 //     override by setting their own PrometheusRule alongside this one.
+//
+// Every expression is scoped to THIS install. controller_runtime_* and
+// workqueue_* are not Redpanda-specific metric names — every
+// controller-runtime-based operator on the cluster exports them (Karpenter,
+// Flux, cert-manager, Trivy, ...). Unscoped, the alerts fire for foreign
+// controllers and, worse, `sum by (controller)` merges same-named controllers
+// across operators so downstream consumers cannot filter the recorded series
+// after the fact. Two labels pin the series:
+//
+//   - job: prometheus-operator defaults a ServiceMonitor's `job` to the scraped
+//     Service's name when spec.jobLabel is unset, which is the case for the
+//     ServiceMonitor this chart renders — so `job` is the metrics Service name.
+//   - namespace: the release namespace, which the chart always knows.
+//
+// Both are also kept in the `sum by (...)` grouping so two operator installs on
+// one cluster produce distinct recorded series instead of merging. See K8S-926.
 func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 	values := helmette.Unwrap[Values](dot.Values)
 
 	if !values.Monitoring.RulesEnabled {
 		return nil
 	}
+
+	scope := fmt.Sprintf(`job="%s", namespace="%s"`,
+		cleanForK8sWithSuffix(Fullname(dot), "metrics-service"),
+		dot.Release.Namespace,
+	)
 
 	return &monitoringv1.PrometheusRule{
 		TypeMeta: metav1.TypeMeta{
@@ -63,21 +86,22 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 					Rules: []monitoringv1.Rule{
 						{
 							Record: "operator:reconcile_rate:5m",
-							Expr:   intstr.FromString(`sum by (controller) (rate(controller_runtime_reconcile_total[5m]))`),
+							Expr:   intstr.FromString(fmt.Sprintf(`sum by (controller, job, namespace) (rate(controller_runtime_reconcile_total{%s}[5m]))`, scope)),
 						},
 						{
 							Record: "operator:reconcile_error_rate:5m",
-							Expr:   intstr.FromString(`sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))`),
+							Expr:   intstr.FromString(fmt.Sprintf(`sum by (controller, job, namespace) (rate(controller_runtime_reconcile_errors_total{%s}[5m]))`, scope)),
 						},
 						{
 							Record: "operator:reconcile_steady_state_rate:5m",
-							Expr:   intstr.FromString(`sum by (controller) (rate(operator_controller_reconcile_steady_state_total[5m]))`),
+							Expr:   intstr.FromString(fmt.Sprintf(`sum by (controller, job, namespace) (rate(operator_controller_reconcile_steady_state_total{%s}[5m]))`, scope)),
 						},
 						{
 							Record: "operator:reconcile_p99_seconds:5m",
-							Expr: intstr.FromString(
-								`histogram_quantile(0.99, sum by (le, controller) (rate(controller_runtime_reconcile_time_seconds_bucket[5m])))`,
-							),
+							Expr: intstr.FromString(fmt.Sprintf(
+								`histogram_quantile(0.99, sum by (le, controller, job, namespace) (rate(controller_runtime_reconcile_time_seconds_bucket{%s}[5m])))`,
+								scope,
+							)),
 						},
 					},
 				},
@@ -96,7 +120,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 								"severity": "warning",
 							},
 							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} is failing reconciles",
+								"summary":     "Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace }} is failing reconciles",
 								"description": "Controller {{ $labels.controller }} has been returning errors at >0.1/s for 5+ minutes. Check the operator pod logs and the relevant resource's status.",
 							},
 						},
@@ -113,7 +137,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 								"severity": "warning",
 							},
 							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} is reconciling at a high rate",
+								"summary":     "Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace }} is reconciling at a high rate",
 								"description": "Controller {{ $labels.controller }} has been reconciling at >5/s for 5+ minutes. On a stable cluster this means the controller is spinning. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while the reconcile rate is high, the controller is making no progress.",
 							},
 						},
@@ -133,7 +157,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 								"severity": "warning",
 							},
 							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} has stopped reconciling",
+								"summary":     "Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace }} has stopped reconciling",
 								"description": "Controller {{ $labels.controller }} was active in the last hour but has reconciled zero times in the past 10 minutes. The controller may have stopped responding to events.",
 							},
 						},
@@ -144,15 +168,16 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// controller is too slow or
 							// MaxConcurrentReconciles is misconfigured.
 							Alert: "OperatorWorkerPoolSaturated",
-							Expr: intstr.FromString(
-								`controller_runtime_active_workers >= controller_runtime_max_concurrent_reconciles`,
-							),
+							Expr: intstr.FromString(fmt.Sprintf(
+								`controller_runtime_active_workers{%s} >= controller_runtime_max_concurrent_reconciles{%s}`,
+								scope, scope,
+							)),
 							For: ptrDuration("10m"),
 							Labels: map[string]string{
 								"severity": "warning",
 							},
 							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} worker pool saturated",
+								"summary":     "Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace }} worker pool saturated",
 								"description": "Controller {{ $labels.controller }} has all reconcile workers busy for 10+ minutes. Reconciles may be queueing. Consider increasing MaxConcurrentReconciles or investigating per-reconcile latency.",
 							},
 						},
@@ -168,7 +193,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// the operator_stretchcluster_member_reachable
 							// gauge. Healthy clusters self-recover quickly.
 							Alert: "StretchClusterMemberUnreachable",
-							Expr:  intstr.FromString(`operator_stretchcluster_member_reachable == 0`),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator_stretchcluster_member_reachable{%s} == 0`, scope)),
 							For:   ptrDuration("2m"),
 							Labels: map[string]string{
 								"severity": "warning",
@@ -185,7 +210,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// rolling restarts; sustained drift means a pod
 							// won't come up.
 							Alert: "StretchClusterBrokerCountSkew",
-							Expr:  intstr.FromString(`operator_stretchcluster_brokers - operator_stretchcluster_brokers_ready > 0`),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator_stretchcluster_brokers{%s} - operator_stretchcluster_brokers_ready{%s} > 0`, scope, scope)),
 							For:   ptrDuration("10m"),
 							Labels: map[string]string{
 								"severity": "warning",
@@ -202,7 +227,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// peer) — reconciliation is blocked on every peer
 							// until the operator sees identical specs.
 							Alert: "StretchClusterSpecDrift",
-							Expr:  intstr.FromString(`operator_stretchcluster_spec_drift > 0`),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator_stretchcluster_spec_drift{%s} > 0`, scope)),
 							For:   ptrDuration("5m"),
 							Labels: map[string]string{
 								"severity": "warning",
@@ -219,7 +244,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// majority of peers unreachable, partitions
 							// under-replicated).
 							Alert: "StretchClusterReplicationUnhealthy",
-							Expr:  intstr.FromString(`operator_stretchcluster_replication_health == 0`),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator_stretchcluster_replication_health{%s} == 0`, scope)),
 							For:   ptrDuration("5m"),
 							Labels: map[string]string{
 								"severity": "warning",

@@ -115349,13 +115349,17 @@ spec:
   groups:
   - name: redpanda-operator.controller-runtime.recording
     rules:
-    - expr: sum by (controller) (rate(controller_runtime_reconcile_total[5m]))
+    - expr: sum by (controller, job, namespace) (rate(controller_runtime_reconcile_total{job="operator-metrics-service",
+        namespace="default"}[5m]))
       record: operator:reconcile_rate:5m
-    - expr: sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))
+    - expr: sum by (controller, job, namespace) (rate(controller_runtime_reconcile_errors_total{job="operator-metrics-service",
+        namespace="default"}[5m]))
       record: operator:reconcile_error_rate:5m
-    - expr: sum by (controller) (rate(operator_controller_reconcile_steady_state_total[5m]))
+    - expr: sum by (controller, job, namespace) (rate(operator_controller_reconcile_steady_state_total{job="operator-metrics-service",
+        namespace="default"}[5m]))
       record: operator:reconcile_steady_state_rate:5m
-    - expr: histogram_quantile(0.99, sum by (le, controller) (rate(controller_runtime_reconcile_time_seconds_bucket[5m])))
+    - expr: histogram_quantile(0.99, sum by (le, controller, job, namespace) (rate(controller_runtime_reconcile_time_seconds_bucket{job="operator-metrics-service",
+        namespace="default"}[5m])))
       record: operator:reconcile_p99_seconds:5m
   - name: redpanda-operator.controller-runtime.alerts
     rules:
@@ -115364,8 +115368,8 @@ spec:
         description: Controller {{ $labels.controller }} has been returning errors
           at >0.1/s for 5+ minutes. Check the operator pod logs and the relevant resource's
           status.
-        summary: Redpanda operator controller {{ $labels.controller }} is failing
-          reconciles
+        summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
+          }} is failing reconciles
       expr: operator:reconcile_error_rate:5m > 0.1
       for: 5m
       labels:
@@ -115376,8 +115380,8 @@ spec:
           for 5+ minutes. On a stable cluster this means the controller is spinning.
           Cross-check operator_controller_reconcile_steady_state_total — if it is
           flat while the reconcile rate is high, the controller is making no progress.
-        summary: Redpanda operator controller {{ $labels.controller }} is reconciling
-          at a high rate
+        summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
+          }} is reconciling at a high rate
       expr: operator:reconcile_rate:5m > 5
       for: 5m
       labels:
@@ -115387,8 +115391,8 @@ spec:
         description: Controller {{ $labels.controller }} was active in the last hour
           but has reconciled zero times in the past 10 minutes. The controller may
           have stopped responding to events.
-        summary: Redpanda operator controller {{ $labels.controller }} has stopped
-          reconciling
+        summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
+          }} has stopped reconciling
       expr: max_over_time(operator:reconcile_rate:5m[1h]) > 0 and operator:reconcile_rate:5m
         == 0
       for: 10m
@@ -115399,9 +115403,11 @@ spec:
         description: Controller {{ $labels.controller }} has all reconcile workers
           busy for 10+ minutes. Reconciles may be queueing. Consider increasing MaxConcurrentReconciles
           or investigating per-reconcile latency.
-        summary: Redpanda operator controller {{ $labels.controller }} worker pool
-          saturated
-      expr: controller_runtime_active_workers >= controller_runtime_max_concurrent_reconciles
+        summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
+          }} worker pool saturated
+      expr: controller_runtime_active_workers{job="operator-metrics-service", namespace="default"}
+        >= controller_runtime_max_concurrent_reconciles{job="operator-metrics-service",
+        namespace="default"}
       for: 10m
       labels:
         severity: warning
@@ -115416,7 +115422,8 @@ spec:
           user, status updates) will be skipped until it recovers.
         summary: Redpanda operator cannot reach StretchCluster member {{ $labels.member
           }}
-      expr: operator_stretchcluster_member_reachable == 0
+      expr: operator_stretchcluster_member_reachable{job="operator-metrics-service",
+        namespace="default"} == 0
       for: 2m
       labels:
         severity: warning
@@ -115428,7 +115435,8 @@ spec:
           start or pass readiness.
         summary: StretchCluster {{ $labels.stretchcluster }} member {{ $labels.member
           }} has fewer ready brokers than desired
-      expr: operator_stretchcluster_brokers - operator_stretchcluster_brokers_ready
+      expr: operator_stretchcluster_brokers{job="operator-metrics-service", namespace="default"}
+        - operator_stretchcluster_brokers_ready{job="operator-metrics-service", namespace="default"}
         > 0
       for: 10m
       labels:
@@ -115441,7 +115449,8 @@ spec:
           }} to clear the drift.
         summary: StretchCluster {{ $labels.stretchcluster }} spec has drifted on member
           {{ $labels.member }}
-      expr: operator_stretchcluster_spec_drift > 0
+      expr: operator_stretchcluster_spec_drift{job="operator-metrics-service", namespace="default"}
+        > 0
       for: 5m
       labels:
         severity: warning
@@ -115451,7 +115460,8 @@ spec:
           }} as unhealthy for 5+ minutes. Check broker readiness across members, cross-region
           network health, and partition replication status (rpk cluster health).
         summary: StretchCluster {{ $labels.stretchcluster }} reports unhealthy replication
-      expr: operator_stretchcluster_replication_health == 0
+      expr: operator_stretchcluster_replication_health{job="operator-metrics-service",
+        namespace="default"} == 0
       for: 5m
       labels:
         severity: warning
