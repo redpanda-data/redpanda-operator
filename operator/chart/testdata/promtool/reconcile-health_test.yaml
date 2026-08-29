@@ -1,0 +1,107 @@
+# promtool unit tests for the PrometheusRule the operator chart renders.
+#
+# These run against the real rendered rules, not a copy: `task test:rules`
+# renders the chart into rules.generated.yaml alongside this file and points
+# promtool at it. Editing an expression in operator/chart/prometheusrule.go is
+# therefore enough to make these fail.
+#
+# K8S-926 is what they exist for. `controller_runtime_*` and `workqueue_*` are
+# controller-runtime metric names, not Redpanda ones, so every operator on the
+# cluster exports them identically. Before the rules carried a job/namespace
+# matcher, a busy Karpenter fired OperatorReconcileRunaway annotated as a
+# Redpanda controller, and the recorded series merged same-named controllers
+# across operators beyond recovery. Both scenarios are pinned below.
+
+# Two installs' worth of rendered rules. Each install scopes its own rules to
+# its own job and namespace, so the second file is what makes the "do not merge
+# across installs" test below meaningful: with only one file loaded there is
+# nothing for the first install's rules to collide with.
+rule_files:
+  - rules.generated.yaml
+  - rules-second-install.generated.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # A foreign operator reconciling hard must not produce Redpanda alerts, and
+  # must not appear in Redpanda's recorded series.
+  #
+  # 600 per minute is 10/s, twice the OperatorReconcileRunaway threshold, held
+  # long enough to clear its 5m `for`.
+  - interval: 1m
+    name: a busy foreign operator stays out of Redpanda's rules
+    input_series:
+      # The Redpanda operator, scraped as the chart's ServiceMonitor names it:
+      # prometheus-operator defaults `job` to the Service name.
+      - series: 'controller_runtime_reconcile_total{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+600x15'
+      # Karpenter, from the field report: same metric, same controller-shaped
+      # labels, different operator.
+      - series: 'controller_runtime_reconcile_total{controller="metrics.pod", job="karpenter", namespace="kube-system"}'
+        values: '0+600x15'
+      - series: 'controller_runtime_reconcile_total{controller="state.pod", job="karpenter", namespace="kube-system"}'
+        values: '0+600x15'
+
+    promql_expr_test:
+      # The recorded series carries only the Redpanda operator, and keeps job
+      # and namespace so two installs stay distinguishable.
+      - expr: operator:reconcile_rate:5m
+        eval_time: 12m
+        exp_samples:
+          - labels: 'operator:reconcile_rate:5m{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+            value: 10
+
+    alert_rule_test:
+      # Exactly one alert, for the Redpanda controller. Before the fix this
+      # returned three, two of them Karpenter's.
+      - alertname: OperatorReconcileRunaway
+        eval_time: 12m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              controller: TopicController
+              job: operator-metrics-service
+              namespace: redpanda-system
+            exp_annotations:
+              summary: 'Redpanda operator controller TopicController in redpanda-system is reconciling at a high rate'
+              description: 'Controller TopicController has been reconciling at >5/s for 5+ minutes. On a stable cluster this means the controller is spinning. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while the reconcile rate is high, the controller is making no progress.'
+
+  # Two Redpanda operator installs on one cluster must record separately rather
+  # than summing into one series. This is the half of K8S-926 that could not be
+  # fixed downstream: `sum by (controller)` alone dropped job and namespace, so
+  # no consumer could split them after the fact.
+  #
+  # Both installs' rules are loaded, and each install's series is scraped under
+  # its own job and namespace, exactly as two releases on one cluster produce.
+  - interval: 1m
+    name: two operator installs record separately
+    input_series:
+      - series: 'controller_runtime_reconcile_total{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+600x15'
+      - series: 'controller_runtime_reconcile_total{controller="TopicController", job="operator-two-metrics-service", namespace="redpanda-other"}'
+        values: '0+60x15'
+
+    promql_expr_test:
+      - expr: operator:reconcile_rate:5m
+        eval_time: 12m
+        exp_samples:
+          - labels: 'operator:reconcile_rate:5m{controller="TopicController", job="operator-two-metrics-service", namespace="redpanda-other"}'
+            value: 1
+          - labels: 'operator:reconcile_rate:5m{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+            value: 10
+
+  # The alerts that read raw metrics rather than a recorded series take the
+  # matcher directly. OperatorWorkerPoolSaturated is the controller-runtime one;
+  # a foreign operator at saturation must not fire it.
+  - interval: 1m
+    name: raw-metric alerts are scoped too
+    input_series:
+      - series: 'controller_runtime_active_workers{controller="TopicController", job="karpenter", namespace="kube-system"}'
+        values: '4x15'
+      - series: 'controller_runtime_max_concurrent_reconciles{controller="TopicController", job="karpenter", namespace="kube-system"}'
+        values: '4x15'
+
+    alert_rule_test:
+      - alertname: OperatorWorkerPoolSaturated
+        eval_time: 15m
+        exp_alerts: []
