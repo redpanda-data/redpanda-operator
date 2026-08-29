@@ -206,6 +206,29 @@ tasks:
       {{.GO_TEST_RUNNER}} {{.PKG}} {{.CLI_ARGS}}
       {{- end}}
 
+  test:rules:
+    desc: "Check and unit-test the chart's PrometheusRule with promtool (~10s)"
+    vars:
+      DIR: operator/chart/testdata/promtool
+    cmds:
+    # Rendered rather than committed, so the tests always run against what the
+    # chart produces now. Two installs are rendered because each one scopes its
+    # rules to its own job and namespace: the second file is what lets the
+    # cross-install tests see anything to collide with.
+    - |
+      set -euo pipefail
+      render() {
+        helm template "$1" ./operator/chart \
+          --namespace "$2" \
+          --set monitoring.rulesEnabled=true \
+          | yq eval-all 'select(.kind == "PrometheusRule") | .spec' - > "{{.DIR}}/$3"
+      }
+      render operator     redpanda-system rules.generated.yaml
+      render operator-two redpanda-other  rules-second-install.generated.yaml
+      cd {{.DIR}}
+      promtool check rules rules.generated.yaml rules-second-install.generated.yaml
+      promtool test rules ./*_test.yaml
+
   test:integration:
     desc: "Run all integration tests (~90m)"
     deps:
