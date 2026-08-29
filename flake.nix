@@ -133,6 +133,7 @@
               pkgs.licenseupdater
               pkgs.openssl
               pkgs.otel-desktop-viewer
+              pkgs.prometheus.cli # Provides promtool, which checks and unit-tests the chart's PrometheusRule. The `prometheus` attr ships the server without promtool.
               pkgs.protoc-gen-go
               pkgs.rp-controller-gen
               pkgs.setup-envtest # Kubernetes provided test utilities

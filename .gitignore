@@ -53,3 +53,6 @@ genschema/genschema.xml
 gotohelm/gotohelm.xml
 pkg/pkg.xml
 /result
+
+# Rendered by `task test:rules` for promtool; regenerated on every run.
+operator/chart/testdata/promtool/*.generated.yaml

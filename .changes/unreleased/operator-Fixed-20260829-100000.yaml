@@ -1,0 +1,12 @@
+project: operator
+kind: Fixed
+body: |-
+    The `monitoring.rulesEnabled` alerts that read a recording rule now carry the same job/namespace matcher as the rest, so two operator installs sharing a Prometheus stop alerting on each other's controllers.
+
+      K8S-926 scoped the recording rules and the alerts that read raw metrics, but
+      left `OperatorReconcileErrors`, `OperatorReconcileRunaway` and
+      `OperatorReconcileStalled` matching a recorded series by name alone. A
+      recorded series is not namespaced to whichever install produced it, so with
+      two installs rendering their PrometheusRule into one Prometheus, each
+      install's copy of those alerts evaluated against both installs' series.
+time: 2026-08-29T10:00:00.000000000-07:00

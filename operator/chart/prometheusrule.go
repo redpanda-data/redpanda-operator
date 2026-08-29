@@ -56,6 +56,12 @@ import (
 //
 // Both are also kept in the `sum by (...)` grouping so two operator installs on
 // one cluster produce distinct recorded series instead of merging. See K8S-926.
+//
+// The alerts that read a recorded series carry the matcher as well, not only the
+// ones reading raw metrics. Each install renders its own PrometheusRule into the
+// same Prometheus, and a recorded series is not namespaced to its producer, so an
+// unscoped alert expression evaluates against every install's series: two
+// installs would each alert on the other's controllers.
 func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -114,7 +120,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// 0.1/s rate (~6/min) over five minutes means
 							// something is wedged.
 							Alert: "OperatorReconcileErrors",
-							Expr:  intstr.FromString(`operator:reconcile_error_rate:5m > 0.1`),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator:reconcile_error_rate:5m{%s} > 0.1`, scope)),
 							For:   ptrDuration("5m"),
 							Labels: map[string]string{
 								"severity": "warning",
@@ -131,7 +137,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// always a controller spinning on the same
 							// resource without making progress.
 							Alert: "OperatorReconcileRunaway",
-							Expr:  intstr.FromString(`operator:reconcile_rate:5m > 5`),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator:reconcile_rate:5m{%s} > 5`, scope)),
 							For:   ptrDuration("5m"),
 							Labels: map[string]string{
 								"severity": "warning",
@@ -149,9 +155,10 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							// silent — i.e. it should have been doing work
 							// and stopped.
 							Alert: "OperatorReconcileStalled",
-							Expr: intstr.FromString(
-								`max_over_time(operator:reconcile_rate:5m[1h]) > 0 and operator:reconcile_rate:5m == 0`,
-							),
+							Expr: intstr.FromString(fmt.Sprintf(
+								`max_over_time(operator:reconcile_rate:5m{%s}[1h]) > 0 and operator:reconcile_rate:5m{%s} == 0`,
+								scope, scope,
+							)),
 							For: ptrDuration("10m"),
 							Labels: map[string]string{
 								"severity": "warning",

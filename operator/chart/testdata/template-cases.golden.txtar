@@ -115370,7 +115370,8 @@ spec:
           status.
         summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
           }} is failing reconciles
-      expr: operator:reconcile_error_rate:5m > 0.1
+      expr: operator:reconcile_error_rate:5m{job="operator-metrics-service", namespace="default"}
+        > 0.1
       for: 5m
       labels:
         severity: warning
@@ -115382,7 +115383,8 @@ spec:
           flat while the reconcile rate is high, the controller is making no progress.
         summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
           }} is reconciling at a high rate
-      expr: operator:reconcile_rate:5m > 5
+      expr: operator:reconcile_rate:5m{job="operator-metrics-service", namespace="default"}
+        > 5
       for: 5m
       labels:
         severity: warning
@@ -115393,8 +115395,9 @@ spec:
           have stopped responding to events.
         summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
           }} has stopped reconciling
-      expr: max_over_time(operator:reconcile_rate:5m[1h]) > 0 and operator:reconcile_rate:5m
-        == 0
+      expr: max_over_time(operator:reconcile_rate:5m{job="operator-metrics-service",
+        namespace="default"}[1h]) > 0 and operator:reconcile_rate:5m{job="operator-metrics-service",
+        namespace="default"} == 0
       for: 10m
       labels:
         severity: warning
