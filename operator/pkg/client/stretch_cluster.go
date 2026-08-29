@@ -381,16 +381,29 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 // connection. A non-nil error means the pod state is unknown, which the caller
 // treats as "do not filter" rather than as a failure.
 //
-// The admin client's host list is otherwise built purely from each
-// RedpandaBrokerPool's declared replica count, so it offers every broker the
-// spec asks for, including ones that are deliberately absent: a pool that was
-// just deleted, or the broker being rolled during a restart-requiring config
-// change. Whichever host a reconcile happens to pick, an absent one fails the
-// call, and the steps that gate on it make no progress as a result --
-// reconcileDecommission cannot read cluster health, so it never deletes the
-// removed pool's StatefulSet, and the maintenance-mode pass defers on an
-// unreadable broker list instead of advancing the roll. Neither recovers on its
-// own while the host list keeps offering the same absent broker.
+// The host list is otherwise built purely from each RedpandaBrokerPool's
+// declared replica count, so it offers every broker the spec asks for,
+// including ones that are deliberately absent: a pool that was just deleted, or
+// the broker being rolled during a restart-requiring config change. rpadmin
+// does not fail on such a host -- it pays for it, and the price is paid on
+// every pass, because the client is rebuilt per reconcile:
+//
+//   - A read (sendAny) shuffles the host list and tries each host in turn until
+//     one answers, so an absent broker costs a wasted attempt and its share of
+//     the client timeout.
+//   - A write (sendToLeader) -- the cluster-config PUT that reconcileClusterConfig
+//     issues, and the decommission and maintenance-mode broker calls -- first
+//     resolves the controller leader through eachBroker, which fans out to every
+//     host and waits for all of them. One host that blackholes therefore adds the
+//     whole admin client timeout to the write, and if the leader is the id that
+//     could not be mapped, sendToLeader burns three stale-leader backoffs before
+//     giving up.
+//
+// Dropping hosts that provably cannot answer keeps that budget for the brokers
+// that can. This is the same reasoning as the IsClusterReachable skip in
+// stretchClusterEndpoints, and it is bounded the same way: a pod whose node has
+// gone NotReady still holds an address and still looks dialable here, so this
+// narrows the window rather than closing it.
 func dialablePodNames(ctx context.Context, k8sClient client.Client, ns string) (map[string]bool, error) {
 	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
 	defer listCancel()
@@ -411,11 +424,13 @@ func dialablePodNames(ctx context.Context, k8sClient client.Client, ns string) (
 
 // podDialable reports whether a connection to pod can be established at all.
 //
-// Readiness is deliberately not part of this. The operator talks to unready
-// brokers on purpose -- reconcileStaleDiskWipe reads a rejoining broker's
-// identity through RedpandaAdminClientForStretchPod -- so only pods that cannot
-// accept a connection are excluded: ones that are terminating, have finished,
-// or have no address yet.
+// Readiness is deliberately not part of this, and an unready broker stays
+// reachable in practice: the operator talks to unready brokers on purpose --
+// reconcileStaleDiskWipe reads a rejoining broker's identity through
+// RedpandaAdminClientForStretchPod -- and the per-pod Service these endpoints
+// resolve through sets PublishNotReadyAddresses. So only pods that cannot accept
+// a connection are excluded: ones that are terminating, have finished, or have
+// no address yet.
 func podDialable(pod *corev1.Pod) bool {
 	if pod.DeletionTimestamp != nil {
 		return false
