@@ -21,6 +21,10 @@ tasks:
   test:unit:
     cmds:
       - defer: 'buildkite-agent artifact upload "{{.SRC_DIR}}/artifacts/*"'
+      # Seconds, and it guards expressions that no Go test can reach: promtool
+      # is the only thing here that actually evaluates PromQL.
+      - 'echo "--- Checking PrometheusRule expressions"'
+      - task: :test:rules
       - 'echo "--- Running unit tests"'
       - task: :test:unit
         vars:

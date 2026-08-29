@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "Redpanda operator full-stack observability — multicluster raft, StretchCluster member status, and operator reconcile health. Each panel description ends with a How-to-read hint summarising the healthy state and what spikes / drops mean. See docs/operator-metrics.md for the metric inventory.",
+  "description": "Redpanda operator full-stack observability — multicluster raft, StretchCluster member status, and operator reconcile health. Each panel description ends with a How-to-read hint summarising the healthy state and what spikes / drops mean. See docs/operator-metrics.md for the metric inventory.\n\nEvery panel is scoped by the Namespace and Job pickers. This matters: controller_runtime_* and workqueue_* are exported by every controller-runtime operator on the cluster (Karpenter, Flux, cert-manager, Trivy, ...), so unscoped panels mix them in. Both pickers draw their values from operator_controller_reconcile_steady_state_total, a metric only the Redpanda operator exports, so even All stays within Redpanda operator installs. The Kubernetes cluster picker filters on the opt-in redpanda_k8s_cluster label (monitoring.clusterLabel.enabled) and is a no-op until that label is turned on.",
   "editable": true,
   "graphTooltip": 1,
   "panels": [
@@ -49,7 +49,7 @@
       },
       "targets": [
         {
-          "expr": "last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1",
+          "expr": "last_over_time(operator_multicluster_raft_state{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", state=\"leader\"}[1m]) == 1",
           "legendFormat": "{{cluster}} / {{job}}",
           "instant": true,
           "refId": "A"
@@ -88,7 +88,7 @@
       },
       "targets": [
         {
-          "expr": "max(operator_multicluster_raft_term)",
+          "expr": "max(operator_multicluster_raft_term{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "term",
           "refId": "A"
         }
@@ -116,7 +116,7 @@
       },
       "targets": [
         {
-          "expr": "max(increase(operator_multicluster_raft_leader_changes_total[10m]))",
+          "expr": "max(increase(operator_multicluster_raft_leader_changes_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[10m]))",
           "legendFormat": "changes / 10m",
           "refId": "A"
         }
@@ -145,7 +145,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum by (le, peer) (rate(operator_multicluster_raft_send_duration_seconds_bucket[5m]) and ignoring(le, peer, result, state) (operator_multicluster_raft_state{state=\"leader\"} == 1)))",
+          "expr": "histogram_quantile(0.99, sum by (le, peer) (rate(operator_multicluster_raft_send_duration_seconds_bucket{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]) and ignoring(le, peer, result, state) (operator_multicluster_raft_state{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", state=\"leader\"} == 1)))",
           "legendFormat": "{{peer}}",
           "refId": "A"
         }
@@ -173,7 +173,7 @@
       },
       "targets": [
         {
-          "expr": "operator_multicluster_raft_send_queue_length",
+          "expr": "operator_multicluster_raft_send_queue_length{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}",
           "legendFormat": "{{cluster}} → {{peer}}",
           "refId": "A"
         }
@@ -201,12 +201,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (msg_type, peer) (rate(operator_multicluster_raft_messages_sent_total{msg_type=~\"heartbeat|append\"}[5m]))",
+          "expr": "sum by (msg_type, peer) (rate(operator_multicluster_raft_messages_sent_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", msg_type=~\"heartbeat|append\"}[5m]))",
           "legendFormat": "sent — {{peer}}/{{msg_type}}",
           "refId": "A"
         },
         {
-          "expr": "sum by (msg_type, peer) (rate(operator_multicluster_raft_messages_received_total{msg_type=~\"heartbeat|append\"}[5m]))",
+          "expr": "sum by (msg_type, peer) (rate(operator_multicluster_raft_messages_received_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", msg_type=~\"heartbeat|append\"}[5m]))",
           "legendFormat": "recv — {{peer}}/{{msg_type}}",
           "refId": "B"
         }
@@ -234,7 +234,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (peer, error_type) (increase(operator_multicluster_raft_send_errors_total[5m]))",
+          "expr": "sum by (peer, error_type) (increase(operator_multicluster_raft_send_errors_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]))",
           "legendFormat": "{{peer}}/{{error_type}}",
           "refId": "A"
         }
@@ -263,7 +263,7 @@
       },
       "targets": [
         {
-          "expr": "max by (peer) (operator_multicluster_raft_follower_match_lag_entries and ignoring(peer, state) (last_over_time(operator_multicluster_raft_state{state=\"leader\"}[1m]) == 1))",
+          "expr": "max by (peer) (operator_multicluster_raft_follower_match_lag_entries{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"} and ignoring(peer, state) (last_over_time(operator_multicluster_raft_state{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", state=\"leader\"}[1m]) == 1))",
           "legendFormat": "{{peer}}",
           "refId": "A"
         }
@@ -291,12 +291,12 @@
       },
       "targets": [
         {
-          "expr": "operator_multicluster_raft_peer_reachable",
+          "expr": "operator_multicluster_raft_peer_reachable{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}",
           "legendFormat": "reachable — {{cluster}} → {{peer}}",
           "refId": "A"
         },
         {
-          "expr": "rate(operator_multicluster_raft_messages_dropped_total[5m])",
+          "expr": "rate(operator_multicluster_raft_messages_dropped_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m])",
           "legendFormat": "dropped/s — {{cluster}} → {{peer}}",
           "refId": "B"
         }
@@ -324,7 +324,7 @@
       },
       "targets": [
         {
-          "expr": "max by (cluster) (operator_multicluster_raft_state{state=\"leader\"})",
+          "expr": "max by (cluster) (operator_multicluster_raft_state{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", state=\"leader\"})",
           "legendFormat": "{{cluster}}",
           "refId": "A"
         }
@@ -389,7 +389,7 @@
       },
       "targets": [
         {
-          "expr": "max by (stretchcluster, member) (operator_stretchcluster_member_reachable)",
+          "expr": "max by (stretchcluster, member) (operator_stretchcluster_member_reachable{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "{{stretchcluster}} / {{member}}",
           "refId": "A"
         }
@@ -419,7 +419,7 @@
       },
       "targets": [
         {
-          "expr": "max by (stretchcluster, member) (operator_stretchcluster_brokers - operator_stretchcluster_brokers_ready)",
+          "expr": "max by (stretchcluster, member) (operator_stretchcluster_brokers{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"} - operator_stretchcluster_brokers_ready{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "{{stretchcluster}} / {{member}}",
           "refId": "A"
         }
@@ -449,7 +449,7 @@
       },
       "targets": [
         {
-          "expr": "max by (stretchcluster, member) (operator_stretchcluster_spec_drift)",
+          "expr": "max by (stretchcluster, member) (operator_stretchcluster_spec_drift{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "{{stretchcluster}} / {{member}}",
           "refId": "A"
         }
@@ -479,7 +479,7 @@
       },
       "targets": [
         {
-          "expr": "max by (stretchcluster) (operator_stretchcluster_replication_health)",
+          "expr": "max by (stretchcluster) (operator_stretchcluster_replication_health{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "{{stretchcluster}}",
           "refId": "A"
         }
@@ -522,7 +522,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (controller) (rate(controller_runtime_reconcile_total[5m]))",
+          "expr": "sum by (controller) (rate(controller_runtime_reconcile_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]))",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -550,7 +550,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m]))",
+          "expr": "sum by (controller) (rate(controller_runtime_reconcile_errors_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]))",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -578,7 +578,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum by (le, controller) (rate(controller_runtime_reconcile_time_seconds_bucket[5m])))",
+          "expr": "histogram_quantile(0.99, sum by (le, controller) (rate(controller_runtime_reconcile_time_seconds_bucket{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m])))",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -606,12 +606,12 @@
       },
       "targets": [
         {
-          "expr": "sum by (controller) (rate(operator_controller_reconcile_steady_state_total[5m]))",
+          "expr": "sum by (controller) (rate(operator_controller_reconcile_steady_state_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]))",
           "legendFormat": "steady — {{controller}}",
           "refId": "A"
         },
         {
-          "expr": "sum by (controller) (rate(controller_runtime_reconcile_total[5m]))",
+          "expr": "sum by (controller) (rate(controller_runtime_reconcile_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]))",
           "legendFormat": "total — {{controller}}",
           "refId": "B"
         }
@@ -652,7 +652,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (name) (workqueue_depth)",
+          "expr": "sum by (name) (workqueue_depth{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "{{name}}",
           "refId": "A"
         }
@@ -680,7 +680,7 @@
       },
       "targets": [
         {
-          "expr": "max by (controller) (controller_runtime_active_workers / controller_runtime_max_concurrent_reconciles)",
+          "expr": "max by (controller) (controller_runtime_active_workers{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"} / controller_runtime_max_concurrent_reconciles{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"})",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -710,7 +710,7 @@
       },
       "targets": [
         {
-          "expr": "sum by (name) (rate(workqueue_retries_total[5m]))",
+          "expr": "sum by (name) (rate(workqueue_retries_total{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"}[5m]))",
           "legendFormat": "{{name}}",
           "refId": "A"
         }
@@ -751,7 +751,7 @@
       },
       "targets": [
         {
-          "expr": "time() - (operator_controller_reconcile_last_success_timestamp_seconds and ignoring(controller, state) (operator_multicluster_raft_state{state=\"leader\"} == 1))",
+          "expr": "time() - (operator_controller_reconcile_last_success_timestamp_seconds{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\"} and ignoring(controller, state) (operator_multicluster_raft_state{namespace=~\"$namespace\", job=~\"$job\", redpanda_k8s_cluster=~\"$k8s_cluster\", state=\"leader\"} == 1))",
           "legendFormat": "{{controller}}",
           "refId": "A"
         }
@@ -773,7 +773,102 @@
     "reconcile-health"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "namespace",
+        "label": "Namespace",
+        "description": "Namespace of the Redpanda operator install. Sourced from a metric only the Redpanda operator exports, so All never widens to other controller-runtime operators.",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(operator_controller_reconcile_steady_state_total, namespace)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(operator_controller_reconcile_steady_state_total, namespace)",
+          "refId": "namespace"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "sort": 1,
+        "hide": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": []
+      },
+      {
+        "name": "job",
+        "label": "Job",
+        "description": "Prometheus job of the Redpanda operator install — the metrics Service name, which is what prometheus-operator puts in `job` for this chart's ServiceMonitor. All covers every Redpanda operator install, and no other operator.",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(operator_controller_reconcile_steady_state_total{namespace=~\"$namespace\"}, job)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(operator_controller_reconcile_steady_state_total{namespace=~\"$namespace\"}, job)",
+          "refId": "job"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "sort": 1,
+        "hide": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": []
+      },
+      {
+        "name": "k8s_cluster",
+        "label": "Kubernetes cluster",
+        "description": "Value of the `redpanda_k8s_cluster` label added by `monitoring.clusterLabel.enabled`. That label is opt-in and off by default, so All (`.*`) is a no-op until you turn it on; once on, it separates the operators of a stretch deployment. Rename here too if you set `monitoring.clusterLabel.name`. Named k8s_cluster rather than cluster because operator_multicluster_raft_* already carries its own `cluster` label (the raft peer name).",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(operator_controller_reconcile_steady_state_total, redpanda_k8s_cluster)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(operator_controller_reconcile_steady_state_total, redpanda_k8s_cluster)",
+          "refId": "k8s_cluster"
+        },
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "sort": 1,
+        "hide": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "allValue": ".*"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",
