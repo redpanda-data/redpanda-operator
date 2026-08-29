@@ -336,7 +336,7 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			return nil, errors.Wrapf(err, "listing RedpandaBrokerPools in cluster %s", clusterName)
 		}
 
-		servable, podsErr := dialablePodNames(ctx, k8sClient, sc.Namespace)
+		servable, podsErr := dialablePodNames(ctx, k8sClient, sc.Namespace, sc.Name)
 		podsKnown := podsErr == nil
 		if !podsKnown {
 			// Losing the pod list costs us only the filter. Offer this
@@ -404,13 +404,23 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 // stretchClusterEndpoints, and it is bounded the same way: a pod whose node has
 // gone NotReady still holds an address and still looks dialable here, so this
 // narrows the window rather than closing it.
-func dialablePodNames(ctx context.Context, k8sClient client.Client, ns string) (map[string]bool, error) {
+func dialablePodNames(ctx context.Context, k8sClient client.Client, ns, releaseName string) (map[string]bool, error) {
 	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
 	defer listCancel()
 
+	// Scoped to this cluster's brokers. A namespace can hold unrelated
+	// workloads, and reading all of them widens both this list and, on a cached
+	// client, what has to be watched to serve it. Correctness never depended on
+	// the scope -- a Pod name is unique in a namespace and a broker's Pod name is
+	// its per-pod Service name, so a name match cannot land on someone else's
+	// Pod. It does close one contrived hole: a Pod named after a broker that is
+	// itself absent would otherwise vouch for it.
 	var pods corev1.PodList
-	if err := k8sClient.List(listCtx, &pods, client.InNamespace(ns)); err != nil {
-		return nil, errors.Wrapf(err, "listing pods in namespace %s", ns)
+	if err := k8sClient.List(listCtx, &pods,
+		client.InNamespace(ns),
+		client.MatchingLabels(rendermulticluster.BrokerPodSelector(releaseName)),
+	); err != nil {
+		return nil, errors.Wrapf(err, "listing broker pods in namespace %s", ns)
 	}
 
 	dialable := make(map[string]bool, len(pods.Items))
