@@ -44,6 +44,9 @@ type Options struct {
 	// (--connect-default-image); used to resolve the effective image version
 	// of Pipelines that don't pin .spec.image.
 	ConnectDefaultImage string
+	// BrokerCREnabled is the operator's --enable-broker flag, reported as
+	// broker.enabled.
+	BrokerCREnabled bool
 	// Delay is the wait before the first report; zero means the shared library default (5m).
 	Delay  time.Duration
 	Period time.Duration
@@ -87,6 +90,7 @@ func NewRunnable(reader client.Reader, disco discovery.ServerVersionInterface, l
 		Features:            opts.Features,
 		Discovery:           disco,
 		ConnectDefaultImage: opts.ConnectDefaultImage,
+		BrokerCREnabled:     opts.BrokerCREnabled,
 	}
 
 	return &Runnable{reporter: &commontelemetry.Reporter{

@@ -99,6 +99,32 @@ type Payload struct {
 		BrokerSizes    []string `json:"brokerSizes,omitempty"`
 	} `json:"vectorizedClusters"`
 
+	// Broker reports the experimental Broker CR mode, in which the operator
+	// manages one Broker CR (and its pod/PVC) per broker instead of a
+	// StatefulSet. The two fields are independent axes — enabled says the
+	// operator *can* run broker mode, count says whether it actually does:
+	//
+	//	enabled=false            -> the mode is unavailable in this install
+	//	enabled=true,  count=0   -> available but unused
+	//	enabled=true,  count>0   -> in use, across count brokers
+	//	enabled=false, count>0   -> in use but the controller was turned off
+	//	                            (a rollback, or the flag dropped from a
+	//	                            running install)
+	Broker struct {
+		// Enabled is the operator's --enable-broker flag: whether the Broker
+		// controller is running at all. Configuration, not usage — it says
+		// nothing about whether any cluster is managed this way.
+		Enabled bool `json:"enabled"`
+		// Count is the number of Broker CRs, i.e. the number of broker pods
+		// managed in broker mode rather than by a StatefulSet. This is the
+		// usage signal: Broker CRs are created by the Redpanda and Cluster
+		// controllers, never by hand, so their existence is direct evidence the
+		// mode is in use. No opt-in signal is read (the use-broker-cr
+		// annotation that selects the mode today goes away once broker mode is
+		// the default path).
+		Count int `json:"count"`
+	} `json:"broker"`
+
 	Storage struct {
 		CSIDrivers []string `json:"csiDrivers"`
 	} `json:"storage"`
