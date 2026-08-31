@@ -65,6 +65,12 @@ type Collector struct {
 	// the reported version tracks in-place cluster upgrades. Optional: when nil,
 	// kubeVersion is omitted from the payload.
 	Discovery discovery.ServerVersionInterface
+	// BrokerCREnabled is the operator's --enable-broker flag, reported as
+	// broker.enabled. Configuration rather than cluster shape, so it is passed
+	// in rather than discovered: an install can run the Broker controller with
+	// no cluster using it yet, and (after a rollback) can have Broker CRs with
+	// the controller switched off.
+	BrokerCREnabled bool
 	// ConnectDefaultImage is the operator-level Connect image override (the
 	// --connect-default-image flag / connectController.image chart values).
 	// Needed to resolve the effective image of Pipelines that don't pin
@@ -185,6 +191,17 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 			}
 		}
 		vec.into(&payload.VectorizedClusters.TotalCPUCores, &payload.VectorizedClusters.TotalMemoryGiB, &payload.VectorizedClusters.BrokerSizes)
+	}
+
+	// Broker CR mode (experimental): the flag says whether the controller runs,
+	// the Broker CR count whether anything actually uses it. Broker CRs are only
+	// ever created by the Redpanda and Cluster controllers, so their existence
+	// is the evidence of use. The experimental Broker CRD may not be installed
+	// at all, which degrades the count to zero like any other missing CRD (see
+	// c.list) without touching the flag.
+	payload.Broker.Enabled = c.BrokerCREnabled
+	if err := c.count(ctx, redpandav1alpha2.SchemeGroupVersion.WithKind("BrokerList"), &payload.Broker.Count); err != nil {
+		return nil, err
 	}
 
 	// Supporting CR-type counts. Metadata-only lists: we only need len(), so

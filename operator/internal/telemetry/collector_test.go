@@ -117,6 +117,14 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 				},
 			},
 		},
+		&redpandav1alpha2.Broker{
+			ObjectMeta: metav1.ObjectMeta{Name: "rp-1-0", Namespace: "default"},
+			Spec:       redpandav1alpha2.BrokerSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp-1"}},
+		},
+		&redpandav1alpha2.Broker{
+			ObjectMeta: metav1.ObjectMeta{Name: "rp-1-1", Namespace: "default"},
+			Spec:       redpandav1alpha2.BrokerSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp-1"}},
+		},
 		&redpandav1alpha2.Redpanda{
 			ObjectMeta: metav1.ObjectMeta{Name: "rp-1", Namespace: "default"},
 			Spec: redpandav1alpha2.RedpandaSpec{
@@ -180,6 +188,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 		OperatorVersion: "v26.2.0",
 		IDHash:          "deadbeefcafe",
 		Features:        map[string]bool{"pvcUnbinder": true},
+		BrokerCREnabled: true,
 		Discovery:       fakeServerVersion{info: &version.Info{GitVersion: "v1.32.0"}},
 	}
 
@@ -244,6 +253,11 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Console.HTTPRoute)
 	require.Equal(t, 1, payload.Console.Ingress)
 
+	// Broker CR mode: the controller is enabled and rp-1's two brokers are
+	// managed as Broker CRs.
+	require.True(t, payload.Broker.Enabled)
+	require.Equal(t, 2, payload.Broker.Count)
+
 	require.Equal(t, 1, payload.CRDCount)
 	// PVC Unbinder usage is reported via the features map, not a dedicated field.
 	require.True(t, payload.Features["pvcUnbinder"])
@@ -300,6 +314,8 @@ func TestCollect_EmptyCluster(t *testing.T) {
 	require.Empty(t, payload.Storage.CSIDrivers)
 	require.Equal(t, 0, payload.Resources.Topics)
 	require.Equal(t, 0, payload.CRDCount)
+	require.False(t, payload.Broker.Enabled)
+	require.Equal(t, 0, payload.Broker.Count)
 }
 
 // TestAggregateRedpandas_GatewayCountRequiresParentRefs locks the telemetry
@@ -575,4 +591,79 @@ func TestAggregatePipelines_ImageResolution(t *testing.T) {
 	payload = &Payload{}
 	c.aggregatePipelines(payload, pipelines)
 	require.Contains(t, payload.Connect.Versions, imageVersion(redpandav1alpha2.PipelineDefaultImage))
+}
+
+// TestCollect_BrokerModeToleratesMissingBrokerCRD locks in that the Broker CR
+// count degrades to zero on an install that runs the Broker controller but
+// never applied the experimental Broker CRD, rather than dropping the whole
+// telemetry document. The reported flag is unaffected by the failed read.
+func TestCollect_BrokerModeToleratesMissingBrokerCRD(t *testing.T) {
+	scheme := testScheme(t)
+	base := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		&redpandav1alpha2.Redpanda{ObjectMeta: metav1.ObjectMeta{Name: "rp-1", Namespace: "default"}},
+	).Build()
+
+	// Tracked so a mistyped list kind can't make this test pass by accident:
+	// the no-match must actually be served to the Broker list.
+	brokersListed := false
+	reader := stubReader{
+		Reader: base,
+		listErr: func(list client.ObjectList) error {
+			if l, ok := list.(*metav1.PartialObjectMetadataList); ok && l.GroupVersionKind().Kind == "BrokerList" {
+				brokersListed = true
+				// Experimental CRD never applied -> RESTMapper no-match.
+				return &meta.NoKindMatchError{GroupKind: schema.GroupKind{Group: redpandaCRDGroup, Kind: "Broker"}}
+			}
+			return nil
+		},
+	}
+
+	raw, err := (&Collector{Reader: reader, BrokerCREnabled: true}).Collect(t.Context())
+	require.NoError(t, err) // tolerated: the document is still sent
+
+	require.True(t, brokersListed)
+	require.True(t, raw.Broker.Enabled)
+	require.Equal(t, 0, raw.Broker.Count)
+	require.Equal(t, 1, raw.Redpanda.Count, "the rest of the report is unaffected")
+}
+
+// TestCollect_BrokerEnabledTracksFlagNotUsage pins the two broker fields as
+// independent axes: enabled mirrors --enable-broker (configuration) and count
+// mirrors the Broker CRs that exist (usage). All four combinations are
+// reachable, including Broker CRs left over from a rollback on an operator that
+// no longer runs the controller.
+func TestCollect_BrokerEnabledTracksFlagNotUsage(t *testing.T) {
+	scheme := testScheme(t)
+
+	for _, tc := range []struct {
+		name    string
+		flag    bool
+		brokers []client.Object
+		count   int
+	}{
+		{name: "unavailable", flag: false},
+		{name: "available but unused", flag: true},
+		{
+			name:    "in use",
+			flag:    true,
+			brokers: []client.Object{&redpandav1alpha2.Broker{ObjectMeta: metav1.ObjectMeta{Name: "rp-1-0", Namespace: "default"}}},
+			count:   1,
+		},
+		{
+			name:    "in use with the controller turned off",
+			flag:    false,
+			brokers: []client.Object{&redpandav1alpha2.Broker{ObjectMeta: metav1.ObjectMeta{Name: "rp-1-0", Namespace: "default"}}},
+			count:   1,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.brokers...).Build()
+
+			raw, err := (&Collector{Reader: c, BrokerCREnabled: tc.flag}).Collect(t.Context())
+			require.NoError(t, err)
+
+			require.Equal(t, tc.flag, raw.Broker.Enabled)
+			require.Equal(t, tc.count, raw.Broker.Count)
+		})
+	}
 }
