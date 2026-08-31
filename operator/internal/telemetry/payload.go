@@ -116,6 +116,23 @@ type Payload struct {
 		BrokerSizes    []string `json:"brokerSizes,omitempty"`
 	} `json:"vectorizedClusters"`
 
+	// Broker reports the experimental Broker CR mode. The fields are
+	// independent axes, so enabled=false with count>0 is a valid shape
+	// (rollback leftovers, or a collector that never runs the Broker
+	// controller — the multicluster command).
+	Broker struct {
+		// Enabled is the operator's --enable-broker flag: configuration,
+		// not usage.
+		Enabled bool `json:"enabled"`
+		// Count is the number of Broker CRs — broker pods managed in broker
+		// mode rather than by a StatefulSet. Only controllers create Broker
+		// CRs, so their existence is direct evidence of use. Slightly
+		// overcounts live brokers during disk-loss recovery: a disk-lost
+		// Broker lingers as its node_id's decommission record while the
+		// replacement reuses the pod name.
+		Count int `json:"count"`
+	} `json:"broker"`
+
 	Storage struct {
 		CSIDrivers []string `json:"csiDrivers"`
 	} `json:"storage"`

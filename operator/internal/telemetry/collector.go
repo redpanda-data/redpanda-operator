@@ -73,6 +73,10 @@ type Collector struct {
 	// key embedded in common-go, and committing a real token to satisfy it is
 	// not an option.
 	ParseLicense func([]byte) (license.RedpandaLicense, error)
+	// BrokerCREnabled is the operator's --enable-broker flag, reported as
+	// broker.enabled. Configuration rather than cluster shape, so it is
+	// passed in rather than discovered.
+	BrokerCREnabled bool
 	// ConnectDefaultImage is the operator-level Connect image override (the
 	// --connect-default-image flag / connectController.image chart values).
 	// Needed to resolve the effective image of Pipelines that don't pin
@@ -229,6 +233,11 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 		if payload.IDHash == "" && len(checksums) == 1 {
 			payload.IDHash = checksums[0]
 		}
+	}
+
+	payload.Broker.Enabled = c.BrokerCREnabled
+	if err := c.count(ctx, redpandav1alpha2.SchemeGroupVersion.WithKind("BrokerList"), &payload.Broker.Count); err != nil {
+		return nil, err
 	}
 
 	// Supporting CR-type counts. Metadata-only lists: we only need len(), so
