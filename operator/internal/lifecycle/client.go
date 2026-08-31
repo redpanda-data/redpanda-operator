@@ -573,10 +573,8 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 	return !resolved.GetDeletionTimestamp().IsZero(), nil
 }
 
-// FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
-// a tracker that can be used for determining necessary operations on the pools.
-// FetchExistingAndDesiredPools fetches the existing and desired node pools
-// for a given cluster, returning a tracker that can be used for determining
+// FetchExistingAndDesiredPools assembles the PoolTracker from the world's
+// existing pool state and the rendered desired state, for determining the
 // necessary operations on the pools.
 //
 // nodePoolsObserved is the observation set returned by
@@ -590,11 +588,11 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 // hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.
-// FetchExistingAndDesiredPools assembles the PoolTracker from the world's
-// existing pool state and the rendered desired state. brokerCRs enables
-// broker mode: pools whose StatefulSet is gone (broker migration completed)
-// are synthesized from Broker CRs and their pods so the tracker's
-// status/readiness/scale accounting keeps working — see fetchBrokerBackedPools.
+//
+// brokerCRs enables broker mode: pools whose StatefulSet is gone (broker
+// migration completed) are synthesized from Broker CRs and their pods so the
+// tracker's status/readiness/scale accounting keeps working — see
+// fetchBrokerBackedPools.
 func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool, brokerCRs bool) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration(), r.useBrokerPoolCRD)
 	logger := log.FromContext(ctx)

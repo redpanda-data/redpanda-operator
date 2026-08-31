@@ -64,8 +64,11 @@ import (
 
 // errBrokerModeFlagOff names the operator misconfiguration where a
 // broker-mode cluster is reconciled without --enable-broker; used only for
-// logging (the reconcile does not error — it refuses pool mutations and
-// keeps the recovery chain running).
+// logging. The reconcile does not error — it refuses pool mutations and
+// deliberately ABORTS the rest of the chain for that cluster (the
+// downstream steps, outage recovery included, cannot do useful work
+// against a pool view that is blind to the broker pods). Nothing operates
+// on the cluster until the flag is restored or it is rolled back.
 var errBrokerModeFlagOff = errors.New("broker mode requires --enable-broker")
 
 const (

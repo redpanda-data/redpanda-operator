@@ -194,7 +194,7 @@ type BrokerSet struct {
 // derive itself: admin-level health, roll bookkeeping, and owner-side
 // quiescence checks. One implementation exists per owning CR (V1 Cluster:
 // resources.BrokerSetResource, V2 Redpanda: the reconciler's per-pass
-// hooks); NopHooks serves tests.
+// hooks).
 type OwnerHooks interface {
 	// IsClusterHealthy gates roll-grant issuance and the migration's
 	// destructive step. Return a *RequeueAfterError when unhealthy so the
@@ -210,16 +210,6 @@ type OwnerHooks interface {
 	// block the migration this pass.
 	MigrationBlockedReason(ctx context.Context) string
 }
-
-// NopHooks is an always-healthy, never-blocked OwnerHooks with no
-// quiescence bookkeeping — for tests.
-type NopHooks struct{}
-
-func (NopHooks) IsClusterHealthy(context.Context) error { return nil }
-
-func (NopHooks) OnQuiesced(context.Context) error { return nil }
-
-func (NopHooks) MigrationBlockedReason(context.Context) string { return "" }
 
 // report is the nil-safe Reporter.Report.
 func (s *BrokerSet) report(ctx context.Context, status corev1.ConditionStatus, reason, message string) {
