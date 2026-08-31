@@ -13,13 +13,23 @@ import (
 	"context"
 	"testing"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
+
+// ClusterConfigForTesting exposes the unexported clusterConfigFor to package
+// redpanda_test, so its tests can live in redpanda_controller_test.go with
+// the rest of the controller's tests.
+func (r *RedpandaReconciler) ClusterConfigForTesting(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema, cl cluster.Cluster) (map[string]any, []error, error) {
+	return r.clusterConfigFor(ctx, rp, schema, cl)
+}
 
 func SetupTestManager(t *testing.T, ctx context.Context, cfg *rest.Config, c client.Client) multicluster.Manager {
 	t.Helper()

@@ -1053,8 +1053,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	pool := redpanda.Pool{Statefulset: state.Values.Statefulset}
-	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state, pool)
+	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state, redpanda.Pool{Statefulset: state.Values.Statefulset})
 	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
 	for k, v := range clusterConfigTemplate {
 		conf.SetAdditionalConfiguration(k, v)
@@ -1063,34 +1062,17 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 		conf.AddFixup(f.Field, f.CEL)
 	}
 
-	// The bootstrap template is reified here rather than by an init
-	// container, so that container's environment has to be mirrored onto the
-	// pod context by hand.
-	//
-	// It is read off the StatefulSet, not the post-install job: the
-	// StatefulSet's copy is the one that actually writes the .bootstrap.yaml
-	// the brokers read, it is always rendered, and the v2 operator never
-	// creates the post-install job at all (it does that job's work
-	// in-process, just below). Sourcing it from the job nil dereferenced
-	// whenever `postInstallJob.enabled=false` — silently wedging cluster
-	// configuration for the entire cluster, with Ready and Healthy still
-	// reporting True. See
+	// The bootstrap template is reified here rather than by the chart's
+	// bootstrap-yaml-envsubst init container, so the environment that
+	// container would run with is mirrored onto the pod context by hand —
+	// derived from the values through the same helper the chart builds the
+	// container from, not read off a rendered resource. Reading it off the
+	// post-install job nil dereferenced whenever `postInstallJob.enabled=false`,
+	// silently wedging cluster configuration for the life of the cluster while
+	// Ready and Healthy kept reporting True. See
 	// https://github.com/redpanda-data/redpanda-operator/issues/1021
-	//
-	// The container is looked up by name: unlike the job, where the templater
-	// is always InitContainers[0], its index on the StatefulSet shifts with
-	// the optional tuning/ownership/fs-validator init containers.
-	templater, ok := findContainer(redpanda.StatefulSet(state, pool).Spec.Template.Spec.InitContainers, redpanda.BootstrapYamlTemplaterContainerName)
-	if !ok {
-		return nil, nil, errors.Newf("%q init container missing from rendered StatefulSet", redpanda.BootstrapYamlTemplaterContainerName)
-	}
-	for _, e := range templater.Env {
+	for _, e := range redpanda.BootstrapTemplateEnvVars(state) {
 		if err := conf.EnsureInitEnv(e); err != nil {
-			return nil, nil, errors.WithStack(err)
-		}
-	}
-	for _, e := range templater.EnvFrom {
-		if err := conf.EnsureInitEnvFrom(e); err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
 	}
@@ -1101,16 +1083,6 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	}
 
 	return desired, conf.Warnings(), nil
-}
-
-// findContainer returns the container with the given name, if present.
-func findContainer(containers []corev1.Container, name string) (corev1.Container, bool) {
-	for _, c := range containers {
-		if c.Name == name {
-			return c, true
-		}
-	}
-	return corev1.Container{}, false
 }
 
 // syncStatus updates the status of the Redpanda cluster at the end of reconciliation when

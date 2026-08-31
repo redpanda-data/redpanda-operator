@@ -22,14 +22,26 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+// BootstrapTemplateEnvVars returns the environment that `${VAR}`-style
+// references in the bootstrap template (see [BootstrapContents]) are resolved
+// against: tiered-storage credential secret refs and any
+// extraClusterConfiguration material. It is shared by the
+// bootstrap-yaml-envsubst init container and by the operator, which reifies
+// the template in-process instead of running that container.
+//
+// Environment injected through PodTemplate overlays is deliberately not
+// included: those overlays target the StatefulSet's or the job's pods, and
+// cluster-config values have these dedicated hooks.
+func BootstrapTemplateEnvVars(state *RenderState) []corev1.EnvVar {
+	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
+	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
+	return append(env, additionalEnv...)
+}
+
 // bootstrapYamlTemplater returns an initcontainer that will template
 // environment variables into ${base-config}/boostrap.yaml and output it to
 // ${config}/.bootstrap.yaml.
 func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Container {
-	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
-	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
-	env = append(env, additionalEnv...)
-
 	image := fmt.Sprintf(`%s:%s`,
 		sts.SideCars.Image.Repository,
 		sts.SideCars.Image.Tag,
@@ -46,7 +58,7 @@ func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Containe
 			"--out-dir",
 			"/tmp/config",
 		}, state.Values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs...),
-		Env: env,
+		Env: BootstrapTemplateEnvVars(state),
 		Resources: corev1.ResourceRequirements{
 			Limits: corev1.ResourceList{
 				corev1.ResourceCPU:    resource.MustParse("100m"),

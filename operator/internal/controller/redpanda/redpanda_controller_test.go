@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/trace"
@@ -39,11 +40,16 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -1226,20 +1232,27 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 	}
 }
 
-// TestBootstrapYamlTemplaterOnStatefulSet asserts the invariant `clusterConfigFor`
-// relies on: the bootstrap-yaml-envsubst init container is always present on the
-// rendered StatefulSet and findable by name, whatever `post_install_job.enabled`
-// is set to.
-//
-// `clusterConfigFor` used to read this container off PostInstallUpgradeJob, which
-// returns nil when the job is disabled — nil dereferencing and silently wedging
-// cluster configuration for the whole cluster.
+// TestBootstrapTemplateEnvVars pins BootstrapTemplateEnvVars as the single
+// source of truth for the bootstrap templater's environment: the container
+// rendered onto the StatefulSet (and onto the post-install job, when that is
+// enabled) must carry exactly the helper's env and nothing more — no extra
+// vars, no EnvFrom. clusterConfigFor mirrors the helper's output, not a
+// rendered container, onto the pod context when it reifies the bootstrap
+// template in-process, so any env source added to the container but not the
+// helper would silently not resolve there. Its ancestor pinned the container
+// index on the job that clusterConfigFor used to read — and nil dereferenced
+// on when the job was disabled.
 // See https://github.com/redpanda-data/redpanda-operator/issues/1021
-func TestBootstrapYamlTemplaterOnStatefulSet(t *testing.T) {
+func TestBootstrapTemplateEnvVars(t *testing.T) {
 	for name, values := range map[string]map[string]any{
 		"chart defaults":            {},
 		"post_install_job enabled":  {"post_install_job": map[string]any{"enabled": true}},
 		"post_install_job disabled": {"post_install_job": map[string]any{"enabled": false}},
+		"tiered storage credentials": {"storage": map[string]any{"tiered": map[string]any{"config": map[string]any{
+			"cloud_storage_enabled": true,
+			"cloud_storage_bucket":  "test-bucket",
+			"cloud_storage_region":  "us-east-1",
+		}}}},
 	} {
 		t.Run(name, func(t *testing.T) {
 			dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, values)
@@ -1248,14 +1261,147 @@ func TestBootstrapYamlTemplaterOnStatefulSet(t *testing.T) {
 			state, err := redpandachart.RenderStateFromDot(dot)
 			require.NoError(t, err)
 
+			expected := redpandachart.BootstrapTemplateEnvVars(state)
+
 			sts := redpandachart.StatefulSet(state, redpandachart.Pool{Statefulset: state.Values.Statefulset})
-			names := make([]string, 0, len(sts.Spec.Template.Spec.InitContainers))
-			for _, c := range sts.Spec.Template.Spec.InitContainers {
-				names = append(names, c.Name)
+			initContainers := sts.Spec.Template.Spec.InitContainers
+			i := slices.IndexFunc(initContainers, func(c corev1.Container) bool {
+				return c.Name == redpandachart.BootstrapYamlTemplaterContainerName
+			})
+			require.GreaterOrEqual(t, i, 0, "the StatefulSet must always carry the bootstrap templater; got init containers %v", initContainers)
+			require.Equal(t, expected, initContainers[i].Env)
+			require.Empty(t, initContainers[i].EnvFrom)
+
+			if job := redpandachart.PostInstallUpgradeJob(state); job != nil {
+				templater := job.Spec.Template.Spec.InitContainers[0]
+				require.Equal(t, redpandachart.BootstrapYamlTemplaterContainerName, templater.Name)
+				require.Equal(t, expected, templater.Env)
+				require.Empty(t, templater.EnvFrom)
+			}
+		})
+	}
+}
+
+// stubCluster implements the only two [cluster.Cluster] accessors
+// clusterConfigFor uses.
+//
+// GetConfig returns nil so the chart renders "offline": GoChart.Dot treats a nil
+// RESTConfig as empty capabilities without erroring, whereas a bogus non-nil
+// config fails apiserver discovery and short-circuits before the code under test.
+type stubCluster struct {
+	cluster.Cluster
+	c client.Client
+}
+
+func (s *stubCluster) GetConfig() *rest.Config  { return nil }
+func (s *stubCluster) GetClient() client.Client { return s.c }
+
+// TestClusterConfigForPostInstallJobDisabled asserts that cluster configuration
+// is derived independently of the optional post-install job.
+//
+// clusterConfigFor used to read the bootstrap init container's environment off
+// redpanda.PostInstallUpgradeJob, which returns nil when
+// `post_install_job.enabled=false`. Dereferencing it panicked, and the recovered
+// panic left ConfigurationApplied in Error and Quiesced/Stable False forever
+// while Ready and Healthy still reported True — cluster configuration was
+// silently never applied.
+//
+// See https://github.com/redpanda-data/redpanda-operator/issues/1021
+func TestClusterConfigForPostInstallJobDisabled(t *testing.T) {
+	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
+
+	configFor := func(t *testing.T, spec *redpandav1alpha2.RedpandaClusterSpec) map[string]any {
+		t.Helper()
+
+		rp := &redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{Name: "redpanda-example", Namespace: "redpanda"},
+			Spec:       redpandav1alpha2.RedpandaSpec{ChartRef: redpandav1alpha2.ChartRef{}, ClusterSpec: spec},
+		}
+
+		r := &redpanda.RedpandaReconciler{}
+		cl := &stubCluster{c: fake.NewClientBuilder().WithScheme(controller.V2Scheme).Build()}
+
+		config, warnings, err := r.ClusterConfigForTesting(ctx, rp, nil, cl)
+		require.NoError(t, err)
+		require.Empty(t, warnings)
+		require.NotEmpty(t, config, "cluster config must not be empty")
+		return config
+	}
+
+	// The reference: chart defaults, where the post-install job is enabled.
+	baseline := configFor(t, &redpandav1alpha2.RedpandaClusterSpec{})
+
+	for name, spec := range map[string]*redpandav1alpha2.RedpandaClusterSpec{
+		// The reporter's configuration.
+		"both jobs disabled": {
+			PostInstallJob: &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(false)},
+			PostUpgradeJob: &redpandav1alpha2.PostUpgradeJob{Enabled: ptr.To(false)},
+		},
+		"post_install_job disabled": {
+			PostInstallJob: &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(false)},
+		},
+		"post_upgrade_job disabled": {
+			PostUpgradeJob: &redpandav1alpha2.PostUpgradeJob{Enabled: ptr.To(false)},
+		},
+		"post_install_job explicitly enabled": {
+			PostInstallJob: &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(true)},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// Whether or not the job is rendered is irrelevant to the cluster
+			// config: the operator performs that job's work itself and never
+			// creates it.
+			require.Equal(t, baseline, configFor(t, spec))
+		})
+	}
+}
+
+// TestClusterConfigForBootstrapEnvIsMirrored asserts that the environment the
+// bootstrap init container would have used is still mirrored onto the pod
+// context, so `${VAR}`-style references in the cluster config template resolve.
+// This is the behavior the (now removed) post-install job lookup existed for,
+// and it must survive with the job disabled.
+func TestClusterConfigForBootstrapEnvIsMirrored(t *testing.T) {
+	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
+
+	for name, postInstallJob := range map[string]*redpandav1alpha2.PostInstallJob{
+		"post_install_job enabled":  {Enabled: ptr.To(true)},
+		"post_install_job disabled": {Enabled: ptr.To(false)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			// Tiered storage credentials are injected into the bootstrap
+			// container as env vars and referenced from the cluster config
+			// template, so they exercise the env mirroring end to end.
+			rp := &redpandav1alpha2.Redpanda{
+				ObjectMeta: metav1.ObjectMeta{Name: "redpanda-example", Namespace: "redpanda"},
+				Spec: redpandav1alpha2.RedpandaSpec{
+					ChartRef: redpandav1alpha2.ChartRef{},
+					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+						PostInstallJob: postInstallJob,
+						Storage: &redpandav1alpha2.Storage{
+							Tiered: &redpandav1alpha2.Tiered{
+								Config: &redpandav1alpha2.TieredConfig{
+									CloudStorageEnabled: &apiutil.JSONBoolean{Raw: []byte("true")},
+									CloudStorageBucket:  ptr.To("test-bucket"),
+									CloudStorageRegion:  ptr.To("us-east-1"),
+								},
+							},
+						},
+					},
+				},
 			}
 
-			require.Contains(t, names, redpandachart.BootstrapYamlTemplaterContainerName,
-				"the StatefulSet must always carry the bootstrap templater; got init containers %v", names)
+			r := &redpanda.RedpandaReconciler{}
+			cl := &stubCluster{c: fake.NewClientBuilder().WithScheme(controller.V2Scheme).Build()}
+
+			config, _, err := r.ClusterConfigForTesting(ctx, rp, nil, cl)
+			require.NoError(t, err)
+
+			// A nil ConfigSchema is passed, so values are not coerced to
+			// their Redpanda types and stay as the reified strings.
+			require.Equal(t, "true", config["cloud_storage_enabled"])
+			require.Equal(t, "test-bucket", config["cloud_storage_bucket"])
+			require.Equal(t, "us-east-1", config["cloud_storage_region"])
 		})
 	}
 }
