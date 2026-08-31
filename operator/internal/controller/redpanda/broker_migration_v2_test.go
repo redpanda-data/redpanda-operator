@@ -23,6 +23,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -586,6 +587,92 @@ func (s *BrokerControllerSuite) TestV2RollbackAdoptsBrokerCreatedPodsWithoutRoll
 		}
 		time.Sleep(2 * time.Second)
 	}
+}
+
+// TestV2BrokerBornRollbackKeepsPodsRollable pins the broker-BORN rollback
+// path — the one with no migration backup ConfigMap (only a migration writes
+// one). The freshly rendered StatefulSet adopts the ordinal-named pods, and
+// under OnDelete the StatefulSet controller labels pods only at creation —
+// so unless the rollback hands the adopted pods over WITH revision
+// bookkeeping, the revision-based roll planner (which deliberately skips
+// unlabeled pods) excludes them from every future rolling restart: image
+// bumps and restart-requiring config changes silently never apply.
+func (s *BrokerControllerSuite) TestV2BrokerBornRollbackKeepsPodsRollable() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+	s.applyAndWait(t, ctx, c, rp)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 3) {
+			return
+		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase)
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	// Roll back the broker-born cluster.
+	s.setMigrationAnnotation(t, ctx, c, rp, nil)
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		assert.Empty(ct, brokers, "all Broker CRs should be removed on rollback")
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		assert.Equal(ct, int32(3), sts.Status.ReadyReplicas, "rendered StatefulSet should adopt all pods")
+	}, 5*time.Minute, 5*time.Second)
+
+	// Mechanism: adopted pods must carry the StatefulSet's revision, or the
+	// roll planner can never see them again.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		if !assert.NotEmpty(ct, sts.Status.UpdateRevision) {
+			return
+		}
+		for i := 0; i < 3; i++ {
+			var pod corev1.Pod
+			if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: fmt.Sprintf("%s-%d", rp.Name, i), Namespace: rp.Namespace}, &pod)) {
+				return
+			}
+			assert.Equalf(ct, sts.Status.UpdateRevision, pod.Labels[appsv1.StatefulSetRevisionLabel],
+				"pod %q must be handed over with the StatefulSet's revision — an unlabeled adopted pod is invisible to every future roll", pod.Name)
+		}
+	}, 3*time.Minute, 5*time.Second)
+
+	// Behavior: a template change after the rollback must actually roll the
+	// pods. Snapshot, bump a node-config value, and require both pods to be
+	// replaced.
+	uids := s.brokerPodUIDs(t, ctx, c, rp, 3)
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	patch := client.MergeFrom(rp.DeepCopy())
+	rp.Spec.ClusterSpec.Config = &redpandav1alpha2.Config{
+		Node: &runtime.RawExtension{Raw: []byte(`{"crash_loop_limit": 7}`)},
+	}
+	require.NoError(t, c.Patch(ctx, rp, patch))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		rolled := 0
+		for name, uid := range uids {
+			var pod corev1.Pod
+			if err := c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod); err != nil {
+				return
+			}
+			if pod.UID != uid {
+				rolled++
+			}
+		}
+		assert.Equalf(ct, 3, rolled,
+			"a post-rollback config change must roll every adopted pod; %d of 3 rolled — unrolled pods are running stale config silently", rolled)
+	}, 8*time.Minute, 5*time.Second)
 }
 
 // TestV2NodePoolDeployedGenerationAdvances pins broker-mode NodePool rollout

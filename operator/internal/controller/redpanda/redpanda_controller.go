@@ -1032,7 +1032,20 @@ func (r *RedpandaReconciler) rollbackBrokerCRs(ctx context.Context, state *clust
 		Owner:           state.cluster.Redpanda,
 		ClusterSelector: k8slabels.SelectorFromSet(r.LifecycleClient.GetOwnerLabels(state.cluster)),
 		Reporter:        &v2MigrationReporter{state: state},
-		Logger:          log.FromContext(ctx),
+		// Lets Rollback synthesize the migration backup for broker-BORN
+		// clusters (no migration ever wrote one), so their pods are handed
+		// over with revision bookkeeping instead of becoming invisible to
+		// every future rolling restart. The tracker's desired pools are
+		// this pass's fresh render — the same one the plain path will
+		// create the StatefulSets from.
+		DesiredStatefulSets: func(context.Context) ([]*appsv1.StatefulSet, error) {
+			var sets []*appsv1.StatefulSet
+			for _, set := range state.pools.DesiredPools() {
+				sets = append(sets, set.StatefulSet)
+			}
+			return sets, nil
+		},
+		Logger: log.FromContext(ctx),
 	})
 }
 

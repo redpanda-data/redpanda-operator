@@ -74,3 +74,40 @@ Feature: Broker CRD with V2 Redpanda
     And cluster "broker-v2" should eventually have 3 Broker CRs
     And all Broker CRs for cluster "broker-v2" should be Running
     And cluster "broker-v2" admin API should show 3 brokers
+    # Roll back a broker-BORN cluster: no migration backup exists (only a
+    # migration writes one), so the StatefulSet is rendered fresh and must
+    # adopt the running pods — and those pods must remain reachable by
+    # future rolling restarts. The final roll is the load-bearing assertion:
+    # an adopted pod left without revision bookkeeping is silently skipped
+    # by every future template change, so image bumps and restart-requiring
+    # config changes would never reach it.
+    When I remove annotation "operator.redpanda.com/use-broker-cr" from Redpanda "broker-v2"
+    Then a StatefulSet should eventually exist for cluster "broker-v2"
+    And cluster "broker-v2" should eventually have 0 Broker CRs
+    And cluster "broker-v2" admin API should show 3 brokers
+    When I snapshot pod UIDs for cluster "broker-v2"
+    And I apply Kubernetes manifest:
+      """
+      apiVersion: cluster.redpanda.com/v1alpha2
+      kind: Redpanda
+      metadata:
+        name: broker-v2
+      spec:
+        clusterSpec:
+          statefulset:
+            replicas: 3
+          tolerations:
+            - key: node.kubernetes.io/not-ready
+              operator: Exists
+              effect: NoExecute
+              tolerationSeconds: 300
+            - key: node.kubernetes.io/unreachable
+              operator: Exists
+              effect: NoExecute
+              tolerationSeconds: 300
+          config:
+            node:
+              crash_loop_limit: 12
+      """
+    Then pods for cluster "broker-v2" should roll one at a time
+    And cluster "broker-v2" admin API should show 3 brokers

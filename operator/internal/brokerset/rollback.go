@@ -43,7 +43,20 @@ type RollbackConfig struct {
 	ClusterSelector k8slabels.Selector
 	// Reporter records rollback progress. Optional.
 	Reporter MigrationReporter
-	Logger   logr.Logger
+	// DesiredStatefulSets renders the owner's CURRENT desired StatefulSets.
+	// Optional. A cluster BORN in broker mode has no migration backup
+	// ConfigMap (only the migration state machine writes one), so with this
+	// hook set, Rollback synthesizes the backup from the render before any
+	// destructive step — its pods were built from exactly that render, so
+	// restore-verbatim semantics hold — and the standard
+	// restore→adopt→stamp→delete flow then runs unchanged. Without it, a
+	// broker-born rollback would adopt pods with no revision bookkeeping,
+	// and the revision-based roll planners (which deliberately skip
+	// unlabeled pods) would exclude them from every future rolling restart.
+	// V1 leaves this nil: its roll signal is the per-pod config checksum,
+	// not ControllerRevisions, so unlabeled pods still roll there.
+	DesiredStatefulSets func(ctx context.Context) ([]*appsv1.StatefulSet, error)
+	Logger              logr.Logger
 }
 
 func (cfg *RollbackConfig) report(ctx context.Context, status corev1.ConditionStatus, reason, message string) {
@@ -179,6 +192,15 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 				cfg.report(ctx, corev1.ConditionFalse, MigrationReasonBlocked, requeueErr.Msg)
 			}
 			return acted, err
+		}
+
+		// Before anything destructive: a broker-born cluster has no backup
+		// ConfigMap, and the ConfigMap is both the stamping trigger and the
+		// resume marker for everything after the CR deletions. Synthesize it
+		// from the current render first, so a crash at any later point
+		// resumes into the standard restore→adopt→stamp→delete flow.
+		if err := synthesizeBackupFromRender(ctx, cfg); err != nil {
+			return acted, errors.Wrap(err, "synthesizing migration backup from the desired render")
 		}
 
 		l.Info("rollback: cleaning up Broker CRs", "count", len(brokers))
@@ -397,6 +419,64 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 
 	cfg.report(ctx, corev1.ConditionTrue,
 		MigrationReasonRolledBack, "Broker CRs removed; StatefulSet manages all pods")
+	return nil
+}
+
+// synthesizeBackupFromRender creates the migration backup ConfigMap from the
+// owner's current desired render when none exists — the broker-born case
+// (see RollbackConfig.DesiredStatefulSets). No-op when the hook is unset,
+// when a backup already exists (a migrated cluster restores ITS backup, not
+// the render), or on AlreadyExists races.
+func synthesizeBackupFromRender(ctx context.Context, cfg RollbackConfig) error {
+	if cfg.DesiredStatefulSets == nil {
+		return nil
+	}
+	c, l := cfg.Client, cfg.Logger
+
+	cmName := migrationBackupName(cfg.Owner.GetName())
+	var existing corev1.ConfigMap
+	err := c.Get(ctx, types.NamespacedName{Name: cmName, Namespace: cfg.Owner.GetNamespace()}, &existing)
+	if err == nil {
+		return nil
+	}
+	if !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	sets, err := cfg.DesiredStatefulSets(ctx)
+	if err != nil {
+		return errors.Wrap(err, "rendering desired StatefulSets")
+	}
+	if len(sets) == 0 {
+		// Nothing rendered (e.g. a cluster being torn down): fall through to
+		// the ordinary no-backup handling.
+		return nil
+	}
+
+	data := map[string]string{}
+	for _, sts := range sets {
+		payload, err := backupStatefulSetPayload(sts)
+		if err != nil {
+			return errors.Wrapf(err, "marshaling backup for StatefulSet %s", sts.Name)
+		}
+		data[fmt.Sprintf("%s.json", sts.Name)] = string(payload)
+	}
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cmName,
+			Namespace: cfg.Owner.GetNamespace(),
+			Labels:    map[string]string{"redpanda.com/migration": "statefulset-to-broker"},
+		},
+		Data: data,
+	}
+	if err := controllerutil.SetControllerReference(cfg.Owner, cm, cfg.Scheme); err != nil {
+		return errors.Wrap(err, "setting owner reference on synthesized backup")
+	}
+	l.Info("rollback: synthesizing migration backup from the current render (broker-born cluster)", "name", cmName, "statefulsets", len(sets))
+	if err := c.Create(ctx, cm); err != nil && !apierrors.IsAlreadyExists(err) {
+		return err
+	}
 	return nil
 }
 
