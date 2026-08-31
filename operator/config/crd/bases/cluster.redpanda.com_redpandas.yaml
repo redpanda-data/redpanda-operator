@@ -2153,6 +2153,10 @@ spec:
                       admin:
                         description: Configures settings for the Admin API listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -2167,6 +2171,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -2406,6 +2414,10 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -2420,6 +2432,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -2664,6 +2680,10 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -2678,6 +2698,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -2917,6 +2941,10 @@ spec:
                       rpc:
                         description: Configures settings for the RPC API listener.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           port:
                             description: Specifies the container port number for the
                               internal listener.
@@ -3005,6 +3033,10 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -3019,6 +3051,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -36274,6 +36310,10 @@ spec:
                       admin:
                         description: Configures settings for the Admin API listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -36288,6 +36328,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -36527,6 +36571,10 @@ spec:
                       http:
                         description: Configures settings for the HTTP Proxy listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -36541,6 +36589,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -36785,6 +36837,10 @@ spec:
                       kafka:
                         description: Configures settings for the Kafka API listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -36799,6 +36855,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.
@@ -37038,6 +37098,10 @@ spec:
                       rpc:
                         description: Configures settings for the RPC API listener.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           port:
                             description: Specifies the container port number for the
                               internal listener.
@@ -37126,6 +37190,10 @@ spec:
                       schemaRegistry:
                         description: Configures settings for the Schema Registry listeners.
                         properties:
+                          address:
+                            description: The address to bind this listener to. Default
+                              0.0.0.0
+                            type: string
                           appProtocol:
                             type: string
                           authenticationMethod:
@@ -37140,6 +37208,10 @@ spec:
                               description: ExternalListener configures settings for
                                 the external listeners.
                               properties:
+                                address:
+                                  description: The address to bind this listener to.
+                                    Default 0.0.0.0
+                                  type: string
                                 advertisedPorts:
                                   description: Specifies the network port that the
                                     external Service listens on.

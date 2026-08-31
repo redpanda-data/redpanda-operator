@@ -1063,9 +1063,19 @@ type Listeners struct {
 	Kafka          ListenerConfig[KafkaAuthenticationMethod] `json:"kafka" jsonschema:"required"`
 	SchemaRegistry ListenerConfig[NoAuth]                    `json:"schemaRegistry" jsonschema:"required"`
 	RPC            struct {
-		Port int32       `json:"port" jsonschema:"required"`
-		TLS  InternalTLS `json:"tls" jsonschema:"required"`
+		Address *string     `json:"address,omitempty"`
+		Port    int32       `json:"port" jsonschema:"required"`
+		TLS     InternalTLS `json:"tls" jsonschema:"required"`
 	} `json:"rpc" jsonschema:"required"`
+}
+
+// +gotohelm:ignore=true
+func (Listeners) JSONSchemaExtend(schema *jsonschema.Schema) {
+	rpc, ok := schema.Properties.Get("rpc")
+	if !ok {
+		panic(fmt.Sprintf("missing field %q on %T", "rpc", schema.Title))
+	}
+	makeNullable(rpc, "address")
 }
 
 // InUseServerCerts returns a set of names (As a sorted slice) of all TLS
@@ -1796,6 +1806,7 @@ type ListenerConfig[T ~string] struct {
 	External map[string]ExternalListener[T] `json:"external"`
 	Port     int32                          `json:"port" jsonschema:"required"`
 	TLS      InternalTLS                    `json:"tls" jsonschema:"required"`
+	Address  *string                        `json:"address,omitempty"`
 
 	AppProtocol          *string `json:"appProtocol,omitempty"`
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
@@ -1818,6 +1829,7 @@ func (l *ListenerConfig[T]) AsString() ListenerConfig[string] {
 		External:             ext,
 		Port:                 l.Port,
 		TLS:                  l.TLS,
+		Address:              l.Address,
 		AppProtocol:          l.AppProtocol,
 		AuthenticationMethod: auth,
 	}
@@ -1825,7 +1837,7 @@ func (l *ListenerConfig[T]) AsString() ListenerConfig[string] {
 
 // +gotohelm:ignore=true
 func (ListenerConfig[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
+	makeNullable(schema, "authenticationMethod", "address")
 
 	external, _ := schema.Properties.Get("external")
 
@@ -1892,7 +1904,7 @@ func (l *ListenerConfig[T]) TrustStores(tls *TLS) []*TrustStore {
 func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
 	internal := map[string]any{
 		"name":    "internal",
-		"address": "0.0.0.0",
+		"address": ptr.Deref(l.Address, "0.0.0.0"),
 		"port":    l.Port,
 	}
 
@@ -1914,7 +1926,7 @@ func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
 		listener := map[string]any{
 			"name":    k,
 			"port":    l.Port,
-			"address": "0.0.0.0",
+			"address": ptr.Deref(l.Address, "0.0.0.0"),
 		}
 
 		if am := ptr.Deref(l.AuthenticationMethod, defaultAuth); am != "" {
@@ -1962,6 +1974,7 @@ type ExternalListener[T ~string] struct {
 	// TODO CHECK NODE PORT USAGE
 	NodePort *int32       `json:"nodePort"`
 	TLS      *ExternalTLS `json:"tls"`
+	Address  *string      `json:"address,omitempty"`
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
@@ -2001,6 +2014,7 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		Port:                 l.Port,
 		NodePort:             l.NodePort,
 		TLS:                  l.TLS,
+		Address:              l.Address,
 		AuthenticationMethod: auth,
 		PrefixTemplate:       l.PrefixTemplate,
 		Type:                 l.Type,
@@ -2011,7 +2025,7 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 
 // +gotohelm:ignore=true
 func (ExternalListener[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
-	makeNullable(schema, "authenticationMethod")
+	makeNullable(schema, "authenticationMethod", "address")
 }
 
 func (l *ExternalListener[T]) IsEnabled() bool {

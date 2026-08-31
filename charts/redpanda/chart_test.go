@@ -926,8 +926,9 @@ func mTLSValuesUsingCertManager() *redpanda.PartialValues {
 				},
 			},
 			RPC: &struct {
-				Port *int32                       `json:"port,omitempty" jsonschema:"required"`
-				TLS  *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
+				Address *string                      `json:"address,omitempty"`
+				Port    *int32                       `json:"port,omitempty" jsonschema:"required"`
+				TLS     *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
 			}{
 				TLS: &redpanda.PartialInternalTLS{
 					Cert:              ptr.To("rpc"),
@@ -992,8 +993,9 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 				},
 			},
 			RPC: &struct {
-				Port *int32                       `json:"port,omitempty" jsonschema:"required"`
-				TLS  *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
+				Address *string                      `json:"address,omitempty"`
+				Port    *int32                       `json:"port,omitempty" jsonschema:"required"`
+				TLS     *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
 			}{
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
