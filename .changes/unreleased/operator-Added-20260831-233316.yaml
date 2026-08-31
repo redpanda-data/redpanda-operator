@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'The single-cluster operator now supports --leader-election-lease-duration, --leader-election-renew-deadline, and --leader-election-retry-period for tuning leader election. The existing 15s, 10s, and 2s defaults remain unchanged.'
+time: 2026-08-31T23:33:16+02:00
