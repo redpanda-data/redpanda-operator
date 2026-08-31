@@ -1,26 +1,9 @@
 project: operator
 kind: Fixed
 body: |-
-    Setting `post_install_job.enabled=false` on a Redpanda resource no longer wedges cluster configuration.
+    Setting `post_install_job.enabled=false` on a Redpanda resource no longer silently wedges cluster configuration.
 
-      Cluster configuration was derived by rendering the chart's post-install job
-      and copying the environment off its bootstrap init container. That job is a
-      Helm hook the operator never creates, and it renders as nothing at all when
-      `post_install_job.enabled=false`, so the operator nil dereferenced on every
-      pass. The recovered panic left `ConfigurationApplied` in `Error` and
-      `Quiesced`/`Stable` at `False` indefinitely, while `Ready` and `Healthy` kept
-      reporting `True` — so no cluster property set through `spec.clusterSpec.config.cluster`
-      was ever applied, silently, for the life of the cluster.
-
-      The environment is now read off the broker StatefulSet's copy of that init
-      container, which is always rendered and is the one that actually writes the
-      `.bootstrap.yaml` the brokers read. It is looked up by container name rather
-      than by index, since its position shifts with the optional tuning,
-      data-directory-ownership and fs-validator init containers.
-
-      The workaround — removing `post_install_job`/`post_upgrade_job` from the
-      resource — is no longer needed. If you injected bootstrap environment via
-      `post_install_job.podTemplate`, move it to `statefulset.podTemplate`: only the
-      StatefulSet's copy feeds cluster configuration now, and only it reaches the
-      brokers.
+      Cluster configuration was derived from the chart's rendered post-install job, which renders as nothing when disabled — a nil dereference on every reconcile that left `ConfigurationApplied` in `Error` while `Ready`/`Healthy` kept reporting `True`, so properties set through `spec.clusterSpec.config.cluster` were never applied.
+      The bootstrap environment is now derived directly from the chart values, independent of any rendered resource.
+      Environment injected through `post_install_job.podTemplate` overlays no longer feeds cluster configuration; cluster-config values have dedicated hooks (`storage.tiered.credentialsSecretRef`, `config.extraClusterConfiguration`).
 time: 2026-08-26T21:00:00-07:00
