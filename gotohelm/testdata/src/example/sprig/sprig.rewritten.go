@@ -13,6 +13,7 @@
 package sprig
 
 import (
+	"cmp"
 	"maps"
 	"slices"
 	"strings"
@@ -32,6 +33,7 @@ func Sprig(dot *helmette.Dot) map[string]any {
 		"asIntegral":      asIntegral(dot),
 		"asNumeric":       asNumeric(dot),
 		"atoi":            atoi(),
+		"cmpOr":           cmpOr(),
 		"concat":          concat(),
 		"default":         default_(),
 		"empty":           empty(),
@@ -289,6 +291,26 @@ func default_() []any {
 		helmette.Default([]string{}, defaultStrSlice),
 		helmette.Default(0, defaultInt),
 		helmette.Default(1, defaultInt),
+	}
+}
+
+// cmpOr asserts that cmp.Or, which transpiles to nested `default` calls,
+// behaves the same in go and helm.
+func cmpOr() []any {
+	empty := ""
+	zero := 0
+	return []any{
+		cmp.Or(empty, "fallback"),
+		cmp.Or("set", "fallback"),
+		cmp.Or(empty, empty, "third"),
+		cmp.Or("first", "second", "third"),
+		cmp.Or(zero, 1234),
+		cmp.Or(5678, 1234),
+		cmp.Or(empty, empty),
+		// NB: cmp.Or is deliberately restricted to basic types by the
+		// transpiler. Pointers diverge: gotohelm erases the pointer, so helm
+		// tests the pointee for emptiness where go tests the pointer for
+		// nil-ness. cmp.Or(ptr.To(""), ptr.To("x")) is "" in go, "x" in helm.
 	}
 }
 
