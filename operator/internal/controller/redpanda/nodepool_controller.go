@@ -236,7 +236,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		}); err != nil {
 			return ctrl.Result{}, err
 		}
-		brokers = brokerList.Items
+		brokers = brokersForNodePool(brokerList.Items, pool.Name)
 	}
 
 	if sts == nil && len(brokers) == 0 {
@@ -311,14 +311,31 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	return ctrl.Result{}, nil
 }
 
+// brokersForNodePool keeps only the Brokers whose clusterRef names this
+// NodePool. The pool-name label the Reconcile listing matches on is not
+// unique across owners: a V1 Cluster with a broker-mode node pool of the
+// same name in the same namespace stamps the identical label on ITS Brokers.
+// Counting those would pollute this NodePool's replica counts and drag
+// DeployedGeneration (a minimum) down indefinitely.
+func brokersForNodePool(brokers []redpandav1alpha2.Broker, poolName string) []redpandav1alpha2.Broker {
+	var owned []redpandav1alpha2.Broker
+	for _, b := range brokers {
+		if b.Spec.ClusterRef.IsNodePool() && b.Spec.ClusterRef.Name == poolName {
+			owned = append(owned, b)
+		}
+	}
+	return owned
+}
+
 // brokerBackedPoolStatus synthesizes the pool's status from its Broker CRs —
 // the broker-mode analog of the StatefulSet-derived status, computed from
 // Broker statuses alone (no pod reads). Field mapping:
 //   - Replicas: brokers whose pod exists (PodScheduled reason is not
 //     PodMissing; Unknown means not yet reconciled and does not count)
-//   - ReadyReplicas / RunningReplicas: brokers with Ready=True (pod-liveness
-//     based, deliberately independent of the cluster-health-coupled
-//     Kubernetes readiness probe that StatefulSet ReadyReplicas reflects)
+//   - ReadyReplicas / RunningReplicas: brokers with Ready=True — the Broker
+//     controller sets it from the pod's Ready condition, i.e. the same
+//     Kubernetes readiness probe StatefulSet readyReplicas counts, just read
+//     through the Broker CR instead of the pod
 //   - UpToDateReplicas: brokers with ConfigSynced=True (pod matches the
 //     desired pod template across all rotation keys)
 //   - CondemnedReplicas: brokers marked for decommission

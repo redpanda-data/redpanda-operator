@@ -56,6 +56,32 @@ func podScheduled(status metav1.ConditionStatus, reason statuses.BrokerPodSchedu
 	return metav1.Condition{Type: statuses.BrokerPodScheduled, Status: status, Reason: string(reason)}
 }
 
+// TestBrokersForNodePool pins the clusterRef filter behind the Reconcile
+// listing: the pool-name label alone must not attribute a same-named V1
+// Cluster node pool's Brokers to this NodePool.
+func TestBrokersForNodePool(t *testing.T) {
+	broker := func(name string, ref redpandav1alpha2.ClusterRef) redpandav1alpha2.Broker {
+		return redpandav1alpha2.Broker{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec:       redpandav1alpha2.BrokerSpec{ClusterRef: ref},
+		}
+	}
+
+	mine := broker("pool-1-broker-0", redpandav1alpha2.ClusterRef{
+		Name: "pool-1", Kind: ptr.To(redpandav1alpha2.NodePoolKind),
+	})
+	v1Twin := broker("pool-1-broker-1", redpandav1alpha2.ClusterRef{
+		Name: "pool-1", Group: ptr.To("redpanda.vectorized.io"), Kind: ptr.To("Cluster"),
+	})
+	otherPool := broker("pool-2-broker-0", redpandav1alpha2.ClusterRef{
+		Name: "pool-2", Kind: ptr.To(redpandav1alpha2.NodePoolKind),
+	})
+
+	owned := brokersForNodePool([]redpandav1alpha2.Broker{mine, v1Twin, otherPool}, "pool-1")
+	require.Equal(t, []redpandav1alpha2.Broker{mine}, owned,
+		"only Brokers whose clusterRef names this NodePool belong to it; label matches alone do not")
+}
+
 func TestBrokerBackedPoolStatus(t *testing.T) {
 	pool := func(replicas int32) *redpandav1alpha2.NodePool {
 		return &redpandav1alpha2.NodePool{

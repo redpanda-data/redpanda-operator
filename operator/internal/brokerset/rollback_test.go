@@ -11,11 +11,14 @@ package brokerset
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -145,4 +148,90 @@ func TestRollbackRederivesLostTerminalReport(t *testing.T) {
 		rollback(t, rep)
 		require.Empty(t, rep.reports, "a persisted RolledBack must not be re-written every pass")
 	})
+}
+
+// TestFinalizeRollbackIgnoresForeignPods pins the finalize phase's blast
+// radius to the pods of THIS rollback — the ordinal names derived from the
+// backup's StatefulSets. finalizeRollback lists pods by the same name-based,
+// copyable label selector as the Broker list, then strips Broker ownerRefs
+// and gates completion on StatefulSet adoption; a label-matching pod from
+// another cluster would otherwise have its ownerRefs stripped (orphaning it
+// from ITS owner) and, never becoming StatefulSet-owned, wedge this
+// cluster's rollback at the adoption wait forever.
+func TestFinalizeRollbackIgnoresForeignPods(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+
+	owner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test", UID: "owner-uid"}}
+
+	backup, err := json.Marshal(&appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test"},
+		Spec:       appsv1.StatefulSetSpec{Replicas: ptr.To(int32(1))},
+	})
+	require.NoError(t, err)
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: migrationBackupName(owner.Name), Namespace: "test"},
+		Data:       map[string]string{"rp.json": string(backup)},
+	}
+
+	// This rollback's pod: StatefulSet-owned and already carrying a revision
+	// label, so the flow can complete in one pass.
+	adopted := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "rp-0",
+			Namespace: "test",
+			Labels:    map[string]string{appsv1.StatefulSetRevisionLabel: "rp-abc"},
+			OwnerReferences: []metav1.OwnerReference{{
+				APIVersion: "apps/v1", Kind: "StatefulSet", Name: "rp", UID: "sts-uid", Controller: ptr.To(true),
+			}},
+		},
+	}
+
+	// A label-matching pod from ANOTHER cluster, still owned by its Broker CR.
+	foreignBrokerRef := metav1.OwnerReference{
+		APIVersion: redpandav1alpha2.GroupVersion.String(),
+		Kind:       redpandav1alpha2.BrokerKind,
+		Name:       "other-cluster-broker-0",
+		UID:        "foreign-broker-uid",
+		Controller: ptr.To(true),
+	}
+	foreignPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "other-cluster-0", Namespace: "test", OwnerReferences: []metav1.OwnerReference{foreignBrokerRef}},
+		Spec: corev1.PodSpec{Volumes: []corev1.Volume{{
+			Name:         "datadir",
+			VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir-other-cluster-0"}},
+		}}},
+	}
+	foreignPVC := &corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{Name: "datadir-other-cluster-0", Namespace: "test", OwnerReferences: []metav1.OwnerReference{foreignBrokerRef}},
+	}
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(owner, cm, adopted, foreignPod, foreignPVC).Build()
+
+	_, err = Rollback(ctx, RollbackConfig{
+		Client:          c,
+		Scheme:          scheme,
+		Owner:           owner,
+		ClusterSelector: k8slabels.Everything(),
+		Logger:          logr.Discard(),
+	})
+	require.NoError(t, err, "a foreign pod must not wedge the rollback at the adoption wait")
+
+	var gone corev1.ConfigMap
+	require.True(t, apierrors.IsNotFound(c.Get(ctx, types.NamespacedName{Name: cm.Name, Namespace: "test"}, &gone)),
+		"rollback must complete (backup deleted) despite the foreign pod")
+
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: foreignPod.Name, Namespace: "test"}, &pod))
+	require.Equal(t, []metav1.OwnerReference{foreignBrokerRef}, pod.OwnerReferences,
+		"rollback stripped the Broker ownerRef from a pod it does not own")
+	require.Empty(t, pod.Labels[appsv1.StatefulSetRevisionLabel],
+		"rollback stamped a revision label onto a pod it does not own")
+
+	var pvc corev1.PersistentVolumeClaim
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: foreignPVC.Name, Namespace: "test"}, &pvc))
+	require.Equal(t, []metav1.OwnerReference{foreignBrokerRef}, pvc.OwnerReferences,
+		"rollback stripped the Broker ownerRef from a claim it does not own")
 }

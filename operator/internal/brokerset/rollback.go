@@ -24,6 +24,7 @@ import (
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -333,9 +334,29 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 	}); err != nil {
 		return err
 	}
+
+	// Act only on the pods that belong to THIS rollback — the ordinal names
+	// of the backup's StatefulSets. The label selector alone is not a safe
+	// gate (the same principle Rollback applies to its Broker list): a
+	// label-matching foreign pod must neither have its ownerRefs stripped
+	// nor wedge this cluster's rollback forever at the adoption wait below.
+	expected := map[string]bool{}
+	for _, data := range cm.Data {
+		var backup appsv1.StatefulSet
+		if err := json.Unmarshal([]byte(data), &backup); err != nil {
+			continue // restoreStatefulSetsFromBackup already reported this
+		}
+		for i := int32(0); i < ptr.Deref(backup.Spec.Replicas, 1); i++ {
+			expected[fmt.Sprintf("%s-%d", backup.Name, i)] = true
+		}
+	}
+
 	revisions := map[string]string{}
 	for i := range pods.Items {
 		pod := &pods.Items[i]
+		if !expected[pod.Name] {
+			continue
+		}
 		// The Broker controller can RE-adopt a pod between Rollback's
 		// ownerRef strip and its CR's deletion (a reconcile of the live CR
 		// is usually in flight). When that write lands after the GC's
