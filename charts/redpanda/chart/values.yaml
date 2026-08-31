@@ -869,6 +869,8 @@ tuning:
 listeners:
   # -- Admin API listener (only one).
   admin:
+    # -- The address to bind to, default is 0.0.0.0
+    address: null
     # -- The port for both internal and external connections to the Admin API.
     port: 9644
     # -- Optional instrumentation hint - https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol
@@ -877,6 +879,7 @@ listeners:
     external:
       # -- Name of the external listener.
       default:
+        address: null
         port: 9645
         # Override the global `external.enabled` for only this listener.
         # enabled: true
@@ -899,6 +902,8 @@ listeners:
       requireClientAuth: false
   # -- Kafka API listeners.
   kafka:
+    # -- The address to bind to, default is 0.0.0.0
+    address: null
     # -- The port for internal client connections.
     port: 9093
     # default is "sasl"
@@ -911,6 +916,8 @@ listeners:
     external:
       default:
         # enabled: true
+        # -- The address to bind to, default is 0.0.0.0
+        address: null
         # -- The port used for external client connections.
         port: 9094
         # prefixTemplate: ""
@@ -936,6 +943,8 @@ listeners:
         # hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
   # -- RPC listener (this is never externally accessible).
   rpc:
+    # -- The address to bind to, default is 0.0.0.0
+    address: null
     port: 33145
     tls:
       # Optional flag to override the global TLS enabled flag.
@@ -945,6 +954,8 @@ listeners:
   # -- Schema registry listeners.
   schemaRegistry:
     enabled: true
+    # -- The address to bind to, default is 0.0.0.0
+    address: null
     port: 8081
     # default is "http_basic"
     authenticationMethod:
@@ -956,6 +967,7 @@ listeners:
     external:
       default:
         # enabled: true
+        address: null
         port: 8084
         advertisedPorts:
         - 30081
@@ -968,6 +980,8 @@ listeners:
   # -- HTTP API listeners (aka PandaProxy).
   http:
     enabled: true
+    # -- The address to bind to, default is 0.0.0.0
+    address: null
     port: 8082
     # default is "http_basic"
     authenticationMethod:
@@ -979,6 +993,7 @@ listeners:
     external:
       default:
         # enabled: true
+        address: null
         port: 8083
         # prefixTemplate: ""
         advertisedPorts:

@@ -646,10 +646,14 @@ func rpcListenersTLS(state *RenderState) map[string]any {
 }
 
 func rpcListeners(state *RenderState) map[string]any {
-	return map[string]any{
+	m := map[string]any{
 		"address": "0.0.0.0",
 		"port":    state.Values.Listeners.RPC.Port,
 	}
+	if addr := ptr.Deref(state.Values.Listeners.Address, ""); addr != "" {
+		m["address"] = addr
+	}
+	return m
 }
 
 // First parameter defaultTLSEnabled must come from `state.Values.tls.enabled`.

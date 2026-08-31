@@ -4701,9 +4701,15 @@
     "listeners": {
       "additionalProperties": false,
       "properties": {
+        "address": {
+          "type": "string"
+        },
         "admin": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "type": "string"
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -4726,6 +4732,9 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "type": "string"
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"
@@ -4899,6 +4908,9 @@
         "http": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "type": "string"
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -4925,6 +4937,9 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "type": "string"
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"
@@ -5102,6 +5117,9 @@
         "kafka": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "type": "string"
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -5129,6 +5147,9 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "type": "string"
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"
@@ -5377,6 +5398,9 @@
         "schemaRegistry": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "type": "string"
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -5399,6 +5423,9 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "type": "string"
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"

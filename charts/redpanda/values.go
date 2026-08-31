@@ -1083,6 +1083,7 @@ type Listeners struct {
 		Port int32       `json:"port" jsonschema:"required"`
 		TLS  InternalTLS `json:"tls" jsonschema:"required"`
 	} `json:"rpc" jsonschema:"required"`
+	Address        *string                                   `json:"address,omitempty"`
 }
 
 // InUseServerCerts returns a set of names (As a sorted slice) of all TLS
@@ -1813,6 +1814,7 @@ type ListenerConfig[T ~string] struct {
 	External map[string]ExternalListener[T] `json:"external"`
 	Port     int32                          `json:"port" jsonschema:"required"`
 	TLS      InternalTLS                    `json:"tls" jsonschema:"required"`
+	Address  *string                        `json:"address,omitempty"`
 
 	AppProtocol          *string `json:"appProtocol,omitempty"`
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
@@ -1835,6 +1837,7 @@ func (l *ListenerConfig[T]) AsString() ListenerConfig[string] {
 		External:             ext,
 		Port:                 l.Port,
 		TLS:                  l.TLS,
+		Address:              l.Address,
 		AppProtocol:          l.AppProtocol,
 		AuthenticationMethod: auth,
 	}
@@ -1912,6 +1915,9 @@ func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
 		"address": "0.0.0.0",
 		"port":    l.Port,
 	}
+	if addr := ptr.Deref(l.Address, ""); addr != "" {
+		internal["address"] = addr
+	}
 
 	defaultAuth := ptr.Deref(auth, "")
 
@@ -1932,6 +1938,9 @@ func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
 			"name":    k,
 			"port":    l.Port,
 			"address": "0.0.0.0",
+		}
+		if addr := ptr.Deref(l.Address, ""); addr != "" {
+			listener["address"] = addr
 		}
 
 		if am := ptr.Deref(l.AuthenticationMethod, defaultAuth); am != "" {
@@ -1979,6 +1988,7 @@ type ExternalListener[T ~string] struct {
 	// TODO CHECK NODE PORT USAGE
 	NodePort *int32       `json:"nodePort"`
 	TLS      *ExternalTLS `json:"tls"`
+	Address  *string      `json:"address,omitempty"`
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
@@ -2018,6 +2028,7 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		Port:                 l.Port,
 		NodePort:             l.NodePort,
 		TLS:                  l.TLS,
+		Address:              l.Address,
 		AuthenticationMethod: auth,
 		PrefixTemplate:       l.PrefixTemplate,
 		Type:                 l.Type,

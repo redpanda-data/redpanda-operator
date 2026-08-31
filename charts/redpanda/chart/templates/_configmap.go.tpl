@@ -615,8 +615,13 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
+{{- $m := (dict "address" "0.0.0.0" "port" ($state.Values.listeners.rpc.port | int)) -}}
+{{- $addr_15 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.address "")))) "r") -}}
+{{- if (ne $addr_15 "") -}}
+{{- $_ := (set $m "address" $addr_15) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "address" "0.0.0.0" "port" ($state.Values.listeners.rpc.port | int))) | toJson -}}
+{{- (dict "r" $m) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -655,19 +660,19 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_712_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_15 := (index $_712_value_15_ok_16 0) -}}
-{{- $ok_16 := (index $_712_value_15_ok_16 1) -}}
-{{- if $ok_16 -}}
-{{- $lockMemory = (ternary (index $enabledOptions $value_15) false (hasKey $enabledOptions $value_15)) -}}
+{{- $_717_value_16_ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_16 := (index $_717_value_16_ok_17 0) -}}
+{{- $ok_17 := (index $_717_value_16_ok_17 1) -}}
+{{- if $ok_17 -}}
+{{- $lockMemory = (ternary (index $enabledOptions $value_16) false (hasKey $enabledOptions $value_16)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_719_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_17 := (index $_719_value_17_ok_18 0) -}}
-{{- $ok_18 := (index $_719_value_17_ok_18 1) -}}
-{{- if $ok_18 -}}
-{{- $overprovisioned = (ternary (index $enabledOptions $value_17) false (hasKey $enabledOptions $value_17)) -}}
+{{- $_724_value_18_ok_19 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_18 := (index $_724_value_18_ok_19 0) -}}
+{{- $ok_19 := (index $_724_value_18_ok_19 1) -}}
+{{- if $ok_19 -}}
+{{- $overprovisioned = (ternary (index $enabledOptions $value_18) false (hasKey $enabledOptions $value_18)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}
 {{- end -}}
 {{- $keys := (keys $flags) -}}
