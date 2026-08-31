@@ -115352,6 +115352,9 @@ spec:
     - expr: sum by (controller, job, namespace) (rate(controller_runtime_reconcile_total{job="operator-metrics-service",
         namespace="default"}[5m]))
       record: operator:reconcile_rate:5m
+    - expr: sum by (controller, job, namespace) (rate(controller_runtime_reconcile_total{result!="requeue_after",
+        job="operator-metrics-service", namespace="default"}[5m]))
+      record: operator:reconcile_churn_rate:5m
     - expr: sum by (controller, job, namespace) (rate(controller_runtime_reconcile_errors_total{job="operator-metrics-service",
         namespace="default"}[5m]))
       record: operator:reconcile_error_rate:5m
@@ -115361,6 +115364,9 @@ spec:
     - expr: histogram_quantile(0.99, sum by (le, controller, job, namespace) (rate(controller_runtime_reconcile_time_seconds_bucket{job="operator-metrics-service",
         namespace="default"}[5m])))
       record: operator:reconcile_p99_seconds:5m
+    - expr: histogram_quantile(0.99, sum by (le, name, job, namespace) (rate(workqueue_queue_duration_seconds_bucket{job="operator-metrics-service",
+        namespace="default"}[5m])))
+      record: operator:workqueue_p99_seconds:5m
   - name: redpanda-operator.controller-runtime.alerts
     rules:
     - alert: OperatorReconcileErrors
@@ -115377,13 +115383,14 @@ spec:
         severity: warning
     - alert: OperatorReconcileRunaway
       annotations:
-        description: Controller {{ $labels.controller }} has been reconciling at >5/s
-          for 5+ minutes. On a stable cluster this means the controller is spinning.
-          Cross-check operator_controller_reconcile_steady_state_total — if it is
-          flat while the reconcile rate is high, the controller is making no progress.
+        description: Controller {{ $labels.controller }} has completed >5 reconciles
+          per second for 5+ minutes, excluding scheduled interval requeues. On a stable
+          cluster this means the controller is spinning on the same resources without
+          reaching steady state. Cross-check operator_controller_reconcile_steady_state_total
+          — if it is flat while this rate is high, the controller is making no progress.
         summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
           }} is reconciling at a high rate
-      expr: operator:reconcile_rate:5m{job="operator-metrics-service", namespace="default"}
+      expr: operator:reconcile_churn_rate:5m{job="operator-metrics-service", namespace="default"}
         > 5
       for: 5m
       labels:
@@ -115403,14 +115410,14 @@ spec:
         severity: warning
     - alert: OperatorWorkerPoolSaturated
       annotations:
-        description: Controller {{ $labels.controller }} has all reconcile workers
-          busy for 10+ minutes. Reconciles may be queueing. Consider increasing MaxConcurrentReconciles
-          or investigating per-reconcile latency.
-        summary: Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace
-          }} worker pool saturated
-      expr: controller_runtime_active_workers{job="operator-metrics-service", namespace="default"}
-        >= controller_runtime_max_concurrent_reconciles{job="operator-metrics-service",
-        namespace="default"}
+        description: 'Items on controller {{ $labels.name }}''s workqueue have waited
+          >30s at p99 for 10+ minutes: work arrives faster than the worker pool drains
+          it. Consider increasing MaxConcurrentReconciles or investigating per-reconcile
+          latency (operator:reconcile_p99_seconds:5m).'
+        summary: Redpanda operator controller {{ $labels.name }} in {{ $labels.namespace
+          }} reconcile queue is backlogged
+      expr: operator:workqueue_p99_seconds:5m{job="operator-metrics-service", namespace="default"}
+        > 30
       for: 10m
       labels:
         severity: warning

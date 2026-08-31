@@ -62,6 +62,15 @@ import (
 // same Prometheus, and a recorded series is not namespaced to its producer, so an
 // unscoped alert expression evaluates against every install's series: two
 // installs would each alert on the other's controllers.
+//
+// The load-shaped alerts are calibrated for the interval-driven CR controllers
+// (Topic, User, Schema, ...), which requeue every CR every sync interval: the
+// steady-state reconcile rate is proportional to CR count × engaged clusters /
+// sync interval, and each controller runs a single worker that legitimately
+// sits busy under that load while its queue stays empty. Runaway therefore
+// counts only churn (everything but result="requeue_after"), and saturation is
+// measured as p99 time-in-queue rather than the sampled busy-worker gauge.
+// See K8S-927.
 func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -95,6 +104,22 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							Expr:   intstr.FromString(fmt.Sprintf(`sum by (controller, job, namespace) (rate(controller_runtime_reconcile_total{%s}[5m]))`, scope)),
 						},
 						{
+							// Churn: reconciles that are NOT the interval-driven
+							// "come back in sync-interval" shape. The interval
+							// controllers (Topic, User, Schema, ...) end every
+							// healthy pass with RequeueAfter, which
+							// controller-runtime counts as result="requeue_after",
+							// so the total reconcile rate scales with CR count ×
+							// engaged clusters / sync interval on a perfectly
+							// healthy install. Excluding only that result keeps
+							// errors, explicit requeues, AND success-result spin
+							// loops (a controller re-triggering itself by
+							// rewriting status converges to result="success" at
+							// high rate) visible. See K8S-927.
+							Record: "operator:reconcile_churn_rate:5m",
+							Expr:   intstr.FromString(fmt.Sprintf(`sum by (controller, job, namespace) (rate(controller_runtime_reconcile_total{result!="requeue_after", %s}[5m]))`, scope)),
+						},
+						{
 							Record: "operator:reconcile_error_rate:5m",
 							Expr:   intstr.FromString(fmt.Sprintf(`sum by (controller, job, namespace) (rate(controller_runtime_reconcile_errors_total{%s}[5m]))`, scope)),
 						},
@@ -106,6 +131,17 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							Record: "operator:reconcile_p99_seconds:5m",
 							Expr: intstr.FromString(fmt.Sprintf(
 								`histogram_quantile(0.99, sum by (le, controller, job, namespace) (rate(controller_runtime_reconcile_time_seconds_bucket{%s}[5m])))`,
+								scope,
+							)),
+						},
+						{
+							// Time spent waiting in the workqueue before a worker
+							// picks the item up. This, not the busy-worker gauge,
+							// is the backlog signal: workqueue metrics label the
+							// queue with `name` (== the controller name).
+							Record: "operator:workqueue_p99_seconds:5m",
+							Expr: intstr.FromString(fmt.Sprintf(
+								`histogram_quantile(0.99, sum by (le, name, job, namespace) (rate(workqueue_queue_duration_seconds_bucket{%s}[5m])))`,
 								scope,
 							)),
 						},
@@ -131,20 +167,24 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							},
 						},
 						{
-							// Runaway reconcile rate on a stable cluster.
-							// Healthy controllers reach steady state and
-							// rarely fire — a sustained >5/s is almost
-							// always a controller spinning on the same
-							// resource without making progress.
+							// Runaway reconcile churn on a stable cluster.
+							// Deliberately reads the churn rate, not the total
+							// rate: the interval-driven controllers requeue
+							// every CR every sync interval, so the total rate
+							// is proportional to CR count and a fleet of a few
+							// hundred Topics trips any fixed threshold while
+							// perfectly healthy (K8S-927). Churn — anything but
+							// result="requeue_after" — stays near zero on a
+							// stable cluster.
 							Alert: "OperatorReconcileRunaway",
-							Expr:  intstr.FromString(fmt.Sprintf(`operator:reconcile_rate:5m{%s} > 5`, scope)),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator:reconcile_churn_rate:5m{%s} > 5`, scope)),
 							For:   ptrDuration("5m"),
 							Labels: map[string]string{
 								"severity": "warning",
 							},
 							Annotations: map[string]string{
 								"summary":     "Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace }} is reconciling at a high rate",
-								"description": "Controller {{ $labels.controller }} has been reconciling at >5/s for 5+ minutes. On a stable cluster this means the controller is spinning. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while the reconcile rate is high, the controller is making no progress.",
+								"description": "Controller {{ $labels.controller }} has completed >5 reconciles per second for 5+ minutes, excluding scheduled interval requeues. On a stable cluster this means the controller is spinning on the same resources without reaching steady state. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while this rate is high, the controller is making no progress.",
 							},
 						},
 						{
@@ -169,23 +209,26 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 							},
 						},
 						{
-							// Worker pool saturation. Workers pegged at
-							// max_concurrent_reconciles for >10m means the
-							// queue is consistently full — either the
-							// controller is too slow or
-							// MaxConcurrentReconciles is misconfigured.
+							// Worker pool saturation, measured as time-in-queue
+							// rather than the busy-worker gauge. The controllers
+							// run one worker each, and on interval-driven
+							// controllers with a few dozen CRs that single
+							// worker legitimately sits near 100% busy while the
+							// queue stays empty — the sampled
+							// active>=max_concurrent comparison read that as
+							// saturation on a healthy install (K8S-927). Items
+							// waiting >30s at p99 for 10 minutes is an actual
+							// backlog: work is arriving faster than the pool
+							// drains it.
 							Alert: "OperatorWorkerPoolSaturated",
-							Expr: intstr.FromString(fmt.Sprintf(
-								`controller_runtime_active_workers{%s} >= controller_runtime_max_concurrent_reconciles{%s}`,
-								scope, scope,
-							)),
-							For: ptrDuration("10m"),
+							Expr:  intstr.FromString(fmt.Sprintf(`operator:workqueue_p99_seconds:5m{%s} > 30`, scope)),
+							For:   ptrDuration("10m"),
 							Labels: map[string]string{
 								"severity": "warning",
 							},
 							Annotations: map[string]string{
-								"summary":     "Redpanda operator controller {{ $labels.controller }} in {{ $labels.namespace }} worker pool saturated",
-								"description": "Controller {{ $labels.controller }} has all reconcile workers busy for 10+ minutes. Reconciles may be queueing. Consider increasing MaxConcurrentReconciles or investigating per-reconcile latency.",
+								"summary":     "Redpanda operator controller {{ $labels.name }} in {{ $labels.namespace }} reconcile queue is backlogged",
+								"description": "Items on controller {{ $labels.name }}'s workqueue have waited >30s at p99 for 10+ minutes: work arrives faster than the worker pool drains it. Consider increasing MaxConcurrentReconciles or investigating per-reconcile latency (operator:reconcile_p99_seconds:5m).",
 							},
 						},
 					},
