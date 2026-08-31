@@ -1,0 +1,7 @@
+project: gotohelm
+kind: Added
+body: |-
+    Added support for `cmp.Or`, which transpiles to nested `default` calls.
+
+      Restricted to basic types. Structs and pointers are rejected as sprig's `empty` diverges from go's zero value for both.
+time: 2026-08-31T17:14:41.000000-04:00

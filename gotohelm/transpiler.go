@@ -1253,6 +1253,32 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 			})
 		}
 		return litCall("_shims.slices_Sorted", args...)
+	case "cmp.Or":
+		// Provided the return is a Basic type, cmp.Or can be transpiled to default.
+		// Other types result in divergent behaviors:
+		// - Structs - Don't really exist in helm but if they do, sprig considers
+		//   them always not-empty
+		// - Pointers - Don't exist in helm so the test is on the pointed to value
+		//   not the pointer itself.
+		//   cmp.Or(new(""), new("fallback")) -> "" in go.
+		//   default "" "fallback" -> "fallback" in helm.
+		//
+		// Reject anything that isn't a basic type rather than diverging.
+		if _, ok := signature.Results().At(0).Type().Underlying().(*types.Basic); !ok {
+			panic(&Unsupported{
+				Fset: t.Fset,
+				Node: n,
+				Msg:  fmt.Sprintf("cmp.Or is only supported for basic types, got: %v", signature.Results().At(0).Type()),
+			})
+		}
+
+		// Fold right to left so cmp.Or(a, b, c) becomes
+		// `(default (default c b) a)`.
+		folded := args[len(args)-1]
+		for i := len(args) - 2; i >= 0; i-- {
+			folded = &BuiltInCall{Func: Literal("default"), Arguments: []Node{folded, args[i]}}
+		}
+		return folded
 	case "strings.Join":
 		return &BuiltInCall{Func: Literal("join"), Arguments: []Node{args[1], args[0]}}
 	case "strings.Contains":
