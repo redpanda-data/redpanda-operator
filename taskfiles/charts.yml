@@ -106,6 +106,7 @@ tasks:
       vars: [CHART]
     sources:
     - ./*.go
+    - ../*.go # For charts nested in a chart directory, we need to watch the parent directory as well.
     generates:
     - "{{ .OUT }}"
     cmds:
