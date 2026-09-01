@@ -201,8 +201,10 @@ func init() {
 	framework.RegisterStep(`^no StatefulSet should eventually exist for cluster "([^"]*)"$`, noStatefulSetShouldEventuallyExistForCluster)
 	framework.RegisterStep(`^a StatefulSet should exist for cluster "([^"]*)"$`, statefulSetShouldExistForCluster)
 	framework.RegisterStep(`^a StatefulSet should eventually exist for cluster "([^"]*)"$`, statefulSetShouldEventuallyExistForCluster)
-	framework.RegisterStep(`^I set annotation "([^"]*)" to "([^"]*)" on V1 cluster "([^"]*)"$`, setAnnotationOnV1Cluster)
-	framework.RegisterStep(`^I remove annotation "([^"]*)" from V1 cluster "([^"]*)"$`, removeAnnotationFromV1Cluster)
+	framework.RegisterStep(`^I set annotation "([^"]*)" to "([^"]*)" on V1 cluster "([^"]*)"$`, setAnnotationOnVectorizedV1Alpha1Cluster)
+	framework.RegisterStep(`^I remove annotation "([^"]*)" from V1 cluster "([^"]*)"$`, removeAnnotationFromVectorizedV1Alpha1Cluster)
+	framework.RegisterStep(`^I set annotation "([^"]*)" to "([^"]*)" on Redpanda "([^"]*)"$`, setAnnotationOnRedpandaV1Alpha2Redpanda)
+	framework.RegisterStep(`^I remove annotation "([^"]*)" from Redpanda "([^"]*)"$`, removeAnnotationFromRedpandaV1Alpha2Redpanda)
 	framework.RegisterStep(`^I set decommission on Broker "([^"]*)"$`, setDecommissionOnBroker)
 	framework.RegisterStep(`^I set decommission on the Broker with index (\d+) of cluster "([^"]*)"$`, setDecommissionOnBrokerWithIndex)
 	framework.RegisterStep(`^the Broker with index (\d+) of cluster "([^"]*)" should be replaced$`, brokerWithIndexShouldBeReplaced)
@@ -217,6 +219,7 @@ func init() {
 	framework.RegisterStep(`^Broker "([^"]*)" should have condition "([^"]*)" as "([^"]*)"$`, brokerShouldHaveCondition)
 	framework.RegisterStep(`^I snapshot pod UIDs for cluster "([^"]*)"$`, snapshotPodUIDs)
 	framework.RegisterStep(`^pods for cluster "([^"]*)" should have the same UIDs as the snapshot$`, podUIDsShouldBeUnchanged)
+	framework.RegisterStep(`^pods for cluster "([^"]*)" should have no container restarts$`, podsShouldHaveNoContainerRestarts)
 
 	// Debug steps
 	framework.RegisterStep(`^I become debuggable$`, sleepALongTime)

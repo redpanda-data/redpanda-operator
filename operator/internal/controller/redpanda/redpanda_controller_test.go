@@ -1004,7 +1004,7 @@ func (s *RedpandaControllerSuite) SetupSuite() {
 				lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
 				lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
-			)),
+			), false),
 			UseNodePools: true,
 		}).SetupWithManager(ctx, mgr, "")
 	})

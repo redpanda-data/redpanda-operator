@@ -518,10 +518,11 @@ func Run(
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
 			Manager:                        mcmanager,
-			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
+			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets), opts.enableBrokerController).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
 			ClientFactory:                  factory,
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
+			BrokerCREnabled:                opts.enableBrokerController,
 			PostRestartCaughtUpPercent:     opts.postRestartCaughtUpPercent,
 			WaitForSchemaRegistrySync:      opts.waitForSchemaRegistrySync,
 			MaintenanceModeClearThreshold:  opts.clearMaintenanceModeAfter,

@@ -79,11 +79,12 @@ func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr multicluster.Ma
 		simpleResourceRenderer: simpleResourceRenderer,
 		traceLogging:           true,
 		useBrokerPoolCRD:       true,
+		brokerCREnabled:        false,
 	}
 }
 
 // NewResourceClient creates a new instance of a ResourceClient for managing resources.
-func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
+func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesFn ResourceManagerFactory[T, U], brokerCREnabled bool) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr.GetLocalManager())
 
 	return &ResourceClient[T, U]{
@@ -95,6 +96,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesF
 		simpleResourceRenderer: simpleResourceRenderer,
 		traceLogging:           true,
 		useBrokerPoolCRD:       false,
+		brokerCREnabled:        brokerCREnabled,
 	}
 }
 
@@ -105,6 +107,7 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	logger                 logr.Logger
 	traceLogging           bool
 	useBrokerPoolCRD       bool
+	brokerCREnabled        bool
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -588,12 +591,7 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 // hold. ToScaleDown / ToDelete gate "no desired counterpart" decisions on
 // this combined observation so a partial-visibility reconcile can never
 // trigger an unintended decommission.
-//
-// brokerCRs enables broker mode: pools whose StatefulSet is gone (broker
-// migration completed) are synthesized from Broker CRs and their pods so the
-// tracker's status/readiness/scale accounting keeps working — see
-// fetchBrokerBackedPools.
-func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool, brokerCRs bool) (*PoolTracker, error) {
+func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context, cluster U, configVersion string, nodePoolsObserved map[string]bool) (*PoolTracker, error) {
 	pools := NewPoolTracker(cluster.GetGeneration(), r.useBrokerPoolCRD)
 	logger := log.FromContext(ctx)
 	for _, clusterName := range r.clusterList(cluster) {
@@ -610,7 +608,7 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 			continue
 		}
 
-		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName, brokerCRs)
+		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName, r.brokerCREnabled)
 		if err != nil {
 			return nil, fmt.Errorf("fetching existing pools: %w", err)
 		}
