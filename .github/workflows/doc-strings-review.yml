@@ -1,0 +1,53 @@
+---
+# Suggest-only review of user-facing doc strings (CRD field comments and
+# helm-docs values.yaml comments) — published to the CRD reference,
+# kubectl explain, chart READMEs, and docs.redpanda.com.
+#
+# All review logic lives in the shared reusable workflow in
+# redpanda-data/docs-extensions-and-macros so it cannot drift between
+# repos; this shim owns only the trigger paths and the secrets.
+#
+# The ref tracks main deliberately. docs-extensions-and-macros is a
+# first-party repo owned by the docs team, and pinning a SHA meant every
+# fix to the shared review needed a manual bump here before it took
+# effect. Tracking main means fixes land automatically; the tradeoff is
+# that a merge there ships straight into this repo's CI. The review is
+# suggest-only and fails open, so the blast radius of a bad change is a
+# missing review rather than a blocked PR.
+name: doc-strings-review
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+    paths:
+      - "operator/api/redpanda/**"
+      - "charts/*/chart/values.yaml"
+      - "charts/*/values.yaml"
+concurrency:
+  group: doc-strings-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  review:
+    # Same-repo PRs only. A fork PR carries no secrets, and the reusable
+    # workflow declares anthropic_api_key as required, so a fork PR would
+    # FAIL the job rather than skip it. A suggest-only review must never
+    # redden an external contributor's PR.
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    uses: redpanda-data/docs-extensions-and-macros/.github/workflows/doc-strings-review.yml@main
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    with:
+      # The AWS inputs let the reusable workflow assume this repo's OIDC role
+      # and read the org bot token from Secrets Manager, the same way the
+      # repo's other workflows do. The token is not a GitHub Actions secret
+      # here. Requires docs-extensions-and-macros#294.
+      aws_region: ${{ vars.RP_AWS_CRED_REGION }}
+      aws_role_name_prefix: ${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}
+      surfaces: helm,crd
+    secrets:
+      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      aws_cred_account_id: ${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}
+      actions_bot_token: ${{ secrets.ACTIONS_BOT_TOKEN }}
