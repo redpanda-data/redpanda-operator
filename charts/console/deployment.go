@@ -10,6 +10,7 @@
 package console
 
 import (
+	"cmp"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -204,7 +205,7 @@ func consoleContainerEnv(state *RenderState) []corev1.EnvVar {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: state.Values.LicenseSecretRef.Name,
 						},
-						Key: helmette.Default("enterprise-license", state.Values.LicenseSecretRef.Key),
+						Key: cmp.Or(state.Values.LicenseSecretRef.Key, "enterprise-license"),
 					},
 				},
 			})

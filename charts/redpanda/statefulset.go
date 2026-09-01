@@ -11,6 +11,7 @@
 package redpanda
 
 import (
+	"cmp"
 	"fmt"
 	"strings"
 
@@ -1427,7 +1428,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: helmette.Default("tiered-storage-dir", state.Values.Storage.PersistentVolume.NameOverwrite),
+			Name: cmp.Or(state.Values.Storage.PersistentVolume.NameOverwrite, "tiered-storage-dir"),
 			Labels: helmette.Merge(map[string]string{
 				`app.kubernetes.io/name`:      Name(state),
 				`app.kubernetes.io/instance`:  state.Release.Name,

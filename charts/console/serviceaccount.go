@@ -10,11 +10,11 @@
 package console
 
 import (
+	"cmp"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 // Create the name of the service account to use
@@ -26,7 +26,7 @@ func ServiceAccountName(state *RenderState) string {
 		return state.FullName()
 	}
 
-	return helmette.Default("default", state.Values.ServiceAccount.Name)
+	return cmp.Or(state.Values.ServiceAccount.Name, "default")
 }
 
 func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
