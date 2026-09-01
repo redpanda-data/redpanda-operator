@@ -1149,7 +1149,7 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 			"--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s",
 			ChartLabel(state),
 			Name(state),
-			state.Dot.Release.Name,
+			state.Release.Name,
 		),
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,

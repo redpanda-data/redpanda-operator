@@ -123,19 +123,20 @@ func render(dot *helmette.Dot) []kube.Object {
 		Files:    &dot.Files,
 		Chart:    &dot.Chart,
 		Values:   values,
-		Dot:      dot,
 		Template: templater.Template,
 		Metrics:  NewMetrics(dot, &values),
 	}
 
-	state.FetchBootstrapUser()
-	state.FetchStatefulSetPodSelector()
+	state.FetchBootstrapUser(dot)
+	state.FetchStatefulSetPodSelector(dot)
 
 	manifests := renderResources(state)
 
 	for _, obj := range StatefulSets(state) {
 		manifests = append(manifests, obj)
 	}
+
+	manifests = append(manifests, consoleChartIntegration(dot, state)...)
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you
@@ -210,8 +211,6 @@ func renderResources(state *RenderState) []kube.Object {
 	for _, obj := range Secrets(state) {
 		manifests = append(manifests, obj)
 	}
-
-	manifests = append(manifests, consoleChartIntegration(state)...)
 
 	// NB: This slice may contain nil interfaces!
 	// Filtering happens elsewhere, don't call this function directly if you

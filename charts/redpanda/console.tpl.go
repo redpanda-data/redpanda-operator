@@ -25,12 +25,12 @@ import (
 // consoleChartIntegration plumbs redpanda connection information into the console subchart.
 // It does this by calculating Kafka, Schema registry, Redpanda Admin API configuration
 // from Redpanda chart state.Values.
-func consoleChartIntegration(state *RenderState) []kube.Object {
+func consoleChartIntegration(dot *helmette.Dot, state *RenderState) []kube.Object {
 	if !ptr.Deref(state.Values.Console.Enabled, true) {
 		return nil
 	}
 
-	consoleDot := state.Dot.Subcharts["console"]
+	consoleDot := dot.Subcharts["console"]
 	consoleState := consolechart.DotToState(consoleDot)
 
 	// Populate metrics state from the subchart's capabilities.

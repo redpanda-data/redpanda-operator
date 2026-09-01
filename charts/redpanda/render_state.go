@@ -51,11 +51,6 @@ type RenderState struct {
 	// See [NewMetrics].
 	Metrics Metrics
 
-	// Dot is the underlying [helmette.Dot] that was used to construct this
-	// RenderState.
-	// TODO: remove this eventually once we get templating figured out.
-	Dot *helmette.Dot
-
 	// Template expands a user provided Go template string, mirroring helm's
 	// `tpl`. It's injected so that render functions don't need a handle to
 	// [helmette.Dot] just to expand templated values.
@@ -90,7 +85,7 @@ func (t *templater) Template(tpl string) string {
 
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in
 // the cluster. If found, it is stored in [RenderState.BootstrapUserSecret
-func (r *RenderState) FetchBootstrapUser() {
+func (r *RenderState) FetchBootstrapUser(dot *helmette.Dot) {
 	if r.Values.Auth.SASL == nil || !r.Values.Auth.SASL.Enabled {
 		return
 	}
@@ -105,7 +100,7 @@ func (r *RenderState) FetchBootstrapUser() {
 	// TODO: Should we try to detect invalid configurations, panic, and request
 	// that a password be explicitly set?
 	// See also: https://github.com/redpanda-data/helm-charts/issues/1596
-	if existing, ok := helmette.Lookup[corev1.Secret](r.Dot, r.Release.Namespace, selector.Name); ok {
+	if existing, ok := helmette.Lookup[corev1.Secret](dot, r.Release.Namespace, selector.Name); ok {
 		// This object is re-rendered into the chart's output, so server
 		// populated metadata must be stripped: Helm 4 server-side applies
 		// rendered manifests and the API server rejects any apply request
@@ -126,13 +121,13 @@ func (r *RenderState) FetchBootstrapUser() {
 
 // FetchStatefulSetPodSelector attempts to locate an existing statefulset pod
 // selector in the cluster. If found, it is stored in [RenderState.StatefulSetPodLabels
-func (r *RenderState) FetchStatefulSetPodSelector() {
+func (r *RenderState) FetchStatefulSetPodSelector(dot *helmette.Dot) {
 	// TODO: this may be broken now that we no longer fully distinguish between upgrades/installs
 	// in controller applies
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
 	if r.Release.IsUpgrade {
-		if existing, ok := helmette.Lookup[appsv1.StatefulSet](r.Dot, r.Release.Namespace, Fullname(r)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
+		if existing, ok := helmette.Lookup[appsv1.StatefulSet](dot, r.Release.Namespace, Fullname(r)); ok && len(existing.Spec.Template.ObjectMeta.Labels) > 0 {
 			r.StatefulSetPodLabels = existing.Spec.Template.ObjectMeta.Labels
 			r.StatefulSetSelector = existing.Spec.Selector.MatchLabels
 		}

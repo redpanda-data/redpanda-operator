@@ -213,7 +213,12 @@ func TestFetchBootstrapUser(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			state := makeState(t, tc.sasl)
-			state.FetchBootstrapUser()
+
+			// Temporary fixture to plumb a kubeconfig into FetchBootstrapUser.
+			dot, err := Chart.Dot(ctl.RestConfig(), *state.Release, nil)
+			require.NoError(t, err)
+
+			state.FetchBootstrapUser(dot)
 
 			require.Equal(t, tc.wantPassword, state.BootstrapUserPassword)
 			if tc.wantSecret {

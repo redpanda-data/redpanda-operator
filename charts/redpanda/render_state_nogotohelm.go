@@ -137,13 +137,12 @@ func RenderStateFromDot(dot *helmette.Dot, migrateFNs ...func(state *RenderState
 		Files:    &dot.Files,
 		Chart:    &dot.Chart,
 		Values:   values,
-		Dot:      dot,
 		Template: templater.Template,
 		Metrics:  NewMetrics(dot, &values),
 	}
 
-	state.FetchBootstrapUser()
-	state.FetchStatefulSetPodSelector()
+	state.FetchBootstrapUser(dot)
+	state.FetchStatefulSetPodSelector(dot)
 
 	for _, fn := range migrateFNs {
 		if err := fn(state); err != nil {
