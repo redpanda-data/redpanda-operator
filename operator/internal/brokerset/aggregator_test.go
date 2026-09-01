@@ -17,10 +17,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type staticNeedsCompletion bool
+type staticReporter bool
 
-func (s staticNeedsCompletion) Report(context.Context, corev1.ConditionStatus, string, string) {}
-func (s staticNeedsCompletion) NeedsCompletion(context.Context) bool                           { return bool(s) }
+func (s staticReporter) Report(context.Context, corev1.ConditionStatus, string, string) {}
+func (s staticReporter) ShouldReportComplete(context.Context) bool                      { return bool(s) }
+func (s staticReporter) ShouldReportRolledBack(context.Context) bool                    { return bool(s) }
 
 // TestMigrationAggregator pins the flap fix: a pool that finished migrating
 // must never flip the cluster-scoped condition to Complete while another
@@ -34,7 +35,7 @@ func TestMigrationAggregator(t *testing.T) {
 		if reason == MigrationReasonComplete {
 			status = corev1.ConditionTrue
 		}
-		agg.PoolReporter(pool, staticNeedsCompletion(true)).Report(ctx, status, reason, message)
+		agg.PoolReporter(pool, staticReporter(true)).Report(ctx, status, reason, message)
 	}
 
 	t.Run("one complete one blocked stays blocked", func(t *testing.T) {
@@ -76,8 +77,8 @@ func TestMigrationAggregator(t *testing.T) {
 
 	t.Run("no reports means no write", func(t *testing.T) {
 		agg := NewMigrationAggregator()
-		agg.PoolReporter("blue-a", staticNeedsCompletion(false))
-		agg.PoolReporter("blue-b", staticNeedsCompletion(false))
+		agg.PoolReporter("blue-a", staticReporter(false))
+		agg.PoolReporter("blue-b", staticReporter(false))
 
 		_, _, _, ok := agg.Aggregate()
 		require.False(t, ok, "quiescent pools must not dirty the condition")
@@ -86,7 +87,7 @@ func TestMigrationAggregator(t *testing.T) {
 	t.Run("partial reports mean no write", func(t *testing.T) {
 		agg := NewMigrationAggregator()
 		report(agg, "blue-a", MigrationReasonInProgress, "creating shadow Broker CRs")
-		agg.PoolReporter("blue-b", staticNeedsCompletion(true)) // constructed, never reported
+		agg.PoolReporter("blue-b", staticReporter(true)) // constructed, never reported
 
 		_, _, _, ok := agg.Aggregate()
 		require.False(t, ok, "a pool that errored before reporting must not cause a flap on stale data")
@@ -94,7 +95,7 @@ func TestMigrationAggregator(t *testing.T) {
 
 	t.Run("last report per pool wins", func(t *testing.T) {
 		agg := NewMigrationAggregator()
-		rep := agg.PoolReporter("blue-a", staticNeedsCompletion(true))
+		rep := agg.PoolReporter("blue-a", staticReporter(true))
 		rep.Report(ctx, corev1.ConditionFalse, MigrationReasonInProgress, "creating shadow Broker CRs")
 		rep.Report(ctx, corev1.ConditionFalse, MigrationReasonBlocked, "cluster is restarting")
 

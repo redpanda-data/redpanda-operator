@@ -118,10 +118,19 @@ type MigrationReporter interface {
 	// Report records the given condition value. Implementations should
 	// de-duplicate writes when nothing changed.
 	Report(ctx context.Context, status corev1.ConditionStatus, reason, message string)
-	// NeedsCompletion reports whether migration progress was previously
-	// recorded and not yet marked complete. Steady state promotes such a
-	// record to Complete; clusters that never migrated never get one.
-	NeedsCompletion(ctx context.Context) bool
+	// ShouldReportComplete reports whether migration progress was previously
+	// recorded and the condition has not yet reached Complete. Steady state
+	// promotes such a record to Complete; clusters that never migrated never
+	// get one.
+	ShouldReportComplete(ctx context.Context) bool
+	// ShouldReportRolledBack reports whether migration progress was
+	// previously recorded and the condition has not yet reached RolledBack.
+	// Rollback's steady state promotes such a record to RolledBack — like
+	// Complete, the terminal state is observed, not recorded, so a report
+	// lost between the last rollback action and its persistence
+	// (status-write conflict, crash) is re-derived instead of gone. Clusters
+	// that never migrated never get one.
+	ShouldReportRolledBack(ctx context.Context) bool
 }
 
 // BrokerSet manages the Broker CRs of one node pool on behalf of an owning
@@ -217,7 +226,7 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	// Migration completion is observed, not recorded: reaching steady state
 	// (no StatefulSet left) IS completion. Only progress an existing
 	// condition — clusters that never migrated don't get one.
-	if s.Reporter != nil && s.Reporter.NeedsCompletion(ctx) {
+	if s.Reporter != nil && s.Reporter.ShouldReportComplete(ctx) {
 		s.report(ctx, corev1.ConditionTrue,
 			MigrationReasonComplete, "StatefulSet removed; Broker CRs manage all pods")
 	}

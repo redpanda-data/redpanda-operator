@@ -43,9 +43,9 @@ func NewMigrationAggregator() *MigrationAggregator {
 }
 
 // PoolReporter returns the MigrationReporter for one pool. Report calls
-// accumulate (last report per pool wins); NeedsCompletion delegates to
-// inner, which keeps the underlying condition as the source of truth for
-// "was a migration ever recorded".
+// accumulate (last report per pool wins); the ShouldReport* predicates
+// delegate to inner, which keeps the underlying condition as the source of
+// truth for "was a migration ever recorded".
 func (a *MigrationAggregator) PoolReporter(pool string, inner MigrationReporter) MigrationReporter {
 	a.expected++
 	return &poolReporter{agg: a, pool: pool, inner: inner}
@@ -100,6 +100,10 @@ func (r *poolReporter) Report(_ context.Context, status corev1.ConditionStatus, 
 	r.agg.reports[r.pool] = poolReport{status: status, reason: reason, message: message}
 }
 
-func (r *poolReporter) NeedsCompletion(ctx context.Context) bool {
-	return r.inner.NeedsCompletion(ctx)
+func (r *poolReporter) ShouldReportComplete(ctx context.Context) bool {
+	return r.inner.ShouldReportComplete(ctx)
+}
+
+func (r *poolReporter) ShouldReportRolledBack(ctx context.Context) bool {
+	return r.inner.ShouldReportRolledBack(ctx)
 }

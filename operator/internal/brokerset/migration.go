@@ -34,6 +34,17 @@ func migrationBackupName(ownerName string) string {
 	return fmt.Sprintf("%s-migration-backup", ownerName)
 }
 
+func backupStatefulSetPayload(sts *appsv1.StatefulSet) ([]byte, error) {
+	return json.Marshal(&appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        sts.Name,
+			Labels:      sts.Labels,
+			Annotations: sts.Annotations,
+		},
+		Spec: sts.Spec,
+	})
+}
+
 // ensureMigration runs the StatefulSet→Broker CR migration state machine.
 //
 // State 0→1: Create shadow Broker CRs + back up STS spec to ConfigMap.
@@ -253,18 +264,7 @@ func (s *BrokerSet) ensureBackupConfigMap(ctx context.Context, l logr.Logger, st
 	cmName := migrationBackupName(s.Owner.GetName())
 	poolKey := fmt.Sprintf("%s.json", s.PoolName)
 
-	// Store only what restoreStatefulSetsFromBackup consumes. Marshaling the
-	// live object verbatim would embed resourceVersion/status churn and make
-	// the staleness comparison below dirty on every pass.
-	backup := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        sts.Name,
-			Labels:      sts.Labels,
-			Annotations: sts.Annotations,
-		},
-		Spec: sts.Spec,
-	}
-	data, err := json.Marshal(backup)
+	data, err := backupStatefulSetPayload(sts)
 	if err != nil {
 		return err
 	}
