@@ -135,3 +135,10 @@ func (b *Broker) ClaimNames() []string {
 	}
 	return claimNames
 }
+
+func (b *Broker) PodNameBase() string {
+	if b.Spec.NetworkIndex == nil {
+		return ""
+	}
+	return strings.TrimSuffix(b.PodName(), fmt.Sprintf("-%d", *b.Spec.NetworkIndex))
+}
