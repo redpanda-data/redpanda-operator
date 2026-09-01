@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'In broker mode a NodePool has no StatefulSet to report status from: with --enable-broker, the NodePool reconciler now derives the pool replica accounting and deployedGeneration from the pool Broker CRs and their pods, so rollout tracking that waits for deployedGeneration to reach the metadata generation keeps working after migration. A live StatefulSet stays authoritative mid-migration, and only Brokers whose clusterRef names the NodePool are counted, so a same-named node pool of another cluster cannot skew the numbers'
+time: 2026-09-11T15:39:07.585210388+02:00

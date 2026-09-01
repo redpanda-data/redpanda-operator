@@ -132,6 +132,10 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 
 		require.NoError(t, (&redpanda.NodePoolReconciler{
 			Manager: mgr,
+			// Matches the production wiring (run.go): with --enable-broker,
+			// NodePool status is derived from Broker CRs for pools that have
+			// no StatefulSet.
+			BrokerCREnabled: true,
 		}).SetupWithManager(ctx, mgr, ""))
 
 		require.NoError(t, (&redpanda.RedpandaReconciler{
@@ -1612,6 +1616,192 @@ func (s *BrokerControllerSuite) TestV2BrokerBornRollbackKeepsPodsRollable() {
 		assert.Equalf(ct, 3, rolled,
 			"a post-rollback config change must roll every adopted pod; %d of 3 rolled — unrolled pods are running stale config silently", rolled)
 	}, 8*time.Minute, 5*time.Second)
+}
+
+// TestV2NodePoolBrokers covers the V2 + NodePools ownership path:
+// Brokers of NodePool pools point their clusterRef at the
+// NodePool (the Broker controller resolves the cluster through the NodePool's
+// own clusterRef), while the implicit default pool points at the Redpanda.
+func (s *BrokerControllerSuite) TestV2NodePoolBrokers() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(1)
+
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "pool-" + testenv.RandString(6),
+			Annotations: make(map[string]string),
+		},
+		Spec: redpandav1alpha2.MinimalNodePoolSpec(rp),
+	}
+	pool.Spec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+	pool.Spec.Replicas = ptr.To(int32(2))
+	require.NoError(t, c.Create(ctx, pool))
+
+	s.applyAndWait(t, ctx, c, rp)
+
+	var stsList appsv1.StatefulSetList
+	require.NoError(t, c.List(ctx, &stsList, client.InNamespace(rp.Namespace)))
+	require.Empty(t, stsList.Items, "a fresh broker-mode cluster must never create StatefulSets")
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 3) {
+			return
+		}
+
+		var defaultPool, nodePool int
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase, "broker %q should be Running", b.Name)
+			// Broker ID discovery requires the admin client to resolve
+			// through the NodePool's own clusterRef for NodePool-referencing
+			// Brokers.
+			assert.NotNil(ct, b.Status.BrokerID, "broker %q should have discovered its broker ID", b.Name)
+			assert.True(ct, apimeta.IsStatusConditionTrue(b.Status.Conditions, "BrokerRegistered"),
+				"broker %q should be registered", b.Name)
+			// The "Owner Kind" printer column reads .spec.clusterRef.kind
+			// verbatim — it must be stamped, not defaulted.
+			assert.NotNil(ct, b.Spec.ClusterRef.Kind, "broker %q should carry an explicit clusterRef kind", b.Name)
+
+			if b.Spec.ClusterRef.IsNodePool() {
+				nodePool++
+				assert.Equal(ct, pool.Name, b.Spec.ClusterRef.Name)
+				assert.Equal(ct, rp.Name, b.Labels[redpandav1alpha2.ClusterNameLabel])
+				assert.Equal(ct, pool.Name, b.Labels[redpandav1alpha2.NodePoolLabel])
+			} else {
+				defaultPool++
+				assert.Equal(ct, rp.Name, b.Spec.ClusterRef.Name)
+				assert.Equal(ct, redpandav1alpha2.DefaultNodePoolName, b.Labels[redpandav1alpha2.NodePoolLabel])
+			}
+		}
+		assert.Equal(ct, 1, defaultPool, "the implicit default pool should have one Redpanda-referencing Broker")
+		assert.Equal(ct, 2, nodePool, "the NodePool should have two NodePool-referencing Brokers")
+
+		for _, name := range []string{
+			fmt.Sprintf("%s-0", rp.Name),
+			fmt.Sprintf("%s-%s-0", rp.Name, pool.Name),
+			fmt.Sprintf("%s-%s-1", rp.Name, pool.Name),
+		} {
+			var pod corev1.Pod
+			assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod), "pod %q should exist", name)
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	rpPatch := client.MergeFrom(rp.DeepCopy())
+	rp.Spec.ClusterSpec.Statefulset.PodTemplate = &redpandav1alpha2.PodTemplate{
+		Annotations: map[string]string{"test.redpanda.com/cluster-level": "yes"},
+	}
+	require.NoError(t, c.Patch(ctx, rp, rpPatch))
+
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pool), pool))
+	poolPatch := client.MergeFrom(pool.DeepCopy())
+	pool.Spec.PodTemplate = &redpandav1alpha2.PodTemplate{
+		Annotations: map[string]string{"test.redpanda.com/pool-level": "yes"},
+	}
+	require.NoError(t, c.Patch(ctx, pool, poolPatch))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var pod corev1.Pod
+		if assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: fmt.Sprintf("%s-0", rp.Name), Namespace: rp.Namespace}, &pod)) {
+			assert.Equal(ct, "yes", pod.Annotations["test.redpanda.com/cluster-level"],
+				"Redpanda-level podTemplate annotations should reach the default pool's pod in place")
+		}
+		for _, name := range []string{
+			fmt.Sprintf("%s-%s-0", rp.Name, pool.Name),
+			fmt.Sprintf("%s-%s-1", rp.Name, pool.Name),
+		} {
+			if assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod)) {
+				assert.Equal(ct, "yes", pod.Annotations["test.redpanda.com/pool-level"],
+					"NodePool-level podTemplate annotations should reach pod %q in place", name)
+			}
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	// Metadata sync must never have rotated anything: same pods throughout.
+	for _, b := range s.listBrokers(t, ctx, c, rp) {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: b.PodName(), Namespace: rp.Namespace}, &pod))
+		require.False(t, b.PodOutdated(&pod), "broker %q must not be pending a rotation after a metadata-only change", b.Name)
+	}
+
+	// Removing the NodePool drains its brokers: decommission intent one at a
+	// time, executed by the Broker controller — whose admin resolution must
+	// fall back to the controller owner, the NodePool being gone (its
+	// deletion is not gated on the drain). The default pool's broker and the
+	// rest of the reconcile chain must keep operating throughout.
+	require.NoError(t, c.Delete(ctx, pool))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 1, "the removed pool's brokers should drain away") {
+			return
+		}
+		assert.False(ct, brokers[0].Spec.ClusterRef.IsNodePool(), "the surviving broker belongs to the default pool")
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, brokers[0].Status.Phase)
+
+		for _, name := range []string{
+			fmt.Sprintf("%s-%s-0", rp.Name, pool.Name),
+			fmt.Sprintf("%s-%s-1", rp.Name, pool.Name),
+		} {
+			var pod corev1.Pod
+			err := c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod)
+			assert.True(ct, apierrors.IsNotFound(err), "drained pool's pod %q should be gone", name)
+		}
+	}, 10*time.Minute, 5*time.Second)
+}
+
+func (s *BrokerControllerSuite) TestV2NodePoolDeployedGenerationAdvances() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(1)
+
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "pool-" + testenv.RandString(6),
+			Annotations: make(map[string]string),
+		},
+		Spec: redpandav1alpha2.MinimalNodePoolSpec(rp),
+	}
+	pool.Spec.Image.Repository = ptr.To(os.Getenv("TEST_REDPANDA_REPO"))
+	pool.Spec.Replicas = ptr.To(int32(1))
+	require.NoError(t, c.Create(ctx, pool))
+
+	s.applyAndWait(t, ctx, c, rp)
+
+	// Baseline: the pool converges and reports its creation generation.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(pool), pool)) {
+			return
+		}
+		assert.Equal(ct, int32(1), pool.Status.Replicas)
+		assert.Equal(ct, pool.Generation, pool.Status.DeployedGeneration)
+	}, 5*time.Minute, 5*time.Second)
+
+	// A metadata-only spec change: bumps the generation; the Broker
+	// controller syncs it to the pod in place, no rotation involved.
+	patch := client.MergeFrom(pool.DeepCopy())
+	pool.Spec.PodTemplate = &redpandav1alpha2.PodTemplate{
+		Annotations: map[string]string{"test.redpanda.com/deployed-generation-bump": "yes"},
+	}
+	require.NoError(t, c.Patch(ctx, pool, patch))
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pool), pool))
+	bumped := pool.Generation
+	require.Greater(t, bumped, int64(1), "the spec patch must bump the generation")
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(pool), pool)) {
+			return
+		}
+		assert.Equal(ct, bumped, pool.Status.DeployedGeneration,
+			"DeployedGeneration must advance once the new generation's desired state is synced")
+	}, 3*time.Minute, 5*time.Second)
 }
 
 func (s *BrokerControllerSuite) brokerPodUIDs(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda, replicas int) map[string]types.UID {
