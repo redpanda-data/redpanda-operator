@@ -287,41 +287,23 @@ func TestRedpandaAdminForV1Cluster(t *testing.T) {
 				userAuth: tc.userAuth,
 			}
 
-	t.Run("plaintext internal admin listener alongside a TLS external one", func(t *testing.T) {
-		// Cluster.AdminAPITLS() matches any listener with TLS, internal or
-		// external, so this used to be rejected even though the operator only
-		// ever talks to the internal listener, which is plaintext here.
-		cluster := newCluster(
-			vectorizedv1alpha1.AdminAPI{Port: 9644},
-			vectorizedv1alpha1.AdminAPI{
-				Port:     9645,
-				External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true},
-				TLS:      vectorizedv1alpha1.AdminAPITLS{Enabled: true},
-			},
-		)
+			adminClient, err := factory.redpandaAdminForV1Cluster(ctx, cluster, "v1")
+			if tc.buildErr != "" {
+				require.ErrorContains(t, err, tc.buildErr)
+				return
+			}
+			require.NoError(t, err)
+			t.Cleanup(adminClient.Close)
 
-		// No certificate secrets: the plaintext internal listener must not
-		// trigger any TLS lookup.
-		k8sClient := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).
-			WithObjects(brokerPod(cluster)).
-			Build()
+			_, err = adminClient.GetNodeConfig(ctx)
+			if tc.callErr != "" {
+				require.ErrorContains(t, err, tc.callErr)
+				return
+			}
+			require.NoError(t, err)
 
-		adminClient, err := (&Factory{}).redpandaAdminForV1ClusterWithClient(ctx, cluster, k8sClient)
-		require.NoError(t, err)
-		require.NotNil(t, adminClient)
-		adminClient.Close()
-	})
-
-	t.Run("plaintext admin listener", func(t *testing.T) {
-		cluster := newCluster(vectorizedv1alpha1.AdminAPI{Port: 9644})
-
-		k8sClient := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).
-			WithObjects(brokerPod(cluster)).
-			Build()
-
-		adminClient, err := (&Factory{}).redpandaAdminForV1ClusterWithClient(ctx, cluster, k8sClient)
-		require.NoError(t, err)
-		require.NotNil(t, adminClient)
-		adminClient.Close()
-	})
+			require.Equal(t, []string{tc.dialed}, server.dialed)
+			require.Equal(t, []string{tc.authorization}, server.authorization)
+		})
+	}
 }
