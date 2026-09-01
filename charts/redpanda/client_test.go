@@ -139,7 +139,7 @@ func (c *Client) KafkaConsume(ctx context.Context, topicName string) (map[string
 func (c *Client) GetClusterHealth(ctx context.Context) (rpadmin.ClusterHealthOverview, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	adminClient, err := client.AdminClient(c.state, dialer.DialContext)
+	adminClient, err := client.AdminClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return rpadmin.ClusterHealthOverview{}, err
 	}
@@ -152,7 +152,7 @@ func (c *Client) GetClusterHealth(ctx context.Context) (rpadmin.ClusterHealthOve
 func (c *Client) GetSuperusers(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	adminClient, err := client.AdminClient(c.state, dialer.DialContext)
+	adminClient, err := client.AdminClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (c *Client) GetSuperusers(ctx context.Context) ([]string, error) {
 func (c *Client) QuerySupportedFormats(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (c *Client) QuerySupportedFormats(ctx context.Context) ([]string, error) {
 func (c *Client) RegisterSchema(ctx context.Context, schema map[string]any) (sr.SubjectSchema, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return sr.SubjectSchema{}, err
 	}
@@ -220,7 +220,7 @@ func (c *Client) RegisterSchema(ctx context.Context, schema map[string]any) (sr.
 func (c *Client) RetrieveSchema(ctx context.Context, id int) (sr.Schema, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return sr.Schema{}, err
 	}
@@ -236,7 +236,7 @@ func (c *Client) RetrieveSchema(ctx context.Context, id int) (sr.Schema, error) 
 func (c *Client) ListRegistrySubjects(ctx context.Context) ([]string, error) {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (c *Client) ListRegistrySubjects(ctx context.Context) ([]string, error) {
 func (c *Client) SoftDeleteSchema(ctx context.Context, subject string, version int) error {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func (c *Client) SoftDeleteSchema(ctx context.Context, subject string, version i
 func (c *Client) HardDeleteSchema(ctx context.Context, subject string, version int) error {
 	dialer := kube.NewPodDialer(c.Ctl.RestConfig())
 
-	srClient, err := client.SchemaRegistryClient(c.state, dialer.DialContext)
+	srClient, err := client.SchemaRegistryClient(c.Ctl, c.state, dialer.DialContext)
 	if err != nil {
 		return err
 	}

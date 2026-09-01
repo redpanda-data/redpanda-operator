@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
@@ -26,23 +27,41 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
 )
 
-// redpandaAdminForCluster returns a simple rpadmin.AdminAPI able to communicate with the given cluster specified via a Redpanda cluster.
-func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*rpadmin.AdminAPI, error) {
+// renderStateForCluster builds the redpanda chart's render state for cluster,
+// along with a kube.Ctl for its API server.
+func (c *Factory) renderStateForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*kube.Ctl, *redpandachart.RenderState, error) {
 	config, err := c.GetConfig(ctx, clusterName)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	ctl, err := kube.FromRESTConfig(config, kube.Options{
+		FieldManager: string(redpandachart.DefaultFieldOwner),
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 
 	dot, err := cluster.GetDot(config)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	state, err := redpandachart.RenderStateFromDot(dot)
 	if err != nil {
+		return nil, nil, err
+	}
+
+	return ctl, state, nil
+}
+
+// redpandaAdminForCluster returns a simple rpadmin.AdminAPI able to communicate with the given cluster specified via a Redpanda cluster.
+func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*rpadmin.AdminAPI, error) {
+	ctl, state, err := c.renderStateForCluster(ctx, cluster, clusterName)
+	if err != nil {
 		return nil, err
 	}
-	client, err := redpanda.AdminClient(state, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
+	client, err := redpanda.AdminClient(ctl, state, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, err
 	}
@@ -88,21 +107,11 @@ func (c *Factory) schemaRegistryForCluster(ctx context.Context, cluster *redpand
 		return nil, NoSchemaRegistryAPI
 	}
 
-	config, err := c.GetConfig(ctx, clusterName)
+	ctl, state, err := c.renderStateForCluster(ctx, cluster, clusterName)
 	if err != nil {
 		return nil, err
 	}
-
-	dot, err := cluster.GetDot(config)
-	if err != nil {
-		return nil, err
-	}
-
-	state, err := redpandachart.RenderStateFromDot(dot)
-	if err != nil {
-		return nil, err
-	}
-	client, err := redpanda.SchemaRegistryClient(state, c.dialer)
+	client, err := redpanda.SchemaRegistryClient(ctl, state, c.dialer)
 	if err != nil {
 		return nil, err
 	}
@@ -145,21 +154,11 @@ func (c *Factory) schemaRegistryForV1Cluster(ctx context.Context, cluster *vecto
 
 // kafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
-	config, err := c.GetConfig(ctx, clusterName)
+	ctl, state, err := c.renderStateForCluster(ctx, cluster, clusterName)
 	if err != nil {
 		return nil, err
 	}
-
-	dot, err := cluster.GetDot(config)
-	if err != nil {
-		return nil, err
-	}
-
-	state, err := redpandachart.RenderStateFromDot(dot)
-	if err != nil {
-		return nil, err
-	}
-	client, err := redpanda.KafkaClient(state, c.dialer, opts...)
+	client, err := redpanda.KafkaClient(ctl, state, c.dialer, opts...)
 	if err != nil {
 		return nil, err
 	}

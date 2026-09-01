@@ -67,6 +67,8 @@ linters:
       forbid:
         - pattern: helmette.Tpl
           msg: ".Tpl may not be used in helm-free packages"
+        - pattern: 'helmette\.Dot\.KubeConfig'
+          msg: "the chart may not build a Kubernetes client from the Dot; accept a *kube.Ctl parameter instead"
 
     gosec:
       excludes:
@@ -131,5 +133,12 @@ linters:
       # code.
     - path-except: 'charts/(redpanda|console)/[^/]+\.go'
       text: 'helmette'
+      linters:
+        - forbidigo
+      # RenderState carries no handle to the cluster: rendering must not reach
+      # through the Dot for a kubeconfig. Only meaningful inside the charts;
+      # gotohelm itself populates and reads the field.
+    - path-except: 'charts/(redpanda|console)/'
+      text: 'KubeConfig'
       linters:
         - forbidigo

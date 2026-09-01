@@ -57,13 +57,7 @@ const DefaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
 
 // FetchSASLUsers attempts to locate an existing SASL users secret in the cluster.
 // If found, it is used to populate the first user in the secret for use.
-func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, err error) {
-	ctl, ctlErr := r.KubeCTL()
-	if ctlErr != nil {
-		err = ctlErr
-		return
-	}
-
+func (r *RenderState) FetchSASLUsers(ctl *kube.Ctl) (username, password, mechanism string, err error) {
 	saslUsers := SecretSASLUsers(r)
 	saslUsersError := func(err error) error {
 		return fmt.Errorf("error fetching SASL authentication for %s/%s: %w", saslUsers.Namespace, saslUsers.Name, err)
@@ -182,12 +176,7 @@ func firstUser(data []byte) (user string, password string, mechanism string) {
 }
 
 // TLSConfig constructs a tls.Config for the given internal listener.
-func (r *RenderState) TLSConfig(listener InternalTLS) (*tls.Config, error) {
-	ctl, err := r.KubeCTL()
-	if err != nil {
-		return nil, err
-	}
-
+func (r *RenderState) TLSConfig(ctl *kube.Ctl, listener InternalTLS) (*tls.Config, error) {
 	namespace := r.Release.Namespace
 	serverName := InternalDomain(r)
 
@@ -271,13 +260,6 @@ func certificatesFor(state *RenderState, name string) (certSecret, certKey, clie
 
 	ref := cert.CASecretRef(state, name)
 	return ref.LocalObjectReference.Name, ref.Key, cert.ClientSecretName(state, name)
-}
-
-// KubeCTL constructs a kube.Ctl from the RenderState's kubeconfig.
-func (r *RenderState) KubeCTL() (*kube.Ctl, error) {
-	return kube.FromRESTConfig(r.Dot.KubeConfig, kube.Options{
-		FieldManager: string(DefaultFieldOwner),
-	})
 }
 
 // RenderNodePools can be used to render node pools programmatically from Go.
