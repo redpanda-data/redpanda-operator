@@ -494,10 +494,18 @@ func (c *Factory) UsersForCluster(ctx context.Context, obj redpandav1alpha2.Clus
 
 	adminClient, err := c.RedpandaAdminClientForCluster(ctx, obj, clusterName)
 	if err != nil {
+		kafkaClient.Close()
 		return nil, err
 	}
 
-	return users.NewClient(ctx, client, kadm.NewClient(kafkaClient), adminClient)
+	usersClient, err := users.NewClient(ctx, client, kadm.NewClient(kafkaClient), adminClient)
+	if err != nil {
+		kafkaClient.Close()
+		adminClient.Close()
+		return nil, err
+	}
+
+	return usersClient, nil
 }
 
 func (c *Factory) Users(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error) {
