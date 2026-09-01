@@ -186,14 +186,8 @@ func (s *BrokerSet) VerifyMigrationPreconditions(ctx context.Context, l logr.Log
 		}
 	}
 
-	if s.MigrationBlockedReason != nil {
-		reason, err := s.MigrationBlockedReason(ctx)
-		if err != nil {
-			return err
-		}
-		if reason != "" {
-			return block(reason)
-		}
+	if reason := s.Hooks.MigrationBlockedReason(ctx); reason != "" {
+		return block(reason)
 	}
 
 	// Revision-based signals (UpdatedReplicas, CurrentRevision vs
@@ -242,10 +236,7 @@ func (s *BrokerSet) VerifyMigrationPreconditions(ctx context.Context, l logr.Log
 
 	// Finally the cluster itself must be healthy; IsClusterHealthy returns a
 	// RequeueAfterError when it is not.
-	if s.IsClusterHealthy != nil {
-		return s.IsClusterHealthy(ctx)
-	}
-	return nil
+	return s.Hooks.IsClusterHealthy(ctx)
 }
 
 func (s *BrokerSet) getExistingStatefulSet(ctx context.Context, stsKey types.NamespacedName) (*appsv1.StatefulSet, error) {

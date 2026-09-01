@@ -415,7 +415,7 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 	// Single-cluster path: only the local cluster exists. nodePoolsObserved=nil
 	// is fine because FetchExistingAndDesiredPools unconditionally marks the
 	// local cluster as observed regardless of the map.
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rpcluster, injectedConfigVersion, nil)
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rpcluster, injectedConfigVersion, nil, false)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err
