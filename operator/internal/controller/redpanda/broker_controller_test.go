@@ -59,6 +59,10 @@ type BrokerControllerSuite struct {
 
 	env           *testenv.Env
 	clientFactory internalclient.ClientFactory
+	// mgr is the shared testenv's multicluster manager; tests that need a
+	// reconciler with DIFFERENT flags than the suite's (e.g. the flag-off
+	// downgrade scenario) construct one around it and drive Reconcile by hand.
+	mgr multicluster.Manager
 }
 
 var _ suite.SetupAllSuite = (*BrokerControllerSuite)(nil)
@@ -77,7 +81,7 @@ func (s *BrokerControllerSuite) setupNamespace(t *testing.T) (*testing.T, contex
 
 func (s *BrokerControllerSuite) SetupSuite() {
 	t := s.T()
-	s.env, s.clientFactory = s.newEnv(t, "")
+	s.env, s.clientFactory, s.mgr = s.newEnv(t, "")
 }
 
 // newEnv builds a testenv (shared k3d cluster when clusterName is empty, a
@@ -85,7 +89,7 @@ func (s *BrokerControllerSuite) SetupSuite() {
 // RBAC set up. Tests that disrupt cluster infrastructure (node deletion) use
 // a dedicated cluster so concurrently-running test PACKAGES sharing the
 // default cluster don't lose pods and node-pinned PVCs.
-func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*testenv.Env, internalclient.ClientFactory) {
+func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*testenv.Env, internalclient.ClientFactory, multicluster.Manager) {
 	ctx := trace.Test(t)
 
 	importImages := []string{
@@ -115,8 +119,10 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 	})
 
 	var clientFactory internalclient.ClientFactory
+	var manager multicluster.Manager
 
 	env.SetupManager(s.setupRBAC(ctx, env), func(mgr multicluster.Manager) error {
+		manager = mgr
 		dialer := kube.NewPodDialer(mgr.GetLocalManager().GetConfig())
 		clientFactory = internalclient.NewFactory(mgr, nil).WithDialer(dialer.DialContext)
 
@@ -138,7 +144,7 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)
 	})
 
-	return env, clientFactory
+	return env, clientFactory, manager
 }
 
 func (s *BrokerControllerSuite) setupRBAC(ctx context.Context, env *testenv.Env) string {
@@ -730,7 +736,7 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 	// this suite is not enough — test PACKAGES run concurrently and other
 	// packages' testenvs share the default cluster; their pods and
 	// node-pinned PVCs would be stranded by the deletion.
-	env, _ := s.newEnv(t, "broker-pv-"+strings.ToLower(testenv.RandString(4)))
+	env, _, _ := s.newEnv(t, "broker-pv-"+strings.ToLower(testenv.RandString(4)))
 	ns := env.CreateTestNamespace(t)
 	c := ns.Client
 
@@ -1080,4 +1086,75 @@ func (s *BrokerControllerSuite) applyAndWait(t testing.TB, ctx context.Context, 
 			t.Fatalf("unhandled object %T in applyAndWait", obj)
 		}
 	}
+}
+
+// TestOrphanedPodAdoptionIsEventDriven checks whether the broker controller
+// reconciles on ownerless pods that can be potentially adopted.
+func (s *BrokerControllerSuite) TestOrphanedPodAdoptionIsEventDriven() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{})
+	target := brokers[0]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+
+	// A live foreign owner for the pod. A ConfigMap suffices as a controller
+	// reference and, unlike a synthetic StatefulSet UID, it exists — so the
+	// garbage collector has no reason to delete the pod mid-test.
+	fakeOwner := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "fake-group-controller", Namespace: target.Namespace},
+	}
+	require.NoError(t, c.Create(ctx, fakeOwner))
+
+	// Re-enter shadow mode: hand the pod to the foreign controller. This
+	// update event still reaches the Broker (the OLD object carried its
+	// ownerRef), which is exactly how it learns to stand down.
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	p := client.MergeFrom(pod.DeepCopy())
+	pod.OwnerReferences = []metav1.OwnerReference{{
+		APIVersion:         "v1",
+		Kind:               "ConfigMap",
+		Name:               fakeOwner.Name,
+		UID:                fakeOwner.UID,
+		Controller:         ptr.To(true),
+		BlockOwnerDeletion: ptr.To(true),
+	}}
+	require.NoError(t, c.Patch(ctx, &pod, p))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var b redpandav1alpha2.Broker
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(target), &b)) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhasePending, b.Status.Phase,
+			"foreign-owned pod should park the Broker in shadow mode")
+	}, time.Minute, time.Second)
+
+	// Let the event flurry from the ownership change drain completely, so
+	// adoption below can only be triggered by the orphaning event itself.
+	time.Sleep(10 * time.Second)
+
+	// The handover moment: the pod becomes ownerless (what GC does after the
+	// StatefulSet's orphan-delete).
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	p = client.MergeFrom(pod.DeepCopy())
+	pod.OwnerReferences = nil
+	require.NoError(t, c.Patch(ctx, &pod, p))
+
+	// Adoption must be event-driven: well under the 3-minute periodic
+	// requeue that a missed event would fall back to.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var adopted corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &adopted)) {
+			return
+		}
+		owner := metav1.GetControllerOf(&adopted)
+		if !assert.NotNil(ct, owner, "pod should have been adopted") {
+			return
+		}
+		assert.Equal(ct, "Broker", owner.Kind)
+		assert.Equal(ct, target.Name, owner.Name)
+	}, time.Minute, time.Second,
+		"orphaned pod was not adopted within a minute — adoption is waiting for the periodic requeue instead of the orphaning event")
 }

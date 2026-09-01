@@ -31,7 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
+	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -93,11 +96,20 @@ type BrokerReconciler struct {
 	MarkDiskLostAfter time.Duration
 }
 
-func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFactory internalclient.ClientFactory, namespace string, markDiskLostAfter time.Duration) error {
+func SetupBrokerController(ctx context.Context, mgr multicluster.Manager, clientFactory internalclient.ClientFactory, namespace string, markDiskLostAfter time.Duration) error {
 	// --unbind-pvcs-after is honored when set; otherwise fall back to the
 	// controller's own default instead of disabling remediation.
 	if markDiskLostAfter <= 0 {
 		markDiskLostAfter = defaultMarkDiskLostAfter
+	}
+	for _, clusterName := range mgr.GetClusterNames() {
+		cl, err := mgr.GetCluster(ctx, clusterName)
+		if err != nil {
+			return err
+		}
+		if err := cl.GetFieldIndexer().IndexField(ctx, &redpandav1alpha2.Broker{}, brokerPodNameIndex, indexBrokerByPodName); err != nil {
+			return err
+		}
 	}
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// Tests register several reconcilers against one manager under the
@@ -110,6 +122,16 @@ func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFa
 	).
 		Owns(&corev1.Pod{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Owns(&corev1.PersistentVolumeClaim{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
+		// Owns(Pod) cannot deliver the one event adoption depends on: after
+		// the STS→Broker handover's orphan-delete, kube GC strips the
+		// StatefulSet ownerRef and the pod becomes OWNERLESS — an ownerless
+		// pod maps to no Broker under Owns, so nothing would wake the Broker
+		// until its periodic requeue (minutes of a migration stalled with
+		// adoptable pods; whether it stalled depended on winning a race
+		// against the CR-creation reconcile flurry). Route ownerless-pod
+		// events to the Broker whose deterministic pod name matches.
+		Watches(&corev1.Pod{}, enqueueBrokerForAdoptablePod,
+			mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Complete(
 			controller.FilterNamespaceReconciler(
 				namespace,
@@ -118,6 +140,41 @@ func SetupBrokerController(_ context.Context, mgr multicluster.Manager, clientFa
 					ClientFactory:     clientFactory,
 					MarkDiskLostAfter: markDiskLostAfter,
 				}, "Broker", periodicRequeue)))
+}
+
+// brokerPodNameIndex indexes Broker CRs by their deterministic pod name.
+const brokerPodNameIndex = "__broker_pod_name"
+
+func indexBrokerByPodName(o client.Object) []string {
+	b := o.(*redpandav1alpha2.Broker)
+	if b.Spec.NetworkIndex == nil {
+		return nil
+	}
+	return []string{b.PodName()}
+}
+
+// enqueueBrokerForAdoptablePod enqueues pods with no owner and a name that matches the Broker's pod name format.
+func enqueueBrokerForAdoptablePod(clusterName string, cl cluster.Cluster) mchandler.EventHandler {
+	return handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []mcreconcile.Request {
+		if metav1.GetControllerOf(o) != nil {
+			return nil
+		}
+		var brokers redpandav1alpha2.BrokerList
+		if err := cl.GetClient().List(ctx, &brokers,
+			client.InNamespace(o.GetNamespace()),
+			client.MatchingFields{brokerPodNameIndex: o.GetName()},
+		); err != nil {
+			return nil
+		}
+		requests := make([]mcreconcile.Request, 0, len(brokers.Items))
+		for i := range brokers.Items {
+			requests = append(requests, mcreconcile.Request{
+				Request:     reconcile.Request{NamespacedName: client.ObjectKeyFromObject(&brokers.Items[i])},
+				ClusterName: clusterName,
+			})
+		}
+		return requests
+	})
 }
 
 type brokerReconciliationState struct {
@@ -174,7 +231,7 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, k8sClient client.Clie
 	// (post-handover orphans) are ours to reason about and adopt.
 	if state.pod != nil {
 		if owner := metav1.GetControllerOf(state.pod); owner != nil &&
-			owner.Kind == "Broker" &&
+			owner.Kind == redpandav1alpha2.BrokerKind &&
 			owner.APIVersion == redpandav1alpha2.GroupVersion.String() &&
 			owner.UID != broker.UID {
 			state.pod = nil
@@ -208,7 +265,7 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 			}
 		}
 	} else {
-		return r.reconcileDelete(ctx, l, k8sClient, req.ClusterName, &broker, broker.PodName())
+		return r.reconcileDelete(ctx, l, k8sClient, k8sCluster.GetAPIReader(), req.ClusterName, &broker, broker.PodName())
 	}
 
 	// A NodePool-referenced Broker without the cluster-name label cannot
@@ -357,6 +414,11 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 	}
 	if ownerRef == nil {
+		if adoptionBarredByRollback(ctx, cluster.GetAPIReader(), broker) {
+			l.Info("owning cluster left broker mode; leaving orphaned pod for the StatefulSet to adopt", "name", podName)
+			state.phase = redpandav1alpha2.BrokerPhasePending
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
 		l.Info("adopting orphaned pod", "name", podName)
 		if pod.Annotations == nil {
 			pod.Annotations = map[string]string{}
@@ -378,34 +440,70 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// Owned pods created before pod-template-hash tracking existed lack the
-	// hash annotation; treating them as outdated would roll the whole fleet
-	// on operator upgrade. Backfill the desired hash instead — template
-	// drift predating the hash is undetectable either way, and every future
-	// template change rotates through the freshly stamped value.
-	if _, ok := pod.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]; !ok {
-		if backfillRotationKeys(broker, pod) {
-			l.Info("backfilling pod-template-hash on pre-hash pod", "name", podName)
-			if err := k8sClient.Update(ctx, pod); err != nil {
-				return ctrl.Result{}, err
-			}
-			return ctrl.Result{Requeue: true}, nil
+	// Owned pods may lack rotation keys that post-date their creation: the
+	// pod-template hash on pods from before hash tracking existed (operator
+	// upgrade), or the cluster-config version on pods born before the first
+	// MarkForRestart stamp (bootstrap, or a pod created off a cache-lagged
+	// unstamped template). Treating a MISSING key as outdated would roll the
+	// whole fleet for no actual change — backfill the desired value instead:
+	// drift predating the key is undetectable either way, and every future
+	// change rotates through the freshly stamped value. A pod carrying a
+	// DIFFERENT value is a genuine pending rotation and is never touched.
+	if backfillRotationKeys(broker, pod) {
+		l.Info("backfilling missing rotation keys on pod", "name", podName)
+		if err := k8sClient.Update(ctx, pod); err != nil {
+			return ctrl.Result{}, err
 		}
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// backfillRotationKeys copies each desired rotation annotation onto the pod
-// when the pod carries none, reporting whether anything was stamped. It
-// never overwrites a live value.
-func backfillRotationKeys(broker *redpandav1alpha2.Broker, pod *corev1.Pod) bool {
-	keys := []string{
-		redpandav1alpha2.BrokerPodTemplateHashAnnotation,
-		redpandav1alpha2.BrokerConfigChecksumAnnotation,
+// adoptionBarredByRollback reports whether the Broker's owning cluster has
+// LEFT broker mode — the use-broker-cr annotation removed, which is the one
+// and only rollback trigger. While that holds, adopting an ownerless pod or
+// claim would re-own the very object rollback just released; worse, an
+// adoption written after the garbage collector's orphaning pass (or by a
+// reconcile still holding an already-deleted CR from a stale cache) leaves
+// the object referencing a nonexistent owner, and the GC deletes it —
+// silently. The owner is read UNCACHED: a cached answer only narrows this
+// race, and adoption is rare enough that one direct read costs nothing.
+// Rollback only deletes Broker CRs after observing the annotation removal,
+// so by the time any dangerous adoption could fire, the uncached read is
+// guaranteed to see the annotation gone.
+//
+// Only a POSITIVE "this is a cluster that opted out" bars adoption: Brokers
+// owned by anything unrecognized (or by nothing) keep adopting as before.
+func adoptionBarredByRollback(ctx context.Context, apiReader client.Reader, broker *redpandav1alpha2.Broker) bool {
+	owner := metav1.GetControllerOf(broker)
+	if owner == nil {
+		return false
 	}
+	switch {
+	case owner.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
+		var rp redpandav1alpha2.Redpanda
+		if err := apiReader.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, &rp); err != nil {
+			// Uncertainty bars adoption: the write is cheap to retry, the
+			// dangling ref it could create is not.
+			return true
+		}
+		return !feature.V2UseBrokerCR.Get(ctx, &rp)
+	case owner.Kind == "Cluster" && strings.HasPrefix(owner.APIVersion, "redpanda.vectorized.io/"):
+		var cluster vectorizedv1alpha1.Cluster
+		if err := apiReader.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, &cluster); err != nil {
+			return true
+		}
+		return !feature.V1UseBrokerCR.Get(ctx, &cluster)
+	}
+	return false
+}
+
+// backfillRotationKeys ensures that pod has annotations required.
+// This is to avoid pointless rotation (missing annotation from redpandav1alpha2.RotationAnnotations triggers pod rotation).
+func backfillRotationKeys(broker *redpandav1alpha2.Broker, pod *corev1.Pod) bool {
 	stamped := false
-	for _, key := range keys {
+	for _, key := range redpandav1alpha2.RotationAnnotations {
 		if _, ok := pod.Annotations[key]; ok {
 			continue
 		}
@@ -442,6 +540,10 @@ func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brok
 		}
 		if metav1.GetControllerOf(&pvc) != nil {
 			continue
+		}
+		if adoptionBarredByRollback(ctx, cluster.GetAPIReader(), broker) {
+			l.Info("owning cluster left broker mode; leaving claim unowned", "name", ec.Name)
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
 		}
 		if err := controllerutil.SetControllerReference(broker, &pvc, scheme); err != nil {
 			return ctrl.Result{}, err
@@ -1227,13 +1329,21 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 //     deletion policy decides: "cascade" (default) lets the GC delete pod and
 //     PVCs with the CR — whole-cluster teardown, decommission is pointless —
 //     while "orphan" releases them.
-func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
+func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
 	if !controllerutil.ContainsFinalizer(broker, brokerFinalizerName) {
 		return ctrl.Result{}, nil
 	}
 
+	// The pod MUST be read uncached: every branch below decides whether the
+	// finalizer may be removed, and once it is, any ownerRef still pointing
+	// at this CR is dangling — the garbage collector then deletes the pod
+	// (and the CR-owned PVCs) silently. The informer cache can miss both a
+	// pod this controller created moments ago and its own just-made
+	// adoption (rollback strips the ownerRef, a racing reconcile of the
+	// still-live CR re-adopts, and THIS pass must see that write to release
+	// the pod instead of abandoning it).
 	var pod corev1.Pod
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
+	err := apiReader.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
 	switch {
 	case apierrors.IsNotFound(err):
 		// The pod is already gone (e.g. deleted out of band), but the PVCs
@@ -1244,7 +1354,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 		if r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade {
 			l.Info("pod already gone, cascade policy, removing finalizer")
 		} else {
-			if err := r.releaseBrokerResources(ctx, l, k8sClient, broker, nil); err != nil {
+			if err := r.releaseBrokerResources(ctx, l, k8sClient, apiReader, broker, nil); err != nil {
 				return ctrl.Result{}, err
 			}
 			l.Info("pod already gone, PVCs released, removing finalizer")
@@ -1271,7 +1381,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 				l.Info("cluster teardown, skipping decommission, removing finalizer (cascade policy)", "name", broker.Name)
 			} else {
 				l.Info("cluster teardown, skipping decommission, releasing resources (orphan policy)", "name", broker.Name)
-				if err := r.releaseBrokerResources(ctx, l, k8sClient, broker, &pod); err != nil {
+				if err := r.releaseBrokerResources(ctx, l, k8sClient, apiReader, broker, &pod); err != nil {
 					return ctrl.Result{}, err
 				}
 			}
@@ -1320,7 +1430,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 			// policy: leave pod and PVCs to the GC (owned by this CR).
 			l.Info("cluster teardown with cascade policy, removing finalizer", "name", broker.Name)
 		} else {
-			if err := r.releaseBrokerResources(ctx, l, k8sClient, broker, &pod); err != nil {
+			if err := r.releaseBrokerResources(ctx, l, k8sClient, apiReader, broker, &pod); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -1355,7 +1465,7 @@ func (r *BrokerReconciler) ownerTearingDown(ctx context.Context, l logr.Logger, 
 	switch {
 	case owner.Kind == "Cluster" && strings.HasPrefix(owner.APIVersion, "redpanda.vectorized.io/"):
 		ownerObj = &vectorizedv1alpha1.Cluster{}
-	case owner.Kind == "Redpanda" && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
+	case owner.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(owner.APIVersion, "cluster.redpanda.com/"):
 		ownerObj = &redpandav1alpha2.Redpanda{}
 	default:
 		return false
@@ -1392,8 +1502,10 @@ func (r *BrokerReconciler) deletionPolicy(ctx context.Context, l logr.Logger, k8
 
 // releaseBrokerResources strips this Broker's ownerRefs from its pod and PVCs
 // so they survive the CR deletion. pod may be nil when it is already gone —
-// the PVCs are still released.
-func (r *BrokerReconciler) releaseBrokerResources(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker, pod *corev1.Pod) error {
+// the PVCs are still released. PVCs are read through apiReader: this runs
+// right before the finalizer is removed, and a cache miss read as NotFound
+// would leave a live PVC with a dangling ownerRef for the GC to delete.
+func (r *BrokerReconciler) releaseBrokerResources(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, broker *redpandav1alpha2.Broker, pod *corev1.Pod) error {
 	if pod != nil && removeOwnerRefByUID(pod, broker.UID) {
 		l.Info("releasing pod from deleted Broker CR", "pod", pod.Name)
 		if err := k8sClient.Update(ctx, pod); err != nil {
@@ -1410,7 +1522,7 @@ func (r *BrokerReconciler) releaseBrokerResources(ctx context.Context, l logr.Lo
 	}
 	for _, name := range pvcNames {
 		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
+		if err := apiReader.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}

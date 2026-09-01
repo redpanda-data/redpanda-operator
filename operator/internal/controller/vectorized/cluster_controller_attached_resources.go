@@ -415,7 +415,7 @@ func (a *attachedResources) statefulSet(cfg *clusterconfiguration.CombinedCfg) e
 		return err
 	}
 
-	nps, err := nodepools.GetNodePools(context.TODO(), a.cluster, a.reconciler.Client)
+	nps, err := nodepools.GetNodePoolsWithoutBrokerBacked(context.TODO(), a.cluster, a.reconciler.Client)
 	if err != nil {
 		return fmt.Errorf("while getting node pools: %w", err)
 	}
