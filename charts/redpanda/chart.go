@@ -116,14 +116,18 @@ func render(dot *helmette.Dot) []kube.Object {
 	// Dot. Every other caller should use newRenderState.
 	templater := &templater{Dot: dot}
 
+	values := helmette.Unwrap[Values](dot.Values)
+
 	state := &RenderState{
 		Release:  &dot.Release,
 		Files:    &dot.Files,
 		Chart:    &dot.Chart,
-		Values:   helmette.Unwrap[Values](dot.Values),
+		Values:   values,
 		Dot:      dot,
 		Template: templater.Template,
+		Metrics:  NewMetrics(dot, &values),
 	}
+
 	state.FetchBootstrapUser()
 	state.FetchStatefulSetPodSelector()
 

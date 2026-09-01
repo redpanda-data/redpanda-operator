@@ -47,6 +47,10 @@ type RenderState struct {
 	// Pools contains the list of NodePools that are being rendered.
 	Pools []Pool
 
+	// Metrics is the telemetry context reported by the Redpanda container.
+	// See [NewMetrics].
+	Metrics Metrics
+
 	// Dot is the underlying [helmette.Dot] that was used to construct this
 	// RenderState.
 	// TODO: remove this eventually once we get templating figured out.
@@ -56,18 +60,6 @@ type RenderState struct {
 	// `tpl`. It's injected so that render functions don't need a handle to
 	// [helmette.Dot] just to expand templated values.
 	Template func(string) string
-
-	// ViaOperator is a flag that says that this rendering function is being
-	// called via an operator.
-	ViaOperator bool
-
-	// CloudEnvironment is the Cloud environment (Azure, GCP, AWS) that this is deployed
-	// in, if not set, will attempt to be determined via the Kubernetes version string
-	CloudEnvironment string
-
-	// OperatorVersion is the version of the operator deploying this chart.
-	// When set, it overrides Chart.Version for metrics reporting.
-	OperatorVersion string
 }
 
 // templater abstracts out the global `tpl` function so that render functions

@@ -47,8 +47,8 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 	}
 
 	return redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
-		state.ViaOperator = true
-		state.OperatorVersion = version.Version
+		state.Metrics.ViaOperator = true
+		state.Metrics.ChartVersion = version.Version
 
 		if err := convertV2Fields(state, &state.Values, spec); err != nil {
 			return err

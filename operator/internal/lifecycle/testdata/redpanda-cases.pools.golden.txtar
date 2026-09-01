@@ -74,7 +74,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -470,7 +469,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -868,7 +866,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -1322,7 +1319,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -1718,7 +1714,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -2115,7 +2110,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
@@ -2511,7 +2505,6 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: 26.2.1
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           - name: REDPANDA_METRICS_K8S_CLUSTER_ID
