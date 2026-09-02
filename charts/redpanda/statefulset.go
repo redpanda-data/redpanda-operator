@@ -204,7 +204,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 		volumes = append(volumes, *v)
 	}
 
-	volumes = append(volumes, kubeTokenAPIVolume(ServiceAccountVolumeName))
+	volumes = append(volumes, KubeTokenAPIVolume(ServiceAccountVolumeName))
 
 	if ptr.Deref(state.Values.Tuning.TuneAIOEvents, false) && ptr.Deref(state.Values.Tuning.ApplyHostTuners, false) {
 		volumes = append(volumes, HostTunerVolumes()...)
@@ -274,11 +274,11 @@ func HostTunerVolumes() []corev1.Volume {
 	return vols
 }
 
-// kubeTokenAPIVolume is a slightly changed variant of
+// KubeTokenAPIVolume is a slightly changed variant of
 // https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L484-L524
 // Upstream creates Projected Volume Source, but this function returns Volume with provided name.
 // Also const are renamed.
-func kubeTokenAPIVolume(name string) corev1.Volume {
+func KubeTokenAPIVolume(name string) corev1.Volume {
 	return corev1.Volume{
 		Name: name,
 		VolumeSource: corev1.VolumeSource{
@@ -931,7 +931,7 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 	return containers
 }
 
-// wrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
+// WrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
 //   - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
 //   - It redirect stderr to stdout so all logs from cmd get the same treatment.
 //   - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
@@ -944,7 +944,7 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 //   - It still terminates the entire command with "true" so non-zero exits
 //     don't poison container lifecycle on transient hook issues. The TIMEOUT
 //     marker above is the diagnostic signal operators grep for.
-func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
+func WrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
 	wrapped := strings.Join(cmd, " ")
 	script := fmt.Sprintf(
 		`timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1`+"\n"+
@@ -969,7 +969,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			// finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
 			PostStart: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: wrapLifecycleHook(
+					Command: WrapLifecycleHook(
 						"post-start",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"},
@@ -978,7 +978,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			},
 			PreStop: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: wrapLifecycleHook(
+					Command: WrapLifecycleHook(
 						"pre-stop",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"},

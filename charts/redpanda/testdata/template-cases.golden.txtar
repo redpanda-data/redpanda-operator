@@ -83,6 +83,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -1631,6 +1633,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -2840,6 +2844,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -4344,6 +4350,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -5656,6 +5664,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -7277,6 +7287,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -8872,6 +8884,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -10622,6 +10636,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -12167,6 +12183,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -13716,6 +13734,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -15382,6 +15402,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -16836,6 +16858,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -18385,6 +18409,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -19647,6 +19673,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -21222,6 +21250,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -22767,6 +22797,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -24315,6 +24347,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -25864,6 +25898,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -27478,6 +27514,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -29092,6 +29130,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -30707,6 +30747,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -32271,6 +32313,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -33903,6 +33947,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -35535,6 +35581,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -37169,6 +37217,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -38752,6 +38802,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -40384,6 +40436,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -42016,6 +42070,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -43650,6 +43706,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -45233,6 +45291,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -46778,6 +46838,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -48324,6 +48386,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -49869,6 +49933,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -51502,6 +51568,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -53053,6 +53121,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -54693,6 +54763,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -56242,6 +56314,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.change-name.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -57819,6 +57893,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -59399,6 +59475,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -60933,6 +61011,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -62440,6 +62520,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -63849,6 +63931,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -65574,6 +65658,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -67170,6 +67256,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -68725,6 +68813,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -70325,6 +70415,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -71856,6 +71948,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local"
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -73366,6 +73460,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -74911,6 +75007,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -76463,6 +76561,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -106580,6 +106680,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -107939,6 +108041,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -109298,6 +109402,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -110888,6 +110994,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -112553,6 +112661,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -114200,6 +114310,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -115847,6 +115959,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -117661,6 +117775,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -119429,6 +119545,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -121168,6 +121286,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -122850,6 +122970,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -124572,6 +124694,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.also-not-redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -126117,6 +126241,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -127662,6 +127788,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -129205,6 +129333,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -130777,6 +130907,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -132351,6 +132483,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -133904,6 +134038,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -145080,6 +145216,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -146660,6 +146798,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -148157,6 +148297,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -149702,6 +149844,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -151365,6 +151509,8 @@ stringData:
 
     # the address this pod's broker advertises to the rest of the cluster,
     # i.e. the internal_rpc_address its broker registers under
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash

@@ -57,6 +57,9 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		replicas = replicas + set.Statefulset.Replicas
 	}
 
+	adminCurlFlags := adminTLSCurlFlags(state)
+	drain := replicas > 2 && !helmette.Dig(state.Values.Config.Node, false, "recovery_mode_enabled").(bool)
+
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -67,15 +70,36 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},
-		Type:       corev1.SecretTypeOpaque,
-		StringData: map[string]string{},
+		Type: corev1.SecretTypeOpaque,
+		StringData: map[string]string{
+			"common.sh": LifecycleCommonSh(
+				adminInternalURL(state),
+				adminCurlFlags,
+				fmt.Sprintf("${SERVICE_NAME}.%s", InternalDomain(state)),
+			),
+			"postStart.sh": LifecyclePostStartSh(adminCurlFlags),
+			"preStop.sh":   LifecyclePreStopSh(adminCurlFlags, drain),
+		},
 	}
-	adminCurlFlags := adminTLSCurlFlags(state)
-	secret.StringData["common.sh"] = strings.Join([]string{
+
+	return secret
+}
+
+// LifecycleCommonSh renders `common.sh`, the file sourced by both lifecycle
+// hooks. It defines the admin API URL, the curl invocations used by the hooks,
+// and this pod's advertised RPC address.
+//
+// curlURL is the admin API base URL, adminCurlFlags the TLS flags curl needs
+// to talk to it, and podFQDN the host this pod's broker registers itself under
+// (it must stay character-identical to the statefulset's
+// --advertise-rpc-addr host, or the ghost-broker sweep in
+// [LifecyclePostStartSh] silently matches nothing).
+func LifecycleCommonSh(curlURL, adminCurlFlags, podFQDN string) string {
+	return strings.Join([]string{
 		`#!/usr/bin/env bash`,
 		``,
 		`# the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME`,
-		fmt.Sprintf(`CURL_URL="%s"`, adminInternalURL(state)),
+		fmt.Sprintf(`CURL_URL="%s"`, curlURL),
 		``,
 		`# commands used throughout. Every curl carries --max-time so a single`,
 		`# hung admin connection can never freeze a lifecycle hook until the`,
@@ -91,10 +115,19 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		``,
 		`# the address this pod's broker advertises to the rest of the cluster,`,
 		`# i.e. the internal_rpc_address its broker registers under`,
-		fmt.Sprintf(`POD_FQDN="${SERVICE_NAME}.%s"`, InternalDomain(state)),
+		`# character-identical to the statefulset's --advertise-rpc-addr host`,
+		`POD_ORDINAL=${SERVICE_NAME##*-}`,
+		fmt.Sprintf(`POD_FQDN="%s"`, podFQDN),
 	}, "\n")
+}
 
-	postStartSh := []string{
+// LifecyclePostStartSh renders `postStart.sh`, which clears maintenance mode
+// for this broker once it has rejoined, and sweeps up maintenance mode left
+// behind by any previous incarnation of this pod (see the comments inline).
+//
+// Shared with the operator's multicluster renderer; see [LifecycleCommonSh].
+func LifecyclePostStartSh(adminCurlFlags string) string {
+	return strings.Join([]string{
 		`#!/usr/bin/env bash`,
 		`# This code should be similar if not exactly the same as that found in the panda-operator, see`,
 		`# https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go`,
@@ -168,9 +201,16 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		``,
 		`postStartHook`,
 		`true`,
-	}
-	secret.StringData["postStart.sh"] = strings.Join(postStartSh, "\n")
+	}, "\n")
+}
 
+// LifecyclePreStopSh renders `preStop.sh`, which drains leadership off this
+// broker by putting it into maintenance mode before it receives SIGTERM.
+//
+// drain gates whether the drain is attempted at all: with too few brokers
+// entering maintenance mode would cost the cluster quorum, and in recovery
+// mode there's nothing to drain.
+func LifecyclePreStopSh(adminCurlFlags string, drain bool) string {
 	preStopSh := []string{
 		`#!/usr/bin/env bash`,
 		`# This code should be similar if not exactly the same as that found in the panda-operator, see`,
@@ -237,7 +277,8 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		`  touch /tmp/preStopHookFinished`,
 		`}`,
 	}
-	if replicas > 2 && !helmette.Dig(state.Values.Config.Node, false, "recovery_mode_enabled").(bool) {
+
+	if drain {
 		preStopSh = append(preStopSh,
 			`preStopHook`,
 		)
@@ -247,11 +288,12 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 			`echo "Not enough replicas or in recovery mode, cannot put a broker into maintenance mode."`,
 		)
 	}
+
 	preStopSh = append(preStopSh,
 		`true`,
 	)
-	secret.StringData["preStop.sh"] = strings.Join(preStopSh, "\n")
-	return secret
+
+	return strings.Join(preStopSh, "\n")
 }
 
 func SecretSASLUsers(state *RenderState) *corev1.Secret {
@@ -346,7 +388,19 @@ func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
 		StringData: map[string]string{},
 	}
 
-	secret.StringData["fsValidator.sh"] = `set -e
+	secret.StringData["fsValidator.sh"] = FSValidatorSh()
+	return secret
+}
+
+// FSValidatorSh renders `fsValidator.sh`, the init container script that
+// asserts the data directory exists, is the expected filesystem type, and is
+// writable before Redpanda starts. It takes the expected filesystem type as
+// $1 and is otherwise static.
+//
+// Shared with the operator's multicluster renderer, which runs the same init
+// container for StretchCluster brokers.
+func FSValidatorSh() string {
+	return `set -e
 EXPECTED_FS_TYPE=$1
 
 DATA_DIR="/var/lib/redpanda/data"
@@ -384,11 +438,22 @@ if [ "${result}" != "0" ]; then
 fi
 
 echo "passed"`
-	return secret
 }
 
 func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev1.Secret {
-	secret := &corev1.Secret{
+	configuratorSh := ConfiguratorPrologueSh()
+
+	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset, ordinalOffset)
+	configuratorSh = append(configuratorSh, kafkaSnippet...)
+
+	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset, ordinalOffset)
+	configuratorSh = append(configuratorSh, httpSnippet...)
+
+	if state.Values.RackAwareness.Enabled {
+		configuratorSh = append(configuratorSh, ConfiguratorRackAwarenessSh(state.Values.RackAwareness.NodeAnnotation)...)
+	}
+
+	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -398,11 +463,19 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 			Namespace: state.Release.Namespace,
 			Labels:    FullLabels(state),
 		},
-		Type:       corev1.SecretTypeOpaque,
-		StringData: map[string]string{},
+		Type: corev1.SecretTypeOpaque,
+		StringData: map[string]string{
+			"configurator.sh": strings.Join(configuratorSh, "\n"),
+		},
 	}
-	configuratorSh := []string{}
-	configuratorSh = append(configuratorSh,
+}
+
+// ConfiguratorPrologueSh renders the head of `configurator.sh`: the argv
+// contract with the init container (SERVICE_NAME, KUBERNETES_NODE_NAME), the
+// pod ordinal derived from the pod name, and the copy of the base
+// redpanda.yaml that the rest of the script mutates in place.
+func ConfiguratorPrologueSh() []string {
+	return []string{
 		`set -xe`,
 		`SERVICE_NAME=$1`,
 		`KUBERNETES_NODE_NAME=$2`,
@@ -413,28 +486,22 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 		``,
 		`# Setup config files`,
 		`cp /tmp/base-config/redpanda.yaml "${CONFIG}"`,
-	)
-
-	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset, ordinalOffset)
-	configuratorSh = append(configuratorSh, kafkaSnippet...)
-
-	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset, ordinalOffset)
-	configuratorSh = append(configuratorSh, httpSnippet...)
-
-	if state.Values.RackAwareness.Enabled {
-		configuratorSh = append(configuratorSh,
-			``,
-			`# Configure Rack Awareness`,
-			`set +x`,
-			fmt.Sprintf(`RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')`,
-				helmette.SQuote(helmette.Quote(state.Values.RackAwareness.NodeAnnotation)),
-			),
-			`set -x`,
-			`rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`,
-		)
 	}
-	secret.StringData["configurator.sh"] = strings.Join(configuratorSh, "\n")
-	return secret
+}
+
+// ConfiguratorRackAwarenessSh renders the `configurator.sh` block that reads
+// nodeAnnotation off this pod's Node and sets `redpanda.rack` from it.
+func ConfiguratorRackAwarenessSh(nodeAnnotation string) []string {
+	return []string{
+		``,
+		`# Configure Rack Awareness`,
+		`set +x`,
+		fmt.Sprintf(`RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')`,
+			helmette.SQuote(helmette.Quote(nodeAnnotation)),
+		),
+		`set -x`,
+		`rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`,
+	}
 }
 
 func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalOffset int) []string {

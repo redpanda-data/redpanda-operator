@@ -36,7 +36,7 @@ import (
 // so that a future refactor (e.g. someone rewrites the wrapper but
 // silently drops the PIPESTATUS branch) gets caught.
 //
-// wrapLifecycleHook expects its cmd slice to be space-joinable into a
+// WrapLifecycleHook expects its cmd slice to be space-joinable into a
 // single valid shell command (e.g. ["bash", "-x", "/var/lifecycle/preStop.sh"]
 // in production). The tests follow that contract by writing the hook
 // body to a temp script and invoking it via `bash -x <path>`.
@@ -56,7 +56,7 @@ func TestWrapLifecycleHook_TimeoutSurfaced(t *testing.T) {
 	}
 
 	// writeHook writes body to a tempfile and returns a cmd slice
-	// suitable for wrapLifecycleHook — argv-style, no shell quoting.
+	// suitable for WrapLifecycleHook — argv-style, no shell quoting.
 	//
 	// The hook path is rendered into the wrapper *unquoted* (matching
 	// the production usage with /var/lifecycle/preStop.sh), so it must
@@ -81,7 +81,7 @@ func TestWrapLifecycleHook_TimeoutSurfaced(t *testing.T) {
 	// unchanged), executes via bash and returns combined stdout.
 	run := func(t *testing.T, cmd []string, budget int64) (stdout string, exitErr error) {
 		t.Helper()
-		wrapped := wrapLifecycleHook("pre-stop", budget, cmd)
+		wrapped := WrapLifecycleHook("pre-stop", budget, cmd)
 		script := strings.ReplaceAll(wrapped[2], "/proc/1/fd/1", "/dev/stdout")
 
 		var out, errOut bytes.Buffer

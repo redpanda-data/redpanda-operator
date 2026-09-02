@@ -167,56 +167,9 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	}
 
 	// Kube API access token volume.
-	volumes = append(volumes, kubeTokenAPIVolume(serviceAccountVolumeName))
+	volumes = append(volumes, redpanda.KubeTokenAPIVolume(serviceAccountVolumeName))
 
 	return volumes
-}
-
-// kubeTokenAPIVolume builds a projected volume that provides the three pieces
-// needed for in-pod Kubernetes API access without automounting the default SA token:
-//   - ServiceAccountToken: a short-lived, auto-rotated JWT (audience-bound)
-//   - ConfigMap "kube-root-ca.crt": the cluster CA for TLS verification
-//   - DownwardAPI namespace: the pod's namespace for building API URLs
-func kubeTokenAPIVolume(name string) corev1.Volume {
-	return corev1.Volume{
-		Name: name,
-		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				DefaultMode: ptr.To(corev1.ProjectedVolumeSourceDefaultMode),
-				Sources: []corev1.VolumeProjection{
-					{
-						ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
-							Path:              "token",
-							ExpirationSeconds: ptr.To(int64(tokenExpirationSeconds)),
-						},
-					},
-					{
-						ConfigMap: &corev1.ConfigMapProjection{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "kube-root-ca.crt",
-							},
-							Items: []corev1.KeyToPath{
-								{Key: "ca.crt", Path: "ca.crt"},
-							},
-						},
-					},
-					{
-						DownwardAPI: &corev1.DownwardAPIProjection{
-							Items: []corev1.DownwardAPIVolumeFile{
-								{
-									Path: "namespace",
-									FieldRef: &corev1.ObjectFieldSelector{
-										APIVersion: "v1",
-										FieldPath:  "metadata.namespace",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }
 
 func statefulSetVolumeDataDir(pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Volume {

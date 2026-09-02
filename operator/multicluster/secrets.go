@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -93,9 +94,9 @@ func secretSTSLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 		},
 		Type: corev1.SecretTypeOpaque,
 		StringData: map[string]string{
-			"common.sh":    lifecycleCommonSh(p),
-			"postStart.sh": lifecyclePostStartSh(p),
-			"preStop.sh":   lifecyclePreStopSh(p),
+			"common.sh":    redpanda.LifecycleCommonSh(p.CurlURL, p.AdminCurlFlags, p.InternalAdvertiseAddress),
+			"postStart.sh": redpanda.LifecyclePostStartSh(p.AdminCurlFlags),
+			"preStop.sh":   redpanda.LifecyclePreStopSh(p.AdminCurlFlags, p.TotalReplicas > 2),
 		},
 	}
 }
@@ -195,7 +196,7 @@ func secretFSValidator(state *RenderState, pool *redpandav1alpha2.RedpandaBroker
 		},
 		Type: corev1.SecretTypeOpaque,
 		StringData: map[string]string{
-			"fsValidator.sh": fsValidatorSh,
+			"fsValidator.sh": redpanda.FSValidatorSh(),
 		},
 	}
 }
