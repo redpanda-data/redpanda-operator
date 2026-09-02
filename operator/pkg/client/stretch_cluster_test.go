@@ -389,16 +389,29 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	s.mc.ApplyAll(t, ctx, mutatedSC)
 
 	// Verify ConfigurationApplied returns to True and the config version changed.
+	// Each unmet branch logs what it saw, so a timeout says which requirement
+	// never held instead of a bare "Condition never satisfied".
 	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(ctx, nn, &cluster); err != nil {
+			t.Logf("get StretchCluster: %v", err)
 			return false
 		}
 		cond := apimeta.FindStatusCondition(cluster.Status.Conditions, statuses.StretchClusterConfigurationApplied)
-		if cond == nil || cond.Status != metav1.ConditionTrue {
+		if cond == nil {
+			t.Logf("ConfigurationApplied absent; configVersion=%q (want != %q)", cluster.Status.ConfigVersion, initialConfigVersion)
 			return false
 		}
-		return cluster.Status.ConfigVersion != "" && cluster.Status.ConfigVersion != initialConfigVersion
+		if cond.Status != metav1.ConditionTrue {
+			t.Logf("ConfigurationApplied=%s reason=%q message=%q; configVersion=%q (want != %q)",
+				cond.Status, cond.Reason, cond.Message, cluster.Status.ConfigVersion, initialConfigVersion)
+			return false
+		}
+		if cluster.Status.ConfigVersion == "" || cluster.Status.ConfigVersion == initialConfigVersion {
+			t.Logf("ConfigurationApplied=True but configVersion=%q has not moved off %q", cluster.Status.ConfigVersion, initialConfigVersion)
+			return false
+		}
+		return true
 	}, 3*time.Minute, 5*time.Second, "ConfigurationApplied=True with new config version never appeared after config change")
 }
 

@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sasl"
@@ -300,7 +301,8 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 // across all clusters known to the manager, and builds per-pod endpoint addresses
 // for the given port.
 func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alpha2.StretchCluster, port int32) ([]string, error) {
-	var endpoints []string
+	// All endpoints the pool specs declare, and the subset whose pod is dialable.
+	var declared, dialable []string
 
 	for _, clusterName := range c.mgr.GetClusterNames() {
 		// Skip peers the probe has marked unreachable. Without this the List
@@ -332,6 +334,15 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			return nil, errors.Wrapf(err, "listing RedpandaBrokerPools in cluster %s", clusterName)
 		}
 
+		servable, podsErr := dialablePodNames(ctx, k8sClient, sc.Namespace, sc.Name)
+		podsKnown := podsErr == nil
+		if !podsKnown {
+			// A failed pod list costs only the filter: offer this cluster's
+			// endpoints unfiltered rather than fail the client construction.
+			log.FromContext(ctx).V(log.DebugLevel).Info("pod list unavailable; not filtering admin endpoints for this cluster",
+				"cluster", clusterName, "error", podsErr.Error())
+		}
+
 		for i := range brokerPoolList.Items {
 			pool := &brokerPoolList.Items[i]
 			ref := pool.Spec.ClusterRef
@@ -341,11 +352,69 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			for j := int32(0); j < pool.GetReplicas(); j++ {
 				poolFullname := tplutil.CleanForK8s(sc.Name) + pool.Suffix()
 				name := rendermulticluster.PerPodServiceName(poolFullname, j)
-				endpoints = append(endpoints, fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port))
+				endpoint := fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port)
+				declared = append(declared, endpoint)
+				// A per-pod Service and its backing Pod share a name.
+				if !podsKnown || servable[name] {
+					dialable = append(dialable, endpoint)
+				}
 			}
 		}
 	}
-	return endpoints, nil
+
+	// Prefer brokers that can answer. With none dialable (a whole-cluster
+	// outage), return the declared list so that case fails exactly as it used to.
+	if len(dialable) > 0 {
+		return dialable, nil
+	}
+	return declared, nil
+}
+
+// dialablePodNames returns the names of pods in ns that can currently accept a
+// connection. A non-nil error means the pod state is unknown, which the caller
+// treats as "do not filter" rather than as a failure.
+//
+// The endpoint list is otherwise built from declared replica counts alone, so
+// it offers brokers that are deliberately absent -- a just-deleted pool, a
+// broker mid-roll -- and rpadmin pays for each such host with wasted attempts,
+// timeouts, and stale-leader backoffs on every reconcile. A pod on a NotReady
+// node still holds its address and still counts as dialable, so this narrows
+// that window rather than closing it.
+func dialablePodNames(ctx context.Context, k8sClient client.Client, ns, releaseName string) (map[string]bool, error) {
+	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
+	defer listCancel()
+
+	// Scope to this cluster's brokers: the namespace can hold unrelated
+	// workloads, and on a cached client an unscoped list widens the watch.
+	var pods corev1.PodList
+	if err := k8sClient.List(listCtx, &pods,
+		client.InNamespace(ns),
+		client.MatchingLabels(rendermulticluster.BrokerPodSelector(releaseName)),
+	); err != nil {
+		return nil, errors.Wrapf(err, "listing broker pods in namespace %s", ns)
+	}
+
+	dialable := make(map[string]bool, len(pods.Items))
+	for i := range pods.Items {
+		if podDialable(&pods.Items[i]) {
+			dialable[pods.Items[i].Name] = true
+		}
+	}
+	return dialable, nil
+}
+
+// podDialable reports whether a connection to pod can be established at all:
+// not terminating, not finished, and holding an address. Readiness is
+// deliberately excluded -- the operator reads rejoining brokers through unready
+// pods on purpose, and the per-pod Services publish not-ready addresses.
+func podDialable(pod *corev1.Pod) bool {
+	if pod.DeletionTimestamp != nil {
+		return false
+	}
+	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+		return false
+	}
+	return pod.Status.PodIP != ""
 }
 
 // stretchClusterListenerTLSConfig builds a *tls.Config for a listener if TLS

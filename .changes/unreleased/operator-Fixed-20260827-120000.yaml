@@ -1,0 +1,10 @@
+project: operator
+kind: Fixed
+body: |-
+    The StretchCluster admin, Kafka, and Schema Registry clients no longer offer brokers whose pod cannot be dialed.
+
+      Endpoints came from declared replica counts alone, so clients also tried
+      deliberately absent brokers — a deleted pool, a broker mid-roll — spending
+      their timeout on each. Terminating, finished, and address-less pods are now
+      skipped; with none dialable, the full declared list is used as before.
+time: 2026-08-27T12:00:00.000000000-07:00
