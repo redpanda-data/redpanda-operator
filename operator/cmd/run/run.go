@@ -176,6 +176,9 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionID, "leader-election-id", "aa9fc693.vectorized.io", "Sets the ID used for the leader election process.")
 	// NB: The default behavior here is in the controller-runtime, pretty deep. It reads the namespace file that's created when mounting a service account token.
 	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionNamespace, "leader-election-namespace", "", "Sets the namespace that leader election resources will be created within. If not specified, defaults the value of --namespace or the namespace this Pod is running in.")
+	o.managerOptions.LeaseDuration = cmd.Flags().Duration("leader-election-lease-duration", 15*time.Second, "Duration that non-leader candidates wait before forcing acquisition of the leader election lease")
+	o.managerOptions.RenewDeadline = cmd.Flags().Duration("leader-election-renew-deadline", 10*time.Second, "Duration that the acting leader retries refreshing leadership before giving up")
+	o.managerOptions.RetryPeriod = cmd.Flags().Duration("leader-election-retry-period", 2*time.Second, "Duration that leader election clients wait between attempts")
 	cmd.Flags().StringVar(&o.managerOptions.HealthProbeBindAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	cmd.Flags().StringVar(&o.managerOptions.PprofBindAddress, "pprof-bind-address", ":8082", "The address the metric endpoint binds to. Set to '' or 0 to disable")
 	cmd.Flags().StringVar(&o.namespace, "namespace", "", "If namespace is set to not empty value, it changes scope of Redpanda operator to work in single namespace")
