@@ -100,7 +100,7 @@ func TestEnsure_StatefulSet(t *testing.T) {
 		TestAdminTLSConfigProvider{},
 		"",
 		res.ConfiguratorSettings{
-			ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
+			ConfiguratorBaseImage: "redpandadata/redpanda-operator",
 			ConfiguratorTag:       "latest",
 			ImagePullPolicy:       "Always",
 		},

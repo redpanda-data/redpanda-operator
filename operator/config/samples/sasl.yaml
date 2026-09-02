@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   name: cluster-sample-sasl
 spec:
-  image: "vectorized/redpanda"
+  image: "redpandadata/redpanda"
   version: "latest"
   replicas: 1
   kafkaEnableAuthorization: true

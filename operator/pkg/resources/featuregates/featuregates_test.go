@@ -38,7 +38,7 @@ func TestFeatureGates(t *testing.T) { //nolint:funlen // table tests can be long
 			version:   "dev",
 			supported: true,
 		},
-		// Versions from: https://hub.docker.com/r/vectorized/redpanda/tags
+		// Versions from: https://hub.docker.com/r/redpandadata/redpanda/tags
 		{
 			version:   "latest",
 			supported: true,
@@ -47,7 +47,7 @@ func TestFeatureGates(t *testing.T) { //nolint:funlen // table tests can be long
 			version:   "v23.2.3-arm64",
 			supported: true,
 		},
-		// Versions from: https://hub.docker.com/r/vectorized/redpanda-nightly/tags
+		// Versions from: https://hub.docker.com/r/redpandadata/redpanda-nightly/tags
 		{
 			version:   "v0.0.0-20221006git23a658b",
 			supported: true,
