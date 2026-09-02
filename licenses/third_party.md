@@ -68,7 +68,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/cockroachdb/errors | [Apache-2.0](https://github.com/cockroachdb/errors/blob/v1.12.0/LICENSE) |
 | github.com/cockroachdb/logtags | [Apache-2.0](https://github.com/cockroachdb/logtags/blob/bb51bb14a506/LICENSE) |
 | github.com/cockroachdb/redact | [Apache-2.0](https://github.com/cockroachdb/redact/blob/v1.1.6/LICENSE) |
-| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.30/LICENSE) |
+| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.34/LICENSE) |
 | github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v1.0.0/LICENSE) |
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
