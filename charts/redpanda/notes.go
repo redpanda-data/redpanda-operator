@@ -20,6 +20,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+// RpkSASLEnvironmentVariables is the set of environment variables rpk reads
+// SASL credentials from. The REDPANDA_SASL_* spelling it replaced was only
+// needed for Redpanda older than v23.2.1.
+//
+// was:   rpk sasl environment variables
+const RpkSASLEnvironmentVariables = `RPK_USER RPK_PASS RPK_SASL_MECHANISM`
+
 func Warnings(state *RenderState) []string {
 	var warnings []string
 	if w := cpuWarning(state); w != "" {
@@ -118,10 +125,10 @@ func Notes(state *RenderState) []string {
 			fmt.Sprintf(`  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s`,
 				state.Release.Namespace,
 				state.Values.Auth.SASL.SecretRef,
-				RpkSASLEnvironmentVariables(state),
+				RpkSASLEnvironmentVariables,
 			),
 			fmt.Sprintf(`  export %s`,
-				RpkSASLEnvironmentVariables(state),
+				RpkSASLEnvironmentVariables,
 			),
 		)
 	}
@@ -194,16 +201,4 @@ func RpkTopicDescribe(*RenderState) string {
 
 func RpkTopicDelete(state *RenderState) string {
 	return `rpk topic delete test-topic`
-}
-
-// was:   rpk sasl environment variables
-//
-// This will return a string with the correct environment variables to use for SASL based on the
-// version of the redpanda container being used
-func RpkSASLEnvironmentVariables(state *RenderState) string {
-	if RedpandaAtLeast_23_2_1(state) {
-		return `RPK_USER RPK_PASS RPK_SASL_MECHANISM`
-	} else {
-		return `REDPANDA_SASL_USERNAME REDPANDA_SASL_PASSWORD REDPANDA_SASL_MECHANISM`
-	}
 }

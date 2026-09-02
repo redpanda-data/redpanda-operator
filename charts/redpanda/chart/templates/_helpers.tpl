@@ -117,57 +117,11 @@ Use AppVersion if image.tag is not set
 {{- dig "sasl" "mechanism" "SCRAM-SHA-512" .Values.auth -}}
 {{- end -}}
 
-{{- define "fail-on-insecure-sasl-logging" -}}
-{{- if (include "sasl-enabled" .|fromJson).bool -}}
-  {{- $check := list
-      (include "redpanda-atleast-23-1-1" .|fromJson).bool
-      (include "redpanda-22-3-atleast-22-3-13" .|fromJson).bool
-      (include "redpanda-22-2-atleast-22-2-10" .|fromJson).bool
-  -}}
-  {{- if not (mustHas true $check) -}}
-    {{- fail "SASL is enabled and the redpanda version specified leaks secrets to the logs. Please choose a newer version of redpanda." -}}
-  {{- end -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "fail-on-unsupported-helm-version" -}}
   {{- $helmVer := (fromYaml (toYaml .Capabilities.HelmVersion)).version -}}
   {{- if semverCompare "<3.8.0-0" $helmVer -}}
     {{- fail (printf "helm version %s is not supported. Please use helm version v3.8.0 or newer." $helmVer) -}}
   {{- end -}}
-{{- end -}}
-
-{{- define "redpanda-atleast-22-2-0" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_2_0" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-atleast-22-3-0" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-atleast-23-1-1" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_1_1" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-atleast-23-1-2" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_1_2" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-22-3-atleast-22-3-13" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_3_atleast_22_3_13" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-22-2-atleast-22-2-10" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_22_2_atleast_22_2_10" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-atleast-23-2-1" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_2_1" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-{{- define "redpanda-atleast-23-3-0" -}}
-{{- toJson (dict "bool" (get ((include "redpanda.RedpandaAtLeast_23_3_0" (dict "a" (list .))) | fromJson) "r")) }}
-{{- end -}}
-
-{{- define "redpanda-22-2-x-without-sasl" -}}
-{{- $result :=  (include "redpanda-atleast-22-3-0" . | fromJson).bool -}}
-{{- if or (include "sasl-enabled" . | fromJson).bool .Values.listeners.kafka.authenticationMethod -}}
-{{-   $result := false -}}
-{{- end -}}
-{{- toJson (dict "bool" $result) -}}
 {{- end -}}
 
 {{- define "admin-tls-curl-flags" -}}
@@ -307,20 +261,6 @@ advertised-host returns a json string with the data needed for configuring the a
 {{- $cfg := get ((include "redpanda.StorageTieredConfig" (dict "a" (list .))) | fromJson) "r" }}
 {{- if $cfg -}}
 {{- toYaml $cfg -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-  rpk sasl environment variables
-
-  this will return a string with the correct environment variables to use for SASL based on the
-  version of the redpada container being used
-*/}}
-{{- define "rpk-sasl-environment-variables" -}}
-{{- if (include "redpanda-atleast-23-2-1" . | fromJson).bool -}}
-RPK_USER RPK_PASS RPK_SASL_MECHANISM
-{{- else -}}
-REDPANDA_SASL_USERNAME REDPANDA_SASL_PASSWORD REDPANDA_SASL_MECHANISM
 {{- end -}}
 {{- end -}}
 

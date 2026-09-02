@@ -181,104 +181,6 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.RedpandaAtLeast_22_2_0" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.2.0-0 || <0.0.1-0")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_22_3_0" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.3.0-0 || <0.0.1-0")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_23_1_1" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.1.1-0 || <0.0.1-0")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_23_1_2" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.1.2-0 || <0.0.1-0")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_22_3_atleast_22_3_13" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.3.13-0,<22.4")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_22_2_atleast_22_2_10" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=22.2.10-0,<22.3")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_23_2_1" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.2.1-0 || <0.0.1-0")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RedpandaAtLeast_23_3_0" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.redpandaAtLeast" (dict "a" (list $state ">=23.3.0-0 || <0.0.1-0")))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.redpandaAtLeast" -}}
-{{- $state := (index .a 0) -}}
-{{- $constraint := (index .a 1) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) -}}
-{{- $_277_result_err := (list (semverCompare $constraint $version) nil) -}}
-{{- $result := (index $_277_result_err 0) -}}
-{{- $err := (index $_277_result_err 1) -}}
-{{- if (ne (toJson $err) "null") -}}
-{{- $_ := (fail $err) -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $result) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "redpanda.cleanForK8s" -}}
 {{- $in := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -390,9 +292,9 @@
 {{- $originalKeys := (dict) -}}
 {{- $overrideByKey := (dict) -}}
 {{- range $_, $el := $override -}}
-{{- $_414_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_414_key_ok 0) -}}
-{{- $ok := (index $_414_key_ok 1) -}}
+{{- $_345_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_345_key_ok 0) -}}
+{{- $ok := (index $_345_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -403,13 +305,13 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
-{{- $_426_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_426_key__ 0) -}}
-{{- $_ := (index $_426_key__ 1) -}}
+{{- $_357_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_357_key__ 0) -}}
+{{- $_ := (index $_357_key__ 1) -}}
 {{- $_ := (set $originalKeys $key true) -}}
-{{- $_428_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
-{{- $elOverride_5 := (index $_428_elOverride_5_ok_6 0) -}}
-{{- $ok_6 := (index $_428_elOverride_5_ok_6 1) -}}
+{{- $_359_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
+{{- $elOverride_5 := (index $_359_elOverride_5_ok_6 0) -}}
+{{- $ok_6 := (index $_359_elOverride_5_ok_6 1) -}}
 {{- if $ok_6 -}}
 {{- $merged = (concat (default (list) $merged) (list (get (fromJson (include (first $mergeFunc) (dict "a" (concat (rest $mergeFunc) (list $el $elOverride_5))))) "r"))) -}}
 {{- else -}}
@@ -420,15 +322,15 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
-{{- $_438_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_438_key_ok 0) -}}
-{{- $ok := (index $_438_key_ok 1) -}}
+{{- $_369_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_369_key_ok 0) -}}
+{{- $ok := (index $_369_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
-{{- $_443___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
-{{- $_ := (index $_443___ok_7 0) -}}
-{{- $ok_7 := (index $_443___ok_7 1) -}}
+{{- $_374___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
+{{- $_ := (index $_374___ok_7 0) -}}
+{{- $ok_7 := (index $_374___ok_7 1) -}}
 {{- if $ok_7 -}}
 {{- continue -}}
 {{- end -}}

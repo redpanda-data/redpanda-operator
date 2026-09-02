@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/util/jsonpath"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/yaml"
 
@@ -43,7 +42,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
-	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 func TestMain(m *testing.M) {
@@ -102,7 +100,6 @@ func TestTemplate(t *testing.T) {
 	goldens := testutil.NewTxTar(t, "testdata/template-cases.golden.txtar")
 
 	cases := archive.Files
-	cases = append(cases, VersionGoldenTestsCases(t)...)
 	cases = append(cases, CIGoldenTestCases(t)...)
 
 	for _, tc := range cases {
@@ -309,110 +306,6 @@ func CIGoldenTestCases(t *testing.T) []txtar.File {
 		cases[i] = txtar.File{
 			Name: f.Name(),
 			Data: append([]byte("# ASSERT-NO-ERROR\n# ASSERT-GOLDEN\n# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED\n"), data...),
-		}
-	}
-	return cases
-}
-
-func VersionGoldenTestsCases(t *testing.T) []txtar.File {
-	// A collection of versions that should trigger all the gates guarded by
-	// "redpanda-atleast-*" helpers.
-	versions := []struct {
-		Image  redpanda.PartialImage
-		ErrMsg *string
-	}{
-		{
-			Image:  redpanda.PartialImage{Tag: ptr.To("v22.1.0")},
-			ErrMsg: ptr.To("no longer supported"),
-		},
-		{
-			Image:  redpanda.PartialImage{Tag: ptr.To("v22.2.0")},
-			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
-		},
-		{
-			Image:  redpanda.PartialImage{Tag: ptr.To("v22.3.0")},
-			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
-		},
-		{
-			Image: redpanda.PartialImage{Tag: ptr.To("v22.3.14")},
-		},
-		{
-			Image:  redpanda.PartialImage{Tag: ptr.To("v22.4.0")},
-			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
-		},
-		{
-			Image:  redpanda.PartialImage{Tag: ptr.To("v23.1.1")},
-			ErrMsg: ptr.To("does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01."),
-		},
-		{
-			Image: redpanda.PartialImage{Tag: ptr.To("v23.1.2")},
-		},
-		{
-			Image: redpanda.PartialImage{Tag: ptr.To("v23.1.3")},
-		},
-		{
-			Image: redpanda.PartialImage{Tag: ptr.To("v23.2.1")},
-		},
-		{
-			Image: redpanda.PartialImage{Tag: ptr.To("v23.3.0")},
-		},
-		{
-			Image: redpanda.PartialImage{Tag: ptr.To("v24.1.0")},
-		},
-		{
-			Image: redpanda.PartialImage{Repository: ptr.To("somecustomrepo"), Tag: ptr.To("v24.1.0")},
-		},
-		{
-			Image: redpanda.PartialImage{Repository: ptr.To("somecustomrepo"), Tag: ptr.To("v23.2.8")},
-		},
-	}
-
-	// A collection of features that are protected by the various above version
-	// gates.
-	permutations := []redpanda.PartialValues{
-		{
-			Config: &redpanda.PartialConfig{
-				Tunable: redpanda.PartialTunableConfig{
-					"log_segment_size_min":  100,
-					"log_segment_size_max":  99999,
-					"kafka_batch_max_bytes": 7777,
-				},
-			},
-		},
-		{
-			Enterprise: &redpanda.PartialEnterprise{License: ptr.To("ATOTALLYVALIDLICENSE")},
-		},
-		{
-			RackAwareness: &redpanda.PartialRackAwareness{
-				Enabled:        ptr.To(true),
-				NodeAnnotation: ptr.To("topology-label"),
-			},
-		},
-	}
-
-	var cases []txtar.File
-	for _, version := range versions {
-		version := version
-		for i, perm := range permutations {
-			values, err := valuesutil.UnmarshalInto[redpanda.PartialValues](perm)
-			require.NoError(t, err)
-
-			values.Image = &version.Image
-
-			name := fmt.Sprintf("%s-%s-%d", ptr.Deref(version.Image.Repository, "default"), *version.Image.Tag, i)
-
-			header := []byte("# ASSERT-NO-ERROR\n# ASSERT-GOLDEN\n# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED\n")
-			if version.ErrMsg != nil {
-				header = []byte(fmt.Sprintf("# ASSERT-ERROR-CONTAINS [%q]\n# ASSERT-GOLDEN\n", *version.ErrMsg))
-			}
-
-			data, err := yaml.Marshal(values)
-			require.NoError(t, err)
-
-			cases = append(cases, txtar.File{
-				Name: name,
-				Data: append(header, data...),
-			})
 		}
 	}
 	return cases

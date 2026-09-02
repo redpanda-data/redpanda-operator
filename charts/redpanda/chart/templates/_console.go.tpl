@@ -2,7 +2,8 @@
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/console.tpl.go" */ -}}
 
 {{- define "redpanda.consoleChartIntegration" -}}
-{{- $state := (index .a 0) -}}
+{{- $dot := (index .a 0) -}}
+{{- $state := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.console.enabled true)))) "r")) -}}
@@ -10,7 +11,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $consoleDot := (index $state.Dot.Subcharts "console") -}}
+{{- $consoleDot := (index $dot.Subcharts "console") -}}
 {{- $consoleState := (get (fromJson (include "chart.DotToState" (dict "a" (list $consoleDot)))) "r") -}}
 {{- $kubeVersion := $consoleDot.Capabilities.KubeVersion.Version -}}
 {{- $_ := (set $consoleState "Metrics" (mustMergeOverwrite (dict "ViaOperator" false "CloudEnvironment" "" "KubernetesVersion" "" "ChartVersion" "" "ClusterID" "") (dict "KubernetesVersion" $kubeVersion "ChartVersion" $consoleDot.Chart.Version))) -}}

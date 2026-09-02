@@ -161,7 +161,7 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 		redpandaYaml["rpk"] = rpkNodeConfig(state, pool)
 		redpandaYaml["pandaproxy_client"] = kafkaClient(state, "pandaproxy")
 		redpandaYaml["schema_registry_client"] = kafkaClient(state, "schema_registry")
-		if RedpandaAtLeast_23_3_0(state) && state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
+		if state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
 			redpandaYaml["audit_log_client"] = kafkaClient(state, "audit_log")
 		}
 	}
@@ -621,12 +621,6 @@ func schemaRegistry(state *RenderState) map[string]any {
 
 func rpcListenersTLS(state *RenderState) map[string]any {
 	r := state.Values.Listeners.RPC
-
-	if !(RedpandaAtLeast_22_2_atleast_22_2_10(state) ||
-		RedpandaAtLeast_22_3_atleast_22_3_13(state) ||
-		RedpandaAtLeast_23_1_2(state)) && (r.TLS.Enabled == nil && state.Values.TLS.Enabled || ptr.Deref(r.TLS.Enabled, false)) {
-		panic(fmt.Sprintf("Redpanda version v%s does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.", helmette.TrimPrefix("v", Tag(state))))
-	}
 
 	if !r.TLS.IsEnabled(&state.Values.TLS) {
 		return map[string]any{}

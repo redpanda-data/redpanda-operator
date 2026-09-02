@@ -2,9 +2,6 @@
 # tls.enabled: false and tls.cert: "" triggered failures.
 console:
   enabled: false
-image:
-  repository: docker.redpanda.com/redpandadata/redpanda
-  tag: v23.2.2
 listeners:
   admin:
     external: {}

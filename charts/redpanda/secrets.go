@@ -414,17 +414,6 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 		`# Setup config files`,
 		`cp /tmp/base-config/redpanda.yaml "${CONFIG}"`,
 	)
-	if !RedpandaAtLeast_22_3_0(state) {
-		configuratorSh = append(configuratorSh,
-			``,
-			`# Configure bootstrap`,
-			`## Not used for Redpanda v22.3.0+`,
-			`rpk --config "${CONFIG}" redpanda config set redpanda.node_id "${POD_ORDINAL}"`,
-			`if [ "${POD_ORDINAL}" = "0" ]; then`,
-			`	rpk --config "${CONFIG}" redpanda config set redpanda.seed_servers '[]' --format yaml`,
-			`fi`,
-		)
-	}
 
 	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, kafkaSnippet...)
@@ -432,7 +421,7 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, httpSnippet...)
 
-	if RedpandaAtLeast_22_3_0(state) && state.Values.RackAwareness.Enabled {
+	if state.Values.RackAwareness.Enabled {
 		configuratorSh = append(configuratorSh,
 			``,
 			`# Configure Rack Awareness`,

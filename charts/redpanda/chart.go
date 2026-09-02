@@ -11,8 +11,6 @@
 package redpanda
 
 import (
-	"fmt"
-
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/redpanda-data/common-go/kube"
@@ -25,7 +23,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
@@ -145,7 +142,6 @@ func render(dot *helmette.Dot) []kube.Object {
 }
 
 func renderResources(state *RenderState) []kube.Object {
-	checkVersion(state)
 	state.Values.External.ValidateGateway()
 	validateGatewayListeners(state)
 
@@ -216,11 +212,4 @@ func renderResources(state *RenderState) []kube.Object {
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.
 	return manifests
-}
-
-func checkVersion(state *RenderState) {
-	if !RedpandaAtLeast_22_2_0(state) && !ptr.Deref(state.Values.Force, false) {
-		sv := semver(state)
-		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
-	}
 }

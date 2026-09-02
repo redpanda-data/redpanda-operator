@@ -60,7 +60,7 @@
 {{- end -}}
 {{- $notes = (concat (default (list) $notes) (list (printf `  rpk profile create --from-profile <(kubectl get configmap -n %s %s-rpk -o go-template='{{ .data.profile }}') %s` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $profileName) `` `Set up dns to look up the pods on their Kubernetes Nodes. You can use this query to get the list of short-names to IP addresses. Add your external domain to the hostnames and you could test by adding these to your /etc/hosts:` `` (printf `  kubectl get pod -n %s -o custom-columns=node:.status.hostIP,name:.metadata.name --no-headers -l app.kubernetes.io/name=redpanda,app.kubernetes.io/component=redpanda-statefulset` $state.Release.Namespace))) -}}
 {{- if $anySASL -}}
-{{- $notes = (concat (default (list) $notes) (list `` `Set the credentials in the environment:` `` (printf `  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s` $state.Release.Namespace $state.Values.auth.sasl.secretRef (get (fromJson (include "redpanda.RpkSASLEnvironmentVariables" (dict "a" (list $state)))) "r")) (printf `  export %s` (get (fromJson (include "redpanda.RpkSASLEnvironmentVariables" (dict "a" (list $state)))) "r")))) -}}
+{{- $notes = (concat (default (list) $notes) (list `` `Set the credentials in the environment:` `` (printf `  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s` $state.Release.Namespace $state.Values.auth.sasl.secretRef "RPK_USER RPK_PASS RPK_SASL_MECHANISM") (printf `  export %s` "RPK_USER RPK_PASS RPK_SASL_MECHANISM"))) -}}
 {{- end -}}
 {{- $notes = (concat (default (list) $notes) (list `` `Try some sample commands:`)) -}}
 {{- if $anySASL -}}
@@ -142,22 +142,6 @@
 {{- $_is_returning = true -}}
 {{- (dict "r" `rpk topic delete test-topic`) | toJson -}}
 {{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.RpkSASLEnvironmentVariables" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- if (get (fromJson (include "redpanda.RedpandaAtLeast_23_2_1" (dict "a" (list $state)))) "r") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" `RPK_USER RPK_PASS RPK_SASL_MECHANISM`) | toJson -}}
-{{- break -}}
-{{- else -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" `REDPANDA_SASL_USERNAME REDPANDA_SASL_PASSWORD REDPANDA_SASL_MECHANISM`) | toJson -}}
-{{- break -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 

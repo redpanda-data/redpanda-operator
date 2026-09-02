@@ -1353,10 +1353,6 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 	return set
 }
 
-func semver(state *RenderState) string {
-	return strings.TrimPrefix(Tag(state), "v")
-}
-
 // statefulSetChecksumAnnotation was statefulset-checksum-annotation
 // statefulset-checksum-annotation calculates a checksum that is used
 // as the value for the annotation, "checksum/config". When this value

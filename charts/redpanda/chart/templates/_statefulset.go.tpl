@@ -569,7 +569,7 @@ chroot /host /bin/bash -c '
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $state.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (printf "--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Dot.Release.Name) `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $state)))) "r")) -}}
+{{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $state.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (printf "--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Release.Name) `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $state)))) "r")) -}}
 {{- if $pool.Statefulset.sideCars.rpkProfileWatcher.enabled -}}
 {{- $args = (concat (default (list) $args) (default (list) (list `--watch-rpk-profile` `--rpk-profile-source=/tmp/base-config/redpanda.yaml`))) -}}
 {{- end -}}
@@ -669,16 +669,6 @@ chroot /host /bin/bash -c '
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $set) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.semver" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
