@@ -8,9 +8,14 @@
 # K8S-926 is what they exist for. `controller_runtime_*` and `workqueue_*` are
 # controller-runtime metric names, not Redpanda ones, so every operator on the
 # cluster exports them identically. Before the rules carried a job/namespace
-# matcher, a busy Karpenter fired OperatorReconcileRunaway annotated as a
+# matcher, a busy Karpenter fired a Redpanda reconcile alert annotated as a
 # Redpanda controller, and the recorded series merged same-named controllers
 # across operators beyond recovery. Both scenarios are pinned below.
+#
+# K8S-927 added the steady-state scenarios: the interval-driven controllers
+# requeue every CR every sync interval, so healthy reconcile rate is
+# proportional to CR count, and a single always-busy worker with an empty
+# queue is normal — neither may alert.
 
 # Two installs' worth of rendered rules. Each install scopes its own rules to
 # its own job and namespace, so the second file is what makes the "do not merge
@@ -26,21 +31,23 @@ tests:
   # A foreign operator reconciling hard must not produce Redpanda alerts, and
   # must not appear in Redpanda's recorded series.
   #
-  # 600 per minute is 10/s, twice the OperatorReconcileRunaway threshold, held
-  # long enough to clear its 5m `for`.
+  # 600 per minute is 10/s, twice the OperatorReconcileChurn threshold, held
+  # long enough to clear its 5m `for`. result="success" is one spin-loop shape:
+  # a controller that re-triggers itself by rewriting status completes
+  # "successfully" every pass — the churn alert must keep counting it.
   - interval: 1m
     name: a busy foreign operator stays out of Redpanda's rules
     input_series:
       # The Redpanda operator, scraped as the chart's ServiceMonitor names it:
       # prometheus-operator defaults `job` to the Service name.
-      - series: 'controller_runtime_reconcile_total{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
-        values: '0+600x15'
+      - series: 'controller_runtime_reconcile_total{controller="TopicController", result="success", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+600x25'
       # Karpenter, from the field report: same metric, same controller-shaped
       # labels, different operator.
-      - series: 'controller_runtime_reconcile_total{controller="metrics.pod", job="karpenter", namespace="kube-system"}'
-        values: '0+600x15'
-      - series: 'controller_runtime_reconcile_total{controller="state.pod", job="karpenter", namespace="kube-system"}'
-        values: '0+600x15'
+      - series: 'controller_runtime_reconcile_total{controller="metrics.pod", result="success", job="karpenter", namespace="kube-system"}'
+        values: '0+2400x25'
+      - series: 'controller_runtime_reconcile_total{controller="state.pod", result="success", job="karpenter", namespace="kube-system"}'
+        values: '0+2400x25'
 
     promql_expr_test:
       # The recorded series carries only the Redpanda operator, and keeps job
@@ -54,7 +61,7 @@ tests:
     alert_rule_test:
       # Exactly one alert, for the Redpanda controller. Before the fix this
       # returned three, two of them Karpenter's.
-      - alertname: OperatorReconcileRunaway
+      - alertname: OperatorReconcileChurn
         eval_time: 12m
         exp_alerts:
           - exp_labels:
@@ -63,8 +70,13 @@ tests:
               job: operator-metrics-service
               namespace: redpanda-system
             exp_annotations:
-              summary: 'Redpanda operator controller TopicController in redpanda-system is reconciling at a high rate'
-              description: 'Controller TopicController has been reconciling at >5/s for 5+ minutes. On a stable cluster this means the controller is spinning. Cross-check operator_controller_reconcile_steady_state_total — if it is flat while the reconcile rate is high, the controller is making no progress.'
+              summary: 'Redpanda operator controller TopicController in redpanda-system has high non-interval reconcile churn'
+              description: 'Controller TopicController has completed >5 reconciles per second for 5+ minutes with a result other than requeue_after. Investigate errors, explicit requeues, or success-result event loops.'
+      # Karpenter is above the total-rate backstop but remains out of scope;
+      # Redpanda's 10/s rate stays below it.
+      - alertname: OperatorReconcileRunaway
+        eval_time: 20m
+        exp_alerts: []
 
   # Two Redpanda operator installs on one cluster must record separately rather
   # than summing into one series. This is the half of K8S-926 that could not be
@@ -90,18 +102,153 @@ tests:
           - labels: 'operator:reconcile_rate:5m{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
             value: 10
 
-  # The alerts that read raw metrics rather than a recorded series take the
-  # matcher directly. OperatorWorkerPoolSaturated is the controller-runtime one;
-  # a foreign operator at saturation must not fire it.
+  # K8S-927, the field report's exact steady state: 67 Topic CRs on a 3-member
+  # StretchCluster at the default 30s sync interval. Every reconcile ends in
+  # result="requeue_after" (67×3/30s = 6.7/s = 402/min), errors are flat zero,
+  # the single worker is pegged (active == max_concurrent == 1), and the queue
+  # is empty (every queued item picked up within one second). This is a healthy
+  # operator: nothing may fire. Before the fix both OperatorReconcileRunaway
+  # and OperatorWorkerPoolSaturated alerted on it.
   - interval: 1m
-    name: raw-metric alerts are scoped too
+    name: interval-driven steady state does not alert (K8S-927)
     input_series:
-      - series: 'controller_runtime_active_workers{controller="TopicController", job="karpenter", namespace="kube-system"}'
-        values: '4x15'
-      - series: 'controller_runtime_max_concurrent_reconciles{controller="TopicController", job="karpenter", namespace="kube-system"}'
-        values: '4x15'
+      - series: 'controller_runtime_reconcile_total{controller="TopicController", result="requeue_after", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+402x20'
+      - series: 'controller_runtime_reconcile_errors_total{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0x20'
+      - series: 'controller_runtime_active_workers{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '1x20'
+      - series: 'controller_runtime_max_concurrent_reconciles{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '1x20'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="1", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+402x20'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="10", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+402x20'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="100", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+402x20'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="+Inf", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+402x20'
+
+    promql_expr_test:
+      # The total rate records the interval-driven load faithfully...
+      - expr: operator:reconcile_rate:5m
+        eval_time: 12m
+        exp_samples:
+          - labels: 'operator:reconcile_rate:5m{controller="TopicController", job="operator-metrics-service", namespace="redpanda-system"}'
+            value: 6.7
+      # ...and the churn rate sees none of it.
+      - expr: operator:reconcile_churn_rate:5m
+        eval_time: 12m
+        exp_samples: []
+      # The saturation recording rule uses the exact 10s bucket, not a p99
+      # interpolated inside the production histogram's wide (10, 100] bucket.
+      - expr: operator:workqueue_over_10s_ratio:5m
+        eval_time: 12m
+        exp_samples:
+          - labels: 'operator:workqueue_over_10s_ratio:5m{name="topic", job="operator-metrics-service", namespace="redpanda-system"}'
+            value: 0
+
+    alert_rule_test:
+      - alertname: OperatorReconcileChurn
+        eval_time: 15m
+        exp_alerts: []
+      - alertname: OperatorReconcileRunaway
+        eval_time: 18m
+        exp_alerts: []
+      - alertname: OperatorWorkerPoolSaturated
+        eval_time: 18m
+        exp_alerts: []
+      - alertname: OperatorReconcileErrors
+        eval_time: 15m
+        exp_alerts: []
+
+  # A controller can stamp RequeueAfter on every successful return even when a
+  # watch event, rather than its interval timer, triggered the reconcile. The
+  # result label therefore cannot identify every loop. Keep a high-headroom
+  # total-rate backstop for this shape while the churn signal remains quiet.
+  - interval: 1m
+    name: a high-rate requeue-after loop fires the runaway backstop
+    input_series:
+      - series: 'controller_runtime_reconcile_total{controller="RedpandaController", result="requeue_after", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+2400x25'
+
+    promql_expr_test:
+      - expr: operator:reconcile_rate:5m
+        eval_time: 20m
+        exp_samples:
+          - labels: 'operator:reconcile_rate:5m{controller="RedpandaController", job="operator-metrics-service", namespace="redpanda-system"}'
+            value: 40
+      - expr: operator:reconcile_churn_rate:5m
+        eval_time: 20m
+        exp_samples: []
+
+    alert_rule_test:
+      - alertname: OperatorReconcileChurn
+        eval_time: 20m
+        exp_alerts: []
+      - alertname: OperatorReconcileRunaway
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              controller: RedpandaController
+              job: operator-metrics-service
+              namespace: redpanda-system
+            exp_annotations:
+              summary: 'Redpanda operator controller RedpandaController in redpanda-system is reconciling at an extreme rate'
+              description: 'Controller RedpandaController has completed >30 reconciles per second for 15+ minutes. This total-rate backstop includes requeue_after results because the result label cannot distinguish scheduled interval work from event-driven spin loops.'
+
+  # The saturation alert's positive case: 2% of items cross the production
+  # histogram's exact 10-second bucket boundary for 10 minutes — an actual
+  # backlog, unlike a busy worker with an empty queue.
+  - interval: 1m
+    name: a backlogged workqueue fires the saturation alert
+    input_series:
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="1", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+98x25'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="10", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+98x25'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="100", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+100x25'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="topic", le="+Inf", job="operator-metrics-service", namespace="redpanda-system"}'
+        values: '0+100x25'
+
+    promql_expr_test:
+      - expr: operator:workqueue_over_10s_ratio:5m
+        eval_time: 20m
+        exp_samples:
+          - labels: 'operator:workqueue_over_10s_ratio:5m{name="topic", job="operator-metrics-service", namespace="redpanda-system"}'
+            value: 0.020000000000000018
 
     alert_rule_test:
       - alertname: OperatorWorkerPoolSaturated
-        eval_time: 15m
+        eval_time: 20m
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              name: topic
+              job: operator-metrics-service
+              namespace: redpanda-system
+            exp_annotations:
+              summary: 'Redpanda operator controller topic in redpanda-system reconcile queue is backlogged'
+              description: "More than 1% of items on controller topic's workqueue have taken over 10 seconds to be dequeued, sustained for 10+ minutes. Work is arriving faster than the worker pool drains it. Consider increasing MaxConcurrentReconciles or investigating per-reconcile latency (operator:reconcile_p99_seconds:5m)."
+
+  # The alerts read recorded series that are already scoped, and the recording
+  # rules take the matcher directly — a foreign operator's backlogged workqueue
+  # must not fire Redpanda's saturation alert.
+  - interval: 1m
+    name: raw-metric alerts are scoped too
+    input_series:
+      - series: 'workqueue_queue_duration_seconds_bucket{name="provisioner", le="1", job="karpenter", namespace="kube-system"}'
+        values: '0+98x25'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="provisioner", le="10", job="karpenter", namespace="kube-system"}'
+        values: '0+98x25'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="provisioner", le="100", job="karpenter", namespace="kube-system"}'
+        values: '0+100x25'
+      - series: 'workqueue_queue_duration_seconds_bucket{name="provisioner", le="+Inf", job="karpenter", namespace="kube-system"}'
+        values: '0+100x25'
+
+    alert_rule_test:
+      - alertname: OperatorWorkerPoolSaturated
+        eval_time: 20m
         exp_alerts: []

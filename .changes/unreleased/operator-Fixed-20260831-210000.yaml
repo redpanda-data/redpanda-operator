@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Fixed false-positive `OperatorReconcileRunaway` and `OperatorWorkerPoolSaturated` alerts during healthy interval reconciliation. A new `OperatorReconcileChurn` alert tracks non-interval work, Runaway retains a higher-threshold total-rate backstop, and saturation now measures sustained workqueue delay instead of worker utilization.
+time: 2026-08-31T21:00:00-07:00
