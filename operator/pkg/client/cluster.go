@@ -81,6 +81,13 @@ func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vector
 
 // schemaRegistryForCluster returns a simple sr.Client able to communicate with the given cluster specified via a Redpanda cluster.
 func (c *Factory) schemaRegistryForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*sr.Client, error) {
+	// A disabled listener publishes no _schemaregistry._tcp SRV record, so
+	// endpoint resolution below can only NXDOMAIN. Return the sentinel that
+	// isSchemaRegistryNotConfigured tolerates instead (#1793).
+	if !redpandaSchemaRegistryEnabled(cluster) {
+		return nil, NoSchemaRegistryAPI
+	}
+
 	config, err := c.GetConfig(ctx, clusterName)
 	if err != nil {
 		return nil, err
