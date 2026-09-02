@@ -75,9 +75,6 @@ const (
 
 	// datadirVolumeName is the volume and PVC name for the Redpanda data directory.
 	datadirVolumeName = "datadir"
-
-	// tokenExpirationSeconds is the expiration time for projected service account tokens.
-	tokenExpirationSeconds = 60*60 + 7
 )
 
 // Well-known Kubernetes label keys.

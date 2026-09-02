@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/chartutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
@@ -433,7 +434,7 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	// writing `config.rpk.tune_fstrim: false` keeps that opt-out even
 	// with apply_host_tuners enabled.
 	if state.Values.Tuning.ApplyHostTuners {
-		result = helmette.Merge(result, HostTunerDefaults())
+		result = helmette.Merge(result, redpanda.HostTunerDefaults())
 	}
 
 	return result

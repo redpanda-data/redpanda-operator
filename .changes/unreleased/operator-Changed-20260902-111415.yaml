@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: 'StretchCluster lifecycle hooks now log an explicit TIMEOUT line when `postStart.sh` or `preStop.sh` is killed at its timeout, matching the Helm chart. Previously the hook was killed silently and the broker received SIGTERM with no indication that the drain had not finished.'
+time: 2026-09-02T11:14:15.000000-04:00

@@ -918,7 +918,7 @@ type Tuning struct {
 	//     types); does real work on metal instance types.
 	// These are defaults, not overrides: an explicit `config.rpk.tune_*`
 	// value always wins, so `config.rpk.tune_fstrim: false` alongside
-	// `apply_host_tuners: true` keeps fstrim off (see HostTunerDefaults
+	// `apply_host_tuners: true` keeps fstrim off (see redpanda.HostTunerDefaults
 	// and its merge site in rpkNodeConfig).
 	//
 	// Requires TuneAIOEvents (the flag that gates the tuning init
@@ -952,7 +952,7 @@ type Tuning struct {
 
 func (t *Tuning) Translate() map[string]any {
 	// ApplyHostTuners without the tuning init container is a
-	// self-contradiction: HostTunerDefaults would enable host tuners in
+	// self-contradiction: redpanda.HostTunerDefaults would enable host tuners in
 	// redpanda.yaml, but the container that applies them is gated on
 	// TuneAIOEvents and would never render. Refuse the combination
 	// instead of shipping config that silently does nothing. Translate
@@ -981,35 +981,6 @@ func (t *Tuning) Translate() map[string]any {
 	helmette.Unset(result, "apply_host_tuners")
 
 	return result
-}
-
-// HostTunerDefaults returns the per-tuner rpk flags that ApplyHostTuners
-// default-enables. The whole point of ApplyHostTuners is to make the rpk
-// tuners that need host /sys, /proc, NICs and block devices actually
-// fire, and those tuners are gated by per-tuner flags in the rpk section
-// of redpanda.yaml, not by ApplyHostTuners itself — so flipping just
-// ApplyHostTuners would render the chroot init container running against
-// a config where only tune_aio_events is true. See the ApplyHostTuners
-// doc comment for per-tuner rationale; the invariant for membership in
-// this list is "only works (or only does real work) via the chroot path,
-// and cannot crashloop the init container on hosts that lack the
-// feature".
-//
-// These are merged at LOWEST precedence in rpkNodeConfig — after both
-// Tuning.Translate() and the user's config.rpk — so an explicit
-// `config.rpk.tune_*: false` opt-out always wins over these defaults.
-// The multicluster (StretchCluster) renderer applies the same map with
-// the same precedence.
-func HostTunerDefaults() map[string]any {
-	return map[string]any{
-		"tune_disk_irq":         true,
-		"tune_disk_scheduler":   true,
-		"tune_disk_nomerges":    true,
-		"tune_network":          true,
-		"tune_fstrim":           true,
-		"tune_disk_write_cache": true,
-		"tune_cpu":              true,
-	}
 }
 
 type Sidecars struct {
