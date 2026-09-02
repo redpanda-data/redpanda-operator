@@ -132,7 +132,7 @@
 {{- $_ := (set $redpandaYaml "rpk" (get (fromJson (include "redpanda.rpkNodeConfig" (dict "a" (list $state $pool)))) "r")) -}}
 {{- $_ := (set $redpandaYaml "pandaproxy_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state "pandaproxy")))) "r")) -}}
 {{- $_ := (set $redpandaYaml "schema_registry_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state "schema_registry")))) "r")) -}}
-{{- if (and (and (get (fromJson (include "redpanda.RedpandaAtLeast_23_3_0" (dict "a" (list $state)))) "r") $state.Values.auditLogging.enabled) (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r")) -}}
+{{- if (and $state.Values.auditLogging.enabled (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r")) -}}
 {{- $_ := (set $redpandaYaml "audit_log_client" (get (fromJson (include "redpanda.kafkaClient" (dict "a" (list $state "audit_log")))) "r")) -}}
 {{- end -}}
 {{- end -}}
@@ -597,9 +597,6 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $r := $state.Values.listeners.rpc -}}
-{{- if (and (not ((or (or (get (fromJson (include "redpanda.RedpandaAtLeast_22_2_atleast_22_2_10" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_atleast_22_3_13" (dict "a" (list $state)))) "r")) (get (fromJson (include "redpanda.RedpandaAtLeast_23_1_2" (dict "a" (list $state)))) "r")))) ((or (and (eq (toJson $r.tls.enabled) "null") $state.Values.tls.enabled) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $r.tls.enabled false)))) "r")))) -}}
-{{- $_ := (fail (printf "Redpanda version v%s does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01." (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")))) -}}
-{{- end -}}
 {{- if (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $r.tls $state.Values.tls)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (dict)) | toJson -}}
@@ -655,17 +652,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_712_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_15 := (index $_712_value_15_ok_16 0) -}}
-{{- $ok_16 := (index $_712_value_15_ok_16 1) -}}
+{{- $_706_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_15 := (index $_706_value_15_ok_16 0) -}}
+{{- $ok_16 := (index $_706_value_15_ok_16 1) -}}
 {{- if $ok_16 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_15) false (hasKey $enabledOptions $value_15)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_719_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_17 := (index $_719_value_17_ok_18 0) -}}
-{{- $ok_18 := (index $_719_value_17_ok_18 1) -}}
+{{- $_713_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_17 := (index $_713_value_17_ok_18 0) -}}
+{{- $ok_18 := (index $_713_value_17_ok_18 1) -}}
 {{- if $ok_18 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_17) false (hasKey $enabledOptions $value_17)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}

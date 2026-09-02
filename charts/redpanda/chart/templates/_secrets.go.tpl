@@ -191,14 +191,11 @@ echo "passed"`) -}}
 {{- $secret := (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%.51s-configurator" (printf "%s%s" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Pool.Suffix" (dict "a" (list (deepCopy $pool))))) "r"))) "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $configuratorSh := (list) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `set -xe` `SERVICE_NAME=$1` `KUBERNETES_NODE_NAME=$2` `POD_ORDINAL=${SERVICE_NAME##*-}` "BROKER_INDEX=`expr $POD_ORDINAL + 1`" `` `CONFIG=/etc/redpanda/redpanda.yaml` `` `# Setup config files` `cp /tmp/base-config/redpanda.yaml "${CONFIG}"`)) -}}
-{{- if (not (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r")) -}}
-{{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure bootstrap` `## Not used for Redpanda v22.3.0+` `rpk --config "${CONFIG}" redpanda config set redpanda.node_id "${POD_ORDINAL}"` `if [ "${POD_ORDINAL}" = "0" ]; then` `	rpk --config "${CONFIG}" redpanda config set redpanda.seed_servers '[]' --format yaml` `fi`)) -}}
-{{- end -}}
 {{- $kafkaSnippet := (get (fromJson (include "redpanda.secretConfiguratorKafkaConfig" (dict "a" (list $state $pool.Statefulset $ordinalOffset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $kafkaSnippet)) -}}
 {{- $httpSnippet := (get (fromJson (include "redpanda.secretConfiguratorHTTPConfig" (dict "a" (list $state $pool.Statefulset $ordinalOffset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $httpSnippet)) -}}
-{{- if (and (get (fromJson (include "redpanda.RedpandaAtLeast_22_3_0" (dict "a" (list $state)))) "r") $state.Values.rackAwareness.enabled) -}}
+{{- if $state.Values.rackAwareness.enabled -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (squote (quote $state.Values.rackAwareness.nodeAnnotation))) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) -}}
 {{- end -}}
 {{- $_ := (set $secret.stringData "configurator.sh" (join "\n" $configuratorSh)) -}}
