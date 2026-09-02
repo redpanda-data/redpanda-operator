@@ -190,7 +190,6 @@ tasks:
       - task: :build:operator-image
         vars:
           TAGS:
-          - docker.io/vectorized/redpanda-operator:{{.OPERATOR_VERSION}}
           - docker.io/redpandadata/redpanda-operator:{{.OPERATOR_VERSION}}
           PLATFORMS:
           - linux/amd64
