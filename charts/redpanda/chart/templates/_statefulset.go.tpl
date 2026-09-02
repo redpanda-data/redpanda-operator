@@ -673,16 +673,6 @@ chroot /host /bin/bash -c '
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.semver" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r"))) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "redpanda.statefulSetChecksumAnnotation" -}}
 {{- $state := (index .a 0) -}}
 {{- $pool := (index .a 1) -}}
