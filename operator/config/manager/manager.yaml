@@ -29,7 +29,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: vectorized/redpanda-operator:2021022-e853bf3
+        image: redpandadata/redpanda-operator:latest
         name: manager
         ports: []
         securityContext:

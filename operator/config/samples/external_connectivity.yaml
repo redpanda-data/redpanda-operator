@@ -3,7 +3,7 @@ kind: Cluster
 metadata:
   name: external-connectivity
 spec:
-  image: "vectorized/redpanda"
+  image: "redpandadata/redpanda"
   version: "latest"
   replicas: 3
   resources:

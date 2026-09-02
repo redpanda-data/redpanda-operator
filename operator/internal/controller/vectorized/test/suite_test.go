@@ -158,7 +158,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		DecommissionWaitInterval:       100 * time.Millisecond,
 		ConfigurationReassertionPeriod: driftCheckPeriod,
 	}).WithClusterDomain("cluster.local").WithConfiguratorSettings(resources.ConfiguratorSettings{
-		ConfiguratorBaseImage: "redpanda-data/redpanda-operator",
+		ConfiguratorBaseImage: "redpandadata/redpanda-operator",
 		ConfiguratorTag:       "latest",
 		ImagePullPolicy:       "Always",
 	}).SetupWithManager(k8sManager)
