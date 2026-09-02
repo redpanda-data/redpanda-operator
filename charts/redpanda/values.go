@@ -1332,7 +1332,7 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 		if v.Repr != nil {
 			template[k] = string(*v.Repr)
 		} else if v.ConfigMapKeyRef != nil {
-			envName := keyToEnvVar(k)
+			envName := KeyToEnvVar(k)
 			envVars = append(envVars, corev1.EnvVar{
 				Name: envName,
 				ValueFrom: &corev1.EnvVarSource{
@@ -1349,7 +1349,7 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 				fixups = append(fixups, clusterconfiguration.Fixup{Field: k, CEL: fmt.Sprintf(`%s(%s("%s"))`, clusterconfiguration.CELRepr, clusterconfiguration.CELEnvString, envName)})
 			}
 		} else if v.SecretKeyRef != nil {
-			envName := keyToEnvVar(k)
+			envName := KeyToEnvVar(k)
 			envVars = append(envVars, corev1.EnvVar{
 				Name: envName,
 				ValueFrom: &corev1.EnvVarSource{
@@ -1384,7 +1384,12 @@ func (c ClusterConfiguration) Translate() (map[string]string, []clusterconfigura
 	return template, fixups, envVars
 }
 
-func keyToEnvVar(k string) string {
+// KeyToEnvVar returns the environment variable that Redpanda reads the given
+// cluster configuration key from.
+//
+// Shared with the operator's multicluster renderer, which threads the same
+// cluster config through env vars for StretchCluster brokers.
+func KeyToEnvVar(k string) string {
 	return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 }
 

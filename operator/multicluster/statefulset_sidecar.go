@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -36,11 +37,11 @@ func statefulSetContainerSidecar(state *RenderState, pool *redpandav1alpha2.Redp
 	volumeMounts := append(
 		state.commonMounts(pool),
 		corev1.VolumeMount{Name: configVolumeName, MountPath: redpandaConfigMountPath},
-		corev1.VolumeMount{Name: serviceAccountVolumeName, MountPath: defaultAPITokenMountPath, ReadOnly: true},
+		corev1.VolumeMount{Name: redpanda.ServiceAccountVolumeName, MountPath: redpanda.DefaultAPITokenMountPath, ReadOnly: true},
 	)
 
 	return corev1.Container{
-		Name:         sidecarContainerName,
+		Name:         redpanda.SidecarContainerName,
 		Image:        image,
 		Command:      []string{`/redpanda-operator`},
 		Args:         append([]string{`supervisor`, `--`}, args...),

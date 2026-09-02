@@ -48,7 +48,9 @@ var (
 	ErrSASLSecretKeyNotFound       = errors.New("users secret key not found")
 	ErrSASLSecretSuperuserNotFound = errors.New("users secret has no users")
 
-	supportedSASLMechanisms = []string{
+	// SupportedSASLMechanisms is the set of SASL mechanisms a users.txt entry
+	// may name. Shared with the operator's multicluster renderer.
+	SupportedSASLMechanisms = []string{
 		"SCRAM-SHA-256", "SCRAM-SHA-512",
 	}
 )
@@ -164,7 +166,7 @@ func firstUser(data []byte) (user string, password string, mechanism string) {
 			return tokens[0], tokens[1], string(DefaultSASLMechanism)
 
 		case 3:
-			if !slices.Contains(supportedSASLMechanisms, tokens[2]) {
+			if !slices.Contains(SupportedSASLMechanisms, tokens[2]) {
 				continue
 			}
 

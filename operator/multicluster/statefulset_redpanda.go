@@ -81,7 +81,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 	env = append(env, bootstrapUserEnvVars(state)...)
 
 	container := corev1.Container{
-		Name:      redpandaContainerName,
+		Name:      redpanda.RedpandaContainerName,
 		Image:     pool.RedpandaImage(),
 		Env:       env,
 		Resources: resources,

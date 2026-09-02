@@ -55,7 +55,7 @@ func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.R
 	}
 
 	return corev1.Container{
-		Name:    redpandaTuningContainerName,
+		Name:    redpanda.RedpandaTuningContainerName,
 		Image:   pool.RedpandaImage(),
 		Command: []string{`/bin/bash`, `-c`, `rpk redpanda tune all`},
 		SecurityContext: &corev1.SecurityContext{
@@ -85,7 +85,7 @@ func statefulSetInitContainerTuning(state *RenderState, pool *redpandav1alpha2.R
 // broker's read-only tuner-state mount in statefulSetVolumeMounts.
 func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	return corev1.Container{
-		Name:    redpandaTuningContainerName,
+		Name:    redpanda.RedpandaTuningContainerName,
 		Image:   pool.RedpandaImage(),
 		Command: []string{`/bin/bash`, `-c`, redpanda.HostTunerScript()},
 		SecurityContext: &corev1.SecurityContext{
@@ -102,7 +102,7 @@ func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerP
 
 func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Container {
 	return corev1.Container{
-		Name:    setDataDirectoryOwnershipContainerName,
+		Name:    redpanda.SetDataDirectoryOwnershipContainerName,
 		Image:   pool.InitImage(),
 		Command: []string{`/bin/sh`, `-c`, fmt.Sprintf(`chown %d:%d -R %s`, redpandaUserID, redpandaGroupID, datadirMountPath)},
 		SecurityContext: &corev1.SecurityContext{
@@ -124,7 +124,7 @@ func statefulSetInitContainerFSValidator(state *RenderState, pool *redpandav1alp
 	expectedFS := fsValidator.GetExpectedFS()
 
 	return corev1.Container{
-		Name:    fsValidatorContainerName,
+		Name:    redpanda.FSValidatorContainerName,
 		Image:   pool.RedpandaImage(),
 		Command: []string{`/bin/sh`},
 		Args: []string{
@@ -149,14 +149,14 @@ func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1al
 
 	if pool.Spec.RackAwareness.IsEnabled() {
 		volMounts = append(volMounts, corev1.VolumeMount{
-			Name:      serviceAccountVolumeName,
-			MountPath: defaultAPITokenMountPath,
+			Name:      redpanda.ServiceAccountVolumeName,
+			MountPath: redpanda.DefaultAPITokenMountPath,
 			ReadOnly:  true,
 		})
 	}
 
 	return corev1.Container{
-		Name:  redpandaConfiguratorContainerName,
+		Name:  redpanda.RedpandaConfiguratorContainerName,
 		Image: pool.RedpandaImage(),
 		Command: []string{
 			`/bin/bash`, `-c`,

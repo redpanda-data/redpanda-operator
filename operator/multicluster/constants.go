@@ -10,11 +10,7 @@
 package multicluster
 
 import (
-	"fmt"
 	"time"
-
-	"github.com/cockroachdb/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -42,10 +38,6 @@ const (
 
 // Mount paths.
 const (
-	// defaultAPITokenMountPath is the default mount path for Kubernetes API tokens.
-	//nolint:gosec
-	defaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
-
 	// redpandaConfigMountPath is the path where the final Redpanda config is mounted.
 	redpandaConfigMountPath = "/etc/redpanda"
 
@@ -61,9 +53,6 @@ const (
 
 // Volume names.
 const (
-	// serviceAccountVolumeName is the name of the projected service account token volume.
-	serviceAccountVolumeName = "kube-api-access"
-
 	// lifecycleScriptsVolumeName is the volume name for lifecycle hook scripts.
 	lifecycleScriptsVolumeName = "lifecycle-scripts"
 
@@ -101,16 +90,6 @@ const (
 	labelManagedByValue = "redpanda-operator"
 )
 
-// Container names.
-const (
-	redpandaContainerName                  = "redpanda"
-	sidecarContainerName                   = "sidecar"
-	redpandaConfiguratorContainerName      = "redpanda-configurator"
-	redpandaTuningContainerName            = "tuning"
-	setDataDirectoryOwnershipContainerName = "set-datadir-ownership"
-	fsValidatorContainerName               = "fs-validator"
-)
-
 // Internal service port names.
 const (
 	internalAdminAPIPortName       = "admin"
@@ -123,33 +102,8 @@ const (
 // Internal listener name used in Redpanda configuration.
 const internalListenerName = "internal"
 
-// Field owner for server-side apply.
-var defaultFieldOwner = client.FieldOwner("cluster.redpanda.com/operator")
-
 // defaultBootstrapUsername is the default SCRAM username created by
 // RP_BOOTSTRAP_USER and added to the superusers list. Aliases the canonical
 // constant in v1alpha2 so callers outside this package don't have to depend
 // on the API package just for the username string.
 const defaultBootstrapUsername = redpandav1alpha2.StretchClusterBootstrapUsername
-
-// Supported SASL mechanisms.
-var supportedSASLMechanisms = []string{
-	"SCRAM-SHA-256", "SCRAM-SHA-512",
-}
-
-// SASL error sentinels.
-var (
-	errSASLSecretNotFound          = fmt.Errorf("users secret not found")
-	errSASLSecretKeyNotFound       = fmt.Errorf("users secret key not found")
-	errSASLSecretSuperuserNotFound = fmt.Errorf("users secret has no users")
-)
-
-// TLS error sentinels.
-var (
-	errServerCertificateNotFound          = errors.New("server TLS certificate not found")
-	errServerCertificatePublicKeyNotFound = errors.New("server TLS certificate does not contain a public key")
-
-	errClientCertificateNotFound           = errors.New("client TLS certificate not found")
-	errClientCertificatePublicKeyNotFound  = errors.New("client TLS certificate does not contain a public key")
-	errClientCertificatePrivateKeyNotFound = errors.New("client TLS certificate does not contain a private key")
-)

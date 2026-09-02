@@ -21,6 +21,7 @@ import (
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
@@ -158,7 +159,7 @@ func NewRenderState(
 	if config != nil {
 		var err error
 		ctl, err = kube.FromRESTConfig(config, kube.Options{
-			FieldManager: string(defaultFieldOwner),
+			FieldManager: string(redpanda.DefaultFieldOwner),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("creating kubernetes client: %w", err)

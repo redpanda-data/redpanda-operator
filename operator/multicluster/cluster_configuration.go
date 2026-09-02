@@ -11,11 +11,11 @@ package multicluster
 
 import (
 	"fmt"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
@@ -79,7 +79,7 @@ func clusterConfigurationToConfiguration(cc redpandav1alpha2.ClusterConfiguratio
 // a ConfigMap or Secret reference. When useRawValue is true the env var's string
 // value is used as-is; otherwise it is wrapped in repr() for JSON encoding.
 func envVarFixup(key string, source *corev1.EnvVarSource, useRawValue bool) (corev1.EnvVar, clusterconfiguration.Fixup) {
-	envName := keyToEnvVar(key)
+	envName := redpanda.KeyToEnvVar(key)
 
 	cel := fmt.Sprintf(`%s("%s")`, clusterconfiguration.CELEnvString, envName)
 	if !useRawValue {
@@ -88,10 +88,4 @@ func envVarFixup(key string, source *corev1.EnvVarSource, useRawValue bool) (cor
 
 	return corev1.EnvVar{Name: envName, ValueFrom: source},
 		clusterconfiguration.Fixup{Field: key, CEL: cel}
-}
-
-// keyToEnvVar converts a cluster config key to an environment variable name.
-// e.g. "group.initial_rebalance_delay" → "REDPANDA_GROUP_INITIAL_REBALANCE_DELAY"
-func keyToEnvVar(k string) string {
-	return "REDPANDA_" + strings.ReplaceAll(strings.ToUpper(k), ".", "_")
 }

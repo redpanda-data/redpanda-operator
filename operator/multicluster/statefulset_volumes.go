@@ -167,7 +167,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	}
 
 	// Kube API access token volume.
-	volumes = append(volumes, redpanda.KubeTokenAPIVolume(serviceAccountVolumeName))
+	volumes = append(volumes, redpanda.KubeTokenAPIVolume(redpanda.ServiceAccountVolumeName))
 
 	return volumes
 }
@@ -210,7 +210,7 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 		corev1.VolumeMount{Name: baseConfigVolumeName, MountPath: baseConfigMountPath},
 		corev1.VolumeMount{Name: lifecycleScriptsVolumeName, MountPath: lifecycleScriptsMountPath},
 		corev1.VolumeMount{Name: datadirVolumeName, MountPath: datadirMountPath},
-		corev1.VolumeMount{Name: serviceAccountVolumeName, MountPath: defaultAPITokenMountPath, ReadOnly: true},
+		corev1.VolumeMount{Name: redpanda.ServiceAccountVolumeName, MountPath: redpanda.DefaultAPITokenMountPath, ReadOnly: true},
 	)
 
 	// Truststore mount.

@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -49,14 +50,14 @@ func (r *RenderState) TLSConfig(pool *redpandav1alpha2.RedpandaBrokerPool, certN
 	lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: rootCertName, Namespace: namespace}, &serverCert)
 	if lookupErr != nil {
 		if k8sapierrors.IsNotFound(lookupErr) {
-			return nil, serverTLSError(errServerCertificateNotFound)
+			return nil, serverTLSError(redpanda.ErrServerCertificateNotFound)
 		}
 		return nil, serverTLSError(lookupErr)
 	}
 
 	serverPublicKey, found := serverCert.Data[rootCertKey]
 	if !found {
-		return nil, serverTLSError(errServerCertificatePublicKeyNotFound)
+		return nil, serverTLSError(redpanda.ErrServerCertificatePublicKeyNotFound)
 	}
 
 	block, _ := pem.Decode(serverPublicKey)
@@ -77,19 +78,19 @@ func (r *RenderState) TLSConfig(pool *redpandav1alpha2.RedpandaBrokerPool, certN
 		lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: clientCertName, Namespace: namespace}, &clientCert)
 		if lookupErr != nil {
 			if k8sapierrors.IsNotFound(lookupErr) {
-				return nil, clientTLSError(errClientCertificateNotFound)
+				return nil, clientTLSError(redpanda.ErrClientCertificateNotFound)
 			}
 			return nil, clientTLSError(lookupErr)
 		}
 
 		clientPublicKey, found := clientCert.Data[corev1.TLSCertKey]
 		if !found {
-			return nil, clientTLSError(errClientCertificatePublicKeyNotFound)
+			return nil, clientTLSError(redpanda.ErrClientCertificatePublicKeyNotFound)
 		}
 
 		clientPrivateKey, found := clientCert.Data[corev1.TLSPrivateKeyKey]
 		if !found {
-			return nil, clientTLSError(errClientCertificatePrivateKeyNotFound)
+			return nil, clientTLSError(redpanda.ErrClientCertificatePrivateKeyNotFound)
 		}
 
 		clientKey, err := tls.X509KeyPair(clientPublicKey, clientPrivateKey)

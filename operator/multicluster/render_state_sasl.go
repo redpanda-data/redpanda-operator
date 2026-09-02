@@ -18,6 +18,8 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
 	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 )
 
 // FetchSASLUsers attempts to locate an existing SASL users secret in the cluster.
@@ -40,7 +42,7 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 		lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: saslUsers.Name, Namespace: saslUsers.Namespace}, &users)
 		if lookupErr != nil {
 			if k8sapierrors.IsNotFound(lookupErr) {
-				err = saslUsersError(errSASLSecretNotFound)
+				err = saslUsersError(redpanda.ErrSASLSecretNotFound)
 				return
 			}
 			err = saslUsersError(lookupErr)
@@ -49,13 +51,13 @@ func (r *RenderState) FetchSASLUsers() (username, password, mechanism string, er
 
 		data, found := users.Data["users.txt"]
 		if !found {
-			err = saslUsersError(errSASLSecretKeyNotFound)
+			err = saslUsersError(redpanda.ErrSASLSecretKeyNotFound)
 			return
 		}
 
 		username, password, mechanism = firstUser(data)
 		if username == "" {
-			err = saslUsersError(errSASLSecretSuperuserNotFound)
+			err = saslUsersError(redpanda.ErrSASLSecretSuperuserNotFound)
 			return
 		}
 	}
@@ -74,7 +76,7 @@ func firstUser(data []byte) (user string, password string, mechanism string) {
 			return tokens[0], tokens[1], "SCRAM-SHA-256"
 
 		case 3:
-			if !slices.Contains(supportedSASLMechanisms, tokens[2]) {
+			if !slices.Contains(redpanda.SupportedSASLMechanisms, tokens[2]) {
 				continue
 			}
 			return tokens[0], tokens[1], tokens[2]
