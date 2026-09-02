@@ -100,7 +100,7 @@ controller making progress".
 **Suggested alerts**:
 
 - **Errored reconciles**: `sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m])) > 0.1` for 5m → warning.
-- **Worker pool saturated**: `operator:workqueue_p99_seconds:5m > 30` for 10m → warning. This measures sustained queue latency; the alert identifies the affected workqueue with the `name` label.
+- **Worker pool saturated**: `operator:workqueue_over_10s_ratio:5m > 0.01` for 10m → warning. This bucket-exact signal means more than 1% of items waited over 10 seconds; the alert identifies the affected workqueue with the `name` label.
 
 Both are emitted by the PrometheusRule when `monitoring.rulesEnabled=true`.
 
@@ -121,18 +121,20 @@ controller-runtime built-ins:
 | Recording rule | Labels | What it records |
 |----------------|--------|-----------------|
 | `operator:reconcile_rate:5m` | `controller`, `job`, `namespace` | Total reconcile rate, including scheduled interval requeues. |
-| `operator:reconcile_churn_rate:5m` | `controller`, `job`, `namespace` | Reconcile rate excluding `result="requeue_after"`. This stays near zero for healthy interval-driven controllers while retaining errors, explicit requeues, and success-result spin loops. |
+| `operator:reconcile_churn_rate:5m` | `controller`, `job`, `namespace` | Reconcile rate excluding `result="requeue_after"`. This stays near zero for healthy interval-driven controllers while retaining errors, explicit requeues, and success-result loops. It cannot distinguish event-driven work from interval work when a controller stamps `RequeueAfter` on every successful return; the total-rate runaway alert is the backstop for sufficiently fast loops of that shape. |
 | `operator:reconcile_error_rate:5m` | `controller`, `job`, `namespace` | Reconcile error rate. |
 | `operator:reconcile_steady_state_rate:5m` | `controller`, `job`, `namespace` | Steady-state reconcile rate. |
 | `operator:reconcile_p99_seconds:5m` | `controller`, `job`, `namespace` | p99 reconcile execution time. |
-| `operator:workqueue_p99_seconds:5m` | `name`, `job`, `namespace` | p99 time an item waits in a workqueue before a worker picks it up. |
+| `operator:workqueue_p99_seconds:5m` | `name`, `job`, `namespace` | Estimated p99 time an item waits in a workqueue before a worker picks it up. controller-runtime uses decade-wide histogram buckets, so treat values between bucket boundaries as interpolated estimates. |
+| `operator:workqueue_over_10s_ratio:5m` | `name`, `job`, `namespace` | Exact share of workqueue items that waited longer than the histogram's 10-second bucket boundary. |
 
 **Suggested alerts** (all shipped in the chart's PrometheusRule):
 
 - **Errored reconciles**: `operator:reconcile_error_rate:5m > 0.1` for 5m → warning.
-- **Runaway reconcile rate**: `operator:reconcile_churn_rate:5m > 5` for 5m → warning. Scheduled `requeue_after` work is excluded; cross-check `operator_controller_reconcile_steady_state_total` — if it is flat while churn is high, the controller is spinning.
+- **Reconcile churn**: `operator:reconcile_churn_rate:5m > 5` for 5m → warning. This sensitive signal excludes `requeue_after` results and catches errors, explicit requeues, and success-result event loops.
+- **Runaway reconcile rate**: `operator:reconcile_rate:5m > 30` for 15m → warning. This high-headroom backstop includes `requeue_after` results because that label describes the controller's return value, not what triggered the reconcile.
 - **Reconcile stalled**: a controller that was active in the last hour but has reconciled zero times in the past 10 minutes → warning.
-- **Worker pool saturated**: `operator:workqueue_p99_seconds:5m > 30` for 10m → warning. The alert's workqueue identifier is the `name` label, not `controller`.
+- **Worker pool saturated**: `operator:workqueue_over_10s_ratio:5m > 0.01` for 10m → warning. More than 1% of items crossed the real 10-second histogram boundary; the alert's workqueue identifier is the `name` label, not `controller`.
 
 ## Group 3: resource-state metrics
 

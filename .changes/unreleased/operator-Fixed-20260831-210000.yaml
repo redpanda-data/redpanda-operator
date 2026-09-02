@@ -4,6 +4,6 @@ body: |-
     The `OperatorReconcileRunaway` and `OperatorWorkerPoolSaturated` alerts no longer fire on healthy interval-driven steady state.
 
       The interval controllers (Topic, User, Schema, ...) requeue every CR every sync interval, so total reconcile rate is proportional to CR count and a single always-busy worker with an empty queue is normal — e.g. 67 Topics on a 3-member StretchCluster tripped both alerts while perfectly healthy.
-      Runaway now counts only churn (a new `operator:reconcile_churn_rate:5m` recording rule excluding `result="requeue_after"`), which still catches error storms, requeue storms, and success-result spin loops.
-      Saturation now measures real backlog — p99 time-in-queue above 30s (new `operator:workqueue_p99_seconds:5m` rule) — instead of comparing the sampled busy-worker gauge against `max_concurrent_reconciles`; its alert labels carry the workqueue `name` instead of `controller`.
+      The new `OperatorReconcileChurn` alert detects more than 5 non-`requeue_after` reconciles per second for 5 minutes, while `OperatorReconcileRunaway` retains a high-headroom total-rate backstop of more than 30 reconciles per second for 15 minutes. The backstop includes `requeue_after` because the result label cannot distinguish scheduled interval work from event-driven spin loops.
+      Saturation now measures real backlog — more than 1% of workqueue items waiting over the histogram's exact 10-second bucket boundary (new `operator:workqueue_over_10s_ratio:5m` rule) — instead of comparing the sampled busy-worker gauge against `max_concurrent_reconciles`; its alert labels carry the workqueue `name` instead of `controller`.
 time: 2026-08-31T21:00:00-07:00
