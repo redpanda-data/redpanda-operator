@@ -32,7 +32,8 @@ func mvrs() {
 
 	{
 		x, y := a.(map[string]int)
-		_, _ = x, y
+		_ = x
+		_ = y
 	}
 
 	{
@@ -51,14 +52,31 @@ func mvrs() {
 
 	{
 		a, b, c := mvr3()
-		_, _, _ = a, b, c
+		_ = a
+		_ = b
+		_ = c
+	}
+
+	{
+		// Parallel assignment where a value reads a variable an earlier pair
+		// overwrites. Splitting these in order would leave both holding the
+		// original b, so the rewrite captures the values first.
+		a := "a"
+		b := "b"
+		_tmp_0 := b
+		_tmp_1 := a
+		a = _tmp_0
+		b = _tmp_1
+		_ = a
+		_ = b
 	}
 
 	{
 		// Using a 3rd party type, with type aliasing to boot.
 		m := map[string]corev1.Affinity{}
 		x, y := m[""]
-		_, _ = x, y
+		_ = x
+		_ = y
 	}
 }
 

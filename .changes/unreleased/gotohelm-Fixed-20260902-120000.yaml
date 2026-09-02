@@ -1,0 +1,19 @@
+project: gotohelm
+kind: Fixed
+body: |-
+    Parallel assignment no longer produces the wrong result.
+
+      Go evaluates every value in `a, b = b, a` before assigning any of them,
+      so it swaps. gotohelm unrolled the statement into one assignment per pair
+      and emitted them in order, producing `$a = $b` followed by `$b = $a` and
+      leaving both holding the original `b`. Nothing failed; the template just
+      computed the wrong answer. The same applied to assignment through field
+      selectors, e.g. `p.a, p.b = p.b, p.a`.
+
+      Unrolling has moved out of the transpiler into `internal/rewrite`, where
+      it captures the values into temporaries first whenever a later value
+      could read something an earlier pair overwrites. Because it's now a
+      source rewrite, the result is visible in the `.rewritten.go` golden files
+      and is covered by a test that runs a program before and after rewriting
+      and compares the output.
+time: 2026-09-02T12:00:00.000000-04:00

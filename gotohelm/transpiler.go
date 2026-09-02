@@ -301,21 +301,18 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		return &Return{Expr: &BuiltInCall{Func: Literal("list"), Arguments: results}}
 
 	case *ast.AssignStmt:
-		// "unroll" in-lined assignments
-		// x, y, := 1, 2
-		// becomes
-		// x := 1
-		// x := 2
+		// Multi-value assignments (x, y := 1, 2) are split into one assignment
+		// per pair by
+		// [github.com/redpanda-data/redpanda-operator/gotohelm/internal/rewrite.Rewrite]
+		// before transpilation, which also handles the case where a naive
+		// split would change the statement's meaning. Anything that survives
+		// that would silently lose every pair but the first, so reject it.
 		if len(stmt.Lhs) == len(stmt.Rhs) && len(stmt.Lhs) > 1 {
-			var stmts []Node
-			for i := 0; i < len(stmt.Lhs); i++ {
-				stmts = append(stmts, t.transpileStatement(&ast.AssignStmt{
-					Lhs: []ast.Expr{stmt.Lhs[i]},
-					Tok: stmt.Tok,
-					Rhs: []ast.Expr{stmt.Rhs[i]},
-				}))
-			}
-			return &Block{Statements: stmts}
+			panic(&Unsupported{
+				Node: stmt,
+				Fset: t.Fset,
+				Msg:  "multi-value assignment was not unrolled before transpilation",
+			})
 		}
 
 		if len(stmt.Lhs) > 1 && len(stmt.Rhs) == 1 {

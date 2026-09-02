@@ -11,21 +11,13 @@ package gotohelm
 
 import (
 	"bytes"
-	"fmt"
-	"go/ast"
 	"go/format"
-	"go/types"
 
 	"github.com/cockroachdb/errors"
-	"golang.org/x/tools/go/ast/astutil"
 	"golang.org/x/tools/go/packages"
+
+	"github.com/redpanda-data/redpanda-operator/gotohelm/internal/rewrite"
 )
-
-type astRewrite func(*packages.Package, *ast.File) (_ *ast.File, changed bool)
-
-var rewrites = []astRewrite{
-	hoistIfs,
-}
 
 // LoadPackages is a wrapper around [packages.Load] that performs a handful of
 // AST rewrites followed by a second invocation of [packages.Load] to
@@ -35,10 +27,11 @@ var rewrites = []astRewrite{
 // will be rewritten to supported equivalents instead.
 // If need be, the rewritten files can also be dumped to disk and have assertions made
 func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package, error) {
-	// Ensure we're getting all the values we need (which is pretty much everything...)
-	cfg.Mode |= packages.NeedName | packages.NeedFiles | packages.NeedImports |
-		packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo |
-		packages.NeedDeps
+	// Ensure we're getting all the values we need (which is pretty much
+	// everything...). LoadSyntax is required by the analysis driver that
+	// Transpile gates on; NeedDeps extends it across the import graph, which
+	// both the transpiler and the analyzer's facts rely on.
+	cfg.Mode |= packages.LoadSyntax | packages.NeedDeps
 
 	// Add in the gotohelm build tag for any package that wants to either
 	// include or exclude specific files.
@@ -74,13 +67,7 @@ func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package
 		for _, parsed := range pkg.Syntax {
 			filename := pkg.Fset.File(parsed.Pos()).Name()
 
-			var changed bool
-			for _, rewrite := range rewrites {
-				var didChange bool
-				parsed, didChange = rewrite(pkg, parsed)
-				changed = changed || didChange
-			}
-
+			parsed, changed := rewrite.Rewrite(pkg, parsed)
 			if !changed {
 				continue
 			}
@@ -115,79 +102,4 @@ func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package
 	}
 
 	return pkgs, nil
-}
-
-// hoistIfs "hoists" all assignments within an if else chain to be above said
-// chain. It munges the variable names to ensure that variable shadowing
-// doesn't become an issues.
-// NOTE: All assignments within if-else chains MUST expect to be called as if
-// hoisting nullifies the capabilities of short-circuiting.
-//
-//	if x, ok := m[k1]; ok {
-//	} y, ok := m[k2]; ok {
-//	}
-//
-// Will get rewritten to:
-//
-//	x, ok_1 := m[k1]
-//	y, ok_2 := m[k2]
-//
-//	if ok_1 {
-//	} else if ok_2 {
-//	}
-func hoistIfs(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
-	count := 0
-	info := pkg.TypesInfo
-	renames := map[types.Object]*ast.Ident{}
-
-	return astutil.Apply(f, func(c *astutil.Cursor) bool {
-		node, ok := c.Node().(*ast.IfStmt)
-		if !ok || node.Init == nil {
-			return true
-		}
-
-		for _, v := range node.Init.(*ast.AssignStmt).Lhs {
-			old := v.(*ast.Ident)
-			if old.Name == "_" {
-				continue
-			}
-
-			count++
-			new := ast.NewIdent(fmt.Sprintf("%s_%d", old.Name, count))
-			new.Obj = old.Obj
-
-			renames[info.ObjectOf(old)] = new
-
-			info.Defs[new] = info.Defs[old]
-			info.Instances[new] = info.Instances[old]
-		}
-
-		return true
-	}, func(c *astutil.Cursor) bool {
-		switch node := c.Node().(type) {
-		case *ast.Ident:
-			if rename, ok := renames[info.ObjectOf(node)]; ok {
-				c.Replace(rename)
-			}
-
-		case *ast.IfStmt:
-			// Don't process if-else statements as c.InsertBefore will panic.
-			// Instead, we loop through the first if and hoist all child
-			// assignments.
-			if _, ok := c.Parent().(*ast.IfStmt); ok {
-				return true
-			}
-
-			for n := node; n != nil; {
-				if n.Init != nil {
-					c.InsertBefore(n.Init)
-					n.Init = nil
-				}
-
-				n, _ = n.Else.(*ast.IfStmt)
-			}
-		}
-
-		return true
-	}).(*ast.File), count > 0
 }
