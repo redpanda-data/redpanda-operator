@@ -25,8 +25,7 @@ import (
 )
 
 // ClusterConfigForTesting exposes the unexported clusterConfigFor to package
-// redpanda_test, so its tests can live in redpanda_controller_test.go with
-// the rest of the controller's tests.
+// redpanda_test.
 func (r *RedpandaReconciler) ClusterConfigForTesting(ctx context.Context, rp *redpandav1alpha2.Redpanda, schema rpadmin.ConfigSchema, cl cluster.Cluster) (map[string]any, []error, error) {
 	return r.clusterConfigFor(ctx, rp, schema, cl)
 }

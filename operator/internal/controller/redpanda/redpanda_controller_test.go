@@ -1233,16 +1233,10 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 }
 
 // TestBootstrapTemplateEnvVars pins BootstrapTemplateEnvVars as the single
-// source of truth for the bootstrap templater's environment: the container
-// rendered onto the StatefulSet (and onto the post-install job, when that is
-// enabled) must carry exactly the helper's env and nothing more — no extra
-// vars, no EnvFrom. clusterConfigFor mirrors the helper's output, not a
-// rendered container, onto the pod context when it reifies the bootstrap
-// template in-process, so any env source added to the container but not the
-// helper would silently not resolve there. Its ancestor pinned the container
-// index on the job that clusterConfigFor used to read — and nil dereferenced
-// on when the job was disabled.
-// See https://github.com/redpanda-data/redpanda-operator/issues/1021
+// source of truth for the templater's environment: the rendered container (on
+// the StatefulSet, and the job when enabled) must carry exactly the helper's
+// env and no EnvFrom, since clusterConfigFor mirrors the helper rather than a
+// rendered container (issue #1021).
 func TestBootstrapTemplateEnvVars(t *testing.T) {
 	for name, values := range map[string]map[string]any{
 		"chart defaults":            {},
@@ -1282,12 +1276,10 @@ func TestBootstrapTemplateEnvVars(t *testing.T) {
 	}
 }
 
-// stubCluster implements the only two [cluster.Cluster] accessors
-// clusterConfigFor uses.
-//
-// GetConfig returns nil so the chart renders "offline": GoChart.Dot treats a nil
-// RESTConfig as empty capabilities without erroring, whereas a bogus non-nil
-// config fails apiserver discovery and short-circuits before the code under test.
+// stubCluster implements the two [cluster.Cluster] accessors clusterConfigFor
+// uses. GetConfig returns nil so the chart renders "offline" — GoChart.Dot
+// treats a nil RESTConfig as empty capabilities, where a bogus non-nil one
+// fails apiserver discovery before reaching the code under test.
 type stubCluster struct {
 	cluster.Cluster
 	c client.Client
@@ -1297,16 +1289,9 @@ func (s *stubCluster) GetConfig() *rest.Config  { return nil }
 func (s *stubCluster) GetClient() client.Client { return s.c }
 
 // TestClusterConfigForPostInstallJobDisabled asserts that cluster configuration
-// is derived independently of the optional post-install job.
-//
-// clusterConfigFor used to read the bootstrap init container's environment off
-// redpanda.PostInstallUpgradeJob, which returns nil when
-// `post_install_job.enabled=false`. Dereferencing it panicked, and the recovered
-// panic left ConfigurationApplied in Error and Quiesced/Stable False forever
-// while Ready and Healthy still reported True — cluster configuration was
-// silently never applied.
-//
-// See https://github.com/redpanda-data/redpanda-operator/issues/1021
+// is derived independently of the optional post-install job. clusterConfigFor
+// used to read env off the rendered job — nil when disabled — and the recovered
+// panic silently wedged cluster configuration forever (issue #1021).
 func TestClusterConfigForPostInstallJobDisabled(t *testing.T) {
 	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
 
@@ -1348,19 +1333,14 @@ func TestClusterConfigForPostInstallJobDisabled(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			// Whether or not the job is rendered is irrelevant to the cluster
-			// config: the operator performs that job's work itself and never
-			// creates it.
 			require.Equal(t, baseline, configFor(t, spec))
 		})
 	}
 }
 
-// TestClusterConfigForBootstrapEnvIsMirrored asserts that the environment the
-// bootstrap init container would have used is still mirrored onto the pod
-// context, so `${VAR}`-style references in the cluster config template resolve.
-// This is the behavior the (now removed) post-install job lookup existed for,
-// and it must survive with the job disabled.
+// TestClusterConfigForBootstrapEnvIsMirrored asserts the bootstrap env is
+// still mirrored onto the pod context so `${VAR}` references in the config
+// template resolve — the behavior the removed job lookup existed for.
 func TestClusterConfigForBootstrapEnvIsMirrored(t *testing.T) {
 	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
 
@@ -1369,9 +1349,8 @@ func TestClusterConfigForBootstrapEnvIsMirrored(t *testing.T) {
 		"post_install_job disabled": {Enabled: ptr.To(false)},
 	} {
 		t.Run(name, func(t *testing.T) {
-			// Tiered storage credentials are injected into the bootstrap
-			// container as env vars and referenced from the cluster config
-			// template, so they exercise the env mirroring end to end.
+			// Tiered-storage credentials are env-injected and referenced from
+			// the config template, exercising the mirroring end to end.
 			rp := &redpandav1alpha2.Redpanda{
 				ObjectMeta: metav1.ObjectMeta{Name: "redpanda-example", Namespace: "redpanda"},
 				Spec: redpandav1alpha2.RedpandaSpec{

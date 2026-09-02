@@ -1062,15 +1062,11 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 		conf.AddFixup(f.Field, f.CEL)
 	}
 
-	// The bootstrap template is reified here rather than by the chart's
-	// bootstrap-yaml-envsubst init container, so the environment that
-	// container would run with is mirrored onto the pod context by hand —
-	// derived from the values through the same helper the chart builds the
-	// container from, not read off a rendered resource. Reading it off the
-	// post-install job nil dereferenced whenever `postInstallJob.enabled=false`,
-	// silently wedging cluster configuration for the life of the cluster while
-	// Ready and Healthy kept reporting True. See
-	// https://github.com/redpanda-data/redpanda-operator/issues/1021
+	// The operator reifies the bootstrap template in-process, so mirror the env
+	// the bootstrap-yaml-envsubst container would run with — from the same
+	// helper the chart builds that container from, never off a rendered
+	// resource: reading it off the post-install job nil dereferenced whenever
+	// the job was disabled (issue #1021).
 	for _, e := range redpanda.BootstrapTemplateEnvVars(state) {
 		if err := conf.EnsureInitEnv(e); err != nil {
 			return nil, nil, errors.WithStack(err)

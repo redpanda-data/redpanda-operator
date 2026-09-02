@@ -22,16 +22,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-// BootstrapTemplateEnvVars returns the environment that `${VAR}`-style
-// references in the bootstrap template (see [BootstrapContents]) are resolved
-// against: tiered-storage credential secret refs and any
-// extraClusterConfiguration material. It is shared by the
-// bootstrap-yaml-envsubst init container and by the operator, which reifies
-// the template in-process instead of running that container.
-//
-// Environment injected through PodTemplate overlays is deliberately not
-// included: those overlays target the StatefulSet's or the job's pods, and
-// cluster-config values have these dedicated hooks.
+// BootstrapTemplateEnvVars returns the environment `${VAR}`-style references
+// in the bootstrap template (see [BootstrapContents]) resolve against. Shared
+// by the bootstrap-yaml-envsubst init container and by the operator, which
+// reifies the template in-process instead of running that container.
+// PodTemplate overlay env is deliberately not included.
 func BootstrapTemplateEnvVars(state *RenderState) []corev1.EnvVar {
 	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
 	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
