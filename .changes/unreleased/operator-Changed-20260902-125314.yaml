@@ -1,0 +1,7 @@
+project: operator
+kind: Changed
+body: |-
+    StretchCluster brokers now render their init containers through the same code as the Redpanda Helm chart, which changes two things in the generated StatefulSets. The `redpanda-configurator` init container now carries `securityContext.runAsNonRoot: true` and `securityContext.allowPrivilegeEscalation: false`, matching the chart and the pod level `runAsUser: 101` that StretchCluster already sets. The configurator and fs-validator script volumes are now named `configurator` and `fs-validator` rather than being prefixed with the pool's full name; the Secrets they project are unchanged.
+
+      Both are pod template changes, so applying this to an existing StretchCluster rolls the brokers.
+time: 2026-09-02T12:53:14.522260-04:00

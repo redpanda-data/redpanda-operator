@@ -51,21 +51,6 @@ const (
 	// RedpandaControllersContainerName is the container that can perform day
 	// 2 operation similarly to Redpanda operator.
 	RedpandaControllersContainerName = "redpanda-controllers"
-	// RedpandaConfiguratorContainerName is the user facing name of the
-	// redpanda-configurator init container in the redpanda StatefulSet.
-	RedpandaConfiguratorContainerName = "redpanda-configurator"
-	// RedpandaTuningContainerName is the user facing name of the
-	// tuning init container in the redpanda StatefulSet.
-	RedpandaTuningContainerName = "tuning"
-	// SetDataDirectoryOwnershipContainerName is the user facing name of the
-	// set-datadir-ownership init container in the redpanda StatefulSet.
-	SetDataDirectoryOwnershipContainerName = "set-datadir-ownership"
-	// SetTieredStorageCacheOwnershipContainerName is the user facing name of the
-	// set-tiered-storage-cache-dir-ownership init container in the redpanda StatefulSet.
-	SetTieredStorageCacheOwnershipContainerName = "set-tiered-storage-cache-dir-ownership"
-	// FSValidatorContainerName is the user facing name of the
-	// fs-validator init container in the redpanda StatefulSet.
-	FSValidatorContainerName = "fs-validator"
 )
 
 type MebiBytes = int64
