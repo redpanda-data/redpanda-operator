@@ -11,7 +11,7 @@ It covers four groups:
 
 1. **controller-runtime built-ins** — exported automatically by every
    controller registered through `ctrl.NewControllerManagedBy(mgr)`. Useful
-   for reconcile rate, errors, queue depth, and worker pool saturation.
+   for reconcile rate, errors, queue depth, and queue backlog.
 2. **operator reconcile-health metrics** — added by the operator on top of
    the built-ins to surface spinning controllers and time-since-success.
 3. **resource-state metrics** — per-CR gauges describing what the operator
@@ -88,7 +88,7 @@ controller making progress".
 | `controller_runtime_reconcile_total` | Counter | `controller`, `result` | Reconcile invocations. `result` is one of `success`, `error`, `requeue`, `requeue_after`. |
 | `controller_runtime_reconcile_errors_total` | Counter | `controller` | Errored reconciles. Sustained rate = something is broken. |
 | `controller_runtime_reconcile_time_seconds` | Histogram | `controller` | Reconcile duration distribution. p99 climbing = controller is slowing down. |
-| `controller_runtime_active_workers` | Gauge | `controller` | Currently-busy workers. Pegged at `max_concurrent_reconciles` = saturation. |
+| `controller_runtime_active_workers` | Gauge | `controller` | Currently-busy workers. Reaching `max_concurrent_reconciles` can be normal for interval-driven controllers; use queue latency to distinguish healthy load from backlog. |
 | `controller_runtime_max_concurrent_reconciles` | Gauge | `controller` | Configured worker pool ceiling. |
 | `workqueue_depth` | Gauge | `name` | Items waiting to be reconciled per controller. |
 | `workqueue_adds_total` | Counter | `name` | Enqueues. |
@@ -100,7 +100,7 @@ controller making progress".
 **Suggested alerts**:
 
 - **Errored reconciles**: `sum by (controller) (rate(controller_runtime_reconcile_errors_total[5m])) > 0.1` for 5m → warning.
-- **Worker pool saturated**: `controller_runtime_active_workers >= controller_runtime_max_concurrent_reconciles` for 10m → warning.
+- **Worker pool saturated**: `operator:workqueue_p99_seconds:5m > 30` for 10m → warning. This measures sustained queue latency; the alert identifies the affected workqueue with the `name` label.
 
 Both are emitted by the PrometheusRule when `monitoring.rulesEnabled=true`.
 
@@ -115,12 +115,24 @@ them for every controller — no per-controller wiring required.
 | `operator_controller_reconcile_steady_state_total` | Counter | `controller` | Reconciles that returned "no work to do" — either `(Result{}, nil)` *or* `(Result{RequeueAfter: defaultRequeueTimeout}, nil)` matching the controller's configured periodic-requeue interval (the wrapper accepts both shapes so controllers using a periodic-wake pattern still register as steady). Healthy controllers see this dominate once the system is converged. A controller whose `reconcile_total` rate is high while `steady_state_total` rate is flat is spinning. |
 | `operator_controller_reconcile_last_success_timestamp_seconds` | Gauge | `controller` | Unix timestamp of the most recent steady-state reconcile per controller. Query as `time() - operator_controller_reconcile_last_success_timestamp_seconds` for seconds-since-last-success — a flat value while `reconcile_total` is climbing means the controller is failing or spinning. |
 
+The chart records shorter, install-scoped series from these metrics and the
+controller-runtime built-ins:
+
+| Recording rule | Labels | What it records |
+|----------------|--------|-----------------|
+| `operator:reconcile_rate:5m` | `controller`, `job`, `namespace` | Total reconcile rate, including scheduled interval requeues. |
+| `operator:reconcile_churn_rate:5m` | `controller`, `job`, `namespace` | Reconcile rate excluding `result="requeue_after"`. This stays near zero for healthy interval-driven controllers while retaining errors, explicit requeues, and success-result spin loops. |
+| `operator:reconcile_error_rate:5m` | `controller`, `job`, `namespace` | Reconcile error rate. |
+| `operator:reconcile_steady_state_rate:5m` | `controller`, `job`, `namespace` | Steady-state reconcile rate. |
+| `operator:reconcile_p99_seconds:5m` | `controller`, `job`, `namespace` | p99 reconcile execution time. |
+| `operator:workqueue_p99_seconds:5m` | `name`, `job`, `namespace` | p99 time an item waits in a workqueue before a worker picks it up. |
+
 **Suggested alerts** (all shipped in the chart's PrometheusRule):
 
 - **Errored reconciles**: `operator:reconcile_error_rate:5m > 0.1` for 5m → warning.
-- **Runaway reconcile rate**: `operator:reconcile_rate:5m > 5` for 5m → warning. Cross-check `operator_controller_reconcile_steady_state_total` — if it is flat while the rate is high, the controller is spinning.
+- **Runaway reconcile rate**: `operator:reconcile_churn_rate:5m > 5` for 5m → warning. Scheduled `requeue_after` work is excluded; cross-check `operator_controller_reconcile_steady_state_total` — if it is flat while churn is high, the controller is spinning.
 - **Reconcile stalled**: a controller that was active in the last hour but has reconciled zero times in the past 10 minutes → warning.
-- **Worker pool saturated**: `controller_runtime_active_workers >= controller_runtime_max_concurrent_reconciles` for 10m → warning.
+- **Worker pool saturated**: `operator:workqueue_p99_seconds:5m > 30` for 10m → warning. The alert's workqueue identifier is the `name` label, not `controller`.
 
 ## Group 3: resource-state metrics
 
