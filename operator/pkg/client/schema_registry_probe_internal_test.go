@@ -48,76 +48,6 @@ func TestRedpandaSchemaRegistryEnabled(t *testing.T) {
 		assert.True(t, redpandaSchemaRegistryEnabled(mk(true)))
 	})
 }
-<<<<<<< HEAD
-=======
-
-func TestSchemaRegistryProbeUniform(t *testing.T) {
-	mkPool := func(mutate func(*redpandav1alpha2.StretchAPIListener)) *redpandav1alpha2.RedpandaBrokerPool {
-		pool := &redpandav1alpha2.RedpandaBrokerPool{}
-		if mutate != nil {
-			listener := &redpandav1alpha2.StretchAPIListener{}
-			mutate(listener)
-			pool.Spec.Listeners = &redpandav1alpha2.StretchListeners{SchemaRegistry: listener}
-		}
-		return pool
-	}
-
-	t.Run("defaults to uniform", func(t *testing.T) {
-		// No pools, nil pools, unset listener config, and explicit
-		// enablement are all uniform: MergeDefaults renders an enabled
-		// listener on the default port for every one of these.
-		for _, pools := range [][]*redpandav1alpha2.RedpandaBrokerPool{
-			nil,
-			{nil, mkPool(nil)},
-			{mkPool(nil), mkPool(func(l *redpandav1alpha2.StretchAPIListener) { l.Enabled = ptr.To(true) })},
-		} {
-			uniform, reason := SchemaRegistryProbeUniform(pools)
-			assert.True(t, uniform, reason)
-		}
-	})
-
-	t.Run("explicit disable is not probeable", func(t *testing.T) {
-		// Per-broker probing against a pool that doesn't serve SR would
-		// read as permanently unreachable.
-		uniform, reason := SchemaRegistryProbeUniform([]*redpandav1alpha2.RedpandaBrokerPool{
-			mkPool(func(l *redpandav1alpha2.StretchAPIListener) { l.Enabled = ptr.To(true) }),
-			mkPool(func(l *redpandav1alpha2.StretchAPIListener) { l.Enabled = ptr.To(false) }),
-		})
-		assert.False(t, uniform)
-		assert.Contains(t, reason, "explicitly disabled")
-	})
-
-	t.Run("heterogeneous ports are not probeable", func(t *testing.T) {
-		// The client stamps the representative pool's port onto every
-		// broker's endpoint, so a pool on a different port would probe as
-		// connection-refused forever.
-		uniform, reason := SchemaRegistryProbeUniform([]*redpandav1alpha2.RedpandaBrokerPool{
-			mkPool(nil),
-			mkPool(func(l *redpandav1alpha2.StretchAPIListener) { l.Port = ptr.To(int32(9081)) }),
-		})
-		assert.False(t, uniform)
-		assert.Contains(t, reason, "differs from its peers")
-	})
-
-	t.Run("heterogeneous TLS is not probeable", func(t *testing.T) {
-		uniform, reason := SchemaRegistryProbeUniform([]*redpandav1alpha2.RedpandaBrokerPool{
-			mkPool(nil),
-			mkPool(func(l *redpandav1alpha2.StretchAPIListener) {
-				l.TLS = &redpandav1alpha2.StretchListenerTLS{Enabled: ptr.To(true)}
-			}),
-		})
-		assert.False(t, uniform)
-		assert.Contains(t, reason, "differs from its peers")
-	})
-
-	t.Run("homogeneous non-default config is probeable", func(t *testing.T) {
-		custom := func(l *redpandav1alpha2.StretchAPIListener) { l.Port = ptr.To(int32(9081)) }
-		uniform, reason := SchemaRegistryProbeUniform([]*redpandav1alpha2.RedpandaBrokerPool{
-			mkPool(custom), mkPool(custom),
-		})
-		assert.True(t, uniform, reason)
-	})
-}
 
 // TestSchemaRegistryDisabledSentinel covers #1793: a v2 cluster with the
 // Schema Registry listener disabled yields the not-configured sentinel (and
@@ -139,4 +69,3 @@ func TestSchemaRegistryDisabledSentinel(t *testing.T) {
 	// SchemaRegistryACLClientForCluster maps this to (nil, nil).
 	require.True(t, isSchemaRegistryNotConfigured(err))
 }
->>>>>>> 6778b170 (operator: tolerate a disabled Schema Registry listener in the v2 client factory (#1794))
