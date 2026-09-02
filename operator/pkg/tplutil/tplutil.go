@@ -73,26 +73,6 @@ func FromJSON(data string) any {
 	return out
 }
 
-// Quote wraps values in double quotes (Go %q format).
-func Quote(vs ...any) string {
-	result := make([]string, 0, len(vs))
-	for _, v := range vs {
-		result = append(result, fmt.Sprintf("%q", fmt.Sprint(v)))
-	}
-	return strings.Join(result, " ")
-}
-
-// SQuote wraps values in single quotes.
-func SQuote(vs ...any) string {
-	result := make([]string, 0, len(vs))
-	for _, v := range vs {
-		if v != nil {
-			result = append(result, fmt.Sprintf("'%v'", v))
-		}
-	}
-	return strings.Join(result, " ")
-}
-
 // RandAlphaNum generates a random alphanumeric string of the given length.
 func RandAlphaNum(length int) string {
 	b := make([]byte, length)

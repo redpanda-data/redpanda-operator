@@ -149,11 +149,11 @@ func configuratorSh(p ScriptParams) string {
 	// Kafka advertised listeners
 	lines = append(lines,
 		``,
-		fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+		fmt.Sprintf(`LISTENER=%q`, tplutil.ToJSON(map[string]any{
 			"name":    internalListenerName,
 			"address": p.InternalAdvertiseAddress,
 			"port":    p.KafkaPort,
-		}))),
+		})),
 		`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"`,
 	)
 
@@ -161,11 +161,11 @@ func configuratorSh(p ScriptParams) string {
 	for i, ext := range p.ExternalKafkaListeners {
 		lines = append(lines,
 			``,
-			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+			fmt.Sprintf(`LISTENER=%q`, tplutil.ToJSON(map[string]any{
 				"address": "${SERVICE_NAME}",
 				"name":    ext.Name,
 				"port":    ext.Port,
-			}))),
+			})),
 			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[%d] "$LISTENER"`, i+1),
 		)
 	}
@@ -173,11 +173,11 @@ func configuratorSh(p ScriptParams) string {
 	// HTTP/pandaproxy advertised listeners
 	lines = append(lines,
 		``,
-		fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+		fmt.Sprintf(`LISTENER=%q`, tplutil.ToJSON(map[string]any{
 			"name":    internalListenerName,
 			"address": p.InternalAdvertiseAddress,
 			"port":    p.HTTPPort,
-		}))),
+		})),
 		`rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"`,
 	)
 
@@ -185,11 +185,11 @@ func configuratorSh(p ScriptParams) string {
 	for i, ext := range p.ExternalHTTPListeners {
 		lines = append(lines,
 			``,
-			fmt.Sprintf(`LISTENER=%s`, tplutil.Quote(tplutil.ToJSON(map[string]any{
+			fmt.Sprintf(`LISTENER=%q`, tplutil.ToJSON(map[string]any{
 				"address": "${SERVICE_NAME}",
 				"name":    ext.Name,
 				"port":    ext.Port,
-			}))),
+			})),
 			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[%d] "$LISTENER"`, i+1),
 		)
 	}

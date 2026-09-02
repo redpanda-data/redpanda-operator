@@ -255,7 +255,7 @@ echo "passed"`) | toJson -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (squote (quote $nodeAnnotation))) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) | toJson -}}
+{{- (dict "r" (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (printf `'%q'` $nodeAnnotation)) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -271,7 +271,7 @@ echo "passed"`) | toJson -}}
 {{- $listenerName := "kafka" -}}
 {{- $listenerAdvertisedName := $listenerName -}}
 {{- $redpandaConfigPart := "redpanda" -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `LISTENER=%s` (quote (toJson (dict "name" "internal" "address" $internalAdvertiseAddress "port" ($state.Values.listeners.kafka.port | int))))) (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"` $redpandaConfigPart $listenerAdvertisedName))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `LISTENER=%q` (toJson (dict "name" "internal" "address" $internalAdvertiseAddress "port" ($state.Values.listeners.kafka.port | int)))) (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"` $redpandaConfigPart $listenerAdvertisedName))) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.listeners.kafka.external)))) "r") | int) (0 | int)) -}}
 {{- $externalCounter := (0 | int) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.kafka.external -}}
@@ -292,7 +292,7 @@ echo "passed"`) | toJson -}}
 {{- if (eq $prefixTemplate "") -}}
 {{- $prefixTemplate = (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.prefixTemplate "")))) "r") -}}
 {{- end -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%s` (quote $prefixTemplate)) (printf `ADVERTISED_%s_ADDRESSES+=(%s)` (upper $listenerName) (quote $address)))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%q` $prefixTemplate) (printf `ADVERTISED_%s_ADDRESSES+=(%q)` (upper $listenerName) $address))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -320,7 +320,7 @@ echo "passed"`) | toJson -}}
 {{- $listenerName := "http" -}}
 {{- $listenerAdvertisedName := "pandaproxy" -}}
 {{- $redpandaConfigPart := "pandaproxy" -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `LISTENER=%s` (quote (toJson (dict "name" "internal" "address" $internalAdvertiseAddress "port" ($state.Values.listeners.http.port | int))))) (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"` $redpandaConfigPart $listenerAdvertisedName))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `LISTENER=%q` (toJson (dict "name" "internal" "address" $internalAdvertiseAddress "port" ($state.Values.listeners.http.port | int)))) (printf `rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"` $redpandaConfigPart $listenerAdvertisedName))) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.listeners.http.external)))) "r") | int) (0 | int)) -}}
 {{- $externalCounter := (0 | int) -}}
 {{- range $externalName, $externalVals := $state.Values.listeners.http.external -}}
@@ -341,7 +341,7 @@ echo "passed"`) | toJson -}}
 {{- if (eq $prefixTemplate "") -}}
 {{- $prefixTemplate = (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.prefixTemplate "")))) "r") -}}
 {{- end -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%s` (quote $prefixTemplate)) (printf `ADVERTISED_%s_ADDRESSES+=(%s)` (upper $listenerName) (quote $address)))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `PREFIX_TEMPLATE=%q` $prefixTemplate) (printf `ADVERTISED_%s_ADDRESSES+=(%q)` (upper $listenerName) $address))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}

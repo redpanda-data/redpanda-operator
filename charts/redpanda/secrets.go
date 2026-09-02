@@ -497,7 +497,7 @@ func ConfiguratorRackAwarenessSh(nodeAnnotation string) []string {
 		`# Configure Rack Awareness`,
 		`set +x`,
 		fmt.Sprintf(`RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')`,
-			helmette.SQuote(helmette.Quote(nodeAnnotation)),
+			fmt.Sprintf(`'%q'`, nodeAnnotation),
 		),
 		`set -x`,
 		`rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`,
@@ -515,11 +515,11 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalO
 	redpandaConfigPart := "redpanda"
 	snippet = append(snippet,
 		``,
-		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
+		fmt.Sprintf(`LISTENER=%q`, helmette.ToJSON(map[string]any{
 			"name":    "internal",
 			"address": internalAdvertiseAddress,
 			"port":    state.Values.Listeners.Kafka.Port,
-		}))),
+		})),
 		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"`,
 			redpandaConfigPart,
 			listenerAdvertisedName,
@@ -566,10 +566,10 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalO
 				}
 				snippet = append(snippet,
 					``,
-					fmt.Sprintf(`PREFIX_TEMPLATE=%s`, helmette.Quote(prefixTemplate)),
-					fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%s)`,
+					fmt.Sprintf(`PREFIX_TEMPLATE=%q`, prefixTemplate),
+					fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%q)`,
 						helmette.Upper(listenerName),
-						helmette.Quote(address),
+						address,
 					),
 				)
 			}
@@ -600,11 +600,11 @@ func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset, ordinalOf
 	redpandaConfigPart := "pandaproxy"
 	snippet = append(snippet,
 		``,
-		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
+		fmt.Sprintf(`LISTENER=%q`, helmette.ToJSON(map[string]any{
 			"name":    "internal",
 			"address": internalAdvertiseAddress,
 			"port":    state.Values.Listeners.HTTP.Port,
-		}))),
+		})),
 		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"`,
 			redpandaConfigPart,
 			listenerAdvertisedName,
@@ -652,10 +652,10 @@ func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset, ordinalOf
 				}
 				snippet = append(snippet,
 					``,
-					fmt.Sprintf(`PREFIX_TEMPLATE=%s`, helmette.Quote(prefixTemplate)),
-					fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%s)`,
+					fmt.Sprintf(`PREFIX_TEMPLATE=%q`, prefixTemplate),
+					fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%q)`,
 						helmette.Upper(listenerName),
-						helmette.Quote(address),
+						address,
 					),
 				)
 			}
