@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Changed
+body: |-
+    The configurator and fs-validator script volumes on the Redpanda StatefulSet are now named `configurator` and `fs-validator` rather than `<fullname>-configurator` and `<fullname>-fs-validator`. Volume names are pod-local, so only the volume and volumeMount entries change; the Secrets they project are still named after the release and are untouched. This also fixes the configurator volume name exceeding Kubernetes' 63 character limit for releases whose fullname is 51 characters or longer.
+
+      Upgrading an existing release changes the pod template and therefore rolls the brokers. If you override either of these volumes or volumeMounts through `podTemplate`, note that those lists are merged by name: an override keyed on the old `<fullname>-` prefixed name will silently stop matching and must be re-keyed to the new name.
+time: 2026-09-02T12:53:13.522260-04:00

@@ -20,6 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/kube/podtemplate"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
@@ -266,4 +267,57 @@ func statefulSetChecksumAnnotation(state *RenderState, pool *redpandav1alpha2.Re
 	data, _ := json.Marshal(dependencies)
 	sum := sha256.Sum256(data)
 	return fmt.Sprintf("%x", sum), nil
+}
+
+// statefulSetInitContainers resolves this pool into the required init
+// containers for its statefulset.
+func statefulSetInitContainers(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Container {
+	var cliArgs []string
+	if pool.Spec.InitContainers != nil && pool.Spec.InitContainers.Configurator != nil {
+		cliArgs = pool.Spec.InitContainers.Configurator.AdditionalCLIArgs
+	}
+
+	renderer := redpanda.StatefulSetInitContainerRenderer{
+		Image:        pool.RedpandaImage(),
+		InitImage:    pool.InitImage(),
+		SidecarImage: pool.SidecarImage(),
+		CommonMounts: state.commonMounts(pool),
+		Configurator: &redpanda.ConfiguratorInitContainer{
+			MountAPIToken: pool.Spec.RackAwareness.IsEnabled(),
+		},
+		Bootstrap: &redpanda.BootstrapInitContainer{
+			Env:               bootstrapContents(state, pool).envVars,
+			AdditionalCLIArgs: cliArgs,
+		},
+	}
+
+	if state.Spec().Tuning.IsTuneAioEventsEnabled() {
+		renderer.Tuning = &redpanda.TuningInitContainer{
+			OnHost: state.Spec().Tuning.IsApplyHostTunersEnabled(),
+		}
+	}
+
+	if pool.Spec.InitContainers != nil && pool.Spec.InitContainers.SetDataDirOwnership.IsEnabled() {
+		renderer.DataDirOwnership = &redpanda.DataDirOwnershipInitContainer{
+			UID: redpandaUserID,
+			GID: redpandaGroupID,
+		}
+	}
+
+	if pool.Spec.InitContainers != nil && pool.Spec.InitContainers.FSValidator.IsEnabled() {
+		renderer.FSValidator = &redpanda.FSValidatorInitContainer{
+			ExpectedFS: pool.Spec.InitContainers.FSValidator.GetExpectedFS(),
+		}
+	}
+
+	if pool.Spec.TieredMountType() != "none" {
+		renderer.TieredStorageCacheOwnership = &redpanda.TieredStorageCacheOwnershipInitContainer{
+			UID:             redpandaUserID,
+			GID:             redpandaGroupID,
+			CacheDirectory:  pool.Spec.TieredCacheDirectory(),
+			CacheVolumeName: pool.Spec.TieredStorageVolumeName(),
+		}
+	}
+
+	return renderer.Render()
 }
