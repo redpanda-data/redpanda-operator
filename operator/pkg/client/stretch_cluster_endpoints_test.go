@@ -31,9 +31,8 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
-// pod builds a broker Pod in the shape the dialability check reads, labelled
-// the way the renderer labels brokers of the StretchCluster named "sc" so the
-// scoped list selects it.
+// pod builds a running, addressable Pod labelled as a broker of the
+// StretchCluster named "sc".
 func pod(name string, mutate ...func(*corev1.Pod)) *corev1.Pod {
 	p := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -49,10 +48,8 @@ func pod(name string, mutate ...func(*corev1.Pod)) *corev1.Pod {
 	return p
 }
 
-// TestPodDialable pins which pods are excluded from the admin client's host
-// list. Only pods that cannot accept a connection are: readiness is
-// deliberately not a factor, because the operator reads a rejoining broker's
-// identity from an unready pod on purpose.
+// TestPodDialable pins which pods are excluded from the host list: only ones
+// that cannot accept a connection. Readiness is deliberately not a factor.
 func TestPodDialable(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -112,11 +109,8 @@ func TestPodDialable(t *testing.T) {
 	}
 }
 
-// TestDialablePodNames covers the lookup that stretchClusterEndpoints filters
-// against, including the case that motivated it: a broker pool being deleted
-// leaves a terminating pod that must not be offered to the admin client, since
-// the decommission that removes its StatefulSet is itself gated on a
-// cluster-health read.
+// TestDialablePodNames covers the lookup: a deleted pool's terminating pod, a
+// pod without an address, and scoping to this cluster's brokers.
 func TestDialablePodNames(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(scheme))
@@ -164,11 +158,8 @@ func TestDialablePodNames(t *testing.T) {
 	}, got)
 }
 
-// TestDialablePodNamesListFailure pins the fallback: losing the pod list must
-// cost only the filter. Reporting the state as unknown makes
-// stretchClusterEndpoints offer its endpoints unfiltered, which is how the
-// admin client behaved before the filter existed, rather than failing a
-// construction that never needed pod state.
+// TestDialablePodNamesListFailure pins the fallback: a failed pod list reports
+// the state as unknown, and the caller then skips filtering instead of failing.
 func TestDialablePodNamesListFailure(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, corev1.AddToScheme(scheme))
@@ -186,9 +177,8 @@ func TestDialablePodNamesListFailure(t *testing.T) {
 	assert.Nil(t, got)
 }
 
-// stubCluster satisfies cluster.Cluster well enough to hand back a client. The
-// embedded interface is nil: any method this test does not exercise panics
-// rather than silently returning a zero value.
+// stubCluster hands back a client; the nil embedded interface makes any
+// unexercised method panic rather than return a zero value.
 type stubCluster struct {
 	cluster.Cluster
 	c client.Client
@@ -197,8 +187,7 @@ type stubCluster struct {
 func (s *stubCluster) GetClient() client.Client { return s.c }
 
 // stubManager satisfies multicluster.Manager for the three methods
-// stretchClusterEndpoints reaches through. Same nil-embedding contract as
-// stubCluster.
+// stretchClusterEndpoints uses; same nil-embedding contract as stubCluster.
 type stubManager struct {
 	multicluster.Manager
 	clients map[string]client.Client
@@ -247,17 +236,13 @@ func endpointsScheme(t *testing.T) *runtime.Scheme {
 	return scheme
 }
 
-// TestStretchClusterEndpointsSkipsUndialablePods is the test that pins the fix
-// itself: the endpoint list is derived from each pool's declared replica count,
-// so without the pod filter it offers a broker that is provably absent, and the
-// steps gating on it (decommission's cluster-health read, the maintenance-mode
-// broker list) then fail on whichever host they happen to pick.
+// TestStretchClusterEndpointsSkipsUndialablePods pins the fix end to end: a
+// terminating pool's broker must not be offered to the admin client.
 func TestStretchClusterEndpointsSkipsUndialablePods(t *testing.T) {
 	scheme := endpointsScheme(t)
 	now := metav1.Now()
 
-	// Cluster one's broker is up; cluster two's pool is being deleted, which is
-	// exactly the SingleBrokerPoolDeletion shape.
+	// Cluster one's broker is up; cluster two's pool is being deleted.
 	clusterOne := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
 		brokerPool("pool-a", "sc"),
 		pod("sc-pool-a-0"),
@@ -286,14 +271,12 @@ func TestStretchClusterEndpointsSkipsUndialablePods(t *testing.T) {
 		"the terminating pool's broker must not be offered to the admin client")
 }
 
-// TestStretchClusterEndpointsFallsBackWhenNoneDialable pins the safety valve. A
-// whole-cluster outage must still produce a host list: the caller treats an
-// empty one as fatal, and failing there would trade a dial error for a
-// different, less informative one.
+// TestStretchClusterEndpointsFallsBackWhenNoneDialable pins the safety valve:
+// a whole-cluster outage must still produce a host list.
 func TestStretchClusterEndpointsFallsBackWhenNoneDialable(t *testing.T) {
 	scheme := endpointsScheme(t)
 
-	// Both brokers are mid-reschedule with no address assigned.
+	// The cluster's only broker is mid-reschedule with no address assigned.
 	pending := func(name string) *corev1.Pod {
 		return pod(name, func(p *corev1.Pod) {
 			p.Status.Phase = corev1.PodPending

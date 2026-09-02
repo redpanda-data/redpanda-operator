@@ -137,17 +137,12 @@ func PerPodServiceName(poolFullname string, ordinal int32) string {
 }
 
 // BrokerPodSelector returns the labels identifying the broker Pods of the
-// cluster deployed under releaseName -- sc.Name for a StretchCluster. Callers
-// outside the renderer use it to list brokers without reading every other Pod in
-// the namespace.
+// cluster deployed under releaseName -- sc.Name for a StretchCluster.
 //
-// These are StatefulSet selector labels, so every broker Pod of a deployed
-// cluster carries them whatever operator version rendered it: a StatefulSet's
-// selector is immutable and has to match its own Pods. Stricter markers such as
-// cluster.redpanda.com/broker are deliberately left out -- they are set on the
-// Pod template rather than the selector, so a Pod rendered before such a label
-// existed would not match, and a caller filtering on the result would then drop
-// a live broker.
+// These are StatefulSet selector labels: immutable, so present on every broker
+// Pod whatever operator version rendered it. Stricter markers such as
+// cluster.redpanda.com/broker live only on the Pod template, and filtering on
+// one would drop a live broker rendered before the label existed.
 func BrokerPodSelector(releaseName string) map[string]string {
 	return map[string]string{
 		labelNameKey:     labelNameValue,

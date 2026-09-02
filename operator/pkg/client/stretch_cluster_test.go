@@ -389,12 +389,8 @@ func (s *StretchClusterFactorySuite) TestClusterConfigSync() {
 	s.mc.ApplyAll(t, ctx, mutatedSC)
 
 	// Verify ConfigurationApplied returns to True and the config version changed.
-	//
-	// Each unmet branch logs what it saw. A bare bool here is indistinguishable
-	// from every other way this can time out, and the failure it produces
-	// ("Condition never satisfied") says nothing about whether the roll never
-	// started, the condition went False, or the version simply never moved --
-	// which is the difference between a product bug and a slow environment.
+	// Each unmet branch logs what it saw, so a timeout says which requirement
+	// never held instead of a bare "Condition never satisfied".
 	require.Eventually(t, func() bool {
 		var cluster redpandav1alpha2.StretchCluster
 		if err := s.mc.Envs[0].Client().Get(ctx, nn, &cluster); err != nil {
