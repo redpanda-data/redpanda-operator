@@ -13,7 +13,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -113,4 +115,25 @@ func TestSchemaRegistryProbeUniform(t *testing.T) {
 		})
 		assert.True(t, uniform, reason)
 	})
+}
+
+// TestSchemaRegistryDisabledSentinel covers #1793: a v2 cluster with the
+// Schema Registry listener disabled yields the not-configured sentinel (and
+// a nil ACL client) instead of a failed SRV lookup that bricks User/Role/
+// Group reconciliation. Runs on a zero Factory: the gate must trip before
+// any config or DNS access.
+func TestSchemaRegistryDisabledSentinel(t *testing.T) {
+	cluster := &redpandav1alpha2.Redpanda{
+		Spec: redpandav1alpha2.RedpandaSpec{ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+			Listeners: &redpandav1alpha2.Listeners{SchemaRegistry: &redpandav1alpha2.SchemaRegistry{
+				Listener: redpandav1alpha2.Listener{Enabled: ptr.To(false)},
+			}},
+		}},
+	}
+
+	f := &Factory{}
+	_, err := f.SchemaRegistryClientForCluster(t.Context(), cluster, mcmanager.LocalCluster)
+	require.ErrorIs(t, err, NoSchemaRegistryAPI)
+	// SchemaRegistryACLClientForCluster maps this to (nil, nil).
+	require.True(t, isSchemaRegistryNotConfigured(err))
 }
