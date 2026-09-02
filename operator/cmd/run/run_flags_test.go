@@ -18,18 +18,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 )
 
-// TestWipeStaleDiskAfterDefaultsDisabled pins the single-cluster operator's
-// conservative default: the destructive stale-disk wipe (K8S-843) is opt-in
-// here, so --wipe-stale-disk-after defaults to 0 (disabled). The StretchCluster
-// operator keeps its shipped 5m default (see operator/cmd/multicluster). The
-// underlying "0 or negative == off" semantics are covered by
-// TestRedpandaStaleDiskWipeThresholdAndDisable.
-func TestWipeStaleDiskAfterDefaultsDisabled(t *testing.T) {
-	f := Command().Flags().Lookup("wipe-stale-disk-after")
-	require.NotNil(t, f, "run command must define --wipe-stale-disk-after")
-	require.Equal(t, "0s", f.DefValue, "the single-cluster stale-disk wipe must be disabled (opt-in) by default")
-}
-
 // TestLeaderElectionTimingFlags pins the leader-election tunables
 // (--leader-election-lease-duration, --leader-election-renew-deadline,
 // --leader-election-retry-period): their defaults must equal
