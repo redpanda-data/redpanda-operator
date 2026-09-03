@@ -77,13 +77,14 @@ tasks:
     desc: "Generate files for the redpanda Helm chart"
     cmds:
     - task: genpartial
-      vars: { CHART: redpanda }
+      vars: { CHART: redpanda, DIR: charts/redpanda/chart }
     - task: genschema
-      vars: { CHART: redpanda, OUT: ./chart/values.schema.json }
+      vars: { CHART: redpanda, DIR: charts/redpanda/chart, OUT: ./values.schema.json }
     - task: gotohelm
       vars:
         CHART: redpanda
-        OUT: "./chart/templates"
+        DIR: charts/redpanda/chart
+        OUT: "./templates"
         BUNDLE:
         - github.com/redpanda-data/redpanda-operator/pkg/chartutil
         SUBCHARTS:
@@ -145,6 +146,7 @@ tasks:
       vars: [CHART]
     sources:
     - ./*.go
+    - ../*.go # For charts nested in a chart directory, we need to watch the parent directory as well.
     generates:
     - "{{ .OUT }}"
     cmds:

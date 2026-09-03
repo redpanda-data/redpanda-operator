@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
@@ -58,7 +58,7 @@ func CachedNodePoolAdminAPIClientFactory(factory NodePoolAdminAPIClientFactory) 
 		redpandaCluster *vectorizedv1alpha1.Cluster,
 		fqdn string,
 		adminTLSProvider types.AdminTLSConfigProvider,
-		dialer redpanda.DialContextFunc,
+		dialer redpandaclient.DialContextFunc,
 		timeout time.Duration,
 		pods ...string,
 	) (AdminAPIClient, error) {
@@ -108,7 +108,7 @@ func NewNodePoolInternalAdminAPI(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	adminTLSProvider types.AdminTLSConfigProvider,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	timeout time.Duration,
 	pods ...string,
 ) (AdminAPIClient, error) {
@@ -209,7 +209,7 @@ type NodePoolAdminAPIClientFactory func(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	adminTLSProvider types.AdminTLSConfigProvider,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	timeout time.Duration,
 	pods ...string,
 ) (AdminAPIClient, error)

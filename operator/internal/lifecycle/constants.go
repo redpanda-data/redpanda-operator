@@ -12,7 +12,7 @@ package lifecycle
 import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	multiclusterRenderer "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 )
 
@@ -23,7 +23,7 @@ const (
 	defaultOwnerLabel       = "cluster.redpanda.com/owner"
 	generationLabel         = "cluster.redpanda.com/generation"
 	configVersionLabel      = "cluster.redpanda.com/configVersion"
-	nodePoolGenerationLabel = redpanda.NodePoolLabelGeneration
+	nodePoolGenerationLabel = redpandachart.NodePoolLabelGeneration
 	// GCLabel is applied to out-of-band resources (Endpoints, EndpointSlices)
 	// that should retain ownership labels for tracking but should not be
 	// garbage collected by the syncer.
