@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: An unreadable broker list no longer aborts the whole reconcile pass — the maintenance-mode step defers instead. Because it runs first in both the single-cluster and StretchCluster chains, a transient admin-API read failure against a broker whose pod is already gone (mid-roll, mid-decommission, or a BrokerPool being deleted) previously aborted decommissioning and cluster-config sync for that pass, so the very broker that made the read fail was never removed
-time: 2026-08-26T19:30:00.000000000-07:00
