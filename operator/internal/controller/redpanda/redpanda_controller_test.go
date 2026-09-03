@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/otelutil/trace"
@@ -40,16 +39,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/cluster"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -326,6 +320,10 @@ func (s *RedpandaControllerSuite) TestClusterSettings() {
 
 	rp := s.minimalRP()
 	rp.Annotations[feature.RestartOnConfigChange.Key] = "true"
+
+	// Cluster config must apply without the post-install job (issue #1021).
+	rp.Spec.ClusterSpec.PostInstallJob = &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(false)}
+	rp.Spec.ClusterSpec.PostUpgradeJob = &redpandav1alpha2.PostUpgradeJob{Enabled: ptr.To(false)}
 
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
@@ -1272,115 +1270,6 @@ func TestBootstrapTemplateEnvVars(t *testing.T) {
 				require.Equal(t, expected, templater.Env)
 				require.Empty(t, templater.EnvFrom)
 			}
-		})
-	}
-}
-
-// stubCluster implements the two [cluster.Cluster] accessors clusterConfigFor
-// uses. GetConfig returns nil so the chart renders "offline" — GoChart.Dot
-// treats a nil RESTConfig as empty capabilities, where a bogus non-nil one
-// fails apiserver discovery before reaching the code under test.
-type stubCluster struct {
-	cluster.Cluster
-	c client.Client
-}
-
-func (s *stubCluster) GetConfig() *rest.Config  { return nil }
-func (s *stubCluster) GetClient() client.Client { return s.c }
-
-// TestClusterConfigForPostInstallJobDisabled asserts that cluster configuration
-// is derived independently of the optional post-install job. clusterConfigFor
-// used to read env off the rendered job — nil when disabled — and the recovered
-// panic silently wedged cluster configuration forever (issue #1021).
-func TestClusterConfigForPostInstallJobDisabled(t *testing.T) {
-	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
-
-	configFor := func(t *testing.T, spec *redpandav1alpha2.RedpandaClusterSpec) map[string]any {
-		t.Helper()
-
-		rp := &redpandav1alpha2.Redpanda{
-			ObjectMeta: metav1.ObjectMeta{Name: "redpanda-example", Namespace: "redpanda"},
-			Spec:       redpandav1alpha2.RedpandaSpec{ChartRef: redpandav1alpha2.ChartRef{}, ClusterSpec: spec},
-		}
-
-		r := &redpanda.RedpandaReconciler{}
-		cl := &stubCluster{c: fake.NewClientBuilder().WithScheme(controller.V2Scheme).Build()}
-
-		config, warnings, err := r.ClusterConfigForTesting(ctx, rp, nil, cl)
-		require.NoError(t, err)
-		require.Empty(t, warnings)
-		require.NotEmpty(t, config, "cluster config must not be empty")
-		return config
-	}
-
-	// The reference: chart defaults, where the post-install job is enabled.
-	baseline := configFor(t, &redpandav1alpha2.RedpandaClusterSpec{})
-
-	for name, spec := range map[string]*redpandav1alpha2.RedpandaClusterSpec{
-		// The reporter's configuration.
-		"both jobs disabled": {
-			PostInstallJob: &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(false)},
-			PostUpgradeJob: &redpandav1alpha2.PostUpgradeJob{Enabled: ptr.To(false)},
-		},
-		"post_install_job disabled": {
-			PostInstallJob: &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(false)},
-		},
-		"post_upgrade_job disabled": {
-			PostUpgradeJob: &redpandav1alpha2.PostUpgradeJob{Enabled: ptr.To(false)},
-		},
-		"post_install_job explicitly enabled": {
-			PostInstallJob: &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(true)},
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			require.Equal(t, baseline, configFor(t, spec))
-		})
-	}
-}
-
-// TestClusterConfigForBootstrapEnvIsMirrored asserts the bootstrap env is
-// still mirrored onto the pod context so `${VAR}` references in the config
-// template resolve — the behavior the removed job lookup existed for.
-func TestClusterConfigForBootstrapEnvIsMirrored(t *testing.T) {
-	ctx := ctrllog.IntoContext(context.Background(), logr.Discard())
-
-	for name, postInstallJob := range map[string]*redpandav1alpha2.PostInstallJob{
-		"post_install_job enabled":  {Enabled: ptr.To(true)},
-		"post_install_job disabled": {Enabled: ptr.To(false)},
-	} {
-		t.Run(name, func(t *testing.T) {
-			// Tiered-storage credentials are env-injected and referenced from
-			// the config template, exercising the mirroring end to end.
-			rp := &redpandav1alpha2.Redpanda{
-				ObjectMeta: metav1.ObjectMeta{Name: "redpanda-example", Namespace: "redpanda"},
-				Spec: redpandav1alpha2.RedpandaSpec{
-					ChartRef: redpandav1alpha2.ChartRef{},
-					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
-						PostInstallJob: postInstallJob,
-						Storage: &redpandav1alpha2.Storage{
-							Tiered: &redpandav1alpha2.Tiered{
-								Config: &redpandav1alpha2.TieredConfig{
-									CloudStorageEnabled: &apiutil.JSONBoolean{Raw: []byte("true")},
-									CloudStorageBucket:  ptr.To("test-bucket"),
-									CloudStorageRegion:  ptr.To("us-east-1"),
-								},
-							},
-						},
-					},
-				},
-			}
-
-			r := &redpanda.RedpandaReconciler{}
-			cl := &stubCluster{c: fake.NewClientBuilder().WithScheme(controller.V2Scheme).Build()}
-
-			config, _, err := r.ClusterConfigForTesting(ctx, rp, nil, cl)
-			require.NoError(t, err)
-
-			// A nil ConfigSchema is passed, so values are not coerced to
-			// their Redpanda types and stay as the reified strings.
-			require.Equal(t, "true", config["cloud_storage_enabled"])
-			require.Equal(t, "test-bucket", config["cloud_storage_bucket"])
-			require.Equal(t, "us-east-1", config["cloud_storage_region"])
 		})
 	}
 }

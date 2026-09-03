@@ -6,10 +6,10 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $env := (get (fromJson (include "redpanda.TieredStorageCredentials.AsEnvVars" (dict "a" (list $state.Values.storage.tiered.credentialsSecretRef (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $state.Values.storage)))) "r"))))) "r") -}}
-{{- $_32_____additionalEnv := (get (fromJson (include "redpanda.ClusterConfiguration.Translate" (dict "a" (list (deepCopy $state.Values.config.extraClusterConfiguration))))) "r") -}}
-{{- $_ := (index $_32_____additionalEnv 0) -}}
-{{- $_ := (index $_32_____additionalEnv 1) -}}
-{{- $additionalEnv := (index $_32_____additionalEnv 2) -}}
+{{- $_33_____additionalEnv := (get (fromJson (include "redpanda.ClusterConfiguration.Translate" (dict "a" (list (deepCopy $state.Values.config.extraClusterConfiguration))))) "r") -}}
+{{- $_ := (index $_33_____additionalEnv 0) -}}
+{{- $_ := (index $_33_____additionalEnv 1) -}}
+{{- $additionalEnv := (index $_33_____additionalEnv 2) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (concat (default (list) $env) (default (list) $additionalEnv))) | toJson -}}
 {{- break -}}

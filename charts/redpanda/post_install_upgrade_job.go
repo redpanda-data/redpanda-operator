@@ -26,7 +26,8 @@ import (
 // in the bootstrap template (see [BootstrapContents]) resolve against. Shared
 // by the bootstrap-yaml-envsubst init container and by the operator, which
 // reifies the template in-process instead of running that container.
-// PodTemplate overlay env is deliberately not included.
+// PodTemplate overlay env is deliberately excluded as it's not considered a
+// valid source to reference in templates.
 func BootstrapTemplateEnvVars(state *RenderState) []corev1.EnvVar {
 	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
 	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
