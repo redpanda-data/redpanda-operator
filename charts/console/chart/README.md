@@ -5,7 +5,7 @@ description: Find the default values and descriptions of settings in the Redpand
 
 ![Version: 3.9.0](https://img.shields.io/badge/Version-3.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v3.9.0](https://img.shields.io/badge/AppVersion-v3.9.0-informational?style=flat-square)
 
-This page describes the official Redpanda Console Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/helm-charts/blob/main/charts/console/values.yaml).
+This page describes the official Redpanda Console Helm Chart. In particular, this page describes the contents of the chart’s [`values.yaml` file](https://github.com/redpanda-data/redpanda-operator/blob/main/charts/console/chart/values.yaml).
 Each of the settings is listed and described on this page, along with any default values.
 
 The Redpanda Console Helm chart is included as a subchart in the Redpanda Helm chart so that you can deploy and configure Redpanda and Redpanda Console together.
