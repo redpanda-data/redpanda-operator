@@ -25,7 +25,7 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
@@ -82,7 +82,7 @@ func NewBrokerSet(
 	cfg *clusterconfiguration.CombinedCfg,
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
 	schemaRegistryClientFactory SchemaRegistryClientsFactory,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,

@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
@@ -278,7 +278,7 @@ func TestPutInMaintenanceMode(t *testing.T) {
 					redpandaCluster *vectorizedv1alpha1.Cluster,
 					fqdn string,
 					adminTLSProvider types.AdminTLSConfigProvider,
-					_ redpanda.DialContextFunc,
+					_ redpandaclient.DialContextFunc,
 					timeout time.Duration,
 					pods ...string,
 				) (adminutils.AdminAPIClient, error) {
@@ -372,7 +372,7 @@ func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 					redpandaCluster *vectorizedv1alpha1.Cluster,
 					fqdn string,
 					adminTLSProvider types.AdminTLSConfigProvider,
-					_ redpanda.DialContextFunc,
+					_ redpandaclient.DialContextFunc,
 					timeout time.Duration,
 					pods ...string,
 				) (adminutils.AdminAPIClient, error) {
@@ -752,7 +752,7 @@ func Test_sortPodList(t *testing.T) {
 // fast in tests. A non-nil err is returned instead when set.
 func stubSRClientsFactory(t *testing.T, err error, urls ...string) SchemaRegistryClientsFactory {
 	t.Helper()
-	return func(context.Context, client.Client, *vectorizedv1alpha1.Cluster, string, types.AdminTLSConfigProvider, redpanda.DialContextFunc, ...string) ([]schemaregistry.Broker, error) {
+	return func(context.Context, client.Client, *vectorizedv1alpha1.Cluster, string, types.AdminTLSConfigProvider, redpandaclient.DialContextFunc, ...string) ([]schemaregistry.Broker, error) {
 		if err != nil {
 			return nil, err
 		}

@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
@@ -93,7 +93,7 @@ type ClusterReconciler struct {
 	// for the duration semantics (0=off, positive=seconds, negative=forever).
 	BrokerPodNodeUnavailableToleration time.Duration
 	BrokerCREnabled                    bool
-	Dialer                             redpanda.DialContextFunc
+	Dialer                             redpandaclient.DialContextFunc
 	Timeout                            time.Duration
 	// this is provided if external cloud secret resolution is configured. It's
 	// used to expand external cloud secrets from config

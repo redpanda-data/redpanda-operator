@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/acls"
@@ -148,7 +148,7 @@ type Factory struct {
 	fs  afero.Fs
 
 	adminClientTimeout time.Duration
-	dialer             redpanda.DialContextFunc
+	dialer             redpandaclient.DialContextFunc
 	userAuth           *UserAuth
 	secretExpander     *pkgsecrets.CloudExpander
 }
@@ -184,7 +184,7 @@ func (c *Factory) GetConfig(ctx context.Context, clusterName string) (*rest.Conf
 	return cluster.GetConfig(), nil
 }
 
-func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
+func (c *Factory) WithDialer(dialer redpandaclient.DialContextFunc) *Factory {
 	return &Factory{
 		mgr:                c.mgr,
 		userAuth:           c.userAuth,
@@ -345,7 +345,7 @@ func (c *Factory) RedpandaAdminClientForCluster(ctx context.Context, obj any, cl
 
 // Deprecated: Use RedpandaAdminClientForCluster with a *StretchCluster instead.
 func (c *Factory) RedpandaAdminClientForMulticluster(adminAPIEndpoints []string, username, password string) (*rpadmin.AdminAPI, error) {
-	return redpanda.AdminClientForStretch(c.dialer, adminAPIEndpoints, username, password, nil)
+	return redpandaclient.AdminClientForStretch(c.dialer, adminAPIEndpoints, username, password, nil)
 }
 
 func (c *Factory) RedpandaAdminClient(ctx context.Context, obj any) (*rpadmin.AdminAPI, error) {
