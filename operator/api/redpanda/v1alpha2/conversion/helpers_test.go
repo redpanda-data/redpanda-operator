@@ -16,12 +16,12 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 func TestYAMLConversion(t *testing.T) {
-	dot, err := redpanda.Chart.Dot(nil, helmette.Release{
+	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{
 		Name:      "redpanda",
 		Namespace: "redpanda",
 		Service:   "Helm",
@@ -29,7 +29,7 @@ func TestYAMLConversion(t *testing.T) {
 	require.NoError(t, err)
 
 	var mounts []applycorev1.VolumeMountApplyConfiguration
-	require.NoError(t, convertAndAppendYAMLNotNil(&redpanda.RenderState{
+	require.NoError(t, convertAndAppendYAMLNotNil(&redpandachart.RenderState{
 		Dot: dot,
 	}, ptr.To(`- name: foo
   mountPath: foo`), &mounts))

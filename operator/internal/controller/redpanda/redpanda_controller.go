@@ -42,7 +42,7 @@ import (
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -1054,11 +1054,11 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	// "envsubst" the bootstrap file itself as various components feed into the
 	// final cluster config and they may be referencing values stored in
 	// configmaps or secrets.
-	state, err := redpanda.RenderStateFromDot(dot)
+	state, err := redpandachart.RenderStateFromDot(dot)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state, redpanda.Pool{Statefulset: state.Values.Statefulset})
+	clusterConfigTemplate, fixups := redpandachart.BootstrapContents(state, redpandachart.Pool{Statefulset: state.Values.Statefulset})
 	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
 	for k, v := range clusterConfigTemplate {
 		conf.SetAdditionalConfiguration(k, v)
@@ -1066,7 +1066,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	for _, f := range fixups {
 		conf.AddFixup(f.Field, f.CEL)
 	}
-	for _, e := range redpanda.BootstrapTemplateEnvVars(state) {
+	for _, e := range redpandachart.BootstrapTemplateEnvVars(state) {
 		if err := conf.EnsureInitEnv(e); err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
