@@ -27,7 +27,6 @@ linters:
   default: none
   enable:
   - depguard
-#  - errcheck
   - gosec
   - govet
   - importas
@@ -68,6 +67,13 @@ linters:
             desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
           - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
             desc: 'import specific charts, the overarching charts module is now deprecated'
+        shared-rendering:
+          files:
+          - "${config-path}/charts/redpanda/*.go"
+          deny:
+          - pkg: "github.com/redpanda-data/redpanda-operator/gotohelm"
+            desc: 'gotohelm and its subpackages may not be used in shared rendering cores'
+
 
     gosec:
       excludes:
@@ -102,6 +108,12 @@ linters:
         alias: certmanager$1
       - pkg: github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/(v\w+)
         alias: monitoring$1
+      # redpanda and console's parent packages must be imported as "redpanda/console"
+      - pkg: github.com/redpanda-data/redpanda-operator/charts/(redpanda|console)/v\w+$
+        alias: ""
+      # subpackages must be (parent)(child) e.g. redpandachart, consolechart.
+      - pkg: github.com/redpanda-data/redpanda-operator/charts/(redpanda|console)/v\w+/(\w+)
+        alias: $1$2
 
     staticcheck:
       # We should revisit
