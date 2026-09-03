@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: User, Role, and Group resources now reconcile on clusters with `listeners.schemaRegistry.enabled=false`. The Schema Registry client is no longer resolved via DNS SRV lookup (which always failed with the listener disabled, blocking all ACL syncs); a disabled listener is treated as "Schema Registry not configured", matching v1 clusters.
-time: 2026-09-01T14:00:00-07:00
