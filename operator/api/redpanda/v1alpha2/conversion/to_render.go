@@ -19,7 +19,7 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
@@ -33,10 +33,10 @@ type V2Defaulters struct {
 }
 
 // ConvertV2ToRenderState converts a v2 Redpanda CRD to a redpanda chart RenderState.
-func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.NodePool) (*redpanda.RenderState, error) {
+func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda, pools []*redpandav1alpha2.NodePool) (*redpandachart.RenderState, error) {
 	spec := defaultV2Spec(defaulters, cluster)
 
-	dot, err := redpanda.Chart.Dot(config, helmette.Release{
+	dot, err := redpandachart.Chart.Dot(config, helmette.Release{
 		Namespace: cluster.Namespace,
 		Name:      cluster.GetHelmReleaseName(),
 		Service:   "Helm",
@@ -46,7 +46,7 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		return nil, err
 	}
 
-	return redpanda.RenderStateFromDot(dot, func(state *redpanda.RenderState) error {
+	return redpandachart.RenderStateFromDot(dot, func(state *redpandachart.RenderState) error {
 		state.ViaOperator = true
 		state.OperatorVersion = version.Version
 
@@ -57,7 +57,7 @@ func ConvertV2ToRenderState(config *kube.RESTConfig, defaulters *V2Defaulters, c
 		if err != nil {
 			return err
 		}
-		slices.SortStableFunc(renderedPools, func(poolA, poolB redpanda.Pool) int {
+		slices.SortStableFunc(renderedPools, func(poolA, poolB redpandachart.Pool) int {
 			return strings.Compare(poolA.Name, poolB.Name)
 		})
 		state.Pools = renderedPools
@@ -122,7 +122,7 @@ func defaultV2Spec(defaulters *V2Defaulters, cluster *redpandav1alpha2.Redpanda)
 // - `imagePullSecrets` -> `podTemplate.spec.imagePullSecrets`.
 //
 // All other field mappings happen in nested conversion functions.
-func convertV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.RedpandaClusterSpec) error {
+func convertV2Fields(state *redpandachart.RenderState, values *redpandachart.Values, spec *redpandav1alpha2.RedpandaClusterSpec) error {
 	if values.PodTemplate.Spec == nil {
 		values.PodTemplate.Spec = &applycorev1.PodSpecApplyConfiguration{}
 	}
@@ -163,7 +163,7 @@ func convertV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec 
 // - `statefulset.extraVolumesMounts` -> `statefulset.podTemplate.spec.containers[*].volumeMounts`
 //
 // All other field mappings for init and sidecar containers happen in nested conversion functions.
-func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.Statefulset) error {
+func convertStatefulsetV2Fields(state *redpandachart.RenderState, values *redpandachart.Values, spec *redpandav1alpha2.Statefulset) error {
 	if spec == nil {
 		return nil
 	}
@@ -183,7 +183,7 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 	// pointer dangling into a stale backing array (the second call's append
 	// reallocates it), silently discarding every write to the redpanda
 	// container below. See https://github.com/redpanda-data/redpanda-operator/issues/1577.
-	brokerAndSidecar := containersOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName, redpanda.SidecarContainerName)
+	brokerAndSidecar := containersOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpandachart.RedpandaContainerName, redpandachart.SidecarContainerName)
 	redpandaContainer, sidecarContainer := brokerAndSidecar[0], brokerAndSidecar[1]
 
 	if spec.Annotations != nil {
@@ -265,7 +265,7 @@ func convertStatefulsetV2Fields(state *redpanda.RenderState, values *redpanda.Va
 // - `statefulset.initContainers.extraInitContainers` -> `statefulset.podTemplate.spec.initContainers`
 // - `statefulset.initContainers.*.extraVolumesMounts` -> `statefulset.podTemplate.spec.initContainers[*].volumeMounts`
 // - `statefulset.initContainers.*.resources` -> `statefulset.podTemplate.spec.initContainers[*].resources`
-func convertStatefulsetInitContainersV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.InitContainers) error {
+func convertStatefulsetInitContainersV2Fields(state *redpandachart.RenderState, values *redpandachart.Values, spec *redpandav1alpha2.InitContainers) error {
 	if spec == nil {
 		return nil
 	}
@@ -274,28 +274,28 @@ func convertStatefulsetInitContainersV2Fields(state *redpanda.RenderState, value
 		return err
 	}
 
-	if err := convertInitContainer(state, values, redpanda.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
+	if err := convertInitContainer(state, values, redpandachart.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
 		return err
 	}
 
 	// NB: we need to check if the following containers are enabled first, otherwise we wind up with a badly merged pod template spec.
 	if ptr.Deref(values.Tuning.TuneAIOEvents, false) {
-		if err := convertInitContainer(state, values, redpanda.RedpandaTuningContainerName, spec.Tuning); err != nil {
+		if err := convertInitContainer(state, values, redpandachart.RedpandaTuningContainerName, spec.Tuning); err != nil {
 			return err
 		}
 	}
 	if values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
-		if err := convertInitContainer(state, values, redpanda.SetDataDirectoryOwnershipContainerName, spec.SetDataDirOwnership); err != nil {
+		if err := convertInitContainer(state, values, redpandachart.SetDataDirectoryOwnershipContainerName, spec.SetDataDirOwnership); err != nil {
 			return err
 		}
 	}
 	if values.Storage.IsTieredStorageEnabled() {
-		if err := convertInitContainer(state, values, redpanda.SetTieredStorageCacheOwnershipContainerName, spec.SetTieredStorageCacheDirOwnership); err != nil {
+		if err := convertInitContainer(state, values, redpandachart.SetTieredStorageCacheOwnershipContainerName, spec.SetTieredStorageCacheDirOwnership); err != nil {
 			return err
 		}
 	}
 	if values.Statefulset.InitContainers.FSValidator.Enabled {
-		if err := convertInitContainer(state, values, redpanda.FSValidatorContainerName, spec.FsValidator); err != nil {
+		if err := convertInitContainer(state, values, redpandachart.FSValidatorContainerName, spec.FsValidator); err != nil {
 			return err
 		}
 	}
@@ -307,12 +307,12 @@ func convertStatefulsetInitContainersV2Fields(state *redpanda.RenderState, value
 // - `statefulset.sidecars.extraVolumeMounts` -> `statefulset.podTemplate.spec.containers[1].volumeMounts`
 // - `statefulset.sidecars.resources` -> `statefulset.podTemplate.spec.containers[1].resources`
 // - `statefulset.sidecars.securityContext` -> `statefulset.podTemplate.spec.containers[1].securityContext`
-func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redpanda.Values, spec *redpandav1alpha2.SideCars) error {
+func convertStatefulsetSidecarV2Fields(state *redpandachart.RenderState, values *redpandachart.Values, spec *redpandav1alpha2.SideCars) error {
 	if spec == nil {
 		return nil
 	}
 
-	sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.SidecarContainerName)
+	sidecarContainer := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpandachart.SidecarContainerName)
 
 	if err := convertAndAppendYAMLNotNil(state, spec.ExtraVolumeMounts, &sidecarContainer.VolumeMounts); err != nil {
 		return err
@@ -336,8 +336,8 @@ func convertStatefulsetSidecarV2Fields(state *redpanda.RenderState, values *redp
 	return nil
 }
 
-func convertV2NodepoolsToPools(values redpanda.Values, pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpanda.Pool, error) {
-	converted := make([]redpanda.Pool, len(pools))
+func convertV2NodepoolsToPools(values redpandachart.Values, pools []*redpandav1alpha2.NodePool, defaulters *V2Defaulters) ([]redpandachart.Pool, error) {
+	converted := make([]redpandachart.Pool, len(pools))
 	for i, pool := range pools {
 		set, err := convertV2NodepoolToPool(values, pool, defaulters)
 		if err != nil {
@@ -348,11 +348,11 @@ func convertV2NodepoolsToPools(values redpanda.Values, pools []*redpandav1alpha2
 	return converted, nil
 }
 
-func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpanda.Pool, err error) {
+func convertV2NodepoolToPool(clusterValues redpandachart.Values, pool *redpandav1alpha2.NodePool, defaulters *V2Defaulters) (_ redpandachart.Pool, err error) {
 	// we grab *just* the default values here
-	v, err := redpanda.Chart.LoadValues(map[string]any{})
+	v, err := redpandachart.Chart.LoadValues(map[string]any{})
 	if err != nil {
-		return redpanda.Pool{}, err
+		return redpandachart.Pool{}, err
 	}
 	defer func() {
 		switch r := recover().(type) {
@@ -364,7 +364,7 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 		}
 	}()
 
-	values := helmette.Unwrap[redpanda.Values](v)
+	values := helmette.Unwrap[redpandachart.Values](v)
 	defaultSet := values.Statefulset
 	// we adjust some of the defaults that need to be changed in the nodepool context
 	defaultSet.PodTemplate.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution[0].LabelSelector.MatchLabels = map[string]string{
@@ -394,12 +394,12 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 
 	// now we merge everything in to construct the pool
 	if err := convertJSON(pool.Spec, &defaultSet); err != nil {
-		return redpanda.Pool{}, err
+		return redpandachart.Pool{}, err
 	}
 
 	// and do a little bit of conversion
 	if err := convertJSON(pool.Spec.SidecarImage, &defaultSet.SideCars.Image); err != nil {
-		return redpanda.Pool{}, err
+		return redpandachart.Pool{}, err
 	}
 
 	// this is needed since normally the image is taken from the top-level cluster CRD, but node pools
@@ -411,26 +411,26 @@ func convertV2NodepoolToPool(clusterValues redpanda.Values, pool *redpandav1alph
 			image := fmt.Sprintf("%s:%s", repo, tag)
 
 			// override all of the containers that generally are set via Values.Image
-			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpanda.RedpandaContainerName)
-			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
+			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpandachart.RedpandaContainerName)
+			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpandachart.RedpandaConfiguratorContainerName)
 
 			container.Image = ptr.To(image)
 			configurator.Image = ptr.To(image)
 
 			// here we use clusterValues since we need to look at the cluster-level context
 			if ptr.Deref(clusterValues.Tuning.TuneAIOEvents, false) {
-				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
+				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpandachart.RedpandaTuningContainerName)
 				tuning.Image = ptr.To(image)
 			}
 			if values.Statefulset.InitContainers.FSValidator.Enabled {
-				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
+				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpandachart.FSValidatorContainerName)
 				validator.Image = ptr.To(image)
 			}
 		}
 	}
 
 	// and finally return wrapped with a name and generation
-	return redpanda.Pool{
+	return redpandachart.Pool{
 		Name:        pool.Name,
 		Generation:  fmt.Sprintf("%d", pool.Generation),
 		Statefulset: defaultSet,

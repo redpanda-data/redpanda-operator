@@ -35,7 +35,7 @@ import (
 	"k8s.io/utils/ptr"
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
@@ -466,7 +466,7 @@ type SchemaRegistryClientsFactory func(
 	cluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	tlsProvider resourcetypes.AdminTLSConfigProvider,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	pods ...string,
 ) ([]schemaregistry.Broker, error)
 

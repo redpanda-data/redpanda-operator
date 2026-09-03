@@ -1,5 +1,5 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
-{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/service.nodeport.go" */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart/service.nodeport.go" */ -}}
 
 {{- define "redpanda.NodePortService" -}}
 {{- $state := (index .a 0) -}}

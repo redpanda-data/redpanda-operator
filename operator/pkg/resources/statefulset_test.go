@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
@@ -188,7 +188,7 @@ func TestEnsure(t *testing.T) {
 					CloudSecretsAWSRoleARN: "arn",
 				},
 				cfg,
-				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
 					health := tt.clusterHealth
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("testAdminAPI").WithName("mockAdminAPI")}
 					adminAPI.SetClusterHealth(health)
@@ -682,7 +682,7 @@ func TestCurrentVersion(t *testing.T) {
 					ImagePullPolicy:       "Always",
 				},
 				cfg,
-				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+				func(ctx context.Context, k8sClient client.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
 					return nil, nil
 				},
 				nil, // schema registry clients factory (gate skipped)

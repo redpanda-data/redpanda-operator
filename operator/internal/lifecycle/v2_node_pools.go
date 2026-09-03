@@ -19,7 +19,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 )
@@ -53,10 +53,10 @@ func (m *V2NodePoolRenderer) Render(ctx context.Context, cluster *ClusterWithPoo
 		return nil, errors.WithStack(err)
 	}
 
-	return redpanda.RenderNodePools(state)
+	return redpandachart.RenderNodePools(state)
 }
 
-func (m *V2NodePoolRenderer) convertToRender(cluster *ClusterWithPools) (*redpanda.RenderState, error) {
+func (m *V2NodePoolRenderer) convertToRender(cluster *ClusterWithPools) (*redpandachart.RenderState, error) {
 	return conversion.ConvertV2ToRenderState(m.kubeConfig, &conversion.V2Defaulters{
 		RedpandaImage:    defaultImage(m.redpandaImage),
 		SidecarImage:     defaultImage(m.sideCarImage),

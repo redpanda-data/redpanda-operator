@@ -17,7 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
@@ -59,7 +59,7 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool
 	// these defaults. Mirrors the Helm chart's precedence in its
 	// rpkNodeConfig.
 	if state.Spec().Tuning.IsApplyHostTunersEnabled() {
-		for k, v := range redpanda.HostTunerDefaults() {
+		for k, v := range redpandachart.HostTunerDefaults() {
 			result[k] = v
 		}
 	}

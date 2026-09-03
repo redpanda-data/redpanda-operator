@@ -1,5 +1,5 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
-{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/configmap.tpl.go" */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart/configmap.tpl.go" */ -}}
 
 {{- define "redpanda.ConfigMaps" -}}
 {{- $state := (index .a 0) -}}

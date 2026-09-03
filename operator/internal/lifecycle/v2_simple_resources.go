@@ -19,7 +19,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
 )
@@ -64,7 +64,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 	// disable the console spec components so we don't try to render it twice
 	state.Values.Console.Enabled = ptr.To(false)
 
-	resources, err := redpanda.RenderResources(state)
+	resources, err := redpandachart.RenderResources(state)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (m *V2SimpleResourceRenderer) consoleIntegration(
 // WatchedResourceTypes returns the list of all the resources that the cluster
 // controller needs to watch.
 func (m *V2SimpleResourceRenderer) WatchedResourceTypes() []client.Object {
-	return redpanda.Types()
+	return redpandachart.Types()
 }
 
 // MigratingResources returns a list of resources that need to be migrated
@@ -150,13 +150,13 @@ func (m *V2SimpleResourceRenderer) GetAdminAPIEndpoints(cluster *ClusterWithPool
 	// The default statefulset is not among state.Pools (those hold only
 	// NodePool-derived pools); mirror the chart's StatefulSets renderer, which
 	// prepends it as an unnamed Pool.
-	pools := append([]redpanda.Pool{{Statefulset: state.Values.Statefulset}}, state.Pools...)
+	pools := append([]redpandachart.Pool{{Statefulset: state.Values.Statefulset}}, state.Pools...)
 
 	var endpoints []string
 	for _, pool := range pools {
-		poolFullname := redpanda.Fullname(state) + pool.Suffix()
+		poolFullname := redpandachart.Fullname(state) + pool.Suffix()
 		for i := int32(0); i < pool.Statefulset.Replicas; i++ {
-			endpoints = append(endpoints, fmt.Sprintf("%s-%d.%s:%d", poolFullname, i, redpanda.InternalDomain(state), state.Values.Listeners.Admin.Port))
+			endpoints = append(endpoints, fmt.Sprintf("%s-%d.%s:%d", poolFullname, i, redpandachart.InternalDomain(state), state.Values.Listeners.Admin.Port))
 		}
 	}
 	return endpoints
