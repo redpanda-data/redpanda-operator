@@ -27,11 +27,16 @@ import (
 // will be rewritten to supported equivalents instead.
 // If need be, the rewritten files can also be dumped to disk and have assertions made
 func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package, error) {
-	// Ensure we're getting all the values we need (which is pretty much
-	// everything...). LoadSyntax is required by the analysis driver that
-	// Transpile gates on; NeedDeps extends it across the import graph, which
-	// both the transpiler and the analyzer's facts rely on.
-	cfg.Mode |= packages.LoadSyntax | packages.NeedDeps
+	// The first load exists only to give the rewrites enough type information
+	// to work with, and they only ever touch the identifiers of the packages
+	// they're rewriting. That needs LoadSyntax for the roots; their imports
+	// can come from export data, which is markedly cheaper than type checking
+	// the whole graph from source.
+	//
+	// The second load widens to NeedDeps, which the transpiler does need: it
+	// reads `+gotohelm:` directives off the declaring package's AST, so it
+	// walks the syntax of everything a chart calls into.
+	cfg.Mode |= packages.LoadSyntax
 
 	// Add in the gotohelm build tag for any package that wants to either
 	// include or exclude specific files.
@@ -80,6 +85,8 @@ func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package
 			cfg.Overlay[filename] = buf.Bytes()
 		}
 	}
+
+	cfg.Mode |= packages.NeedDeps
 
 	pkgs, err = packages.Load(cfg, patterns...)
 	if err != nil {
