@@ -22,8 +22,8 @@ require (
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/text v0.40.0
-	golang.org/x/tools v0.47.0
+	golang.org/x/text v0.41.0
+	golang.org/x/tools v0.48.0
 	k8s.io/api v0.35.1
 	k8s.io/apimachinery v0.35.1
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2
@@ -38,7 +38,7 @@ require (
 	buf.build/gen/go/redpandadata/common/protocolbuffers/go v1.36.11-20260323171043-6e06f84ad823.1 // indirect
 	buf.build/gen/go/redpandadata/core/connectrpc/go v1.20.0-20260706172830-ee867ae38d23.1 // indirect
 	buf.build/gen/go/redpandadata/core/protocolbuffers/go v1.36.11-20260714112317-973b760dcc8a.1 // indirect
-	cel.dev/expr v0.25.1 // indirect
+	cel.dev/expr v0.25.2 // indirect
 	cloud.google.com/go/auth v0.18.2 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
@@ -266,10 +266,10 @@ require (
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f // indirect
-	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
@@ -280,7 +280,7 @@ require (
 	google.golang.org/genproto v0.0.0-20260316180232-0b37fe3546d5 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	google.golang.org/grpc v1.82.1 // indirect
+	google.golang.org/grpc v1.83.2 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
