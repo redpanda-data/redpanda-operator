@@ -362,3 +362,21 @@ func (i *IfStmt) Write(w io.Writer) {
 
 	fmt.Fprintf(w, "{{- end -}}\n")
 }
+
+// Invalid stands in for a node that couldn't be transpiled.
+//
+// [Transpiler.report] returns it so that a rule can bail out of one expression
+// or statement without unwinding the whole walk, which is what lets a single
+// pass report every problem in a package instead of only the first.
+//
+// NB: It is deliberately not nil. nil already means "absent" throughout the
+// transpiler -- a slice expression with no low bound, a range with no key --
+// and consumers substitute defaults for it. Reusing nil for "failed" would let
+// a reported error be silently replaced by a plausible looking default.
+type Invalid struct{}
+
+func (*Invalid) Write(io.Writer) {
+	// Transpiled output is discarded whenever anything was reported, so
+	// reaching this means a caller used a chart it was told not to.
+	panic("gotohelm: transpiled output used despite reported diagnostics")
+}

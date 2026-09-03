@@ -6,6 +6,7 @@ ignore:
   # Ignore go files installed in testdata as they're not writable.
   - directory: gen/partial/testdata
   - directory: gotohelm/testdata
+  - directory: gotohelm/testdata/analyzer
   - directory: .build
   - directory: .buildkite
   - directory: .github

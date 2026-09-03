@@ -94,9 +94,11 @@ var transpileBootstrap = sync.OnceValues(func() (*File, error) {
 
 	// We call the private transpile method which doesn't bundle the _shims.tpl
 	// into the final chart.
-	bootstrapFiles, err := transpile(pkgs[0])
-	if err != nil {
-		return nil, err
+	// The bootstrap package is gotohelm's own source, so anything it reports
+	// is a bug here rather than in a chart.
+	bootstrapFiles, diagnostics := transpile(pkgs[0])
+	if len(diagnostics) > 0 {
+		return nil, &DiagnosticsError{Fset: pkgs[0].Fset, Diagnostics: diagnostics}
 	}
 
 	shims := bootstrapFiles[0]

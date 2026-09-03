@@ -11,6 +11,7 @@ package gotohelm
 
 import (
 	"bytes"
+	"cmp"
 	_ "embed"
 	"fmt"
 	"go/ast"
@@ -20,10 +21,12 @@ import (
 	"go/types"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/types/typeutil"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -32,19 +35,25 @@ import (
 
 var directiveRE = regexp.MustCompile(`\+gotohelm:([\w\.-]+)=([\w\.-]+)`)
 
-type Unsupported struct {
-	Node ast.Node
-	Msg  string
-	Fset *token.FileSet
+// DiagnosticsError is the error returned when a package fails to transpile.
+//
+// It renders every diagnostic rather than only the first, so a chart author
+// sees the full set of problems in one pass. That's the point of reporting
+// instead of panicking: the Unsupported panic this replaces unwound the whole
+// walk, so the second problem in a file only surfaced once the first was
+// fixed.
+type DiagnosticsError struct {
+	Fset        *token.FileSet
+	Diagnostics []analysis.Diagnostic
 }
 
-func (u *Unsupported) Error() string {
-	var b bytes.Buffer
-	fmt.Fprintf(&b, "unsupported ast.Node: %T\n", u.Node)
-	fmt.Fprintf(&b, "%s\n", u.Msg)
-	fmt.Fprintf(&b, "%s\n\t", u.Fset.PositionFor(u.Node.Pos(), false).String())
-	if err := format.Node(&b, u.Fset, u.Node); err != nil {
-		panic(err) // Oh the irony
+func (e *DiagnosticsError) Error() string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "%d untranspilable construct(s):", len(e.Diagnostics))
+
+	for _, diagnostic := range e.Diagnostics {
+		fmt.Fprintf(&b, "\n%s: %s", e.Fset.PositionFor(diagnostic.Pos, false), diagnostic.Message)
 	}
 
 	return b.String()
@@ -54,18 +63,44 @@ type Chart struct {
 	Files []*File
 }
 
+// report records that node can't be transpiled and returns [Invalid] to stand
+// in for whatever it should have produced.
+//
+// Returning rather than panicking is what lets a single pass report every
+// problem in a package: the enclosing statement is poisoned, but the loop over
+// the function's body carries on.
+func (t *Transpiler) report(node ast.Node, format string, args ...any) Node {
+	t.diagnostics = append(t.diagnostics, analysis.Diagnostic{
+		Pos:      node.Pos(),
+		End:      node.End(),
+		Category: "unsupported",
+		Message:  fmt.Sprintf(format, args...),
+	})
+
+	return &Invalid{}
+}
+
 func Transpile(pkgs []*packages.Package, deps ...string) (*Chart, error) {
 	for _, pkg := range pkgs {
 		deps = append(deps, pkg.PkgPath)
 	}
 
 	var chart Chart
+	var diagnostics []analysis.Diagnostic
+
 	for _, pkg := range pkgs {
-		files, err := transpile(pkg, deps...)
-		if err != nil {
-			return nil, err
-		}
+		files, diags := transpile(pkg, deps...)
+
 		chart.Files = append(chart.Files, files...)
+		diagnostics = append(diagnostics, diags...)
+	}
+
+	if len(diagnostics) > 0 {
+		slices.SortStableFunc(diagnostics, func(a, b analysis.Diagnostic) int {
+			return cmp.Compare(a.Pos, b.Pos)
+		})
+
+		return nil, &DiagnosticsError{Fset: pkgs[0].Fset, Diagnostics: diagnostics}
 	}
 
 	shims, err := transpileBootstrap()
@@ -88,17 +123,7 @@ func Transpile(pkgs []*packages.Package, deps ...string) (*Chart, error) {
 //
 // The public [Transpile] method handles bundling of multiple packages and
 // injecting the shims/bootstrap.
-func transpile(pkg *packages.Package, deps ...string) (_ []*File, err error) {
-	defer func() {
-		switch v := recover().(type) {
-		case nil:
-		case *Unsupported:
-			err = v
-		default:
-			panic(v)
-		}
-	}()
-
+func transpile(pkg *packages.Package, deps ...string) ([]*File, []analysis.Diagnostic) {
 	dependencies := map[string]struct{}{}
 	for _, path := range append(deps, pkg.PkgPath) {
 		dependencies[path] = struct{}{}
@@ -125,7 +150,7 @@ func transpile(pkg *packages.Package, deps ...string) (_ []*File, err error) {
 		},
 	}
 
-	return t.Transpile(), nil
+	return t.Transpile(), t.diagnostics
 }
 
 type Transpiler struct {
@@ -150,6 +175,9 @@ type Transpiler struct {
 	// names is a cache for holding the transpiled name of a function.
 	// It's exclusively used by `funcNameFor`.
 	names map[*types.Func]string
+
+	// diagnostics collects everything report was handed.
+	diagnostics []analysis.Diagnostic
 }
 
 func (t *Transpiler) Transpile() []*File {
@@ -248,21 +276,13 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		case *ast.GenDecl:
 			if len(d.Specs) > 1 {
 				// TODO could just return multiple statements.
-				panic(&Unsupported{
-					Node: d,
-					Fset: t.Fset,
-					Msg:  "declarations may only contain 1 spec",
-				})
+				return t.report(d, "declarations may only contain 1 spec")
 			}
 
 			spec := d.Specs[0].(*ast.ValueSpec)
 
 			if len(spec.Names) > 1 || len(spec.Values) > 1 {
-				panic(&Unsupported{
-					Node: d,
-					Fset: t.Fset,
-					Msg:  "specs may only contain 1 value",
-				})
+				return t.report(d, "specs may only contain 1 value")
 			}
 
 			rhs := t.zeroOf(t.TypesInfo.TypeOf(spec.Names[0]))
@@ -308,11 +328,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		// split would change the statement's meaning. Anything that survives
 		// that would silently lose every pair but the first, so reject it.
 		if len(stmt.Lhs) == len(stmt.Rhs) && len(stmt.Lhs) > 1 {
-			panic(&Unsupported{
-				Node: stmt,
-				Fset: t.Fset,
-				Msg:  "multi-value assignment was not unrolled before transpilation",
-			})
+			return t.report(stmt, "multi-value assignment was not unrolled before transpilation")
 		}
 
 		if len(stmt.Lhs) > 1 && len(stmt.Rhs) == 1 {
@@ -331,11 +347,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		switch stmt.Tok {
 		case token.ASSIGN, token.DEFINE:
 		default:
-			panic(&Unsupported{
-				Node: stmt,
-				Fset: t.Fset,
-				Msg:  "Unsupported assignment token",
-			})
+			return t.report(stmt, "Unsupported assignment token")
 		}
 
 		// TODO could simplify this by performing a type switch on the
@@ -393,11 +405,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 			// Super janky check to enforce deterministic iteration of maps
 			// when side effects occur within the range's body.
 			if bytes.Contains(body.Bytes(), []byte(`= append(`)) {
-				panic(&Unsupported{
-					Node: stmt,
-					Fset: t.Fset,
-					Msg:  "ranges over maps are non-deterministic. use `helmette.SortedMap`",
-				})
+				return t.report(stmt, "ranges over maps are non-deterministic. use `helmette.SortedMap`")
 			}
 		}
 
@@ -476,11 +484,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 					}
 				}
 			default:
-				panic(&Unsupported{
-					Node: stmt,
-					Fset: t.Fset,
-					Msg:  fmt.Sprintf("%T of %s is not supported in for condition", b, b.Op),
-				})
+				return t.report(stmt, "%T of %s is not supported in for condition", b, b.Op)
 			}
 		}
 
@@ -506,19 +510,11 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 				step = Literal("-1")
 			}
 		default:
-			panic(&Unsupported{
-				Node: stmt,
-				Fset: t.Fset,
-				Msg:  "unhandled ast.ForStmt",
-			})
+			return t.report(stmt, "unhandled ast.ForStmt")
 		}
 
 		if stop == nil || start == nil || step == nil {
-			panic(&Unsupported{
-				Node: stmt,
-				Fset: t.Fset,
-				Msg:  fmt.Sprintf("start: %v; stop: %v; step: %v", start, stop, step),
-			})
+			return t.report(stmt, "start: %v; stop: %v; step: %v", start, stop, step)
 		}
 		return &Range{
 			Key:   &Ident{Name: "_"},
@@ -532,11 +528,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		}
 	}
 
-	panic(&Unsupported{
-		Node: stmt,
-		Fset: t.Fset,
-		Msg:  "unhandled ast.Stmt",
-	})
+	return t.report(stmt, "unhandled ast.Stmt")
 }
 
 // transpileMVAssignStmt handles transpiling assignments where the RHS has
@@ -751,11 +743,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 
 		case *types.Func:
 			if _, ok := t.dependencies[obj.Pkg().Path()]; !ok {
-				panic(&Unsupported{
-					Node: n,
-					Msg:  fmt.Sprintf("function %q is not present in the dependencies list and therefore cannot be referenced", obj.FullName()),
-					Fset: t.Fset,
-				})
+				return t.report(n, "function %q is not present in the dependencies list and therefore cannot be referenced", obj.FullName())
 			}
 
 			// Function references are stored as []{funcName, capturedArguments...}.
@@ -778,11 +766,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			return Literal(n.Name)
 
 		default:
-			panic(&Unsupported{
-				Node: n,
-				Fset: t.Fset,
-				Msg:  "Unsupported *ast.Ident",
-			})
+			return t.report(n, "Unsupported *ast.Ident")
 		}
 
 	case *ast.SelectorExpr:
@@ -835,11 +819,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			}
 		}
 
-		panic(&Unsupported{
-			Node: n,
-			Fset: t.Fset,
-			Msg:  fmt.Sprintf("%T", t.TypesInfo.ObjectOf(n.Sel)),
-		})
+		return t.report(n, "%T", t.TypesInfo.ObjectOf(n.Sel))
 
 	case *ast.BinaryExpr:
 		// Closure helpers to make the following logic a bit nicer.
@@ -961,11 +941,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 			}
 		}
 
-		panic(&Unsupported{
-			Node: n,
-			Fset: t.Fset,
-			Msg:  fmt.Sprintf(`No matching %T signature for %v`, n, patterns),
-		})
+		return t.report(n, `No matching %T signature for %v`, n, patterns)
 
 	case *ast.UnaryExpr:
 		switch n.Op {
@@ -1036,11 +1012,7 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 		typ := t.typeOf(n.Type)
 
 		if basic, ok := typ.(*types.Basic); ok && (basic.Info()&types.IsNumeric != 0) {
-			panic(&Unsupported{
-				Node: n,
-				Fset: t.Fset,
-				Msg:  "type assertions on numeric types are unreliable due to JSON casting all numbers to float64's. Instead use `helmette.IsNumeric` or `helmette.AsIntegral`",
-			})
+			return t.report(n, "type assertions on numeric types are unreliable due to JSON casting all numbers to float64's. Instead use `helmette.IsNumeric` or `helmette.AsIntegral`")
 		}
 
 		return litCall(
@@ -1211,11 +1183,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 			}
 		}
 
-		panic(&Unsupported{
-			Fset: t.Fset,
-			Node: n,
-			Msg:  fmt.Sprintf("unsupported usage of builtin directive for signature: %v", signature),
-		})
+		return t.report(n, "unsupported usage of builtin directive for signature: %v", signature)
 	}
 
 	// The second to last stop on this train, the big ol' switch statement of
@@ -1243,11 +1211,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		// than silently mangling values.
 		elem := signature.Results().At(0).Type().(*types.Slice).Elem()
 		if basic, ok := elem.Underlying().(*types.Basic); !ok || basic.Info()&types.IsString == 0 {
-			panic(&Unsupported{
-				Fset: t.Fset,
-				Node: n,
-				Msg:  fmt.Sprintf("slices.Sorted is only supported for strings, got: %v", elem),
-			})
+			return t.report(n, "slices.Sorted is only supported for strings, got: %v", elem)
 		}
 		return litCall("_shims.slices_Sorted", args...)
 	case "cmp.Or":
@@ -1476,11 +1440,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 				},
 			}
 		default:
-			panic(&Unsupported{
-				Node: n,
-				Msg:  fmt.Sprintf("callee of type %T: %v", callee, callee),
-				Fset: t.Fset,
-			})
+			return t.report(n, "callee of type %T: %v", callee, callee)
 		}
 	} else {
 		// Otherwise, if there is a receiver, we need to emulate a method call.
@@ -1494,7 +1454,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		}
 
 		if _, ok := typ.(*types.Named); !ok {
-			panic(&Unsupported{Fset: t.Fset, Node: n, Msg: "method calls with not pointer type with named type"})
+			return t.report(n, "method calls with not pointer type with named type")
 		}
 		var receiverArg Node
 
@@ -1569,11 +1529,7 @@ func (t *Transpiler) transpileCast(expr ast.Expr, to types.Type) Node {
 		}
 	}
 
-	panic(&Unsupported{
-		Fset: t.Fset,
-		Node: expr,
-		Msg:  fmt.Sprintf("unsupported type cast to %v", to),
-	})
+	return t.report(expr, "unsupported type cast to %v", to)
 }
 
 func (t *Transpiler) transpileTypeRepr(typ types.Type) Node {
