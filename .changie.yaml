@@ -69,7 +69,7 @@ projects:
     # Update golden files across the entire repo.
     # Changie uses go's filepath.Match which doesn't support ** globbing so
     # there's some repetition here.
-    - path: 'charts/redpanda/testdata/*.golden.txtar'
+    - path: 'charts/redpanda/chart/testdata/*.golden.txtar'
       find: 'image: docker.redpanda.com/redpandadata/redpanda-operator:v.*$'
       replace: 'image: docker.redpanda.com/redpandadata/redpanda-operator:{{.Version}}'
     - path: 'operator/internal/lifecycle/testdata/*.golden.txtar'

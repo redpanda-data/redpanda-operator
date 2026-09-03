@@ -17,8 +17,8 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
@@ -42,7 +42,7 @@ func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpanda
 	if err != nil {
 		return nil, err
 	}
-	client, err := redpanda.AdminClient(state, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
+	client, err := redpandaclient.AdminClient(state, c.dialer, rpadmin.ClientTimeout(c.adminClientTimeout))
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (c *Factory) schemaRegistryForCluster(ctx context.Context, cluster *redpand
 	if err != nil {
 		return nil, err
 	}
-	client, err := redpanda.SchemaRegistryClient(state, c.dialer)
+	client, err := redpandaclient.SchemaRegistryClient(state, c.dialer)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (c *Factory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2
 	if err != nil {
 		return nil, err
 	}
-	client, err := redpanda.KafkaClient(state, c.dialer, opts...)
+	client, err := redpandaclient.KafkaClient(state, c.dialer, opts...)
 	if err != nil {
 		return nil, err
 	}
