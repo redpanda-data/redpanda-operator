@@ -24,7 +24,7 @@ import (
 	"pgregory.net/rapid"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/fuzzing"
@@ -144,7 +144,7 @@ func TestRedpanda_ValuesJSON(t *testing.T) {
 // accepts.
 func TestHelmValuesCompat(t *testing.T) {
 	t.Run("clusterSpec", rapid.MakeCheck(func(t *rapid.T) {
-		AssertJSONCompat[redpanda.PartialValues, redpandav1alpha2.RedpandaClusterSpec](t, fuzzing.ClusterSpecConfig(), func(from *redpanda.PartialValues) {
+		AssertJSONCompat[redpandachart.PartialValues, redpandav1alpha2.RedpandaClusterSpec](t, fuzzing.ClusterSpecConfig(), func(from *redpandachart.PartialValues) {
 			if from.Storage != nil && from.Storage.Tiered != nil && from.Storage.Tiered.PersistentVolume != nil {
 				// Incorrect type (should be a *resource.Quantity) on an anonymous struct in Partial Values.
 				from.Storage.Tiered.PersistentVolume.Size = nil

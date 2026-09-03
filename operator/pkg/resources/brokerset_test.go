@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
@@ -208,7 +208,7 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 		pandaCluster: cluster,
 		nodePool:     vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default"}},
 		logger:       ctrl.Log.WithName("test"),
-		adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+		adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
 			adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
 			adminAPI.SetClusterHealth(healthy)
 			return adminAPI, nil
@@ -707,7 +707,7 @@ func buildMigrationBrokerSet(t *testing.T, healthy bool, cluster *vectorizedv1al
 		pandaCluster: cluster,
 		nodePool:     vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default"}},
 		logger:       ctrl.Log.WithName("test"),
-		adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+		adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
 			adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
 			adminAPI.SetClusterHealth(healthy)
 			return adminAPI, nil
@@ -1669,7 +1669,7 @@ func buildArbitrationHarness(t *testing.T, poolNames []string) (map[string]*arbi
 			stsResource: &StatefulSetResource{
 				pandaCluster: cluster,
 				logger:       ctrl.Log.WithName("test"),
-				adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpanda.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
+				adminAPIClientFactory: func(ctx context.Context, k8sClient k8sclient.Reader, redpandaCluster *vectorizedv1alpha1.Cluster, fqdn string, adminTLSProvider resourcetypes.AdminTLSConfigProvider, dialer redpandaclient.DialContextFunc, timeout time.Duration, pods ...string) (adminutils.AdminAPIClient, error) {
 					adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
 					adminAPI.SetClusterHealth(true)
 					return adminAPI, nil

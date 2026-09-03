@@ -23,8 +23,8 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3"
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 )
@@ -52,7 +52,7 @@ func migrateFieldManagers(ctx context.Context, ctl *kube.Ctl, k8sClient client.C
 	}
 
 	redpandaTypes := redpandachart.Types()
-	consoleTypes := consolechart.Types()
+	consoleTypes := console.Types()
 	ownershipResolver := lifecycle.NewV2OwnershipResolver()
 
 	// Forbidden errors below this point are non-fatal. Installs that manage
@@ -160,11 +160,11 @@ func typeName(scheme *runtime.Scheme, obj client.Object) string {
 }
 
 // copied from operator/internal/controller/console/controller.go
-func consoleOwnershipLabels(console *redpandav1alpha2.Console) map[string]string {
+func consoleOwnershipLabels(c *redpandav1alpha2.Console) map[string]string {
 	return map[string]string{
-		"app.kubernetes.io/name":       consolechart.ChartName,
+		"app.kubernetes.io/name":       console.ChartName,
 		"app.kubernetes.io/managed-by": "redpanda-operator",
-		"app.kubernetes.io/instance":   console.Name,
+		"app.kubernetes.io/instance":   c.Name,
 	}
 }
 

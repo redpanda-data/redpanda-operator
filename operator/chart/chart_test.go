@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/run"
@@ -364,7 +364,7 @@ func TestRBACStretchRackAwarenessScoped(t *testing.T) {
 func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 	testCases := []struct {
 		Name           string
-		RedpandaValues redpanda.PartialValues
+		RedpandaValues redpandachart.PartialValues
 		OperatorValues PartialValues
 	}{
 		{
@@ -377,7 +377,7 @@ func TestRBACIsSuperSetOfRedpanda(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			redpandaObjs, err := redpanda.Chart.Render(nil, helmette.Release{}, tc.RedpandaValues)
+			redpandaObjs, err := redpandachart.Chart.Render(nil, helmette.Release{}, tc.RedpandaValues)
 			require.NoError(t, err)
 
 			operatorObjs, err := Chart.Render(nil, helmette.Release{}, tc.OperatorValues)

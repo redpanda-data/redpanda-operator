@@ -1,5 +1,5 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
-{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/helpers.go" */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart/helpers.go" */ -}}
 
 {{- define "redpanda.ChartLabel" -}}
 {{- $state := (index .a 0) -}}
