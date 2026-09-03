@@ -1,4 +1,0 @@
-project: operator
-kind: Fixed
-body: The `monitoring.rulesEnabled` PrometheusRule and the shipped Grafana dashboard now scope every expression to this operator install by `job` and `namespace`, and keep both labels on the recorded series. `controller_runtime_*` and `workqueue_*` are exported by every controller-runtime operator on the cluster (Karpenter, Flux, cert-manager, Trivy), so unscoped rules fired the operator's alerts for foreign controllers and merged same-named controllers across operators. The dashboard gains Namespace and Job pickers plus one for the opt-in `monitoring.clusterLabel` label.
-time: 2026-08-28T21:00:00.000000000-07:00

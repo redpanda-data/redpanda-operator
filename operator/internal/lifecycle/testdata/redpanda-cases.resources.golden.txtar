@@ -10,7 +10,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external
@@ -57,7 +57,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -86,7 +86,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -102,7 +102,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
       monitoring.redpanda.com/enabled: "false"
@@ -312,7 +312,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test
@@ -352,7 +352,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk
@@ -368,7 +368,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-selfsigned-issuer
@@ -387,7 +387,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-issuer
@@ -407,7 +407,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-selfsigned-issuer
@@ -426,7 +426,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-issuer
@@ -446,7 +446,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-root-certificate
@@ -475,7 +475,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-root-certificate
@@ -504,7 +504,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-default-cert
@@ -544,7 +544,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-external-cert
@@ -584,7 +584,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk-debug-bundle
@@ -618,7 +618,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar
@@ -647,7 +647,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-rpk-debug-bundle
@@ -671,7 +671,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sidecar
@@ -695,7 +695,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-sts-lifecycle
@@ -875,7 +875,7 @@
       cluster.redpanda.com/namespace: basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: basic-test
       helm.toolkit.fluxcd.io/namespace: basic-test
     name: basic-test-configurator
@@ -954,7 +954,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-external
@@ -1001,7 +1001,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test
@@ -1030,7 +1030,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test
@@ -1046,7 +1046,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
       monitoring.redpanda.com/enabled: "false"
@@ -1315,7 +1315,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test
@@ -1553,7 +1553,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-pool
@@ -1584,7 +1584,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-rpk
@@ -1600,7 +1600,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-default-selfsigned-issuer
@@ -1619,7 +1619,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-default-root-issuer
@@ -1639,7 +1639,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-external-selfsigned-issuer
@@ -1658,7 +1658,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-external-root-issuer
@@ -1678,7 +1678,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-default-root-certificate
@@ -1707,7 +1707,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-external-root-certificate
@@ -1736,7 +1736,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-default-cert
@@ -1776,7 +1776,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-external-cert
@@ -1816,7 +1816,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-rpk-debug-bundle
@@ -1850,7 +1850,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-sidecar
@@ -1879,7 +1879,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-rpk-debug-bundle
@@ -1903,7 +1903,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-sidecar
@@ -1927,7 +1927,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-sts-lifecycle
@@ -2107,7 +2107,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-configurator
@@ -2150,7 +2150,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-pool-configurator
@@ -2247,7 +2247,7 @@
       cluster.redpanda.com/namespace: compat-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: compat-test
       helm.toolkit.fluxcd.io/namespace: compat-test
     name: compat-test-pool-fs-validator
@@ -2322,7 +2322,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-external
@@ -2369,7 +2369,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled
@@ -2398,7 +2398,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled
@@ -2414,7 +2414,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
       monitoring.redpanda.com/enabled: "false"
@@ -2624,7 +2624,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled
@@ -2664,7 +2664,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-rpk
@@ -2680,7 +2680,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-default-selfsigned-issuer
@@ -2699,7 +2699,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-default-root-issuer
@@ -2719,7 +2719,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-external-selfsigned-issuer
@@ -2738,7 +2738,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-external-root-issuer
@@ -2758,7 +2758,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-default-root-certificate
@@ -2787,7 +2787,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-external-root-certificate
@@ -2816,7 +2816,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-default-cert
@@ -2856,7 +2856,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-external-cert
@@ -2896,7 +2896,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-rpk-debug-bundle
@@ -2930,7 +2930,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-sidecar
@@ -2959,7 +2959,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-rpk-debug-bundle
@@ -2983,7 +2983,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-sidecar
@@ -3007,7 +3007,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-sts-lifecycle
@@ -3187,7 +3187,7 @@
       cluster.redpanda.com/namespace: console-disabled
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: console-disabled
       helm.toolkit.fluxcd.io/namespace: console-disabled
     name: console-disabled-configurator
@@ -3249,7 +3249,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-external
@@ -3296,7 +3296,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test
@@ -3325,7 +3325,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test
@@ -3341,7 +3341,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
       monitoring.redpanda.com/enabled: "false"
@@ -3571,7 +3571,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test
@@ -3770,7 +3770,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-basic-a
@@ -3969,7 +3969,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-basic-b
@@ -4009,7 +4009,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-rpk
@@ -4025,7 +4025,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-default-selfsigned-issuer
@@ -4044,7 +4044,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-default-root-issuer
@@ -4064,7 +4064,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-external-selfsigned-issuer
@@ -4083,7 +4083,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-external-root-issuer
@@ -4103,7 +4103,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-default-root-certificate
@@ -4132,7 +4132,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-external-root-certificate
@@ -4161,7 +4161,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-default-cert
@@ -4201,7 +4201,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-external-cert
@@ -4241,7 +4241,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-rpk-debug-bundle
@@ -4275,7 +4275,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-sidecar
@@ -4304,7 +4304,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-rpk-debug-bundle
@@ -4328,7 +4328,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-sidecar
@@ -4352,7 +4352,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-sts-lifecycle
@@ -4532,7 +4532,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-configurator
@@ -4593,7 +4593,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-basic-a-configurator
@@ -4642,7 +4642,7 @@
       cluster.redpanda.com/namespace: nodepool-basic-test
       cluster.redpanda.com/operator: v2
       cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.2
+      helm.sh/chart: redpanda-26.2.3
       helm.toolkit.fluxcd.io/name: nodepool-basic-test
       helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
     name: nodepool-basic-test-basic-b-configurator
