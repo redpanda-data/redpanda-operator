@@ -1,9 +1,10 @@
 # promtool unit tests for the PrometheusRule the operator chart renders.
 #
-# These run against the real rendered rules, not a copy: `task test:rules`
-# renders the chart into rules.generated.yaml alongside this file and points
-# promtool at it. Editing an expression in operator/chart/prometheusrule.go is
-# therefore enough to make these fail.
+# These run against the real rendered rules: TestPrometheusRules
+# (operator/chart/prometheusrule_test.go) renders the chart in-process into
+# the rules.generated.yaml files in a temp dir, copies this file alongside
+# them and points promtool at it. Editing an expression in
+# operator/chart/prometheusrule.go is therefore enough to make these fail.
 #
 # K8S-926 is what they exist for. `controller_runtime_*` and `workqueue_*` are
 # controller-runtime metric names, not Redpanda ones, so every operator on the
