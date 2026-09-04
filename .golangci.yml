@@ -29,7 +29,21 @@ linters:
   - staticcheck
   - unparam
   - unused
+  - laconiccomments
   settings:
+    # A module plugin in golangci-lint's terms; a vanilla golangci-lint binary
+    # will refuse to start on this file, which is documented behaviour for
+    # custom linters. lint/houselint is what reads this file now.
+    custom:
+      laconiccomments:
+        type: module
+        description: Forces your Clanker to write shorter code comments.
+        original-url: github.com/hidalgopl/laconiccomments
+        settings:
+          max-line-length: 120
+          # The analyzer's default of 5 reports 925 comment groups in this
+          # repo; 20 reports the genuine walls of text.
+          max-lines: 20
 
     depguard:
       rules:
@@ -39,7 +53,7 @@ linters:
           deny:
           - pkg: "^errors$"
             desc: 'use "github.com/cockroachdb/errors"'
-          - pkg: "^github.com/pkg/errors"
+          - pkg: "github.com/pkg/errors"
             desc: 'use "github.com/cockroachdb/errors"'
         # the yaml parsing behavior of each of these is slightly different, so standardize
         # on one
@@ -55,11 +69,11 @@ linters:
             desc: 'use "github.com/redpanda-data/redpanda-operator/gotohelm"'
         chart-versions:
           deny:
-          - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda$"
+          - pkg: "github.com/redpanda-data/redpanda-operator/charts/redpanda$"
             desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
-          - pkg: "^github.com/redpanda-data/redpanda-operator/charts/redpanda/v5$"
+          - pkg: "github.com/redpanda-data/redpanda-operator/charts/redpanda/v5$"
             desc: 'use "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"'
-          - pkg: "^github.com/redpanda-data/redpanda-operator/charts$"
+          - pkg: "github.com/redpanda-data/redpanda-operator/charts$"
             desc: 'import specific charts, the overarching charts module is now deprecated'
 
     gosec:
@@ -75,6 +89,10 @@ linters:
 
       config:
         G306: "0644" # Maximum allowed os.WriteFile Permissions
+
+    misspell:
+      ignore-rules:
+      - importas # a linter's name, spelt like that
 
     importas:
       # Disallow not using aliases for all matches of the below alias list.
@@ -107,7 +125,14 @@ linters:
       checks: ["all", "-ST1005", "-ST1000", "-QF1003", "-ST1020", "-S1009", "-QF1008", "-ST1003", "-QF1001", "-ST1019", "-ST1021"]
 
   exclusions:
+    paths:
+    - testdata
     rules:
+    # The API types' comments are published verbatim as CRD field descriptions,
+    # so their length is documentation, not style.
+    - path: 'operator/api/'
+      linters:
+      - laconiccomments
     # unparam will complain about functions that are called with a constant
     # parameter. In production code, that may be helpful but it harms the
     # readability of test code to eliminate such cases.
