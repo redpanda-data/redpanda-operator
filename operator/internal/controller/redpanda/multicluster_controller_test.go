@@ -39,6 +39,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -100,7 +101,10 @@ func (s *MulticlusterControllerSuite) SetupSuite() {
 		WatchAllNamespaces: true,
 		InstallCertManager: true,
 		SetupFn: func(mgr multicluster.Manager) error {
-			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, nil, 0, 0, 100 /* post-restart caught-up % */, false /* wait-for-schema-registry-sync (factory is nil here) */, 5*time.Minute /* clear-maintenance-mode-after */, 0 /* wipe-stale-disk-after (default) */)
+			// A real factory, as in cmd/multicluster: a nil one panics the
+			// reconciler on the first admin-client build.
+			factory := internalclient.NewFactory(mgr, nil)
+			return redpanda.SetupMulticlusterController(s.ctx, mgr, redpandaImage, sidecarImage, cloudSecrets, factory, 0, 0, 100 /* post-restart caught-up % */, false /* wait-for-schema-registry-sync */, 5*time.Minute /* clear-maintenance-mode-after */, 0 /* wipe-stale-disk-after (default) */)
 		},
 	})
 }

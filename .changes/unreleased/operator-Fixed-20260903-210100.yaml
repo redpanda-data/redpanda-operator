@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    StretchCluster admin, Kafka, and Schema Registry clients no longer dial
+    broker pods on a node that has gone NotReady. Such pods keep their address
+    while being unreachable, previously wedging cluster-health fetches — and
+    with them decommission and pool cleanup — behind connection timeouts.
+time: 2026-09-03T21:01:00.000000-07:00
