@@ -3,20 +3,40 @@ version: '3'
 tasks:
   generate:
     desc: "Run all file generation tasks"
+    deps:
+      # console, operator and connectors share no inputs, so they can be
+      # generated in parallel.
+    - generate:console
+    - generate:operator
+    - generate:connectors
     cmds:
-      - task: generate:console
-      - task: generate:operator
       - task: generate:redpanda
-      - task: generate:connectors
-      # Generate chart README.md's
-      - helm-docs --chart-to-generate charts/connectors,charts/console/chart,operator/chart,charts/redpanda/chart
+      - task: generate:readmes
+
+  # Generate chart README.md's
+  generate:readmes:
+    internal: true
+    sources:
+    - ./charts/connectors/*.yaml
+    - ./charts/connectors/README.md.gotmpl
+    - ./charts/console/chart/*.yaml
+    - ./charts/console/chart/README.md.gotmpl
+    - ./charts/redpanda/chart/*.yaml
+    - ./charts/redpanda/chart/README.md.gotmpl
+    - ./operator/chart/*.yaml
+    - ./operator/chart/README.md.gotmpl
+    generates:
+    - ./charts/connectors/README.md
+    - ./charts/console/chart/README.md
+    - ./charts/redpanda/chart/README.md
+    - ./operator/chart/README.md
+    cmds:
+    - helm-docs --chart-to-generate charts/connectors,charts/console/chart,operator/chart,charts/redpanda/chart
 
   generate:console:
     desc: "Generate files for the console Helm chart"
-    deps:
-    - task: :build:gen
     cmds:
-    - cmd: cd charts/console && gen partial --out zz_generated.config.go --package console --struct Config github.com/redpanda-data/console/backend/pkg/config
+    - task: generate:console:config
     - task: genpartial
       vars: { CHART: console, STRUCT: RenderValues }
     - task: genpartial
@@ -25,6 +45,23 @@ tasks:
       vars: { CHART: console, DIR: charts/console/chart }
     - task: gotohelm
       vars: { CHART: console/chart, BUNDLE: ['github.com/redpanda-data/redpanda-operator/charts/console/v3'] }
+
+  # A partial of Console's own Config struct. Unlike genpartial it takes no
+  # --header, and its input is an external package -- hence a fingerprint on
+  # the console module's version rather than on any file here.
+  generate:console:config:
+    internal: true
+    deps:
+    - task: :build:gen
+    dir: charts/console
+    sources:
+    - ./go.mod
+    - ./go.sum
+    - ../../gen/partial/*.go
+    generates:
+    - ./zz_generated.config.go
+    cmds:
+    - gen partial --out zz_generated.config.go --package console --struct Config github.com/redpanda-data/console/backend/pkg/config
 
   generate:operator:
     desc: "Generate files for the operator Helm chart"
@@ -84,9 +121,11 @@ tasks:
     sources:
     - ./*.go
     - ./**/*.go
-    - exclude: ./values_partial.gen.go
+    - '{{ .SRC_DIR }}/licenses/boilerplate.go.txt'
+    - exclude: ./{{ .STRUCT | lower }}_partial.gen.go
+    - exclude: ./**/zz_*.go
     generates:
-    - ./values_partial.gen.go
+    - ./{{ .STRUCT | lower }}_partial.gen.go
     cmds:
     - gen partial --header {{ .SRC_DIR }}/licenses/boilerplate.go.txt --out ./{{ .STRUCT | lower }}_partial.gen.go --struct {{ .STRUCT }} .
 
