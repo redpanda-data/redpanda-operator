@@ -44,7 +44,7 @@ func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Containe
 	)
 
 	return corev1.Container{
-		Name:  BootstrapYamlTemplaterContainerName,
+		Name:  "bootstrap-yaml-envsubst",
 		Image: image,
 		Command: append([]string{
 			"/redpanda-operator",

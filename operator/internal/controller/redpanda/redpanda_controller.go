@@ -1061,12 +1061,6 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	for _, f := range fixups {
 		conf.AddFixup(f.Field, f.CEL)
 	}
-
-	// The operator reifies the bootstrap template in-process, so mirror the env
-	// the bootstrap-yaml-envsubst container would run with — from the same
-	// helper the chart builds that container from, never off a rendered
-	// resource: reading it off the post-install job nil dereferenced whenever
-	// the job was disabled (issue #1021).
 	for _, e := range redpanda.BootstrapTemplateEnvVars(state) {
 		if err := conf.EnsureInitEnv(e); err != nil {
 			return nil, nil, errors.WithStack(err)

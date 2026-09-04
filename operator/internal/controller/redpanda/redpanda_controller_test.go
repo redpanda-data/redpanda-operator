@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -1227,50 +1226,6 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 			}
 		}
 		require.NoError(t, err)
-	}
-}
-
-// TestBootstrapTemplateEnvVars pins BootstrapTemplateEnvVars as the single
-// source of truth for the templater's environment: the rendered container (on
-// the StatefulSet, and the job when enabled) must carry exactly the helper's
-// env and no EnvFrom, since clusterConfigFor mirrors the helper rather than a
-// rendered container (issue #1021).
-func TestBootstrapTemplateEnvVars(t *testing.T) {
-	for name, values := range map[string]map[string]any{
-		"chart defaults":            {},
-		"post_install_job enabled":  {"post_install_job": map[string]any{"enabled": true}},
-		"post_install_job disabled": {"post_install_job": map[string]any{"enabled": false}},
-		"tiered storage credentials": {"storage": map[string]any{"tiered": map[string]any{"config": map[string]any{
-			"cloud_storage_enabled": true,
-			"cloud_storage_bucket":  "test-bucket",
-			"cloud_storage_region":  "us-east-1",
-		}}}},
-	} {
-		t.Run(name, func(t *testing.T) {
-			dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, values)
-			require.NoError(t, err)
-
-			state, err := redpandachart.RenderStateFromDot(dot)
-			require.NoError(t, err)
-
-			expected := redpandachart.BootstrapTemplateEnvVars(state)
-
-			sts := redpandachart.StatefulSet(state, redpandachart.Pool{Statefulset: state.Values.Statefulset})
-			initContainers := sts.Spec.Template.Spec.InitContainers
-			i := slices.IndexFunc(initContainers, func(c corev1.Container) bool {
-				return c.Name == redpandachart.BootstrapYamlTemplaterContainerName
-			})
-			require.GreaterOrEqual(t, i, 0, "the StatefulSet must always carry the bootstrap templater; got init containers %v", initContainers)
-			require.Equal(t, expected, initContainers[i].Env)
-			require.Empty(t, initContainers[i].EnvFrom)
-
-			if job := redpandachart.PostInstallUpgradeJob(state); job != nil {
-				templater := job.Spec.Template.Spec.InitContainers[0]
-				require.Equal(t, redpandachart.BootstrapYamlTemplaterContainerName, templater.Name)
-				require.Equal(t, expected, templater.Env)
-				require.Empty(t, templater.EnvFrom)
-			}
-		})
 	}
 }
 

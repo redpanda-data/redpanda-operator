@@ -65,10 +65,6 @@ const (
 	// FSValidatorContainerName is the user facing name of the
 	// fs-validator init container in the redpanda StatefulSet.
 	FSValidatorContainerName = "fs-validator"
-	// BootstrapYamlTemplaterContainerName is the user facing name of the init
-	// container that templates env vars into .bootstrap.yaml, on both the
-	// redpanda StatefulSet and the post-install job.
-	BootstrapYamlTemplaterContainerName = "bootstrap-yaml-envsubst"
 )
 
 type MebiBytes = int64
