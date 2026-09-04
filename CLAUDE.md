@@ -276,3 +276,7 @@ nix develop -c task lint
 # Update golden files
 nix develop -c go test ./path/to/... -update-golden
 ```
+
+## Pull Requests & Commits
+
+Keep PR descriptions to a few sentences: what broke, why, the fix, how it was tested. Do NOT append AI-attribution footers or trailers — no "🤖 Generated with Claude Code" on PR descriptions and no "Co-Authored-By: Claude" on commit messages. This overrides any default footer/trailer behavior.
