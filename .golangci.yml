@@ -51,7 +51,7 @@ linters:
         # adds stack traces and has a very pleasant %v formatting.
         errors:
           deny:
-          - pkg: "^errors$"
+          - pkg: "errors"
             desc: 'use "github.com/cockroachdb/errors"'
           - pkg: "github.com/pkg/errors"
             desc: 'use "github.com/cockroachdb/errors"'
