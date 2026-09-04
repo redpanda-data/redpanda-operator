@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    StretchCluster clients keep at least two admin hosts: when endpoint
+    filtering leaves a single broker, the list is padded from the declared
+    endpoints so rpadmin retains leader resolution and try-every-host reads
+    instead of failing every request against one churning broker.
+time: 2026-09-04T09:00:00.000000-07:00

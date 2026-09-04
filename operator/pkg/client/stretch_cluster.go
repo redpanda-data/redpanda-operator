@@ -301,8 +301,10 @@ func (c *Factory) schemaRegistryForStretchCluster(ctx context.Context, sc *redpa
 // across all clusters known to the manager, and builds per-pod endpoint addresses
 // for the given port.
 func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alpha2.StretchCluster, port int32) ([]string, error) {
-	// All endpoints the pool specs declare, and the subset whose pod is dialable.
-	var declared, dialable []string
+	// All endpoints the pool specs declare, the subset whose pod is dialable,
+	// and the subset with no backing pod at all (candidates for padding: the
+	// dialer rejects them instantly, unlike a pod that holds a dead address).
+	var declared, dialable, absent []string
 
 	for _, clusterName := range c.mgr.GetClusterNames() {
 		// Skip peers the probe has marked unreachable. Without this the List
@@ -334,7 +336,7 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			return nil, errors.Wrapf(err, "listing RedpandaBrokerPools in cluster %s", clusterName)
 		}
 
-		servable, podsErr := dialablePodNames(ctx, k8sClient, sc.Namespace, sc.Name)
+		servable, podsErr := podDialability(ctx, k8sClient, sc.Namespace, sc.Name)
 		podsKnown := podsErr == nil
 		if !podsKnown {
 			// A failed pod list costs only the filter: offer this cluster's
@@ -355,30 +357,56 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 				endpoint := fmt.Sprintf("%s.%s:%d", name, pool.GetNamespace(), port)
 				declared = append(declared, endpoint)
 				// A per-pod Service and its backing Pod share a name.
-				if !podsKnown || servable[name] {
+				canDial, exists := servable[name]
+				switch {
+				case !podsKnown || canDial:
 					dialable = append(dialable, endpoint)
+				case !exists:
+					absent = append(absent, endpoint)
 				}
 			}
 		}
 	}
 
-	// Prefer brokers that can answer. With none dialable (a whole-cluster
-	// outage), return the declared list so that case fails exactly as it used to.
-	if len(dialable) > 0 {
-		return dialable, nil
-	}
-	return declared, nil
+	return pickAdminEndpoints(declared, dialable, absent), nil
 }
 
-// dialablePodNames returns the names of pods in ns that can currently accept a
-// connection. A non-nil error means the pod state is unknown, which the caller
-// treats as "do not filter" rather than as a failure.
+// pickAdminEndpoints chooses the hosts offered to rpadmin. The dialable
+// subset wins outright when it holds at least two hosts. A single-URL list
+// flips rpadmin into single-host mode — no leader resolution, no
+// try-every-host reads (#1783) — so one churning broker would fail every
+// request; pad back up to two from the declared list, preferring an endpoint
+// whose pod is gone entirely (the dialer rejects those instantly, while a pod
+// on a NotReady node holds its address and costs a connect timeout). With
+// nothing dialable (a whole-cluster outage) return the declared list so that
+// case fails exactly as it always has.
+func pickAdminEndpoints(declared, dialable, absent []string) []string {
+	if len(dialable) == 0 {
+		return declared
+	}
+	if len(dialable) >= 2 {
+		return dialable
+	}
+	for _, candidates := range [][]string{absent, declared} {
+		for _, ep := range candidates {
+			if ep != dialable[0] {
+				return append(dialable, ep)
+			}
+		}
+	}
+	return dialable
+}
+
+// podDialability maps each of this cluster's broker pods in ns to whether it
+// can currently accept a connection. A declared endpoint missing from the map
+// has no backing pod at all. A non-nil error means the pod state is unknown,
+// which the caller treats as "do not filter" rather than as a failure.
 //
 // The endpoint list is otherwise built from declared replica counts alone, so
 // it offers brokers that are deliberately absent -- a just-deleted pool, a
 // broker mid-roll -- and rpadmin pays for each such host with wasted attempts,
 // timeouts, and stale-leader backoffs on every reconcile.
-func dialablePodNames(ctx context.Context, k8sClient client.Client, ns, releaseName string) (map[string]bool, error) {
+func podDialability(ctx context.Context, k8sClient client.Client, ns, releaseName string) (map[string]bool, error) {
 	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
 	defer listCancel()
 
@@ -394,9 +422,7 @@ func dialablePodNames(ctx context.Context, k8sClient client.Client, ns, releaseN
 
 	dialable := make(map[string]bool, len(pods.Items))
 	for i := range pods.Items {
-		if podDialable(&pods.Items[i]) {
-			dialable[pods.Items[i].Name] = true
-		}
+		dialable[pods.Items[i].Name] = podDialable(&pods.Items[i])
 	}
 	return dialable, nil
 }
