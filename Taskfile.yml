@@ -10,7 +10,9 @@ vars:
   SRC_DIR:
     sh: 'realpath {{default "." .SRC_DIR}}'
   BUILD_ROOT:
-    sh: 'realpath {{default ".build" .BUILD_ROOT}}'
+    # Ensure BUILD_ROOT exists. Fresh non-CI clones (e.g. Claude worktrees)
+    # need something to create this directory.
+    sh: 'mkdir -p {{default ".build" .BUILD_ROOT}} && realpath {{default ".build" .BUILD_ROOT}}'
   TIMESTAMP: # Timestamp used for any build artifacts.
     # MacOS' man page isn't helpful. https://man7.org/linux/man-pages/man1/date.1.html
     # Roughly ISO 8601
@@ -54,13 +56,6 @@ tasks:
       - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
       - actionlint
 
-  lint-fix:
-    desc: "equivalent to task lint -- --fix"
-    cmds:
-      - task: lint
-        vars:
-          CLI_ARGS: "--fix"
-
   mod:tidy:
     desc: "Runs go mod tidy on all go modules in this repo"
     # This isn't the most accurate check as any new imports in go files may
@@ -96,34 +91,82 @@ tasks:
     cmds:
       - gofumpt -w ./
 
+  fmt:fix:
+    desc: "Apply the golangci-lint formatters (gci, gofumpt) to all go code"
+    # Kept as the lint-fix alias since that's the name in shell history, but
+    # it no longer loads the analysis linters. For that: `task lint -- --fix`.
+    aliases:
+    - lint-fix
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
+    cmds:
+      - golangci-lint fmt {{.PKG}} {{.CLI_ARGS}}
+
   generate:
     desc: "[re]generate all generated files"
     cmds:
       - task: mod:tidy
-      # update-licenses may update licenses/boilerplate.go.txt which is used
-      # for _some_ of k8s:generate. For simplicity, we just run update-licenses
-      # twice.
+      # boilerplate.go.txt feeds nearly every generator below, so header
+      # updates settle first.
       - task: dev:update-licenses
+      # Writes into ./operator/api/redpanda/v1alpha2, so it precedes every
+      # generator that typechecks that package.
       - task: generate:applyconfig-copy
-      - task: k8s:generate
-      - task: dev:update-licenses
+      - task: generate:parallelizable
+      # charts:generate embeds the itemized RBAC that k8s:generate writes into
+      # charts/redpanda/chart/files, so it has to follow it.
       - task: charts:generate
-      - task: generate:third-party-licenses-list
-      - task: generate:changelog
-      - task: generate:buildkite-pipelines
-      - buf generate
-      - task: lint-fix
+      - task: fmt:fix # Format any newly generated files.
       - nix fmt . # Ensure flake.nix has been formatted.
+
+  # Stages that share no inputs or outputs, fanned out.
+  #
+  # A separate task rather than `deps:` on generate: deps run before cmds, and
+  # these have to follow mod:tidy and update-licenses.
+  generate:parallelizable:
+    internal: true
+    deps:
+    - k8s:generate
+    - generate:third-party-licenses-list
+    - generate:changelog
+    - generate:buildkite-pipelines
+    - generate:protos
+
+  generate:protos:
+    sources:
+    - ./buf.gen.yaml
+    - ./pkg/multicluster/leaderelection/proto/**/*.proto
+    generates:
+    - ./pkg/multicluster/leaderelection/proto/gen/**/*.go
+    cmds:
+    - buf generate
 
   generate:buildkite-pipelines:
     deps:
     - build:gen
+    sources:
+    - ./gen/pipeline/**/*.go
+    - ./.buildkite/pipeline.yml
+    generates:
+    - ./.buildkite/testsuite.yml
     cmds:
     - gen pipeline testsuite > .buildkite/testsuite.yml
 
   generate:applyconfig-copy:
     deps:
     - build:gen
+    sources:
+    - ./gen/applyconfig-copy/**/*.go
+    - ./licenses/boilerplate.go.txt
+    # The struct being copied comes from client-go, so a dependency bump
+    # changes the output even when nothing in this repo did.
+    - ./gen/go.sum
+    - ./go.work.sum
+    generates:
+    - ./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy.go
+    - ./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy_test.go
     cmds:
     - gen applyconfig-copy --header "licenses/boilerplate.go.txt" --package "v1alpha2" --out "./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy.go"  --test "./operator/api/redpanda/v1alpha2/zz_generated.applyconfigcopy_test.go" --struct "PodSpecApplyConfiguration" k8s.io/client-go/applyconfigurations/core/v1
 
