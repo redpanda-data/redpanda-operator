@@ -168,19 +168,8 @@ type BrokerSet struct {
 	// rotation-identity keys.
 	ConfigChecksumKey string
 
-	// IsClusterHealthy gates roll-grant issuance and the migration's
-	// destructive step. Return a *RequeueAfterError when unhealthy so the
-	// owning reconciler backs off instead of erroring. nil means
-	// always-healthy (tests only).
-	IsClusterHealthy func(ctx context.Context) error
-	// OnQuiesced runs when no rolls are outstanding and no grants are active
-	// (V1 clears Status.Restarting here). Optional.
-	OnQuiesced func(ctx context.Context) error
-	// MigrationBlockedReason contributes owner-specific quiescence checks to
-	// the migration preconditions (V1: cluster restarting, decommission
-	// recorded in status). Return a non-empty human-readable reason to block
-	// the migration this pass. Optional.
-	MigrationBlockedReason func(ctx context.Context) (string, error)
+	// Hooks supplies the owning CR's view of cluster state. Required.
+	Hooks OwnerHooks
 	// Reporter records migration progress. Optional.
 	Reporter MigrationReporter
 	// Arbitration shares this reconcile pass's in-memory disruptive-write
@@ -190,6 +179,24 @@ type BrokerSet struct {
 	Arbitration *Arbitration
 
 	Logger logr.Logger
+}
+
+// OwnerHooks supplies the owner-CR-specific behavior the engine cannot
+// derive itself: admin-level health, roll bookkeeping, and owner-side
+// quiescence checks. One implementation exists per owning CR (V1 Cluster:
+// resources.BrokerSetResource, V2 Redpanda: the reconciler's per-pass
+// hooks).
+type OwnerHooks interface {
+	// IsClusterHealthy reports the cluster's admin-API health, returning a
+	// *RequeueAfterError when it is not healthy.
+	IsClusterHealthy(ctx context.Context) error
+	// OnQuiesced clears any owner-side restart bookkeeping (V1:
+	// Status.Restarting). For Owners with none it's a no-op.
+	OnQuiesced(ctx context.Context) error
+	// MigrationBlockedReason returns a non-empty human-readable reason the
+	// owner is not migratable (V1: cluster restarting, decommission
+	// recorded in status), or "" if it is.
+	MigrationBlockedReason(ctx context.Context) string
 }
 
 // report is the nil-safe Reporter.Report.

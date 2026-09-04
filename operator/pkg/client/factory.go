@@ -25,8 +25,11 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
@@ -695,27 +698,81 @@ func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterNa
 		return nil, nil
 	}
 
-	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
-		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
-			var cluster redpandav1alpha2.Redpanda
+	// Like its getV1Cluster/getRemoteV1Cluster/getStretchCluster siblings,
+	// this is a probe: (nil, nil) means "obj does not reference a V2 cluster
+	// this way" and the caller tries the next flavor.
+	source := o.GetClusterSource()
+	if source == nil {
+		return nil, nil
+	}
+	ref := source.GetClusterRef()
+	if ref == nil {
+		return nil, nil
+	}
 
-			client, err := c.GetClient(ctx, clusterName)
-			if err != nil {
-				return nil, err
-			}
+	namespace := ref.GetNamespace(obj.GetNamespace())
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
-				if apierrors.IsNotFound(err) {
-					return nil, ErrInvalidClusterRef
-				}
-				return nil, err
-			}
-
-			return &cluster, nil
+	if ref.IsNodePool() {
+		var err error
+		ref, namespace, err = c.derefNodePool(ctx, obj, clusterName, ref, namespace)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return nil, nil
+	if !ref.IsV2() {
+		return nil, nil
+	}
+
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	var cluster redpandav1alpha2.Redpanda
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &cluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, ErrInvalidClusterRef
+		}
+		return nil, err
+	}
+
+	return &cluster, nil
+}
+
+// derefNodePool resolves a NodePool clusterRef one hop to the NodePool's own
+// cluster ref. If the NodePool is gone (removed from the spec while its
+// Brokers still drain), it falls back to a ref synthesized from obj's
+// controller-owning Redpanda.
+func (c *Factory) derefNodePool(ctx context.Context, obj client.Object, clusterName string, ref *redpandav1alpha2.ClusterRef, namespace string) (*redpandav1alpha2.ClusterRef, string, error) {
+	k8sClient, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, "", err
+	}
+
+	var pool redpandav1alpha2.NodePool
+	err = k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &pool)
+	if err == nil {
+		if !pool.Spec.ClusterRef.IsV2() {
+			return nil, "", ErrInvalidClusterRef
+		}
+		return &pool.Spec.ClusterRef, pool.Spec.ClusterRef.GetNamespace(pool.Namespace), nil
+	}
+	if !apierrors.IsNotFound(err) {
+		return nil, "", err
+	}
+
+	owner := metav1.GetControllerOf(obj)
+	if owner == nil || owner.Kind != redpandav1alpha2.RedpandaKind {
+		return nil, "", ErrInvalidClusterRef
+	}
+	if gv, err := schema.ParseGroupVersion(owner.APIVersion); err != nil || gv.Group != redpandav1alpha2.GroupVersion.Group {
+		return nil, "", ErrInvalidClusterRef
+	}
+	return &redpandav1alpha2.ClusterRef{
+		Kind: ptr.To(redpandav1alpha2.RedpandaKind),
+		Name: owner.Name,
+	}, obj.GetNamespace(), nil
 }
 
 // getStretchCluster resolves a StretchCluster CR referenced by obj's
