@@ -30,6 +30,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -493,8 +494,27 @@ func buildURL(info *proxyInfo, licenseRelPath string, m module, name string, fal
 			// produce 404s; the only reliable option is to ask the
 			// source-of-truth host (github, gitiles, gitlab, etc.).
 			candidates := candidateRepoPaths(info.Origin.Subdir, m.Path, licenseRelPath)
-			for _, p := range candidates {
-				url := blobURL(repoURL, ref, p)
+			urls := make([]string, len(candidates))
+			for i, p := range candidates {
+				urls[i] = blobURL(repoURL, ref, p)
+			}
+
+			// Reuse what the previous run resolved (--fallback-from seeded it)
+			// before probing. Otherwise every module whose most-specific
+			// candidate is a virtual /vN dir or a slash-containing subdir tag
+			// pays a serial round trip to 404 before reaching the root URL
+			// already sitting in third_party.md.
+			//
+			// This trusts the table over specificity: a candidate that would
+			// newly 200 loses to a later one already committed.
+			// --validate-full skips the seed and re-derives from scratch.
+			for _, url := range urls {
+				if exists, _ := peekURLExists(url); exists {
+					return url
+				}
+			}
+
+			for _, url := range urls {
 				if urlExists(url) {
 					return url
 				}
@@ -503,7 +523,7 @@ func buildURL(info *proxyInfo, licenseRelPath string, m module, name string, fal
 			// the safest fallback (license inherited from root is the
 			// most common scenario when subdir lookups fail).
 			fmt.Fprintf(os.Stderr, "licensereport: no working URL for %s@%s (tried %d candidates)\n", m.Path, m.Version, len(candidates))
-			return blobURL(repoURL, ref, candidates[len(candidates)-1])
+			return urls[len(urls)-1]
 		}
 	}
 	// No Origin — fall back to a previously-committed URL. Verify it works;
@@ -644,13 +664,21 @@ var (
 	urlExistsCacheMu sync.Mutex
 )
 
-func urlExists(url string) bool {
+// peekURLExists reports whether url is already cached, and whether it was
+// cached at all, without issuing a request. Both are needed: the candidate
+// pre-pass wants known-good only, while urlExists must also honour a cached
+// 404 rather than re-probing it.
+func peekURLExists(url string) (exists, cached bool) {
 	urlExistsCacheMu.Lock()
-	if v, ok := urlExistsCache[url]; ok {
-		urlExistsCacheMu.Unlock()
-		return v
+	defer urlExistsCacheMu.Unlock()
+	exists, cached = urlExistsCache[url]
+	return exists, cached
+}
+
+func urlExists(url string) bool {
+	if exists, cached := peekURLExists(url); cached {
+		return exists
 	}
-	urlExistsCacheMu.Unlock()
 
 	req, _ := http.NewRequest("HEAD", url, nil) //nolint:gosec // url is built from constant origin + sanitized path
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -718,6 +746,15 @@ func listPackages(dir string) ([]goListPackage, error) {
 }
 
 func fetchInfo(m module) (*proxyInfo, error) {
+	// listPackages already made the go command download the whole build list,
+	// so this hits for every module in practice.
+	if body := readCached(m, ".info"); body != nil {
+		var info proxyInfo
+		if err := json.Unmarshal(body, &info); err == nil {
+			return &info, nil
+		}
+	}
+
 	url := fmt.Sprintf("%s/%s/@v/%s.info", proxyBase, escapePath(m.Path), m.Version)
 	resp, err := http.Get(url) //nolint:gosec // url is built from constant proxy base + sanitized module path
 	if err != nil {
@@ -735,6 +772,12 @@ func fetchInfo(m module) (*proxyInfo, error) {
 }
 
 func fetchZip(m module) (*zip.Reader, error) {
+	if body := readCached(m, ".zip"); body != nil {
+		if r, err := zip.NewReader(bytes.NewReader(body), int64(len(body))); err == nil {
+			return r, nil
+		}
+	}
+
 	url := fmt.Sprintf("%s/%s/@v/%s.zip", proxyBase, escapePath(m.Path), m.Version)
 	resp, err := http.Get(url) //nolint:gosec // url is built from constant proxy base + sanitized module path
 	if err != nil {
@@ -810,3 +853,44 @@ func die(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "licensereport: "+format+"\n", args...)
 	os.Exit(1)
 }
+
+// readCached reads m's <ext> artifact from the module cache, or returns nil.
+// Any error is a miss; the caller falls back to the proxy.
+func readCached(m module, ext string) []byte {
+	p := cachePath(m, ext)
+	if p == "" {
+		return nil
+	}
+	body, err := os.ReadFile(p)
+	if err != nil {
+		return nil
+	}
+	return body
+}
+
+// cachePath returns where the module cache would hold m's <ext> artifact, or
+// "" if there's no usable cache. Path and version both take the proxy's case
+// encoding, matching the on-disk layout.
+func cachePath(m module, ext string) string {
+	dir := modCacheDir()
+	if dir == "" {
+		return ""
+	}
+	return filepath.Join(dir, filepath.FromSlash(escapePath(m.Path)), "@v", escapePath(m.Version)+ext)
+}
+
+// modCacheDir returns $GOMODCACHE/cache/download, the go command's local
+// mirror of the proxy. It holds byte-identical .info and .zip artifacts under
+// the same "!<lower>"-escaped layout, Origin field included. Empty if `go env`
+// fails, which degrades every lookup to a proxy fetch.
+var modCacheDir = sync.OnceValue(func() string {
+	out, err := exec.Command("go", "env", "GOMODCACHE").Output()
+	if err != nil {
+		return ""
+	}
+	dir := strings.TrimSpace(string(out))
+	if dir == "" {
+		return ""
+	}
+	return filepath.Join(dir, "cache", "download")
+})
