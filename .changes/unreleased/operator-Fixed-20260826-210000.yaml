@@ -1,0 +1,12 @@
+project: operator
+kind: Fixed
+body: |-
+    Setting `post_install_job.enabled=false` on a Redpanda resource no longer silently wedges cluster configuration.
+
+      Cluster configuration was read off the rendered post-install job, which is nil
+      when disabled — a panic on every reconcile that left `ConfigurationApplied` in
+      `Error` (while `Ready`/`Healthy` stayed `True`), so `spec.clusterSpec.config.cluster`
+      was never applied. The bootstrap environment now comes directly from chart values.
+      Env injected via `post_install_job.podTemplate` no longer feeds cluster config; use
+      `storage.tiered.credentialsSecretRef` or `config.extraClusterConfiguration`.
+time: 2026-08-26T21:00:00-07:00
