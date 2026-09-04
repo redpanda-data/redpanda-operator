@@ -33,9 +33,9 @@ func LoadPackages(cfg *packages.Config, patterns ...string) ([]*packages.Package
 	// can come from export data, which is markedly cheaper than type checking
 	// the whole graph from source.
 	//
-	// The second load widens to NeedDeps, which the transpiler does need: it
-	// reads `+gotohelm:` directives off the declaring package's AST, so it
-	// walks the syntax of everything a chart calls into.
+	// The second load widens to NeedDeps, which the transpiler does need: the
+	// analysis driver runs over every package in the graph to collect
+	// `+gotohelm:` directives as facts, and that requires their syntax.
 	cfg.Mode |= packages.LoadSyntax
 
 	// Add in the gotohelm build tag for any package that wants to either

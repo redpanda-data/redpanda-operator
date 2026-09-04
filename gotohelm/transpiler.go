@@ -27,10 +27,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"golang.org/x/tools/go/analysis"
+	"golang.org/x/tools/go/analysis/checker"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/types/typeutil"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
 )
 
 var directiveRE = regexp.MustCompile(`\+gotohelm:([\w\.-]+)=([\w\.-]+)`)
@@ -39,9 +39,8 @@ var directiveRE = regexp.MustCompile(`\+gotohelm:([\w\.-]+)=([\w\.-]+)`)
 //
 // It renders every diagnostic rather than only the first, so a chart author
 // sees the full set of problems in one pass. That's the point of reporting
-// instead of panicking: the Unsupported panic this replaces unwound the whole
-// walk, so the second problem in a file only surfaced once the first was
-// fixed.
+// instead of panicking: the old Unsupported panic unwound the whole walk, so
+// the second problem in a file only surfaced once the first was fixed.
 type DiagnosticsError struct {
 	Fset        *token.FileSet
 	Diagnostics []analysis.Diagnostic
@@ -66,9 +65,10 @@ type Chart struct {
 // report records that node can't be transpiled and returns [Invalid] to stand
 // in for whatever it should have produced.
 //
-// Returning rather than panicking is what lets a single pass report every
-// problem in a package: the enclosing statement is poisoned, but the loop over
-// the function's body carries on.
+// It exists so that a rule can bail out of one expression or statement without
+// unwinding the whole walk: the enclosing statement is poisoned, the loop over
+// the function's body carries on, and a single pass reports every problem in
+// the package rather than only the first one it happened to reach.
 func (t *Transpiler) report(node ast.Node, format string, args ...any) Node {
 	t.diagnostics = append(t.diagnostics, analysis.Diagnostic{
 		Pos:      node.Pos(),
@@ -85,14 +85,9 @@ func Transpile(pkgs []*packages.Package, deps ...string) (*Chart, error) {
 		deps = append(deps, pkg.PkgPath)
 	}
 
-	var chart Chart
-	var diagnostics []analysis.Diagnostic
-
-	for _, pkg := range pkgs {
-		files, diags := transpile(pkg, deps...)
-
-		chart.Files = append(chart.Files, files...)
-		diagnostics = append(diagnostics, diags...)
+	files, diagnostics, err := analyze(pkgs, deps)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(diagnostics) > 0 {
@@ -108,34 +103,53 @@ func Transpile(pkgs []*packages.Package, deps ...string) (*Chart, error) {
 		return nil, err
 	}
 
-	chart.Files = append(chart.Files, shims)
-
-	return &chart, nil
+	return &Chart{Files: append(files, shims)}, nil
 }
 
-// transpile is the entrypoint to the gotohelm transpiler. It transpiles a
-// single go package into go/helm templates.
+// analyze transpiles pkgs by running [NewAnalyzer] over them through the
+// standard go/analysis driver.
 //
-// deps is a slice of PkgPaths indicating "permitted dependencies". Any
-// function calls from `pkg` to one of the listed packages will be transpiled
-// as normal. The caller is then responsible for ensuring that the dependent
-// package is available either by bundling or subcharting.
-//
-// The public [Transpile] method handles bundling of multiple packages and
-// injecting the shims/bootstrap.
-func transpile(pkg *packages.Package, deps ...string) ([]*File, []analysis.Diagnostic) {
-	dependencies := map[string]struct{}{}
-	for _, path := range append(deps, pkg.PkgPath) {
+// Going through the driver rather than calling the transpiler directly is what
+// gives it a single entry point. The transpiler needs the `+gotohelm:`
+// directives of the packages it calls into, and the only way one pass can see
+// another package's source is via facts, which the driver propagates in
+// dependency order. See facts.go.
+func analyze(pkgs []*packages.Package, deps []string) ([]*File, []analysis.Diagnostic, error) {
+	graph, err := checker.Analyze([]*analysis.Analyzer{NewAnalyzer(deps...)}, pkgs, nil)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	var files []*File
+	var diagnostics []analysis.Diagnostic
+
+	for _, root := range graph.Roots {
+		if root.Err != nil {
+			return nil, nil, errors.WithStack(root.Err)
+		}
+
+		files = append(files, root.Result.([]*File)...)
+		diagnostics = append(diagnostics, root.Diagnostics...)
+	}
+
+	return files, diagnostics, nil
+}
+
+// newTranspiler builds a Transpiler over the package a go/analysis pass was
+// handed.
+func newTranspiler(pass *analysis.Pass, chart map[string]struct{}) *Transpiler {
+	dependencies := map[string]struct{}{pass.Pkg.Path(): {}}
+	for path := range chart {
 		dependencies[path] = struct{}{}
 	}
 
-	t := &Transpiler{
-		Package:   pkg,
-		Fset:      pkg.Fset,
-		TypesInfo: pkg.TypesInfo,
-		Files:     pkg.Syntax,
+	return &Transpiler{
+		Fset:      pass.Fset,
+		TypesInfo: pass.TypesInfo,
+		Types:     pass.Pkg,
+		Files:     pass.Files,
 
-		packages:     mkPkgTree(pkg),
+		pass:         pass,
 		namespaces:   map[*types.Package]string{},
 		dependencies: dependencies,
 		names:        map[*types.Func]string{},
@@ -149,15 +163,13 @@ func transpile(pkg *packages.Package, deps ...string) ([]*File, []analysis.Diagn
 			"strings.ToUpper":            "upper",
 		},
 	}
-
-	return t.Transpile(), t.diagnostics
 }
 
 type Transpiler struct {
-	Package   *packages.Package
 	Fset      *token.FileSet
 	Files     []*ast.File
 	TypesInfo *types.Info
+	Types     *types.Package
 
 	// builtins is a pre-populated cache of function id (fmt.Printf,
 	// github.com/my/pkg.Function) to an equivalent go template / sprig
@@ -168,7 +180,6 @@ type Transpiler struct {
 	// function calls. It should contain the path of .Package and any dependent
 	// charts (subcharts).
 	dependencies map[string]struct{}
-	packages     map[string]*packages.Package
 	// namespaces is a cache for holding the namespace package directive. It's
 	// exclusively used by `namespaceFor`.
 	namespaces map[*types.Package]string
@@ -178,6 +189,10 @@ type Transpiler struct {
 
 	// diagnostics collects everything report was handed.
 	diagnostics []analysis.Diagnostic
+
+	// pass is how the transpiler reaches its dependencies' directives, which
+	// arrive as facts. See facts.go.
+	pass *analysis.Pass
 }
 
 func (t *Transpiler) Transpile() []*File {
@@ -195,7 +210,7 @@ func (t *Transpiler) transpileFile(f *ast.File) *File {
 	path := t.Fset.File(f.Pos()).Name()
 	source := filepath.Base(path)
 
-	name := fmt.Sprintf("_%s.%s.tpl", t.namespaceFor(t.Package.Types), source[:len(source)-3])
+	name := fmt.Sprintf("_%s.%s.tpl", t.namespaceFor(t.Types), source[:len(source)-3])
 
 	isTestFile := strings.HasSuffix(name, "_test.go")
 	if isTestFile || name == "main.go" {
@@ -252,8 +267,8 @@ func (t *Transpiler) transpileFile(f *ast.File) *File {
 
 		// TODO add a source field here? Ideally with a line number.
 		funcs = append(funcs, &Func{
-			Name:       t.funcNameFor(t.Package.TypesInfo.ObjectOf(fn.Name).(*types.Func)),
-			Namespace:  t.namespaceFor(t.Package.Types),
+			Name:       t.funcNameFor(t.TypesInfo.ObjectOf(fn.Name).(*types.Func)),
+			Namespace:  t.namespaceFor(t.Types),
 			Params:     params,
 			Statements: statements,
 		})
@@ -261,7 +276,7 @@ func (t *Transpiler) transpileFile(f *ast.File) *File {
 
 	return &File{
 		Name:   name,
-		Source: filepath.Join(t.Package.PkgPath, source),
+		Source: filepath.Join(t.Types.Path(), source),
 		Funcs:  funcs,
 	}
 }
@@ -1029,32 +1044,6 @@ func (t *Transpiler) transpileExpr(n ast.Expr) Node {
 	panic(fmt.Sprintf("unhandled Expr %T\n%s", n, b.String()))
 }
 
-// mkPkgTree "flattens" a loaded [packages.Package] and its dependencies into a
-// map keyed by path.
-func mkPkgTree(root *packages.Package) map[string]*packages.Package {
-	tree := map[string]*packages.Package{}
-	toVisit := []*packages.Package{root}
-
-	// The naive approach here is crazy slow so instead we do a memomized
-	// implementation.
-	var pkg *packages.Package
-	for len(toVisit) > 0 {
-		pkg, toVisit = toVisit[0], toVisit[1:]
-
-		if _, ok := tree[pkg.PkgPath]; ok {
-			continue
-		}
-
-		tree[pkg.PkgPath] = pkg
-
-		for _, imported := range pkg.Imports {
-			toVisit = append(toVisit, imported)
-		}
-	}
-
-	return tree
-}
-
 func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	callee := typeutil.Callee(t.TypesInfo, n)
 
@@ -1152,12 +1141,7 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	// as an optimization.
 	if _, ok := t.builtins[id]; !ok {
 		t.builtins[id] = ""
-		pkg := t.packages[callee.Pkg().Path()]
-
-		if fnDecl := findNearest[*ast.FuncDecl](pkg, callee.Pos()); fnDecl != nil {
-			directives := parseDirectives(fnDecl.Doc.Text())
-			t.builtins[id] = directives["builtin"]
-		}
+		t.builtins[id] = t.directivesOf(callee)["builtin"]
 	}
 
 	// The above would have populated the builtins cache for us. If we have a
@@ -1624,9 +1608,9 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 	// If encoding/json is in the dependency chain for this package, we'll
 	// enable some additional checks (because it's other wise very difficult to
 	// check for implementation of {M,Unm}arshaller...)
-	if json, ok := t.packages["encoding/json"]; ok {
-		marshaller := json.Types.Scope().Lookup("Marshaler").Type().Underlying().(*types.Interface)
-		unmarshaller := json.Types.Scope().Lookup("Unmarshaler").Type().Underlying().(*types.Interface)
+	if json := importedPackage(t.Types, "encoding/json"); json != nil {
+		marshaller := json.Scope().Lookup("Marshaler").Type().Underlying().(*types.Interface)
+		unmarshaller := json.Scope().Lookup("Unmarshaler").Type().Underlying().(*types.Interface)
 
 		ptr := types.NewPointer(typ)
 
@@ -1689,26 +1673,15 @@ func (t *Transpiler) zeroOf(typ types.Type) Node {
 // getFields returns a _flattened_ list (embedded structs) of structFields for
 // the given struct type.
 func (t *Transpiler) getFields(root *types.Struct) []structField {
-	_, rootSpec := t.getStructType(root)
-
-	// Would be nice to have a tuple type but it's a bit too verbose for my
-	// test.
-	typs := []*types.Struct{root}
-	specs := []*ast.StructType{rootSpec}
-
 	var fields []structField
-	for len(typs) > 0 && len(specs) > 0 {
-		s := typs[0]
-		spec := specs[0]
 
-		typs = typs[1:]
-		specs = specs[1:]
+	for queue := []*types.Struct{root}; len(queue) > 0; queue = queue[1:] {
+		s := queue[0]
 
-		for i, astField := range spec.Fields.List {
+		for i := range s.NumFields() {
 			field := structField{
-				Field:      s.Field(i),
-				Tag:        parseTag(s.Tag(i)),
-				Definition: astField,
+				Field: s.Field(i),
+				Tag:   parseTag(s.Tag(i)),
 			}
 
 			// If we encounter a JSON inlined field (See JSONInline for
@@ -1719,10 +1692,7 @@ func (t *Transpiler) getFields(root *types.Struct) []structField {
 				// first: an embedded field may be an alias (type A =
 				// otherpkg.B), which is a *types.Alias, not a *types.Named.
 				// Both resolve to the same struct through .Underlying().
-				embeddedType := field.Field.Type().Underlying().(*types.Struct)
-				_, embeddedSpec := t.getStructType(embeddedType)
-				typs = append(typs, embeddedType)
-				specs = append(specs, embeddedSpec)
+				queue = append(queue, field.Field.Type().Underlying().(*types.Struct))
 			}
 
 			fields = append(fields, field)
@@ -1768,30 +1738,6 @@ func (t *Transpiler) maybeCast(n Node, to types.Type) Node {
 	return n
 }
 
-// getTypeSpec returns the [ast.StructType] for the given named type and the
-// [packages.Package] that contains the definition.
-//
-//nolint:unparam
-func (t *Transpiler) getStructType(typ *types.Struct) (*packages.Package, *ast.StructType) {
-	if typ.NumFields() == 0 {
-		panic("unhandled")
-	}
-
-	pack := t.packages[typ.Field(0).Pkg().Path()]
-	if pack == nil {
-		pack = t.Package
-	}
-
-	// This is quite strange, struct
-	spec := findNearest[*ast.StructType](pack, typ.Field(0).Pos())
-
-	if spec == nil {
-		panic(fmt.Sprintf("failed to resolve TypeSpec: %#v", typ))
-	}
-
-	return pack, spec
-}
-
 // namespaceFor returns the "namespace" for the given package that was
 // specified in a gotohelm namespace directive. It defaults to pkg.Name() if
 // not specified.
@@ -1800,36 +1746,23 @@ func (t *Transpiler) namespaceFor(pkg *types.Package) string {
 		return ns
 	}
 
-	var namespace *string
-	for _, f := range t.packages[pkg.Path()].Syntax {
-		directives := parseDirectives(f.Doc.Text())
+	namespace := t.namespaceOverride(pkg)
 
-		ns, ok := directives["namespace"]
-		if !ok {
-			continue
+	if namespace == "" {
+		// Really bad heuristic to turn versioned modules into combined names to
+		// dance around imports of other charts across different versions.
+		// e.g. console/v3 (package console) -> consolev3
+		namespace = pkg.Name()
+		if importName := pkg.Path()[strings.LastIndex(pkg.Path(), "/")+1:]; pkg.Name() != importName {
+			namespace += importName
 		}
-
-		if namespace != nil {
-			panic(fmt.Sprintf("multiple namespace directives encountered in %q: %q and %q", pkg.Path(), ns, *namespace))
-		}
-
-		namespace = &ns
 	}
 
-	// Really bad heuristic to turn versioned modules into combined names to
-	// dance around imports of other charts across different versions.
-	// e.g. console/v3 (package console) -> consolev3
-	defaultName := pkg.Name()
-	importName := pkg.Path()[strings.LastIndex(pkg.Path(), "/")+1:]
-	if pkg.Name() != importName {
-		defaultName += importName
-	}
-
-	t.namespaces[pkg] = ptr.Deref(namespace, defaultName)
+	t.namespaces[pkg] = namespace
 
 	// Check for duplicates.
 	for path, inUse := range t.namespaces {
-		if path != pkg && inUse == t.namespaces[pkg] {
+		if path != pkg && inUse == namespace {
 			panic(fmt.Sprintf(
 				"cross package conflicting namespaces encountered:\n%q -> %q\n%q -> %q",
 				path, inUse,
@@ -1838,7 +1771,7 @@ func (t *Transpiler) namespaceFor(pkg *types.Package) string {
 		}
 	}
 
-	return t.namespaces[pkg]
+	return namespace
 }
 
 // funcNameFor returns the transpiled "function" name for a given function
@@ -1848,11 +1781,7 @@ func (t *Transpiler) funcNameFor(fn *types.Func) string {
 		return name
 	}
 
-	// TODO should probably make a directives cache if this ever gets to be too
-	// slow.
-	decl := findNearest[*ast.FuncDecl](t.packages[fn.Pkg().Path()], fn.Pos())
-
-	directives := parseDirectives(decl.Doc.Text())
+	directives := t.directivesOf(fn)
 
 	fnName := fn.Name()
 	if name, ok := directives["name"]; ok {
@@ -1934,9 +1863,8 @@ func parseTag(tag string) jsonTag {
 }
 
 type structField struct {
-	Field      *types.Var
-	Tag        jsonTag
-	Definition *ast.Field
+	Field *types.Var
+	Tag   jsonTag
 }
 
 func (f *structField) JSONName() string {
@@ -1944,13 +1872,6 @@ func (f *structField) JSONName() string {
 		return f.Tag.Name
 	}
 	return f.Field.Name()
-}
-
-// KubernetesOptional returns true if this field's comment contains any of
-// Kubernetes' optional annotations.
-func (f *structField) KubernetesOptional() bool {
-	optional, _ := regexp.MatchString(`\+optional`, f.Definition.Doc.Text())
-	return optional
 }
 
 // JSONOmit returns true if json.Marshal would omit this field. This is
@@ -2001,35 +1922,23 @@ func parseDirectives(in string) map[string]string {
 	return out
 }
 
-// findNearest finds the nearest [ast.Node] to the given position. This allows
-// finding the defining [ast.Node] from type instances or other such objects.
-func findNearest[T ast.Node](pkg *packages.Package, pos token.Pos) T {
-	// NB: It seems that pkg.Syntax is NOT ordered by position and therefore
-	// can't be binary searched.
-	var file *ast.File
-	for _, f := range pkg.Syntax {
-		if f.FileStart < pos && f.FileEnd > pos {
-			file = f
-			break
+// importedPackage searches pkg's transitive imports for the one at path.
+func importedPackage(pkg *types.Package, path string) *types.Package {
+	seen := map[*types.Package]bool{}
+
+	for queue := []*types.Package{pkg}; len(queue) > 0; queue = queue[1:] {
+		current := queue[0]
+		if seen[current] {
+			continue
 		}
+		seen[current] = true
+
+		if current.Path() == path {
+			return current
+		}
+
+		queue = append(queue, current.Imports()...)
 	}
 
-	if file == nil {
-		panic(errors.Newf("pos %d not located in pkg: %v", pos, pkg))
-	}
-
-	var result T
-	ast.Inspect(file, func(n ast.Node) bool {
-		if n == nil || n.Pos() > pos || n.End() < pos {
-			return false
-		}
-
-		if asT, ok := n.(T); ok {
-			result = asT
-		}
-
-		return true
-	})
-
-	return result
+	return nil
 }

@@ -1,0 +1,46 @@
+package unsupported
+
+import "github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
+
+func Sorted(m map[string]int) []int {
+	var out []int
+	for _, v := range helmette.SortedMap(m) {
+		out = append(out, v)
+	}
+	return out
+}
+
+func GroupedVars() int {
+	var a = 1
+	var b = 2
+	return a + b
+}
+
+func MultipleNames() int {
+	var a = 1
+	var b = 2 // want `var declarations may only declare a single variable`
+	return a + b
+}
+
+func CompoundAssign(x int) int {
+	x = x + 1 // want `\+= is not supported`
+	x = x - 2 // want `-= is not supported`
+	x = x * 3 // want `\*= is not supported`
+	x = x / 4 // want `/= is not supported`
+	x = x % 5 // want `%= is not supported`
+	return x
+}
+
+func IncDec(x int) int {
+	x = x + 1 // want `\+\+ is only supported as a for loop's post statement`
+	x = x - 1 // want `-- is only supported as a for loop's post statement`
+	return x
+}
+
+func MapMutation(m map[string]int) []int {
+	var out []int
+	for _, v := range helmette.SortedMap(m) { // want `ranges over maps are non-deterministic`
+		out = append(out, v)
+	}
+	return out
+}

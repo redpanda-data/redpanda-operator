@@ -96,7 +96,11 @@ var transpileBootstrap = sync.OnceValues(func() (*File, error) {
 	// into the final chart.
 	// The bootstrap package is gotohelm's own source, so anything it reports
 	// is a bug here rather than in a chart.
-	bootstrapFiles, diagnostics := transpile(pkgs[0])
+	bootstrapFiles, diagnostics, err := analyze(pkgs, []string{pkgs[0].PkgPath})
+	if err != nil {
+		return nil, err
+	}
+
 	if len(diagnostics) > 0 {
 		return nil, &DiagnosticsError{Fset: pkgs[0].Fset, Diagnostics: diagnostics}
 	}
