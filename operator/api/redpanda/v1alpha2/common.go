@@ -337,11 +337,17 @@ type ClusterRef struct {
 }
 
 const (
+	// Kind names of this group's cluster-shaped CRDs, for ownerReference and
+	// clusterRef comparisons.
+	RedpandaKind = "Redpanda"
+	NodePoolKind = "NodePool"
+	BrokerKind   = "Broker"
+
 	v1ClusterRefGroup     = "redpanda.vectorized.io"
 	v1ClusterRefKind      = "Cluster"
 	v2ClusterRefGroup     = "cluster.redpanda.com"
-	v2ClusterRefKind      = "Redpanda"
-	NodePoolRefKind       = "NodePool"
+	v2ClusterRefKind      = RedpandaKind
+	NodePoolRefKind       = NodePoolKind
 	StretchClusterRefKind = "StretchCluster"
 
 	// AnnotationUseBrokerCR selects Broker CR mode for a Cluster (V1) or

@@ -150,7 +150,7 @@ func TestEnsure(t *testing.T) {
 			err = c.Create(context.Background(), tt.pandaCluster)
 			assert.NoError(t, err, tt.name)
 
-			nps, err := nodepools.GetNodePools(context.Background(), tt.pandaCluster, &NopReader{})
+			nps, err := nodepools.GetNodePoolsWithoutBrokerBacked(context.Background(), tt.pandaCluster, &NopReader{})
 			assert.NoError(t, err)
 
 			npIndex := slices.IndexFunc(nps, func(np *vectorizedv1alpha1.NodePoolSpecWithDeleted) bool {
