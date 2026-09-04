@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    In the multicluster operator, a persistently failing maintenance-mode,
+    stale-disk-wipe, or decommission step no longer blocks a StretchCluster's
+    cluster-config and license synchronization; previously `ConfigurationApplied`
+    could report `True` indefinitely while spec changes were never applied.
+time: 2026-09-03T21:00:00.000000-07:00

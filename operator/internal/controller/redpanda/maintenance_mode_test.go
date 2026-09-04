@@ -31,6 +31,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cluster"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -1460,7 +1462,7 @@ func TestRedpandaReconcilerRunsMaintenanceModeBeforeDecommission(t *testing.T) {
 // ordering on the MulticlusterReconciler chain.
 func TestMulticlusterReconcilerRunsMaintenanceModeBeforeDecommission(t *testing.T) {
 	r := &MulticlusterReconciler{}
-	chain := r.clusterReconcilers()
+	chain := r.clusterRemediationReconcilers()
 	names := make([]string, len(chain))
 	for i, fn := range chain {
 		names[i] = reconcilerStepName(fn)
@@ -1480,7 +1482,7 @@ func TestMulticlusterReconcilerRunsMaintenanceModeBeforeDecommission(t *testing.
 // bad_rejoin's stuck-not-Ready pod always is (K8S-843).
 func TestMulticlusterReconcilerRunsStaleDiskWipeBeforeDecommission(t *testing.T) {
 	r := &MulticlusterReconciler{}
-	chain := r.clusterReconcilers()
+	chain := r.clusterRemediationReconcilers()
 	names := make([]string, len(chain))
 	for i, fn := range chain {
 		names[i] = reconcilerStepName(fn)
@@ -1527,7 +1529,7 @@ func TestReconcilersRunMaintenanceModeBeforeStaleDiskWipe(t *testing.T) {
 	}
 	{
 		r := &MulticlusterReconciler{}
-		chain := r.clusterReconcilers()
+		chain := r.clusterRemediationReconcilers()
 		names := make([]string, len(chain))
 		for i, fn := range chain {
 			names[i] = reconcilerStepName(fn)
@@ -1582,4 +1584,69 @@ func TestClearStuckMaintenanceModeDefersOnBrokerListFailure(t *testing.T) {
 
 	require.NoError(t, clearStuckMaintenanceMode(ctx, client, pods, 5*time.Minute, nil, testr.New(t)),
 		"an unreadable broker list must defer the pass, not abort the reconcile chain")
+}
+
+// TestMulticlusterSyncStepsAreNotBehindRemediation pins the Phase-3 group
+// membership: the declarative syncs (cluster config, license) live in the
+// independent group, not behind the fail-fast remediation chain, or a
+// persistently failing reconcileDecommission (e.g. cluster health unreachable
+// during broker churn) freezes Status.ConfigVersion while ConfigurationApplied
+// sits at a stale True.
+func TestMulticlusterSyncStepsAreNotBehindRemediation(t *testing.T) {
+	r := &MulticlusterReconciler{}
+	remNames := make([]string, 0)
+	for _, fn := range r.clusterRemediationReconcilers() {
+		remNames = append(remNames, reconcilerStepName(fn))
+	}
+	syncNames := make([]string, 0)
+	for _, fn := range r.clusterSyncReconcilers() {
+		syncNames = append(syncNames, reconcilerStepName(fn))
+	}
+	require.GreaterOrEqual(t, indexOfReconcilerStep(syncNames, "reconcileClusterConfig"), 0, "reconcileClusterConfig not in the sync group: %v", syncNames)
+	require.GreaterOrEqual(t, indexOfReconcilerStep(syncNames, "reconcileLicense"), 0, "reconcileLicense not in the sync group: %v", syncNames)
+	assert.Equal(t, -1, indexOfReconcilerStep(remNames, "reconcileClusterConfig"), "reconcileClusterConfig must not be behind the fail-fast remediation chain: %v", remNames)
+	assert.Equal(t, -1, indexOfReconcilerStep(remNames, "reconcileLicense"), "reconcileLicense must not be behind the fail-fast remediation chain: %v", remNames)
+}
+
+// TestRunOrderedStepsStopsAtFirstAbort: later remediation steps depend on
+// earlier ones, so the first error or requeue ends the group for this pass.
+func TestRunOrderedStepsStopsAtFirstAbort(t *testing.T) {
+	var ran []string
+	step := func(name string, result ctrl.Result, err error) stretchClusterReconciliationFn {
+		return func(context.Context, *stretchClusterReconciliationState, cluster.Cluster) (ctrl.Result, error) {
+			ran = append(ran, name)
+			return result, err
+		}
+	}
+	boom := errors.New("boom")
+	result, err := runOrderedSteps(t.Context(), nil, nil, []stretchClusterReconciliationFn{
+		step("a", ctrl.Result{}, nil),
+		step("b", ctrl.Result{}, boom),
+		step("c", ctrl.Result{}, nil),
+	})
+	assert.Equal(t, []string{"a", "b"}, ran, "steps after the first abort must not run")
+	assert.ErrorIs(t, err, boom)
+	assert.Zero(t, result.RequeueAfter)
+}
+
+// TestRunIndependentStepsRunsEveryStep: a failing sync step must not starve
+// the rest of the group — every step runs, errors are joined so none is
+// dropped, and the soonest requested requeue wins.
+func TestRunIndependentStepsRunsEveryStep(t *testing.T) {
+	var ran []string
+	step := func(name string, result ctrl.Result, err error) stretchClusterReconciliationFn {
+		return func(context.Context, *stretchClusterReconciliationState, cluster.Cluster) (ctrl.Result, error) {
+			ran = append(ran, name)
+			return result, err
+		}
+	}
+	boom := errors.New("boom")
+	result, err := runIndependentSteps(t.Context(), nil, nil, []stretchClusterReconciliationFn{
+		step("a", ctrl.Result{}, boom),
+		step("b", ctrl.Result{RequeueAfter: time.Minute}, nil),
+		step("c", ctrl.Result{RequeueAfter: time.Second}, nil),
+	})
+	assert.Equal(t, []string{"a", "b", "c"}, ran, "every independent step must run despite the first one failing")
+	assert.ErrorIs(t, err, boom)
+	assert.Equal(t, time.Second, result.RequeueAfter, "the soonest requested requeue must win")
 }
