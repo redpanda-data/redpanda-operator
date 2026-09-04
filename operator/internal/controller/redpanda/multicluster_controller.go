@@ -363,19 +363,28 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 		state.status.StretchClusterStatus.SetResourcesSynced(statuses.StretchClusterResourcesSyncedReasonSynced)
 	}
 
-	// Phase 3: cluster-level reconciliation (admin API, maintenance mode,
-	// stale-disk wipe, decommission, config, license) — see clusterReconcilers
-	// for ordering. Deliberately NOT gated on the pool view: these steps act
-	// through the admin API and on the pods/pools we can see, and any
-	// "no desired counterpart → drain" decision inside them is separately
-	// guarded by the per-cluster observed set threaded into
-	// FetchExistingAndDesiredPools.
-	for _, reconciler := range r.clusterReconcilers() {
-		result, err := reconciler(ctx, state, cluster)
-		if err != nil || result.RequeueAfter > 0 {
-			l.V(log.TraceLevel).Info("aborting reconciliation early", "error", err, "requeueAfter", result.RequeueAfter)
-			return r.syncStatus(ctx, cluster, state, result, err)
-		}
+	// Phase 3: cluster-level reconciliation. Deliberately NOT gated on the
+	// pool view: these steps act through the admin API and on the pods/pools
+	// we can see, and any "no desired counterpart → drain" decision inside
+	// them is separately guarded by the per-cluster observed set threaded
+	// into FetchExistingAndDesiredPools.
+	//
+	// initAdminClient gates everything below. The remediation steps run in
+	// strict order and stop at the first error or requeue (see
+	// clusterRemediationReconcilers), but the declarative syncs still run
+	// afterwards: a persistently failing remediation step — e.g.
+	// reconcileDecommission unable to fetch cluster health during broker
+	// churn — must not starve cluster-config and license sync, or
+	// ConfigurationApplied sits at a stale True while the spec has moved on.
+	phase3Result, phase3Err := r.initAdminClient(ctx, state, cluster)
+	if phase3Err == nil && phase3Result.RequeueAfter == 0 {
+		remResult, remErr := runOrderedSteps(ctx, state, cluster, r.clusterRemediationReconcilers())
+		syncResult, syncErr := runIndependentSteps(ctx, state, cluster, r.clusterSyncReconcilers())
+		phase3Result, phase3Err = soonerRequeue(remResult, syncResult), errors.Join(remErr, syncErr)
+	}
+	if phase3Err != nil || phase3Result.RequeueAfter > 0 {
+		l.V(log.TraceLevel).Info("aborting reconciliation early", "error", phase3Err, "requeueAfter", phase3Result.RequeueAfter)
+		return r.syncStatus(ctx, cluster, state, phase3Result, phase3Err)
 	}
 
 	// we're at the end of reconciliation, so sync back our status.
@@ -399,11 +408,11 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 	return r.syncStatus(ctx, cluster, state, pollResult, nil)
 }
 
-// clusterReconcilers returns the ordered cluster-level reconcile steps
-// (admin API, maintenance mode, stale-disk wipe, decommission, config, license).
-// Order matters: any step returning a non-zero RequeueAfter or an error aborts
-// the rest of the chain for this pass, so a step whose completion is a
-// precondition for another must come first.
+// clusterRemediationReconcilers returns the ordered remediation steps
+// (maintenance mode, stale-disk wipe, decommission). Order matters: any step
+// returning a non-zero RequeueAfter or an error stops the rest of this group
+// for the pass, so a step whose completion is a precondition for another must
+// come first. initAdminClient runs before this group in Reconcile.
 //
 // reconcileMaintenanceMode must precede reconcileDecommission specifically:
 // reconcileDecommission requeues for as long as a decommission it started is
@@ -413,21 +422,70 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 //
 // reconcileStaleDiskWipe must precede reconcileDecommission: reconcileDecommission
 // runs the rolling-restart pre-check and requeues (aborting the rest of the
-// chain) whenever HasRecentlyReplacedPods() is true — i.e. while any recently
+// group) whenever HasRecentlyReplacedPods() is true — i.e. while any recently
 // replaced pod is still not-Ready. A decommissioned-broker bad_rejoin (K8S-843)
 // is exactly that state (its pod is stuck not-Ready), so if the wipe step were
 // ordered after reconcileDecommission it would never run to recover the very
 // bad_rejoin it exists for. Running it first lets it destroy the stale disk and
 // unblock the pod before the roll-loop deferral aborts the pass.
-func (r *MulticlusterReconciler) clusterReconcilers() []stretchClusterReconciliationFn {
+func (r *MulticlusterReconciler) clusterRemediationReconcilers() []stretchClusterReconciliationFn {
 	return []stretchClusterReconciliationFn{
-		r.initAdminClient,
 		r.reconcileMaintenanceMode,
 		r.reconcileStaleDiskWipe,
 		r.reconcileDecommission,
+	}
+}
+
+// clusterSyncReconcilers returns the declarative sync steps (license, cluster
+// config). They run every pass once the admin client is initialized — even
+// when a remediation step failed or requeued, and independently of each other
+// — because they share no preconditions with the remediation group and
+// skipping them turns any persistent remediation failure into a silent config
+// and license freeze.
+func (r *MulticlusterReconciler) clusterSyncReconcilers() []stretchClusterReconciliationFn {
+	return []stretchClusterReconciliationFn{
 		r.reconcileLicense,
 		r.reconcileClusterConfig,
 	}
+}
+
+// runOrderedSteps runs steps in order, stopping at the first error or
+// non-zero requeue: later steps depend on earlier ones having completed.
+func runOrderedSteps(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster, steps []stretchClusterReconciliationFn) (ctrl.Result, error) {
+	for _, step := range steps {
+		result, err := step(ctx, state, cluster)
+		if err != nil || result.RequeueAfter > 0 {
+			log.FromContext(ctx).V(log.TraceLevel).Info("stopping ordered steps early", "error", err, "requeueAfter", result.RequeueAfter)
+			return result, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+// runIndependentSteps runs every step even when an earlier one fails, joining
+// errors and keeping the soonest requested requeue: the steps don't depend on
+// one another, and stopping early would starve the rest behind a persistent
+// failure.
+func runIndependentSteps(ctx context.Context, state *stretchClusterReconciliationState, cluster cluster.Cluster, steps []stretchClusterReconciliationFn) (ctrl.Result, error) {
+	var combined ctrl.Result
+	var errs error
+	for _, step := range steps {
+		result, err := step(ctx, state, cluster)
+		errs = errors.Join(errs, err)
+		combined = soonerRequeue(combined, result)
+	}
+	return combined, errs
+}
+
+// soonerRequeue merges two results, keeping the soonest non-zero RequeueAfter.
+func soonerRequeue(a, b ctrl.Result) ctrl.Result {
+	if a.RequeueAfter == 0 {
+		return b
+	}
+	if b.RequeueAfter != 0 && b.RequeueAfter < a.RequeueAfter {
+		return b
+	}
+	return a
 }
 
 // findAliveCluster checks whether the StretchCluster exists and is NOT being
@@ -2008,6 +2066,12 @@ func (r *MulticlusterReconciler) setupLicense(ctx context.Context, sc *redpandav
 }
 
 func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, redpandaImage lifecycle.Image, sidecarImage lifecycle.Image, cloudSecrets lifecycle.CloudSecretsFlags, factory *internalclient.Factory, reconcileTimeout time.Duration, brokerPodNodeUnavailableToleration time.Duration, postRestartCaughtUpPercent int, waitForSchemaRegistrySync bool, clearMaintenanceModeAfter time.Duration, staleDiskWipeNotReadyThreshold time.Duration) error {
+	// A nil factory survives until the first reconcile that builds an admin
+	// client, then panics on every such pass (Factory methods dispatch fine on
+	// a nil receiver until the first field access). Refuse it at startup.
+	if factory == nil {
+		return errors.New("SetupMulticlusterController requires a non-nil client factory")
+	}
 	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
