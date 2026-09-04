@@ -72,6 +72,20 @@ func TestPodDialable(t *testing.T) {
 			want: true,
 		},
 		{
+			// The node lifecycle controller stamps this reason when the pod's
+			// node stops reporting; the pod keeps its address but nothing
+			// answers on it, so it must not be offered as an endpoint.
+			name: "unready because its node is gone",
+			pod: pod("broker-0", func(p *corev1.Pod) {
+				p.Status.Conditions = []corev1.PodCondition{{
+					Type:   corev1.PodReady,
+					Status: corev1.ConditionFalse,
+					Reason: "NodeNotReady",
+				}}
+			}),
+			want: false,
+		},
+		{
 			name: "terminating",
 			pod: pod("broker-0", func(p *corev1.Pod) {
 				now := metav1.Now()

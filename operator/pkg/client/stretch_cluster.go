@@ -377,9 +377,7 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 // The endpoint list is otherwise built from declared replica counts alone, so
 // it offers brokers that are deliberately absent -- a just-deleted pool, a
 // broker mid-roll -- and rpadmin pays for each such host with wasted attempts,
-// timeouts, and stale-leader backoffs on every reconcile. A pod on a NotReady
-// node still holds its address and still counts as dialable, so this narrows
-// that window rather than closing it.
+// timeouts, and stale-leader backoffs on every reconcile.
 func dialablePodNames(ctx context.Context, k8sClient client.Client, ns, releaseName string) (map[string]bool, error) {
 	listCtx, listCancel := context.WithTimeout(ctx, lifecycle.RemoteCallTimeout)
 	defer listCancel()
@@ -403,16 +401,29 @@ func dialablePodNames(ctx context.Context, k8sClient client.Client, ns, releaseN
 	return dialable, nil
 }
 
+// podReasonNodeNotReady is the Ready-condition reason the node lifecycle
+// controller stamps on every pod of a node that stopped reporting
+// (MarkPodsNotReady in k8s.io/kubernetes/pkg/controller/nodelifecycle).
+const podReasonNodeNotReady = "NodeNotReady"
+
 // podDialable reports whether a connection to pod can be established at all:
-// not terminating, not finished, and holding an address. Readiness is
-// deliberately excluded -- the operator reads rejoining brokers through unready
-// pods on purpose, and the per-pod Services publish not-ready addresses.
+// not terminating, not finished, holding an address, and not sitting on a
+// NotReady node. App-level readiness is deliberately excluded -- the operator
+// reads rejoining brokers through unready pods on purpose, and the per-pod
+// Services publish not-ready addresses -- but a pod whose NODE is gone keeps
+// its address while being unreachable, so offering it wedges health fetches
+// (and with them decommission) behind connection timeouts.
 func podDialable(pod *corev1.Pod) bool {
 	if pod.DeletionTimestamp != nil {
 		return false
 	}
 	if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
 		return false
+	}
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == corev1.PodReady && cond.Status == corev1.ConditionFalse && cond.Reason == podReasonNodeNotReady {
+			return false
+		}
 	}
 	return pod.Status.PodIP != ""
 }
