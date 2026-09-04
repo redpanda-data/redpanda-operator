@@ -105,6 +105,18 @@ tasks:
       - task: go:build
         vars: { DIR: gotohelm, PACKAGE: ./cmd/gotohelm }
 
+  lint-tools:
+    desc: "Build lint/ into .build/houselint"
+    aliases: [houselint]
+    cmds:
+    # GOWORK=off because lint/ is deliberately not a workspace module: the
+    # linters it pins must not move the versions the shipped modules build
+    # against. See lint/README.md.
+    - GOWORK=off go build -C lint -o ../.build/houselint .
+    status:
+    # Same `go build -n` cache probe as go:build below.
+    - "! GOWORK=off go build -C lint -n -o ../.build/houselint . 2>&1 | grep 'mv $WORK'"
+
   go:build:
     internal: true
     run: when_changed
