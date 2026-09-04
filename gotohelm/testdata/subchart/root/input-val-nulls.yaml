@@ -1,0 +1,21 @@
+# Nulls aimed at the subchart machinery. helm defers pruning a null that lands
+# in a subchart's stanza to that subchart's own pass, so every key below must
+# end up ABSENT rather than reset to the owning chart's default.
+
+# Root scalars, pruned by root's own pass.
+change-me: null
+do-not-change: null
+
+values-overwrite:
+  # In root's `values-overwrite` stanza; pruned one level down.
+  change-me: null
+  # Not in root's stanza, only in values-overwrite's own values.yaml.
+  do-not-change: null
+  dependency:
+    # Deferred twice: root -> values-overwrite -> dependency.
+    change-me: null
+
+dependency-included-by-default:
+  # Nulling a subchart's `condition` key. helm reads the resulting missing value
+  # as "no opinion" and leaves the dependency enabled.
+  enabled-dependency: null

@@ -1,0 +1,20 @@
+stringWithDefault: null
+stringEmptyDefault: null
+intWithDefault: null
+boolWithDefault: null
+
+nested:
+  stringWithDefault: null
+  deeper:
+    stringWithDefault: null
+
+extensible:
+  known:
+    stringWithDefault: null
+  unknown:
+    stringWithDefault: null
+
+list:
+- stringWithDefault: null
+
+notInDefaults: null
