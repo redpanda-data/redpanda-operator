@@ -119,6 +119,9 @@ func NewNodePoolInternalAdminAPI(
 
 	var tlsConfig *tls.Config
 	if adminInternal.TLS.Enabled {
+		if adminTLSProvider == nil {
+			return nil, fmt.Errorf("internal admin API of cluster %s/%s has TLS enabled but no TLS provider was given", redpandaCluster.Namespace, redpandaCluster.Name)
+		}
 		var err error
 		tlsConfig, err = adminTLSProvider.GetTLSConfig(ctx, k8sClient)
 		if err != nil {

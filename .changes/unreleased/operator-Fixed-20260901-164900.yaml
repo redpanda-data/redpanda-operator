@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Admin API clients for vectorized.io/v1alpha1 Clusters no longer fail with "non-TLS admin API is not supported on V1 CRD" when TLS is enabled on an admin listener. This unblocks every V2 CR and controller that reaches a V1 Cluster over the admin API (User, Role, and ShadowLink CRs, Broker CRs on V1 node pools, and the ghost-broker decommissioner). When the internal admin listener has TLS enabled the client now resolves the cluster's certificates the same way the V1 Kafka and Schema Registry clients do, and a plaintext internal listener keeps working regardless of TLS on the external admin listener or on other APIs' listeners
+time: 2026-09-01T16:49:00.000000000+02:00

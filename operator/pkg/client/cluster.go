@@ -11,8 +11,8 @@ package client
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
@@ -23,7 +23,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/shadow"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/certmanager"
+	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
 
 // redpandaAdminForCluster returns a simple rpadmin.AdminAPI able to communicate with the given cluster specified via a Redpanda cluster.
@@ -57,26 +57,46 @@ func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpanda
 	return client, nil
 }
 
+// redpandaAdminForV1Cluster returns a simple rpadmin.AdminAPI able to communicate with the given V1 cluster through its internal admin listener.
 func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*rpadmin.AdminAPI, error) {
-	client, err := c.GetClient(ctx, clusterName)
+	k8sClient, err := c.GetClient(ctx, clusterName)
 	if err != nil {
 		return nil, err
 	}
 
-	if cluster.AdminAPITLS() != nil {
-		return nil, fmt.Errorf("non-TLS admin API is not supported on V1 CRD")
+	// NewNodePoolInternalAdminAPI consults the TLS provider only when the
+	// internal admin listener has TLS enabled, so resolve the certificates only
+	// then. NewClusterCertificates walks the listeners of every API and reads
+	// their Issuers and node secrets, and a plaintext admin listener must not
+	// fail on the cert-manager state of the Kafka, Schema Registry, or Proxy
+	// listeners.
+	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster)
+	var certs resourcetypes.AdminTLSConfigProvider
+	if internal := cluster.AdminAPIInternal(); internal != nil && internal.TLS.Enabled {
+		if _, certs, err = v1ClusterCerts(ctx, k8sClient, cluster); err != nil {
+			return nil, err
+		}
 	}
-	// Assume no TLS. Practically, we don't need to support it in Operator V1.
-	t := &certmanager.ClusterCertificates{}
 
-	a, err := admin.NewNodePoolInternalAdminAPI(ctx, client, cluster, fmt.Sprintf("%s.%s.svc.cluster.local", cluster.Name, cluster.Namespace), t, c.dialer, c.adminClientTimeout)
+	a, err := admin.NewNodePoolInternalAdminAPI(ctx, k8sClient, cluster, fqdn, certs, c.dialer, c.adminClientTimeout)
 	if err != nil {
 		return nil, err
 	}
-	// It's weird that the V1 admin factory returns an interface instead of the
-	// rpadmin struct. We'll cast it back; it's ugly but since this is a legacy
-	// code path we don't care too much.
-	return a.(*rpadmin.AdminAPI), nil
+	// The V1 admin factory returns an interface; the rest of the Factory works
+	// with the rpadmin struct.
+	adminClient, ok := a.(*rpadmin.AdminAPI)
+	if !ok {
+		return nil, errors.Newf("unexpected admin API client type %T for cluster %s/%s", a, cluster.Namespace, cluster.Name)
+	}
+
+	if c.userAuth != nil {
+		adminClient.SetAuth(&rpadmin.BasicAuth{
+			Username: c.userAuth.Username,
+			Password: c.userAuth.Password,
+		})
+	}
+
+	return adminClient, nil
 }
 
 // schemaRegistryForCluster returns a simple sr.Client able to communicate with the given cluster specified via a Redpanda cluster.
