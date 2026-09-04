@@ -50,6 +50,14 @@ var (
 	// goverter:context namespace
 	ConvertSchemaRegistrySpecToIR func(namespace string, src *SchemaRegistrySpec) *ir.SchemaRegistrySpec
 
+	// goverter:ignore ClusterDomain TLS External Listeners RBAC ServiceAccount
+	// goverter:ignore Monitoring Storage Resources ImagePullSecrets RackAwareness Logging
+	// A v2 NodePool carries no cluster-level configuration: the ignored fields
+	// exist only on EmbeddedBrokerPoolSpec (they migrated off StretchClusterSpec
+	// onto the pool) and stay nil here. On the v2 path their values come from the
+	// Redpanda CR through the chart render pipeline instead.
+	ConvertEmbeddedNodePoolSpecToEmbeddedBrokerPoolSpec func(EmbeddedNodePoolSpec) (*EmbeddedBrokerPoolSpec, error)
+
 	// Private conversions for tuning / customizing conversions.
 	// Naming convention: `autoconv_<Type>_To_<pkg>_<Type>`
 
@@ -315,9 +323,10 @@ var (
 
 	// LivenessProbe/ReadinessProbe conversions (RedpandaConsole -> Console)
 
-	conv_LivenessProbe_To_ProbeApplyConfiguration           = convertViaMarshaling[*LivenessProbe, *ProbeApplyConfiguration]
-	conv_ReadinessProbe_To_ProbeApplyConfiguration          = convertViaMarshaling[*ReadinessProbe, *ProbeApplyConfiguration]
-	conv_ProbeApplyConfiguration_To_ProbeApplyConfiguration = convertViaMarshaling[*ProbeApplyConfiguration, *applycorev1.ProbeApplyConfiguration]
+	conv_LivenessProbe_To_ProbeApplyConfiguration                                       = convertViaMarshaling[*LivenessProbe, *ProbeApplyConfiguration]
+	conv_ReadinessProbe_To_ProbeApplyConfiguration                                      = convertViaMarshaling[*ReadinessProbe, *ProbeApplyConfiguration]
+	conv_ProbeApplyConfiguration_To_ProbeApplyConfiguration                             = convertViaMarshaling[*ProbeApplyConfiguration, *applycorev1.ProbeApplyConfiguration]
+	conv_applycorev1_PodSpecApplyConfiguration_To_applycorev1_PodSpecApplyConfiguration = convertViaMarshaling[*applycorev1.PodSpecApplyConfiguration, *applycorev1.PodSpecApplyConfiguration]
 )
 
 type deepCopier[T any] interface {

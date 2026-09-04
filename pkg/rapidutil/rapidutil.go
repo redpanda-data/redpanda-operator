@@ -16,6 +16,7 @@
 package rapidutil
 
 import (
+	"maps"
 	"reflect"
 	"time"
 
@@ -66,3 +67,24 @@ var (
 		},
 	}
 )
+
+// Merge merges the provided [rapid.MakeConfig]s into one. Priority is given to
+// the right most configs.
+func Merge(cfgs ...rapid.MakeConfig) rapid.MakeConfig {
+	out := rapid.MakeConfig{
+		Types:  map[reflect.Type]*rapid.Generator[any]{},
+		Fields: map[reflect.Type]map[string]*rapid.Generator[any]{},
+	}
+
+	for _, cfg := range cfgs {
+		if cfg.Types != nil {
+			maps.Copy(out.Types, cfg.Types)
+		}
+
+		if cfg.Fields != nil {
+			maps.Copy(out.Fields, cfg.Fields)
+		}
+	}
+
+	return out
+}
