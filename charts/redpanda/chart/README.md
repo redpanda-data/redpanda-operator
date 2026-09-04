@@ -331,7 +331,7 @@ Listener settings.  Override global settings configured above for individual lis
 **Default:**
 
 ```
-{"admin":{"external":{"default":{"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}},"port":9644,"tls":{"cert":"default","requireClientAuth":false}},"http":{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"port":8082,"tls":{"cert":"default","requireClientAuth":false}},"kafka":{"authenticationMethod":null,"external":{"default":{"advertisedPorts":[31092],"authenticationMethod":null,"port":9094,"tls":{"cert":"external"}}},"port":9093,"tls":{"cert":"default","requireClientAuth":false}},"rpc":{"port":33145,"tls":{"cert":"default","requireClientAuth":false}},"schemaRegistry":{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"port":8081,"tls":{"cert":"default","requireClientAuth":false}}}
+{"admin":{"address":null,"external":{"default":{"address":null,"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}},"port":9644,"tls":{"cert":"default","requireClientAuth":false}},"http":{"address":null,"authenticationMethod":null,"enabled":true,"external":{"default":{"address":null,"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"port":8082,"tls":{"cert":"default","requireClientAuth":false}},"kafka":{"address":null,"authenticationMethod":null,"external":{"default":{"address":null,"advertisedPorts":[31092],"authenticationMethod":null,"port":9094,"tls":{"cert":"external"}}},"port":9093,"tls":{"cert":"default","requireClientAuth":false}},"rpc":{"address":null,"port":33145,"tls":{"cert":"default","requireClientAuth":false}},"schemaRegistry":{"address":null,"authenticationMethod":null,"enabled":true,"external":{"default":{"address":null,"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"port":8081,"tls":{"cert":"default","requireClientAuth":false}}}
 ```
 
 ### [listeners.admin](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.admin)
@@ -341,8 +341,14 @@ Admin API listener (only one).
 **Default:**
 
 ```
-{"external":{"default":{"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}},"port":9644,"tls":{"cert":"default","requireClientAuth":false}}
+{"address":null,"external":{"default":{"address":null,"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}},"port":9644,"tls":{"cert":"default","requireClientAuth":false}}
 ```
+
+### [listeners.admin.address](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.admin.address)
+
+The address to bind to, default is 0.0.0.0
+
+**Default:** `nil`
 
 ### [listeners.admin.external](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.admin.external)
 
@@ -351,7 +357,7 @@ Optional external access settings.
 **Default:**
 
 ```
-{"default":{"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}}
+{"default":{"address":null,"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}}
 ```
 
 ### [listeners.admin.external.default](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.admin.external.default)
@@ -361,7 +367,7 @@ Name of the external listener.
 **Default:**
 
 ```
-{"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}
+{"address":null,"advertisedPorts":[31644],"port":9645,"tls":{"cert":"external"}}
 ```
 
 ### [listeners.admin.external.default.tls](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.admin.external.default.tls)
@@ -405,8 +411,14 @@ HTTP API listeners (aka PandaProxy).
 **Default:**
 
 ```
-{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"port":8082,"tls":{"cert":"default","requireClientAuth":false}}
+{"address":null,"authenticationMethod":null,"enabled":true,"external":{"default":{"address":null,"advertisedPorts":[30082],"authenticationMethod":null,"port":8083,"tls":{"cert":"external","requireClientAuth":false}}},"port":8082,"tls":{"cert":"default","requireClientAuth":false}}
 ```
+
+### [listeners.http.address](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.http.address)
+
+The address to bind to, default is 0.0.0.0
+
+**Default:** `nil`
 
 ### [listeners.kafka](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.kafka)
 
@@ -415,8 +427,20 @@ Kafka API listeners.
 **Default:**
 
 ```
-{"authenticationMethod":null,"external":{"default":{"advertisedPorts":[31092],"authenticationMethod":null,"port":9094,"tls":{"cert":"external"}}},"port":9093,"tls":{"cert":"default","requireClientAuth":false}}
+{"address":null,"authenticationMethod":null,"external":{"default":{"address":null,"advertisedPorts":[31092],"authenticationMethod":null,"port":9094,"tls":{"cert":"external"}}},"port":9093,"tls":{"cert":"default","requireClientAuth":false}}
 ```
+
+### [listeners.kafka.address](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.kafka.address)
+
+The address to bind to, default is 0.0.0.0
+
+**Default:** `nil`
+
+### [listeners.kafka.external.default.address](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.kafka.external.default.address)
+
+The address to bind to, default is 0.0.0.0
+
+**Default:** `nil`
 
 ### [listeners.kafka.external.default.advertisedPorts](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.kafka.external.default.advertisedPorts)
 
@@ -443,8 +467,14 @@ RPC listener (this is never externally accessible).
 **Default:**
 
 ```
-{"port":33145,"tls":{"cert":"default","requireClientAuth":false}}
+{"address":null,"port":33145,"tls":{"cert":"default","requireClientAuth":false}}
 ```
+
+### [listeners.rpc.address](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.rpc.address)
+
+The address to bind to, default is 0.0.0.0
+
+**Default:** `nil`
 
 ### [listeners.schemaRegistry](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.schemaRegistry)
 
@@ -453,8 +483,14 @@ Schema registry listeners.
 **Default:**
 
 ```
-{"authenticationMethod":null,"enabled":true,"external":{"default":{"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"port":8081,"tls":{"cert":"default","requireClientAuth":false}}
+{"address":null,"authenticationMethod":null,"enabled":true,"external":{"default":{"address":null,"advertisedPorts":[30081],"authenticationMethod":null,"port":8084,"tls":{"cert":"external","requireClientAuth":false}}},"port":8081,"tls":{"cert":"default","requireClientAuth":false}}
 ```
+
+### [listeners.schemaRegistry.address](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=listeners.schemaRegistry.address)
+
+The address to bind to, default is 0.0.0.0
+
+**Default:** `nil`
 
 ### [logging](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=logging)
 
