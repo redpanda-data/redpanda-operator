@@ -15,6 +15,13 @@ formatters:
       no-prefix-comments: false
   exclusions:
     generated: strict
+    paths:
+    # gotohelm's rewrite tests assert on these files' contents, import
+    # grouping included, so they must not be reformatted. `golangci-lint run`
+    # skips them anyway (it can't typecheck example.com/example), but `fmt` is
+    # syntactic and would. .licenseupdater.yaml ignores them for the same
+    # reason.
+    - gotohelm/testdata/
 
 linters:
   default: none

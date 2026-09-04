@@ -24,7 +24,7 @@ This is a Go monorepo using `go.work` with multiple modules:
 ## CI Lint Flow
 
 The CI lint step (`taskfiles/ci.yml`) runs:
-1. `task :generate` — regenerates ALL generated files (CRDs, RBAC, templates, schemas, partials, licenses, changelog, buildkite pipelines, then `lint-fix`)
+1. `task :generate` — regenerates ALL generated files (CRDs, RBAC, templates, schemas, partials, licenses, changelog, buildkite pipelines, then `fmt:fix`)
 2. `task :lint` — runs `golangci-lint run`, `helm lint --strict`, and `actionlint`
 3. `git diff --exit-code` — fails if any generated file doesn't match what's committed
 
@@ -33,6 +33,23 @@ The CI lint step (`taskfiles/ci.yml`) runs:
 - Adding dependencies without updating `licenses/third_party.md`
 - Changing kubebuilder RBAC markers without running `controller-gen`
 - Import ordering violations caught by `gci` formatter
+
+`generate` ends with `fmt:fix` (`golangci-lint fmt`), which runs the formatters
+only. `lint-fix` is an alias of it, so it no longer auto-fixes analysis-linter
+findings in hand-written code — step 2 reports those instead. For the old
+behavior, `task lint -- --fix`.
+
+### Generation task caching
+
+Generators in `taskfiles/k8s.yml` and `taskfiles/charts.yml` declare
+`sources:`/`generates:`, so `task generate` skips whatever is current: ~4s for
+a no-op and ~12s after editing one controller, against ~50s from scratch.
+**Give any new generator a fingerprint**, and `exclude:` its own output from
+`sources:` or it dirties itself every run.
+
+This only helps locally. CI starts with an empty `.task/` and ends with
+`git diff --exit-code`, so it regenerates everything and catches a glob that
+missed a real input. `rm -rf .task` forces a full local rebuild.
 
 ## Golden Test Files
 

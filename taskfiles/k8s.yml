@@ -1,32 +1,82 @@
 version: '3'
 
+# Each task here is an input-fingerprinted wrapper around one generator, so a
+# no-op run does nothing and editing one controller regenerates one artifact.
+#
+# Source globs exclude generated output; a task that lists its own output
+# dirties itself every run. The cost is that hand-editing a generated file goes
+# unnoticed locally -- CI starts with an empty .task dir and ends with
+# `git diff --exit-code`, so it catches the drift.
+
+# Inputs for generators that walk the whole module looking for markers.
+x-operator-sources: &operator-sources
+- ./**/*.go
+- ../licenses/boilerplate.go.txt
+- exclude: ./**/zz_*.go
+- exclude: ./**/*.gen.go
+- exclude: ./api/applyconfiguration/**/*.go
+
+# Narrower set for generators pointed only at ./api, so editing a controller
+# doesn't re-run them.
+x-operator-api-sources: &operator-api-sources
+- ./api/**/*.go
+- ../licenses/boilerplate.go.txt
+- exclude: ./api/**/zz_*.go
+- exclude: ./api/applyconfiguration/**/*.go
+
 tasks:
 
   generate:
-    dir: 'operator'
     aliases:
     - generate-controller-code
     - generate-manifests
     cmds:
-      # Generates SchemaBuilders and automatically registers CRs with it.
-      - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/... ./api/vectorized/...
+    # register and objects write into ./api, so they precede everything that
+    # typechecks it.
+    - task: generate:register
+    - task: generate:objects
+    - task: generate:statuses
+    - task: generate:deprecations
+    - task: generate:crd-docs
+    - task: generate:rbac:itemized
+    - task: generate:rbac:embedded
+    - task: generate:rbac:testdata
+    - task: generate:applyconfiguration
+    - task: generate:conversions
 
-      # Generate the full RBAC bundle for kustomize and the operator chart, CRD
-      # manifests, and deep copy methods.
-      - |
-        controller-gen \
-          object:headerFile="../licenses/boilerplate.go.txt" \
-          paths='./...' \
-          crd \
-          webhook \
-          rbac:roleName=manager-role \
-          output:crd:artifacts:config=config/crd/bases \
-          output:rbac:artifacts:config=config/rbac/bases/operator
+  # Generates SchemaBuilders and automatically registers CRs with it.
+  generate:register:
+    internal: true
+    dir: 'operator'
+    sources: *operator-api-sources
+    generates:
+    - ./api/redpanda/**/zz_generated.register.go
+    - ./api/vectorized/**/zz_generated.register.go
+    cmds:
+    - register-gen --go-header-file "../licenses/boilerplate.go.txt" --output-file 'zz_generated.register.go' ./api/redpanda/... ./api/vectorized/...
 
-      - task: generate:statuses
-      - task: generate:deprecations
-      - task: generate:crd-docs
+  # Generate the full RBAC bundle for kustomize and the operator chart, CRD
+  # manifests, and deep copy methods.
+  generate:objects:
+    internal: true
+    dir: 'operator'
+    sources: *operator-sources
+    generates:
+    - ./config/crd/bases/*.yaml
+    - ./config/rbac/bases/operator/*.yaml
+    - ./api/**/zz_generated.deepcopy.go
+    cmds:
+    - |
+      controller-gen \
+        object:headerFile="../licenses/boilerplate.go.txt" \
+        paths='./...' \
+        crd \
+        webhook \
+        rbac:roleName=manager-role \
+        output:crd:artifacts:config=config/crd/bases \
+        output:rbac:artifacts:config=config/rbac/bases/operator
 
+<<<<<<< HEAD
       # For each controller (or really itemizable RBAC source), generate an
       # isolated rbac bundle. These are used by the helm charts to check
       # whether or not permissions are correctly in sync. As we allow VERY
@@ -63,20 +113,53 @@ tasks:
             paths={{ .ITEM.PATH }} \
             rbac:roleName={{ .ITEM.NAME }} \
             output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
+=======
+  # For each controller (or really itemizable RBAC source), generate an
+  # isolated rbac bundle. These are used by the helm charts to check
+  # whether or not permissions are correctly in sync. As we allow VERY
+  # granular toggling at the moment it's critical to upkeep this bookkeeping.
+  #
+  # Fanned out rather than looped: one controller-gen process each, ~150MB and
+  # under half the cores apiece, so concurrency takes ~10s down to ~4s.
+  generate:rbac:itemized:
+    internal: true
+    deps:
+    - { task: generate:rbac:bundle, vars: { NAME: rpk-debug-bundle, PACKAGE: ./internal/controller/rpkdebugbundle } }
+    - { task: generate:rbac:bundle, vars: { NAME: rack-awareness, PACKAGE: ./internal/controller/rackawareness } }
+    - { task: generate:rbac:bundle, vars: { NAME: stretch-rack-awareness, PACKAGE: ./internal/controller/stretchrackawareness } }
+    - { task: generate:rbac:bundle, vars: { NAME: old-decommission, PACKAGE: ./internal/controller/olddecommission } }
+    - { task: generate:rbac:bundle, vars: { NAME: pvcunbinder, PACKAGE: ./internal/controller/pvcunbinder } }
+    - { task: generate:rbac:bundle, vars: { NAME: v2-manager, PACKAGE: ./internal/controller/redpanda } }
+    - { task: generate:rbac:bundle, vars: { NAME: console, PACKAGE: ./internal/controller/console } }
+    - { task: generate:rbac:bundle, vars: { NAME: pipeline, PACKAGE: ./internal/controller/pipeline } }
+    - { task: generate:rbac:bundle, vars: { NAME: v1-manager, PACKAGE: ./internal/controller/vectorized } }
+    - { task: generate:rbac:bundle, vars: { NAME: decommission, PACKAGE: ./internal/controller/decommissioning } }
+    - { task: generate:rbac:bundle, vars: { NAME: sidecar, PACKAGE: ./cmd/sidecar } }
+    - { task: generate:rbac:bundle, vars: { NAME: leader-election, PACKAGE: ./cmd/run } }
+    - { task: generate:rbac:bundle, vars: { NAME: crd-installation, PACKAGE: ./cmd/crd } }
+    - { task: generate:rbac:bundle, vars: { NAME: multicluster-manager, PACKAGE: ./cmd/multicluster } }
+>>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
 
-      # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
-      # The chart embeds these permissions so they can't get out of sync with the operator.
-      - rm ../charts/redpanda/chart/files/*.yaml
-      - |
-        yq e \
-          --split-exp '"../charts/redpanda/chart/files/\( .metadata.name ).\( .kind ).yaml"' \
-          '.' \
-          ./config/rbac/itemized/decommission.yaml \
-          ./config/rbac/itemized/pvcunbinder.yaml \
-          ./config/rbac/itemized/sidecar.yaml \
-          ./config/rbac/itemized/rpk-debug-bundle.yaml \
-          ./config/rbac/itemized/rack-awareness.yaml
+  generate:rbac:bundle:
+    internal: true
+    run: when_changed
+    label: "generate:rbac:bundle:{{ .NAME }}"
+    dir: 'operator'
+    requires:
+      vars: [NAME, PACKAGE]
+    # `paths` has no `/...`, so only this directory's markers are read.
+    sources:
+    - '{{ .PACKAGE }}/*.go'
+    generates:
+    - ./config/rbac/itemized/{{ .NAME }}.yaml
+    cmds:
+    - |
+      controller-gen \
+        paths={{ .PACKAGE }} \
+        rbac:roleName={{ .NAME }} \
+        output:rbac:stdout > config/rbac/itemized/{{ .NAME }}.yaml
 
+<<<<<<< HEAD
       # And once more for the Operator's chart.
       - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
       - |
@@ -96,17 +179,52 @@ tasks:
           ./config/rbac/itemized/v1-manager.yaml \
           ./config/rbac/itemized/v2-manager.yaml \
           ./config/rbac/itemized/console.yaml
+=======
+  # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
+  # The chart embeds these permissions so they can't get out of sync with the operator.
+  generate:rbac:embedded:
+    internal: true
+    dir: 'operator'
+    sources:
+    - ./config/rbac/itemized/*.yaml
+    generates:
+    - ../charts/redpanda/chart/files/*.yaml
+    - ./chart/files/rbac/*.yaml
+    cmds:
+    - rm ../charts/redpanda/chart/files/*.yaml
+    - |
+      yq e \
+        --split-exp '"../charts/redpanda/chart/files/\( .metadata.name ).\( .kind ).yaml"' \
+        '.' \
+        ./config/rbac/itemized/decommission.yaml \
+        ./config/rbac/itemized/pvcunbinder.yaml \
+        ./config/rbac/itemized/sidecar.yaml \
+        ./config/rbac/itemized/rpk-debug-bundle.yaml \
+        ./config/rbac/itemized/rack-awareness.yaml
+>>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
 
-      # Some integration tests use their RBAC declarations but generally
-      # require some additional permissions (e.g. leader election, running
-      # multiple controllers)
-      - |
-        controller-gen \
-          paths=./cmd/run \
-          paths=./internal/controller/decommissioning \
-          rbac:roleName=decommissioning \
-          output:rbac:stdout > ./internal/controller/decommissioning/testdata/role.yaml
+    # And once more for the Operator's chart.
+    - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
+    - |
+      yq e \
+        --split-exp '"chart/files/rbac/\( .metadata.name ).\( .kind ).yaml"' \
+        '.' \
+        ./config/rbac/itemized/decommission.yaml \
+        ./config/rbac/itemized/leader-election.yaml \
+        ./config/rbac/itemized/old-decommission.yaml \
+        ./config/rbac/itemized/pvcunbinder.yaml \
+        ./config/rbac/itemized/rack-awareness.yaml \
+        ./config/rbac/itemized/stretch-rack-awareness.yaml \
+        ./config/rbac/itemized/rpk-debug-bundle.yaml \
+        ./config/rbac/itemized/sidecar.yaml \
+        ./config/rbac/itemized/crd-installation.yaml \
+        ./config/rbac/itemized/multicluster-manager.yaml \
+        ./config/rbac/itemized/pipeline.yaml \
+        ./config/rbac/itemized/v1-manager.yaml \
+        ./config/rbac/itemized/v2-manager.yaml \
+        ./config/rbac/itemized/console.yaml
 
+<<<<<<< HEAD
       - |
         controller-gen \
           paths=./cmd/run \
@@ -118,23 +236,97 @@ tasks:
           paths=./internal/controller/olddecommission \
           rbac:roleName=manager \
           output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
+=======
+  # Some integration tests use their RBAC declarations but generally
+  # require some additional permissions (e.g. leader election, running
+  # multiple controllers)
+  generate:rbac:testdata:
+    internal: true
+    deps:
+    - generate:rbac:testdata:decommissioning
+    - generate:rbac:testdata:manager
+>>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
 
-      - |
-        applyconfiguration-gen \
-        --go-header-file "../licenses/boilerplate.go.txt" \
-        --output-dir "api/applyconfiguration" \
-        --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
-        ./api/redpanda/v1alpha2
-      - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
-      - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
+  generate:rbac:testdata:decommissioning:
+    internal: true
+    dir: 'operator'
+    sources:
+    - ./cmd/run/*.go
+    - ./internal/controller/decommissioning/*.go
+    generates:
+    - ./internal/controller/decommissioning/testdata/role.yaml
+    cmds:
+    - |
+      controller-gen \
+        paths=./cmd/run \
+        paths=./internal/controller/decommissioning \
+        rbac:roleName=decommissioning \
+        output:rbac:stdout > ./internal/controller/decommissioning/testdata/role.yaml
 
-      # Generate rote conversion functions.
-      # Must run after deepcopy is generated.
-      - goverter gen ./api/redpanda/v1alpha2/
+  generate:rbac:testdata:manager:
+    internal: true
+    dir: 'operator'
+    sources:
+    - ./cmd/run/*.go
+    - ./cmd/multicluster/*.go
+    - ./internal/controller/redpanda/*.go
+    - ./internal/controller/rackawareness/*.go
+    - ./internal/controller/rpkdebugbundle/*.go
+    - ./internal/controller/olddecommission/*.go
+    generates:
+    - ./internal/controller/redpanda/testdata/role.yaml
+    cmds:
+    - |
+      controller-gen \
+        paths=./cmd/run \
+        paths=./cmd/multicluster \
+        paths=./internal/controller/redpanda \
+        paths=./internal/controller/rackawareness \
+        paths=./internal/controller/rpkdebugbundle \
+        paths=./internal/controller/olddecommission \
+        rbac:roleName=manager \
+        output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
+
+  generate:applyconfiguration:
+    internal: true
+    dir: 'operator'
+    sources: *operator-api-sources
+    generates:
+    - ./api/applyconfiguration/**/*.go
+    cmds:
+    - |
+      applyconfiguration-gen \
+      --go-header-file "../licenses/boilerplate.go.txt" \
+      --output-dir "api/applyconfiguration" \
+      --output-pkg "github.com/redpanda-data/redpanda-operator/operator/api/applyconfiguration" \
+      ./api/redpanda/v1alpha2
+    - find ./api/applyconfiguration/redpanda/v1alpha2 -type f -exec sed -i'' 's/"redpanda\/v1/"cluster.redpanda.com\/v1/g' {} \;
+    - rm -rf api/applyconfiguration/utils.go api/applyconfiguration/internal
+
+  # Generate rote conversion functions.
+  # Must run after deepcopy is generated, hence its position after
+  # generate:objects above.
+  generate:conversions:
+    internal: true
+    dir: 'operator'
+    sources: *operator-api-sources
+    generates:
+    - ./api/redpanda/v1alpha2/zz_generated.conversion.go
+    cmds:
+    - goverter gen ./api/redpanda/v1alpha2/
 
   generate:crd-docs:
     desc: Generates an example ascii doc from our crd-ref-docs configuration.
     dir: 'operator'
+    sources:
+    - ./api/redpanda/v1alpha2/*.go
+    # Only the hand-written types reach the doc; the zz_* files alongside them
+    # would just dirty this task whenever they're regenerated.
+    - exclude: ./api/redpanda/v1alpha2/zz_*.go
+    - ./crd-ref-docs-config.yaml
+    - ./crd-docs-templates/*
+    generates:
+    - ./api/redpanda/v1alpha2/testdata/crd-docs.adoc
     cmds:
     - |
       crd-ref-docs \
@@ -146,6 +338,11 @@ tasks:
   generate:deprecations:
     label: "generate:deprecations"
     desc: "Generate the deprecation tests for our deprecation warnings."
+    sources:
+    - ./operator/api/redpanda/v1alpha2/*.go
+    - exclude: ./operator/api/redpanda/v1alpha2/zz_*.go
+    generates:
+    - ./operator/api/redpanda/v1alpha2/zz_generated.deprecations_test.go
     cmds:
     - rp-controller-gen deprecations --directory ./operator/api/redpanda/v1alpha2
 
