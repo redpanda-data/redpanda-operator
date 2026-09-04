@@ -105,7 +105,17 @@ tasks:
     # gotohelm invocations)
     # `go build -n` reports all commands to build without running them. When a
     # rebuild is required, the final lines will contain: 'mv $WORK/<somepath> < -o flag >'.
+<<<<<<< HEAD
     # Negating the output of grep effectively indicates if go thinks a rebuild
     # is required. Command must be encased in "s as the negation operator (!)
     # is otherwise consumed during YAML parsing.
     - "! go build -C {{ .DIR }} -n -o ../.build/{{ .DIR }} {{ .PACKAGE }} 2>&1 | grep 'mv $WORK'"
+=======
+    # An empty grep therefore means go considers the binary current.
+    #
+    # Do not rewrite this as `! go build -n ... | grep ...`: Task runs status
+    # through mvdan/sh, where `!` binds to the pipeline's first command rather
+    # than the pipeline, so the status took grep's exit code (1 == no match)
+    # as "needs rebuild" and never once reported up-to-date.
+    - 'test -z "$(go build -C {{ .DIR }} -n -ldflags=''{{ .LD_FLAGS }}'' -o ../.build/{{ .DIR }} {{ .PACKAGE }} 2>&1 | grep ''mv $WORK'')"'
+>>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
