@@ -48,18 +48,42 @@ tasks:
         sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
       PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-      - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
+      - task: lint:go
       - task: charts:download-dependencies
         vars: { CHART: redpanda/chart }
       - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
       - actionlint
 
-  lint-fix:
-    desc: "equivalent to task lint -- --fix"
+  # Every go linter and formatter the old .golangci.yml enabled, in one
+  # go/analysis binary built from lint/ -- each tool pinned in lint/go.mod at
+  # the version golangci-lint v2.13.2 vendored, so findings match what CI
+  # reported before the switch. go vet runs it per package and caches per
+  # package, and it honours the repo's //nolint directives itself.
+  #
+  # Two measured differences from golangci-lint, both documented in
+  # lint/README.md: staticcheck findings are no longer capped at 3 repeats per
+  # message, and there is no nolintlint.
+  lint:go:
+    desc: "Run every go linter (replaces golangci-lint)"
+    deps: [build:lint-tools]
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
     cmds:
+    # Both run even if the first fails, so lint/ findings are not hidden behind
+    # workspace ones, and the task fails if either did. (Task runs this with
+    # errexit, so a failure has to be caught in an || list.) lint/ is outside
+    # go.work on purpose (see lint/README.md), so it is not in PKG and cannot be
+    # named from here: -C runs vet inside it, and the binary finds .golangci.yml
+    # by walking up.
+    - go vet -vettool={{.SRC_DIR}}/.build/houselint {{.PKG}}
+
+  lint-fix:
+    desc: "format in place, then lint"
+    cmds:
+      - task: fmt
       - task: lint
-        vars:
-          CLI_ARGS: "--fix"
 
   mod:tidy:
     desc: "Runs go mod tidy on all go modules in this repo"
@@ -92,9 +116,20 @@ tasks:
     - go work sync
 
   fmt:
-    desc: "gofumpt all go code"
+    desc: "gofumpt and gci all go code"
+    deps: [build:lint-tools]
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-      - gofumpt -w ./
+    # The formatters are analyzers whose fix is the formatted file, so -fix
+    # applies them. Only these two are selected: the other analyzers' fixes
+    # (staticcheck's quickfixes, for one) are not formatting. Never run the
+    # binary standalone without selecting analyzers -- the whole suite in one
+    # process holds SSA for every package at once and was OOM-killed at 23GB.
+    - '{{.SRC_DIR}}/.build/houselint -fix -gofumpt -gci {{.PKG}} || true'
+    - 'cd lint && GOWORK=off {{.SRC_DIR}}/.build/houselint -fix -gofumpt -gci ./... || true'
 
   generate:
     desc: "[re]generate all generated files"
