@@ -228,36 +228,106 @@ type StretchTiered struct {
 // replaced *apiutil.JSONBoolean with *bool for CloudStorageEnabled (JSONBoolean was a
 // Helm-era hack to handle "true" vs true in values files).
 type StretchTieredConfig struct {
-	CloudStorageEnabled                     *bool   `json:"cloud_storage_enabled,omitempty"`
-	CloudStorageAPIEndpoint                 *string `json:"cloud_storage_api_endpoint,omitempty"`
-	CloudStorageAPIEndpointPort             *int    `json:"cloud_storage_api_endpoint_port,omitempty"`
-	CloudStorageBucket                      *string `json:"cloud_storage_bucket,omitempty"`
-	CloudStorageAzureContainer              *string `json:"cloud_storage_azure_container,omitempty"`
-	CloudStorageAzureManagedIdentityID      *string `json:"cloud_storage_azure_managed_identity_id,omitempty"`
-	CloudStorageAzureStorageAccount         *string `json:"cloud_storage_azure_storage_account,omitempty"`
-	CloudStorageAzureSharedKey              *string `json:"cloud_storage_azure_shared_key,omitempty"`
-	CloudStorageAzureADLSEndpoint           *string `json:"cloud_storage_azure_adls_endpoint,omitempty"`
-	CloudStorageAzureADLSPort               *int    `json:"cloud_storage_azure_adls_port,omitempty"`
-	CloudStorageCacheCheckInterval          *int    `json:"cloud_storage_cache_check_interval,omitempty"`
-	CloudStorageCacheDirectory              *string `json:"cloud_storage_cache_directory,omitempty"`
-	CloudStorageCacheSize                   *string `json:"cloud_storage_cache_size,omitempty"`
-	CloudStorageCredentialsSource           *string `json:"cloud_storage_credentials_source,omitempty"`
-	CloudStorageDisableTLS                  *bool   `json:"cloud_storage_disable_tls,omitempty"`
-	CloudStorageEnableRemoteRead            *bool   `json:"cloud_storage_enable_remote_read,omitempty"`
-	CloudStorageEnableRemoteWrite           *bool   `json:"cloud_storage_enable_remote_write,omitempty"`
-	CloudStorageInitialBackoffMs            *int    `json:"cloud_storage_initial_backoff_ms,omitempty"`
-	CloudStorageManifestUploadTimeoutMs     *int    `json:"cloud_storage_manifest_upload_timeout_ms,omitempty"`
-	CloudStorageMaxConnectionIdleTimeMs     *int    `json:"cloud_storage_max_connection_idle_time_ms,omitempty"`
-	CloudStorageMaxConnections              *int    `json:"cloud_storage_max_connections,omitempty"`
-	CloudStorageRegion                      *string `json:"cloud_storage_region,omitempty"`
-	CloudStorageSegmentMaxUploadIntervalSec *int    `json:"cloud_storage_segment_max_upload_interval_sec,omitempty"`
-	CloudStorageSegmentUploadTimeoutMs      *int    `json:"cloud_storage_segment_upload_timeout_ms,omitempty"`
-	CloudStorageTrustFile                   *string `json:"cloud_storage_trust_file,omitempty"`
-	CloudStorageUploadCtrlDCoeff            *int    `json:"cloud_storage_upload_ctrl_d_coeff,omitempty"`
-	CloudStorageUploadCtrlMaxShares         *int    `json:"cloud_storage_upload_ctrl_max_shares,omitempty"`
-	CloudStorageUploadCtrlMinShares         *int    `json:"cloud_storage_upload_ctrl_min_shares,omitempty"`
-	CloudStorageUploadCtrlPCoeff            *int    `json:"cloud_storage_upload_ctrl_p_coeff,omitempty"`
-	CloudStorageUploadCtrlUpdateIntervalMs  *int    `json:"cloud_storage_upload_ctrl_update_interval_ms,omitempty"`
+	// Enable object storage. Must be set to `true` to use Tiered Storage, Remote
+	// Read Replicas, or Cloud Topics.
+	CloudStorageEnabled *bool `json:"cloud_storage_enabled,omitempty"`
+	// Optional API endpoint. The only instance in which you must set this value
+	// is when using a custom domain with your object storage service.
+	CloudStorageAPIEndpoint *string `json:"cloud_storage_api_endpoint,omitempty"`
+	// TLS port override.
+	CloudStorageAPIEndpointPort *int `json:"cloud_storage_api_endpoint_port,omitempty"`
+	// AWS or GCP bucket that should be used to store data.
+	CloudStorageBucket *string `json:"cloud_storage_bucket,omitempty"`
+	// The name of the Azure container to use with Tiered Storage. If `null`, the
+	// property is disabled.
+	CloudStorageAzureContainer *string `json:"cloud_storage_azure_container,omitempty"`
+	// The managed identity ID to use for access to the Azure storage account. To
+	// use Azure managed identities, you must set
+	// `cloud_storage_credentials_source` to `azure_vm_instance_metadata`.
+	CloudStorageAzureManagedIdentityID *string `json:"cloud_storage_azure_managed_identity_id,omitempty"`
+	// The name of the Azure storage account to use with Tiered Storage. If
+	// `null`, the property is disabled.
+	CloudStorageAzureStorageAccount *string `json:"cloud_storage_azure_storage_account,omitempty"`
+	// The account access key to be used for Azure Shared Key authentication with
+	// the Azure storage account configured by
+	// `cloud_storage_azure_storage_account`. If `null`, the property is
+	// disabled.
+	CloudStorageAzureSharedKey *string `json:"cloud_storage_azure_shared_key,omitempty"`
+	// Azure Data Lake Storage v2 endpoint override. Use when hierarchical
+	// namespaces are enabled on your storage account and you have set up a
+	// custom endpoint.
+	CloudStorageAzureADLSEndpoint *string `json:"cloud_storage_azure_adls_endpoint,omitempty"`
+	// Azure Data Lake Storage v2 port override. See also:
+	// `cloud_storage_azure_adls_endpoint`. Use when hierarchical namespaces are
+	// enabled on your storage account and you have set up a custom endpoint.
+	CloudStorageAzureADLSPort *int `json:"cloud_storage_azure_adls_port,omitempty"`
+	// Minimum interval between Tiered Storage cache trims, measured in
+	// milliseconds. This setting dictates the cooldown period after a cache trim
+	// operation before another trim can occur. If a cache fetch operation
+	// requests a trim but the interval since the last trim has not yet passed,
+	// the trim will be postponed until this cooldown expires. Adjusting this
+	// interval helps manage the balance between cache size and retrieval
+	// performance.
+	CloudStorageCacheCheckInterval *int `json:"cloud_storage_cache_check_interval,omitempty"`
+	// Directory for archival cache. Set when the `cloud_storage_enabled` cluster
+	// property is enabled. If not specified, Redpanda uses a default path within
+	// the data directory.
+	CloudStorageCacheDirectory *string `json:"cloud_storage_cache_directory,omitempty"`
+	// Maximum size of the object storage cache, in bytes.
+	CloudStorageCacheSize *string `json:"cloud_storage_cache_size,omitempty"`
+	// The source of credentials used to authenticate to object storage services.
+	// Required for AWS or GCP authentication with IAM roles.
+	CloudStorageCredentialsSource *string `json:"cloud_storage_credentials_source,omitempty"`
+	// Disable TLS for all object storage connections.
+	CloudStorageDisableTLS *bool `json:"cloud_storage_disable_tls,omitempty"`
+	// Default remote read config value for new topics. When set to `true`, new
+	// topics are by default configured to allow reading data directly from
+	// object storage, facilitating access to older data that might have been
+	// offloaded as part of Tiered Storage. With the default set to `false`,
+	// remote reads must be explicitly enabled at the topic level.
+	CloudStorageEnableRemoteRead *bool `json:"cloud_storage_enable_remote_read,omitempty"`
+	// Default remote write value for new topics. When set to `true`, new topics
+	// are by default configured to upload data to object storage. With the
+	// default set to `false`, remote write must be explicitly enabled at the
+	// topic level.
+	CloudStorageEnableRemoteWrite *bool `json:"cloud_storage_enable_remote_write,omitempty"`
+	// Initial backoff time for exponential backoff algorithm (ms).
+	CloudStorageInitialBackoffMs *int `json:"cloud_storage_initial_backoff_ms,omitempty"`
+	// Manifest upload timeout, in milliseconds.
+	CloudStorageManifestUploadTimeoutMs *int `json:"cloud_storage_manifest_upload_timeout_ms,omitempty"`
+	// Defines the maximum duration an HTTPS connection to object storage can
+	// stay idle, in milliseconds, before being terminated. This setting reduces
+	// resource utilization by closing inactive connections. Adjust this property
+	// to balance keeping connections ready for subsequent requests and freeing
+	// resources associated with idle connections.
+	CloudStorageMaxConnectionIdleTimeMs *int `json:"cloud_storage_max_connection_idle_time_ms,omitempty"`
+	// Maximum simultaneous object storage connections per shard, applicable to
+	// upload and download activities.
+	CloudStorageMaxConnections *int `json:"cloud_storage_max_connections,omitempty"`
+	// Cloud provider region that houses the bucket or container used for
+	// storage.
+	CloudStorageRegion *string `json:"cloud_storage_region,omitempty"`
+	// Time that a segment can be kept locally without uploading it to the object
+	// storage, in seconds.
+	CloudStorageSegmentMaxUploadIntervalSec *int `json:"cloud_storage_segment_max_upload_interval_sec,omitempty"`
+	// Log segment upload timeout, in milliseconds.
+	CloudStorageSegmentUploadTimeoutMs *int `json:"cloud_storage_segment_upload_timeout_ms,omitempty"`
+	// Path to certificate that should be used to validate server certificate
+	// during TLS handshake.
+	CloudStorageTrustFile *string `json:"cloud_storage_trust_file,omitempty"`
+	// Derivative coefficient for upload PID controller.
+	CloudStorageUploadCtrlDCoeff *int `json:"cloud_storage_upload_ctrl_d_coeff,omitempty"`
+	// Maximum number of I/O and CPU shares that archival upload can use.
+	CloudStorageUploadCtrlMaxShares *int `json:"cloud_storage_upload_ctrl_max_shares,omitempty"`
+	// Minimum number of I/O and CPU shares that archival upload can use.
+	CloudStorageUploadCtrlMinShares *int `json:"cloud_storage_upload_ctrl_min_shares,omitempty"`
+	// Proportional coefficient for upload PID controller.
+	CloudStorageUploadCtrlPCoeff *int `json:"cloud_storage_upload_ctrl_p_coeff,omitempty"`
+	// The interval (in milliseconds) for updating the controller that manages
+	// the priority of Tiered Storage uploads. This property determines how
+	// frequently the system recalculates and adjusts the work scheduling for
+	// uploads to object storage.
+	CloudStorageUploadCtrlUpdateIntervalMs *int `json:"cloud_storage_upload_ctrl_update_interval_ms,omitempty"`
 }
 
 // StretchLogging defines log level settings for stretch clusters.
