@@ -403,6 +403,8 @@ resources:
     # -- Enables memory locking.
     # For production, set to `true`.
     # enable_memory_locking: false
+
+    # -- Memory limits and requests for each Redpanda broker container.
     #
     # It is recommended to have at least 2Gi of memory per core for the Redpanda binary.
     # This memory is taken from the total memory given to each container.
