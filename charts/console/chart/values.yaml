@@ -17,6 +17,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# -- Number of Console Pods to run.
 replicaCount: 1
 
 # -- Redpanda Console Docker image settings.
@@ -59,21 +60,27 @@ serviceAccount:
   # a name is generated using the `console.fullname` template
   name: ""
 
-# Common labels to add to all the pods
+# -- Common labels to add to all the pods
 commonLabels: {}
 
 # -- Annotations to add to the deployment.
 annotations: {}
 
+# -- Annotations to add to the Console Pods.
 podAnnotations: {}
 
+# -- Labels to add to the Console Pods.
 podLabels: {}
 
+# -- Pod-level security context for the Console Pods.
+# For details,
+# see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
 podSecurityContext:
   runAsUser: 99
   fsGroup: 99
   fsGroupChangePolicy: 'Always'
 
+# -- Container-level security context for the Console container.
 securityContext:
   runAsNonRoot: true
   # capabilities:
@@ -84,7 +91,9 @@ securityContext:
   # runAsUser: 1000
 
 service:
+  # -- Type of Service created for Console.
   type: ClusterIP
+  # -- Port that the Console Service listens on.
   port: 8080
   # nodePort: 30001
   # -- Override the value in `console.config.server.listenPort` if not `nil`
@@ -92,16 +101,21 @@ service:
   annotations: {}
 
 ingress:
+  # -- Whether to create an Ingress for Console.
   enabled: false
   # className:
+  # -- Annotations to add to the Ingress, for example to select an ingress
+  # controller or request a certificate.
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+  # -- Hosts and paths that the Ingress routes to Console.
   hosts:
     - host: chart-example.local
       paths:
         - path: /
           pathType: ImplementationSpecific
+  # -- TLS configuration for the Ingress.
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
@@ -124,6 +138,8 @@ gateway:
   # -- One of Exact, PathPrefix, or RegularExpression.
   pathType: PathPrefix
 
+# -- Compute resources for the Console container. Left empty so the chart
+# runs on small clusters; see the commented example below.
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -137,18 +153,27 @@ resources: {}
   #   memory: 128Mi
 
 autoscaling:
+  # -- Whether to create a HorizontalPodAutoscaler for the Console Deployment.
   enabled: false
+  # -- Minimum number of Console Pods the autoscaler scales down to.
   minReplicas: 1
+  # -- Maximum number of Console Pods the autoscaler scales up to.
   maxReplicas: 100
+  # -- Average CPU utilization the autoscaler targets, as a percentage of the
+  # CPU request.
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
+# -- Node labels that the Console Pods must match to be scheduled.
 nodeSelector: {}
 
+# -- Taints that the Console Pods tolerate.
 tolerations: []
 
+# -- Affinity rules for scheduling the Console Pods.
 affinity: {}
 
+# -- Constraints on how the Console Pods are spread across failure domains.
 topologySpreadConstraints: []
 
 # -- PriorityClassName given to Pods.
@@ -278,6 +303,9 @@ livenessProbe:
   successThreshold: 1
   failureThreshold: 3
 
+# -- Readiness probe for the Console container.
+# For details,
+# see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
 readinessProbe:
   # -- Grant time to test connectivity to upstream services such as Kafka and Schema Registry.
   initialDelaySeconds: 10
@@ -287,16 +315,23 @@ readinessProbe:
   failureThreshold: 3
 
 configmap:
+  # -- Whether to render the ConfigMap that holds Console's configuration.
   create: true
 deployment:
+  # -- Whether to render the Console Deployment.
   create: true
 
+# -- Update strategy for the Console Deployment.
 strategy: {}
 
 tests:
   enabled: true
 
 monitoring:
+  # -- Whether to create a ServiceMonitor for Console's metrics endpoint.
   enabled: false
+  # -- How often Prometheus scrapes that endpoint.
   scrapeInterval: "1m"
+  # -- Labels to add to the ServiceMonitor, so that a Prometheus instance can
+  # select it.
   labels: {}

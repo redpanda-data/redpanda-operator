@@ -55,6 +55,8 @@ image:
 imagePullSecrets: []
 
 test:
+  # -- Whether to render the chart's Helm test resources, which run a
+  # MirrorMaker 2 smoke test against the cluster when `helm test` is invoked.
   create: true
 
 connectors:
@@ -62,14 +64,23 @@ connectors:
   restPort: 8083
   # -- A comma-separated list of Redpanda broker addresses in the format of IP:Port or DNS:Port. Kafka Connect uses this to connect to the Redpanda/Kafka cluster.
   bootstrapServers: ""
-  # A comma-separated list of Schema Registry addresses in the format IP:Port or DNS:Port. The Schema Registry is a service that manages the schemas used by producers and consumers.
+  # -- A comma-separated list of Schema Registry addresses in the format IP:Port or DNS:Port. The Schema Registry is a service that manages the schemas used by producers and consumers.
   schemaRegistryURL: ""
   # -- A placeholder for any Java configuration settings for Kafka Connect that are not explicitly defined in this Helm chart. Java configuration settings are passed to the Kafka Connect startup script.
   additionalConfiguration: ""
   secretManager:
+    # -- Whether to register the AWS Secrets Manager config provider with Kafka
+    # Connect, so that connector configurations can reference secrets held in
+    # Secrets Manager instead of inlining them.
     enabled: false
+    # -- AWS region that Secrets Manager is read from.
+    # Sets `config.providers.secretsManager.param.aws.region`.
     region: ""
+    # -- First part of the prefix that every secret name is looked up under.
+    # Concatenated with `connectorsPrefix` to form
+    # `config.providers.secretsManager.param.secret.prefix`.
     consolePrefix: ""
+    # -- Second part of that secret name prefix, appended to `consolePrefix`.
     connectorsPrefix: ""
   # -- The number of bytes of records a producer will attempt to batch together before sending to Redpanda. Batching improves throughput.
   producerBatchSize: 131072
@@ -104,6 +115,8 @@ connectors:
   # -- A unique string that identifies the Kafka Connect cluster. It's used in the formation of the internal topic names, ensuring that multiple Kafka Connect clusters can connect to the same Redpanda cluster without interfering with each other.
   groupID: connectors-cluster
   brokerTLS:
+    # -- Whether Kafka Connect connects to the Redpanda brokers over TLS.
+    # Sets the `CONNECT_TLS_ENABLED` environment variable.
     enabled: false
     ca:
       # -- The name of the Secret where the ca.crt file content is located.
@@ -170,17 +183,26 @@ container:
       memory: 2350Mi
     # -- Java maximum heap size must not be greater than `container.resources.limits.memory`.
     javaMaxHeapSize: 2G
+  # -- Whether Kafka Connect writes Java garbage-collection logs.
+  # Sets the `CONNECT_GC_LOG_ENABLED` environment variable.
   javaGCLogEnabled: "false"
 
 deployment:
   # Replicas can be used to scale Deployment
   # replicas
 
+  # -- Whether to render the Deployment. Set to `false` to install the chart's
+  # other resources without running Kafka Connect.
   create: true
   # Customize the command to use as the entrypoint of the Deployment.
   # command: []
+  # -- Update strategy for this Deployment.
+  # For details,
+  # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy).
   strategy:
     type: RollingUpdate
+  # -- Name of the scheduler used to place the Pods of this Deployment.
+  # Leave empty to use the default scheduler.
   schedulerName: ""
   budget:
     maxUnavailable: 1
@@ -195,6 +217,9 @@ deployment:
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 1
+  # -- Adjust the period for your probes to meet your needs.
+  # For details,
+  # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
   readinessProbe:
     initialDelaySeconds: 60
     failureThreshold: 2
@@ -265,25 +290,37 @@ deployment:
   # For details,
   # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/).
   tolerations: []
+  # -- Constraints on how the Pods of this Deployment are spread across
+  # failure domains.
   # For details,
   # see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/).
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: topology.kubernetes.io/zone
     whenUnsatisfiable: ScheduleAnyway
+  # -- Pod-level security context for the Pods of this Deployment.
+  # For details,
+  # see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
   securityContext:
     fsGroup: 101
     runAsUser: 101
     fsGroupChangePolicy: OnRootMismatch
+  # -- How long Kubernetes waits for a Pod of this Deployment to shut down
+  # cleanly before killing it.
   terminationGracePeriodSeconds: 30
+  # -- Restart policy for the Pods of this Deployment.
   restartPolicy: Always
 
 storage:
+  # -- Volumes to add to the Pods of this Deployment. The default provides the
+  # writable `/tmp` that Kafka Connect needs when the root filesystem is
+  # read-only.
   volume:
   - emptyDir:
       medium: Memory
       sizeLimit: 5Mi
     name: rp-connect-tmp
+  # -- Where the volumes above are mounted in the Kafka Connect container.
   volumeMounts:
   - mountPath: /tmp
     name: rp-connect-tmp

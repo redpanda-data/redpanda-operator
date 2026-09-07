@@ -524,6 +524,8 @@ Pull secrets may be used to provide credentials to image repositories See the [K
 
 ### [post_install_job.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=post_install_job.enabled)
 
+Whether to run the post-install and post-upgrade Job, which syncs the cluster configuration and the users listed under `auth.sasl` into the running cluster.
+
 **Default:** `true`
 
 ### [post_install_job.podTemplate.annotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=post_install_job.podTemplate.annotations)
@@ -723,25 +725,37 @@ Additional labels to be added to statefulset label selector. For example, `my.k8
 
 ### [statefulset.budget.maxUnavailable](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.budget.maxUnavailable)
 
+Maximum number of brokers the rendered PodDisruptionBudget allows to be unavailable at once during a voluntary disruption, such as a node drain.
+
 **Default:** `1`
 
 ### [statefulset.initContainerImage.repository](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainerImage.repository)
+
+Repository of the image used for the chart's own init containers.
 
 **Default:** `"busybox"`
 
 ### [statefulset.initContainerImage.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainerImage.tag)
 
+Tag of the image used for the chart's own init containers.
+
 **Default:** `"latest"`
 
 ### [statefulset.initContainers.configurator.additionalCLIArgs](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.configurator.additionalCLIArgs)
+
+Additional command-line arguments passed to the configurator init container.
 
 **Default:** `[]`
 
 ### [statefulset.initContainers.fsValidator.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.fsValidator.enabled)
 
+Whether to run the filesystem-validator init container, which refuses to start a broker whose data directory is not on the expected filesystem.
+
 **Default:** `false`
 
 ### [statefulset.initContainers.fsValidator.expectedFS](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.fsValidator.expectedFS)
+
+Filesystem the validator requires on the data directory.
 
 **Default:** `"xfs"`
 
@@ -839,17 +853,25 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 ### [statefulset.sideCars.brokerDecommissioner.decommissionAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.decommissionAfter)
 
+How long a broker must keep being detected as invalid before the decommission operation starts.
+
 **Default:** `"60s"`
 
 ### [statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout)
+
+How often the decommissioner rechecks a cluster that has a broker flagged as invalid.
 
 **Default:** `"10s"`
 
 ### [statefulset.sideCars.brokerDecommissioner.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.enabled)
 
+Whether to run the BrokerDecommissioner sidecar controller.
+
 **Default:** `false`
 
 ### [statefulset.sideCars.configWatcher.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.configWatcher.enabled)
+
+Whether to run the config-watcher sidecar.
 
 **Default:** `true`
 
@@ -861,17 +883,25 @@ DEPRECATED: Use `rbac.enabled` to control RBAC chart wide or control RBAC by sel
 
 ### [statefulset.sideCars.controllers.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.enabled)
 
+Whether to run the sidecar controllers.
+
 **Default:** `false`
 
 ### [statefulset.sideCars.controllers.healthProbeAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.healthProbeAddress)
+
+Address on which the sidecar controllers serve health probes.
 
 **Default:** `":8085"`
 
 ### [statefulset.sideCars.controllers.metricsAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.metricsAddress)
 
+Address on which the sidecar controllers serve Prometheus metrics.
+
 **Default:** `":9082"`
 
 ### [statefulset.sideCars.controllers.pprofAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.pprofAddress)
+
+Address on which the sidecar controllers serve pprof profiles.
 
 **Default:** `":9083"`
 
@@ -883,6 +913,8 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 ### [statefulset.sideCars.image.repository](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.repository)
 
+Repository of the sidecar container image.
+
 **Default:**
 
 ```
@@ -890,6 +922,8 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 ```
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
+
+Tag of the sidecar container image.
 
 **Default:** `"v26.2.1"`
 
@@ -907,6 +941,8 @@ Enables the PVCUnbinder sidecar controller. Note: with `rbac.enabled`, this rend
 
 ### [statefulset.sideCars.pvcUnbinder.unbindAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.unbindAfter)
 
+How long a broker Pod must stay in `Pending` before the PVCUnbinder deletes its PersistentVolumeClaim to re-trigger volume provisioning.
+
 **Default:** `"60s"`
 
 ### [statefulset.sideCars.rpkProfileWatcher](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.rpkProfileWatcher)
@@ -915,9 +951,11 @@ Keeps the in-pod rpk configuration fresh after node operations (scale, NodePool 
 
 **Default:** `{"enabled":true}`
 
-### [statefulset.updateStrategy.type](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.updateStrategy.type)
+### [statefulset.updateStrategy](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.updateStrategy)
 
-**Default:** `"RollingUpdate"`
+Update strategy for the StatefulSet. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#rolling-update).
+
+**Default:** `{"type":"RollingUpdate"}`
 
 ### [storage](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=storage)
 

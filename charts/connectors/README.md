@@ -88,6 +88,8 @@ The name of the secret where client signed certificate is located
 
 ### [connectors.brokerTLS.enabled](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.brokerTLS.enabled)
 
+Whether Kafka Connect connects to the Redpanda brokers over TLS. Sets the `CONNECT_TLS_ENABLED` environment variable.
+
 **Default:** `false`
 
 ### [connectors.brokerTLS.key.secretNameOverwrite](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.brokerTLS.key.secretNameOverwrite)
@@ -128,21 +130,31 @@ The port on which the Kafka Connect REST API listens. The API is used for admini
 
 ### [connectors.schemaRegistryURL](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.schemaRegistryURL)
 
+A comma-separated list of Schema Registry addresses in the format IP:Port or DNS:Port. The Schema Registry is a service that manages the schemas used by producers and consumers.
+
 **Default:** `""`
 
 ### [connectors.secretManager.connectorsPrefix](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.connectorsPrefix)
+
+Second part of that secret name prefix, appended to `consolePrefix`.
 
 **Default:** `""`
 
 ### [connectors.secretManager.consolePrefix](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.consolePrefix)
 
+First part of the prefix that every secret name is looked up under. Concatenated with `connectorsPrefix` to form `config.providers.secretsManager.param.secret.prefix`.
+
 **Default:** `""`
 
 ### [connectors.secretManager.enabled](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.enabled)
 
+Whether to register the AWS Secrets Manager config provider with Kafka Connect, so that connector configurations can reference secrets held in Secrets Manager instead of inlining them.
+
 **Default:** `false`
 
 ### [connectors.secretManager.region](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.region)
+
+AWS region that Secrets Manager is read from. Sets `config.providers.secretsManager.param.aws.region`.
 
 **Default:** `""`
 
@@ -216,6 +228,8 @@ The name of the internal topic that Kafka Connect uses to store connector and ta
 
 ### [container.javaGCLogEnabled](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=container.javaGCLogEnabled)
 
+Whether Kafka Connect writes Java garbage-collection logs. Sets the `CONNECT_GC_LOG_ENABLED` environment variable.
+
 **Default:** `"false"`
 
 ### [container.resources](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=container.resources)
@@ -255,6 +269,8 @@ Additional annotations to apply to the Pods of this Deployment.
 **Default:** `1`
 
 ### [deployment.create](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.create)
+
+Whether to render the Deployment. Set to `false` to install the chart's other resources without running Kafka Connect.
 
 **Default:** `true`
 
@@ -344,27 +360,19 @@ The maximum time in seconds for a deployment to make progress before it is consi
 
 **Default:** `600`
 
-### [deployment.readinessProbe.failureThreshold](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.readinessProbe.failureThreshold)
+### [deployment.readinessProbe](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.readinessProbe)
 
-**Default:** `2`
+Adjust the period for your probes to meet your needs. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes).
 
-### [deployment.readinessProbe.initialDelaySeconds](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.readinessProbe.initialDelaySeconds)
+**Default:**
 
-**Default:** `60`
-
-### [deployment.readinessProbe.periodSeconds](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.readinessProbe.periodSeconds)
-
-**Default:** `10`
-
-### [deployment.readinessProbe.successThreshold](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.readinessProbe.successThreshold)
-
-**Default:** `3`
-
-### [deployment.readinessProbe.timeoutSeconds](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.readinessProbe.timeoutSeconds)
-
-**Default:** `5`
+```
+{"failureThreshold":2,"initialDelaySeconds":60,"periodSeconds":10,"successThreshold":3,"timeoutSeconds":5}
+```
 
 ### [deployment.restartPolicy](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.restartPolicy)
+
+Restart policy for the Pods of this Deployment.
 
 **Default:** `"Always"`
 
@@ -376,25 +384,29 @@ The number of old ReplicaSets to retain to allow rollback. This is a pointer to 
 
 ### [deployment.schedulerName](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.schedulerName)
 
+Name of the scheduler used to place the Pods of this Deployment. Leave empty to use the default scheduler.
+
 **Default:** `""`
 
-### [deployment.securityContext.fsGroup](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.securityContext.fsGroup)
+### [deployment.securityContext](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.securityContext)
 
-**Default:** `101`
+Pod-level security context for the Pods of this Deployment. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
 
-### [deployment.securityContext.fsGroupChangePolicy](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.securityContext.fsGroupChangePolicy)
+**Default:**
 
-**Default:** `"OnRootMismatch"`
+```
+{"fsGroup":101,"fsGroupChangePolicy":"OnRootMismatch","runAsUser":101}
+```
 
-### [deployment.securityContext.runAsUser](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.securityContext.runAsUser)
+### [deployment.strategy](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.strategy)
 
-**Default:** `101`
+Update strategy for this Deployment. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy).
 
-### [deployment.strategy.type](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.strategy.type)
-
-**Default:** `"RollingUpdate"`
+**Default:** `{"type":"RollingUpdate"}`
 
 ### [deployment.terminationGracePeriodSeconds](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.terminationGracePeriodSeconds)
+
+How long Kubernetes waits for a Pod of this Deployment to shut down cleanly before killing it.
 
 **Default:** `30`
 
@@ -404,21 +416,15 @@ Taints to be tolerated by Pods of this Deployment. These tolerations override th
 
 **Default:** `[]`
 
-### [deployment.topologySpreadConstraints[0].maxSkew](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.topologySpreadConstraints[0].maxSkew)
+### [deployment.topologySpreadConstraints](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.topologySpreadConstraints)
 
-**Default:** `1`
-
-### [deployment.topologySpreadConstraints[0].topologyKey](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.topologySpreadConstraints[0].topologyKey)
+Constraints on how the Pods of this Deployment are spread across failure domains. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/).
 
 **Default:**
 
 ```
-"topology.kubernetes.io/zone"
+[{"maxSkew":1,"topologyKey":"topology.kubernetes.io/zone","whenUnsatisfiable":"ScheduleAnyway"}]
 ```
-
-### [deployment.topologySpreadConstraints[0].whenUnsatisfiable](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.topologySpreadConstraints[0].whenUnsatisfiable)
-
-**Default:** `"ScheduleAnyway"`
 
 ### [fullnameOverride](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=fullnameOverride)
 
@@ -548,27 +554,29 @@ The name of the ServiceAccount to use. If not set and `serviceAccount.create` is
 
 **Default:** `""`
 
-### [storage.volumeMounts[0].mountPath](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volumeMounts[0].mountPath)
+### [storage.volume](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volume)
 
-**Default:** `"/tmp"`
+Volumes to add to the Pods of this Deployment. The default provides the writable `/tmp` that Kafka Connect needs when the root filesystem is read-only.
 
-### [storage.volumeMounts[0].name](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volumeMounts[0].name)
+**Default:**
 
-**Default:** `"rp-connect-tmp"`
+```
+[{"emptyDir":{"medium":"Memory","sizeLimit":"5Mi"},"name":"rp-connect-tmp"}]
+```
 
-### [storage.volume[0].emptyDir.medium](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volume[0].emptyDir.medium)
+### [storage.volumeMounts](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volumeMounts)
 
-**Default:** `"Memory"`
+Where the volumes above are mounted in the Kafka Connect container.
 
-### [storage.volume[0].emptyDir.sizeLimit](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volume[0].emptyDir.sizeLimit)
+**Default:**
 
-**Default:** `"5Mi"`
-
-### [storage.volume[0].name](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volume[0].name)
-
-**Default:** `"rp-connect-tmp"`
+```
+[{"mountPath":"/tmp","name":"rp-connect-tmp"}]
+```
 
 ### [test.create](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=test.create)
+
+Whether to render the chart's Helm test resources, which run a MirrorMaker 2 smoke test against the cluster when `helm test` is invoked.
 
 **Default:** `true`
 
