@@ -303,7 +303,7 @@ SecretMounts is an abstraction to make a Secret available in the container's fil
 
 ### [service.annotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=service.annotations)
 
-Override the value in `console.config.server.listenPort` if not `nil` targetPort:
+Annotations to add to the Console Service.
 
 **Default:** `{}`
 
