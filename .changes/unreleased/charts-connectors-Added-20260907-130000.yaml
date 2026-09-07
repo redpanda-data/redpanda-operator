@@ -1,0 +1,16 @@
+project: charts/connectors
+kind: Added
+body: |-
+    Descriptions for the 30 values that shipped blank in the Helm reference
+
+      Includes `connectors.schemaRegistryURL`, the `connectors.secretManager` group,
+      `connectors.brokerTLS.enabled`, `container.javaGCLogEnabled`, `deployment.create`,
+      `deployment.strategy`, `deployment.schedulerName`, `readinessProbe`,
+      `deployment.topologySpreadConstraints`, `deployment.securityContext`,
+      `deployment.terminationGracePeriodSeconds`, `deployment.restartPolicy`,
+      `storage.volume`, `storage.volumeMounts` and `test.create`.
+
+      `deployment.budget.maxUnavailable` is deliberately left undocumented: it is
+      declared in the values schema but this chart renders no PodDisruptionBudget, so
+      the value currently has no effect.
+time: 2026-09-07T13:00:00.000000-07:00
