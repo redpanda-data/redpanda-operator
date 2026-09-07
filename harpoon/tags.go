@@ -20,8 +20,17 @@ func isolatedTag(ctx context.Context, t TestingT, args ...string) context.Contex
 	return ctx
 }
 
+// vclusterTag handles @vcluster and @vcluster:<cluster-domain>. The optional
+// argument runs the feature in a vcluster whose DNS serves that domain instead
+// of cluster.local, for features that exercise the operator's --cluster-domain
+// handling.
 func vclusterTag(ctx context.Context, t TestingT, args ...string) context.Context {
-	t.VCluster(ctx)
+	require.LessOrEqual(t, len(args), 1, "vcluster tags take at most one argument, the cluster domain")
+	clusterDomain := ""
+	if len(args) == 1 {
+		clusterDomain = args[0]
+	}
+	t.VCluster(ctx, clusterDomain)
 	return ctx
 }
 

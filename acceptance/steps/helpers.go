@@ -603,7 +603,11 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 
 	mgr := setupTestManager(ctx, t.RestConfig(), t)
 
-	factory := client.NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	// The test-side Factory dials the same FQDNs the operator does, so it has
+	// to agree with the cluster domain the feature runs on.
+	factory := client.NewFactory(mgr, nil).
+		WithDialer(kube.NewPodDialer(t.RestConfig()).WithClusterDomain(t.ClusterDomain()).DialContext).
+		WithClusterDomain(t.ClusterDomain())
 
 	clients := &clusterClients{
 		resourceTarget: referencer,
@@ -650,7 +654,11 @@ func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
 
 	mgr := setupTestManager(ctx, t.RestConfig(), t)
 
-	factory := client.NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	// The test-side Factory dials the same FQDNs the operator does, so it has
+	// to agree with the cluster domain the feature runs on.
+	factory := client.NewFactory(mgr, nil).
+		WithDialer(kube.NewPodDialer(t.RestConfig()).WithClusterDomain(t.ClusterDomain()).DialContext).
+		WithClusterDomain(t.ClusterDomain())
 
 	clients := &clusterClients{
 		resourceTarget: referencer,
