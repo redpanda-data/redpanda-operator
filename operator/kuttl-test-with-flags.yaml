@@ -17,6 +17,10 @@ commands:
   - command: "kubectl create -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/e23ff77fceba6a5d9f190f5d1a123c87701dc964/bundle.yaml"
     background: true
     ignoreFailure: true
+  # The Broker CRD is experimental and intentionally not part of config/crd
+  # (real installs get it from the Helm chart's CRD job). This suite runs the
+  # operator with --enable-broker, so install it before the operator comes up.
+  - command: "kubectl apply --server-side -f config/crd/bases/cluster.redpanda.com_brokers.yaml"
   - command: "sh -c 'until kustomize build config/e2e-tests-with-flags 2>> tests/_e2e_with_flags_artifacts/kustomize-output.txt | kubectl apply --server-side -f - 1>> tests/_e2e_with_flags_artifacts/kubectl-output.txt 2>> tests/_e2e_with_flags_artifacts/kubectl-error-output.txt; do sleep 0.5; done'"
     background: true
   - command: "./hack/wait-for-webhook-ready.sh"

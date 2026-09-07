@@ -15,6 +15,7 @@ resources:
 - bases/cluster.redpanda.com_users.yaml
 - bases/cluster.redpanda.com_groups.yaml
 - bases/cluster.redpanda.com_shadowlinks.yaml
+# experimental CRDs (NodePool, Broker) shouldn't be here; they are installed via pre-install CRD job in helm chart.
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
