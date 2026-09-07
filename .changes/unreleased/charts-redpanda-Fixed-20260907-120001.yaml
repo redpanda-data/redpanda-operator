@@ -1,0 +1,10 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    `resources.memory.container` no longer publishes a description belonging to another value
+
+      The Helm reference showed "Enables memory locking. For production, set to `true`."
+      for `resources.memory.container`. That text was written for the commented-out
+      `resources.memory.enable_memory_locking` above it. The memory sizing guidance that
+      also appeared there is unchanged.
+time: 2026-09-07T12:00:01.000000-07:00
