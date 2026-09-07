@@ -755,7 +755,7 @@ Whether to run the filesystem-validator init container, which refuses to start a
 
 ### [statefulset.initContainers.fsValidator.expectedFS](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.initContainers.fsValidator.expectedFS)
 
-Filesystem the validator requires on the data directory.
+Filesystem the validator requires on the data directory, for example `xfs`. Applies only when `fsValidator.enabled` is `true`.
 
 **Default:** `"xfs"`
 
@@ -853,13 +853,13 @@ Number of Redpanda brokers (Redpanda Data recommends setting this to the number 
 
 ### [statefulset.sideCars.brokerDecommissioner.decommissionAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.decommissionAfter)
 
-How long a broker must keep being detected as invalid before the decommission operation starts.
+How long a broker must keep being detected as invalid before the decommission operation starts. Applies only when `brokerDecommissioner.enabled` is `true`.
 
 **Default:** `"60s"`
 
 ### [statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout)
 
-How often the decommissioner rechecks a cluster that has a broker flagged as invalid.
+How often the decommissioner rechecks a cluster that has a broker flagged as invalid. Applies only when `brokerDecommissioner.enabled` is `true`.
 
 **Default:** `"10s"`
 
@@ -889,19 +889,19 @@ Whether to run the sidecar controllers.
 
 ### [statefulset.sideCars.controllers.healthProbeAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.healthProbeAddress)
 
-Address on which the sidecar controllers serve health probes.
+Address on which the sidecar controllers serve health probes. Applies only when `controllers.enabled` is `true`.
 
 **Default:** `":8085"`
 
 ### [statefulset.sideCars.controllers.metricsAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.metricsAddress)
 
-Address on which the sidecar controllers serve Prometheus metrics.
+Address on which the sidecar controllers serve Prometheus metrics. Applies only when `controllers.enabled` is `true`.
 
 **Default:** `":9082"`
 
 ### [statefulset.sideCars.controllers.pprofAddress](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.controllers.pprofAddress)
 
-Address on which the sidecar controllers serve pprof profiles.
+Address on which the sidecar controllers serve pprof profiles. Applies only when `controllers.enabled` is `true`.
 
 **Default:** `":9083"`
 
@@ -941,7 +941,7 @@ Enables the PVCUnbinder sidecar controller. Note: with `rbac.enabled`, this rend
 
 ### [statefulset.sideCars.pvcUnbinder.unbindAfter](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.unbindAfter)
 
-How long a broker Pod must stay in `Pending` before the PVCUnbinder deletes its PersistentVolumeClaim to re-trigger volume provisioning.
+How long a broker Pod must stay in `Pending` before the PVCUnbinder deletes its PersistentVolumeClaim to re-trigger volume provisioning. Applies only when `pvcUnbinder.enabled` is `true`.
 
 **Default:** `"60s"`
 

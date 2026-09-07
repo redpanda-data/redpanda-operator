@@ -136,13 +136,13 @@ A comma-separated list of Schema Registry addresses in the format IP:Port or DNS
 
 ### [connectors.secretManager.connectorsPrefix](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.connectorsPrefix)
 
-Second part of that secret name prefix, appended to `consolePrefix`.
+Second part of that lookup prefix, appended to `consolePrefix`. Applies only when `connectors.secretManager.enabled` is `true`.
 
 **Default:** `""`
 
 ### [connectors.secretManager.consolePrefix](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.consolePrefix)
 
-First part of the prefix that every secret name is looked up under. Concatenated with `connectorsPrefix` to form `config.providers.secretsManager.param.secret.prefix`.
+First part of the prefix that every secret name is looked up under. Concatenated with `connectorsPrefix` to form `config.providers.secretsManager.param.secret.prefix`. Applies only when `connectors.secretManager.enabled` is `true`.
 
 **Default:** `""`
 
@@ -154,7 +154,7 @@ Whether to register the AWS Secrets Manager config provider with Kafka Connect, 
 
 ### [connectors.secretManager.region](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=connectors.secretManager.region)
 
-AWS region that Secrets Manager is read from. Sets `config.providers.secretsManager.param.aws.region`.
+AWS region that Secrets Manager is read from. Sets `config.providers.secretsManager.param.aws.region`. Applies only when `connectors.secretManager.enabled` is `true`.
 
 **Default:** `""`
 
@@ -372,7 +372,7 @@ Adjust the period for your probes to meet your needs. For details, see the [Kube
 
 ### [deployment.restartPolicy](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=deployment.restartPolicy)
 
-Restart policy for the Pods of this Deployment.
+Restart policy for the Pods of this Deployment. Kubernetes requires `Always` for Pods managed by a Deployment.
 
 **Default:** `"Always"`
 
@@ -566,7 +566,7 @@ Volumes to add to the Pods of this Deployment. The default provides the writable
 
 ### [storage.volumeMounts](https://artifacthub.io/packages/helm/redpanda-data/connectors?modal=values&path=storage.volumeMounts)
 
-Where the volumes above are mounted in the Kafka Connect container.
+Where the volumes declared in `storage.volume` are mounted inside the Kafka Connect container.
 
 **Default:**
 

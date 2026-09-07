@@ -27,7 +27,7 @@ Kubernetes: `>= 1.25.0-0`
 
 ### [affinity](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=affinity)
 
-Affinity rules for scheduling the Console Pods.
+Affinity rules for scheduling the Console Pods. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity).
 
 **Default:** `{}`
 
@@ -51,25 +51,25 @@ Whether to create a HorizontalPodAutoscaler for the Console Deployment.
 
 ### [autoscaling.maxReplicas](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=autoscaling.maxReplicas)
 
-Maximum number of Console Pods the autoscaler scales up to.
+Maximum number of Console Pods the autoscaler scales up to. Applies only when `autoscaling.enabled` is `true`.
 
 **Default:** `100`
 
 ### [autoscaling.minReplicas](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=autoscaling.minReplicas)
 
-Minimum number of Console Pods the autoscaler scales down to.
+Minimum number of Console Pods the autoscaler scales down to. Applies only when `autoscaling.enabled` is `true`.
 
 **Default:** `1`
 
 ### [autoscaling.targetCPUUtilizationPercentage](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=autoscaling.targetCPUUtilizationPercentage)
 
-Average CPU utilization the autoscaler targets, as a percentage of the CPU request.
+Average CPU utilization the autoscaler targets, as a percentage of the CPU request. Applies only when `autoscaling.enabled` is `true`.
 
 **Default:** `80`
 
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=commonLabels)
 
-Common labels to add to all the pods
+Common labels to add to all the Pods.
 
 **Default:** `{}`
 
@@ -191,7 +191,7 @@ Pull secrets may be used to provide credentials to image repositories See https:
 
 ### [ingress.annotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=ingress.annotations)
 
-Annotations to add to the Ingress, for example to select an ingress controller or request a certificate.
+Annotations to add to the Ingress, for example to select an ingress controller or request a certificate. Applies only when `ingress.enabled` is `true`.
 
 **Default:** `{}`
 
@@ -203,7 +203,7 @@ Whether to create an Ingress for Console.
 
 ### [ingress.hosts](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=ingress.hosts)
 
-Hosts and paths that the Ingress routes to Console.
+Hosts and paths that the Ingress routes to Console. Applies only when `ingress.enabled` is `true`.
 
 **Default:**
 
@@ -213,7 +213,7 @@ Hosts and paths that the Ingress routes to Console.
 
 ### [ingress.tls](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=ingress.tls)
 
-TLS configuration for the Ingress.
+TLS certificates for the Ingress, each entry naming a Secret and the hosts it covers. Applies only when `ingress.enabled` is `true`.
 
 **Default:** `[]`
 
@@ -247,13 +247,13 @@ Whether to create a ServiceMonitor for Console's metrics endpoint.
 
 ### [monitoring.labels](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=monitoring.labels)
 
-Labels to add to the ServiceMonitor, so that a Prometheus instance can select it.
+Labels to add to the ServiceMonitor, so that a Prometheus instance can select it. Applies only when `monitoring.enabled` is `true`.
 
 **Default:** `{}`
 
 ### [monitoring.scrapeInterval](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=monitoring.scrapeInterval)
 
-How often Prometheus scrapes that endpoint.
+How often Prometheus scrapes Console's metrics endpoint. Applies only when `monitoring.enabled` is `true`.
 
 **Default:** `"1m"`
 
@@ -315,13 +315,13 @@ Grant time to test connectivity to upstream services such as Kafka and Schema Re
 
 ### [replicaCount](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=replicaCount)
 
-Number of Console Pods to run.
+Number of Console Pods to run. Ignored when `autoscaling.enabled` is `true`, in which case the HorizontalPodAutoscaler sets the count.
 
 **Default:** `1`
 
 ### [resources](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=resources)
 
-Compute resources for the Console container. Left empty so the chart runs on small clusters; see the commented example below.
+Compute resources for the Console container. Left empty by default so that the chart runs on clusters with little capacity, which means Console runs without requests or limits until you set them.
 
 **Default:** `{}`
 
@@ -349,7 +349,7 @@ SecretMounts is an abstraction to make a Secret available in the container's fil
 
 ### [securityContext](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=securityContext)
 
-Container-level security context for the Console container.
+Container-level security context for the Console container. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
 
 **Default:** `{"runAsNonRoot":true}`
 
@@ -367,7 +367,7 @@ Port that the Console Service listens on.
 
 ### [service.type](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=service.type)
 
-Type of Service created for Console.
+Type of Service created for Console. One of `ClusterIP`, `NodePort`, or `LoadBalancer`. `nodePort` applies only when this is `NodePort`.
 
 **Default:** `"ClusterIP"`
 
@@ -397,7 +397,7 @@ The name of the service account to use. If not set and `serviceAccount.create` i
 
 ### [strategy](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=strategy)
 
-Update strategy for the Console Deployment.
+Update strategy for the Console Deployment. Leave empty to use the Kubernetes default, `RollingUpdate`. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy).
 
 **Default:** `{}`
 
@@ -407,13 +407,13 @@ Update strategy for the Console Deployment.
 
 ### [tolerations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=tolerations)
 
-Taints that the Console Pods tolerate.
+Taints that the Console Pods tolerate. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/).
 
 **Default:** `[]`
 
 ### [topologySpreadConstraints](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=topologySpreadConstraints)
 
-Constraints on how the Console Pods are spread across failure domains.
+Constraints on how the Console Pods are spread across failure domains. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/).
 
 **Default:** `[]`
 

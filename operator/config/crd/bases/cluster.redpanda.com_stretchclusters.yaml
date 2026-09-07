@@ -663,7 +663,9 @@ spec:
                           cloud_storage_credentials_source:
                             description: |-
                               The source of credentials used to authenticate to object storage services.
-                              Required for AWS or GCP authentication with IAM roles.
+                              Required for AWS or GCP authentication with IAM roles. Accepted values:
+                              `config_file`, `aws_instance_metadata`, `sts`, `gcp_instance_metadata`,
+                              `azure_aks_oidc_federation`, `azure_vm_instance_metadata`.
                             type: string
                           cloud_storage_disable_tls:
                             description: Disable TLS for all object storage connections.

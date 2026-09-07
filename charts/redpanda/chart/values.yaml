@@ -729,6 +729,7 @@ statefulset:
       enabled: false
       # -- How long a broker Pod must stay in `Pending` before the PVCUnbinder
       # deletes its PersistentVolumeClaim to re-trigger volume provisioning.
+      # Applies only when `pvcUnbinder.enabled` is `true`.
       unbindAfter: 60s
       # -- Renders `--disable-pvc-rebinding-gate-exemption`: turns off the pvc-rebinding gate's
       # stuck-claim exemption (an escape hatch if its proof chain misfires in your environment)
@@ -743,10 +744,12 @@ statefulset:
       # -- Whether to run the BrokerDecommissioner sidecar controller.
       enabled: false
       # -- How long a broker must keep being detected as invalid before the
-      # decommission operation starts.
+      # decommission operation starts. Applies only when
+      # `brokerDecommissioner.enabled` is `true`.
       decommissionAfter: 60s
       # -- How often the decommissioner rechecks a cluster that has a broker
-      # flagged as invalid.
+      # flagged as invalid. Applies only when `brokerDecommissioner.enabled`
+      # is `true`.
       decommissionRequeueTimeout: 10s
     configWatcher:
       # -- Whether to run the config-watcher sidecar.
@@ -763,10 +766,13 @@ statefulset:
       # Setting this field has no effect.
       createRBAC: true
       # -- Address on which the sidecar controllers serve health probes.
+      # Applies only when `controllers.enabled` is `true`.
       healthProbeAddress: ":8085"
       # -- Address on which the sidecar controllers serve Prometheus metrics.
+      # Applies only when `controllers.enabled` is `true`.
       metricsAddress: ":9082"
       # -- Address on which the sidecar controllers serve pprof profiles.
+      # Applies only when `controllers.enabled` is `true`.
       pprofAddress: ":9083"
       # -- DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder
       # Setting this field has no effect.
@@ -778,7 +784,8 @@ statefulset:
       # refuses to start a broker whose data directory is not on the expected
       # filesystem.
       enabled: false
-      # -- Filesystem the validator requires on the data directory.
+      # -- Filesystem the validator requires on the data directory, for
+      # example `xfs`. Applies only when `fsValidator.enabled` is `true`.
       expectedFS: xfs
     setDataDirOwnership:
       # -- In environments where root is not allowed, you cannot change the ownership of files and directories.

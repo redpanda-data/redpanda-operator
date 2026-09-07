@@ -276,7 +276,9 @@ type StretchTieredConfig struct {
 	// Maximum size of the object storage cache, in bytes.
 	CloudStorageCacheSize *string `json:"cloud_storage_cache_size,omitempty"`
 	// The source of credentials used to authenticate to object storage services.
-	// Required for AWS or GCP authentication with IAM roles.
+	// Required for AWS or GCP authentication with IAM roles. Accepted values:
+	// `config_file`, `aws_instance_metadata`, `sts`, `gcp_instance_metadata`,
+	// `azure_aks_oidc_federation`, `azure_vm_instance_metadata`.
 	CloudStorageCredentialsSource *string `json:"cloud_storage_credentials_source,omitempty"`
 	// Disable TLS for all object storage connections.
 	CloudStorageDisableTLS *bool `json:"cloud_storage_disable_tls,omitempty"`
