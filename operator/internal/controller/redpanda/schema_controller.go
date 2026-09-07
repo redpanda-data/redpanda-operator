@@ -88,8 +88,8 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
-func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
-	factory := internalclient.NewFactory(mgr, expander)
+func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace, clusterDomain string, syncInterval time.Duration) error {
+	factory := internalclient.NewFactory(mgr, expander).WithClusterDomain(clusterDomain)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Schema{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))

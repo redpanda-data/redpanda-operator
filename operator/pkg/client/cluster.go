@@ -66,10 +66,10 @@ func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vector
 
 	// A zero resourcetypes.AdminTLSConfigProvider indicates no TLS.
 	// v1ClusterCerts errors if ANY listener errors. Only attempt to pull certs if they're need.
-	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster)
+	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster, c.domain())
 	var certs resourcetypes.AdminTLSConfigProvider
 	if internal := cluster.AdminAPIInternal(); internal != nil && internal.TLS.Enabled {
-		if _, certs, err = v1ClusterCerts(ctx, k8sClient, cluster); err != nil {
+		if _, certs, err = v1ClusterCerts(ctx, k8sClient, cluster, c.domain()); err != nil {
 			return nil, err
 		}
 	}
@@ -139,7 +139,7 @@ func (c *Factory) schemaRegistryForV1Cluster(ctx context.Context, cluster *vecto
 		return nil, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1al
 		return nil, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +288,7 @@ func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster
 		return settings, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
 	if err != nil {
 		return settings, err
 	}
