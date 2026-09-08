@@ -58,29 +58,6 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.annotate" -}}
-{{- $state := (index .a 0) -}}
-{{- $meta := (index .a 1) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_ := (get (fromJson (include "redpanda.annotateWith" (dict "a" (list (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r") $meta)))) "r") -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.annotateWith" -}}
-{{- $annotations := (index .a 0) -}}
-{{- $meta := (index .a 1) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- if (eq ((get (fromJson (include "_shims.len" (dict "a" (list $annotations)))) "r") | int) (0 | int)) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (list)) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- $_ := (set $meta "annotations" (merge (dict) (default (dict) $meta.annotations) $annotations)) -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "redpanda.FullAnnotations" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
@@ -305,9 +282,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $version := (trimPrefix "v" (get (fromJson (include "redpanda.Tag" (dict "a" (list $state)))) "r")) -}}
-{{- $_315_result_err := (list (semverCompare $constraint $version) nil) -}}
-{{- $result := (index $_315_result_err 0) -}}
-{{- $err := (index $_315_result_err 1) -}}
+{{- $_293_result_err := (list (semverCompare $constraint $version) nil) -}}
+{{- $result := (index $_293_result_err 0) -}}
+{{- $err := (index $_293_result_err 1) -}}
 {{- if (ne (toJson $err) "null") -}}
 {{- $_ := (fail $err) -}}
 {{- end -}}
@@ -428,9 +405,9 @@
 {{- $originalKeys := (dict) -}}
 {{- $overrideByKey := (dict) -}}
 {{- range $_, $el := $override -}}
-{{- $_452_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_452_key_ok 0) -}}
-{{- $ok := (index $_452_key_ok 1) -}}
+{{- $_430_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_430_key_ok 0) -}}
+{{- $ok := (index $_430_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -441,13 +418,13 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
-{{- $_464_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_464_key__ 0) -}}
-{{- $_ := (index $_464_key__ 1) -}}
+{{- $_442_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_442_key__ 0) -}}
+{{- $_ := (index $_442_key__ 1) -}}
 {{- $_ := (set $originalKeys $key true) -}}
-{{- $_466_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
-{{- $elOverride_5 := (index $_466_elOverride_5_ok_6 0) -}}
-{{- $ok_6 := (index $_466_elOverride_5_ok_6 1) -}}
+{{- $_444_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
+{{- $elOverride_5 := (index $_444_elOverride_5_ok_6 0) -}}
+{{- $ok_6 := (index $_444_elOverride_5_ok_6 1) -}}
 {{- if $ok_6 -}}
 {{- $merged = (concat (default (list) $merged) (list (get (fromJson (include (first $mergeFunc) (dict "a" (concat (rest $mergeFunc) (list $el $elOverride_5))))) "r"))) -}}
 {{- else -}}
@@ -458,15 +435,15 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
-{{- $_476_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_476_key_ok 0) -}}
-{{- $ok := (index $_476_key_ok 1) -}}
+{{- $_454_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_454_key_ok 0) -}}
+{{- $ok := (index $_454_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
-{{- $_481___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
-{{- $_ := (index $_481___ok_7 0) -}}
-{{- $ok_7 := (index $_481___ok_7 1) -}}
+{{- $_459___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
+{{- $_ := (index $_459___ok_7 0) -}}
+{{- $ok_7 := (index $_459___ok_7 1) -}}
 {{- if $ok_7 -}}
 {{- continue -}}
 {{- end -}}

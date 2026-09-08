@@ -127,7 +127,7 @@ func NodePortService(state *RenderState) *corev1.Service {
 		annotations = map[string]string{}
 	}
 
-	svc := &corev1.Service{
+	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
@@ -136,7 +136,7 @@ func NodePortService(state *RenderState) *corev1.Service {
 			Name:        fmt.Sprintf("%s-external", ServiceName(state)),
 			Namespace:   state.Release.Namespace,
 			Labels:      FullLabels(state),
-			Annotations: annotations,
+			Annotations: helmette.Merge(annotations, FullAnnotations(state)),
 		},
 		Spec: corev1.ServiceSpec{
 			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
@@ -147,8 +147,4 @@ func NodePortService(state *RenderState) *corev1.Service {
 			Type:                     corev1.ServiceTypeNodePort,
 		},
 	}
-
-	annotate(state, &svc.ObjectMeta)
-
-	return svc
 }

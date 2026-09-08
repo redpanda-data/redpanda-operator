@@ -74,15 +74,16 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
 		})
 
-		cert := &certmanagerv1.Certificate{
+		certs = append(certs, &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-cert", fullname, name),
-				Labels:    FullLabels(state),
-				Namespace: state.Release.Namespace,
+				Name:        fmt.Sprintf("%s-%s-cert", fullname, name),
+				Labels:      FullLabels(state),
+				Namespace:   state.Release.Namespace,
+				Annotations: FullAnnotations(state),
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				DNSNames:   names,
@@ -95,11 +96,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 					Size:      256,
 				},
 			},
-		}
-
-		annotate(state, &cert.ObjectMeta)
-
-		certs = append(certs, cert)
+		})
 	}
 
 	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
@@ -127,15 +124,16 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 
 		duration := helmette.Default("43800h", data.Duration)
 
-		cert := &certmanagerv1.Certificate{
+		certs = append(certs, &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-client", fullname, name),
-				Namespace: state.Release.Namespace,
-				Labels:    FullLabels(state),
+				Name:        fmt.Sprintf("%s-%s-client", fullname, name),
+				Namespace:   state.Release.Namespace,
+				Labels:      FullLabels(state),
+				Annotations: FullAnnotations(state),
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
@@ -148,11 +146,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 				},
 				IssuerRef: issuerRef,
 			},
-		}
-
-		annotate(state, &cert.ObjectMeta)
-
-		certs = append(certs, cert)
+		})
 	}
 
 	return certs

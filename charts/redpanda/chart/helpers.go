@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/utils/ptr"
@@ -91,33 +90,12 @@ func FullLabels(state *RenderState) map[string]string {
 // FullAnnotations returns the annotations that are applied to every object
 // rendered by this chart.
 //
-// Unlike [FullLabels] it contributes no chart defaults of its own; it exists so
+// Unlike [FullLabels] it contributes no chart defaults of its own. It exists so
 // that call sites share one definition of "the common annotations" and so that
 // an unset commonAnnotations normalizes to an empty map rather than nil.
-// annotate applies the chart's common annotations to meta, merging beneath any
-// annotations meta already carries.
-func annotate(state *RenderState, meta *metav1.ObjectMeta) {
-	annotateWith(FullAnnotations(state), meta)
-}
-
-// annotateWith merges annotations into meta, beneath anything meta already
-// carries.
 //
-// It leaves meta.Annotations untouched when annotations is empty. gotohelm
-// emits a key for every field the go source assigns, so assigning
-// unconditionally would add `annotations: {}` to every object this chart
-// renders.
-func annotateWith(annotations map[string]string, meta *metav1.ObjectMeta) {
-	if len(annotations) == 0 {
-		return
-	}
-
-	meta.Annotations = helmette.Merge(
-		helmette.Default(map[string]string{}, meta.Annotations),
-		annotations,
-	)
-}
-
+// Call sites that carry their own annotations merge those on top, as
+// resource-specific annotations take precedence over the common ones.
 func FullAnnotations(state *RenderState) map[string]string {
 	if state.Values.CommonAnnotations == nil {
 		return map[string]string{}

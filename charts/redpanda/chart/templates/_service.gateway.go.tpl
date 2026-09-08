@@ -19,8 +19,7 @@
 {{- break -}}
 {{- end -}}
 {{- $services := (coalesce nil) -}}
-{{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-gateway-bootstrap" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict) (dict "ports" $ports "publishNotReadyAddresses" true "selector" $selector "sessionAffinity" "None" "type" "ClusterIP")))) -}}
-{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $bootstrap.metadata)))) "r") -}}
+{{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-gateway-bootstrap" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) "namespace" $state.Release.Namespace "labels" $labels "annotations" (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r"))) "spec" (mustMergeOverwrite (dict) (dict "ports" $ports "publishNotReadyAddresses" true "selector" $selector "sessionAffinity" "None" "type" "ClusterIP")))) -}}
 {{- $services = (concat (default (list) $services) (list $bootstrap)) -}}
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- range $_, $podname := $pods -}}
@@ -32,8 +31,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_ := (set $podSelector "statefulset.kubernetes.io/pod-name" $podname) -}}
-{{- $svc := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.gatewayBrokerServiceName" (dict "a" (list $podname)))) "r") "namespace" $state.Release.Namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict) (dict "ports" $ports "publishNotReadyAddresses" true "selector" $podSelector "sessionAffinity" "None" "type" "ClusterIP")))) -}}
-{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $svc.metadata)))) "r") -}}
+{{- $svc := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.gatewayBrokerServiceName" (dict "a" (list $podname)))) "r") "namespace" $state.Release.Namespace "labels" $labels "annotations" (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r"))) "spec" (mustMergeOverwrite (dict) (dict "ports" $ports "publishNotReadyAddresses" true "selector" $podSelector "sessionAffinity" "None" "type" "ClusterIP")))) -}}
 {{- $services = (concat (default (list) $services) (list $svc)) -}}
 {{- end -}}
 {{- if $_is_returning -}}

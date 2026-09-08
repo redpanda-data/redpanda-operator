@@ -1304,6 +1304,7 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 			Labels: helmette.Merge(map[string]string{
 				"app.kubernetes.io/component": fmt.Sprintf("%s%s", Name(state), pool.Suffix()),
 			}, poolLabels, FullLabels(state)),
+			Annotations: FullAnnotations(state),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -1348,8 +1349,6 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 			set.Spec.VolumeClaimTemplates = append(set.Spec.VolumeClaimTemplates, *t)
 		}
 	}
-
-	annotate(state, &set.ObjectMeta)
 
 	return set
 }
@@ -1397,7 +1396,7 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 				state.Values.Storage.PersistentVolume.Labels,
 				state.Values.CommonLabels,
 			),
-			Annotations: helmette.Default(nil, state.Values.Storage.PersistentVolume.Annotations),
+			Annotations: helmette.Merge(helmette.Default(map[string]string{}, state.Values.Storage.PersistentVolume.Annotations), FullAnnotations(state)),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -1419,8 +1418,6 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 		}
 	}
 
-	annotate(state, &pvc.ObjectMeta)
-
 	return pvc
 }
 
@@ -1440,7 +1437,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 				state.Values.Storage.TieredPersistentVolumeLabels(),
 				state.Values.CommonLabels,
 			),
-			Annotations: helmette.Default(nil, state.Values.Storage.TieredPersistentVolumeAnnotations()),
+			Annotations: helmette.Merge(helmette.Default(map[string]string{}, state.Values.Storage.TieredPersistentVolumeAnnotations()), FullAnnotations(state)),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -1459,8 +1456,6 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 	} else if !helmette.Empty(sc) {
 		pvc.Spec.StorageClassName = ptr.To(sc)
 	}
-
-	annotate(state, &pvc.ObjectMeta)
 
 	return pvc
 }

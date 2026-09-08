@@ -63,9 +63,10 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-sts-lifecycle", Fullname(state)),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%s-sts-lifecycle", Fullname(state)),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -251,8 +252,6 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		`true`,
 	)
 	secret.StringData["preStop.sh"] = helmette.Join("\n", preStopSh)
-	annotate(state, &secret.ObjectMeta)
-
 	return secret
 }
 
@@ -264,9 +263,10 @@ func SecretSASLUsers(state *RenderState) *corev1.Secret {
 				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      state.Values.Auth.SASL.SecretRef,
-				Namespace: state.Release.Namespace,
-				Labels:    FullLabels(state),
+				Name:        state.Values.Auth.SASL.SecretRef,
+				Namespace:   state.Release.Namespace,
+				Labels:      FullLabels(state),
+				Annotations: FullAnnotations(state),
 			},
 			Type:       corev1.SecretTypeOpaque,
 			StringData: map[string]string{},
@@ -284,8 +284,6 @@ func SecretSASLUsers(state *RenderState) *corev1.Secret {
 			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
 		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)
-		annotate(state, &secret.ObjectMeta)
-
 		return secret
 	} else if state.Values.Auth.SASL.Enabled && state.Values.Auth.SASL.SecretRef == "" {
 		panic("auth.sasl.secretRef cannot be empty when auth.sasl.enabled=true")
@@ -313,15 +311,16 @@ func SecretBootstrapUser(state *RenderState) *corev1.Secret {
 		password = *userPassword
 	}
 
-	secret := &corev1.Secret{
+	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        secretName,
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Immutable: ptr.To(true),
 		Type:      corev1.SecretTypeOpaque,
@@ -329,10 +328,6 @@ func SecretBootstrapUser(state *RenderState) *corev1.Secret {
 			"password": password,
 		},
 	}
-
-	annotate(state, &secret.ObjectMeta)
-
-	return secret
 }
 
 func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
@@ -346,9 +341,10 @@ func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.49s-fs-validator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%.49s-fs-validator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -392,8 +388,6 @@ if [ "${result}" != "0" ]; then
 fi
 
 echo "passed"`
-	annotate(state, &secret.ObjectMeta)
-
 	return secret
 }
 
@@ -404,9 +398,10 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.51s-configurator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%.51s-configurator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -455,8 +450,6 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 		)
 	}
 	secret.StringData["configurator.sh"] = helmette.Join("\n", configuratorSh)
-	annotate(state, &secret.ObjectMeta)
-
 	return secret
 }
 

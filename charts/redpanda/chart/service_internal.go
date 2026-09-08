@@ -82,7 +82,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 		annotations = state.Values.Service.Internal.Annotations
 	}
 
-	svc := &corev1.Service{
+	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
@@ -91,7 +91,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 			Name:        ServiceName(state),
 			Namespace:   state.Release.Namespace,
 			Labels:      helmette.Merge(FullLabels(state), MonitoringEnabledLabel(state)),
-			Annotations: annotations,
+			Annotations: helmette.Merge(annotations, FullAnnotations(state)),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,
@@ -101,8 +101,4 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 			Ports:                    ports,
 		},
 	}
-
-	annotate(state, &svc.ObjectMeta)
-
-	return svc
 }

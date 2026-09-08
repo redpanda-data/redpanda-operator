@@ -47,9 +47,10 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-gateway-bootstrap", Fullname(state)),
-			Namespace: state.Release.Namespace,
-			Labels:    labels,
+			Name:        fmt.Sprintf("%s-gateway-bootstrap", Fullname(state)),
+			Namespace:   state.Release.Namespace,
+			Labels:      labels,
+			Annotations: FullAnnotations(state),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:                    ports,
@@ -59,8 +60,6 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 			Type:                     corev1.ServiceTypeClusterIP,
 		},
 	}
-	annotate(state, &bootstrap.ObjectMeta)
-
 	services = append(services, bootstrap)
 
 	// Per-broker services: one service per pod, selected by pod name.
@@ -79,9 +78,10 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 				Kind:       "Service",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      gatewayBrokerServiceName(podname),
-				Namespace: state.Release.Namespace,
-				Labels:    labels,
+				Name:        gatewayBrokerServiceName(podname),
+				Namespace:   state.Release.Namespace,
+				Labels:      labels,
+				Annotations: FullAnnotations(state),
 			},
 			Spec: corev1.ServiceSpec{
 				Ports:                    ports,
@@ -91,8 +91,6 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 				Type:                     corev1.ServiceTypeClusterIP,
 			},
 		}
-		annotate(state, &svc.ObjectMeta)
-
 		services = append(services, svc)
 	}
 
