@@ -27,10 +27,12 @@ concurrency:
   cancel-in-progress: true
 jobs:
   review:
-    # Same-repo PRs only. A fork PR carries no secrets, and the reusable
-    # workflow declares anthropic_api_key as required, so a fork PR would
-    # FAIL the job rather than skip it. A suggest-only review must never
-    # redden an external contributor's PR.
+    # Same-repo PRs only. A fork PR is issued a read-only token whatever the
+    # permissions block below asks for, and carries neither the OIDC role nor
+    # the Secrets Manager access the model auth needs — so the review has
+    # nothing to authenticate with and nothing to post with. Skipping it
+    # outright is the honest outcome: a suggest-only review must never redden
+    # an external contributor's PR.
     if: >-
       !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository
@@ -47,7 +49,28 @@ jobs:
       aws_region: ${{ vars.RP_AWS_CRED_REGION }}
       aws_role_name_prefix: ${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}
       surfaces: helm,crd
+      # Model traffic goes through the ADP AI Gateway (DEVPROD-4735) rather
+      # than a direct Anthropic key, matching streaming-enterprise's shim.
+      # Not a cost saving: it is what makes this review's spend attributable.
+      # Cost and usage attributes by agent and by an agent's tags, so the
+      # reusable workflow's default credential is the doc-strings-review
+      # self-managed agent's, and this repo's share of that review now groups
+      # under that agent and its team=docs tag. On a direct key it was outside
+      # ADP altogether and appeared in no report at all.
+      #
+      # The same OIDC role assumed above reads the credential, so the only
+      # other requirement is the Secrets Manager grant:
+      # sdlc/prod/github/docs_doc_strings_client, added for this repo in
+      # devprod-infra#802. Without it the mint cannot happen — and because
+      # every step in that chain is continue-on-error, the symptom is a review
+      # that silently does not appear rather than a failing check. Read the
+      # job log, not the check colour.
+      use_adp_gateway: true
     secrets:
+      # Inert while use_adp_gateway is on: the reusable workflow passes the key
+      # through only on the non-gateway path and blanks it otherwise, so it
+      # never reaches the model step. Kept so that turning the gateway off
+      # leaves a working review rather than a lint-only one.
       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
       aws_cred_account_id: ${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}
       actions_bot_token: ${{ secrets.ACTIONS_BOT_TOKEN }}
