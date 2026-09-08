@@ -33,9 +33,10 @@ func ConfigMap(state *RenderState) *corev1.ConfigMap {
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    state.Labels(nil),
-			Name:      state.FullName(),
-			Namespace: state.Namespace,
+			Labels:      state.Labels(nil),
+			Annotations: state.Annotations(nil),
+			Name:        state.FullName(),
+			Namespace:   state.Namespace,
 		},
 		Data: data,
 	}

@@ -58,7 +58,7 @@ func HTTPRoute(state *RenderState) *gatewayv1.HTTPRoute {
 			Name:        state.FullName(),
 			Labels:      state.Labels(nil),
 			Namespace:   state.Namespace,
-			Annotations: state.Values.Gateway.Annotations,
+			Annotations: state.Annotations(state.Values.Gateway.Annotations),
 		},
 		Spec: gatewayv1.HTTPRouteSpec{
 			CommonRouteSpec: gatewayv1.CommonRouteSpec{

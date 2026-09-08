@@ -57,6 +57,12 @@ Automount API credentials for the Service Account into the pod. Console does not
 
 **Default:** `80`
 
+### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=commonAnnotations)
+
+Additional annotations to add to every object the chart renders, except the Pod template. Annotations set on an individual resource take precedence. For example, `argocd.argoproj.io/sync-wave: "1"`.
+
+**Default:** `{}`
+
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/console?modal=values&path=commonLabels)
 
 **Default:** `{}`

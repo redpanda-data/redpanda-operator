@@ -19,6 +19,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -56,6 +57,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -196,6 +198,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -245,6 +248,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -282,6 +286,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -422,6 +427,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -465,6 +471,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -502,6 +509,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -642,6 +650,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -686,6 +695,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     "": 31q1Pbz
     app.kubernetes.io/instance: console
@@ -724,6 +734,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     "": 31q1Pbz
     app.kubernetes.io/instance: console
@@ -895,6 +906,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -932,6 +944,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -1137,6 +1150,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -1174,6 +1188,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -1361,6 +1376,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -1471,6 +1487,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     "": PtQ7JxIAdPjt
     app.kubernetes.io/instance: console
@@ -1509,6 +1526,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     "": PtQ7JxIAdPjt
     app.kubernetes.io/instance: console
@@ -1686,6 +1704,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -1872,6 +1891,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -1909,6 +1929,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -2101,6 +2122,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -2140,6 +2162,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -2342,6 +2365,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -2524,6 +2548,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -3022,6 +3047,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     JwK5MKTa: WW
     app.kubernetes.io/instance: console
@@ -3061,6 +3087,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     JwK5MKTa: WW
     app.kubernetes.io/instance: console
@@ -3345,6 +3372,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -3382,6 +3410,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -3689,6 +3718,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -3726,6 +3756,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -3969,6 +4000,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -4006,6 +4038,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -4065,6 +4098,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     B0Pmybnj: gh8
     MdyMnFBP0Cd1: UUVRKbjhv
@@ -4105,6 +4139,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     B0Pmybnj: gh8
     MdyMnFBP0Cd1: UUVRKbjhv
@@ -4457,6 +4492,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -4494,6 +4530,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -4837,6 +4874,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -4874,6 +4912,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -5355,6 +5394,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -5717,6 +5757,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -5754,6 +5795,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -5961,6 +6003,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -5998,6 +6041,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -6434,6 +6478,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     0pITqVWuPVXcDF: jm5Ve54
     8iyjfh0: Igz
@@ -6473,6 +6518,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     0pITqVWuPVXcDF: jm5Ve54
     8iyjfh0: Igz
@@ -6517,6 +6563,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     0pITqVWuPVXcDF: jm5Ve54
     8iyjfh0: Igz
@@ -6568,6 +6615,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -6605,6 +6653,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -7174,6 +7223,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -7564,6 +7614,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -8567,6 +8618,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     BKrxjHNg8: qlqPhj
     app.kubernetes.io/instance: console
@@ -8605,6 +8657,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     BKrxjHNg8: qlqPhj
     app.kubernetes.io/instance: console
@@ -8907,6 +8960,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     HzuQ: mCfbHBQ
     app.kubernetes.io/instance: console
@@ -8946,6 +9000,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     HzuQ: mCfbHBQ
     app.kubernetes.io/instance: console
@@ -9506,6 +9561,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     T: f0
     app.kubernetes.io/instance: console
@@ -9569,6 +9625,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     T: f0
     app.kubernetes.io/instance: console
@@ -9610,6 +9667,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -9651,6 +9709,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -9748,6 +9807,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     B19ue: 8W
     Kxm5R1: R
@@ -10434,6 +10494,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     B19ue: 8W
     Kxm5R1: R
@@ -10518,6 +10579,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -11582,6 +11644,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     0fz: qRhpB
     app.kubernetes.io/instance: console
@@ -11651,6 +11714,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     5NU: UG7t
     6NmZI: QxuTdplvdDdc
@@ -12695,6 +12759,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     Nv: YHcp9u
     RMi5: o4
@@ -13664,6 +13729,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     BJ: Gq0Rw
     FPcPYvmbB7dAZe: Cy7WaeI
@@ -13793,6 +13859,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -13851,6 +13918,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -13928,6 +13996,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     X: zjmrl
     "Y": yG0
@@ -15035,6 +15104,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     T1: pMf7C
     app.kubernetes.io/instance: console
@@ -15074,6 +15144,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     T1: pMf7C
     app.kubernetes.io/instance: console
@@ -15661,6 +15732,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     T1: pMf7C
     app.kubernetes.io/instance: console
@@ -15733,6 +15805,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     "": vWjW
     G: qF
@@ -16713,6 +16786,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     "": vWjW
     G: qF
@@ -16852,6 +16926,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     BvJq2xZ: jY6O0
     app.kubernetes.io/instance: console
@@ -17573,6 +17648,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     M1diW: PVb
     app.kubernetes.io/instance: console
@@ -17632,6 +17708,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     M1diW: PVb
     app.kubernetes.io/instance: console
@@ -17713,6 +17790,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     "": WcYTY
     app.kubernetes.io/instance: console
@@ -18499,6 +18577,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -18555,6 +18634,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     4kU: mkn8
     Ro: NFx1P
@@ -19428,6 +19508,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     4kU: mkn8
     Ro: NFx1P
@@ -19486,6 +19567,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     0HYkOrz: JCwpSW
     0TgDztQSY: P
@@ -20318,6 +20400,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     0HYkOrz: JCwpSW
     0TgDztQSY: P
@@ -20349,6 +20432,294 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: 0BIfuN
+-- testdata/common-annotations.yaml.golden --
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+stringData:
+  authentication-jwt-signingkey: SECRETKEY
+  authentication-oidc-client-secret: ""
+  kafka-sasl-aws-msk-iam-secret-key: ""
+  kafka-sasl-password: ""
+  kafka-tls-ca: ""
+  kafka-tls-cert: ""
+  kafka-tls-key: ""
+  license: ""
+  redpanda-admin-api-password: ""
+  redpanda-admin-api-tls-ca: ""
+  redpanda-admin-api-tls-cert: ""
+  redpanda-admin-api-tls-key: ""
+  schema-registry-bearertoken: ""
+  schema-registry-password: ""
+  schemaregistry-tls-ca: ""
+  schemaregistry-tls-cert: ""
+  schemaregistry-tls-key: ""
+  serde-protobuf-git-basicauth-password: ""
+type: Opaque
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+data:
+  config.yaml: |
+    # from .Values.config
+    {}
+kind: ConfigMap
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    hello: world
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 0
+  selector:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/name: console
+  type: ClusterIP
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  replicas: null
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/name: console
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        checksum/config: 28d978af90a43439edaee767a120fd85a15f923d1977979170de19b9e74c5895
+      labels:
+        app.kubernetes.io/instance: console
+        app.kubernetes.io/name: console
+    spec:
+      affinity: {}
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --config.filepath=/etc/console/configs/config.yaml
+        command: null
+        env:
+        - name: AUTHENTICATION_JWTSIGNINGKEY
+          valueFrom:
+            secretKeyRef:
+              key: authentication-jwt-signingkey
+              name: console
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.9.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.9.0
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0
+        envFrom: []
+        image: docker.redpanda.com/redpandadata/console:v3.9.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: console
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/console/configs
+          name: configs
+          readOnly: true
+        - mountPath: /etc/console/secrets
+          name: secrets
+          readOnly: true
+      imagePullSecrets: []
+      initContainers: null
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 99
+        fsGroupChangePolicy: Always
+        runAsUser: 99
+      serviceAccountName: console
+      tolerations: []
+      topologySpreadConstraints: []
+      volumes:
+      - configMap:
+          name: console
+        name: configs
+      - name: secrets
+        secret:
+          secretName: console
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  maxReplicas: 100
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 80
+        type: Utilization
+    type: Resource
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: console
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  ingressClassName: null
+  rules:
+  - host: chart-example.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: console
+            port:
+              number: 8080
+        path: /
+        pathType: ImplementationSpecific
+  tls: null
+---
+# Source: console/templates/entry-point.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/instance: console
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: console
+  namespace: test-namespace
+spec:
+  endpoints:
+  - interval: 1m
+    path: /admin/metrics
+    port: http
+    scheme: http
+  namespaceSelector: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: console
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: console
+      app.kubernetes.io/version: v3.9.0
+      helm.sh/chart: console-3.9.0
 -- testdata/console-config-listen-and-target-port.yaml.golden --
 ---
 # Source: console/templates/entry-point.yaml
@@ -20370,6 +20741,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -20408,6 +20780,7 @@ data:
       listenPort: 3333
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -20564,6 +20937,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -20602,6 +20976,7 @@ data:
       listenPort: 3333
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -20758,6 +21133,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -20805,6 +21181,7 @@ data:
         issuerUrl: my-oidc-issuer.com
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -20969,6 +21346,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -21015,6 +21393,7 @@ data:
           name: user@mycompany.com
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -21638,6 +22017,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -21675,6 +22055,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -21831,6 +22212,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -21868,6 +22250,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22024,6 +22407,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22061,6 +22445,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22226,6 +22611,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22263,6 +22649,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22449,6 +22836,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22486,6 +22874,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22674,6 +23063,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22711,6 +23101,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22867,6 +23258,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -22904,6 +23296,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -23296,6 +23689,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -23333,6 +23727,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -23509,6 +23904,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -23546,6 +23942,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -23702,6 +24099,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm
@@ -23739,6 +24137,7 @@ data:
     {}
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: console
     app.kubernetes.io/managed-by: Helm

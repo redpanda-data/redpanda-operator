@@ -26,9 +26,10 @@ func Secret(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      state.FullName(),
-			Labels:    state.Labels(nil),
-			Namespace: state.Namespace,
+			Name:        state.FullName(),
+			Labels:      state.Labels(nil),
+			Annotations: state.Annotations(nil),
+			Namespace:   state.Namespace,
 		},
 		Type: corev1.SecretTypeOpaque,
 		StringData: map[string]string{

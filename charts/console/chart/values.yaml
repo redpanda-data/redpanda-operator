@@ -62,6 +62,11 @@ serviceAccount:
 # Common labels to add to all the pods
 commonLabels: {}
 
+# -- Additional annotations to add to every object the chart renders, except
+# the Pod template. Annotations set on an individual resource take precedence.
+# For example, `argocd.argoproj.io/sync-wave: "1"`.
+commonAnnotations: {}
+
 # -- Annotations to add to the deployment.
 annotations: {}
 

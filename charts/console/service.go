@@ -43,7 +43,7 @@ func Service(state *RenderState) *corev1.Service {
 			Name:        state.FullName(),
 			Namespace:   state.Namespace,
 			Labels:      state.Labels(nil),
-			Annotations: state.Values.Service.Annotations,
+			Annotations: state.Annotations(state.Values.Service.Annotations),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     state.Values.Service.Type,

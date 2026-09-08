@@ -55,9 +55,10 @@ func HorizontalPodAutoscaler(state *RenderState) *autoscalingv2.HorizontalPodAut
 			Kind:       "HorizontalPodAutoscaler",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    state.Labels(nil),
-			Name:      state.FullName(),
-			Namespace: state.Namespace,
+			Labels:      state.Labels(nil),
+			Annotations: state.Annotations(nil),
+			Name:        state.FullName(),
+			Namespace:   state.Namespace,
 		},
 		Spec: autoscalingv2.HorizontalPodAutoscalerSpec{
 			ScaleTargetRef: autoscalingv2.CrossVersionObjectReference{
