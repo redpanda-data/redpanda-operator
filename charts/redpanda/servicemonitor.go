@@ -50,15 +50,16 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		}
 	}
 
-	sm := &monitoringv1.ServiceMonitor{
+	return &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "monitoring.coreos.com/v1",
 			Kind:       monitoringv1.ServiceMonitorsKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
-			Namespace: state.Release.Namespace,
-			Labels:    helmette.Merge(FullLabels(state), state.Values.Monitoring.Labels),
+			Name:        Fullname(state),
+			Namespace:   state.Release.Namespace,
+			Labels:      helmette.Merge(FullLabels(state), state.Values.Monitoring.Labels),
+			Annotations: FullAnnotations(state),
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{endpoint},
@@ -71,8 +72,4 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			},
 		},
 	}
-
-	annotate(state, &sm.ObjectMeta)
-
-	return sm
 }

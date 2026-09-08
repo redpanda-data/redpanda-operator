@@ -134,9 +134,10 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 			Kind:       "TLSRoute",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-%s-bootstrap", fullname, listenerTag, name),
-			Namespace: namespace,
-			Labels:    labels,
+			Name:        fmt.Sprintf("%s-%s-%s-bootstrap", fullname, listenerTag, name),
+			Namespace:   namespace,
+			Labels:      labels,
+			Annotations: annotations,
 		},
 		Spec: TLSRouteSpec{
 			ParentRefs: parentRefs,
@@ -153,8 +154,6 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 			},
 		},
 	}
-	annotateWith(annotations, &bootstrap.ObjectMeta)
-
 	routes = append(routes, bootstrap)
 
 	if hostTemplate == "" {
@@ -171,9 +170,10 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 				Kind:       "TLSRoute",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-%s-%d", fullname, listenerTag, name, i),
-				Namespace: namespace,
-				Labels:    labels,
+				Name:        fmt.Sprintf("%s-%s-%s-%d", fullname, listenerTag, name, i),
+				Namespace:   namespace,
+				Labels:      labels,
+				Annotations: annotations,
 			},
 			Spec: TLSRouteSpec{
 				ParentRefs: parentRefs,
@@ -190,8 +190,6 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 				},
 			},
 		}
-		annotateWith(annotations, &route.ObjectMeta)
-
 		routes = append(routes, route)
 	}
 

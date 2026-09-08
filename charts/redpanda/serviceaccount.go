@@ -14,6 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 // Create the name of the service account to use
@@ -36,7 +38,7 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 		return nil
 	}
 
-	sa := &corev1.ServiceAccount{
+	return &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "ServiceAccount",
@@ -45,12 +47,8 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 			Name:        ServiceAccountName(state),
 			Namespace:   state.Release.Namespace,
 			Labels:      FullLabels(state),
-			Annotations: state.Values.ServiceAccount.Annotations,
+			Annotations: helmette.Merge(state.Values.ServiceAccount.Annotations, FullAnnotations(state)),
 		},
 		AutomountServiceAccountToken: ptr.To(false),
 	}
-
-	annotate(state, &sa.ObjectMeta)
-
-	return sa
 }
