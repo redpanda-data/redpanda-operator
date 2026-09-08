@@ -62,6 +62,7 @@
 {{- end -}}
 {{- $preStopSh = (concat (default (list) $preStopSh) (list `true`)) -}}
 {{- $_ := (set $secret.stringData "preStop.sh" (join "\n" $preStopSh)) -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $secret.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $secret) | toJson -}}
 {{- break -}}
@@ -87,6 +88,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_ := (set $secret.stringData "users.txt" (join "\n" $usersTxt)) -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $secret.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $secret) | toJson -}}
 {{- break -}}
@@ -121,8 +123,10 @@
 {{- if (ne (toJson $userPassword) "null") -}}
 {{- $password = $userPassword -}}
 {{- end -}}
+{{- $secret := (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $secretName "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "immutable" true "type" "Opaque" "stringData" (dict "password" $password))) -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $secret.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $secretName "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) "immutable" true "type" "Opaque" "stringData" (dict "password" $password)))) | toJson -}}
+{{- (dict "r" $secret) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -176,6 +180,7 @@ if [ "${result}" != "0" ]; then
 fi
 
 echo "passed"`) -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $secret.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $secret) | toJson -}}
 {{- break -}}
@@ -202,6 +207,7 @@ echo "passed"`) -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (list `` `# Configure Rack Awareness` `set +x` (printf `RACK=$(curl --silent --cacert /run/secrets/kubernetes.io/serviceaccount/ca.crt --fail -H 'Authorization: Bearer '$(cat /run/secrets/kubernetes.io/serviceaccount/token) "https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT_HTTPS}/api/v1/nodes/${KUBERNETES_NODE_NAME}?pretty=true" | grep %s | grep -v '\"key\":' | sed 's/.*": "\([^"]\+\).*/\1/')` (squote (quote $state.Values.rackAwareness.nodeAnnotation))) `set -x` `rpk --config "$CONFIG" redpanda config set redpanda.rack "${RACK}"`)) -}}
 {{- end -}}
 {{- $_ := (set $secret.stringData "configurator.sh" (join "\n" $configuratorSh)) -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $secret.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $secret) | toJson -}}
 {{- break -}}

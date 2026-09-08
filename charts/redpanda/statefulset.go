@@ -1349,6 +1349,8 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 		}
 	}
 
+	annotate(state, &set.ObjectMeta)
+
 	return set
 }
 
@@ -1417,6 +1419,8 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 		}
 	}
 
+	annotate(state, &pvc.ObjectMeta)
+
 	return pvc
 }
 
@@ -1455,6 +1459,8 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 	} else if !helmette.Empty(sc) {
 		pvc.Spec.StorageClassName = ptr.To(sc)
 	}
+
+	annotate(state, &pvc.ObjectMeta)
 
 	return pvc
 }

@@ -127,7 +127,7 @@ func NodePortService(state *RenderState) *corev1.Service {
 		annotations = map[string]string{}
 	}
 
-	return &corev1.Service{
+	svc := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
@@ -147,4 +147,8 @@ func NodePortService(state *RenderState) *corev1.Service {
 			Type:                     corev1.ServiceTypeNodePort,
 		},
 	}
+
+	annotate(state, &svc.ObjectMeta)
+
+	return svc
 }

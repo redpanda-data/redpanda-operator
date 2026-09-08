@@ -127,6 +127,8 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 			},
 		}
 
+		annotate(state, &svc.ObjectMeta)
+
 		services = append(services, svc)
 	}
 

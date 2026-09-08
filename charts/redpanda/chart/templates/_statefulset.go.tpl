@@ -667,6 +667,7 @@ chroot /host /bin/bash -c '
 {{- $_ := (set $set.spec "volumeClaimTemplates" (concat (default (list) $set.spec.volumeClaimTemplates) (list $t_10))) -}}
 {{- end -}}
 {{- end -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $set.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $set) | toJson -}}
 {{- break -}}
@@ -721,6 +722,7 @@ chroot /host /bin/bash -c '
 {{- $_ := (set $pvc.spec "storageClassName" $state.Values.storage.persistentVolume.storageClass) -}}
 {{- end -}}
 {{- end -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $pvc.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $pvc) | toJson -}}
 {{- break -}}
@@ -744,6 +746,7 @@ chroot /host /bin/bash -c '
 {{- $_ := (set $pvc.spec "storageClassName" $sc_11) -}}
 {{- end -}}
 {{- end -}}
+{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $pvc.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $pvc) | toJson -}}
 {{- break -}}

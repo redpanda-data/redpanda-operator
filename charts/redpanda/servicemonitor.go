@@ -50,7 +50,7 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 		}
 	}
 
-	return &monitoringv1.ServiceMonitor{
+	sm := &monitoringv1.ServiceMonitor{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "monitoring.coreos.com/v1",
 			Kind:       monitoringv1.ServiceMonitorsKind,
@@ -71,4 +71,8 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			},
 		},
 	}
+
+	annotate(state, &sm.ObjectMeta)
+
+	return sm
 }

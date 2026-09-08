@@ -74,7 +74,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
 		})
 
-		certs = append(certs, &certmanagerv1.Certificate{
+		cert := &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",
 				Kind:       "Certificate",
@@ -95,7 +95,11 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 					Size:      256,
 				},
 			},
-		})
+		}
+
+		annotate(state, &cert.ObjectMeta)
+
+		certs = append(certs, cert)
 	}
 
 	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
@@ -123,7 +127,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 
 		duration := helmette.Default("43800h", data.Duration)
 
-		certs = append(certs, &certmanagerv1.Certificate{
+		cert := &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "cert-manager.io/v1",
 				Kind:       "Certificate",
@@ -144,7 +148,11 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 				},
 				IssuerRef: issuerRef,
 			},
-		})
+		}
+
+		annotate(state, &cert.ObjectMeta)
+
+		certs = append(certs, cert)
 	}
 
 	return certs
