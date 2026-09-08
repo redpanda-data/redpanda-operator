@@ -11,6 +11,7 @@ package steps
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
@@ -62,37 +63,32 @@ const (
 
 type vclusterNodes []*vclusterNode
 
-// dumpDiagnostics logs pod statuses and events from each vcluster to aid
-// debugging when multicluster tests fail.
+// dumpDiagnostics logs the host nodes and, for each vcluster, pod statuses,
+// events, workload objects and container logs to aid debugging when
+// multicluster tests fail.
 func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) {
-	diagCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	diagCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
+
+	hostClient, err := client.New(t.RestConfig(), client.Options{})
+	if err != nil {
+		t.Logf("[multicluster-diagnostics] failed to create host client: %v", err)
+	} else {
+		dumpHostNodes(diagCtx, t, hostClient)
+	}
 
 	for _, node := range v {
 		t.Logf("[multicluster-diagnostics] === vcluster %s (host namespace: %s) ===", node.Name(), node.Name())
 
 		// Dump pods from the host namespace (where vcluster components run).
-		hostClient, err := client.New(t.RestConfig(), client.Options{})
-		if err != nil {
-			t.Logf("[multicluster-diagnostics] failed to create host client: %v", err)
-			continue
-		}
-		var hostPods corev1.PodList
-		if err := hostClient.List(diagCtx, &hostPods, client.InNamespace(node.Name())); err != nil {
-			t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
-		} else {
-			for _, pod := range hostPods.Items {
-				t.Logf("[multicluster-diagnostics] host pod %s: phase=%s", pod.Name, pod.Status.Phase)
-				for _, cs := range pod.Status.ContainerStatuses {
-					if cs.State.Waiting != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
-					}
-					if cs.State.Terminated != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
-					}
-					if cs.RestartCount > 0 {
-						t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
-					}
+		if hostClient != nil {
+			var hostPods corev1.PodList
+			if err := hostClient.List(diagCtx, &hostPods, client.InNamespace(node.Name())); err != nil {
+				t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
+			} else {
+				for _, pod := range hostPods.Items {
+					t.Logf("[multicluster-diagnostics] host pod %s: phase=%s node=%s", pod.Name, pod.Status.Phase, pod.Spec.NodeName)
+					logContainerStatuses(t, pod.Status.ContainerStatuses)
 				}
 			}
 		}
@@ -104,17 +100,7 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 		} else {
 			for _, pod := range vcPods.Items {
 				t.Logf("[multicluster-diagnostics] vcluster pod %s/%s: phase=%s", pod.Namespace, pod.Name, pod.Status.Phase)
-				for _, cs := range pod.Status.ContainerStatuses {
-					if cs.State.Waiting != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
-					}
-					if cs.State.Terminated != nil {
-						t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
-					}
-					if cs.RestartCount > 0 {
-						t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
-					}
-				}
+				logContainerStatuses(t, pod.Status.ContainerStatuses)
 			}
 		}
 
@@ -194,30 +180,115 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 		// reconciles before we even get to anything else. We also surface the
 		// subset filtered by layered-CR controller names so the actual error
 		// the Topic/User/Role/etc. reconciler hit is easy to find.
+		//
+		// Every other pod gets the tail of its broker containers and of any
+		// container that restarted, including the previous instance — the
+		// only place a CrashLoopBackOff broker's crash reason is recorded.
 		k8sClient, err := kubernetes.NewForConfig(node.RESTConfig())
 		if err != nil {
 			t.Logf("[multicluster-diagnostics] failed to create k8s client for logs: %v", err)
 			continue
 		}
 		for _, pod := range vcPods.Items {
-			if !strings.Contains(pod.Name, "operator") {
-				continue
-			}
-			tailLines := int64(4000)
-			req := k8sClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{TailLines: &tailLines})
-			logStream, err := req.Stream(diagCtx)
-			if err != nil {
-				t.Logf("[multicluster-diagnostics] failed to get logs for %s: %v", pod.Name, err)
-				continue
-			}
-			logBytes, _ := io.ReadAll(logStream)
-			_ = logStream.Close()
+			if strings.Contains(pod.Name, "operator") {
+				tailLines := int64(4000)
+				req := k8sClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{TailLines: &tailLines})
+				logStream, err := req.Stream(diagCtx)
+				if err != nil {
+					t.Logf("[multicluster-diagnostics] failed to get logs for %s: %v", pod.Name, err)
+					continue
+				}
+				logBytes, _ := io.ReadAll(logStream)
+				_ = logStream.Close()
 
-			logStr := string(logBytes)
-			dumpLayeredControllerLogs(t, pod.Name, logStr)
-			t.Logf("[multicluster-diagnostics] === operator logs %s (last 4000 lines) ===\n%s", pod.Name, logStr)
+				logStr := string(logBytes)
+				dumpLayeredControllerLogs(t, pod.Name, logStr)
+				t.Logf("[multicluster-diagnostics] === operator logs %s (last 4000 lines) ===\n%s", pod.Name, logStr)
+				continue
+			}
+			for _, cs := range pod.Status.ContainerStatuses {
+				broker := cs.Name == "redpanda" || cs.Name == "sidecar"
+				if !broker && cs.RestartCount == 0 && cs.State.Waiting == nil {
+					continue
+				}
+				dumpVClusterContainerLog(diagCtx, t, k8sClient, pod, cs.Name, false)
+				if cs.RestartCount > 0 {
+					dumpVClusterContainerLog(diagCtx, t, k8sClient, pod, cs.Name, true)
+				}
+			}
 		}
 	}
+}
+
+// dumpHostNodes logs every host node's readiness, taints, allocatable
+// capacity and pod count. Stretch features pin their vclusters to host nodes,
+// so a saturated or NotReady node is a root cause the per-vcluster view
+// cannot show.
+func dumpHostNodes(ctx context.Context, t framework.TestingT, hostClient client.Client) {
+	var nodes corev1.NodeList
+	if err := hostClient.List(ctx, &nodes); err != nil {
+		t.Logf("[multicluster-diagnostics] failed to list host nodes: %v", err)
+		return
+	}
+	var pods corev1.PodList
+	if err := hostClient.List(ctx, &pods); err != nil {
+		t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
+	}
+	podsPerNode := countPodsPerNode(pods.Items)
+	for _, node := range nodes.Items {
+		ready := "<none>"
+		for _, cond := range node.Status.Conditions {
+			if cond.Type == corev1.NodeReady {
+				ready = fmt.Sprintf("%s reason=%s since=%s", cond.Status, cond.Reason, cond.LastTransitionTime.UTC().Format(time.RFC3339))
+			}
+		}
+		taints := make([]string, 0, len(node.Spec.Taints))
+		for _, taint := range node.Spec.Taints {
+			taints = append(taints, taint.ToString())
+		}
+		t.Logf("[multicluster-diagnostics] host node %s: ready=%s taints=%v pods=%d/%s allocatable cpu=%s memory=%s",
+			node.Name, ready, taints, podsPerNode[node.Name], node.Status.Allocatable.Pods().String(), node.Status.Allocatable.Cpu().String(), node.Status.Allocatable.Memory().String())
+	}
+}
+
+// logContainerStatuses logs each container's state and restart count and,
+// after a restart, how the previous instance ended — the exit code and reason
+// a container in CrashLoopBackOff otherwise hides.
+func logContainerStatuses(t framework.TestingT, statuses []corev1.ContainerStatus) {
+	for _, cs := range statuses {
+		if cs.State.Waiting != nil {
+			t.Logf("[multicluster-diagnostics]   container %s: waiting reason=%s", cs.Name, cs.State.Waiting.Reason)
+		}
+		if cs.State.Terminated != nil {
+			t.Logf("[multicluster-diagnostics]   container %s: terminated exitCode=%d reason=%s", cs.Name, cs.State.Terminated.ExitCode, cs.State.Terminated.Reason)
+		}
+		if cs.RestartCount > 0 {
+			t.Logf("[multicluster-diagnostics]   container %s: restarts=%d", cs.Name, cs.RestartCount)
+		}
+		if last := cs.LastTerminationState.Terminated; last != nil {
+			t.Logf("[multicluster-diagnostics]   container %s: last terminated exitCode=%d reason=%s at=%s", cs.Name, last.ExitCode, last.Reason, last.FinishedAt.UTC().Format(time.RFC3339))
+		}
+	}
+}
+
+func dumpVClusterContainerLog(ctx context.Context, t framework.TestingT, k8sClient kubernetes.Interface, pod corev1.Pod, container string, previous bool) {
+	const tailLines = int64(300)
+	name := pod.Namespace + "/" + pod.Name + "/" + container
+	if previous {
+		name += " (previous)"
+	}
+	stream, err := k8sClient.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+		Container: container,
+		Previous:  previous,
+		TailLines: ptr.To(tailLines),
+	}).Stream(ctx)
+	if err != nil {
+		t.Logf("[multicluster-diagnostics] failed to get logs for %s: %v", name, err)
+		return
+	}
+	logBytes, _ := io.ReadAll(stream)
+	_ = stream.Close()
+	t.Logf("[multicluster-diagnostics] === logs %s (last %d lines) ===\n%s", name, tailLines, logBytes)
 }
 
 // dumpLayeredCRs lists each layered CR kind and emits its conditions. The
@@ -871,37 +942,74 @@ func createVClusters(ctx context.Context, t framework.TestingT, clusters int32, 
 	return nodes
 }
 
-// pickK3dAgentNodes returns `clusters` worker-node hostnames from the host
-// k3d cluster so each vcluster can be pinned to a distinct host node. Uses
-// the built-in `kubernetes.io/hostname` label — no extra labeling needed.
-// Skips the control-plane node and fails if there are not enough workers.
+// pickK3dAgentNodes returns the `clusters` host worker nodes to pin this
+// feature's vclusters to: Ready, schedulable workers, least loaded first, so
+// parallel features spread over every agent. Fails if there are not enough
+// eligible workers.
 func pickK3dAgentNodes(ctx context.Context, t framework.TestingT, clusters int32) []string {
 	hostClient, err := client.New(t.RestConfig(), client.Options{})
 	require.NoError(t, err)
 
 	var nodeList corev1.NodeList
 	require.NoError(t, hostClient.List(ctx, &nodeList))
+	var podList corev1.PodList
+	require.NoError(t, hostClient.List(ctx, &podList))
 
-	var workerNodes []corev1.Node
-	for _, n := range nodeList.Items {
-		if _, isControlPlane := n.Labels["node-role.kubernetes.io/control-plane"]; isControlPlane {
+	ranked := rankWorkerNodes(nodeList.Items, podList.Items)
+	require.GreaterOrEqual(t, int32(len(ranked)), clusters,
+		"need at least %d Ready worker nodes in host cluster, got %d", clusters, len(ranked))
+	names := ranked[:clusters]
+	t.Logf("pinning %d vclusters to the least-loaded host nodes %v", clusters, names)
+	return names
+}
+
+// rankWorkerNodes returns the Ready, schedulable worker node names ordered by
+// the number of pods they run (Succeeded/Failed excluded), ties by name.
+func rankWorkerNodes(nodes []corev1.Node, pods []corev1.Pod) []string {
+	podsPerNode := countPodsPerNode(pods)
+
+	var workers []corev1.Node
+	for _, node := range nodes {
+		if _, isControlPlane := node.Labels["node-role.kubernetes.io/control-plane"]; isControlPlane {
 			continue
 		}
-		workerNodes = append(workerNodes, n)
+		if node.Spec.Unschedulable || !nodeReady(node) {
+			continue
+		}
+		workers = append(workers, node)
 	}
-	require.GreaterOrEqual(t, int32(len(workerNodes)), clusters,
-		"need at least %d worker nodes in host cluster, got %d", clusters, len(workerNodes))
-
-	// Sort for deterministic assignment within a single test run.
-	slices.SortFunc(workerNodes, func(a, b corev1.Node) int {
+	slices.SortFunc(workers, func(a, b corev1.Node) int {
+		if c := cmp.Compare(podsPerNode[a.Name], podsPerNode[b.Name]); c != 0 {
+			return c
+		}
 		return strings.Compare(a.Name, b.Name)
 	})
 
-	names := make([]string, clusters)
-	for i := int32(0); i < clusters; i++ {
-		names[i] = workerNodes[i].Name
+	names := make([]string, len(workers))
+	for i, node := range workers {
+		names[i] = node.Name
 	}
 	return names
+}
+
+func countPodsPerNode(pods []corev1.Pod) map[string]int {
+	counts := map[string]int{}
+	for _, pod := range pods {
+		if pod.Status.Phase == corev1.PodSucceeded || pod.Status.Phase == corev1.PodFailed {
+			continue
+		}
+		counts[pod.Spec.NodeName]++
+	}
+	return counts
+}
+
+func nodeReady(node corev1.Node) bool {
+	for _, cond := range node.Status.Conditions {
+		if cond.Type == corev1.NodeReady {
+			return cond.Status == corev1.ConditionTrue
+		}
+	}
+	return false
 }
 
 // pinningValues returns vcluster helm values that pin the control plane pod
