@@ -87,15 +87,7 @@ func FullLabels(state *RenderState) map[string]string {
 	return helmette.Merge(labels, defaults)
 }
 
-// FullAnnotations returns the annotations that are applied to every object
-// rendered by this chart.
-//
-// Unlike [FullLabels] it contributes no chart defaults of its own. It exists so
-// that call sites share one definition of "the common annotations" and so that
-// an unset commonAnnotations normalizes to an empty map rather than nil.
-//
-// Call sites that carry their own annotations merge those on top, as
-// resource-specific annotations take precedence over the common ones.
+// Return common annotations if set
 func FullAnnotations(state *RenderState) map[string]string {
 	if state.Values.CommonAnnotations == nil {
 		return map[string]string{}

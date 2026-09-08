@@ -89,17 +89,6 @@ type Values struct {
 	FullnameOverride string            `json:"fullnameOverride"`
 	ClusterDomain    string            `json:"clusterDomain"`
 	CommonLabels     map[string]string `json:"commonLabels"`
-	// CommonAnnotations are added to all Kubernetes objects rendered by this
-	// chart, to the StatefulSet's volume claim templates, and to the
-	// post-install job's pod template.
-	//
-	// They are deliberately NOT applied to the Redpanda pod template. The pod
-	// template participates in the StatefulSet's rolling update trigger, so
-	// annotating it would make any edit to this field restart every broker.
-	//
-	// Annotations set on an individual resource (for example
-	// service.annotations) and annotations the chart requires to function (for
-	// example helm.sh/hook) both take precedence over these.
 	CommonAnnotations map[string]string          `json:"commonAnnotations"`
 	Image             Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
 	Service           *Service                   `json:"service"`
