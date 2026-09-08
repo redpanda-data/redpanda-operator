@@ -33,6 +33,13 @@ clusterDomain: cluster.local.
 # -- Additional labels to add to all Kubernetes objects.
 # For example, `my.k8s.service: redpanda`.
 commonLabels: {}
+# -- Additional annotations to add to all Kubernetes objects, to the
+# StatefulSet's volume claim templates, and to the post-install job's pod
+# template. For example, `my.k8s.annotation: redpanda`.
+# These are not added to the Redpanda pod template, so changing them does not
+# restart the brokers. Annotations set on an individual resource, and
+# annotations the chart requires to function, both take precedence over these.
+commonAnnotations: {}
 
 # -- Redpanda Docker image settings.
 image:

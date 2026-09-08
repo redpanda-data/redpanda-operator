@@ -251,6 +251,8 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 		`true`,
 	)
 	secret.StringData["preStop.sh"] = helmette.Join("\n", preStopSh)
+	annotate(state, &secret.ObjectMeta)
+
 	return secret
 }
 
@@ -282,6 +284,8 @@ func SecretSASLUsers(state *RenderState) *corev1.Secret {
 			usersTxt = append(usersTxt, fmt.Sprintf("%s:%s:%s", user.Name, user.Password, mechanism))
 		}
 		secret.StringData["users.txt"] = helmette.Join("\n", usersTxt)
+		annotate(state, &secret.ObjectMeta)
+
 		return secret
 	} else if state.Values.Auth.SASL.Enabled && state.Values.Auth.SASL.SecretRef == "" {
 		panic("auth.sasl.secretRef cannot be empty when auth.sasl.enabled=true")
@@ -309,7 +313,7 @@ func SecretBootstrapUser(state *RenderState) *corev1.Secret {
 		password = *userPassword
 	}
 
-	return &corev1.Secret{
+	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Secret",
@@ -325,6 +329,10 @@ func SecretBootstrapUser(state *RenderState) *corev1.Secret {
 			"password": password,
 		},
 	}
+
+	annotate(state, &secret.ObjectMeta)
+
+	return secret
 }
 
 func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
@@ -384,6 +392,8 @@ if [ "${result}" != "0" ]; then
 fi
 
 echo "passed"`
+	annotate(state, &secret.ObjectMeta)
+
 	return secret
 }
 
@@ -445,6 +455,8 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 		)
 	}
 	secret.StringData["configurator.sh"] = helmette.Join("\n", configuratorSh)
+	annotate(state, &secret.ObjectMeta)
+
 	return secret
 }
 

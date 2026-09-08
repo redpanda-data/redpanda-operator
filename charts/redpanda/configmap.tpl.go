@@ -34,7 +34,7 @@ func ConfigMaps(state *RenderState) []*corev1.ConfigMap {
 
 func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 	bootstrap, fixups := BootstrapFile(state, pool)
-	return &corev1.ConfigMap{
+	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
@@ -50,6 +50,10 @@ func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */, pool),
 		},
 	}
+
+	annotate(state, &cm.ObjectMeta)
+
+	return cm
 }
 
 // BootstrapFile returns contents of `.bootstrap.yaml`. Keys that may be set
@@ -176,7 +180,7 @@ func RPKProfile(state *RenderState) *corev1.ConfigMap {
 		return nil
 	}
 
-	return &corev1.ConfigMap{
+	cm := &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
@@ -190,6 +194,10 @@ func RPKProfile(state *RenderState) *corev1.ConfigMap {
 			"profile": helmette.ToYaml(rpkProfile(state)),
 		},
 	}
+
+	annotate(state, &cm.ObjectMeta)
+
+	return cm
 }
 
 // rpkProfile generates an RPK Profile for connecting to external listeners.

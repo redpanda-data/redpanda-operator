@@ -59,6 +59,8 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 			Type:                     corev1.ServiceTypeClusterIP,
 		},
 	}
+	annotate(state, &bootstrap.ObjectMeta)
+
 	services = append(services, bootstrap)
 
 	// Per-broker services: one service per pod, selected by pod name.
@@ -89,6 +91,8 @@ func GatewayServices(state *RenderState) []*corev1.Service {
 				Type:                     corev1.ServiceTypeClusterIP,
 			},
 		}
+		annotate(state, &svc.ObjectMeta)
+
 		services = append(services, svc)
 	}
 

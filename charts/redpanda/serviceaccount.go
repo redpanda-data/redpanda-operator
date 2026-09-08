@@ -36,7 +36,7 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 		return nil
 	}
 
-	return &corev1.ServiceAccount{
+	sa := &corev1.ServiceAccount{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "ServiceAccount",
@@ -49,4 +49,8 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 		},
 		AutomountServiceAccountToken: ptr.To(false),
 	}
+
+	annotate(state, &sa.ObjectMeta)
+
+	return sa
 }
