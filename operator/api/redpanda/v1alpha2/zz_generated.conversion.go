@@ -274,6 +274,12 @@ func init() {
 					v1alpha2ConsoleValues.CommonLabels[key] = value
 				}
 			}
+			if (*source).CommonAnnotations != nil {
+				v1alpha2ConsoleValues.CommonAnnotations = make(map[string]string, len((*source).CommonAnnotations))
+				for key2, value2 := range (*source).CommonAnnotations {
+					v1alpha2ConsoleValues.CommonAnnotations[key2] = value2
+				}
+			}
 			mapStringString, err := conv_runtime_RawExtension_To_mapstringstring((*source).Annotations)
 			if err != nil {
 				return nil, err

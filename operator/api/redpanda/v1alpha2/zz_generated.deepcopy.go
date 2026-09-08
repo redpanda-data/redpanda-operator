@@ -1290,6 +1290,13 @@ func (in *ConsoleValues) DeepCopyInto(out *ConsoleValues) {
 			(*out)[key] = val
 		}
 	}
+	if in.CommonAnnotations != nil {
+		in, out := &in.CommonAnnotations, &out.CommonAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Annotations != nil {
 		in, out := &in.Annotations, &out.Annotations
 		*out = make(map[string]string, len(*in))
@@ -4268,6 +4275,13 @@ func (in *RedpandaClusterSpec) DeepCopyInto(out *RedpandaClusterSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.CommonAnnotations != nil {
+		in, out := &in.CommonAnnotations, &out.CommonAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))
@@ -4563,6 +4577,13 @@ func (in *RedpandaConsole) DeepCopyInto(out *RedpandaConsole) {
 	}
 	if in.CommonLabels != nil {
 		in, out := &in.CommonLabels, &out.CommonLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.CommonAnnotations != nil {
+		in, out := &in.CommonAnnotations, &out.CommonAnnotations
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
