@@ -33,6 +33,9 @@ clusterDomain: cluster.local.
 # -- Additional labels to add to all Kubernetes objects.
 # For example, `my.k8s.service: redpanda`.
 commonLabels: {}
+# -- Additional annotations to add to all Kubernetes objects
+# For example, `my.k8s.annotation: redpanda`.
+commonAnnotations: {}
 
 # -- Redpanda Docker image settings.
 image:

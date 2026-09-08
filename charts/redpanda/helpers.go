@@ -87,6 +87,14 @@ func FullLabels(state *RenderState) map[string]string {
 	return helmette.Merge(labels, defaults)
 }
 
+// Return common annotations if set
+func FullAnnotations(state *RenderState) map[string]string {
+	if state.Values.CommonAnnotations == nil {
+		return map[string]string{}
+	}
+	return state.Values.CommonAnnotations
+}
+
 // Use AppVersion if image.tag is not set
 func Tag(state *RenderState) string {
 	tag := string(state.Values.Image.Tag)

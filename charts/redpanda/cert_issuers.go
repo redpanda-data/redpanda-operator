@@ -70,9 +70,10 @@ func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmana
 					Kind:       "Issuer",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
+					Name:        fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
+					Namespace:   state.Release.Namespace,
+					Labels:      FullLabels(state),
+					Annotations: FullAnnotations(state),
 				},
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{
@@ -93,9 +94,10 @@ func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmana
 					Kind:       "Certificate",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
+					Name:        fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
+					Namespace:   state.Release.Namespace,
+					Labels:      FullLabels(state),
+					Annotations: FullAnnotations(state),
 				},
 				Spec: certmanagerv1.CertificateSpec{
 					Duration:   helmette.MustDuration(helmette.Default("43800h", data.Duration)),
@@ -127,9 +129,10 @@ func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmana
 					Kind:       "Issuer",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
+					Name:        fmt.Sprintf(`%s-%s-root-issuer`, Fullname(state), name),
+					Namespace:   state.Release.Namespace,
+					Labels:      FullLabels(state),
+					Annotations: FullAnnotations(state),
 				},
 				Spec: certmanagerv1.IssuerSpec{
 					IssuerConfig: certmanagerv1.IssuerConfig{

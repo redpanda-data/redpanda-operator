@@ -40,9 +40,10 @@ func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%s%s", Fullname(state), pool.Suffix()),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Data: map[string]string{
 			clusterconfiguration.BootstrapTemplateFile:    bootstrap,
@@ -182,9 +183,10 @@ func RPKProfile(state *RenderState) *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-rpk", Fullname(state)),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%s-rpk", Fullname(state)),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Data: map[string]string{
 			"profile": helmette.ToYaml(rpkProfile(state)),

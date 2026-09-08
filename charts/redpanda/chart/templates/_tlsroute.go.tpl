@@ -13,6 +13,7 @@
 {{- $gw := $state.Values.external.gateway -}}
 {{- $parentRefs := (get (fromJson (include "redpanda.toTLSRouteParentRefs" (dict "a" (list $gw.parentRefs)))) "r") -}}
 {{- $labels := (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") -}}
+{{- $annotations := (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r") -}}
 {{- $fullname := (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") -}}
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $routes := (coalesce nil) -}}
@@ -20,7 +21,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "kafka" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "kafka" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -30,7 +31,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "http" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "http" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -40,7 +41,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "admin" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "admin" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -50,7 +51,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "schema" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "schema" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -66,18 +67,19 @@
 {{- $fullname := (index .a 0) -}}
 {{- $namespace := (index .a 1) -}}
 {{- $labels := (index .a 2) -}}
-{{- $parentRefs := (index .a 3) -}}
-{{- $pods := (index .a 4) -}}
-{{- $host := (index .a 5) -}}
-{{- $hostTemplate := (index .a 6) -}}
-{{- $name := (index .a 7) -}}
-{{- $listenerTag := (index .a 8) -}}
-{{- $port := (index .a 9) -}}
+{{- $annotations := (index .a 3) -}}
+{{- $parentRefs := (index .a 4) -}}
+{{- $pods := (index .a 5) -}}
+{{- $host := (index .a 6) -}}
+{{- $hostTemplate := (index .a 7) -}}
+{{- $name := (index .a 8) -}}
+{{- $listenerTag := (index .a 9) -}}
+{{- $port := (index .a 10) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $routes := (coalesce nil) -}}
 {{- $bootstrapSvcName := (printf "%s-gateway-bootstrap" $fullname) -}}
-{{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-bootstrap" $fullname $listenerTag $name) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $host) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $bootstrapSvcName "port" $port)))))))))) -}}
+{{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-bootstrap" $fullname $listenerTag $name) "namespace" $namespace "labels" $labels "annotations" $annotations)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $host) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $bootstrapSvcName "port" $port)))))))))) -}}
 {{- $routes = (concat (default (list) $routes) (list $bootstrap)) -}}
 {{- if (eq $hostTemplate "") -}}
 {{- $_is_returning = true -}}
@@ -87,7 +89,7 @@
 {{- range $i, $podname := $pods -}}
 {{- $brokerHost := (get (fromJson (include "redpanda.renderBrokerHost" (dict "a" (list $hostTemplate $i $podname)))) "r") -}}
 {{- $brokerSvcName := (get (fromJson (include "redpanda.gatewayBrokerServiceName" (dict "a" (list $podname)))) "r") -}}
-{{- $route := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-%d" $fullname $listenerTag $name $i) "namespace" $namespace "labels" $labels)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $brokerHost) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $brokerSvcName "port" $port)))))))))) -}}
+{{- $route := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict "parentRefs" (coalesce nil) "rules" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-%d" $fullname $listenerTag $name $i) "namespace" $namespace "labels" $labels "annotations" $annotations)) "spec" (mustMergeOverwrite (dict "parentRefs" (coalesce nil) "rules" (coalesce nil)) (dict "parentRefs" $parentRefs "hostnames" (list $brokerHost) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "" "port" 0) (dict "name" $brokerSvcName "port" $port)))))))))) -}}
 {{- $routes = (concat (default (list) $routes) (list $route)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
