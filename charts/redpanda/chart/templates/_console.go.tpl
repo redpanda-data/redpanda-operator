@@ -12,11 +12,12 @@
 {{- end -}}
 {{- $consoleDot := (index $state.Dot.Subcharts "console") -}}
 {{- $consoleState := (get (fromJson (include "chart.DotToState" (dict "a" (list $consoleDot)))) "r") -}}
+{{- $_ := (set $consoleState "CommonAnnotations" (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r")) -}}
 {{- $kubeVersion := $consoleDot.Capabilities.KubeVersion.Version -}}
 {{- $_ := (set $consoleState "Metrics" (mustMergeOverwrite (dict "ViaOperator" false "CloudEnvironment" "" "KubernetesVersion" "" "ChartVersion" "" "ClusterID" "") (dict "KubernetesVersion" $kubeVersion "ChartVersion" $consoleDot.Chart.Version))) -}}
-{{- $_42_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
-{{- $namespace := (index $_42_namespace_ok 0) -}}
-{{- $ok := (index $_42_namespace_ok 1) -}}
+{{- $_45_namespace_ok := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Namespace" "" "kube-system")))) "r") -}}
+{{- $namespace := (index $_45_namespace_ok 0) -}}
+{{- $ok := (index $_45_namespace_ok 1) -}}
 {{- if $ok -}}
 {{- $_ := (set $consoleState.Metrics "ClusterID" (toString $namespace.metadata.uid)) -}}
 {{- end -}}

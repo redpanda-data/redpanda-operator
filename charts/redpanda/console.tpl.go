@@ -32,6 +32,9 @@ func consoleChartIntegration(state *RenderState) []kube.Object {
 
 	consoleDot := state.Dot.Subcharts["console"]
 	consoleState := consolechart.DotToState(consoleDot)
+	// The console objects rendered here carry this chart's commonAnnotations;
+	// the subchart's own templates take theirs from console.commonAnnotations.
+	consoleState.CommonAnnotations = FullAnnotations(state)
 
 	// Populate metrics state from the subchart's capabilities.
 	kubeVersion := consoleDot.Capabilities.KubeVersion.Version

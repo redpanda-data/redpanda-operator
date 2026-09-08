@@ -154,7 +154,7 @@ Default Kubernetes cluster domain.
 
 ### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=commonAnnotations)
 
-Additional annotations to add to all Kubernetes objects, to the StatefulSet's volume claim templates, and to the post-install job's pod template. For example, `my.k8s.annotation: redpanda`. These are not added to the Redpanda pod template, so changing them does not restart the brokers. Annotations set on an individual resource, and annotations the chart requires to function, both take precedence over these.
+Additional annotations to add to all Kubernetes objects the chart renders, except the StatefulSet Pod template (annotating the Pods would restart the brokers). Annotations set on an individual resource, and the Helm hook annotations the chart needs, take precedence. Console objects rendered by the console subchart's own templates take theirs from `console.commonAnnotations`. For example, `argocd.argoproj.io/sync-wave: "1"`.
 
 **Default:** `{}`
 

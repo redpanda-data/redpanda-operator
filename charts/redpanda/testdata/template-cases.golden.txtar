@@ -535,6 +535,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -1982,6 +1983,7 @@ data:
       - http://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -3271,6 +3273,7 @@ data:
       - https://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -4758,6 +4761,7 @@ data:
       - http://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -6155,6 +6159,7 @@ data:
       - https://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -7793,6 +7798,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -9448,6 +9454,7 @@ data:
       - http://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -11164,6 +11171,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -12723,6 +12731,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -14336,6 +14345,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -15968,6 +15978,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -17432,6 +17443,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -18914,6 +18926,7 @@ data:
       - http://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -20260,6 +20273,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -21850,6 +21864,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -23409,6 +23424,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -24971,6 +24987,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -26291,6 +26308,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -26567,6 +26585,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -27919,6 +27938,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -28195,6 +28215,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -29547,6 +29568,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -29823,6 +29845,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -31419,6 +31442,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -32754,6 +32778,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -33030,6 +33055,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -34400,6 +34426,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -34676,6 +34703,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -36046,6 +36074,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -36322,6 +36351,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -37937,6 +37967,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -39291,6 +39322,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -39567,6 +39599,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -40937,6 +40970,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -41213,6 +41247,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -42583,6 +42618,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -42859,6 +42895,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -44474,6 +44511,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -46071,6 +46109,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -47630,6 +47669,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -49190,6 +49230,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -50809,6 +50850,7 @@ data:
       - https://redpanda-3.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -52396,6 +52438,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -54016,6 +54059,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -55616,6 +55660,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -57179,6 +57224,7 @@ data:
       - https://redpanda-2.change-name.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -58771,6 +58817,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -60365,6 +60412,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -63439,6 +63487,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -64648,6 +64697,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -64947,6 +64997,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -66354,6 +66405,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -66630,6 +66682,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -68207,6 +68260,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -69776,6 +69830,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -70107,6 +70162,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -71390,6 +71446,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -74457,6 +74514,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -76028,6 +76086,8 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations:
+    my.co/team: platform
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -76304,7 +76364,8 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations: {}
+  annotations:
+    my.co/team: platform
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -76408,6 +76469,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -77774,6 +77836,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -79389,6 +79452,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -81045,6 +81109,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -82361,6 +82426,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -82637,6 +82703,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -84220,6 +84287,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -85835,6 +85903,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -87151,6 +87220,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -87427,6 +87497,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -89010,6 +89081,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -90613,6 +90685,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -91929,6 +92002,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -92205,6 +92279,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -93788,6 +93863,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -95391,6 +95467,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -96707,6 +96784,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -96983,6 +97061,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -98566,6 +98645,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -100169,6 +100249,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -101485,6 +101566,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -101761,6 +101843,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -103344,6 +103427,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -104947,6 +105031,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -106263,6 +106348,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -106539,6 +106625,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -108122,6 +108209,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -109725,6 +109813,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -111090,6 +111179,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -112456,6 +112546,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -114114,6 +114205,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -115739,6 +115831,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -117400,6 +117493,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -119061,6 +119155,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -120922,6 +121017,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -122690,6 +122786,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -124513,6 +124610,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -126158,6 +126256,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -127888,6 +127987,7 @@ data:
       - https://also-not-redpanda-2.also-not-redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -129447,6 +129547,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -131006,6 +131107,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -132563,6 +132665,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -133488,6 +133591,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -134149,6 +134253,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -135721,6 +135826,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -137305,6 +137411,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -139023,6 +139130,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -140339,6 +140447,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -140615,6 +140724,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -142198,6 +142308,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -143801,6 +143912,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -145117,6 +145229,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -145393,6 +145506,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -146976,6 +147090,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -148579,6 +148694,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -150195,6 +150311,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -151676,6 +151793,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -153242,6 +153360,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -154919,6 +155038,7 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm

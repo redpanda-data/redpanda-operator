@@ -1215,12 +1215,18 @@ func TestAnnotations(t *testing.T) {
 	// take precedence over it.
 	t.Run("yields to chart internal annotations", func(t *testing.T) {
 		objs, _ := render(t, &redpanda.PartialValues{
-			CommonAnnotations: map[string]string{"helm.sh/hook-weight": "99"},
+			CommonAnnotations: map[string]string{
+				"helm.sh/hook":               "bogus",
+				"helm.sh/hook-delete-policy": "bogus",
+				"helm.sh/hook-weight":        "99",
+			},
 		})
 
 		var asserted bool
 		for _, obj := range objs {
 			if job, ok := obj.(*batchv1.Job); ok {
+				require.Equal(t, "post-install,post-upgrade", job.GetAnnotations()["helm.sh/hook"], "%T/%s", job, job.Name)
+				require.Equal(t, "before-hook-creation", job.GetAnnotations()["helm.sh/hook-delete-policy"], "%T/%s", job, job.Name)
 				require.Equal(t, "-5", job.GetAnnotations()["helm.sh/hook-weight"], "%T/%s", job, job.Name)
 				asserted = true
 			}

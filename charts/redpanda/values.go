@@ -84,11 +84,11 @@ type Values struct {
 	// Global is an untyped map of values that are "global" to this chart and
 	// all its sub-charts.
 	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any    `json:"global,omitempty"`
-	NameOverride     string            `json:"nameOverride"`
-	FullnameOverride string            `json:"fullnameOverride"`
-	ClusterDomain    string            `json:"clusterDomain"`
-	CommonLabels     map[string]string `json:"commonLabels"`
+	Global            map[string]any             `json:"global,omitempty"`
+	NameOverride      string                     `json:"nameOverride"`
+	FullnameOverride  string                     `json:"fullnameOverride"`
+	ClusterDomain     string                     `json:"clusterDomain"`
+	CommonLabels      map[string]string          `json:"commonLabels"`
 	CommonAnnotations map[string]string          `json:"commonAnnotations"`
 	Image             Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
 	Service           *Service                   `json:"service"`
