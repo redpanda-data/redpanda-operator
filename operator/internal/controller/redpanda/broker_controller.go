@@ -121,7 +121,6 @@ func SetupBrokerController(ctx context.Context, mgr multicluster.Manager, client
 		mcbuilder.WithEngageWithProviderClusters(true),
 	).
 		Owns(&corev1.Pod{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
-		Owns(&corev1.PersistentVolumeClaim{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		// Owns(Pod) cannot deliver the one event adoption depends on: after
 		// the STS→Broker handover's orphan-delete, kube GC strips the
 		// StatefulSet ownerRef and the pod becomes OWNERLESS — an ownerless
@@ -265,7 +264,7 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 			}
 		}
 	} else {
-		return r.reconcileDelete(ctx, l, k8sClient, k8sCluster.GetAPIReader(), req.ClusterName, &broker, broker.PodName())
+		return r.reconcileDelete(ctx, l, k8sClient, req.ClusterName, &broker, broker.PodName())
 	}
 
 	// A NodePool-referenced Broker without the cluster-name label cannot
@@ -298,7 +297,6 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		r.reconcileDiskLost,
 		r.reconcilePVCs,
 		r.reconcilePod,
-		r.reconcilePVCAdoption,
 		r.reconcilePodRotation,
 		r.reconcilePodMetadata,
 		r.reconcileBrokerRegistration,
@@ -326,7 +324,6 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 
 	l := log.FromContext(ctx)
 	k8sClient := cluster.GetClient()
-	scheme := cluster.GetScheme()
 	podName := broker.PodName()
 
 	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
@@ -342,6 +339,16 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 				l.Info("waiting for PVC deletion to complete", "pvc", pvcName)
 				return ctrl.Result{RequeueAfter: requeueShort}, nil
 			}
+			// Brokers never own PVCs (like a StatefulSet's claims): the GC
+			// must never be in a position to delete data — deleting data is
+			// always an explicit decision (deletion policy, decommission).
+			// Disown claims created before this rule existed.
+			if removeOwnerRefByUID(&pvc, broker.UID) {
+				l.Info("disowning PVC (Brokers no longer own claims)", "pvc", pvcName)
+				if err := k8sClient.Update(ctx, &pvc); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
 		} else {
 			if !apierrors.IsNotFound(err) {
 				return ctrl.Result{}, err
@@ -353,9 +360,6 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 					Labels:    broker.Spec.PodTemplate.Labels,
 				},
 				Spec: vct.Spec,
-			}
-			if err := controllerutil.SetControllerReference(broker, &pvc, scheme); err != nil {
-				return ctrl.Result{}, err
 			}
 			l.Info("creating PVC", "name", pvcName)
 			if err := k8sClient.Create(ctx, &pvc); err != nil {
@@ -516,44 +520,6 @@ func backfillRotationKeys(broker *redpandav1alpha2.Broker, pod *corev1.Pod) bool
 		}
 	}
 	return stamped
-}
-
-func (r *BrokerReconciler) reconcilePVCAdoption(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
-	if state.pod == nil {
-		return ctrl.Result{}, nil
-	}
-	// Don't re-adopt claims on a decommissioning broker: the completion
-	// branch is about to delete them anyway.
-	if state.broker.Spec.Decommission {
-		return ctrl.Result{}, nil
-	}
-	l := log.FromContext(ctx)
-	k8sClient := cluster.GetClient()
-	scheme := cluster.GetScheme()
-	broker := state.broker
-
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: ec.Name, Namespace: broker.Namespace}, &pvc); err != nil {
-			l.Info("could not get PVC for adoption", "name", ec.Name, "error", err)
-			continue
-		}
-		if metav1.GetControllerOf(&pvc) != nil {
-			continue
-		}
-		if adoptionBarredByRollback(ctx, cluster.GetAPIReader(), broker) {
-			l.Info("owning cluster left broker mode; leaving claim unowned", "name", ec.Name)
-			return ctrl.Result{RequeueAfter: requeueShort}, nil
-		}
-		if err := controllerutil.SetControllerReference(broker, &pvc, scheme); err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := k8sClient.Update(ctx, &pvc); err != nil {
-			return ctrl.Result{}, err
-		}
-		l.Info("adopted PVC", "name", ec.Name)
-	}
-	return ctrl.Result{}, nil
 }
 
 // reconcileDiskLost owns the disk-loss lifecycle of a dead incarnation:
@@ -729,9 +695,10 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 	// Broker to create a pod and claims under these very names, so setting
 	// it while a name still exists hands the replacement a collision. The
 	// uncached reader matters for the same reason: a stale "gone" from the
-	// informer must not release the index. Ownership is checked rather than
-	// bare existence so an already-recreated object that belongs to the
-	// replacement doesn't hold the tombstone hostage.
+	// informer must not release the index. The pod is checked by ownership
+	// (an already-recreated pod belongs to the replacement); claims are
+	// unowned, but none of the replacement's can exist yet — it is only
+	// allowed to create them after this checkpoint releases the index.
 	apiReader := cluster.GetAPIReader()
 	var pod corev1.Pod
 	err := apiReader.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
@@ -1029,15 +996,19 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		k8sClient := cluster.GetClient()
 		podName := broker.PodName()
 
-		// Every delete below is guarded by controller ownership: a DiskLost
-		// tombstone's decommission completes AFTER a replacement Broker took
-		// over the network index, so the pod and PVCs answering to these
-		// names belong to the replacement and must be left alone.
+		// A DiskLost tombstone's decommission completes AFTER a replacement
+		// Broker took over the network index, so the pod and claims answering
+		// to these names belong to the replacement: the pod is skipped by the
+		// ownership check below, and claims — unowned by design — are skipped
+		// wholesale (the dismantle already deleted the dead disk's claims).
 		if state.pod != nil && metav1.IsControlledBy(state.pod, broker) {
 			l.Info("deleting pod after decommission", "name", podName)
 			if err := k8sClient.Delete(ctx, state.pod); err != nil && !apierrors.IsNotFound(err) {
 				return ctrl.Result{}, err
 			}
+		}
+		if broker.IsDiskLost() {
+			return ctrl.Result{}, nil
 		}
 		claimNames := make([]string, 0, len(broker.Spec.Storage.VolumeClaimTemplates)+len(broker.Spec.Storage.ExistingClaims))
 		for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
@@ -1314,85 +1285,44 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 	return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioned}, nil
 }
 
-// reconcileDelete handles Broker CR deletion (RFC Q2):
+// reconcileDelete handles Broker CR deletion (RFC Q2). Every branch is
+// decided from recorded intent — Spec.Decommission, the deletion policy —
+// never from the current state of the pod or the PVCs, so a partially
+// failed pass re-enters and converges on the same outcome:
 //
 //   - Decommission runs ONLY when Spec.Decommission is set — never on raw CR
-//     deletion alone, and never during owner teardown (the admin API is dying
-//     under it; see the case body) — and a Stuck result (e.g. last-broker
-//     guard) blocks deletion instead of falling through to pod removal.
-//   - Raw deletion while the owning cluster is alive RELEASES the pod and
-//     PVCs (ownerRefs stripped): the broker keeps running and data survives.
-//     Once an owning cluster controller manages Broker CRs (none is wired up
-//     yet), it will recreate a Broker CR that re-adopts the pod — accidental
-//     deletion then self-heals without a restart.
-//   - When the owning cluster itself is being deleted, the propagated
-//     deletion policy decides: "cascade" (default) lets the GC delete pod and
-//     PVCs with the CR — whole-cluster teardown, decommission is pointless —
-//     while "orphan" releases them.
-func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
+//     deletion alone, and never during owner teardown (the admin API is
+//     dying under it, and insisting on completion would wedge the finalizer
+//     and hang namespace deletion) — and a Stuck result (e.g. the
+//     last-broker guard) blocks deletion instead of falling through. Once
+//     finished, the pod and the PVCs are deleted explicitly.
+//   - Policy orphan (the owning cluster is alive, or teardown with the
+//     orphan policy): the pod's ownerRef is stripped so it survives the CR
+//     deletion — accidental deletion self-heals without a restart once the
+//     owning controller recreates a Broker CR — and PVCs are never owned,
+//     so the data survives by default.
+//   - Policy cascade (teardown default): the PVCs are deleted explicitly;
+//     the pod is CR-owned and left to the garbage collector.
+func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
 	if !controllerutil.ContainsFinalizer(broker, brokerFinalizerName) {
 		return ctrl.Result{}, nil
 	}
 
-	// The pod MUST be read uncached: every branch below decides whether the
-	// finalizer may be removed, and once it is, any ownerRef still pointing
-	// at this CR is dangling — the garbage collector then deletes the pod
-	// (and the CR-owned PVCs) silently. The informer cache can miss both a
-	// pod this controller created moments ago and its own just-made
-	// adoption (rollback strips the ownerRef, a racing reconcile of the
-	// still-live CR re-adopts, and THIS pass must see that write to release
-	// the pod instead of abandoning it).
-	var pod corev1.Pod
-	err := apiReader.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
 	switch {
-	case apierrors.IsNotFound(err):
-		// The pod is already gone (e.g. deleted out of band), but the PVCs
-		// may still exist and carry this CR's controller ownerRef. Apply the
-		// same policy decision as the pod-present path — otherwise the CR
-		// deletion cascades and the GC deletes the data regardless of
-		// intent.
-		if r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade {
-			l.Info("pod already gone, cascade policy, removing finalizer")
-		} else {
-			if err := r.releaseBrokerResources(ctx, l, k8sClient, apiReader, broker, nil); err != nil {
-				return ctrl.Result{}, err
-			}
-			l.Info("pod already gone, PVCs released, removing finalizer")
-		}
-
-	case err != nil:
-		return ctrl.Result{}, err
-
-	case !metav1.IsControlledBy(&pod, broker):
-		l.Info("pod not owned by this Broker CR, removing finalizer (rollback case)", "owner", metav1.GetControllerOf(&pod))
-
-	case broker.Spec.Decommission:
-		// Deletion WITH explicit intent: decommission, then let the CR
-		// deletion cascade pod and PVCs — UNLESS the owning cluster itself
-		// is being torn down. During teardown the sibling Brokers are being
-		// deleted concurrently, so the admin API dies under the decommission
-		// (or the last-broker guard trips) and insisting on completion wedges
-		// this CR's finalizer forever: pod and PVCs leak in Terminating and
-		// namespace deletion hangs. Teardown also makes the decommission
-		// pointless — the whole cluster is going away — so apply the
-		// deletion policy directly, exactly like intent-less deletion.
-		if r.ownerTearingDown(ctx, l, k8sClient, broker) {
-			if r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade {
-				l.Info("cluster teardown, skipping decommission, removing finalizer (cascade policy)", "name", broker.Name)
-			} else {
-				l.Info("cluster teardown, skipping decommission, releasing resources (orphan policy)", "name", broker.Name)
-				if err := r.releaseBrokerResources(ctx, l, k8sClient, apiReader, broker, &pod); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-			break
+	case broker.Spec.Decommission && !r.ownerTearingDown(ctx, l, k8sClient, broker):
+		var pod *corev1.Pod
+		var live corev1.Pod
+		if err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &live); err == nil {
+			pod = &live
+		} else if !apierrors.IsNotFound(err) {
+			return ctrl.Result{}, err
 		}
 
 		// Status.BrokerID may be nil because a status update raced — resolve
 		// it live rather than skipping the decommission and leaving a dead
 		// membership entry behind.
 		if broker.Status.BrokerID == nil {
-			resolved, found, err := r.resolveBroker(ctx, clusterName, broker, &pod, podName)
+			resolved, found, err := r.resolveBroker(ctx, clusterName, broker, pod, podName)
 			if err != nil {
 				l.Info("could not resolve broker ID before decommission, will retry", "error", err)
 				return ctrl.Result{RequeueAfter: requeueShort}, nil
@@ -1418,21 +1348,43 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 				return ctrl.Result{RequeueAfter: requeueDecommission}, nil
 			}
 		}
-		l.Info("deleting pod after decommission", "name", podName)
-		if err := k8sClient.Delete(ctx, &pod); err != nil && !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
+		// Decommission finished: nothing is GC-owned data-wise, so remove
+		// the pod and the claims explicitly. The pod is deleted only when
+		// this CR controls it — the name may already belong to a successor
+		// (e.g. a DiskLost replacement).
+		if pod != nil && metav1.IsControlledBy(pod, broker) {
+			l.Info("deleting pod after decommission", "name", podName)
+			if err := k8sClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
+				return ctrl.Result{}, err
+			}
+		}
+		// A DiskLost tombstone never deletes claims: its dead disk's claims
+		// were removed by the dismantle, and any claim at these names now
+		// belongs to the replacement Broker at the same network index.
+		if !broker.IsDiskLost() {
+			if err := r.deleteBrokerPVCs(ctx, l, k8sClient, broker); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+
+	case r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade:
+		l.Info("cluster teardown with cascade policy: deleting PVCs, pod is left to the GC", "name", broker.Name)
+		// A DiskLost tombstone's claim names belong to its replacement,
+		// whose own deletion handles them.
+		if !broker.IsDiskLost() {
+			if err := r.deleteBrokerPVCs(ctx, l, k8sClient, broker); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 
 	default:
-		// Deletion WITHOUT intent: never decommission (RFC Q2).
-		if r.deletionPolicy(ctx, l, k8sClient, broker) == deletionPolicyCascade {
-			// Owning cluster is being torn down with the default cascade
-			// policy: leave pod and PVCs to the GC (owned by this CR).
-			l.Info("cluster teardown with cascade policy, removing finalizer", "name", broker.Name)
-		} else {
-			if err := r.releaseBrokerResources(ctx, l, k8sClient, apiReader, broker, &pod); err != nil {
-				return ctrl.Result{}, err
-			}
+		// Release (RFC Q2: raw deletion never decommissions): the pod must
+		// survive the CR deletion. A blind strategic-merge patch keyed on
+		// this CR's UID needs no read and no-ops when the pod is gone or
+		// the ref is already absent; PVCs are never owned.
+		l.Info("releasing pod from deleted Broker CR", "name", podName)
+		if err := stripPodOwnerRef(ctx, k8sClient, broker, podName); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 
@@ -1442,6 +1394,51 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 	}
 	l.Info("removed finalizer, Broker CR will be deleted")
 	return ctrl.Result{}, nil
+}
+
+// deleteBrokerPVCs explicitly deletes the Broker's claims, derived from
+// VolumeClaimTemplates and ExistingClaims. Brokers do not own their claims,
+// so deleting data is always this explicit call, never the garbage
+// collector. Claims controlled by another object are skipped; missing claims
+// are no-ops.
+func (r *BrokerReconciler) deleteBrokerPVCs(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker) error {
+	var names []string
+	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
+		names = append(names, fmt.Sprintf("%s-%s", vct.Name, broker.PodName()))
+	}
+	for _, ec := range broker.Spec.Storage.ExistingClaims {
+		names = append(names, ec.Name)
+	}
+	for _, name := range names {
+		var pvc corev1.PersistentVolumeClaim
+		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return err
+		}
+		if owner := metav1.GetControllerOf(&pvc); owner != nil && owner.UID != broker.UID {
+			l.Info("skipping PVC controlled by another object", "pvc", name, "owner", owner.Kind+"/"+owner.Name)
+			continue
+		}
+		l.Info("deleting PVC", "name", name)
+		if err := k8sClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// stripPodOwnerRef removes this Broker's controller ownerRef from its pod
+// via a strategic-merge patch keyed on the CR's UID ($patch: delete on the
+// list's merge key). Missing pods and already-absent refs are no-ops.
+func stripPodOwnerRef(ctx context.Context, c client.Client, broker *redpandav1alpha2.Broker, podName string) error {
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: podName, Namespace: broker.Namespace}}
+	patch := []byte(fmt.Sprintf(`{"metadata":{"ownerReferences":[{"$patch":"delete","uid":"%s"}]}}`, broker.UID))
+	if err := c.Patch(ctx, pod, client.RawPatch(types.StrategicMergePatchType, patch)); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 type brokerDeletionPolicy string
@@ -1498,44 +1495,6 @@ func (r *BrokerReconciler) deletionPolicy(ctx context.Context, l logr.Logger, k8
 		return deletionPolicyOrphan
 	}
 	return deletionPolicyCascade
-}
-
-// releaseBrokerResources strips this Broker's ownerRefs from its pod and PVCs
-// so they survive the CR deletion. pod may be nil when it is already gone —
-// the PVCs are still released. PVCs are read through apiReader: this runs
-// right before the finalizer is removed, and a cache miss read as NotFound
-// would leave a live PVC with a dangling ownerRef for the GC to delete.
-func (r *BrokerReconciler) releaseBrokerResources(ctx context.Context, l logr.Logger, k8sClient client.Client, apiReader client.Reader, broker *redpandav1alpha2.Broker, pod *corev1.Pod) error {
-	if pod != nil && removeOwnerRefByUID(pod, broker.UID) {
-		l.Info("releasing pod from deleted Broker CR", "pod", pod.Name)
-		if err := k8sClient.Update(ctx, pod); err != nil {
-			return fmt.Errorf("releasing pod %s: %w", pod.Name, err)
-		}
-	}
-
-	var pvcNames []string
-	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-		pvcNames = append(pvcNames, fmt.Sprintf("%s-%s", vct.Name, broker.PodName()))
-	}
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		pvcNames = append(pvcNames, ec.Name)
-	}
-	for _, name := range pvcNames {
-		var pvc corev1.PersistentVolumeClaim
-		if err := apiReader.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return err
-		}
-		if removeOwnerRefByUID(&pvc, broker.UID) {
-			l.Info("releasing PVC from deleted Broker CR", "pvc", name)
-			if err := k8sClient.Update(ctx, &pvc); err != nil {
-				return fmt.Errorf("releasing PVC %s: %w", name, err)
-			}
-		}
-	}
-	return nil
 }
 
 func removeOwnerRefByUID(obj client.Object, uid types.UID) bool {
