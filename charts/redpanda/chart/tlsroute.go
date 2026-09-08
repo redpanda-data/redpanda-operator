@@ -29,6 +29,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 
 	gw := state.Values.External.Gateway
 	labels := FullLabels(state)
+	annotations := FullAnnotations(state)
 	fullname := Fullname(state)
 
 	pods := gatewayPodNames(state)
@@ -39,7 +40,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "kafka", listener.Port)
+		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "kafka", listener.Port)
 		routes = append(routes, rs...)
 	}
 
@@ -47,7 +48,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "http", listener.Port)
+		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "http", listener.Port)
 		routes = append(routes, rs...)
 	}
 
@@ -55,7 +56,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "admin", listener.Port)
+		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "admin", listener.Port)
 		routes = append(routes, rs...)
 	}
 
@@ -63,14 +64,14 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
 			continue
 		}
-		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "schema", listener.Port)
+		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "schema", listener.Port)
 		routes = append(routes, rs...)
 	}
 
 	return routes
 }
 
-func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, host string, hostTemplate string, name string, listenerTag string, port int32) []*gatewayv1.TLSRoute {
+func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, annotations map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, host string, hostTemplate string, name string, listenerTag string, port int32) []*gatewayv1.TLSRoute {
 	// Invariants (host present; kafka multi-broker requires hostTemplate) are
 	// enforced upfront by validateGatewayListeners so misconfigurations surface
 	// as a single clear error before any rendering. By the time we get here the
@@ -109,6 +110,8 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 			},
 		},
 	}
+	annotateWith(annotations, &bootstrap.ObjectMeta)
+
 	routes = append(routes, bootstrap)
 
 	if hostTemplate == "" {
@@ -148,6 +151,8 @@ func tlsRoutesForListener(fullname string, namespace string, labels map[string]s
 				},
 			},
 		}
+		annotateWith(annotations, &route.ObjectMeta)
+
 		routes = append(routes, route)
 	}
 

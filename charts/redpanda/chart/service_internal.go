@@ -82,7 +82,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 		annotations = state.Values.Service.Internal.Annotations
 	}
 
-	return &corev1.Service{
+	svc := &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
 			Kind:       "Service",
@@ -101,4 +101,8 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 			Ports:                    ports,
 		},
 	}
+
+	annotate(state, &svc.ObjectMeta)
+
+	return svc
 }

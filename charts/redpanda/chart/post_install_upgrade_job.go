@@ -196,6 +196,9 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 		},
 	}
 
+	annotate(state, &job.ObjectMeta)
+	annotate(state, &job.Spec.Template.ObjectMeta)
+
 	return job
 }
 

@@ -40,7 +40,7 @@ func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
 	matchLabels := ClusterPodLabelsSelector(state)
 	matchLabels["redpanda.com/poddisruptionbudget"] = Fullname(state)
 
-	return &policyv1.PodDisruptionBudget{
+	pdb := &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
@@ -57,4 +57,8 @@ func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
 			MaxUnavailable: &maxUnavailable,
 		},
 	}
+
+	annotate(state, &pdb.ObjectMeta)
+
+	return pdb
 }

@@ -63,83 +63,89 @@ func certIssuersAndCAs(state *RenderState) ([]*certmanagerv1.Issuer, []*certmana
 		// are themselves self-signed.
 		// NB: Technically, we only need a single self signer. For backwards
 		// compatibility, we generate one per cert.
-		issuers = append(issuers,
-			&certmanagerv1.Issuer{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "cert-manager.io/v1",
-					Kind:       "Issuer",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
-				},
-				Spec: certmanagerv1.IssuerSpec{
-					IssuerConfig: certmanagerv1.IssuerConfig{
-						// SelfSigningIssuer would be a MUCH better name.
-						SelfSigned: &certmanagerv1.SelfSignedIssuer{},
-					},
+		selfSigner := &certmanagerv1.Issuer{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Issuer",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
+				Namespace: state.Release.Namespace,
+				Labels:    FullLabels(state),
+			},
+			Spec: certmanagerv1.IssuerSpec{
+				IssuerConfig: certmanagerv1.IssuerConfig{
+					// SelfSigningIssuer would be a MUCH better name.
+					SelfSigned: &certmanagerv1.SelfSignedIssuer{},
 				},
 			},
-		)
+		}
+
+		annotate(state, &selfSigner.ObjectMeta)
+
+		issuers = append(issuers, selfSigner)
 
 		// This is the CA that will be signed with it's own private key by the
 		// above issuer. It will then be used as the Root CA for the Issuer
 		// that the chart actually uses.
-		certs = append(certs,
-			&certmanagerv1.Certificate{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "cert-manager.io/v1",
-					Kind:       "Certificate",
+		rootCert := &certmanagerv1.Certificate{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Certificate",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
+				Namespace: state.Release.Namespace,
+				Labels:    FullLabels(state),
+			},
+			Spec: certmanagerv1.CertificateSpec{
+				Duration:   helmette.MustDuration(helmette.Default("43800h", data.Duration)),
+				IsCA:       true,
+				CommonName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
+				SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
+				PrivateKey: &certmanagerv1.CertificatePrivateKey{
+					Algorithm: "ECDSA",
+					Size:      256,
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
-				},
-				Spec: certmanagerv1.CertificateSpec{
-					Duration:   helmette.MustDuration(helmette.Default("43800h", data.Duration)),
-					IsCA:       true,
-					CommonName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					SecretName: fmt.Sprintf(`%s-%s-root-certificate`, Fullname(state), name),
-					PrivateKey: &certmanagerv1.CertificatePrivateKey{
-						Algorithm: "ECDSA",
-						Size:      256,
-					},
-					IssuerRef: cmmetav1.ObjectReference{
-						Name:  fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
-						Kind:  "Issuer",
-						Group: "cert-manager.io",
-					},
+				IssuerRef: cmmetav1.ObjectReference{
+					Name:  fmt.Sprintf(`%s-%s-selfsigned-issuer`, Fullname(state), name),
+					Kind:  "Issuer",
+					Group: "cert-manager.io",
 				},
 			},
-		)
+		}
+
+		annotate(state, &rootCert.ObjectMeta)
+
+		certs = append(certs, rootCert)
 
 		// This Issuer works like a normal CA Issuer using the above
 		// Certificate as it's root. NB: The root CA is self signed and
 		// therefore all Certificates from this Issuer will be self signed as
 		// well. That is distinct from the Issuer being a
 		// [certmanagerv1.SelfSignedIssuer].
-		issuers = append(issuers,
-			&certmanagerv1.Issuer{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "cert-manager.io/v1",
-					Kind:       "Issuer",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(state), name),
-					Namespace: state.Release.Namespace,
-					Labels:    FullLabels(state),
-				},
-				Spec: certmanagerv1.IssuerSpec{
-					IssuerConfig: certmanagerv1.IssuerConfig{
-						CA: &certmanagerv1.CAIssuer{
-							SecretName: data.RootSecretName(state, name),
-						},
+		rootIssuer := &certmanagerv1.Issuer{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "cert-manager.io/v1",
+				Kind:       "Issuer",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf(`%s-%s-root-issuer`, Fullname(state), name),
+				Namespace: state.Release.Namespace,
+				Labels:    FullLabels(state),
+			},
+			Spec: certmanagerv1.IssuerSpec{
+				IssuerConfig: certmanagerv1.IssuerConfig{
+					CA: &certmanagerv1.CAIssuer{
+						SecretName: data.RootSecretName(state, name),
 					},
 				},
 			},
-		)
+		}
+
+		annotate(state, &rootIssuer.ObjectMeta)
+
+		issuers = append(issuers, rootIssuer)
 
 	}
 

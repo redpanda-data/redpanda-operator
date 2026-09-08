@@ -400,6 +400,37 @@ console:
   ingress:
     enabled: true
 
+-- common-annotations --
+# Enables the same breadth of features as all-possible-objects so that every
+# annotatable object kind appears, then sets commonAnnotations. The golden
+# output is the regression net for the annotation call sites: every object,
+# every volume claim template and the post-install job's pod template should
+# carry my.co/team, while the Redpanda pod template should not.
+#
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+commonAnnotations:
+  my.co/team: platform
+console:
+  enabled: true
+  autoscaling:
+    enabled: true
+  ingress:
+    enabled: true
+rbac:
+  enabled: true
+  rpkDebugBundle: true
+rackAwareness:
+  enabled: true
+  nodeAnnotation: topology.kubernetes.io/zone
+storage:
+  tiered:
+    mountType: persistentVolume
+    config:
+      cloud_storage_enabled: true
+monitoring:
+  enabled: true
+
 -- fix-tpl-generation --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
