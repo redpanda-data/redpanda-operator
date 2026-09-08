@@ -7,7 +7,7 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ConfigMap")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "config")))) "r") "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" $values.annotations)) "data" (dict "controller_manager_config.yaml" (toYaml $values.config))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ConfigMap")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "operator.cleanForK8sWithSuffix" (dict "a" (list (get (fromJson (include "operator.Fullname" (dict "a" (list $dot)))) "r") "config")))) "r") "namespace" $dot.Release.Namespace "labels" (get (fromJson (include "operator.Labels" (dict "a" (list $dot)))) "r") "annotations" (get (fromJson (include "operator.Annotations" (dict "a" (list $dot (coalesce nil))))) "r"))) "data" (dict "controller_manager_config.yaml" (toYaml $values.config))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

@@ -36,12 +36,12 @@ func PostUpgradeMigrationJob(dot *helmette.Dot) *batchv1.Job {
 			Labels: helmette.Merge(
 				Labels(dot),
 			),
-			Annotations: map[string]string{
+			Annotations: Annotations(dot, map[string]string{
 				"helm.sh/hook":               "post-upgrade",
 				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 				// run this after the CRD job
 				"helm.sh/hook-weight": "-4",
-			},
+			}),
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{

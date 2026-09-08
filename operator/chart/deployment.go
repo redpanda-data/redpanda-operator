@@ -68,7 +68,7 @@ func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 			Name:        Fullname(dot),
 			Labels:      Labels(dot),
 			Namespace:   dot.Release.Namespace,
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(values.ReplicaCount),

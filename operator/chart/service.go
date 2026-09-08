@@ -50,11 +50,7 @@ func OperatorService(dot *helmette.Dot) *corev1.Service {
 		svcType = corev1.ServiceTypeClusterIP
 	}
 
-	annotations := helmette.Merge(
-		map[string]string{},
-		helmette.Default(map[string]string{}, values.Annotations),
-		helmette.Default(map[string]string{}, values.Multicluster.Service.Annotations),
-	)
+	annotations := Annotations(dot, values.Multicluster.Service.Annotations)
 
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -124,12 +120,10 @@ func OperatorPeerServices(dot *helmette.Dot) []corev1.Service {
 		if p.Name == self {
 			continue
 		}
-		annotations := helmette.Merge(
-			map[string]string{},
-			helmette.Default(map[string]string{}, values.Annotations),
-			helmette.Default(map[string]string{}, values.Multicluster.Service.Annotations),
+		annotations := Annotations(dot, helmette.Merge(
 			helmette.Default(map[string]string{}, p.Annotations),
-		)
+			helmette.Default(map[string]string{}, values.Multicluster.Service.Annotations),
+		))
 		svcs = append(svcs, corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
@@ -181,7 +175,7 @@ func OperatorServiceExport(dot *helmette.Dot) *mcsv1alpha1.ServiceExport {
 			Name:        Fullname(dot),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
-			Annotations: helmette.Default(map[string]string{}, values.Annotations),
+			Annotations: Annotations(dot, nil),
 		},
 	}
 }
@@ -224,7 +218,7 @@ func OperatorServiceImports(dot *helmette.Dot) []mcsv1alpha1.ServiceImport {
 				Name:        p.Name,
 				Namespace:   dot.Release.Namespace,
 				Labels:      Labels(dot),
-				Annotations: helmette.Default(map[string]string{}, values.Annotations),
+				Annotations: Annotations(dot, nil),
 			},
 			Spec: mcsv1alpha1.ServiceImportSpec{
 				Type: mcsv1alpha1.ClusterSetIP,
@@ -257,7 +251,7 @@ func WebhookService(dot *helmette.Dot) *corev1.Service {
 			Name:        fmt.Sprintf("%s-webhook-service", Name(dot)),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: SelectorLabels(dot),
@@ -272,8 +266,6 @@ func WebhookService(dot *helmette.Dot) *corev1.Service {
 }
 
 func MetricsService(dot *helmette.Dot) *corev1.Service {
-	values := helmette.Unwrap[Values](dot.Values)
-
 	return &corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -283,7 +275,7 @@ func MetricsService(dot *helmette.Dot) *corev1.Service {
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "metrics-service"),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: SelectorLabels(dot),
@@ -313,9 +305,9 @@ func MutatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.Mu
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-mutating-webhook-configuration", Fullname(dot)),
 			Namespace: dot.Release.Namespace,
-			Annotations: map[string]string{
+			Annotations: Annotations(dot, map[string]string{
 				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/%s", dot.Release.Namespace, CertificateName(dot)),
-			},
+			}),
 		},
 		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{
@@ -363,9 +355,9 @@ func ValidatingWebhookConfiguration(dot *helmette.Dot) *admissionregistrationv1.
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-validating-webhook-configuration", Fullname(dot)),
 			Namespace: dot.Release.Namespace,
-			Annotations: map[string]string{
+			Annotations: Annotations(dot, map[string]string{
 				"cert-manager.io/inject-ca-from": fmt.Sprintf("%s/%s", dot.Release.Namespace, CertificateName(dot)),
-			},
+			}),
 		},
 		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{
