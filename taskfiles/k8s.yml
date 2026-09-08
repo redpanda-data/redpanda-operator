@@ -76,44 +76,6 @@ tasks:
         output:crd:artifacts:config=config/crd/bases \
         output:rbac:artifacts:config=config/rbac/bases/operator
 
-<<<<<<< HEAD
-      # For each controller (or really itemizable RBAC source), generate an
-      # isolated rbac bundle. These are used by the helm charts to check
-      # whether or not permissions are correctly in sync. As we allow VERY
-      # granular toggling at the moment it's critical to upkeep this bookkeeping.
-      - for:
-        - NAME: rpk-debug-bundle
-          PATH: ./internal/controller/rpkdebugbundle
-        - NAME: rack-awareness
-          PATH: ./internal/controller/rackawareness
-        - NAME: node-watcher
-          PATH: ./internal/controller/nodewatcher
-        - NAME: old-decommission
-          PATH: ./internal/controller/olddecommission
-        - NAME: pvcunbinder
-          PATH: ./internal/controller/pvcunbinder
-        - NAME: v2-manager
-          PATH: ./internal/controller/redpanda
-        - NAME: console
-          PATH: ./internal/controller/console
-        - NAME: v1-manager
-          PATH: ./internal/controller/vectorized
-        - NAME: decommission
-          PATH: ./internal/controller/decommissioning
-        - NAME: sidecar
-          PATH: ./cmd/sidecar
-        - NAME: leader-election
-          PATH: ./cmd/run
-        - NAME: crd-installation
-          PATH: ./cmd/crd
-        - NAME: multicluster-manager
-          PATH: ./cmd/multicluster
-        cmd: |
-          controller-gen \
-            paths={{ .ITEM.PATH }} \
-            rbac:roleName={{ .ITEM.NAME }} \
-            output:rbac:stdout > config/rbac/itemized/{{ .ITEM.NAME }}.yaml
-=======
   # For each controller (or really itemizable RBAC source), generate an
   # isolated rbac bundle. These are used by the helm charts to check
   # whether or not permissions are correctly in sync. As we allow VERY
@@ -126,19 +88,17 @@ tasks:
     deps:
     - { task: generate:rbac:bundle, vars: { NAME: rpk-debug-bundle, PACKAGE: ./internal/controller/rpkdebugbundle } }
     - { task: generate:rbac:bundle, vars: { NAME: rack-awareness, PACKAGE: ./internal/controller/rackawareness } }
-    - { task: generate:rbac:bundle, vars: { NAME: stretch-rack-awareness, PACKAGE: ./internal/controller/stretchrackawareness } }
+    - { task: generate:rbac:bundle, vars: { NAME: node-watcher, PACKAGE: ./internal/controller/nodewatcher } }
     - { task: generate:rbac:bundle, vars: { NAME: old-decommission, PACKAGE: ./internal/controller/olddecommission } }
     - { task: generate:rbac:bundle, vars: { NAME: pvcunbinder, PACKAGE: ./internal/controller/pvcunbinder } }
     - { task: generate:rbac:bundle, vars: { NAME: v2-manager, PACKAGE: ./internal/controller/redpanda } }
     - { task: generate:rbac:bundle, vars: { NAME: console, PACKAGE: ./internal/controller/console } }
-    - { task: generate:rbac:bundle, vars: { NAME: pipeline, PACKAGE: ./internal/controller/pipeline } }
     - { task: generate:rbac:bundle, vars: { NAME: v1-manager, PACKAGE: ./internal/controller/vectorized } }
     - { task: generate:rbac:bundle, vars: { NAME: decommission, PACKAGE: ./internal/controller/decommissioning } }
     - { task: generate:rbac:bundle, vars: { NAME: sidecar, PACKAGE: ./cmd/sidecar } }
     - { task: generate:rbac:bundle, vars: { NAME: leader-election, PACKAGE: ./cmd/run } }
     - { task: generate:rbac:bundle, vars: { NAME: crd-installation, PACKAGE: ./cmd/crd } }
     - { task: generate:rbac:bundle, vars: { NAME: multicluster-manager, PACKAGE: ./cmd/multicluster } }
->>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
 
   generate:rbac:bundle:
     internal: true
@@ -159,27 +119,6 @@ tasks:
         rbac:roleName={{ .NAME }} \
         output:rbac:stdout > config/rbac/itemized/{{ .NAME }}.yaml
 
-<<<<<<< HEAD
-      # And once more for the Operator's chart.
-      - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
-      - |
-        yq e \
-          --split-exp '"chart/files/rbac/\( .metadata.name ).\( .kind ).yaml"' \
-          '.' \
-          ./config/rbac/itemized/decommission.yaml \
-          ./config/rbac/itemized/leader-election.yaml \
-          ./config/rbac/itemized/node-watcher.yaml \
-          ./config/rbac/itemized/old-decommission.yaml \
-          ./config/rbac/itemized/pvcunbinder.yaml \
-          ./config/rbac/itemized/rack-awareness.yaml \
-          ./config/rbac/itemized/rpk-debug-bundle.yaml \
-          ./config/rbac/itemized/sidecar.yaml \
-          ./config/rbac/itemized/crd-installation.yaml \
-          ./config/rbac/itemized/multicluster-manager.yaml \
-          ./config/rbac/itemized/v1-manager.yaml \
-          ./config/rbac/itemized/v2-manager.yaml \
-          ./config/rbac/itemized/console.yaml
-=======
   # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
   # The chart embeds these permissions so they can't get out of sync with the operator.
   generate:rbac:embedded:
@@ -201,7 +140,6 @@ tasks:
         ./config/rbac/itemized/sidecar.yaml \
         ./config/rbac/itemized/rpk-debug-bundle.yaml \
         ./config/rbac/itemized/rack-awareness.yaml
->>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
 
     # And once more for the Operator's chart.
     - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
@@ -211,32 +149,18 @@ tasks:
         '.' \
         ./config/rbac/itemized/decommission.yaml \
         ./config/rbac/itemized/leader-election.yaml \
+        ./config/rbac/itemized/node-watcher.yaml \
         ./config/rbac/itemized/old-decommission.yaml \
         ./config/rbac/itemized/pvcunbinder.yaml \
         ./config/rbac/itemized/rack-awareness.yaml \
-        ./config/rbac/itemized/stretch-rack-awareness.yaml \
         ./config/rbac/itemized/rpk-debug-bundle.yaml \
         ./config/rbac/itemized/sidecar.yaml \
         ./config/rbac/itemized/crd-installation.yaml \
         ./config/rbac/itemized/multicluster-manager.yaml \
-        ./config/rbac/itemized/pipeline.yaml \
         ./config/rbac/itemized/v1-manager.yaml \
         ./config/rbac/itemized/v2-manager.yaml \
         ./config/rbac/itemized/console.yaml
 
-<<<<<<< HEAD
-      - |
-        controller-gen \
-          paths=./cmd/run \
-          paths=./cmd/multicluster \
-          paths=./internal/controller/redpanda \
-          paths=./internal/controller/rackawareness \
-          paths=./internal/controller/rpkdebugbundle \
-          paths=./internal/controller/nodewatcher \
-          paths=./internal/controller/olddecommission \
-          rbac:roleName=manager \
-          output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
-=======
   # Some integration tests use their RBAC declarations but generally
   # require some additional permissions (e.g. leader election, running
   # multiple controllers)
@@ -245,7 +169,6 @@ tasks:
     deps:
     - generate:rbac:testdata:decommissioning
     - generate:rbac:testdata:manager
->>>>>>> 74e35802 (build: fingerprint and parallelize `task generate`)
 
   generate:rbac:testdata:decommissioning:
     internal: true
@@ -272,6 +195,7 @@ tasks:
     - ./internal/controller/redpanda/*.go
     - ./internal/controller/rackawareness/*.go
     - ./internal/controller/rpkdebugbundle/*.go
+    - ./internal/controller/nodewatcher/*.go
     - ./internal/controller/olddecommission/*.go
     generates:
     - ./internal/controller/redpanda/testdata/role.yaml
@@ -283,6 +207,7 @@ tasks:
         paths=./internal/controller/redpanda \
         paths=./internal/controller/rackawareness \
         paths=./internal/controller/rpkdebugbundle \
+        paths=./internal/controller/nodewatcher \
         paths=./internal/controller/olddecommission \
         rbac:roleName=manager \
         output:rbac:stdout > ./internal/controller/redpanda/testdata/role.yaml
