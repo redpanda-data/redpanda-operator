@@ -637,8 +637,11 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		}
 	}
 
-	// Wait for all bootstrapping jobs to finish running.
-	if err := wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	// Wait for all bootstrapping jobs to finish running. The deadline is
+	// generous: the cert-manager helm-install job pulls its chart and images
+	// over the network inside the fresh cluster, which can exceed two
+	// minutes on a cold or slow connection.
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
 		var jobs batchv1.JobList
 		if err := cl.List(ctx, &jobs, client.InNamespace("kube-system")); err != nil {
 			return false, err
