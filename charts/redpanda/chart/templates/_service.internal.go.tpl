@@ -29,10 +29,8 @@
 {{- if (ne (toJson $state.Values.service) "null") -}}
 {{- $annotations = $state.Values.service.internal.annotations -}}
 {{- end -}}
-{{- $svc := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace "labels" (merge (dict) (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.MonitoringEnabledLabel" (dict "a" (list $state)))) "r")) "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (dict "type" "ClusterIP" "publishNotReadyAddresses" true "clusterIP" "None" "selector" (get (fromJson (include "redpanda.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") "ports" $ports)))) -}}
-{{- $_ := (get (fromJson (include "redpanda.annotate" (dict "a" (list $state $svc.metadata)))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $svc) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Service")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.ServiceName" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace "labels" (merge (dict) (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.MonitoringEnabledLabel" (dict "a" (list $state)))) "r")) "annotations" (merge (dict) $annotations (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r")))) "spec" (mustMergeOverwrite (dict) (dict "type" "ClusterIP" "publishNotReadyAddresses" true "clusterIP" "None" "selector" (get (fromJson (include "redpanda.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") "ports" $ports))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

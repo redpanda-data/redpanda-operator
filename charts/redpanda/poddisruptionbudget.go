@@ -40,15 +40,16 @@ func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
 	matchLabels := ClusterPodLabelsSelector(state)
 	matchLabels["redpanda.com/poddisruptionbudget"] = Fullname(state)
 
-	pdb := &policyv1.PodDisruptionBudget{
+	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "policy/v1",
 			Kind:       "PodDisruptionBudget",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        Fullname(state),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{
@@ -57,8 +58,4 @@ func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
 			MaxUnavailable: &maxUnavailable,
 		},
 	}
-
-	annotate(state, &pdb.ObjectMeta)
-
-	return pdb
 }
