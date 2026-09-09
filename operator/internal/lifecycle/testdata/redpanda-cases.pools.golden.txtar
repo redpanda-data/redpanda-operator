@@ -210,6 +210,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources: {}
           securityContext:
             allowPrivilegeEscalation: false
@@ -606,6 +607,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources:
             requests:
               cpu: 16m
@@ -1003,6 +1005,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources:
             requests:
               cpu: 16m
@@ -1458,6 +1461,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources: {}
           securityContext:
             allowPrivilegeEscalation: false
@@ -1854,6 +1858,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources: {}
           securityContext:
             allowPrivilegeEscalation: false
@@ -2250,6 +2255,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources: {}
           securityContext:
             allowPrivilegeEscalation: false
@@ -2646,6 +2652,7 @@
             initialDelaySeconds: 1
             periodSeconds: 10
             successThreshold: 1
+            timeoutSeconds: 1
           resources: {}
           securityContext:
             allowPrivilegeEscalation: false

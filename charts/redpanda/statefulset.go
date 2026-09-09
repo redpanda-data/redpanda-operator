@@ -1258,7 +1258,9 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 			InitialDelaySeconds: 1,
 			PeriodSeconds:       10,
 			SuccessThreshold:    1,
-			TimeoutSeconds:      0,
+			// The API server defaults 0 to 1; rendering 0 made ArgoCD report the
+			// StatefulSet as permanently OutOfSync.
+			TimeoutSeconds: 1,
 		},
 	}
 }

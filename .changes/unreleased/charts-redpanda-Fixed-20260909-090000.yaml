@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    The sidecar's readiness probe no longer renders `timeoutSeconds: 0`. The API server defaults it to 1, so GitOps tools such as ArgoCD saw a permanent difference between the rendered and live StatefulSet and reported the release as OutOfSync.
+time: 2026-09-09T09:00:00.000000-07:00
