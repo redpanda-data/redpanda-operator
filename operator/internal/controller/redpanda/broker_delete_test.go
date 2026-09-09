@@ -144,6 +144,70 @@ func TestReconcileDeleteCascadeDeletesClaimsExplicitly(t *testing.T) {
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), &keptPod))
 }
 
+// TestReconcileDeleteTeardownOrphanKeepsClaims pins the escape hatch: at
+// teardown, the orphan policy retains DATA only. The claims survive, but the
+// pod's ownerRef stays intact so the GC removes it with the CR — no
+// unmanaged pod may outlive its cluster.
+func TestReconcileDeleteTeardownOrphanKeepsClaims(t *testing.T) {
+	ctx := context.Background()
+	scheme := deleteTestScheme(t)
+	// Controller-owned by a Redpanda that does not exist => owner tearing down.
+	broker, pod, pvc := deleteTestBroker(t, scheme, &metav1.OwnerReference{
+		APIVersion: "cluster.redpanda.com/v1alpha2", Kind: redpandav1alpha2.RedpandaKind,
+		Name: "rp", UID: "owner-uid", Controller: ptr.To(true),
+	})
+	broker.SetBrokerDeletionPolicy(redpandav1alpha2.BrokerDeletionPolicyOrphan)
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(broker, pod, pvc).Build()
+	r := &BrokerReconciler{}
+
+	_, err := r.reconcileDelete(ctx, logr.Discard(), c, "", broker, broker.PodName())
+	require.NoError(t, err)
+
+	var kept corev1.PersistentVolumeClaim
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pvc), &kept),
+		"orphan policy must keep the claims at teardown")
+	var keptPod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), &keptPod))
+	require.True(t, metav1.IsControlledBy(&keptPod, broker),
+		"the pod must stay CR-owned so the GC deletes it with the CR")
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(broker), &b))
+	require.Empty(t, b.Finalizers)
+}
+
+// TestReconcileDeleteOwnerAliveIgnoresCascadeAnnotation pins the release
+// invariant: deleting a single Broker CR while its cluster is alive always
+// releases the pod and keeps the claims, regardless of the deletion-policy
+// annotation. Rollback deletes Broker CRs with the owner alive — an
+// annotation honored here would destroy data on rollback.
+func TestReconcileDeleteOwnerAliveIgnoresCascadeAnnotation(t *testing.T) {
+	ctx := context.Background()
+	scheme := deleteTestScheme(t)
+	broker, pod, pvc := deleteTestBroker(t, scheme, &metav1.OwnerReference{
+		APIVersion: "cluster.redpanda.com/v1alpha2", Kind: redpandav1alpha2.RedpandaKind,
+		Name: "rp", UID: "owner-uid", Controller: ptr.To(true),
+	})
+	broker.SetBrokerDeletionPolicy(redpandav1alpha2.BrokerDeletionPolicyCascade)
+	owner := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test", UID: "owner-uid"},
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(owner, broker, pod, pvc).Build()
+	r := &BrokerReconciler{}
+
+	_, err := r.reconcileDelete(ctx, logr.Discard(), c, "", broker, broker.PodName())
+	require.NoError(t, err)
+
+	var kept corev1.PersistentVolumeClaim
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pvc), &kept),
+		"the claims must survive any single-CR deletion while the owner is alive")
+	var released corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), &released))
+	require.Nil(t, metav1.GetControllerOf(&released), "the pod must be released")
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(broker), &b))
+	require.Empty(t, b.Finalizers)
+}
+
 // TestReconcileDeleteTombstoneKeepsReplacementClaims pins the DiskLost
 // guard: a tombstone's claim NAMES belong to its replacement Broker at the
 // same network index, and claims are unowned — so the tombstone must never

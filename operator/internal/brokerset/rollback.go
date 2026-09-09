@@ -13,7 +13,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -28,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 )
 
 // RollbackConfig carries the owner-specific pieces of a Broker CR rollback.
@@ -71,7 +69,6 @@ func VerifyRollbackPreconditions(l logr.Logger, brokers []redpandav1alpha2.Broke
 		}
 	}
 
-	now := time.Now()
 	for i := range brokers {
 		b := &brokers[i]
 		if b.IsDiskLost() {
@@ -88,22 +85,13 @@ func VerifyRollbackPreconditions(l logr.Logger, brokers []redpandav1alpha2.Broke
 			}
 			continue
 		}
-		if grant := b.Annotations[feature.RollGrant.Key]; grant != "" {
-			if _, deadline, ok := feature.ParseRollGrant(grant); ok && now.Before(deadline) {
-				return block(fmt.Sprintf("Broker %s holds an active roll-grant", b.Name))
-			}
+		if b.HasUnexpiredRollGrant() {
+			return block(fmt.Sprintf("Broker %s holds an active roll-grant", b.Name))
 		}
 	}
 	return nil
 }
 
-// restoreStatefulSetsFromBackup recreates the pre-migration StatefulSets from
-// the migration backup ConfigMap (RFC Q1: the backup is the one piece of
-// state not derivable). Re-rendering could differ from what the pods were
-// built from — e.g. after an operator upgrade mid-migration — and an STS that
-// doesn't match its re-adopted pods would immediately roll them. Restoring
-// the exact backup re-adopts without disruption; any genuine drift then rolls
-// through the normal health-gated StatefulSet update flow.
 func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *corev1.ConfigMap) error {
 	for key, data := range cm.Data {
 		var backup appsv1.StatefulSet
@@ -132,15 +120,6 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *
 
 // Rollback cleans up Broker CRs when the migration annotation is removed,
 // allowing the StatefulSet to re-adopt pods.
-//
-// Rollback is resumable at any point: a transient error aborts the pass and
-// bubbles out of the owning Reconcile, which requeues; the retry re-derives
-// everything from world state, and every mutation is idempotent. The backup
-// ConfigMap is the resume marker for the tail of the flow — it is deleted
-// only after the restored StatefulSets have re-adopted the pods, so a pass
-// interrupted after the last Broker CR was deleted still finishes the
-// restore-and-verify phase on the next reconcile (finalizeRollback keys on
-// the ConfigMap's existence, not on Broker CRs remaining).
 func Rollback(ctx context.Context, cfg RollbackConfig) error {
 	c, l := cfg.Client, cfg.Logger
 
@@ -187,16 +166,6 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 			}
 		}
 
-		// Delete Broker CRs with orphan propagation, leaving each CR's
-		// finalizer alone: the Broker controller removes its own finalizer in
-		// reconcileDelete — the pod's ownerRef was stripped above, so it takes
-		// the no-decommission rollback branch (raw CR deletion never
-		// decommissions, RFC Q2). Removing the finalizer from here instead
-		// would race the Broker controller, which re-adds it on every
-		// reconcile of a live CR — a conflict tug-of-war that stalled
-		// rollback for minutes. Orphan propagation prevents the GC from
-		// cascade-deleting pods that the Broker controller re-adopted between
-		// our ownerRef strip above and the delete here.
 		for i := range brokerList.Items {
 			b := &brokerList.Items[i]
 			if b.DeletionTimestamp.IsZero() {
@@ -214,13 +183,7 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 				}
 				continue
 			}
-			// Already terminating on a later pass: normally the Broker
-			// controller has stripped its own finalizer by now, so a lingering
-			// one means the controller is degraded or disabled — exactly when
-			// rollback must still work. Strip it ourselves. This cannot
-			// re-enter the tug-of-war (the controller never re-adds a
-			// finalizer on a terminating CR), and the merge patch avoids
-			// optimistic-locking conflicts with its status writes.
+
 			if controllerutil.ContainsFinalizer(b, BrokerDecommissionFinalizer) {
 				l.Info("rollback: stripping finalizer from terminating Broker CR", "name", b.Name)
 				stripped := b.DeepCopy()
@@ -239,13 +202,6 @@ func Rollback(ctx context.Context, cfg RollbackConfig) error {
 	return finalizeRollback(ctx, cfg, len(brokerList.Items) > 0)
 }
 
-// finalizeRollback restores the pre-migration StatefulSets from the backup
-// ConfigMap, waits for them to re-adopt the pods, and only then deletes the
-// backup and reports success. It keys on the ConfigMap's existence so an
-// interrupted pass — even one that already deleted every Broker CR — resumes
-// here on the next reconcile. A leaked backup on a steady-state StatefulSet
-// cluster is cleaned up by the same path (the restore no-ops on
-// AlreadyExists and the pods are already adopted).
 func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass bool) error {
 	c, l := cfg.Client, cfg.Logger
 

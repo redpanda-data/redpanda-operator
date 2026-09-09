@@ -44,7 +44,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testenv"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -680,7 +679,7 @@ func (s *BrokerControllerSuite) TestPodRotationWithoutGrant() {
 	if target.Annotations == nil {
 		target.Annotations = map[string]string{}
 	}
-	target.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(newTemplateHash, time.Now().Add(10*time.Minute))
+	target.SetRollGrant(newTemplateHash, time.Now().Add(10*time.Minute))
 	require.NoError(t, c.Patch(ctx, target, p))
 
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
@@ -970,7 +969,7 @@ func (s *BrokerControllerSuite) setupBrokerCluster(t *testing.T, ctx context.Con
 				b.Annotations = map[string]string{}
 			}
 			templateHash := b.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerPodTemplateHashAnnotation]
-			b.Annotations["operator.redpanda.com/roll-grant"] = feature.FormatRollGrant(templateHash, deadline)
+			b.SetRollGrant(templateHash, deadline)
 			require.NoError(t, c.Patch(ctx, b, p))
 		}
 	}
