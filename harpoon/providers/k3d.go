@@ -26,14 +26,25 @@ func NewK3D(nodes int) *K3DProvider {
 }
 
 type K3DProvider struct {
-	nodes         int
-	cluster       *k3d.Cluster
-	retainCluster bool
-	configPath    string
+	nodes                    int
+	cluster                  *k3d.Cluster
+	retainCluster            bool
+	fastNodeFailureDetection bool
+	configPath               string
 }
 
 func (p *K3DProvider) RetainCluster() *K3DProvider {
 	p.retainCluster = true
+	return p
+}
+
+// WithFastNodeFailureDetection shortens the node-failure grace/tolerations to
+// ~10s so a suite that kills a node sees the eviction quickly. Only enable it
+// for such suites: the 10s grace flaps momentarily-loaded nodes, which is fatal
+// to workloads like vclusters. The cluster gets its own name so a retained
+// cluster's baked-in flags are never reused by a suite that wants the defaults.
+func (p *K3DProvider) WithFastNodeFailureDetection() *K3DProvider {
+	p.fastNodeFailureDetection = true
 	return p
 }
 
@@ -42,7 +53,13 @@ func (p *K3DProvider) Initialize() error {
 }
 
 func (p *K3DProvider) Setup(_ context.Context) error {
-	cluster, err := k3d.GetOrCreate("harpoon", k3d.WithServerNoSchedule(), k3d.WithFastNodeFailureDetection(), k3d.SkipManifestInstallation(), k3d.WithAgents(p.nodes))
+	name := "harpoon"
+	opts := []k3d.ClusterOpt{k3d.WithServerNoSchedule(), k3d.SkipManifestInstallation(), k3d.WithAgents(p.nodes)}
+	if p.fastNodeFailureDetection {
+		name = "harpoon-nodefailure"
+		opts = append(opts, k3d.WithFastNodeFailureDetection())
+	}
+	cluster, err := k3d.GetOrCreate(name, opts...)
 	if err != nil {
 		return err
 	}
