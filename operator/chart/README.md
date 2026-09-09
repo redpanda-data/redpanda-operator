@@ -42,7 +42,7 @@ Sets the Kubernetes cluster domain.
 
 ### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonAnnotations)
 
-Additional annotations to add to every object this chart renders (except Pod templates) and, through the operator's `--common-annotations` flag, to every resource the operator manages. Annotations set on an individual resource, and the Helm hook annotations the chart needs, take precedence. Useful for ArgoCD sync waves or OPA Gatekeeper RequiredAnnotations constraints. For example, `owner: "platform-team@example.com"`.
+Additional annotations to add to every object this chart renders (except Pod templates). Also passed to the operator as `--common-annotations`, which the Connect Pipeline controller adds to the resources it creates. Annotations set on an individual resource, and the Helm hook annotations the chart needs, take precedence. Useful for ArgoCD sync waves or OPA Gatekeeper RequiredAnnotations constraints. For example, `owner: "platform-team@example.com"`.
 
 **Default:** `{}`
 

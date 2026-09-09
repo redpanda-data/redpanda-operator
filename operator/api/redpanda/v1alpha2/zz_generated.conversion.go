@@ -47,6 +47,12 @@ func init() {
 					consolePartialRenderValues.CommonLabels[key] = value
 				}
 			}
+			if (*source).CommonAnnotations != nil {
+				consolePartialRenderValues.CommonAnnotations = make(map[string]string, len((*source).CommonAnnotations))
+				for key2, value2 := range (*source).CommonAnnotations {
+					consolePartialRenderValues.CommonAnnotations[key2] = value2
+				}
+			}
 			consolePartialRenderValues.Image = pV1alpha2ImageToPConsolePartialImage((*source).Image)
 			if (*source).ImagePullSecrets != nil {
 				consolePartialRenderValues.ImagePullSecrets = make([]v1.LocalObjectReference, len((*source).ImagePullSecrets))
@@ -61,20 +67,20 @@ func init() {
 			consolePartialRenderValues.ServiceAccount = autoconv_ServiceAccountConfig_To_console_PartialServiceAccountConfig((*source).ServiceAccount)
 			if (*source).Annotations != nil {
 				consolePartialRenderValues.Annotations = make(map[string]string, len((*source).Annotations))
-				for key2, value2 := range (*source).Annotations {
-					consolePartialRenderValues.Annotations[key2] = value2
+				for key3, value3 := range (*source).Annotations {
+					consolePartialRenderValues.Annotations[key3] = value3
 				}
 			}
 			if (*source).PodAnnotations != nil {
 				consolePartialRenderValues.PodAnnotations = make(map[string]string, len((*source).PodAnnotations))
-				for key3, value3 := range (*source).PodAnnotations {
-					consolePartialRenderValues.PodAnnotations[key3] = value3
+				for key4, value4 := range (*source).PodAnnotations {
+					consolePartialRenderValues.PodAnnotations[key4] = value4
 				}
 			}
 			if (*source).PodLabels != nil {
 				consolePartialRenderValues.PodLabels = make(map[string]string, len((*source).PodLabels))
-				for key4, value4 := range (*source).PodLabels {
-					consolePartialRenderValues.PodLabels[key4] = value4
+				for key5, value5 := range (*source).PodLabels {
+					consolePartialRenderValues.PodLabels[key5] = value5
 				}
 			}
 			consolePartialRenderValues.PodSecurityContext = pV1PodSecurityContextToPV1PodSecurityContextApplyConfiguration((*source).PodSecurityContext)
@@ -86,8 +92,8 @@ func init() {
 			consolePartialRenderValues.Autoscaling = pV1alpha2AutoScalingToPConsolePartialAutoScaling((*source).Autoscaling)
 			if (*source).NodeSelector != nil {
 				consolePartialRenderValues.NodeSelector = make(map[string]string, len((*source).NodeSelector))
-				for key5, value5 := range (*source).NodeSelector {
-					consolePartialRenderValues.NodeSelector[key5] = value5
+				for key6, value6 := range (*source).NodeSelector {
+					consolePartialRenderValues.NodeSelector[key6] = value6
 				}
 			}
 			if (*source).Tolerations != nil {

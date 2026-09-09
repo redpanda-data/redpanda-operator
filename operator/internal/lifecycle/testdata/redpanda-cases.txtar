@@ -170,3 +170,16 @@ spec:
             limits:
               cpu: 100m
               memory: 256Mi
+-- common-annotations --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: common-annotations
+spec:
+  clusterSpec:
+    commonAnnotations:
+      my.co/team: platform
+      shared: cluster
+    console:
+      commonAnnotations:
+        shared: console
