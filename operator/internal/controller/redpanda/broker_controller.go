@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -152,8 +153,14 @@ func enqueueBrokerForAdoptablePod(clusterName string, cl cluster.Cluster) mchand
 }
 
 type brokerReconciliationState struct {
-	broker      *redpandav1alpha2.Broker
-	pod         *corev1.Pod                  // nil when pod does not exist yet
+	broker *redpandav1alpha2.Broker
+	pod    *corev1.Pod // nil when pod does not exist yet
+	// pass-start snapshot; nil = did not exist when fetched.
+	// brokerPVCs[i] corresponds to Spec.Storage.VolumeClaimTemplates[i],
+	// brokerExistingPVCs[i] to Spec.Storage.ExistingClaims[i].
+	brokerPVCs         []*corev1.PersistentVolumeClaim
+	brokerExistingPVCs []*corev1.PersistentVolumeClaim
+
 	phase       redpandav1alpha2.BrokerPhase // empty = compute from pod status
 	granted     bool
 	clusterName string
@@ -171,6 +178,11 @@ type brokerReconciliationState struct {
 	registrationConflict string
 }
 
+// brokerPVCs returns all PVCs for given broker (.brokerPVCs + .brokerExistingPVCs combined)
+func (s *brokerReconciliationState) allBrokerPVCs() []*corev1.PersistentVolumeClaim {
+	return slices.Concat(s.brokerPVCs, s.brokerExistingPVCs)
+}
+
 type brokerReconcilerFn func(ctx context.Context, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error)
 
 func (r *BrokerReconciler) fetchState(ctx context.Context, req mcreconcile.Request, k8sClient client.Client, broker *redpandav1alpha2.Broker) (*brokerReconciliationState, error) {
@@ -181,8 +193,39 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, req mcreconcile.Reque
 		clusterName:   req.ClusterName,
 	}
 
+	// fetch PVCs
+	podName := broker.PodName()
+	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
+		pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
+		var pvc corev1.PersistentVolumeClaim
+		if err := k8sClient.Get(ctx, client.ObjectKey{Name: pvcName, Namespace: broker.Namespace}, &pvc); err == nil {
+			state.brokerPVCs = append(state.brokerPVCs, &pvc)
+		} else {
+			if apierrors.IsNotFound(err) {
+				// nil signals that it has to be created
+				state.brokerPVCs = append(state.brokerPVCs, nil)
+			} else {
+				return nil, errors.Wrapf(err, "cannot fetch PVCs for broker %s", broker.Name)
+			}
+		}
+	}
+
+	for _, vct := range broker.Spec.Storage.ExistingClaims {
+		var pvc corev1.PersistentVolumeClaim
+		if err := k8sClient.Get(ctx, client.ObjectKey{Name: vct.Name, Namespace: broker.Namespace}, &pvc); err == nil {
+			state.brokerExistingPVCs = append(state.brokerExistingPVCs, &pvc)
+		} else {
+			if apierrors.IsNotFound(err) {
+				// nil signals that it is missing
+				state.brokerExistingPVCs = append(state.brokerExistingPVCs, nil)
+			} else {
+				return nil, errors.Wrapf(err, "cannot fetch PVCs for broker %s", broker.Name)
+			}
+		}
+	}
+
 	var pod corev1.Pod
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: broker.PodName(), Namespace: broker.Namespace}, &pod)
+	err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
 	switch {
 	case apierrors.IsNotFound(err):
 		return state, nil
@@ -291,24 +334,13 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 	k8sClient := cluster.GetClient()
 	podName := broker.PodName()
 
-	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-		pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
-		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: pvcName, Namespace: broker.Namespace}, &pvc); err == nil {
-			// A PVC mid-deletion (e.g. PV-affinity remediation) must be fully
-			// gone before recreating it or the pod: pvc-protection releases a
-			// Terminating PVC only once no pod references it, so recreating
-			// the pod first pins the old PVC forever and the pod never
-			// schedules.
-			if !pvc.DeletionTimestamp.IsZero() {
-				l.Info("waiting for PVC deletion to complete", "pvc", pvcName)
-				return ctrl.Result{RequeueAfter: requeueShort}, nil
-			}
-		} else {
-			if !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
-			}
-			pvc = corev1.PersistentVolumeClaim{
+	for i, vct := range broker.Spec.Storage.VolumeClaimTemplates {
+		// check if it exists
+		pvc := state.brokerPVCs[i]
+		if pvc == nil {
+			// does not exist, create
+			pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
+			pvc = &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      pvcName,
 					Namespace: broker.Namespace,
@@ -319,8 +351,18 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 				Spec: vct.Spec,
 			}
 			l.Info("creating PVC", "name", pvcName)
-			if err := k8sClient.Create(ctx, &pvc); err != nil {
+			if err := k8sClient.Create(ctx, pvc); err != nil {
 				return ctrl.Result{}, err
+			}
+		} else {
+			// A PVC mid-deletion (e.g. PV-affinity remediation) must be fully
+			// gone before recreating it or the pod: pvc-protection releases a
+			// Terminating PVC only once no pod references it, so recreating
+			// the pod first pins the old PVC forever and the pod never
+			// schedules.
+			if !pvc.DeletionTimestamp.IsZero() {
+				l.Info("waiting for PVC deletion to complete", "pvc", pvc.Name)
+				return ctrl.Result{RequeueAfter: requeueShort}, nil
 			}
 		}
 	}
@@ -533,38 +575,17 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 		}
 	}
 
-	claimNames := make([]string, 0, len(broker.Spec.Storage.VolumeClaimTemplates)+len(broker.Spec.Storage.ExistingClaims))
-	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-		claimNames = append(claimNames, fmt.Sprintf("%s-%s", vct.Name, podName))
-	}
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		claimNames = append(claimNames, ec.Name)
-	}
-	for _, name := range claimNames {
-		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return ctrl.Result{}, err
-		}
-		if owner := metav1.GetControllerOf(&pvc); owner != nil {
-			// never delete PVCs with an owner
-			l.Info("disk-lost dismantle: skipping PVC deletion because it has an ownerReference", "pvc", name)
-			continue
-		}
-		l.Info("disk-lost dismantle: deleting PVC", "pvc", name)
-		if err := k8sClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
-			return ctrl.Result{}, err
-		}
+	err := r.deleteSnapshotPVCs(ctx, state, l, cluster, "disk-lost dismantle: deleting PVC")
+	if err != nil {
+		return ctrl.Result{}, err
 	}
 
 	// make sure pod and pvcs are released, otherwise requeue
 	var pod corev1.Pod
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
+	err = k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
 	if apierrors.IsNotFound(err) {
 		// check PVCs
-		for _, name := range claimNames {
+		for _, name := range broker.ClaimNames() {
 			var pvc corev1.PersistentVolumeClaim
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc)
 			switch {
@@ -793,32 +814,31 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		if broker.IsDiskLost() {
 			return ctrl.Result{}, nil
 		}
-		claimNames := make([]string, 0, len(broker.Spec.Storage.VolumeClaimTemplates)+len(broker.Spec.Storage.ExistingClaims))
-		for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-			claimNames = append(claimNames, fmt.Sprintf("%s-%s", vct.Name, podName))
-		}
-		for _, ec := range broker.Spec.Storage.ExistingClaims {
-			claimNames = append(claimNames, ec.Name)
-		}
-		for _, pvcName := range claimNames {
-			var pvc corev1.PersistentVolumeClaim
-			if err := k8sClient.Get(ctx, client.ObjectKey{Name: pvcName, Namespace: broker.Namespace}, &pvc); err != nil {
-				if !apierrors.IsNotFound(err) {
-					return ctrl.Result{}, err
-				}
-				continue
-			}
-			if owner := metav1.GetControllerOf(&pvc); owner != nil && !metav1.IsControlledBy(&pvc, broker) {
-				continue
-			}
-			l.Info("deleting PVC after decommission", "name", pvcName)
-			if err := k8sClient.Delete(ctx, &pvc); err != nil && !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
-			}
+		if err := r.deleteSnapshotPVCs(ctx, state, l, cluster, "deleting PVC after decommission"); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *BrokerReconciler) deleteSnapshotPVCs(ctx context.Context, state *brokerReconciliationState, l logr.Logger, cluster cluster.Cluster, msg string) error {
+	k8sClient := cluster.GetClient()
+	for _, pvc := range state.allBrokerPVCs() {
+		if pvc == nil {
+			// already deleted.
+			continue
+		}
+		if metav1.GetControllerOf(pvc) != nil {
+			l.Info("skipping PVC deletion because it has an ownerReference", "pvc", pvc.Name)
+			continue
+		}
+		l.Info(msg, "name", pvc.Name)
+		if err := k8sClient.Delete(ctx, pvc); err != nil && !apierrors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
 }
 
 func defaultPhase(broker *redpandav1alpha2.Broker, pod *corev1.Pod) redpandav1alpha2.BrokerPhase {
@@ -914,17 +934,8 @@ func (r *BrokerReconciler) syncBrokerStatus(ctx context.Context, state *brokerRe
 	}
 
 	allBound := true
-	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-		pvcName := fmt.Sprintf("%s-%s", vct.Name, broker.PodName())
-		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: pvcName, Namespace: broker.Namespace}, &pvc); err != nil || pvc.Status.Phase != corev1.ClaimBound {
-			allBound = false
-			break
-		}
-	}
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: ec.Name, Namespace: broker.Namespace}, &pvc); err != nil || pvc.Status.Phase != corev1.ClaimBound {
+	for _, pvc := range state.allBrokerPVCs() {
+		if pvc == nil || pvc.Status.Phase != corev1.ClaimBound {
 			allBound = false
 			break
 		}
@@ -1125,14 +1136,7 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 }
 
 func (r *BrokerReconciler) deleteBrokerPVCs(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker) error {
-	var names []string
-	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
-		names = append(names, fmt.Sprintf("%s-%s", vct.Name, broker.PodName()))
-	}
-	for _, ec := range broker.Spec.Storage.ExistingClaims {
-		names = append(names, ec.Name)
-	}
-	for _, name := range names {
+	for _, name := range broker.ClaimNames() {
 		var pvc corev1.PersistentVolumeClaim
 		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc); err != nil {
 			if apierrors.IsNotFound(err) {
@@ -1140,8 +1144,8 @@ func (r *BrokerReconciler) deleteBrokerPVCs(ctx context.Context, l logr.Logger, 
 			}
 			return err
 		}
-		if owner := metav1.GetControllerOf(&pvc); owner != nil && owner.UID != broker.UID {
-			l.Info("skipping PVC controlled by another object", "pvc", name, "owner", owner.Kind+"/"+owner.Name)
+		if metav1.GetControllerOf(&pvc) != nil {
+			l.Info("skipping PVC controlled by another object", "pvc", name, "owner", metav1.GetControllerOf(&pvc).String())
 			continue
 		}
 		l.Info("deleting PVC", "name", name)
