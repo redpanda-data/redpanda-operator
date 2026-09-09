@@ -70,9 +70,6 @@ output:
   kafka:
     brokers:
     - localhost:9092
-    sasl:
-      enabled: true
-      impersonateUser: true
   schemaRegistry:
     authentication:
       basic:
@@ -89,9 +86,6 @@ output:
   kafka:
     brokers:
     - localhost:9092
-    sasl:
-      enabled: true
-      impersonateUser: true
   schemaRegistry:
     authentication:
       bearerToken: token123
@@ -106,9 +100,6 @@ output:
   kafka:
     brokers:
     - localhost:9092
-    sasl:
-      enabled: true
-      impersonateUser: true
   serde:
     cbor:
       enabled: true
@@ -120,10 +111,6 @@ warnings: null
 
 -- 09-connect-to-kafka-connect --
 output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
   kafkaConnect:
     clusters:
     - name: local
@@ -133,10 +120,6 @@ warnings: null
 
 -- 10-console-max-payload --
 output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
   serde:
     maxDeserializationPayloadSize: 1048576
 warnings: null
@@ -151,10 +134,6 @@ output:
         name: alice
       - loginType: oidc
         name: bob
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
 warnings: null
 
 -- 12-rolebindings-with-groups --
@@ -165,19 +144,11 @@ output:
       users:
       - loginType: basic
         name: alice
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
 warnings:
 - Removed group subject from role binding 'viewer'. Groups are not supported in v3.
 
 -- 13-redpanda-adminapi-with-creds --
 output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
   redpanda:
     adminApi:
       authentication:
@@ -192,10 +163,6 @@ warnings: null
 
 -- 14-redpanda-adminapi-no-creds --
 output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
   redpanda:
     adminApi:
       authentication:
@@ -257,18 +224,10 @@ warnings: null
 output:
   authentication:
     jwtSigningKey: existing-key
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
 warnings: null
 
 -- 17-remaining-fields --
 output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
   logger:
     level: info
   server:
@@ -332,11 +291,7 @@ warnings:
   in Redpanda instead.
 
 -- 22-empty-config --
-output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
+output: {}
 warnings: null
 
 -- 23-kafka-with-tls --
@@ -344,9 +299,6 @@ output:
   kafka:
     brokers:
     - localhost:9093
-    sasl:
-      enabled: true
-      impersonateUser: true
     tls:
       caFilepath: /etc/certs/ca.crt
       enabled: true
@@ -354,10 +306,6 @@ warnings: null
 
 -- 24-redpanda-with-extra-fields --
 output:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
   redpanda:
     adminApi:
       authentication:
@@ -393,4 +341,13 @@ warnings:
   in Redpanda instead.
 - Removed 'directory' from 'keycloak'. OIDC groups are not supported in v3. Create
   Roles in Redpanda instead.
+
+-- 26-kafka-without-login --
+output:
+  kafka:
+    brokers:
+    - broker-0:9092
+    sasl:
+      enabled: false
+warnings: null
 
