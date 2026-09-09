@@ -73,10 +73,7 @@ type mapping struct {
 // mappings is a slice of destination path to JQ query that together migrate a
 // Console v2 config to a Console v3 config. Its behavior matches the converter
 // in our public docs (Thanks Jake!) except that the kafka.sasl defaults are
-// gated on a login being configured: the docs converter always emits them, but
-// Console refuses to start with impersonateUser set while its own
-// authentication is disabled, so an unconditional default crash-loops Console
-// on clusters without SASL.
+// gated on a configured login.
 // https://github.com/redpanda-data/docs-ui/blob/d55545f392e0a9aaa0dbd193606a2b629d779699/console-config-migrator/main.go#L25
 // Due to module dependency conflicts and the quasi closed source nature of
 // console typing the configurations was deemed a non-option. JQ was elected as
