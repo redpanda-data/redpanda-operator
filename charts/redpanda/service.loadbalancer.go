@@ -114,7 +114,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 				Name:        fmt.Sprintf("lb-%s", podname),
 				Namespace:   state.Release.Namespace,
 				Labels:      labels,
-				Annotations: annotations,
+				Annotations: helmette.Merge(annotations, FullAnnotations(state)),
 			},
 			Spec: corev1.ServiceSpec{
 				ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,

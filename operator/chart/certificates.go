@@ -40,7 +40,7 @@ func Certificate(dot *helmette.Dot) *certmanagerv1.Certificate {
 			Name:        CertificateName(dot),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: certmanagerv1.CertificateSpec{
 			DNSNames: []string{
@@ -80,7 +80,7 @@ func Issuer(dot *helmette.Dot) *certmanagerv1.Issuer {
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "selfsigned-issuer"),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: certmanagerv1.IssuerSpec{
 			IssuerConfig: certmanagerv1.IssuerConfig{

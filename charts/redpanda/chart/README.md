@@ -152,6 +152,12 @@ Default Kubernetes cluster domain.
 
 **Default:** `"cluster.local."`
 
+### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=commonAnnotations)
+
+Additional annotations to add to all Kubernetes objects the chart renders, except the StatefulSet Pod template (annotating the Pods would restart the brokers). Annotations set on an individual resource, and the Helm hook annotations the chart needs, take precedence. Console objects rendered by the console subchart's own templates take theirs from `console.commonAnnotations`. For example, `argocd.argoproj.io/sync-wave: "1"`.
+
+**Default:** `{}`
+
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=commonLabels)
 
 Additional labels to add to all Kubernetes objects. For example, `my.k8s.service: redpanda`.

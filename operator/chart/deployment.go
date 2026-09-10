@@ -68,7 +68,7 @@ func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 			Name:        Fullname(dot),
 			Labels:      Labels(dot),
 			Namespace:   dot.Release.Namespace,
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: ptr.To(values.ReplicaCount),
@@ -410,16 +410,16 @@ func operatorArguments(dot *helmette.Dot) []string {
 		defaults["--enable-shadowlinks"] = "true"
 	}
 
-	if len(values.CommonAnnotations) > 0 {
-		// Build comma-separated key=value pairs for --common-annotations flag.
+	if len(values.ConnectAnnotations) > 0 {
+		// Build comma-separated key=value pairs for --connect-annotations flag.
 		annotationArg := ""
-		for key, value := range helmette.SortedMap(values.CommonAnnotations) {
+		for key, value := range helmette.SortedMap(values.ConnectAnnotations) {
 			if annotationArg != "" {
 				annotationArg = annotationArg + ","
 			}
 			annotationArg = annotationArg + quoteFlagMapPair(fmt.Sprintf("%s=%s", key, value))
 		}
-		defaults["--common-annotations"] = annotationArg
+		defaults["--connect-annotations"] = annotationArg
 	}
 
 	if values.Webhook.Enabled {
@@ -445,7 +445,7 @@ func operatorArguments(dot *helmette.Dot) []string {
 }
 
 // quoteFlagMapPair CSV-quotes a single key=value pair destined for a
-// comma-joined pflag StringToString flag (--common-annotations,
+// comma-joined pflag StringToString flag (--connect-annotations,
 // --connect-monitoring-labels). pflag parses multi-pair values with
 // encoding/csv, so an unquoted comma (or double quote) inside a value splits
 // mid-pair and fails flag parsing — a values-only change that would

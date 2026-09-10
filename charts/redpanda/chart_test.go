@@ -40,6 +40,7 @@ import (
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/module"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -1128,6 +1129,127 @@ func TestLabels(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestAnnotations(t *testing.T) {
+	ctx := testutil.Context(t)
+	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
+	require.NoError(t, err)
+
+	// render templates the chart and returns the resultant objects alongside
+	// the RenderState they were rendered from.
+	render := func(t *testing.T, values *redpanda.PartialValues) ([]kube.Object, *redpanda.RenderState) {
+		// This guarantee does not currently extend to console.
+		values.Console = &consolechart.PartialValues{Enabled: ptr.To(false)}
+
+		helmValues, err := redpanda.Chart.LoadValues(values)
+		require.NoError(t, err)
+
+		dot, err := redpanda.Chart.Dot(nil, helmette.Release{
+			Name:      "redpanda",
+			Namespace: "redpanda",
+			Service:   "Helm",
+		}, helmValues)
+		require.NoError(t, err)
+
+		state, err := redpanda.RenderStateFromDot(dot)
+		require.NoError(t, err)
+
+		manifests, err := client.Template(ctx, "./chart", helm.TemplateOptions{
+			Name:      dot.Release.Name,
+			Namespace: dot.Release.Namespace,
+			// Nor does it extend to tests.
+			SkipTests: true,
+			Values:    values,
+		})
+		require.NoError(t, err)
+
+		objs, err := kube.DecodeYAML(manifests, redpanda.Scheme)
+		require.NoError(t, err)
+
+		return objs, state
+	}
+
+	t.Run("applied to all objects", func(t *testing.T) {
+		for _, annotations := range []map[string]string{
+			{"foo": "bar"},
+			{"baz": "1", "quux": "2"},
+		} {
+			objs, state := render(t, &redpanda.PartialValues{CommonAnnotations: annotations})
+
+			expected := redpanda.FullAnnotations(state)
+			require.Subset(t, expected, annotations, "FullAnnotations does not contain CommonAnnotations")
+
+			for _, obj := range objs {
+				// The StatefulSet is deliberately NOT annotated — object, pod
+				// template, or volume claim templates. The VCTs are immutable on
+				// a live StatefulSet, so stamping commonAnnotations there makes
+				// adding/changing/removing the value fail with Forbidden; the
+				// object and pod template are left alone for consistency.
+				if sts, ok := obj.(*appsv1.StatefulSet); ok {
+					for key := range annotations {
+						require.NotContains(t, sts.GetAnnotations(), key, "%T/%s", sts, sts.Name)
+						require.NotContains(t, sts.Spec.Template.GetAnnotations(), key, "%T/%s's pod template", sts, sts.Name)
+						for _, pvc := range sts.Spec.VolumeClaimTemplates {
+							require.NotContains(t, pvc.GetAnnotations(), key, "%T/%s's PVC %q", sts, sts.Name, pvc.Name)
+						}
+					}
+					continue
+				}
+
+				// Every other object carries commonAnnotations.
+				require.Subset(t, obj.GetAnnotations(), expected, "%T %q", obj, obj.GetName())
+
+				if job, ok := obj.(*batchv1.Job); ok {
+					// The post-install job's pod template is annotated,
+					// mirroring the treatment of CommonLabels.
+					require.Subset(t, job.Spec.Template.GetAnnotations(), expected, "%T/%s's pod template", job, job.Name)
+				}
+			}
+		}
+	})
+
+	// CommonAnnotations is a floor of defaults, not an override. Both
+	// per-resource annotations and the annotations the chart itself requires
+	// take precedence over it.
+	t.Run("yields to chart internal annotations", func(t *testing.T) {
+		objs, _ := render(t, &redpanda.PartialValues{
+			CommonAnnotations: map[string]string{
+				"helm.sh/hook":               "bogus",
+				"helm.sh/hook-delete-policy": "bogus",
+				"helm.sh/hook-weight":        "99",
+			},
+		})
+
+		var asserted bool
+		for _, obj := range objs {
+			if job, ok := obj.(*batchv1.Job); ok {
+				require.Equal(t, "post-install,post-upgrade", job.GetAnnotations()["helm.sh/hook"], "%T/%s", job, job.Name)
+				require.Equal(t, "before-hook-creation", job.GetAnnotations()["helm.sh/hook-delete-policy"], "%T/%s", job, job.Name)
+				require.Equal(t, "-5", job.GetAnnotations()["helm.sh/hook-weight"], "%T/%s", job, job.Name)
+				asserted = true
+			}
+		}
+		require.True(t, asserted, "expected the post-install job to be rendered")
+	})
+
+	t.Run("yields to per resource annotations", func(t *testing.T) {
+		objs, _ := render(t, &redpanda.PartialValues{
+			CommonAnnotations: map[string]string{"shared": "common"},
+			ServiceAccount: &redpanda.PartialServiceAccountCfg{
+				Annotations: map[string]string{"shared": "per-resource"},
+			},
+		})
+
+		var asserted bool
+		for _, obj := range objs {
+			if sa, ok := obj.(*corev1.ServiceAccount); ok {
+				require.Equal(t, "per-resource", sa.GetAnnotations()["shared"], "%T/%s", sa, sa.Name)
+				asserted = true
+			}
+		}
+		require.True(t, asserted, "expected a service account to be rendered")
+	})
 }
 
 func TestAppVersion(t *testing.T) {

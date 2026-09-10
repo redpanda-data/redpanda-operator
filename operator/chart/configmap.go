@@ -29,7 +29,7 @@ func ConfigMap(dot *helmette.Dot) *corev1.ConfigMap {
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "config"),
 			Namespace:   dot.Release.Namespace,
 			Labels:      Labels(dot),
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Data: map[string]string{
 			"controller_manager_config.yaml": helmette.ToYaml(values.Config),

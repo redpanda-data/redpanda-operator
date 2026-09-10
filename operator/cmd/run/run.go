@@ -162,7 +162,7 @@ type RunOptions struct {
 	licenseFilePath           string
 
 	// Connect (Pipeline CRD) controller configuration.
-	commonAnnotations               map[string]string
+	connectAnnotations              map[string]string
 	connectMonitoringEnabled        bool
 	connectMonitoringScrapeInterval string
 	connectMonitoringLabels         map[string]string
@@ -195,7 +195,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
 	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
-	cmd.Flags().StringToStringVar(&o.commonAnnotations, "common-annotations", nil, "Annotations to propagate to all operator-managed resources (key=value pairs)")
+	cmd.Flags().StringToStringVar(&o.connectAnnotations, "connect-annotations", nil, "Annotations the operator adds to the Redpanda Connect pipeline resources it creates (key=value pairs)")
 	cmd.Flags().BoolVar(&o.connectMonitoringEnabled, "connect-monitoring-enabled", false, "Enable PodMonitor creation for Connect pipelines")
 	cmd.Flags().StringVar(&o.connectMonitoringScrapeInterval, "connect-monitoring-scrape-interval", "", "Prometheus scrape interval for Connect pipeline PodMonitors (e.g. 30s)")
 	cmd.Flags().StringToStringVar(&o.connectMonitoringLabels, "connect-monitoring-labels", nil, "Additional labels for Connect pipeline PodMonitors (key=value pairs)")
@@ -599,10 +599,10 @@ func Run(
 			setupLog.Info("starting Connect controller")
 
 			if err := (&pipelinecontroller.Controller{
-				Ctl:               pipelineCtl,
-				LicenseFilePath:   opts.licenseFilePath,
-				CommonAnnotations: opts.commonAnnotations,
-				DefaultImage:      opts.connectDefaultImage,
+				Ctl:                pipelineCtl,
+				LicenseFilePath:    opts.licenseFilePath,
+				ConnectAnnotations: opts.connectAnnotations,
+				DefaultImage:       opts.connectDefaultImage,
 				Monitoring: pipelinecontroller.MonitoringConfig{
 					Enabled:        opts.connectMonitoringEnabled,
 					ScrapeInterval: opts.connectMonitoringScrapeInterval,

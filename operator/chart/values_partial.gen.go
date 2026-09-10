@@ -49,7 +49,7 @@ type PartialValues struct {
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
 	VectorizedControllers *PartialVectorizedControllers "json:\"vectorizedControllers,omitempty\""
-	CommonAnnotations     map[string]string             "json:\"commonAnnotations,omitempty\""
+	ConnectAnnotations    map[string]string             "json:\"connectAnnotations,omitempty\""
 	ConnectController     *PartialConnectController     "json:\"connectController,omitempty\""
 	Controllers           *PartialControllers           "json:\"controllers,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""

@@ -80,9 +80,10 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-cert", fullname, name),
-				Labels:    FullLabels(state),
-				Namespace: state.Release.Namespace,
+				Name:        fmt.Sprintf("%s-%s-cert", fullname, name),
+				Labels:      FullLabels(state),
+				Namespace:   state.Release.Namespace,
+				Annotations: FullAnnotations(state),
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				DNSNames:   names,
@@ -129,9 +130,10 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 				Kind:       "Certificate",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-client", fullname, name),
-				Namespace: state.Release.Namespace,
-				Labels:    FullLabels(state),
+				Name:        fmt.Sprintf("%s-%s-client", fullname, name),
+				Namespace:   state.Release.Namespace,
+				Labels:      FullLabels(state),
+				Annotations: FullAnnotations(state),
 			},
 			Spec: certmanagerv1.CertificateSpec{
 				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),

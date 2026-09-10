@@ -44,6 +44,7 @@ func Roles(state *RenderState) []*rbacv1.Role {
 			map[string]string{},
 			state.Values.ServiceAccount.Annotations, // For backwards compatibility
 			state.Values.RBAC.Annotations,
+			FullAnnotations(state),
 		)
 
 		roles = append(roles, &role)
@@ -78,6 +79,7 @@ func ClusterRoles(state *RenderState) []*rbacv1.ClusterRole {
 			map[string]string{},
 			state.Values.ServiceAccount.Annotations, // For backwards compatibility
 			state.Values.RBAC.Annotations,
+			FullAnnotations(state),
 		)
 
 		clusterRoles = append(clusterRoles, &role)
@@ -104,6 +106,7 @@ func RoleBindings(state *RenderState) []*rbacv1.RoleBinding {
 					map[string]string{},
 					state.Values.ServiceAccount.Annotations, // For backwards compatibility
 					state.Values.RBAC.Annotations,
+					FullAnnotations(state),
 				),
 			},
 			RoleRef: rbacv1.RoleRef{
@@ -141,6 +144,7 @@ func ClusterRoleBindings(state *RenderState) []*rbacv1.ClusterRoleBinding {
 					map[string]string{},
 					state.Values.ServiceAccount.Annotations, // For backwards compatibility
 					state.Values.RBAC.Annotations,
+					FullAnnotations(state),
 				),
 			},
 			RoleRef: rbacv1.RoleRef{

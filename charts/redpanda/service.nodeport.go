@@ -136,7 +136,7 @@ func NodePortService(state *RenderState) *corev1.Service {
 			Name:        fmt.Sprintf("%s-external", ServiceName(state)),
 			Namespace:   state.Release.Namespace,
 			Labels:      FullLabels(state),
-			Annotations: annotations,
+			Annotations: helmette.Merge(annotations, FullAnnotations(state)),
 		},
 		Spec: corev1.ServiceSpec{
 			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,

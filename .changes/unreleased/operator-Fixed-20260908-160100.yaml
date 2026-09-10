@@ -1,0 +1,5 @@
+project: operator
+kind: Fixed
+body: |-
+    Objects rendered by the operator chart no longer carry `annotations: null` when no annotations are configured. ArgoCD compared that null against the live object's absent map and kept the ServiceMonitor (and every other chart object) permanently OutOfSync (#1085).
+time: 2026-09-08T16:00:00.000000-07:00
