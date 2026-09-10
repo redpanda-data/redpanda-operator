@@ -46,7 +46,8 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $_, $obj := (get (fromJson (include "redpanda.ClientCerts" (dict "a" (list $state)))) "r") -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- range $_, $obj := (get (fromJson (include "_redpanda.PKI.Render" (dict "a" (list $pki)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
 {{- end -}}
 {{- if $_is_returning -}}

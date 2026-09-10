@@ -14,15 +14,21 @@ import (
 	"fmt"
 	"strings"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
+// defaultCertDuration is a managed certificate's lifetime absent a values
+// override: five years.
+const defaultCertDuration = "43800h"
+
+// PKI resolves this chart's values into an authoritative certificate set. When
+// possible, use the PKI rather than going through Values.
+func PKI(state *RenderState) redpanda.PKI {
 	fullname := Fullname(state)
 	service := ServiceName(state)
 	ns := state.Release.Namespace
@@ -30,73 +36,45 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 	// So we trim it when generating certificates.
 	domain := strings.TrimSuffix(state.Values.ClusterDomain, ".")
 
-	var certs []*certmanagerv1.Certificate
+	// external.domain is templated, so expand it once rather than per cert.
+	externalDomain := ""
+	if state.Values.External.Domain != nil {
+		externalDomain = helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)
+	}
+
+	certs := map[string]redpanda.Certificate{}
+
 	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
 		data := state.Values.TLS.Certs.MustGet(name)
 
-		// Don't generate server Certificates if a secret is provided.
-		if !helmette.Empty(data.SecretRef) {
-			continue
+		// NB: caEnabled declares that the serving Secret carries a trustworthy
+		// ca.crt. Absent it the chart falls back to the serving certificate
+		// itself, so there's no key.
+		var ca *string
+		if data.CAEnabled {
+			ca = ptr.To("ca.crt")
 		}
 
-		var names []string
-		if data.IssuerRef == nil || ptr.Deref(data.ApplyInternalDNSNames, false) {
-			names = append(names, fmt.Sprintf("%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain))
-			names = append(names, fmt.Sprintf("%s-cluster.%s.%s.svc", fullname, service, ns))
-			names = append(names, fmt.Sprintf("%s-cluster.%s.%s", fullname, service, ns))
-			names = append(names, fmt.Sprintf("*.%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain))
-			names = append(names, fmt.Sprintf("*.%s-cluster.%s.%s.svc", fullname, service, ns))
-			names = append(names, fmt.Sprintf("*.%s-cluster.%s.%s", fullname, service, ns))
-			names = append(names, fmt.Sprintf("%s.%s.svc.%s", service, ns, domain))
-			names = append(names, fmt.Sprintf("%s.%s.svc", service, ns))
-			names = append(names, fmt.Sprintf("%s.%s", service, ns))
-			names = append(names, fmt.Sprintf("*.%s.%s.svc.%s", service, ns, domain))
-			names = append(names, fmt.Sprintf("*.%s.%s.svc", service, ns))
-			names = append(names, fmt.Sprintf("*.%s.%s", service, ns))
+		// A provided secretRef means the keypair already exists; only the
+		// generated ones are issued.
+		var request *redpanda.CertificateRequest
+		if data.SecretRef == nil {
+			request = &redpanda.CertificateRequest{
+				ObjectName: fmt.Sprintf("%s-%s-cert", fullname, name),
+				DNSNames:   serverSANs(state, name, fullname, service, ns, domain, externalDomain),
+				Duration:   helmette.MustDuration(helmette.Default(defaultCertDuration, data.Duration)),
+				IssuerRef:  certIssuerRef(fullname, name, data),
+			}
 		}
 
-		if state.Values.External.Domain != nil {
-			names = append(names, helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot))
-			names = append(names, fmt.Sprintf("*.%s", helmette.Tpl(state.Dot, *state.Values.External.Domain, state.Dot)))
+		certs[name] = redpanda.Certificate{
+			Server: redpanda.Keypair{
+				Name:    name,
+				CA:      ca,
+				Secret:  corev1.LocalObjectReference{Name: data.ServerSecretName(state, name)},
+				Request: request,
+			},
 		}
-
-		// Gateway API: a TLS-passthrough listener presents this managed cert
-		// directly to clients, who connect using the listener's host/hostTemplate
-		// SNI names. Those names are not covered by the internal service DNS or the
-		// external.domain wildcard above, so add them here to avoid post-bootstrap
-		// hostname-verification failures.
-		names = append(names, gatewayServerCertDNSNames(state, name)...)
-
-		duration := helmette.Default("43800h", data.Duration)
-		issuerRef := ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
-			Kind:  "Issuer",
-			Group: "cert-manager.io",
-			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
-		})
-
-		certs = append(certs, &certmanagerv1.Certificate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "cert-manager.io/v1",
-				Kind:       "Certificate",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        fmt.Sprintf("%s-%s-cert", fullname, name),
-				Labels:      FullLabels(state),
-				Namespace:   state.Release.Namespace,
-				Annotations: FullAnnotations(state),
-			},
-			Spec: certmanagerv1.CertificateSpec{
-				DNSNames:   names,
-				Duration:   helmette.MustDuration(duration),
-				IsCA:       false,
-				IssuerRef:  issuerRef,
-				SecretName: data.ServerSecretName(state, name),
-				PrivateKey: &certmanagerv1.CertificatePrivateKey{
-					Algorithm: "ECDSA",
-					Size:      256,
-				},
-			},
-		})
 	}
 
 	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
@@ -106,50 +84,64 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			panic(fmt.Sprintf(".clientSecretRef MUST be set if .secretRef is set and require_client_auth is true: Cert %q", name))
 		}
 
-		// Don't generate a client Certificate if a client secret is provided.
-		if data.ClientSecretRef != nil {
-			continue
-		}
-
-		issuerRef := cmmetav1.ObjectReference{
-			Group: "cert-manager.io",
-			Kind:  "Issuer",
-			Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
-		}
-
-		if data.IssuerRef != nil {
-			issuerRef = *data.IssuerRef
-			issuerRef.Group = "cert-manager.io"
-		}
-
-		duration := helmette.Default("43800h", data.Duration)
-
-		certs = append(certs, &certmanagerv1.Certificate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "cert-manager.io/v1",
-				Kind:       "Certificate",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        fmt.Sprintf("%s-%s-client", fullname, name),
-				Namespace:   state.Release.Namespace,
-				Labels:      FullLabels(state),
-				Annotations: FullAnnotations(state),
-			},
-			Spec: certmanagerv1.CertificateSpec{
+		var request *redpanda.CertificateRequest
+		if data.ClientSecretRef == nil {
+			request = &redpanda.CertificateRequest{
+				ObjectName: fmt.Sprintf("%s-%s-client", fullname, name),
 				CommonName: fmt.Sprintf("%s--%s-client", fullname, name),
-				Duration:   helmette.MustDuration(duration),
-				IsCA:       false,
-				SecretName: data.ClientSecretName(state, name),
-				PrivateKey: &certmanagerv1.CertificatePrivateKey{
-					Algorithm: "ECDSA",
-					Size:      256,
-				},
-				IssuerRef: issuerRef,
-			},
-		})
+				Duration:   helmette.MustDuration(helmette.Default(defaultCertDuration, data.Duration)),
+				IssuerRef:  certIssuerRef(fullname, name, data),
+			}
+		}
+
+		// NB: the client certs are a subset of the server certs, so the entry
+		// always exists. Map values aren't addressable, hence the write back.
+		cert := certs[name]
+		cert.Client = &redpanda.Keypair{
+			Name:    fmt.Sprintf("%s-client", name),
+			Secret:  corev1.LocalObjectReference{Name: data.ClientSecretName(state, name)},
+			Request: request,
+		}
+		certs[name] = cert
 	}
 
-	return certs
+	return redpanda.PKI{
+		Namespace:    ns,
+		Labels:       FullLabels(state),
+		Annotations:  FullAnnotations(state),
+		Certificates: certs,
+	}
+}
+
+// serverSANs is the chart's SAN set. Brokers here are subdomains of the
+// headless Service, so it needs neither the namespace wildcards nor the
+// per-broker names the operator adds.
+func serverSANs(state *RenderState, name, fullname, service, ns, domain, externalDomain string) []string {
+	var names []string
+
+	data := state.Values.TLS.Certs.MustGet(name)
+	if data.IssuerRef == nil || ptr.Deref(data.ApplyInternalDNSNames, false) {
+		names = append(names, redpanda.ServiceSANs(fullname, service, ns, domain)...)
+	}
+
+	names = append(names, redpanda.DomainSANs(externalDomain)...)
+
+	// A TLS-passthrough Gateway listener presents this cert directly under
+	// its host/hostTemplate SNI names, which neither the internal service DNS
+	// nor the external.domain wildcard covers.
+	names = append(names, gatewayServerCertDNSNames(state, name)...)
+
+	return names
+}
+
+// certIssuerRef falls back to the per-certificate root issuer this chart
+// bootstraps in cert_issuers.go.
+func certIssuerRef(fullname, name string, data *TLSCert) cmmetav1.ObjectReference {
+	return ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
+		Kind:  "Issuer",
+		Group: "cert-manager.io",
+		Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, name),
+	})
 }
 
 // gatewayServerCertDNSNames returns the Gateway API SNI hostnames that the
