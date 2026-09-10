@@ -1231,7 +1231,6 @@ func (s *RedpandaControllerSuite) waitFor(t testing.TB, ctx context.Context, c c
 	}
 }
 
-<<<<<<< HEAD
 func (s *RedpandaControllerSuite) dumpRedpandaPodLogs(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda) {
 	t.Helper()
 
@@ -1268,20 +1267,6 @@ func (s *RedpandaControllerSuite) dumpRedpandaPodLogs(t testing.TB, ctx context.
 	}
 }
 
-func TestPostInstallUpgradeJobIndex(t *testing.T) {
-	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, map[string]any{})
-	require.NoError(t, err)
-
-	state := &redpandachart.RenderState{Dot: dot, Values: helmette.Unwrap[redpandachart.Values](dot.Values), Chart: &dot.Chart, Files: &dot.Files, Release: &dot.Release}
-	job := redpandachart.PostInstallUpgradeJob(state)
-
-	// Assert that index 0 is the envsubst container as that's what
-	// `clusterConfigfor` utilizes.
-	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
-}
-
-=======
->>>>>>> 0ed3bcba (operator: derive cluster config from the StatefulSet, not the post-install job (#1778))
 // TestControllerRBAC asserts that the declared Roles and ClusterRoles of the
 // RedpandaReconciler line up with all the resource types it needs to manage.
 func TestControllerRBAC(t *testing.T) {

@@ -890,14 +890,6 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 			return nil, errors.WithStack(err)
 		}
 	}
-<<<<<<< HEAD
-	for _, e := range job.Spec.Template.Spec.InitContainers[0].EnvFrom {
-		if err := conf.EnsureInitEnvFrom(e); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-=======
->>>>>>> 0ed3bcba (operator: derive cluster config from the StatefulSet, not the post-install job (#1778))
 
 	desired, err := conf.Reify(ctx, cluster.GetClient(), r.CloudSecretsExpander, schema)
 	if err != nil {
