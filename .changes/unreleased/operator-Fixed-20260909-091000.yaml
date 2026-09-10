@@ -1,0 +1,5 @@
+project: operator
+kind: Fixed
+body: |-
+    The Console configuration rendered for a Redpanda resource no longer contains `kafka.sasl.enabled: true` and `kafka.sasl.impersonateUser: true` unless the legacy `console.console` block configured a login. Console 3.9 refuses to start with impersonation enabled while its own authentication is disabled, so clusters without SASL had a crash-looping Console.
+time: 2026-09-09T09:10:00.000000-07:00
