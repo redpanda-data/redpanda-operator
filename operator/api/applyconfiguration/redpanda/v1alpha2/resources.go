@@ -12,17 +12,17 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
 // ResourcesApplyConfiguration represents a declarative configuration of the Resources type for use
 // with apply.
 type ResourcesApplyConfiguration struct {
-	Limits   *map[v1.ResourceName]resource.Quantity `json:"limits,omitempty"`
-	Requests *map[v1.ResourceName]resource.Quantity `json:"requests,omitempty"`
-	CPU      *CPUApplyConfiguration                 `json:"cpu,omitempty"`
-	Memory   *MemoryApplyConfiguration              `json:"memory,omitempty"`
+	Limits   *map[corev1.ResourceName]resource.Quantity `json:"limits,omitempty"`
+	Requests *map[corev1.ResourceName]resource.Quantity `json:"requests,omitempty"`
+	CPU      *CPUApplyConfiguration                     `json:"cpu,omitempty"`
+	Memory   *MemoryApplyConfiguration                  `json:"memory,omitempty"`
 }
 
 // ResourcesApplyConfiguration constructs a declarative configuration of the Resources type for use with
@@ -34,7 +34,7 @@ func Resources() *ResourcesApplyConfiguration {
 // WithLimits sets the Limits field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Limits field is set to the value of the last call.
-func (b *ResourcesApplyConfiguration) WithLimits(value map[v1.ResourceName]resource.Quantity) *ResourcesApplyConfiguration {
+func (b *ResourcesApplyConfiguration) WithLimits(value map[corev1.ResourceName]resource.Quantity) *ResourcesApplyConfiguration {
 	b.Limits = &value
 	return b
 }
@@ -42,7 +42,7 @@ func (b *ResourcesApplyConfiguration) WithLimits(value map[v1.ResourceName]resou
 // WithRequests sets the Requests field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Requests field is set to the value of the last call.
-func (b *ResourcesApplyConfiguration) WithRequests(value map[v1.ResourceName]resource.Quantity) *ResourcesApplyConfiguration {
+func (b *ResourcesApplyConfiguration) WithRequests(value map[corev1.ResourceName]resource.Quantity) *ResourcesApplyConfiguration {
 	b.Requests = &value
 	return b
 }
