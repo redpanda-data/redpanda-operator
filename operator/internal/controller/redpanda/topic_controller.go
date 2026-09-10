@@ -146,10 +146,10 @@ func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	return nil
 }
 
-func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace, clusterDomain string, syncInterval time.Duration) error {
 	r := &TopicReconciler{
 		Manager:      mgr,
-		Factory:      internalclient.NewFactory(mgr, expander),
+		Factory:      internalclient.NewFactory(mgr, expander).WithClusterDomain(clusterDomain),
 		SyncInterval: intervalOrDefault(syncInterval, DefaultTopicSyncInterval),
 	}
 

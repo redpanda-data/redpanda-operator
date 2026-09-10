@@ -151,7 +151,14 @@ type Factory struct {
 	dialer             redpanda.DialContextFunc
 	userAuth           *UserAuth
 	secretExpander     *pkgsecrets.CloudExpander
+	// clusterDomain is the Kubernetes cluster domain used to build the FQDNs
+	// of V1 clusters. Empty means DefaultClusterDomain.
+	clusterDomain string
 }
+
+// DefaultClusterDomain is the cluster domain assumed when none is configured
+// via WithClusterDomain. It matches the default of the --cluster-domain flag.
+const DefaultClusterDomain = "cluster.local"
 
 var _ ClientFactory = (*Factory)(nil)
 
@@ -191,6 +198,7 @@ func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
 		fs:                 c.fs,
 		dialer:             dialer,
 		adminClientTimeout: c.adminClientTimeout,
+		clusterDomain:      c.clusterDomain,
 	}
 }
 
@@ -201,7 +209,31 @@ func (c *Factory) WithAdminClientTimeout(timeout time.Duration) *Factory {
 		fs:                 c.fs,
 		dialer:             c.dialer,
 		adminClientTimeout: timeout,
+		clusterDomain:      c.clusterDomain,
 	}
+}
+
+// WithClusterDomain sets the Kubernetes cluster domain (Kubelet's
+// --cluster-domain) used to build the FQDNs of V1 clusters. The V1 controller
+// mints node certificate SANs from the same value, so the two must agree for
+// TLS clients to verify the brokers.
+func (c *Factory) WithClusterDomain(clusterDomain string) *Factory {
+	return &Factory{
+		mgr:                c.mgr,
+		userAuth:           c.userAuth,
+		fs:                 c.fs,
+		dialer:             c.dialer,
+		adminClientTimeout: c.adminClientTimeout,
+		clusterDomain:      clusterDomain,
+	}
+}
+
+// domain returns the configured cluster domain or DefaultClusterDomain.
+func (c *Factory) domain() string {
+	if c.clusterDomain == "" {
+		return DefaultClusterDomain
+	}
+	return c.clusterDomain
 }
 
 func (c *Factory) WithFS(fs afero.Fs) *Factory {
@@ -211,6 +243,7 @@ func (c *Factory) WithFS(fs afero.Fs) *Factory {
 		dialer:             c.dialer,
 		fs:                 fs,
 		adminClientTimeout: c.adminClientTimeout,
+		clusterDomain:      c.clusterDomain,
 	}
 }
 
@@ -221,6 +254,7 @@ func (c *Factory) WithUserAuth(userAuth *UserAuth) *Factory {
 		fs:                 c.fs,
 		userAuth:           userAuth,
 		adminClientTimeout: c.adminClientTimeout,
+		clusterDomain:      c.clusterDomain,
 	}
 }
 

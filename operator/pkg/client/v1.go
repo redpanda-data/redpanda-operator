@@ -203,21 +203,21 @@ func newNodePoolInternalSchemaRegistryAPI(
 	return sr.NewClient(append(copts, opts...)...)
 }
 
-// v1ClusterFQDN returns the headless service FQDN of a V1 cluster; the
-// internal clients dial its brokers as <pod>.<fqdn>.
-func v1ClusterFQDN(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster) string {
+// v1ClusterFQDN returns the headless service FQDN of a V1 cluster under the
+// given cluster domain; the internal clients dial its brokers as <pod>.<fqdn>.
+func v1ClusterFQDN(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster, clusterDomain string) string {
 	headlessSvc := resources.NewHeadlessService(k8sClient, cluster, controller.UnifiedScheme, nil, log.FromContext(ctx))
-	return headlessSvc.HeadlessServiceFQDN("cluster.local")
+	return headlessSvc.HeadlessServiceFQDN(clusterDomain)
 }
 
 // v1ClusterCerts returns the headless service FQDN of a V1 cluster together
 // with the TLS provider for its listeners. Building the provider resolves the
 // certificate groups of every API, which reads the Issuers and node secrets
 // the listeners reference.
-func v1ClusterCerts(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster) (string, *certmanager.ClusterCertificates, error) {
+func v1ClusterCerts(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster, clusterDomain string) (string, *certmanager.ClusterCertificates, error) {
 	clusterSvc := resources.NewClusterService(k8sClient, cluster, controller.UnifiedScheme, nil, log.FromContext(ctx))
-	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster)
-	clusterFQDN := clusterSvc.ServiceFQDN("cluster.local")
+	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster, clusterDomain)
+	clusterFQDN := clusterSvc.ServiceFQDN(clusterDomain)
 	certs, err := certmanager.NewClusterCertificates(ctx, cluster, certmanager.KeyStoreKey(cluster), k8sClient, fqdn, clusterFQDN, controller.UnifiedScheme, log.FromContext(ctx))
 	if err != nil {
 		return "", nil, err

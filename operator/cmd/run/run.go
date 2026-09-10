@@ -493,7 +493,7 @@ func Run(
 
 	// Configure controllers that are always enabled (Redpanda, Topic, User, Schema).
 
-	factory := internalclient.NewFactory(mcmanager, cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout)
+	factory := internalclient.NewFactory(mcmanager, cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout).WithClusterDomain(opts.clusterDomain)
 
 	cloudSecrets := lifecycle.CloudSecretsFlags{
 		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
@@ -622,33 +622,33 @@ func Run(
 	// and for replicating from external sources such as Confluent.
 	if opts.enableShadowLinks {
 		setupLog.Info("starting ShadowLink controller")
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.clusterDomain, opts.shadowLinkSyncInterval); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.topicSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.clusterDomain, opts.topicSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.userSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.clusterDomain, opts.userSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.roleSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.clusterDomain, opts.roleSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.groupSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.clusterDomain, opts.groupSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Group")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.schemaSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.clusterDomain, opts.schemaSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

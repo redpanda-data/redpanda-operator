@@ -106,8 +106,8 @@ func (r *ShadowLinkReconciler) DeleteResource(ctx context.Context, request Resou
 	return nil
 }
 
-func SetupShadowLinkController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
-	factory := internalclient.NewFactory(mgr, expander)
+func SetupShadowLinkController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace, clusterDomain string, syncInterval time.Duration) error {
+	factory := internalclient.NewFactory(mgr, expander).WithClusterDomain(clusterDomain)
 
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.ShadowLink{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true), mcbuilder.WithPredicates(predicate.GenerationChangedPredicate{}))

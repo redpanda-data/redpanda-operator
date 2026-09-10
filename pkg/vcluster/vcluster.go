@@ -102,8 +102,9 @@ type Cluster struct {
 }
 
 type VclusterOptions struct {
-	name   string
-	values helm.RawYAML
+	name          string
+	values        helm.RawYAML
+	clusterDomain string
 }
 
 type Option interface {
@@ -136,6 +137,22 @@ func WithValues(values helm.RawYAML) Option {
 
 func WithDefaultValues() Option {
 	return WithValues(helm.RawYAML(DefaultValues))
+}
+
+type clusterDomainOption struct {
+	domain string
+}
+
+func (o *clusterDomainOption) Apply(opts *VclusterOptions) {
+	opts.clusterDomain = o.domain
+}
+
+// WithClusterDomain sets the Kubernetes cluster domain served by the
+// vcluster's CoreDNS (networking.advanced.clusterDomain) instead of the
+// default cluster.local. It is appended to whatever values are in effect, so
+// it composes with WithValues.
+func WithClusterDomain(domain string) Option {
+	return &clusterDomainOption{domain: domain}
 }
 
 func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
@@ -194,6 +211,9 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 
 	if vClusterOptions.values == nil {
 		WithDefaultValues().Apply(&vClusterOptions)
+	}
+	if vClusterOptions.clusterDomain != "" {
+		vClusterOptions.values = append(vClusterOptions.values, fmt.Sprintf("\nnetworking:\n  advanced:\n    clusterDomain: %q\n", vClusterOptions.clusterDomain)...)
 	}
 
 	namespace := &corev1.Namespace{
