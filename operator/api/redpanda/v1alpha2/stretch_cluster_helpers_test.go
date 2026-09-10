@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -208,22 +209,6 @@ func TestTLS(t *testing.T) {
 		})
 	})
 
-	t.Run("CertServerCAPath", func(t *testing.T) {
-		t.Run("nil TLS falls back to tls.crt", func(t *testing.T) {
-			assert.Equal(t, "/etc/tls/certs/default/tls.crt", (*redpandav1alpha2.TLS)(nil).CertServerCAPath("default"))
-		})
-
-		t.Run("CA enabled uses ca.crt", func(t *testing.T) {
-			tls := &redpandav1alpha2.TLS{Certs: map[string]*redpandav1alpha2.Certificate{"my-cert": {CAEnabled: ptr.To(true)}}}
-			assert.Equal(t, "/etc/tls/certs/my-cert/ca.crt", tls.CertServerCAPath("my-cert"))
-		})
-
-		t.Run("CA disabled uses tls.crt", func(t *testing.T) {
-			tls := &redpandav1alpha2.TLS{Certs: map[string]*redpandav1alpha2.Certificate{"my-cert": {CAEnabled: ptr.To(false)}}}
-			assert.Equal(t, "/etc/tls/certs/my-cert/tls.crt", tls.CertServerCAPath("my-cert"))
-		})
-	})
-
 	t.Run("CertificatesFor", func(t *testing.T) {
 		t.Run("nil TLS returns defaults", func(t *testing.T) {
 			certSecret, certKey, clientSecret := (*redpandav1alpha2.TLS)(nil).CertificatesFor("release", "default")
@@ -378,18 +363,17 @@ func TestStretchListenerTLS(t *testing.T) {
 	})
 
 	t.Run("ServerCAPath", func(t *testing.T) {
-		tls := &redpandav1alpha2.TLS{
-			Enabled: ptr.To(true),
-			Certs:   map[string]*redpandav1alpha2.Certificate{"default": {CAEnabled: ptr.To(true)}},
-		}
+		pki := &redpanda.PKI{Certificates: map[string]redpanda.Certificate{
+			"default": {Server: redpanda.Keypair{Name: "default", CA: ptr.To("ca.crt")}},
+		}}
 
 		t.Run("nil listener returns empty", func(t *testing.T) {
-			assert.Equal(t, "", (*redpandav1alpha2.StretchListenerTLS)(nil).ServerCAPath(tls))
+			assert.Equal(t, "", (*redpandav1alpha2.StretchListenerTLS)(nil).ServerCAPath(pki))
 		})
 
 		t.Run("no truststore falls back to cert-based path", func(t *testing.T) {
 			lt := &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("default")}
-			assert.Equal(t, "/etc/tls/certs/default/ca.crt", lt.ServerCAPath(tls))
+			assert.Equal(t, "/etc/tls/certs/default/ca.crt", lt.ServerCAPath(pki))
 		})
 
 		t.Run("truststore takes precedence", func(t *testing.T) {
@@ -402,12 +386,12 @@ func TestStretchListenerTLS(t *testing.T) {
 					},
 				},
 			}
-			assert.Equal(t, "/etc/truststores/secrets/custom-ca-ca.crt", lt.ServerCAPath(tls))
+			assert.Equal(t, "/etc/truststores/secrets/custom-ca-ca.crt", lt.ServerCAPath(pki))
 		})
 
 		t.Run("no cert name returns empty", func(t *testing.T) {
 			lt := &redpandav1alpha2.StretchListenerTLS{}
-			assert.Equal(t, "", lt.ServerCAPath(tls))
+			assert.Equal(t, "", lt.ServerCAPath(pki))
 		})
 	})
 }

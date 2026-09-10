@@ -39,6 +39,25 @@ func TestSANHelpers(t *testing.T) {
 		"*.rp.ns",
 	}, ServiceSANs("rp", "rp", "ns", "cluster.local"))
 
+	// Wildcards first, then one two-label name per broker. No "*.ns": a
+	// wildcard on a single-label parent, which OpenSSL >= 3.0 rejects.
+	nsSANs := NamespaceSANs("ns", "cluster.local", []string{"rp-0", "rp-1"})
+	require.Equal(t, []string{
+		"*.ns.svc.cluster.local",
+		"*.ns.svc",
+		"rp-0.ns",
+		"rp-1.ns",
+	}, nsSANs)
+	require.NotContains(t, nsSANs, "*.ns")
+
+	require.Equal(t, []string{
+		"rp-cluster.rp.ns.svc.clusterset.local",
+		"*.rp-cluster.rp.ns.svc.clusterset.local",
+		"rp.ns.svc.clusterset.local",
+		"*.rp.ns.svc.clusterset.local",
+		"rp-0.ns.svc.clusterset.local",
+	}, ClusterSetSANs("rp", "rp", "ns", []string{"rp-0"}))
+
 	require.Equal(t, []string{"rp.example.com", "*.rp.example.com"}, DomainSANs("rp.example.com"))
 	require.Nil(t, DomainSANs(""))
 }

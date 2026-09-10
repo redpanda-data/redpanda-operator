@@ -35,17 +35,15 @@ func (r *RenderState) commonMounts(pool *redpandav1alpha2.RedpandaBrokerPool) []
 			})
 		}
 	}
+	// NB: listener order rather than [redpanda.PKI.Mounts]' name order;
+	// reordering changes the pod template and rolls every broker.
+	pki := poolPKI(r, pool)
 	for _, name := range pool.Spec.InUseServerCerts() {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      certServerVolumeName(name),
-			MountPath: certServerMountPoint(name),
-		})
+		kp := pki.ServerKeypair(name)
+		mounts = append(mounts, kp.Mount())
 	}
 	for _, name := range pool.Spec.InUseClientCerts() {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      certClientVolumeName(name),
-			MountPath: certClientMountPoint(name),
-		})
+		mounts = append(mounts, pki.ClientKeypair(name).Mount())
 	}
 	return mounts
 }
@@ -55,29 +53,16 @@ func (r *RenderState) commonMounts(pool *redpandav1alpha2.RedpandaBrokerPool) []
 // the pool fullname so two pools using cert name "default" don't collide);
 // SASL stays cluster-wide via Auth.
 func (r *RenderState) commonVolumes(pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.Volume {
-	poolFullname := r.poolFullname(pool)
 	var volumes []corev1.Volume
+	// NB: listener order rather than [redpanda.PKI.Volumes]' name order;
+	// reordering changes the pod template and rolls every broker.
+	pki := poolPKI(r, pool)
 	for _, name := range pool.Spec.InUseServerCerts() {
-		volumes = append(volumes, corev1.Volume{
-			Name: certServerVolumeName(name),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  pool.Spec.TLS.CertServerSecretName(poolFullname, name),
-					DefaultMode: ptr.To[int32](0o440),
-				},
-			},
-		})
+		kp := pki.ServerKeypair(name)
+		volumes = append(volumes, kp.Volume())
 	}
 	for _, name := range pool.Spec.InUseClientCerts() {
-		volumes = append(volumes, corev1.Volume{
-			Name: certClientVolumeName(name),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  pool.Spec.TLS.CertClientSecretName(poolFullname, name),
-					DefaultMode: ptr.To[int32](0o440),
-				},
-			},
-		})
+		volumes = append(volumes, pki.ClientKeypair(name).Volume())
 	}
 	if r.Spec().Auth.IsSASLEnabled() {
 		sasl := r.Spec().Auth.SASL
