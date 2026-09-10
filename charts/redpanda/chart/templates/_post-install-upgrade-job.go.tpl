@@ -1,20 +1,29 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/post_install_upgrade_job.go" */ -}}
 
+{{- define "redpanda.BootstrapTemplateEnvVars" -}}
+{{- $state := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $env := (get (fromJson (include "redpanda.TieredStorageCredentials.AsEnvVars" (dict "a" (list $state.Values.storage.tiered.credentialsSecretRef (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $state.Values.storage)))) "r"))))) "r") -}}
+{{- $_33_____additionalEnv := (get (fromJson (include "redpanda.ClusterConfiguration.Translate" (dict "a" (list (deepCopy $state.Values.config.extraClusterConfiguration))))) "r") -}}
+{{- $_ := (index $_33_____additionalEnv 0) -}}
+{{- $_ := (index $_33_____additionalEnv 1) -}}
+{{- $additionalEnv := (index $_33_____additionalEnv 2) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (concat (default (list) $env) (default (list) $additionalEnv))) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "redpanda.bootstrapYamlTemplater" -}}
 {{- $state := (index .a 0) -}}
 {{- $sts := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $env := (get (fromJson (include "redpanda.TieredStorageCredentials.AsEnvVars" (dict "a" (list $state.Values.storage.tiered.credentialsSecretRef (get (fromJson (include "redpanda.Storage.GetTieredStorageConfig" (dict "a" (list $state.Values.storage)))) "r"))))) "r") -}}
-{{- $_30_____additionalEnv := (get (fromJson (include "redpanda.ClusterConfiguration.Translate" (dict "a" (list (deepCopy $state.Values.config.extraClusterConfiguration))))) "r") -}}
-{{- $_ := (index $_30_____additionalEnv 0) -}}
-{{- $_ := (index $_30_____additionalEnv 1) -}}
-{{- $additionalEnv := (index $_30_____additionalEnv 2) -}}
-{{- $env = (concat (default (list) $env) (default (list) $additionalEnv)) -}}
 {{- $image := (printf `%s:%s` $sts.sideCars.image.repository $sts.sideCars.image.tag) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "bootstrap-yaml-envsubst" "image" $image "command" (concat (default (list) (list "/redpanda-operator" "bootstrap" "--in-dir" "/tmp/base-config" "--out-dir" "/tmp/config")) (default (list) $state.Values.statefulset.initContainers.configurator.additionalCLIArgs)) "env" $env "resources" (mustMergeOverwrite (dict) (dict "limits" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r") "memory" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "125Mi")))) "r")) "requests" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r") "memory" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "125Mi")))) "r")))) "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false "readOnlyRootFilesystem" true "runAsNonRoot" true)) "volumeMounts" (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/tmp/config/")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config/")))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "bootstrap-yaml-envsubst" "image" $image "command" (concat (default (list) (list "/redpanda-operator" "bootstrap" "--in-dir" "/tmp/base-config" "--out-dir" "/tmp/config")) (default (list) $state.Values.statefulset.initContainers.configurator.additionalCLIArgs)) "env" (get (fromJson (include "redpanda.BootstrapTemplateEnvVars" (dict "a" (list $state)))) "r") "resources" (mustMergeOverwrite (dict) (dict "limits" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r") "memory" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "125Mi")))) "r")) "requests" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r") "memory" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "125Mi")))) "r")))) "securityContext" (mustMergeOverwrite (dict) (dict "allowPrivilegeEscalation" false "readOnlyRootFilesystem" true "runAsNonRoot" true)) "volumeMounts" (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "config" "mountPath" "/tmp/config/")) (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/tmp/base-config/")))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
