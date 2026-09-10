@@ -17,6 +17,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/scalalang2/golang-fifo/sieve"
 	fifotypes "github.com/scalalang2/golang-fifo/types"
@@ -119,6 +120,9 @@ func NewNodePoolInternalAdminAPI(
 
 	var tlsConfig *tls.Config
 	if adminInternal.TLS.Enabled {
+		if adminTLSProvider == nil {
+			return nil, errors.Newf("internal admin API of cluster %s/%s has TLS enabled but no TLS provider was given", redpandaCluster.Namespace, redpandaCluster.Name)
+		}
 		var err error
 		tlsConfig, err = adminTLSProvider.GetTLSConfig(ctx, k8sClient)
 		if err != nil {
