@@ -289,9 +289,11 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	// Examine if the object is under deletion
 	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
 		// clean up all dependant resources, requeueing while they are still
-		// going away: no watched object fires when a Pod or StatefulSet
-		// finally disappears, so a bare result would fall through to the 3m
-		// periodicRequeue.
+		// going away: Pod and PVC removals are not mapped to this CR, and the
+		// owned StatefulSet's delete event can race a stale informer cache
+		// (the triggered reconcile may still see the StatefulSet, and no
+		// further event ever comes). Without a requeue the fallback is the
+		// 3m periodicRequeue.
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
 			return r.syncStatus(ctx, cluster, state, reconcile.Result{RequeueAfter: requeueTimeout}, err)
 		}
