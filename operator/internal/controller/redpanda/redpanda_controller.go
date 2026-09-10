@@ -1053,7 +1053,6 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
-	job := redpanda.PostInstallUpgradeJob(state)
 	clusterConfigTemplate, fixups := redpanda.BootstrapContents(state, redpanda.Pool{Statefulset: state.Values.Statefulset})
 	conf := clusterconfiguration.NewClusterCfg(clusterconfiguration.NewPodContext(rp.Namespace))
 	for k, v := range clusterConfigTemplate {
@@ -1062,13 +1061,8 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 	for _, f := range fixups {
 		conf.AddFixup(f.Field, f.CEL)
 	}
-	for _, e := range job.Spec.Template.Spec.InitContainers[0].Env {
+	for _, e := range redpanda.BootstrapTemplateEnvVars(state) {
 		if err := conf.EnsureInitEnv(e); err != nil {
-			return nil, nil, errors.WithStack(err)
-		}
-	}
-	for _, e := range job.Spec.Template.Spec.InitContainers[0].EnvFrom {
-		if err := conf.EnsureInitEnvFrom(e); err != nil {
 			return nil, nil, errors.WithStack(err)
 		}
 	}
