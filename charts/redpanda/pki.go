@@ -330,6 +330,46 @@ func ServiceSANs(fullname, service, namespace, clusterDomain string) []string {
 	}
 }
 
+// NamespaceSANs returns the namespace-wide wildcards followed by one
+// "<broker>.<ns>" name per broker.
+//
+// Only callers whose brokers get standalone per-pod Services -- siblings of
+// the headless Service rather than subdomains of it -- need these. Note the
+// absence of "*.<ns>": a wildcard on a single-label parent (RFC 6125 section
+// 6.4.3), which OpenSSL >= 3.0 rejects. The per-broker names cover the
+// two-label form instead, matching the hostnames written into seed_servers and
+// advertised_rpc_api; without them the RPC handshake fails strict hostname
+// verification and the cluster can't reach quorum.
+func NamespaceSANs(namespace, clusterDomain string, brokers []string) []string {
+	names := []string{
+		fmt.Sprintf("*.%s.svc.%s", namespace, clusterDomain),
+		fmt.Sprintf("*.%s.svc", namespace),
+	}
+
+	for _, broker := range brokers {
+		names = append(names, fmt.Sprintf("%s.%s", broker, namespace))
+	}
+
+	return names
+}
+
+// ClusterSetSANs returns the multi-cluster services clusterset.local names:
+// cluster and service level, plus one per broker.
+func ClusterSetSANs(fullname, service, namespace string, brokers []string) []string {
+	names := []string{
+		fmt.Sprintf("%s-cluster.%s.%s.svc.clusterset.local", fullname, service, namespace),
+		fmt.Sprintf("*.%s-cluster.%s.%s.svc.clusterset.local", fullname, service, namespace),
+		fmt.Sprintf("%s.%s.svc.clusterset.local", service, namespace),
+		fmt.Sprintf("*.%s.%s.svc.clusterset.local", service, namespace),
+	}
+
+	for _, broker := range brokers {
+		names = append(names, fmt.Sprintf("%s.%s.svc.clusterset.local", broker, namespace))
+	}
+
+	return names
+}
+
 // DomainSANs returns "<domain>" and "*.<domain>", or nothing for an empty
 // domain. The domain must arrive already template-expanded.
 func DomainSANs(domain string) []string {

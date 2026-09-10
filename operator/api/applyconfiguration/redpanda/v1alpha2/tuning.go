@@ -12,21 +12,21 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // TuningApplyConfiguration represents a declarative configuration of the Tuning type for use
 // with apply.
 type TuningApplyConfiguration struct {
-	ExtraVolumeMounts *string                  `json:"extraVolumeMounts,omitempty"`
-	Resources         *v1.ResourceRequirements `json:"resources,omitempty"`
-	BallastFilePath   *string                  `json:"ballast_file_path,omitempty"`
-	BallastFileSize   *string                  `json:"ballast_file_size,omitempty"`
-	TuneAioEvents     *bool                    `json:"tune_aio_events,omitempty"`
-	TuneBallastFile   *bool                    `json:"tune_ballast_file,omitempty"`
-	TuneClockSource   *bool                    `json:"tune_clocksource,omitempty"`
-	WellKnownIo       *string                  `json:"well_known_io,omitempty"`
-	ApplyHostTuners   *bool                    `json:"apply_host_tuners,omitempty"`
+	ExtraVolumeMounts *string                      `json:"extraVolumeMounts,omitempty"`
+	Resources         *corev1.ResourceRequirements `json:"resources,omitempty"`
+	BallastFilePath   *string                      `json:"ballast_file_path,omitempty"`
+	BallastFileSize   *string                      `json:"ballast_file_size,omitempty"`
+	TuneAioEvents     *bool                        `json:"tune_aio_events,omitempty"`
+	TuneBallastFile   *bool                        `json:"tune_ballast_file,omitempty"`
+	TuneClockSource   *bool                        `json:"tune_clocksource,omitempty"`
+	WellKnownIo       *string                      `json:"well_known_io,omitempty"`
+	ApplyHostTuners   *bool                        `json:"apply_host_tuners,omitempty"`
 }
 
 // TuningApplyConfiguration constructs a declarative configuration of the Tuning type for use with
@@ -46,7 +46,7 @@ func (b *TuningApplyConfiguration) WithExtraVolumeMounts(value string) *TuningAp
 // WithResources sets the Resources field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Resources field is set to the value of the last call.
-func (b *TuningApplyConfiguration) WithResources(value v1.ResourceRequirements) *TuningApplyConfiguration {
+func (b *TuningApplyConfiguration) WithResources(value corev1.ResourceRequirements) *TuningApplyConfiguration {
 	b.Resources = &value
 	return b
 }

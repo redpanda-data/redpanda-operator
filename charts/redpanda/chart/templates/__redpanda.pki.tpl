@@ -259,6 +259,45 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "_redpanda.NamespaceSANs" -}}
+{{- $namespace := (index .a 0) -}}
+{{- $clusterDomain := (index .a 1) -}}
+{{- $brokers := (index .a 2) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $names := (list (printf "*.%s.svc.%s" $namespace $clusterDomain) (printf "*.%s.svc" $namespace)) -}}
+{{- range $_, $broker := $brokers -}}
+{{- $names = (concat (default (list) $names) (list (printf "%s.%s" $broker $namespace))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $names) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "_redpanda.ClusterSetSANs" -}}
+{{- $fullname := (index .a 0) -}}
+{{- $service := (index .a 1) -}}
+{{- $namespace := (index .a 2) -}}
+{{- $brokers := (index .a 3) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $names := (list (printf "%s-cluster.%s.%s.svc.clusterset.local" $fullname $service $namespace) (printf "*.%s-cluster.%s.%s.svc.clusterset.local" $fullname $service $namespace) (printf "%s.%s.svc.clusterset.local" $service $namespace) (printf "*.%s.%s.svc.clusterset.local" $service $namespace)) -}}
+{{- range $_, $broker := $brokers -}}
+{{- $names = (concat (default (list) $names) (list (printf "%s.%s.svc.clusterset.local" $broker $namespace))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $names) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "_redpanda.DomainSANs" -}}
 {{- $domain := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
