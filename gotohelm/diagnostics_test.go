@@ -46,7 +46,12 @@ func TestTranspileReportsEveryProblem(t *testing.T) {
 	}
 
 	require.ElementsMatch(t, []string{
-		"unhandled ast.Stmt",
+		"fallthrough is not supported",
+		"break inside a switch case is not supported",
+		"break inside a switch case is not supported",
+		"fallthrough is not supported",
+		"type switch statements are not supported",
+		"select statements are not supported",
 		"Unsupported assignment token",
 		"Unsupported assignment token",
 		"*ast.BinaryExpr of != is not supported in for condition",

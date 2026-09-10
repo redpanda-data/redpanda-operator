@@ -51,7 +51,7 @@ import (
 func unrollAssignments(pkg *packages.Package, f *ast.File) (*ast.File, bool) {
 	var changed bool
 
-	names := &temporaries{pkg: pkg, used: map[*types.Scope]int{}}
+	names := &temporaries{pkg: pkg.Types, used: map[*types.Scope]int{}}
 
 	result := astutil.Apply(f, nil, func(c *astutil.Cursor) bool {
 		stmt, ok := c.Node().(*ast.AssignStmt)
@@ -231,13 +231,13 @@ func isConstant(pkg *packages.Package, expr ast.Expr) bool {
 // temporary below it. That keeps the rewritten goldens, and the templates
 // transpiled from them, stable under unrelated edits.
 type temporaries struct {
-	pkg  *packages.Package
+	pkg  *types.Package
 	used map[*types.Scope]int
 }
 
 // next returns a name that is free at pos.
 func (t *temporaries) next(pos token.Pos) string {
-	scope := t.pkg.Types.Scope().Innermost(pos)
+	scope := t.pkg.Scope().Innermost(pos)
 
 	for {
 		name := fmt.Sprintf("_tmp_%d", t.used[scope])

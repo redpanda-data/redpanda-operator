@@ -1,8 +1,26 @@
 package unsupported
 
-func Switch(x int) int {
-	switch x { // want `switch statements are not supported`
+// NB: A switch expression has no fixture here. It's desugared into an if else
+// chain before transpilation, and analysistest loads its own packages without
+// going through LoadPackages, so one written here would be analyzed as a
+// switch and reported. The forms the rewrite declines are below.
+
+func Fallthrough(x int) int {
+	switch x {
 	case 1:
+		fallthrough // want `fallthrough is not supported`
+	case 2:
+		return 2
+	}
+	return 0
+}
+
+func BreakInCase(x int, b bool) int {
+	switch x {
+	case 1:
+		if b {
+			break // want `break inside a switch case is not supported`
+		}
 		return 1
 	}
 	return 0

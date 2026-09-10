@@ -24,6 +24,7 @@ func FlowControl(dot *helmette.Dot) map[string]any {
 		"mapRanges":      mapRanges(dot),
 		"intBinaryExprs": intBinaryExprs(),
 		"blockScoping":   blockScoping(),
+		"switches":       switches(dot),
 	}
 }
 
@@ -102,6 +103,205 @@ func mapRanges(dot *helmette.Dot) []any {
 	}
 
 	return []any{sum}
+}
+
+func switches(dot *helmette.Dot) map[string]any {
+	oneToFour, ok := helmette.AsIntegral[int](dot.Values["oneToFour"])
+	if !ok {
+		return map[string]any{}
+	}
+
+	return map[string]any{
+		"tagged":       tagged(oneToFour),
+		"tagless":      tagless(oneToFour),
+		"defaultFirst": defaultFirst(oneToFour),
+		"noDefault":    noDefault(oneToFour),
+		"onlyDefault":  onlyDefault(),
+		"nested":       nested(oneToFour),
+		"initShadows":  initShadows(oneToFour),
+		"switchInit":   switchInit(oneToFour),
+		"inRange":      inRange(oneToFour),
+		"returns":      returns(oneToFour),
+		"onString":     onString(oneToFour),
+		"commented":    commented(oneToFour),
+	}
+}
+
+func tagged(x int) string {
+	{
+		_tmp_0 := x
+		if _tmp_0 == 1 || _tmp_0 == 2 {
+			return "low"
+		} else if _tmp_0 == 3 {
+			return "three"
+		} else {
+
+			return "high"
+		}
+	}
+
+}
+
+func tagless(x int) string {
+	{
+		if x < 2 {
+			return "under"
+		} else if x < 4 {
+			return "middle"
+		}
+	}
+
+	return "over"
+}
+
+func defaultFirst(x int) string {
+	{
+		_tmp_0 := x
+		if _tmp_0 == 1 {
+			return "one"
+		} else {
+			return "other"
+		}
+	}
+
+}
+
+func noDefault(x int) string {
+	out := "unset"
+	{
+		_tmp_0 := x
+		if _tmp_0 == 1 {
+			out = "one"
+		}
+	}
+
+	return out
+}
+
+func onlyDefault() string {
+	{
+		{
+
+			return "only"
+		}
+	}
+
+}
+
+// nested's inner switch reuses the outer's temporary name. The case after it
+// still reads the outer one, so the inner must not clobber it.
+func nested(x int) string {
+	{
+		_tmp_0 := x
+		if _tmp_0 == 1 || _tmp_0 == 2 {
+			{
+				_tmp_0 := x * 10
+				if _tmp_0 == 10 {
+					return "1"
+				} else {
+
+					return "2"
+				}
+			}
+		} else if _tmp_0 == 3 {
+			return "3"
+		}
+	}
+
+	return "many"
+}
+
+// initShadows' switch declares a name the enclosing scope already has. The
+// init is scoped to the switch, so the outer x survives it.
+func initShadows(x int) []any {
+	{
+		x := x * 10
+		_tmp_0 := x
+		if _tmp_0 == 10 {
+		}
+	}
+
+	return []any{x}
+}
+
+// switchInit's init is a multi-value assignment, so the switch has to be
+// desugared before it can be unrolled.
+func switchInit(x int) []any {
+	m := map[string]int{"a": 1}
+	{
+
+		v, ok := m["a"]
+		_tmp_0 := v
+		if _tmp_0 == x {
+			return []any{"match", ok}
+		} else {
+
+			return []any{"miss", ok}
+		}
+	}
+
+}
+
+// inRange's continue belongs to the range, not the switch.
+func inRange(x int) []int {
+	var out []int
+	for _, i := range []int{1, 2, 3, 4} {
+		{
+			_tmp_0 := i
+			if _tmp_0 == x {
+				continue
+			}
+		}
+
+		out = append(out, i)
+	}
+	return out
+}
+
+func returns(x int) string {
+	{
+		_tmp_0 := x
+		if _tmp_0 == 1 {
+			return "one"
+		}
+	}
+
+	return "other"
+}
+
+func onString(x int) string {
+	{
+		_tmp_0 := helmette.Printf("%d", x)
+		if _tmp_0 == "1" {
+			return "one"
+		} else if _tmp_0 == "2" || _tmp_0 == "3" {
+			return "few"
+		}
+	}
+
+	return "many"
+}
+
+// commented exists to pin down what the printer does with comments attached to
+// a clause the rewrite relocates.
+func commented(x int) string {
+	{
+		_tmp_0 :=
+			// A comment before the first case.
+			x
+		if _tmp_0 == 1 { // A trailing comment on a case.
+			// A comment inside a case body.
+			return "one"
+		} else
+		// A comment on a default that isn't last, whose body moves past the cases
+		// below it.
+		if _tmp_0 == 2 {
+			return "two"
+		} else {
+			return "other"
+		}
+	}
+
 }
 
 // blockScoping asserts that a block's declarations aren't visible after it.

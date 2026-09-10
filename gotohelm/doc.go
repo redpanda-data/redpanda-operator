@@ -40,7 +40,8 @@
 // # Limitations
 //
 //   - There is no "trap door" to fallback to raw templates
-//   - Switch statements, in all forms, are not currently supported
+//   - Switch expressions are desugared into if else chains. `fallthrough`,
+//     `break` within a case, type switches, and `select` are not supported.
 //   - Type assertions don't work.
 //   - Most forms of incompatibility are handled with panics and fmt.Sprintf.
 //   - As all data is represented as JSON within helm. All numeric types must

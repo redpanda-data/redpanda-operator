@@ -41,10 +41,12 @@ type rewrite func(*packages.Package, *ast.File) (_ *ast.File, changed bool)
 
 // all is every rewrite, in the order they are applied.
 //
-// NB: hoistIfs runs first. It moves an if statement's init out into the
-// enclosing block, which is what puts a multi-value init somewhere
-// unrollAssignments can split it.
+// NB: Ordering here is important. Rewrites build on each other.
+//   - desugarSwitches generates if else chains.
+//   - hoistIfs generates assignments.
+//   - unrollAssignments makes multivalue assignments work.
 var all = []rewrite{
+	desugarSwitches,
 	hoistIfs,
 	unrollAssignments,
 }

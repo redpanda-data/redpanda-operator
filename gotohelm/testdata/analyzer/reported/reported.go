@@ -7,10 +7,45 @@
 // Those packages join this one as the remaining panics are converted.
 package reported
 
-func Several(x int, b bool, v any) int {
-	switch x { // want `unhandled ast\.Stmt`
+func Several(x int, b bool, v any, ch chan int) int {
+	// NB: Only switches the rewrite declines belong here. analysistest loads
+	// its own packages and never runs LoadPackages, so a plain switch would
+	// reach the transpiler un-desugared here and be reported, while the same
+	// file goes through the rewrites in TestTranspileReportsEveryProblem.
+	switch x {
 	case 1:
 		x = 2
+		fallthrough // want `fallthrough is not supported`
+	case 2:
+		x = 3
+	}
+
+	switch x {
+	case 1:
+		if b {
+			break // want `break inside a switch case is not supported`
+		}
+		x = 4
+	}
+
+	// Every rejection in a switch is reported, not just the first.
+	switch x {
+	case 1:
+		if b {
+			break // want `break inside a switch case is not supported`
+		}
+		fallthrough // want `fallthrough is not supported`
+	case 2:
+		x = 6
+	}
+
+	switch v.(type) { // want `type switch statements are not supported`
+	case int:
+		x = 5
+	}
+
+	select { // want `select statements are not supported`
+	case <-ch:
 	}
 
 	x += 1 // want `Unsupported assignment token`

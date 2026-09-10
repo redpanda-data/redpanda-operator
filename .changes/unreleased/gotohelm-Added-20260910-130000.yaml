@@ -1,0 +1,14 @@
+project: gotohelm
+kind: Added
+body: |-
+    Switch expressions are now supported.
+
+      A switch is desugared into the if else chain it's shorthand for before
+      transpilation, so tagged and tagless switches, several expressions per
+      case, `default` in any position, and `switch init; tag` all work. The tag
+      is evaluated exactly once and cases still short circuit.
+
+      `fallthrough`, `break` within a case, labeled switches, type switches and
+      `select` remain unsupported, but now say so rather than reporting
+      `unhandled ast.Stmt`.
+time: 2026-09-10T13:00:00.000000-04:00

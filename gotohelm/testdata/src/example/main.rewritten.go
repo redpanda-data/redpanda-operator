@@ -98,82 +98,70 @@ func runChart(dot *helmette.Dot) (_ map[string]any, err any) {
 			err = fmt.Errorf("%v\n%s", r_3, debug.Stack())
 		}
 	}()
+	{
+		_tmp_0 := dot.Chart.Name
+		if _tmp_0 == "aaacommon" {
+			return map[string]any{
+				"SharedConstant": aaacommon.SharedConstant(),
+			}, nil
+		} else if _tmp_0 == "astrewrites" {
+			return map[string]any{
+				"ASTRewrites": astrewrites.ASTRewrites(),
+			}, nil
+		} else if _tmp_0 == "labels" {
+			return map[string]any{
+				"FullLabels": labels.FullLabels(dot),
+			}, nil
+		} else if _tmp_0 == "bootstrap" {
+			return map[string]any{}, nil
+		} else if _tmp_0 == "sprig" {
+			return map[string]any{
+				"Sprig": sprig.Sprig(dot),
+			}, nil
+		} else if _tmp_0 == "typing" {
+			return map[string]any{
+				"Typing": typing.Typing(dot),
+			}, nil
+		} else if _tmp_0 == "directives" {
+			return map[string]any{
+				"Directives": directives.Directives(),
+			}, nil
+		} else if _tmp_0 == "mutability" {
+			return map[string]any{
+				"Mutability": mutability.Mutability(),
+			}, nil
+		} else if _tmp_0 == "k8s" {
+			return map[string]any{
+				"K8s": k8s.K8s(dot),
+			}, nil
+		} else if _tmp_0 == "flowcontrol" {
+			return map[string]any{
+				"FlowControl": flowcontrol.FlowControl(dot),
+			}, nil
+		} else if _tmp_0 == "inputs" {
+			return map[string]any{
+				"Inputs": inputs.Inputs(dot),
+			}, nil
+		} else if _tmp_0 == "changing_inputs" {
+			return map[string]any{
+				"ChangingInputs": changing_inputs.ChangingInputs(dot),
+			}, nil
+		} else if _tmp_0 == "syntax" {
+			return map[string]any{
+				"Syntax": syntax.Syntax(),
+			}, nil
+		} else if _tmp_0 == "files" {
+			return map[string]any{
+				"Files": files.Files(dot),
+			}, nil
+		} else if _tmp_0 == "consumer" {
+			return map[string]any{
+				"Render": consumer.Render(dot),
+			}, nil
+		} else {
 
-	switch dot.Chart.Name {
-	case "aaacommon":
-		return map[string]any{
-			"SharedConstant": aaacommon.SharedConstant(),
-		}, nil
-
-	case "astrewrites":
-		return map[string]any{
-			"ASTRewrites": astrewrites.ASTRewrites(),
-		}, nil
-
-	case "labels":
-		return map[string]any{
-			"FullLabels": labels.FullLabels(dot),
-		}, nil
-
-	case "bootstrap":
-		return map[string]any{}, nil
-
-	case "sprig":
-		return map[string]any{
-			"Sprig": sprig.Sprig(dot),
-		}, nil
-
-	case "typing":
-		return map[string]any{
-			"Typing": typing.Typing(dot),
-		}, nil
-
-	case "directives":
-		return map[string]any{
-			"Directives": directives.Directives(),
-		}, nil
-
-	case "mutability":
-		return map[string]any{
-			"Mutability": mutability.Mutability(),
-		}, nil
-
-	case "k8s":
-		return map[string]any{
-			"K8s": k8s.K8s(dot),
-		}, nil
-
-	case "flowcontrol":
-		return map[string]any{
-			"FlowControl": flowcontrol.FlowControl(dot),
-		}, nil
-
-	case "inputs":
-		return map[string]any{
-			"Inputs": inputs.Inputs(dot),
-		}, nil
-
-	case "changing_inputs":
-		return map[string]any{
-			"ChangingInputs": changing_inputs.ChangingInputs(dot),
-		}, nil
-
-	case "syntax":
-		return map[string]any{
-			"Syntax": syntax.Syntax(),
-		}, nil
-
-	case "files":
-		return map[string]any{
-			"Files": files.Files(dot),
-		}, nil
-
-	case "consumer":
-		return map[string]any{
-			"Render": consumer.Render(dot),
-		}, nil
-
-	default:
-		panic(fmt.Sprintf("unknown package %q", dot.Chart.Name))
+			panic(fmt.Sprintf("unknown package %q", dot.Chart.Name))
+		}
 	}
+
 }

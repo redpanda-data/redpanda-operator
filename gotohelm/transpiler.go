@@ -31,6 +31,8 @@ import (
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/go/types/typeutil"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/redpanda-data/redpanda-operator/gotohelm/internal/rewrite"
 )
 
 var directiveRE = regexp.MustCompile(`\+gotohelm:([\w\.-]+)=([\w\.-]+)`)
@@ -576,6 +578,25 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 			},
 			Body: t.transpileBlock(stmt.Body),
 		}
+
+	case *ast.SwitchStmt:
+		// Switch statements are desugared into an if else chain by
+		// [rewrite.Rewrite] before transpilation. One that's still here
+		// couldn't be, so report what stopped it.
+		rejections := rewrite.UnsupportedSwitch(stmt)
+		if len(rejections) == 0 {
+			panic("unreachable")
+		}
+
+		t.diagnostics = append(t.diagnostics, rejections...)
+
+		return &Invalid{}
+
+	case *ast.TypeSwitchStmt:
+		return t.report(stmt, "type switch statements are not supported")
+
+	case *ast.SelectStmt:
+		return t.report(stmt, "select statements are not supported")
 	}
 
 	return t.report(stmt, "unhandled ast.Stmt")
