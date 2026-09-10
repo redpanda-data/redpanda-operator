@@ -39,7 +39,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "kind" "Ingress" "apiVersion" "networking.k8s.io/v1")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "console.RenderState.FullName" (dict "a" (list $state)))) "r") "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "namespace" $state.Namespace "annotations" (get (fromJson (include "console.RenderState.Annotations" (dict "a" (list $state $state.Values.ingress.annotations)))) "r"))) "spec" (mustMergeOverwrite (dict) (dict "ingressClassName" $state.Values.ingress.className "tls" $tls "rules" $rules))))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (mustMergeOverwrite (dict) (dict "kind" "Ingress" "apiVersion" "networking.k8s.io/v1")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "console.RenderState.FullName" (dict "a" (list $state)))) "r") "labels" (get (fromJson (include "console.RenderState.Labels" (dict "a" (list $state (coalesce nil))))) "r") "namespace" $state.Namespace "annotations" $state.Values.ingress.annotations)) "spec" (mustMergeOverwrite (dict) (dict "ingressClassName" $state.Values.ingress.className "tls" $tls "rules" $rules))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

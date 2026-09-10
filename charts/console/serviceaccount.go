@@ -43,7 +43,7 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 			Name:        ServiceAccountName(state),
 			Labels:      state.Labels(nil),
 			Namespace:   state.Namespace,
-			Annotations: state.Annotations(state.Values.ServiceAccount.Annotations),
+			Annotations: state.Values.ServiceAccount.Annotations,
 		},
 		AutomountServiceAccountToken: ptr.To(state.Values.ServiceAccount.AutomountServiceAccountToken),
 	}

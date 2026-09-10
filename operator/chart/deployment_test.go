@@ -156,12 +156,12 @@ func TestChangeDefaultFlag(t *testing.T) {
 	})
 }
 
-// TestCommonAnnotationsFlagRoundTrip proves the rendered --common-annotations
+// TestConnectAnnotationsFlagRoundTrip proves the rendered --connect-annotations
 // value parses back through the exact pflag machinery the operator binary
 // uses. pflag's StringToString splits multi-pair values with encoding/csv, so
 // an unquoted comma inside an annotation value used to split mid-pair and
 // crash-loop the operator at startup — a values-only breakage.
-func TestCommonAnnotationsFlagRoundTrip(t *testing.T) {
+func TestConnectAnnotationsFlagRoundTrip(t *testing.T) {
 	annotations := map[string]string{
 		"owner":       "platform-team@example.com",
 		"description": "primary, staging, and dev clusters", // commas — the regression
@@ -169,22 +169,22 @@ func TestCommonAnnotationsFlagRoundTrip(t *testing.T) {
 	}
 
 	spec := renderDeployment(t, map[string]any{
-		"commonAnnotations": annotations,
+		"connectAnnotations": annotations,
 	}).Spec.Template.Spec
 
 	var rendered string
 	for _, arg := range spec.Containers[0].Args {
-		if strings.HasPrefix(arg, "--common-annotations=") {
-			rendered = strings.TrimPrefix(arg, "--common-annotations=")
+		if strings.HasPrefix(arg, "--connect-annotations=") {
+			rendered = strings.TrimPrefix(arg, "--connect-annotations=")
 		}
 	}
-	require.NotEmpty(t, rendered, "expected a --common-annotations argument")
+	require.NotEmpty(t, rendered, "expected a --connect-annotations argument")
 
 	// Parse with the same flag type the operator binary registers.
 	parsed := map[string]string{}
 	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
-	fs.StringToStringVar(&parsed, "common-annotations", nil, "")
-	require.NoError(t, fs.Parse([]string{"--common-annotations=" + rendered}),
+	fs.StringToStringVar(&parsed, "connect-annotations", nil, "")
+	require.NoError(t, fs.Parse([]string{"--connect-annotations=" + rendered}),
 		"the rendered flag value must survive pflag's CSV parsing")
 	assert.Equal(t, annotations, parsed)
 }

@@ -1181,30 +1181,29 @@ func TestAnnotations(t *testing.T) {
 			require.Subset(t, expected, annotations, "FullAnnotations does not contain CommonAnnotations")
 
 			for _, obj := range objs {
-				// Assert that CommonAnnotations is included on all top level objects.
+				// The StatefulSet is deliberately NOT annotated — object, pod
+				// template, or volume claim templates. The VCTs are immutable on
+				// a live StatefulSet, so stamping commonAnnotations there makes
+				// adding/changing/removing the value fail with Forbidden; the
+				// object and pod template are left alone for consistency.
+				if sts, ok := obj.(*appsv1.StatefulSet); ok {
+					for key := range annotations {
+						require.NotContains(t, sts.GetAnnotations(), key, "%T/%s", sts, sts.Name)
+						require.NotContains(t, sts.Spec.Template.GetAnnotations(), key, "%T/%s's pod template", sts, sts.Name)
+						for _, pvc := range sts.Spec.VolumeClaimTemplates {
+							require.NotContains(t, pvc.GetAnnotations(), key, "%T/%s's PVC %q", sts, sts.Name, pvc.Name)
+						}
+					}
+					continue
+				}
+
+				// Every other object carries commonAnnotations.
 				require.Subset(t, obj.GetAnnotations(), expected, "%T %q", obj, obj.GetName())
 
-				switch obj := obj.(type) {
-				case *appsv1.StatefulSet:
-					// The volume claim templates are annotated, mirroring the
-					// treatment of CommonLabels.
-					for _, pvc := range obj.Spec.VolumeClaimTemplates {
-						require.Subset(t, pvc.GetAnnotations(), expected, "%T/%s's PVC %q", obj, obj.Name, pvc.Name)
-					}
-
-					// The Redpanda pod template deliberately is NOT, unlike
-					// CommonLabels. The pod template feeds the StatefulSet's
-					// rolling update trigger, so annotating it would restart
-					// every broker whenever this purely descriptive field is
-					// edited. Do not "fix" this asymmetry.
-					for key := range annotations {
-						require.NotContains(t, obj.Spec.Template.GetAnnotations(), key, "%T/%s's pod template", obj, obj.Name)
-					}
-
-				case *batchv1.Job:
+				if job, ok := obj.(*batchv1.Job); ok {
 					// The post-install job's pod template is annotated,
 					// mirroring the treatment of CommonLabels.
-					require.Subset(t, obj.Spec.Template.GetAnnotations(), expected, "%T/%s's pod template", obj, obj.Name)
+					require.Subset(t, job.Spec.Template.GetAnnotations(), expected, "%T/%s's pod template", job, job.Name)
 				}
 			}
 		}

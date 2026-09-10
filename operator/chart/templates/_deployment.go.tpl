@@ -198,9 +198,9 @@
 {{- if $values.crds.enabled -}}
 {{- $_ := (set $defaults "--enable-shadowlinks" "true") -}}
 {{- end -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.commonAnnotations)))) "r") | int) (0 | int)) -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.connectAnnotations)))) "r") | int) (0 | int)) -}}
 {{- $annotationArg := "" -}}
-{{- range $key, $value := $values.commonAnnotations -}}
+{{- range $key, $value := $values.connectAnnotations -}}
 {{- if (ne $annotationArg "") -}}
 {{- $annotationArg = (printf "%s%s" $annotationArg ",") -}}
 {{- end -}}
@@ -209,7 +209,7 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $_ := (set $defaults "--common-annotations" $annotationArg) -}}
+{{- $_ := (set $defaults "--connect-annotations" $annotationArg) -}}
 {{- end -}}
 {{- if $values.webhook.enabled -}}
 {{- $_ := (set $defaults "--webhook-cert-path" "/tmp/k8s-webhook-server/serving-certs") -}}

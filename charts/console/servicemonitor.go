@@ -52,10 +52,9 @@ func ServiceMonitor(state *RenderState) *monitoringv1.ServiceMonitor {
 			Kind:       monitoringv1.ServiceMonitorsKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        state.FullName(),
-			Namespace:   state.Namespace,
-			Labels:      helmette.Merge(state.Labels(nil), state.Values.Monitoring.Labels),
-			Annotations: state.Annotations(nil),
+			Name:      state.FullName(),
+			Namespace: state.Namespace,
+			Labels:    helmette.Merge(state.Labels(nil), state.Values.Monitoring.Labels),
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{endpoint},

@@ -204,18 +204,3 @@ extraVolumes:
             apiVersion: v1
             fieldPath: metadata.namespace
           path: namespace
-
--- common-annotations --
-# Every object kind the chart renders should carry my.co/team; the Pod
-# template should not, and the Service's own annotation must survive the merge.
-commonAnnotations:
-  my.co/team: platform
-service:
-  annotations:
-    hello: world
-ingress:
-  enabled: true
-autoscaling:
-  enabled: true
-monitoring:
-  enabled: true

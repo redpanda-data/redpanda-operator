@@ -1175,13 +1175,6 @@ spec:
                       Pods. For details, see https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id.
                       The default is the `cluster.local` domain.
                     type: string
-                  commonAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: Assigns custom annotations to all resources generated
-                      by the Redpanda Helm chart, except the StatefulSet Pod template.
-                      Specify annotations as key/value pairs.
-                    type: object
                   commonLabels:
                     additionalProperties:
                       type: string
@@ -1544,12 +1537,6 @@ spec:
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
-                      commonAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: Assigns custom annotations to all Redpanda Console
-                          resources. Specify annotations as key/value pairs.
-                        type: object
                       commonLabels:
                         additionalProperties:
                           type: string
@@ -35309,13 +35296,6 @@ spec:
                       Pods. For details, see https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id.
                       The default is the `cluster.local` domain.
                     type: string
-                  commonAnnotations:
-                    additionalProperties:
-                      type: string
-                    description: Assigns custom annotations to all resources generated
-                      by the Redpanda Helm chart, except the StatefulSet Pod template.
-                      Specify annotations as key/value pairs.
-                    type: object
                   commonLabels:
                     additionalProperties:
                       type: string
@@ -35678,12 +35658,6 @@ spec:
                           Redpanda Console.
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
-                      commonAnnotations:
-                        additionalProperties:
-                          type: string
-                        description: Assigns custom annotations to all Redpanda Console
-                          resources. Specify annotations as key/value pairs.
-                        type: object
                       commonLabels:
                         additionalProperties:
                           type: string

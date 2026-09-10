@@ -983,7 +983,7 @@ func cleanObjectForGolden(scheme *runtime.Scheme, obj client.Object) {
 	obj.SetUID("")
 }
 
-func TestRender_CommonAnnotations(t *testing.T) {
+func TestRender_ConnectAnnotations(t *testing.T) {
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "annotated-pipeline",
@@ -998,7 +998,7 @@ func TestRender_CommonAnnotations(t *testing.T) {
 	r := &render{
 		pipeline: pipeline,
 		labels:   labels,
-		commonAnnotations: map[string]string{
+		connectAnnotations: map[string]string{
 			"compliance/owner": "platform-team",
 			"compliance/env":   "production",
 		},
@@ -1012,9 +1012,9 @@ func TestRender_CommonAnnotations(t *testing.T) {
 	for _, obj := range objs {
 		annotations := obj.(metav1.ObjectMetaAccessor).GetObjectMeta().GetAnnotations()
 		assert.Equal(t, "platform-team", annotations["compliance/owner"],
-			"commonAnnotations should propagate to %T", obj)
+			"connectAnnotations should propagate to %T", obj)
 		assert.Equal(t, "production", annotations["compliance/env"],
-			"commonAnnotations should propagate to %T", obj)
+			"connectAnnotations should propagate to %T", obj)
 	}
 
 	// Verify pod template also has annotations.
@@ -1041,7 +1041,7 @@ func TestRender_PodAnnotations(t *testing.T) {
 	r := &render{
 		pipeline: pipeline,
 		labels:   labels,
-		commonAnnotations: map[string]string{
+		connectAnnotations: map[string]string{
 			"compliance/owner": "platform-team",
 		},
 	}
@@ -1049,21 +1049,21 @@ func TestRender_PodAnnotations(t *testing.T) {
 	objs, err := r.Render(t.Context())
 	require.NoError(t, err)
 
-	// ConfigMap should only have commonAnnotations, not pod annotations.
+	// ConfigMap should only have connectAnnotations, not pod annotations.
 	cm := objs[0].(*corev1.ConfigMap)
 	assert.Equal(t, "platform-team", cm.Annotations["compliance/owner"])
 	assert.Empty(t, cm.Annotations["ad.datadoghq.com/connect.checks"],
 		"spec.annotations should not propagate to ConfigMap")
 
-	// Pod template should have both commonAnnotations and spec.annotations.
+	// Pod template should have both connectAnnotations and spec.annotations.
 	dp := objs[1].(*appsv1.Deployment)
 	podAnn := dp.Spec.Template.ObjectMeta.Annotations
 	assert.Equal(t, "platform-team", podAnn["compliance/owner"],
-		"commonAnnotations should be on pod template")
+		"connectAnnotations should be on pod template")
 	assert.Contains(t, podAnn["ad.datadoghq.com/connect.checks"], "openmetrics",
 		"spec.annotations should be on pod template")
 
-	// Deployment metadata should only have commonAnnotations.
+	// Deployment metadata should only have connectAnnotations.
 	assert.Empty(t, dp.Annotations["ad.datadoghq.com/connect.checks"],
 		"spec.annotations should not propagate to Deployment metadata")
 }
@@ -1086,7 +1086,7 @@ func TestRender_PodAnnotations_Override(t *testing.T) {
 	r := &render{
 		pipeline: pipeline,
 		labels:   labels,
-		commonAnnotations: map[string]string{
+		connectAnnotations: map[string]string{
 			"shared-key": "from-common",
 		},
 	}
@@ -1097,7 +1097,7 @@ func TestRender_PodAnnotations_Override(t *testing.T) {
 	dp := objs[1].(*appsv1.Deployment)
 	podAnn := dp.Spec.Template.ObjectMeta.Annotations
 	assert.Equal(t, "from-pipeline", podAnn["shared-key"],
-		"per-pipeline annotations should override commonAnnotations on pod template")
+		"per-pipeline annotations should override connectAnnotations on pod template")
 }
 
 func TestRender_LicenseSecretAndEnvVar(t *testing.T) {
@@ -1694,7 +1694,7 @@ func TestRender_PodMonitor_Enabled(t *testing.T) {
 	assert.Equal(t, Labels(pipeline), pm.Spec.Selector.MatchLabels)
 }
 
-func TestRender_PodMonitor_CommonAnnotations(t *testing.T) {
+func TestRender_PodMonitor_ConnectAnnotations(t *testing.T) {
 	pipeline := &redpandav1alpha2.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{Name: "pm-annotated", Namespace: "default"},
 		Spec:       redpandav1alpha2.PipelineSpec{ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n"},
@@ -1703,7 +1703,7 @@ func TestRender_PodMonitor_CommonAnnotations(t *testing.T) {
 	r := &render{
 		pipeline: pipeline,
 		labels:   Labels(pipeline),
-		commonAnnotations: map[string]string{
+		connectAnnotations: map[string]string{
 			"compliance/owner": "platform-team",
 		},
 		monitoring: MonitoringConfig{Enabled: true},

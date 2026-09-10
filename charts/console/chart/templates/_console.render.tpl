@@ -76,36 +76,6 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "console.RenderState.Annotations" -}}
-{{- $s := (index .a 0) -}}
-{{- $annotations := (index .a 1) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $merged := (dict) -}}
-{{- range $key, $value := $s.CommonAnnotations -}}
-{{- $_ := (set $merged $key $value) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $key, $value := $s.Values.commonAnnotations -}}
-{{- $_ := (set $merged $key $value) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $key, $value := $annotations -}}
-{{- $_ := (set $merged $key $value) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $merged) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "console.Render" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}

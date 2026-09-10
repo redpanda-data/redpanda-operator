@@ -535,7 +535,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -867,7 +866,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -1249,7 +1247,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -1983,7 +1981,6 @@ data:
       - http://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -2311,7 +2308,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -2671,7 +2667,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -3273,7 +3269,6 @@ data:
       - https://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -3605,7 +3600,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -3987,7 +3981,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -4761,7 +4755,6 @@ data:
       - http://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -5093,7 +5086,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -5497,7 +5489,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -6159,7 +6151,6 @@ data:
       - https://redpanda-0.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -6501,7 +6492,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -6929,7 +6919,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -7798,7 +7788,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -8171,7 +8160,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -8556,7 +8544,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -9454,7 +9442,6 @@ data:
       - http://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -9816,7 +9803,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -10222,7 +10208,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -11171,7 +11157,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -11503,7 +11488,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -11885,7 +11869,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -12731,7 +12715,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -13063,7 +13046,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -13445,7 +13427,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -14345,7 +14327,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -14687,7 +14668,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -15115,7 +15095,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -15978,7 +15958,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -16310,7 +16289,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -16692,7 +16670,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -17443,7 +17421,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -17870,7 +17847,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -18252,7 +18228,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -18926,7 +18902,6 @@ data:
       - http://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -19248,7 +19223,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -19606,7 +19580,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -20273,7 +20247,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -20605,7 +20578,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -20987,7 +20959,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -21864,7 +21836,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -22196,7 +22167,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -22578,7 +22548,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -23424,7 +23394,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -23756,7 +23725,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -24141,7 +24109,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -24987,7 +24955,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -25319,7 +25286,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -25701,7 +25667,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -26308,7 +26274,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -26585,7 +26550,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -26933,7 +26897,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -27333,7 +27296,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -27938,7 +27901,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -28215,7 +28177,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -28563,7 +28524,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -28963,7 +28923,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -29568,7 +29528,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -29845,7 +29804,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -30193,7 +30151,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -30593,7 +30550,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -31442,7 +31399,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -31774,7 +31730,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -32174,7 +32129,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -32778,7 +32733,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -33055,7 +33009,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -33403,7 +33356,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -33807,7 +33759,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -33821,7 +33773,7 @@ spec:
           storage: 20Gi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -34426,7 +34378,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -34703,7 +34654,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -35051,7 +35001,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -35455,7 +35404,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -35469,7 +35418,7 @@ spec:
           storage: 20Gi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -36074,7 +36023,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -36351,7 +36299,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -36699,7 +36646,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -37103,7 +37049,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -37118,7 +37064,7 @@ spec:
       storageClassName: managed-csi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -37967,7 +37913,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -38299,7 +38244,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -38703,7 +38647,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -38718,7 +38662,7 @@ spec:
       storageClassName: managed-csi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -39322,7 +39266,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -39599,7 +39542,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -39947,7 +39889,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -40351,7 +40292,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -40365,7 +40306,7 @@ spec:
           storage: 20Gi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -40970,7 +40911,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -41247,7 +41187,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -41595,7 +41534,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -41999,7 +41937,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -42013,7 +41951,7 @@ spec:
           storage: 20Gi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -42618,7 +42556,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -42895,7 +42832,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -43243,7 +43179,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -43647,7 +43582,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -43662,7 +43597,7 @@ spec:
       storageClassName: managed-csi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -44511,7 +44446,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -44843,7 +44777,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -45247,7 +45180,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -45262,7 +45195,7 @@ spec:
       storageClassName: managed-csi
     status: {}
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -46109,7 +46042,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -46441,7 +46373,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -46823,7 +46754,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -47669,7 +47600,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -48001,7 +47931,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -48384,7 +48313,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -49230,7 +49159,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -49562,7 +49490,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -49944,7 +49871,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -50850,7 +50777,6 @@ data:
       - https://redpanda-3.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -51202,7 +51128,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -51592,7 +51517,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -52438,7 +52363,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -52770,7 +52694,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -53158,7 +53081,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -54059,7 +53982,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -54391,7 +54313,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -54814,7 +54735,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -55660,7 +55581,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -55992,7 +55912,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -56374,7 +56293,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -57224,7 +57143,6 @@ data:
       - https://redpanda-2.change-name.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -57557,7 +57475,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -57941,7 +57858,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -58817,7 +58734,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -59149,7 +59065,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -59547,7 +59462,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -60412,7 +60327,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -60744,7 +60658,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -61128,7 +61041,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -62107,7 +62020,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -62506,7 +62418,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -63487,7 +63399,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -63819,7 +63730,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -64201,7 +64111,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -64697,7 +64607,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -64997,7 +64906,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -65355,7 +65263,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -65783,7 +65690,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -66405,7 +66312,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -66682,7 +66588,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -67030,7 +66935,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -67412,7 +67316,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -68260,7 +68164,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -68597,7 +68500,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -68979,7 +68881,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -69830,7 +69732,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -70162,7 +70063,6 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -70190,7 +70090,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -70572,7 +70471,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -71446,7 +71345,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -71778,7 +71676,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -72160,7 +72057,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -73225,7 +73122,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -73703,7 +73599,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -74514,7 +74410,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -74846,7 +74741,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -75228,7 +75122,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -76086,8 +75980,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations:
-    my.co/team: platform
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -76364,8 +76256,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    my.co/team: platform
+  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -76469,7 +76360,6 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -76497,8 +76387,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations:
-    my.co/team: platform
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -76905,8 +76793,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations:
-        my.co/team: platform
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -76920,8 +76807,7 @@ spec:
           storage: 20Gi
     status: {}
   - metadata:
-      annotations:
-        my.co/team: platform
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -77836,7 +77722,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -78175,7 +78060,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -78557,7 +78441,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -79452,7 +79336,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -79794,7 +79677,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -80222,7 +80104,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -81109,7 +80991,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -81441,7 +81322,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -81823,7 +81703,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -82426,7 +82306,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -82703,7 +82582,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -83051,7 +82929,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -83433,7 +83310,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -84287,7 +84164,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -84660,7 +84536,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -85045,7 +84920,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -85903,7 +85778,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -86235,7 +86109,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -86617,7 +86490,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -87220,7 +87093,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -87497,7 +87369,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -87845,7 +87716,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -88227,7 +88097,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -89081,7 +88951,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -89454,7 +89323,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -89839,7 +89707,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -90685,7 +90553,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -91017,7 +90884,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -91399,7 +91265,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -92002,7 +91868,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -92279,7 +92144,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -92627,7 +92491,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -93009,7 +92872,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -93863,7 +93726,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -94236,7 +94098,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -94621,7 +94482,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -95467,7 +95328,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -95799,7 +95659,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -96181,7 +96040,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -96784,7 +96643,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -97061,7 +96919,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -97409,7 +97266,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -97791,7 +97647,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -98645,7 +98501,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -99018,7 +98873,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -99403,7 +99257,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -100249,7 +100103,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -100581,7 +100434,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -100963,7 +100815,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -101566,7 +101418,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -101843,7 +101694,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -102191,7 +102041,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -102573,7 +102422,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -103427,7 +103276,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -103800,7 +103648,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -104185,7 +104032,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -105031,7 +104878,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -105363,7 +105209,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -105745,7 +105590,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -106348,7 +106193,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -106625,7 +106469,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -106973,7 +106816,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -107355,7 +107197,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -108209,7 +108051,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -108582,7 +108423,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -108967,7 +108807,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -109813,7 +109653,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -110145,7 +109984,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -110527,7 +110365,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -111179,7 +111017,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -111511,7 +111348,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -111893,7 +111729,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -112546,7 +112382,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -112878,7 +112713,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -113282,7 +113116,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -114205,7 +114039,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -114537,7 +114370,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -114985,7 +114817,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -115831,7 +115663,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -116261,7 +116092,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -116643,7 +116473,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -117493,7 +117323,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -117923,7 +117752,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -118305,7 +118133,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -119155,7 +118983,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -119599,7 +119426,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -119981,7 +119807,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -121017,7 +120843,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -121456,7 +121281,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -121840,7 +121664,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -122786,7 +122610,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -123220,7 +123043,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -123602,7 +123424,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -124610,7 +124432,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -124972,7 +124793,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -125399,7 +125219,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -126256,7 +126076,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -126600,7 +126419,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -127006,7 +126824,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -127987,7 +127805,6 @@ data:
       - https://also-not-redpanda-2.also-not-redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -128319,7 +128136,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: not-redpanda
     app.kubernetes.io/instance: redpanda
@@ -128701,7 +128517,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: not-redpanda
         app.kubernetes.io/instance: redpanda
@@ -129547,7 +129363,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -129879,7 +129694,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -130261,7 +130075,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -131107,7 +130921,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -131439,7 +131252,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -131819,7 +131631,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -132665,7 +132477,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -132997,7 +132808,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -133379,7 +133189,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -133591,7 +133401,6 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -134253,7 +134062,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -134585,7 +134393,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -134967,7 +134774,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -135826,7 +135633,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -136158,7 +135964,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -136540,7 +136345,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -137411,7 +137216,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -137819,7 +137623,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -138265,7 +138068,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -139130,7 +138933,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -139462,7 +139264,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -139844,7 +139645,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -140447,7 +140248,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -140724,7 +140524,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -141072,7 +140871,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -141454,7 +141252,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -142308,7 +142106,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -142681,7 +142478,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -143066,7 +142862,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -143912,7 +143708,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -144244,7 +144039,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -144626,7 +144420,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -145229,7 +145023,6 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -145506,7 +145299,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -145854,7 +145646,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -146236,7 +146027,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -147090,7 +146881,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -147463,7 +147253,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -147848,7 +147637,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -148694,7 +148483,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -149033,7 +148821,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -149415,7 +149202,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -150311,7 +150098,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -150748,7 +150534,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -151141,7 +150926,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -151793,7 +151578,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -152125,7 +151909,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -152507,7 +152290,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -153360,7 +153143,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -153692,7 +153474,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -154185,7 +153966,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda
@@ -155038,7 +154819,6 @@ data:
       - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
 kind: ConfigMap
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
@@ -155370,7 +155150,6 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -155863,7 +155642,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      annotations: {}
+      annotations: null
       labels:
         app.kubernetes.io/component: redpanda
         app.kubernetes.io/instance: redpanda

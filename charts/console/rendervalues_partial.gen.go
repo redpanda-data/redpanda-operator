@@ -26,7 +26,6 @@ type PartialRenderValues struct {
 	ReplicaCount                 *int32                                            "json:\"replicaCount,omitempty\""
 	NameOverride                 *string                                           "json:\"nameOverride,omitempty\""
 	CommonLabels                 map[string]string                                 "json:\"commonLabels,omitempty\""
-	CommonAnnotations            map[string]string                                 "json:\"commonAnnotations,omitempty\""
 	FullnameOverride             *string                                           "json:\"fullnameOverride,omitempty\""
 	Image                        *PartialImage                                     "json:\"image,omitempty\""
 	ImagePullSecrets             []corev1.LocalObjectReference                     "json:\"imagePullSecrets,omitempty\""

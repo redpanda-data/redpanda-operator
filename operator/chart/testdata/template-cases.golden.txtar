@@ -83993,9 +83993,7 @@ apiVersion: v1
 automountServiceAccountToken: false
 kind: ServiceAccount
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84022,9 +84020,7 @@ data:
       port: 9443
 kind: ConfigMap
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84038,9 +84034,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84058,9 +84052,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84615,9 +84607,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84779,9 +84769,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84802,9 +84790,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84825,9 +84811,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84848,9 +84832,7 @@ subjects:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84872,9 +84854,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -84901,7 +84881,6 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - --common-annotations=environment=production,owner=platform-team@example.com
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -84987,9 +84966,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -85149,9 +85126,7 @@ spec:
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  annotations:
-    environment: production
-    owner: platform-team@example.com
+  annotations: {}
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -85187,11 +85162,9 @@ automountServiceAccountToken: false
 kind: ServiceAccount
 metadata:
   annotations:
-    environment: production
     helm.sh/hook: post-upgrade
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
     helm.sh/hook-weight: "-10"
-    owner: platform-team@example.com
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -85206,11 +85179,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   annotations:
-    environment: production
     helm.sh/hook: post-upgrade
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
     helm.sh/hook-weight: "-10"
-    owner: platform-team@example.com
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -85766,11 +85737,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   annotations:
-    environment: production
     helm.sh/hook: post-upgrade
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
     helm.sh/hook-weight: "-10"
-    owner: platform-team@example.com
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
@@ -85792,11 +85761,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   annotations:
-    environment: production
     helm.sh/hook: post-upgrade
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
     helm.sh/hook-weight: "-4"
-    owner: platform-team@example.com
   labels:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm

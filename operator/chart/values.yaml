@@ -146,14 +146,11 @@ podLabels: {}
 # - `--additional-controllers`: Additional controllers to deploy. The supported value is `decommission`, which runs the NodePool-aware broker decommissioner; `legacy-decommission` opts into the deprecated controller. For more information about the Decommission controller, see [Use the Decommission controller](https://docs.redpanda.com/current/manage/kubernetes/k-decommission-brokers/#Automated). PVC remediation is handled by the PVCUnbinder via `--unbind-pvcs-after`.
 additionalCmdFlags: []
 
-# -- Additional annotations to add to every object this chart renders (except
-# Pod templates). Also passed to the operator as `--common-annotations`, which
-# the Connect Pipeline controller adds to the resources it creates. Annotations
-# set on an individual resource, and the Helm hook annotations the chart needs,
-# take precedence.
-# Useful for ArgoCD sync waves or OPA Gatekeeper RequiredAnnotations
-# constraints. For example, `owner: "platform-team@example.com"`.
-commonAnnotations: {}
+# -- Additional annotations the operator adds to the resources it creates for
+# Redpanda Connect pipelines. Passed to the operator as `--connect-annotations`.
+# Per-pipeline `spec.annotations` take precedence. For example,
+# `owner: "platform-team@example.com"`.
+connectAnnotations: {}
 
 # -- Enables the Redpanda Connect controller for managing Connect pipeline CRs.
 # Requires an operator-level enterprise license that includes the Redpanda

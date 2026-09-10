@@ -88,7 +88,7 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 			Name:        state.FullName(),
 			Labels:      state.Labels(nil),
 			Namespace:   state.Namespace,
-			Annotations: state.Annotations(state.Values.Annotations),
+			Annotations: state.Values.Annotations,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: replicas,

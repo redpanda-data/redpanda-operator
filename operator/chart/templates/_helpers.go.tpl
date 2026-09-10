@@ -78,7 +78,7 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (merge (dict) (default (dict) $overrides) (default (dict) $values.annotations) (default (dict) $values.commonAnnotations))) | toJson -}}
+{{- (dict "r" (merge (dict) (default (dict) $overrides) (default (dict) $values.annotations))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -151,9 +151,9 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $vol := $original.spec.volumes -}}
-{{- $_183_overrideVol_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideVolumes $vol.name (dict "name" ""))))) "r") -}}
-{{- $overrideVol_1 := (index $_183_overrideVol_1_ok_2 0) -}}
-{{- $ok_2 := (index $_183_overrideVol_1_ok_2 1) -}}
+{{- $_182_overrideVol_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideVolumes $vol.name (dict "name" ""))))) "r") -}}
+{{- $overrideVol_1 := (index $_182_overrideVol_1_ok_2 0) -}}
+{{- $ok_2 := (index $_182_overrideVol_1_ok_2 1) -}}
 {{- if $ok_2 -}}
 {{- $newVolumes = (concat (default (list) $newVolumes) (list $overrideVol_1)) -}}
 {{- $_ := (unset $overrideVolumes $vol.name) -}}
@@ -257,9 +257,9 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $container := $original.spec.containers -}}
-{{- $_322_override_3_ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
-{{- $override_3 := (index $_322_override_3_ok_4 0) -}}
-{{- $ok_4 := (index $_322_override_3_ok_4 1) -}}
+{{- $_321_override_3_ok_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
+{{- $override_3 := (index $_321_override_3_ok_4 0) -}}
+{{- $ok_4 := (index $_321_override_3_ok_4 1) -}}
 {{- if $ok_4 -}}
 {{- $env := (concat (default (list) $container.env) (default (list) $override_3.env)) -}}
 {{- $container = (merge (dict) $override_3 $container) -}}
@@ -284,9 +284,9 @@
 {{- end -}}
 {{- $merged = (list) -}}
 {{- range $_, $container := $original.spec.initContainers -}}
-{{- $_353_override_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
-{{- $override_5 := (index $_353_override_5_ok_6 0) -}}
-{{- $ok_6 := (index $_353_override_5_ok_6 1) -}}
+{{- $_352_override_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideContainers $container.name (coalesce nil))))) "r") -}}
+{{- $override_5 := (index $_352_override_5_ok_6 0) -}}
+{{- $ok_6 := (index $_352_override_5_ok_6 1) -}}
 {{- if $ok_6 -}}
 {{- $env := (concat (default (list) $container.env) (default (list) $override_5.env)) -}}
 {{- $container = (merge (dict) $override_5 $container) -}}
@@ -311,9 +311,9 @@
 {{- end -}}
 {{- $mergedEphemeralContainers := (coalesce nil) -}}
 {{- range $_, $container := $original.spec.ephemeralContainers -}}
-{{- $_384_override_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideEphemeralContainers $container.name (coalesce nil))))) "r") -}}
-{{- $override_7 := (index $_384_override_7_ok_8 0) -}}
-{{- $ok_8 := (index $_384_override_7_ok_8 1) -}}
+{{- $_383_override_7_ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideEphemeralContainers $container.name (coalesce nil))))) "r") -}}
+{{- $override_7 := (index $_383_override_7_ok_8 0) -}}
+{{- $ok_8 := (index $_383_override_7_ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- $env := (concat (default (list) $container.env) (default (list) $override_7.env)) -}}
 {{- $container = (merge (dict) $override_7 $container) -}}

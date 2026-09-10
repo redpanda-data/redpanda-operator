@@ -12,7 +12,6 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-	"maps"
 
 	"github.com/redpanda-data/common-go/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,24 +95,14 @@ func (m *V2SimpleResourceRenderer) consoleIntegration(
 		return nil, nil
 	}
 
-	// As in the chart, the cluster's commonAnnotations reach the console
-	// objects too; console.commonAnnotations wins on conflict.
-	annotations := map[string]string{}
-	if cluster.Spec.ClusterSpec != nil {
-		maps.Copy(annotations, cluster.Spec.ClusterSpec.CommonAnnotations)
-	}
-	maps.Copy(annotations, values.CommonAnnotations)
-	values.CommonAnnotations = annotations
-
 	return &redpandav1alpha2.Console{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Console",
 			APIVersion: redpandav1alpha2.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        cluster.Name,
-			Namespace:   cluster.Namespace,
-			Annotations: annotations,
+			Name:      cluster.Name,
+			Namespace: cluster.Namespace,
 		},
 		Spec: redpandav1alpha2.ConsoleSpec{
 			ConsoleValues: *values,

@@ -68,7 +68,7 @@ func Ingress(state *RenderState) *networkingv1.Ingress {
 			Name:        state.FullName(),
 			Labels:      state.Labels(nil),
 			Namespace:   state.Namespace,
-			Annotations: state.Annotations(state.Values.Ingress.Annotations),
+			Annotations: state.Values.Ingress.Annotations,
 		},
 		Spec: networkingv1.IngressSpec{
 			IngressClassName: state.Values.Ingress.ClassName,

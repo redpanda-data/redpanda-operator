@@ -22,7 +22,6 @@ type RenderValues struct {
 	ReplicaCount                 int32                             `json:"replicaCount"`
 	NameOverride                 string                            `json:"nameOverride"`
 	CommonLabels                 map[string]string                 `json:"commonLabels"`
-	CommonAnnotations            map[string]string                 `json:"commonAnnotations"`
 	FullnameOverride             string                            `json:"fullnameOverride"`
 	Image                        Image                             `json:"image"`
 	ImagePullSecrets             []corev1.LocalObjectReference     `json:"imagePullSecrets"`

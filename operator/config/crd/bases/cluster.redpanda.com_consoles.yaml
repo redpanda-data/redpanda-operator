@@ -3270,10 +3270,6 @@ spec:
                 x-kubernetes-validations:
                 - message: either clusterRef or staticConfiguration must be set
                   rule: has(self.clusterRef) || has(self.staticConfiguration)
-              commonAnnotations:
-                additionalProperties:
-                  type: string
-                type: object
               commonLabels:
                 additionalProperties:
                   type: string

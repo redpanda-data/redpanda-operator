@@ -40,12 +40,6 @@ Sets the Kubernetes cluster domain.
 
 **Default:** `"cluster.local"`
 
-### [commonAnnotations](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonAnnotations)
-
-Additional annotations to add to every object this chart renders (except Pod templates). Also passed to the operator as `--common-annotations`, which the Connect Pipeline controller adds to the resources it creates. Annotations set on an individual resource, and the Helm hook annotations the chart needs, take precedence. Useful for ArgoCD sync waves or OPA Gatekeeper RequiredAnnotations constraints. For example, `owner: "platform-team@example.com"`.
-
-**Default:** `{}`
-
 ### [commonLabels](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=commonLabels)
 
 Additional labels to add to all Kubernetes objects. For example, `my.k8s.service: redpanda-operator`.
@@ -127,6 +121,12 @@ Configuration for webhooks, such as the port they listen on. Webhooks are HTTP c
 Sets the port for the webhook server to listen on.
 
 **Default:** `9443`
+
+### [connectAnnotations](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectAnnotations)
+
+Additional annotations the operator adds to the resources it creates for Redpanda Connect pipelines. Passed to the operator as `--connect-annotations`. Per-pipeline `spec.annotations` take precedence. For example, `owner: "platform-team@example.com"`.
+
+**Default:** `{}`
 
 ### [connectController](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=connectController)
 

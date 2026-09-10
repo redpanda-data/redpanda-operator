@@ -17,8 +17,6 @@ import (
 
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -585,43 +583,4 @@ func TestGatewayRemoval(t *testing.T) {
 		require.False(t, hasHTTPRoute, "second render should not have HTTPRoute")
 		require.True(t, hasIngress, "second render should have Ingress")
 	})
-}
-
-// TestAnnotations asserts that commonAnnotations, whether set through values
-// or by an embedding chart on the RenderState, reach every rendered object
-// without clobbering the object's own annotations, and that no object renders
-// with a nil annotations map.
-func TestAnnotations(t *testing.T) {
-	state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
-		CommonAnnotations: map[string]string{"my.co/team": "platform", "shared": "values"},
-		Service:           &PartialServiceConfig{Annotations: map[string]string{"shared": "per-resource"}},
-		Ingress:           &PartialIngressConfig{Enabled: ptr.To(true)},
-		Autoscaling:       &PartialAutoScaling{Enabled: ptr.To(true)},
-	})
-	require.NoError(t, err)
-	state.CommonAnnotations = map[string]string{"my.co/owner": "ops", "shared": "state"}
-
-	var services int
-	for _, obj := range Render(state) {
-		if !isNonNil(obj) {
-			continue
-		}
-
-		got := obj.GetAnnotations()
-		require.NotNil(t, got, "%T %q has nil annotations", obj, obj.GetName())
-		require.Equal(t, "platform", got["my.co/team"], "%T %q", obj, obj.GetName())
-		require.Equal(t, "ops", got["my.co/owner"], "%T %q", obj, obj.GetName())
-
-		if svc, ok := obj.(*corev1.Service); ok {
-			services++
-			require.Equal(t, "per-resource", got["shared"], "%T %q", svc, svc.Name)
-		} else {
-			require.Equal(t, "values", got["shared"], "%T %q: values must win over the embedding chart's annotations", obj, obj.GetName())
-		}
-
-		if deploy, ok := obj.(*appsv1.Deployment); ok {
-			require.NotContains(t, deploy.Spec.Template.Annotations, "my.co/team", "pod template")
-		}
-	}
-	require.Equal(t, 1, services)
 }

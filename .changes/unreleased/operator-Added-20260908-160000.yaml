@@ -1,5 +1,0 @@
-project: operator
-kind: Added
-body: |-
-    The operator chart's `commonAnnotations` now also annotates every object the chart itself renders (Deployment, Services, ServiceAccounts, RBAC, ServiceMonitor, PrometheusRule, ConfigMap, certificates and hook Jobs; Pod templates excluded), in addition to being passed to the operator as `--common-annotations` for the Connect Pipeline resources it creates. The Redpanda CRD gains `spec.clusterSpec.commonAnnotations` and `spec.clusterSpec.console.commonAnnotations`, mirroring the chart values.
-time: 2026-09-08T16:00:00.000000-07:00

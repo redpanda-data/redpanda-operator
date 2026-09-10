@@ -74,13 +74,12 @@ type MetricsState struct {
 }
 
 type RenderState struct {
-	ReleaseName       string
-	Namespace         string
-	Template          func(string) string
-	CommonLabels      map[string]string
-	CommonAnnotations map[string]string
-	Values            RenderValues
-	Metrics           MetricsState
+	ReleaseName  string
+	Namespace    string
+	Template     func(string) string
+	CommonLabels map[string]string
+	Values       RenderValues
+	Metrics      MetricsState
 }
 
 // +gotohelm:ignore=true
@@ -171,29 +170,6 @@ func (s *RenderState) Labels(labels map[string]string) map[string]string {
 	}
 
 	return labels
-}
-
-// Annotations returns annotations updated with the chart-wide commonAnnotations
-// (from the embedding chart's state and from values). Keys already present in
-// annotations win, so per-object annotations are never clobbered. The result is
-// never nil: a rendered `annotations: null` differs from a live object's absent
-// map and shows up as permanent drift in ArgoCD.
-func (s *RenderState) Annotations(annotations map[string]string) map[string]string {
-	merged := map[string]string{}
-
-	for key, value := range s.CommonAnnotations {
-		merged[key] = value
-	}
-
-	for key, value := range s.Values.CommonAnnotations {
-		merged[key] = value
-	}
-
-	for key, value := range annotations {
-		merged[key] = value
-	}
-
-	return merged
 }
 
 // render is the entrypoint to both the go and helm versions of the console

@@ -40,9 +40,9 @@ const (
 
 // render implements [kube.Renderer] for Pipeline resources.
 type render struct {
-	pipeline          *redpandav1alpha2.Pipeline
-	labels            map[string]string
-	commonAnnotations map[string]string
+	pipeline           *redpandav1alpha2.Pipeline
+	labels             map[string]string
+	connectAnnotations map[string]string
 	// defaultImage is the chart-level default Redpanda Connect image, used
 	// when the Pipeline CR omits .spec.image. Empty when the operator was
 	// installed without setting connectController.image.{repository,tag}.
@@ -214,26 +214,26 @@ func Labels(pipeline *redpandav1alpha2.Pipeline) map[string]string {
 }
 
 func (r *render) annotations() map[string]string {
-	if len(r.commonAnnotations) == 0 {
+	if len(r.connectAnnotations) == 0 {
 		return nil
 	}
-	out := make(map[string]string, len(r.commonAnnotations))
-	for k, v := range r.commonAnnotations {
+	out := make(map[string]string, len(r.connectAnnotations))
+	for k, v := range r.connectAnnotations {
 		out[k] = v
 	}
 	return out
 }
 
 // podAnnotations returns annotations for the pod template, merging
-// commonAnnotations with per-pipeline spec.annotations. Per-pipeline
+// connectAnnotations with per-pipeline spec.annotations. Per-pipeline
 // annotations take precedence.
 func (r *render) podAnnotations() map[string]string {
 	specAnn := r.pipeline.Spec.Annotations
-	if len(r.commonAnnotations) == 0 && len(specAnn) == 0 {
+	if len(r.connectAnnotations) == 0 && len(specAnn) == 0 {
 		return nil
 	}
-	out := make(map[string]string, len(r.commonAnnotations)+len(specAnn))
-	for k, v := range r.commonAnnotations {
+	out := make(map[string]string, len(r.connectAnnotations)+len(specAnn))
+	for k, v := range r.connectAnnotations {
 		out[k] = v
 	}
 	for k, v := range specAnn {

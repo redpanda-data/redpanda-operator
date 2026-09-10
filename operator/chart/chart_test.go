@@ -557,10 +557,10 @@ func TestGenerateCases(t *testing.T) {
 	require.NoError(t, os.WriteFile("testdata/template-cases-generated.txtar", archive, 0o644))
 }
 
-// TestAnnotations asserts that commonAnnotations and annotations reach every
+// TestAnnotations asserts that the chart's `annotations` value reaches every
 // object the chart renders except Pod templates, that no object is rendered
-// with a nil annotations map (#1085), and that neither value can change the
-// Helm hook annotations on the chart's hook Jobs, ServiceAccounts and RBAC.
+// with a nil annotations map (#1085), and that the value cannot change the Helm
+// hook annotations on the chart's hook Jobs, ServiceAccounts and RBAC.
 func TestAnnotations(t *testing.T) {
 	hookKeys := []string{"helm.sh/hook", "helm.sh/hook-weight", "helm.sh/hook-delete-policy"}
 
@@ -576,14 +576,14 @@ func TestAnnotations(t *testing.T) {
 		for _, obj := range objs {
 			key := fmt.Sprintf("%T %q", obj, obj.GetName())
 			got := obj.GetAnnotations()
-			require.NotNil(t, got, "%s has nil annotations", key)
+			require.NotNil(t, got, "%s has nil annotations (#1085)", key)
 			annotations[key] = got
 
 			switch obj := obj.(type) {
 			case *appsv1.Deployment:
-				require.NotContains(t, obj.Spec.Template.Annotations, "my.co/team", "%s pod template", key)
+				require.NotContains(t, obj.Spec.Template.Annotations, "my.co/owner", "%s pod template", key)
 			case *batchv1.Job:
-				require.NotContains(t, obj.Spec.Template.Annotations, "my.co/team", "%s pod template", key)
+				require.NotContains(t, obj.Spec.Template.Annotations, "my.co/owner", "%s pod template", key)
 			}
 		}
 		return annotations
@@ -591,16 +591,8 @@ func TestAnnotations(t *testing.T) {
 
 	base := render(t, PartialValues{})
 	got := render(t, PartialValues{
-		CommonAnnotations: map[string]string{
-			"my.co/team":                 "platform",
-			"shared":                     "common",
-			"helm.sh/hook":               "bogus",
-			"helm.sh/hook-weight":        "999",
-			"helm.sh/hook-delete-policy": "bogus",
-		},
 		Annotations: map[string]string{
 			"my.co/owner":                "ops",
-			"shared":                     "annotations",
 			"helm.sh/hook":               "bogus",
 			"helm.sh/hook-weight":        "999",
 			"helm.sh/hook-delete-policy": "bogus",
@@ -610,9 +602,7 @@ func TestAnnotations(t *testing.T) {
 
 	var hooks int
 	for key, annotations := range got {
-		require.Equal(t, "platform", annotations["my.co/team"], key)
 		require.Equal(t, "ops", annotations["my.co/owner"], key)
-		require.Equal(t, "annotations", annotations["shared"], "%s: annotations must win over commonAnnotations", key)
 
 		if _, isHook := base[key]["helm.sh/hook"]; isHook {
 			hooks++

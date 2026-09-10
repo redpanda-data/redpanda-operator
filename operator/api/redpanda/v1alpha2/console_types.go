@@ -102,7 +102,6 @@ type ConsoleValues struct {
 	AutomountServiceAccountToken *bool                             `json:"automountServiceAccountToken,omitempty"`
 	ServiceAccount               *ServiceAccountConfig             `json:"serviceAccount,omitempty"`
 	CommonLabels                 map[string]string                 `json:"commonLabels,omitempty"`
-	CommonAnnotations            map[string]string                 `json:"commonAnnotations,omitempty"`
 	Annotations                  map[string]string                 `json:"annotations,omitempty"`
 	PodAnnotations               map[string]string                 `json:"podAnnotations,omitempty"`
 	PodLabels                    map[string]string                 `json:"podLabels,omitempty"`

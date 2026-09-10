@@ -1304,7 +1304,6 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 			Labels: helmette.Merge(map[string]string{
 				"app.kubernetes.io/component": fmt.Sprintf("%s%s", Name(state), pool.Suffix()),
 			}, poolLabels, FullLabels(state)),
-			Annotations: FullAnnotations(state),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
@@ -1396,7 +1395,7 @@ func volumeClaimTemplateDatadir(state *RenderState) *corev1.PersistentVolumeClai
 				state.Values.Storage.PersistentVolume.Labels,
 				state.Values.CommonLabels,
 			),
-			Annotations: helmette.Merge(helmette.Default(map[string]string{}, state.Values.Storage.PersistentVolume.Annotations), FullAnnotations(state)),
+			Annotations: helmette.Default(nil, state.Values.Storage.PersistentVolume.Annotations),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
@@ -1437,7 +1436,7 @@ func volumeClaimTemplateTieredStorageDir(state *RenderState) *corev1.PersistentV
 				state.Values.Storage.TieredPersistentVolumeLabels(),
 				state.Values.CommonLabels,
 			),
-			Annotations: helmette.Merge(helmette.Default(map[string]string{}, state.Values.Storage.TieredPersistentVolumeAnnotations()), FullAnnotations(state)),
+			Annotations: helmette.Default(nil, state.Values.Storage.TieredPersistentVolumeAnnotations()),
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{
