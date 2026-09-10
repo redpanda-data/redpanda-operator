@@ -393,6 +393,11 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 				return ctrl.Result{}, nil
 			}
 		}
+		if adoptionBarredByRollback(ctx, k8sClient, broker) {
+			l.Info("owning cluster left broker mode; not creating a pod", "name", podName)
+			state.phase = redpandav1alpha2.BrokerPhasePending
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
 		l.Info("creating pod (no existing pod found)", "name", podName)
 		newPod := broker.BuildPod(podName)
 		if err := controllerutil.SetControllerReference(broker, newPod, scheme); err != nil {
