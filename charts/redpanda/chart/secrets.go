@@ -390,12 +390,15 @@ func adminTLSCurlFlags(state *RenderState) string {
 		return ""
 	}
 
+	pki := PKI(state)
+
 	if state.Values.Listeners.Admin.TLS.RequireClientAuth {
-		path := state.Values.Listeners.Admin.TLS.ClientMountPoint(&state.Values.TLS)
+		kp := state.Values.Listeners.Admin.TLS.ClientKeypair(&pki)
+		path := kp.MountPath()
 		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
 	}
 
-	path := state.Values.Listeners.Admin.TLS.ServerCAPath(&state.Values.TLS)
+	path := state.Values.Listeners.Admin.TLS.ServerCAPath(&pki)
 	return fmt.Sprintf("--cacert %s", path)
 }
 

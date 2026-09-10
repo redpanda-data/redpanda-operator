@@ -262,13 +262,15 @@
 {{- (dict "r" "") | toJson -}}
 {{- break -}}
 {{- end -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
 {{- if $state.Values.listeners.admin.tls.requireClientAuth -}}
-{{- $path := (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
+{{- $kp := (get (fromJson (include "redpanda.InternalTLS.ClientKeypair" (dict "a" (list $state.Values.listeners.admin.tls $pki)))) "r") -}}
+{{- $path := (get (fromJson (include "_redpanda.Keypair.MountPath" (dict "a" (list $kp)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key" $path $path $path)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $path := (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
+{{- $path := (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $state.Values.listeners.admin.tls $pki)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (printf "--cacert %s" $path)) | toJson -}}
 {{- break -}}

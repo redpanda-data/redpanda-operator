@@ -1438,3 +1438,26 @@ tuning:
 config:
   rpk:
     tune_fstrim: false
+
+-- external-issuer-with-client-auth --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
+# ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
+# An externally issued cert with mTLS: the client Certificate must reach the
+# same issuer as the server one. The client loop used to force
+# issuerRef.group back to cert-manager.io, so a third-party issuer never
+# resolved and the client keypair Secret was never created.
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: false
+      issuerRef:
+        group: cas-issuer.jetstack.io
+        kind: GoogleCASClusterIssuer
+        name: my-cas-issuer
+listeners:
+  admin:
+    tls:
+      requireClientAuth: true
