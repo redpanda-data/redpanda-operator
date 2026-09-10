@@ -647,7 +647,7 @@ func rpcListenersTLS(state *RenderState) map[string]any {
 
 func rpcListeners(state *RenderState) map[string]any {
 	return map[string]any{
-		"address": ptr.Deref(state.Values.Listeners.RPC.Address, "0.0.0.0"),
+		"address": "0.0.0.0",
 		"port":    state.Values.Listeners.RPC.Port,
 	}
 }

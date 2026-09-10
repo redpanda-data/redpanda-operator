@@ -647,9 +647,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Cert: "default"}},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Cert: "default"}},
 			},
 			Expected: []string{"default"},
@@ -684,9 +683,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{"external"},
@@ -721,9 +719,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Cert: "default"}},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Cert: "default"}},
 			},
 			Expected: []string{"default", "external"},
@@ -751,9 +748,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{},
@@ -797,9 +793,8 @@ func TestInUseServerCerts(t *testing.T) {
 					TLS:  InternalTLS{Enabled: ptr.To(false), Cert: "default"},
 				},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{"external"},
@@ -845,9 +840,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{"admin-ext", "kafka-ext"},
@@ -873,9 +867,8 @@ func TestInUseServerCerts(t *testing.T) {
 				HTTP:           ListenerConfig[HTTPAuthenticationMethod]{Port: 8082, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				SchemaRegistry: ListenerConfig[NoAuth]{Port: 8081, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 				RPC: struct {
-					Address *string     `json:"address,omitempty"`
-					Port    int32       `json:"port" jsonschema:"required"`
-					TLS     InternalTLS `json:"tls" jsonschema:"required"`
+					Port int32       `json:"port" jsonschema:"required"`
+					TLS  InternalTLS `json:"tls" jsonschema:"required"`
 				}{Port: 33145, TLS: InternalTLS{Enabled: ptr.To(false), Cert: "default"}},
 			},
 			Expected: []string{},

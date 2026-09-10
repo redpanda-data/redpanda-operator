@@ -236,9 +236,8 @@ type PartialListeners struct {
 	Kafka          *PartialListenerConfig[KafkaAuthenticationMethod] "json:\"kafka,omitempty\" jsonschema:\"required\""
 	SchemaRegistry *PartialListenerConfig[NoAuth]                    "json:\"schemaRegistry,omitempty\" jsonschema:\"required\""
 	RPC            *struct {
-		Address *string             "json:\"address,omitempty\""
-		Port    *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-		TLS     *PartialInternalTLS "json:\"tls,omitempty\" jsonschema:\"required\""
+		Port *int32              "json:\"port,omitempty\" jsonschema:\"required\""
+		TLS  *PartialInternalTLS "json:\"tls,omitempty\" jsonschema:\"required\""
 	} "json:\"rpc,omitempty\" jsonschema:\"required\""
 }
 
@@ -345,7 +344,6 @@ type PartialListenerConfig[T ~string] struct {
 	External             map[string]PartialExternalListener[T] "json:\"external,omitempty\""
 	Port                 *int32                                "json:\"port,omitempty\" jsonschema:\"required\""
 	TLS                  *PartialInternalTLS                   "json:\"tls,omitempty\" jsonschema:\"required\""
-	Address              *string                               "json:\"address,omitempty\""
 	AppProtocol          *string                               "json:\"appProtocol,omitempty\""
 	AuthenticationMethod *T                                    "json:\"authenticationMethod,omitempty\""
 }
@@ -425,7 +423,6 @@ type PartialExternalListener[T ~string] struct {
 	Port                 *int32              "json:\"port,omitempty\" jsonschema:\"required\""
 	NodePort             *int32              "json:\"nodePort,omitempty\""
 	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
-	Address              *string             "json:\"address,omitempty\""
 	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
 	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
 	Type                 *string             "json:\"type,omitempty\" jsonschema:\"enum=tlsroute\""
