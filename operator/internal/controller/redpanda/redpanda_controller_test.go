@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
-	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
@@ -300,6 +299,10 @@ func (s *RedpandaControllerSuite) TestExternalSecretInjection() {
 func (s *RedpandaControllerSuite) TestClusterSettings() {
 	rp := s.minimalRP()
 	rp.Annotations[feature.RestartOnConfigChange.Key] = "true"
+
+	// Cluster config must apply without the post-install job (issue #1021).
+	rp.Spec.ClusterSpec.PostInstallJob = &redpandav1alpha2.PostInstallJob{Enabled: ptr.To(false)}
+	rp.Spec.ClusterSpec.PostUpgradeJob = &redpandav1alpha2.PostUpgradeJob{Enabled: ptr.To(false)}
 
 	// Ensure that some superusers exist.
 	rp.Spec.ClusterSpec.Auth = &redpandav1alpha2.Auth{
@@ -1153,18 +1156,6 @@ func (s *RedpandaControllerSuite) waitFor(obj client.Object, cond func(client.Ob
 
 		return false, nil
 	}))
-}
-
-func TestPostInstallUpgradeJobIndex(t *testing.T) {
-	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{}, map[string]any{})
-	require.NoError(t, err)
-
-	state := &redpandachart.RenderState{Dot: dot, Values: helmette.Unwrap[redpandachart.Values](dot.Values), Chart: &dot.Chart, Files: &dot.Files, Release: &dot.Release}
-	job := redpandachart.PostInstallUpgradeJob(state)
-
-	// Assert that index 0 is the envsubst container as that's what
-	// `clusterConfigfor` utilizes.
-	require.Equal(t, "bootstrap-yaml-envsubst", job.Spec.Template.Spec.InitContainers[0].Name)
 }
 
 // TestControllerRBAC asserts that the declared Roles and ClusterRoles of the
