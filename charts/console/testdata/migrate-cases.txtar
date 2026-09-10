@@ -226,3 +226,11 @@ login:
     enabled: true
     realm: "keycloak realm"
     directory: "keycloak directory"
+-- 26-kafka-without-login --
+# No login stanza: Console authentication stays disabled, so the migration must
+# not enable SASL impersonation (Console 3.9 refuses to start otherwise).
+kafka:
+  brokers:
+    - broker-0:9092
+  sasl:
+    enabled: false
