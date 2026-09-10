@@ -281,6 +281,35 @@ func (t *Transpiler) transpileFile(f *ast.File) *File {
 	}
 }
 
+// transpileBlock transpiles the body of a statement that scopes in its own
+// right.
+//
+//	if cond { ... } else { ... }
+//	for ...        { ... }
+//
+// A go block statement is [Transpiler.transpileStatement]'s job. It needs a
+// [Scope]; a body doesn't.
+func (t *Transpiler) transpileBlock(stmt ast.Stmt) Node {
+	block, ok := stmt.(*ast.BlockStmt)
+	if !ok {
+		// An else may be another if rather than a block, and either may be
+		// absent entirely.
+		return t.transpileStatement(stmt)
+	}
+
+	return &Block{Statements: t.transpileStatements(block.List)}
+}
+
+// transpileStatements transpiles a list of statements.
+func (t *Transpiler) transpileStatements(stmts []ast.Stmt) []Node {
+	out := make([]Node, len(stmts))
+	for i, stmt := range stmts {
+		out[i] = t.transpileStatement(stmt)
+	}
+
+	return out
+}
+
 func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 	switch stmt := stmt.(type) {
 	case nil:
@@ -428,7 +457,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 			Key:   t.transpileExpr(stmt.Key),
 			Value: t.transpileExpr(stmt.Value),
 			Over:  t.transpileExpr(stmt.X),
-			Body:  t.transpileStatement(stmt.Body),
+			Body:  t.transpileBlock(stmt.Body),
 		}
 
 	case *ast.ExprStmt:
@@ -437,18 +466,24 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 		}
 
 	case *ast.BlockStmt:
-		var out []Node
-		for _, s := range stmt.List {
-			out = append(out, t.transpileStatement(s))
+		statements := t.transpileStatements(stmt.List)
+
+		// NB: Only a block that declares something needs a [Scope]. The action
+		// around a body already pops the variable stack, so one there is dead
+		// weight, and a block can't tell which it is: an if's body and a bare
+		// block both open a child of the same scope.
+		if scope, ok := t.TypesInfo.Scopes[stmt]; ok && scope.Len() > 0 {
+			return &Scope{Statements: statements}
 		}
-		return &Block{Statements: out}
+
+		return &Block{Statements: statements}
 
 	case *ast.IfStmt:
 		return &IfStmt{
 			Init: t.transpileStatement(stmt.Init),
 			Cond: t.transpileExpr(stmt.Cond),
-			Body: t.transpileStatement(stmt.Body),
-			Else: t.transpileStatement(stmt.Else),
+			Body: t.transpileBlock(stmt.Body),
+			Else: t.transpileBlock(stmt.Else),
 		}
 	case *ast.ForStmt:
 		var start, stop Node
@@ -539,7 +574,7 @@ func (t *Transpiler) transpileStatement(stmt ast.Stmt) Node {
 				Stop:  stop,
 				Step:  step,
 			},
-			Body: t.transpileStatement(stmt.Body),
+			Body: t.transpileBlock(stmt.Body),
 		}
 	}
 

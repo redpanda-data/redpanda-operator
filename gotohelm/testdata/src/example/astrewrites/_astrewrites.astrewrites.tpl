@@ -15,27 +15,36 @@
 {{- $_is_returning := false -}}
 {{- $m := (dict) -}}
 {{- $a := $m -}}
+{{- if true -}}
 {{- $_26_x_y := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "1" 0)))) "r") -}}
 {{- $x := ((index $_26_x_y 0) | int) -}}
 {{- $y := (index $_26_x_y 1) -}}
 {{- $_ = $x -}}
 {{- $_ = $y -}}
+{{- end -}}
+{{- if true -}}
 {{- $_32_x_y := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil))))) "r") -}}
 {{- $x := (index $_32_x_y 0) -}}
 {{- $y := (index $_32_x_y 1) -}}
 {{- $_ = $x -}}
 {{- $_ = $y -}}
+{{- end -}}
+{{- if true -}}
 {{- $_38_x__ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil))))) "r") -}}
 {{- $x := (index $_38_x__ 0) -}}
 {{- $_ := (index $_38_x__ 1) -}}
 {{- $_ = $x -}}
+{{- end -}}
+{{- if true -}}
 {{- $_43___x := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil))))) "r") -}}
 {{- $_ := (index $_43___x 0) -}}
 {{- $x := (index $_43___x 1) -}}
 {{- $_ = $x -}}
+{{- end -}}
 {{- $_48____ := (get (fromJson (include "_shims.typetest" (dict "a" (list (printf "map[%s]%s" "string" "int") $a (coalesce nil))))) "r") -}}
 {{- $_ = (index $_48____ 0) -}}
 {{- $_ = (index $_48____ 1) -}}
+{{- if true -}}
 {{- $_52_a_b_c := (get (fromJson (include "astrewrites.mvr3" (dict "a" (list)))) "r") -}}
 {{- $a := (index $_52_a_b_c 0) -}}
 {{- $b := (index $_52_a_b_c 1) -}}
@@ -43,6 +52,8 @@
 {{- $_ = $a -}}
 {{- $_ = $b -}}
 {{- $_ = $c -}}
+{{- end -}}
+{{- if true -}}
 {{- $a := "a" -}}
 {{- $b := "b" -}}
 {{- $_tmp_0 := $b -}}
@@ -51,12 +62,15 @@
 {{- $b = $_tmp_1 -}}
 {{- $_ = $a -}}
 {{- $_ = $b -}}
+{{- end -}}
+{{- if true -}}
 {{- $m := (dict) -}}
 {{- $_75_x_y := (get (fromJson (include "_shims.dicttest" (dict "a" (list $m "" (dict))))) "r") -}}
 {{- $x := (index $_75_x_y 0) -}}
 {{- $y := (index $_75_x_y 1) -}}
 {{- $_ = $x -}}
 {{- $_ = $y -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

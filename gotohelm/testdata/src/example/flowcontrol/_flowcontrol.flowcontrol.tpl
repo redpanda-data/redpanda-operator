@@ -6,7 +6,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "earlyReturn" (get (fromJson (include "flowcontrol.earlyReturn" (dict "a" (list $dot)))) "r") "ifElse" (get (fromJson (include "flowcontrol.ifElse" (dict "a" (list $dot)))) "r") "sliceRanges" (get (fromJson (include "flowcontrol.sliceRanges" (dict "a" (list $dot)))) "r") "mapRanges" (get (fromJson (include "flowcontrol.mapRanges" (dict "a" (list $dot)))) "r") "intBinaryExprs" (get (fromJson (include "flowcontrol.intBinaryExprs" (dict "a" (list)))) "r"))) | toJson -}}
+{{- (dict "r" (dict "earlyReturn" (get (fromJson (include "flowcontrol.earlyReturn" (dict "a" (list $dot)))) "r") "ifElse" (get (fromJson (include "flowcontrol.ifElse" (dict "a" (list $dot)))) "r") "sliceRanges" (get (fromJson (include "flowcontrol.sliceRanges" (dict "a" (list $dot)))) "r") "mapRanges" (get (fromJson (include "flowcontrol.mapRanges" (dict "a" (list $dot)))) "r") "intBinaryExprs" (get (fromJson (include "flowcontrol.intBinaryExprs" (dict "a" (list)))) "r") "blockScoping" (get (fromJson (include "flowcontrol.blockScoping" (dict "a" (list)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -15,9 +15,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_28_b_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "boolean" (coalesce nil))))) "r") -}}
-{{- $b_1 := (index $_28_b_1_ok_2 0) -}}
-{{- $ok_2 := (index $_28_b_1_ok_2 1) -}}
+{{- $_29_b_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "boolean" (coalesce nil))))) "r") -}}
+{{- $b_1 := (index $_29_b_1_ok_2 0) -}}
+{{- $ok_2 := (index $_29_b_1_ok_2 1) -}}
 {{- if (and $ok_2 (get (fromJson (include "_shims.typeassertion" (dict "a" (list "bool" $b_1)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "Early Returns work!") | toJson -}}
@@ -33,9 +33,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_38_oneToFour_ok := (get (fromJson (include "_shims.asintegral" (dict "a" (list (index $dot.Values "oneToFour"))))) "r") -}}
-{{- $oneToFour := ((index $_38_oneToFour_ok 0) | int) -}}
-{{- $ok := (index $_38_oneToFour_ok 1) -}}
+{{- $_39_oneToFour_ok := (get (fromJson (include "_shims.asintegral" (dict "a" (list (index $dot.Values "oneToFour"))))) "r") -}}
+{{- $oneToFour := ((index $_39_oneToFour_ok 0) | int) -}}
+{{- $ok := (index $_39_oneToFour_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" "oneToFour not specified!") | toJson -}}
@@ -70,9 +70,9 @@
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_56_intsAny_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "ints" (coalesce nil))))) "r") -}}
-{{- $intsAny := (index $_56_intsAny_ok 0) -}}
-{{- $ok := (index $_56_intsAny_ok 1) -}}
+{{- $_57_intsAny_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $dot.Values "ints" (coalesce nil))))) "r") -}}
+{{- $intsAny := (index $_57_intsAny_ok 0) -}}
+{{- $ok := (index $_57_intsAny_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $intsAny = (list) -}}
 {{- end -}}
@@ -126,6 +126,24 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list $sum)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "flowcontrol.blockScoping" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $x := (1 | int) -}}
+{{- if true -}}
+{{- $x := (2 | int) -}}
+{{- $_ = $x -}}
+{{- end -}}
+{{- if true -}}
+{{- $x := (3 | int) -}}
+{{- $_ = $x -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list $x)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

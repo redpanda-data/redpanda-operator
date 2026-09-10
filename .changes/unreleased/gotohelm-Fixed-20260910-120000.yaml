@@ -1,0 +1,22 @@
+project: gotohelm
+kind: Fixed
+body: |-
+    Go blocks now scope their declarations.
+
+      `Block` emitted its statements inline, and templates have no block
+      construct, so a declaration inside a block stayed on the variable stack
+      after it. Where the block shadowed an existing name, every later read saw
+      the inner value:
+
+          x := 1
+          {
+              x := 2
+              _ = x
+          }
+          _ = x // go: 1, template: 2
+
+      Nothing failed; the template just computed the wrong answer. Blocks are
+      now emitted as an `if true`, which is the only construct that pops the
+      variable stack without rebinding dot or swallowing `break` and
+      `continue`.
+time: 2026-09-10T12:00:00.000000-04:00

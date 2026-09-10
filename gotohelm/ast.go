@@ -292,6 +292,11 @@ func (l Literal) Write(w io.Writer) {
 	fmt.Fprintf(w, "%s", l)
 }
 
+// Block is a bare sequence of statements that introduces no scope of its own.
+//
+// It's the body of anything that already scopes -- an if, a range, a function --
+// and the group of statements a single go statement can expand into. For a go
+// block statement, which does scope, see [Scope].
 type Block struct {
 	Statements []Node
 }
@@ -300,6 +305,31 @@ func (b *Block) Write(w io.Writer) {
 	for _, s := range b.Statements {
 		s.Write(w)
 	}
+}
+
+// Scope is a go block statement.
+//
+//	x := 1
+//	{
+//		x := 2
+//	}
+//	// x is 1
+//
+// Templates have no block, so it's borrowed from an `if` that's always true:
+// text/template pops the variable stack at the end of an if body. `with` pops
+// too but rebinds dot, and `range $_ := (list 1)`, which [Func] uses, swallows
+// break and continue, so either one in the block would stop targeting the go
+// loop it belongs to.
+type Scope struct {
+	Statements []Node
+}
+
+func (s *Scope) Write(w io.Writer) {
+	fmt.Fprintf(w, "{{- if true -}}\n")
+	for _, stmt := range s.Statements {
+		stmt.Write(w)
+	}
+	fmt.Fprintf(w, "{{- end -}}\n")
 }
 
 type Range struct {

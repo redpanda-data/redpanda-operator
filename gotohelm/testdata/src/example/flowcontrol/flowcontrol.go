@@ -21,6 +21,7 @@ func FlowControl(dot *helmette.Dot) map[string]any {
 		"sliceRanges":    sliceRanges(dot),
 		"mapRanges":      mapRanges(dot),
 		"intBinaryExprs": intBinaryExprs(),
+		"blockScoping":   blockScoping(),
 	}
 }
 
@@ -97,6 +98,29 @@ func mapRanges(dot *helmette.Dot) []any {
 	}
 
 	return []any{sum}
+}
+
+// blockScoping asserts that a block's declarations aren't visible after it.
+//
+// Templates have no block construct, so this is the case that a naive
+// transpilation gets wrong: emitting the block's statements inline leaves the
+// shadowing declaration on the variable stack and every later read sees it.
+func blockScoping() []any {
+	x := 1
+
+	{
+		x := 2
+		_ = x
+	}
+
+	// A second, sibling block reusing the same name must not collide with the
+	// first now that each is emitted into its own scope.
+	{
+		x := 3
+		_ = x
+	}
+
+	return []any{x}
 }
 
 func intBinaryExprs() []int {
