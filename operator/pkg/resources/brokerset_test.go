@@ -39,7 +39,6 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
 )
@@ -71,9 +70,14 @@ func brokerSetTestCluster() *vectorizedv1alpha1.Cluster {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "rp",
 			Namespace: "test",
-			UID:       types.UID("cluster-uid"),
+			UID:       "cluster-uid",
 		},
 	}
+}
+
+type testGrant struct {
+	checksum string
+	deadline time.Time
 }
 
 type testBroker struct {
@@ -86,7 +90,7 @@ type testBroker struct {
 	// podUnschedulable marks the pod PodScheduled=False/Unschedulable (the
 	// disk-loss shape). Mutually exclusive with podReady.
 	podUnschedulable bool
-	grant            string
+	grant            testGrant
 	decommission     bool
 	phase            redpandav1alpha2.BrokerPhase
 	brokerID         *int32
@@ -155,8 +159,8 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 				broker.Status.Phase = redpandav1alpha2.BrokerPhaseDiskLost
 			}
 		}
-		if tb.grant != "" {
-			broker.Annotations = map[string]string{feature.RollGrant.Key: tb.grant}
+		if tb.grant.checksum != "" || !tb.grant.deadline.IsZero() {
+			broker.SetRollGrant(tb.grant.checksum, tb.grant.deadline)
 		}
 		require.NoError(t, controllerutil.SetControllerReference(cluster, broker, scheme))
 		objs = append(objs, broker)
@@ -230,7 +234,7 @@ func listGrantedBrokers(t *testing.T, c k8sclient.Client) []string {
 	require.NoError(t, c.List(context.Background(), &list))
 	var granted []string
 	for _, b := range list.Items {
-		if b.Annotations[feature.RollGrant.Key] != "" {
+		if b.HasRollGrant() {
 			granted = append(granted, b.Name)
 		}
 	}
@@ -254,7 +258,7 @@ func TestEnsureRollGrantsGrantsExactlyOne(t *testing.T) {
 
 	var b redpandav1alpha2.Broker
 	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &b))
-	checksum, deadline, ok := feature.ParseRollGrant(b.Annotations[feature.RollGrant.Key])
+	checksum, deadline, ok := b.ParseRollGrant()
 	require.True(t, ok)
 	assert.Equal(t, testTemplateHash(testCurrentChecksum), checksum)
 	assert.True(t, deadline.After(time.Now()))
@@ -263,9 +267,11 @@ func TestEnsureRollGrantsGrantsExactlyOne(t *testing.T) {
 func TestEnsureRollGrantsNoSecondGrantWhileActive(t *testing.T) {
 	// Broker 0 holds an unexpired grant (mid-roll, pod deleted); broker 1 is
 	// outdated but must NOT be granted.
-	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
 	r, c := buildBrokerSet(t, true, []testBroker{
-		{index: 0, grant: activeGrant}, // no pod: mid-rotation
+		{index: 0, grant: testGrant{
+			checksum: testTemplateHash(testCurrentChecksum),
+			deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL),
+		}}, // no pod: mid-rotation
 		{index: 1, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
@@ -281,9 +287,12 @@ func TestEnsureRollGrantsRevokesOnCompletion(t *testing.T) {
 	// Broker 0 finished its roll: pod matches the desired checksum, is ready,
 	// and the broker is registered. The grant must be revoked; with nothing
 	// left to roll the pass is a no-op.
-	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
+
 	r, c := buildBrokerSet(t, true, []testBroker{
-		{index: 0, grant: activeGrant, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
+		{index: 0, grant: testGrant{
+			checksum: testTemplateHash(testCurrentChecksum),
+			deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL),
+		}, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
 		{index: 1, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(1))},
 	}, interceptor.Funcs{})
 
@@ -295,9 +304,11 @@ func TestEnsureRollGrantsRevokesStaleChecksum(t *testing.T) {
 	// A grant minted for a previous template generation whose roll is
 	// COMPLETE (pod current, ready, registered) is revoked, even though its
 	// deadline has not passed.
-	staleGrant := feature.FormatRollGrant(testTemplateHash(testOldChecksum), time.Now().Add(feature.RollGrantTTL))
 	r, c := buildBrokerSet(t, true, []testBroker{
-		{index: 0, grant: staleGrant, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
+		{index: 0, grant: testGrant{
+			checksum: testTemplateHash(testOldChecksum),
+			deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL),
+		}, podChecksum: testCurrentChecksum, podReady: true, brokerID: ptr.To(int32(0))},
 	}, interceptor.Funcs{})
 
 	require.NoError(t, r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log))
@@ -309,9 +320,11 @@ func TestEnsureRollGrantsRekeysStaleMidRoll(t *testing.T) {
 	// flight (pod outdated). The grant must be re-keyed IN PLACE — the
 	// holder may be half drained, and handing the grant to another broker
 	// would strand it in maintenance mode, deadlocking the next drain.
-	staleGrant := feature.FormatRollGrant(testTemplateHash(testOldChecksum), time.Now().Add(feature.RollGrantTTL))
 	r, c := buildBrokerSet(t, true, []testBroker{
-		{index: 0, grant: staleGrant, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(0))},
+		{index: 0, grant: testGrant{
+			checksum: testTemplateHash(testOldChecksum),
+			deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL),
+		}, podChecksum: testOldChecksum, podReady: true, brokerID: ptr.To(int32(0))},
 		{index: 1, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
@@ -324,7 +337,7 @@ func TestEnsureRollGrantsRekeysStaleMidRoll(t *testing.T) {
 	require.Equal(t, []string{"rp-broker-0"}, listGrantedBrokers(t, c))
 	var b redpandav1alpha2.Broker
 	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &b))
-	checksum, deadline, ok := feature.ParseRollGrant(b.Annotations[feature.RollGrant.Key])
+	checksum, deadline, ok := b.ParseRollGrant()
 	require.True(t, ok)
 	assert.Equal(t, testTemplateHash(testCurrentChecksum), checksum)
 	assert.True(t, deadline.After(time.Now()))
@@ -333,10 +346,12 @@ func TestEnsureRollGrantsRekeysStaleMidRoll(t *testing.T) {
 func TestEnsureRollGrantsRegrantsExpired(t *testing.T) {
 	// Broker 1 holds an EXPIRED grant on an unfinished roll: it is re-granted
 	// with priority over broker 0, which is also outdated.
-	expiredGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))
 	r, c := buildBrokerSet(t, true, []testBroker{
 		{index: 0, podChecksum: testOldChecksum, podReady: true},
-		{index: 1, grant: expiredGrant, podChecksum: testOldChecksum, podReady: true},
+		{index: 1, grant: testGrant{
+			checksum: testTemplateHash(testCurrentChecksum),
+			deadline: time.Now().Add(-time.Minute),
+		}, podChecksum: testOldChecksum, podReady: true},
 	}, interceptor.Funcs{})
 
 	err := r.core(ctrl.Log).EnsureRollGrants(context.Background(), ctrl.Log)
@@ -348,7 +363,7 @@ func TestEnsureRollGrantsRegrantsExpired(t *testing.T) {
 
 	var b redpandav1alpha2.Broker
 	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-1", Namespace: "test"}, &b))
-	_, deadline, ok := feature.ParseRollGrant(b.Annotations[feature.RollGrant.Key])
+	_, deadline, ok := b.ParseRollGrant()
 	require.True(t, ok)
 	assert.True(t, deadline.After(time.Now()), "expired grant must be re-stamped with a fresh deadline")
 }
@@ -902,14 +917,14 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 
 	t.Run("blocked by active roll-grant", func(t *testing.T) {
 		brokers, _ := build(t, []testBroker{
-			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))},
+			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: testGrant{testTemplateHash(testCurrentChecksum), time.Now().Add(redpandav1alpha2.RollGrantTTL)}},
 		})
 		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
 
 	t.Run("expired roll-grant does not block", func(t *testing.T) {
 		brokers, _ := build(t, []testBroker{
-			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))},
+			{index: 0, podChecksum: testCurrentChecksum, podReady: true, grant: testGrant{testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute)}},
 		})
 		require.NoError(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers))
 	})
@@ -926,7 +941,7 @@ func TestVerifyRollbackPreconditions(t *testing.T) {
 
 	t.Run("missing pod with unexpired grant still blocks", func(t *testing.T) {
 		brokers, _ := build(t, []testBroker{
-			{index: 0, grant: feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))}, // rotation actively in flight
+			{index: 0, grant: testGrant{testTemplateHash(testCurrentChecksum), time.Now().Add(redpandav1alpha2.RollGrantTTL)}}, // rotation actively in flight
 		})
 		requireMigrationBlocked(t, brokerset.VerifyRollbackPreconditions(ctrl.Log, brokers), "roll-grant")
 	})
@@ -967,7 +982,7 @@ func TestUpdateBrokerWritesOnChange(t *testing.T) {
 	assert.Equal(t, "next-checksum", updated.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerConfigChecksumAnnotation])
 	// The grant is NOT stamped by updateBroker — that is ensureRollGrants'
 	// job, one broker at a time.
-	assert.Empty(t, updated.Annotations[feature.RollGrant.Key])
+	assert.False(t, updated.HasRollGrant())
 }
 
 func TestDecommissionIntentIsNeverUnset(t *testing.T) {
@@ -1033,23 +1048,6 @@ func TestDecommissionIntentIsNeverUnset(t *testing.T) {
 	})
 }
 
-func TestUpdateBrokerSyncsDeletionPolicy(t *testing.T) {
-	r, c := buildBrokerSet(t, true, []testBroker{
-		{index: 0, podChecksum: testCurrentChecksum, podReady: true},
-	}, interceptor.Funcs{})
-
-	var existing redpandav1alpha2.Broker
-	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &existing))
-	desired := existing.DeepCopy()
-	desired.Annotations = map[string]string{feature.BrokerDeletionPolicy.Key: "orphan"}
-
-	require.NoError(t, r.core(ctrl.Log).UpdateBroker(context.Background(), ctrl.Log, &existing, desired))
-
-	var updated redpandav1alpha2.Broker
-	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &updated))
-	assert.Equal(t, "orphan", updated.Annotations[feature.BrokerDeletionPolicy.Key])
-}
-
 func TestBrokersFromStatefulSetPodNameConsistency(t *testing.T) {
 	// For every pool, the rendered Broker's PodName() must resolve to the
 	// pod the renderer targets (Hostname): <cluster>-<ordinal> for the
@@ -1090,6 +1088,15 @@ func TestBrokersFromStatefulSetPodNameConsistency(t *testing.T) {
 				assert.Equal(t, fmt.Sprintf("%s-%d", tc.stsName, *b.Spec.NetworkIndex), b.PodName())
 				assert.Equal(t, b.Spec.PodTemplate.Spec.Hostname, b.PodName(),
 					"PodName must match the hostname the renderer stamps")
+
+				// Broker-created pods must be indistinguishable from
+				// StatefulSet-created ones: external tooling may select on the
+				// STS-injected identity labels.
+				assert.Equal(t, b.PodName(), b.Spec.PodTemplate.Labels[appsv1.StatefulSetPodNameLabel])
+				assert.Equal(t, fmt.Sprintf("%d", *b.Spec.NetworkIndex), b.Spec.PodTemplate.Labels[appsv1.PodIndexLabel])
+				// The CR itself is not a pod: identity labels stay off it.
+				assert.NotContains(t, b.Labels, appsv1.StatefulSetPodNameLabel)
+				assert.NotContains(t, b.Labels, appsv1.PodIndexLabel)
 			}
 		})
 	}
@@ -1269,11 +1276,11 @@ func TestDecommissionMutualExclusionIsClusterWide(t *testing.T) {
 // is a released grant and must not block.
 func TestScaleDownWaitsForActiveRollGrant(t *testing.T) {
 	ctx := context.Background()
-	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
-	expiredGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute))
+	activeGrant := testGrant{testTemplateHash(testCurrentChecksum), time.Now().Add(redpandav1alpha2.RollGrantTTL)}
+	expiredGrant := testGrant{testTemplateHash(testCurrentChecksum), time.Now().Add(-time.Minute)}
 
 	for name, tc := range map[string]struct {
-		grant      string
+		grant      testGrant
 		wantMarked bool
 	}{
 		"unexpired grant blocks the excess mark": {activeGrant, false},
@@ -1462,10 +1469,12 @@ func TestDiskLostTombstoneReleasesIndex(t *testing.T) {
 // it cannot serialize the fleet.
 func TestEnsureRollGrantsSkipsDiskLostTombstones(t *testing.T) {
 	ctx := context.Background()
-	activeGrant := feature.FormatRollGrant(testTemplateHash(testCurrentChecksum), time.Now().Add(feature.RollGrantTTL))
 	r, c := buildBrokerSet(t, true, []testBroker{
 		{index: 0, podChecksum: testOldChecksum, podReady: true},
-		{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: activeGrant},
+		{index: 1, name: "rp-tombstone-1", diskLostReleased: true, brokerID: ptr.To(int32(1)), grant: testGrant{
+			checksum: testTemplateHash(testCurrentChecksum),
+			deadline: time.Now().Add(redpandav1alpha2.RollGrantTTL),
+		}},
 	}, interceptor.Funcs{})
 
 	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log)
@@ -1698,17 +1707,14 @@ func buildArbitrationHarness(t *testing.T, poolNames []string) (map[string]*arbi
 
 func liveDisruptions(t *testing.T, c k8sclient.Client, names []string) (decommissioning, granted []string) {
 	t.Helper()
-	now := time.Now()
 	for _, name := range names {
 		var b redpandav1alpha2.Broker
 		require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: name, Namespace: "test"}, &b))
 		if b.Spec.Decommission && b.Status.Phase != redpandav1alpha2.BrokerPhaseDecommissioned {
 			decommissioning = append(decommissioning, name)
 		}
-		if grant := b.Annotations[feature.RollGrant.Key]; grant != "" {
-			if _, deadline, ok := feature.ParseRollGrant(grant); ok && now.Before(deadline) {
-				granted = append(granted, name)
-			}
+		if b.HasUnexpiredRollGrant() {
+			granted = append(granted, name)
 		}
 	}
 	return decommissioning, granted

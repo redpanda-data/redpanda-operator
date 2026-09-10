@@ -27,7 +27,6 @@ import (
 	"maps"
 	"slices"
 	"sort"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -44,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 )
 
 const (
@@ -256,17 +254,11 @@ func (s *BrokerSet) ensureBrokers(ctx context.Context, l logr.Logger, desiredSTS
 	// reverse of EnsureRollGrants' hold-while-decommissioning. Grants
 	// stranded on DiskLost tombstones don't count: their holder is already
 	// down either way and EnsureRollGrants revokes them.
-	now := time.Now()
 	rollGrantHeld := s.Arbitration.RollGranted() || slices.ContainsFunc(clusterBrokers, func(b redpandav1alpha2.Broker) bool {
 		if b.IsDiskLost() {
 			return false
 		}
-		grant := b.Annotations[feature.RollGrant.Key]
-		if grant == "" {
-			return false
-		}
-		_, deadline, ok := feature.ParseRollGrant(grant)
-		return ok && now.Before(deadline)
+		return b.HasUnexpiredRollGrant()
 	})
 
 	// DiskLost tombstones (dead incarnations) never enter the ordinary
@@ -548,6 +540,16 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 		brokerLabels := maps.Clone(s.BrokerLabels)
 		brokerLabels[NetworkIndexLabelKey] = fmt.Sprintf("%d", i)
 
+		// Broker-created pods carry the same identity labels the StatefulSet
+		// controller injects on the pods it creates: external tooling (cloud
+		// control planes, per-broker Service selectors, ordinal fieldRefs)
+		// selects on them, and pods must be indistinguishable across
+		// pod-management flavors. Pod-template only — a Broker CR is not a
+		// pod, and its non-ordinal name is not a pod name.
+		podLabels := maps.Clone(brokerLabels)
+		podLabels[appsv1.StatefulSetPodNameLabel] = podName
+		podLabels[appsv1.PodIndexLabel] = fmt.Sprintf("%d", i)
+
 		storage := redpandav1alpha2.BrokerStorage{
 			VolumeClaimTemplates: brokerVCTs,
 		}
@@ -563,15 +565,8 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 			}
 		}
 
-		// Propagate the deletion policy so it stays readable during cluster
-		// teardown, after the owning cluster object itself is gone.
-		var brokerAnnotations map[string]string
-		if policy, ok := s.Owner.GetAnnotations()[feature.BrokerDeletionPolicy.Key]; ok {
-			brokerAnnotations = map[string]string{feature.BrokerDeletionPolicy.Key: policy}
-		}
-
 		podTemplate := redpandav1alpha2.BrokerPodTemplate{
-			Labels:      brokerLabels,
+			Labels:      podLabels,
 			Annotations: podAnnotations,
 			Spec:        podSpec,
 		}
@@ -584,9 +579,8 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 
 		broker := redpandav1alpha2.Broker{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   s.Owner.GetNamespace(),
-				Labels:      brokerLabels,
-				Annotations: brokerAnnotations,
+				Namespace: s.Owner.GetNamespace(),
+				Labels:    brokerLabels,
 			},
 			Spec: redpandav1alpha2.BrokerSpec{
 				ClusterRef:   *s.ClusterRef.DeepCopy(),
@@ -686,27 +680,13 @@ func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, d
 		}
 	}
 
-	policyKey := feature.BrokerDeletionPolicy.Key
-	desiredPolicy, desiredPolicySet := desired.Annotations[policyKey]
-	existingPolicy, existingPolicySet := existing.Annotations[policyKey]
-	policyChanged := desiredPolicy != existingPolicy || desiredPolicySet != existingPolicySet
-
-	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) &&
-		!policyChanged {
+	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) {
 		return nil
 	}
 	// Spec.Decommission is deliberately not synced: decommission intent is
 	// never unset by the operator, not even when the index is desired again.
 	// Terminal brokers at desired indices are replaced by EnsureDesiredBroker.
 	existing.Spec.PodTemplate = desired.Spec.PodTemplate
-	if desiredPolicySet {
-		if existing.Annotations == nil {
-			existing.Annotations = map[string]string{}
-		}
-		existing.Annotations[policyKey] = desiredPolicy
-	} else {
-		delete(existing.Annotations, policyKey)
-	}
 
 	l.V(1).Info("updating Broker CR", "name", existing.Name, "index", *existing.Spec.NetworkIndex)
 	return s.Client.Update(ctx, existing)

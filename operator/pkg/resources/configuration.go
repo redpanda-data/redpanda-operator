@@ -632,7 +632,7 @@ func generateSeedServer(
 		addresses = append(addresses, fmt.Sprintf("%s-%d.%s", pandaCluster.Name, i, serviceFQDN))
 	}
 
-	nps, err := nodepools.GetNodePools(ctx, pandaCluster, reader)
+	nps, err := nodepools.GetNodePoolsWithoutBrokerBacked(ctx, pandaCluster, reader)
 	if err != nil {
 		return []string{}, err
 	}

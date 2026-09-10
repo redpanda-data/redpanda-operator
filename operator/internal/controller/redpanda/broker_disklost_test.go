@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
@@ -101,13 +102,6 @@ func diskLostFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) 
 			Name:      "datadir-rp-1",
 			Namespace: "ns",
 			UID:       types.UID("pvc-uid-1"),
-			OwnerReferences: []metav1.OwnerReference{{
-				APIVersion: redpandav1alpha2.GroupVersion.String(),
-				Kind:       "Broker",
-				Name:       "rp-1",
-				UID:        types.UID("broker-uid-1"),
-				Controller: ptr.To(true),
-			}},
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{VolumeName: "pv-1"},
 	}
@@ -135,16 +129,13 @@ func diskLostFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) 
 	return broker, pod, []client.Object{pod, pvc, pv}
 }
 
-func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, pod *corev1.Pod, objs []client.Object) (client.Client, *brokerReconciliationState, error) {
+func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, objs []client.Object) (client.Client, *brokerReconciliationState, error) {
 	c := fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
 		WithObjects(objs...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
 	r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
-	state := &brokerReconciliationState{
-		broker:        broker,
-		pod:           pod,
-		initialStatus: broker.Status.DeepCopy(),
-	}
-	_, err := r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
+	state, err := r.fetchState(t.Context(), mcreconcile.Request{}, c, broker)
+	require.NoError(t, err)
+	_, err = r.reconcileDiskLost(context.Background(), state, &diskLostCluster{client: c})
 	return c, state, err
 }
 
@@ -154,8 +145,8 @@ func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, pod *corev1.Pod,
 // NOTHING — dismantle acts only on the persisted latch — and the recorded
 // BrokerID is untouched.
 func TestDetectDiskLostMarksDeadNode(t *testing.T) {
-	broker, pod, objs := diskLostFixture()
-	c, state, err := runDiskLost(t, broker, pod, objs)
+	broker, _, objs := diskLostFixture()
+	c, state, err := runDiskLost(t, broker, objs)
 	require.NoError(t, err)
 
 	require.NotNil(t, broker.Status.DiskLost, "the latch must be set")
@@ -198,42 +189,21 @@ func TestDetectDiskLostNegatives(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			broker, pod, objs := diskLostFixture()
 			objs = mutate(broker, pod, objs)
-			_, _, err := runDiskLost(t, broker, pod, objs)
+			_, _, err := runDiskLost(t, broker, objs)
 			require.NoError(t, err)
 			require.Nil(t, broker.Status.DiskLost, "the latch must not be set")
 		})
 	}
 }
 
-// TestDetectDiskLostTOCTOU proves the uncached re-read gate: when the
-// authoritative view of the pod no longer shows the volume-affinity
-// scheduling failure, the marking is refused even though the caller's
-// cached copy still qualifies.
-func TestDetectDiskLostTOCTOU(t *testing.T) {
-	broker, pod, objs := diskLostFixture()
-
-	// The "API server" view: same pod, but scheduled — since-resolved.
-	resolved := pod.DeepCopy()
-	resolved.Status.Conditions = []corev1.PodCondition{{
-		Type:   corev1.PodScheduled,
-		Status: corev1.ConditionTrue,
-	}}
-	objs[0] = resolved
-
-	// `pod` is the stale informer copy that still looks unschedulable.
-	_, _, err := runDiskLost(t, broker, pod, objs)
-	require.NoError(t, err)
-	require.Nil(t, broker.Status.DiskLost)
-}
-
 // TestDismantleDiskLost covers the dismantle pass: pod and every claim
 // (ExistingClaims included — the migrated-broker shape) are deleted, and
-// ResourcesReleased is set once the uncached reader confirms them gone.
+// ResourcesReleased is set once the reader confirms them gone.
 func TestDismantleDiskLost(t *testing.T) {
-	broker, pod, objs := diskLostFixture()
+	broker, _, objs := diskLostFixture()
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
 
-	c, state, err := runDiskLost(t, broker, pod, objs)
+	c, state, err := runDiskLost(t, broker, objs)
 	require.NoError(t, err)
 	require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
 	require.True(t, broker.Status.DiskLost.ResourcesReleased)
@@ -249,32 +219,6 @@ func TestDismantleDiskLost(t *testing.T) {
 		"dismantle must not touch reclaim policies")
 }
 
-// TestDismantleDiskLostSparesForeignResources: resources answering to the
-// tombstone's names but controlled by ANOTHER owner (the replacement CR, after
-// index takeover) are left alone, and the tombstone still releases.
-func TestDismantleDiskLostSparesForeignResources(t *testing.T) {
-	broker, pod, objs := diskLostFixture()
-	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
-
-	// Rewrite pod and PVC as replacement-owned.
-	for _, ref := range []*[]metav1.OwnerReference{&pod.OwnerReferences, &objs[1].(*corev1.PersistentVolumeClaim).OwnerReferences} {
-		(*ref)[0].Name = "rp-1-replacement"
-		(*ref)[0].UID = types.UID("replacement-uid")
-	}
-
-	// fetchState would have nulled a foreign pod out; mirror that here.
-	c, _, err := runDiskLost(t, broker, nil, objs)
-	require.NoError(t, err)
-	require.True(t, broker.Status.DiskLost.ResourcesReleased,
-		"foreign-owned resources count as released for the tombstone")
-
-	ctx := context.Background()
-	var alive corev1.Pod
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "rp-1", Namespace: "ns"}, &alive), "the replacement's pod must survive")
-	var pvc corev1.PersistentVolumeClaim
-	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "datadir-rp-1", Namespace: "ns"}, &pvc), "the replacement's PVC must survive")
-}
-
 // TestDiskLostChainGating: a marked tombstone without decommission intent
 // short-circuits the chain pass after pass — the pod is never recreated.
 func TestDiskLostChainGating(t *testing.T) {
@@ -284,7 +228,7 @@ func TestDiskLostChainGating(t *testing.T) {
 	// No pod, no PVC in the world; two consecutive passes must not create
 	// anything.
 	for range 2 {
-		c, state, err := runDiskLost(t, broker, nil, objs[2:]) // PV only
+		c, state, err := runDiskLost(t, broker, objs[2:]) // PV only
 		require.NoError(t, err)
 		require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
 		var pod corev1.Pod

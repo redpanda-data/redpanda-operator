@@ -33,12 +33,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
-// GetNodePools gets all NodePoolSpecs within a cluster.
+// GetNodePoolsWithoutBrokerBacked gets all NodePoolSpecs within a cluster,
+// including deleted pools reconstructed from their StatefulSets — but NOT
+// deleted broker-backed pools (their StatefulSet is gone; see
+// GetNodePoolsWithBrokerBacked). Broker-mode reconcile paths must use
+// GetNodePoolsWithBrokerBacked or they will orphan the brokers of a deleted
+// pool instead of draining them.
 // This also includes deleted node pools. These are removed from spec,
 // therefore a NodePoolSpec is synthesized by searching for existing StatefulSets.
 // To include information that a NodePool has been deleted, the NodePoolSpec is
 // wrapped into a type with an extra Deleted boolean.
-func GetNodePools(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
+func GetNodePoolsWithoutBrokerBacked(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
 	var nodePoolsWithDeleted []*vectorizedv1alpha1.NodePoolSpecWithDeleted
 
 	nps := cluster.GetNodePoolsFromSpec()
@@ -117,8 +122,13 @@ outer:
 // synthesized spec is minimal (name and zero replicas): a deleted
 // broker-backed pool renders no desired brokers, so the drain path never
 // consults the rest of the spec (see BrokerSetResource.Ensure).
+//
+// Use this on every broker-mode reconcile path — not just during migration
+// or rollback: Broker CRs outlive their pool's StatefulSet permanently, so
+// listing only spec pools would drop a deleted broker-backed pool and orphan
+// its brokers instead of draining them.
 func GetNodePoolsWithBrokerBacked(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, k8sClient client.Reader) ([]*vectorizedv1alpha1.NodePoolSpecWithDeleted, error) {
-	pools, err := GetNodePools(ctx, cluster, k8sClient)
+	pools, err := GetNodePoolsWithoutBrokerBacked(ctx, cluster, k8sClient)
 	if err != nil {
 		return nil, err
 	}

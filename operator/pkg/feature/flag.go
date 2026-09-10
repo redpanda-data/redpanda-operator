@@ -22,6 +22,7 @@ const (
 	_ FlagBundle = iota
 	V1Flags
 	V2Flags
+	BrokerFlags
 
 	maxBundles
 )
