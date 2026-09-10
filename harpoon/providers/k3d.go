@@ -31,6 +31,7 @@ type K3DProvider struct {
 	retainCluster            bool
 	fastNodeFailureDetection bool
 	configPath               string
+	importedImages           []string
 }
 
 func (p *K3DProvider) RetainCluster() *K3DProvider {
@@ -89,6 +90,7 @@ func (p *K3DProvider) LoadImages(_ context.Context, images []string) error {
 	if len(images) == 0 {
 		return nil
 	}
+	p.importedImages = append(p.importedImages, images...)
 	return p.cluster.ImportImage(images...)
 }
 
@@ -97,7 +99,17 @@ func (p *K3DProvider) DeleteNode(_ context.Context, name string) error {
 }
 
 func (p *K3DProvider) AddNode(_ context.Context, name string) error {
-	return p.cluster.CreateNodeWithName(name)
+	if err := p.cluster.CreateNodeWithName(name); err != nil {
+		return err
+	}
+	// A node created after setup has none of the images LoadImages imported, so
+	// a pod scheduled onto it (e.g. the node-failure scenario's replacement
+	// broker) would hit ImagePullBackOff pulling localhost/... images that never
+	// came from a registry. Re-import the suite's images onto the new node.
+	if len(p.importedImages) == 0 {
+		return nil
+	}
+	return p.cluster.ImportImage(p.importedImages...)
 }
 
 func (p *K3DProvider) GetBaseContext() context.Context {
