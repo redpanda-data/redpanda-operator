@@ -195,33 +195,36 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, req mcreconcile.Reque
 
 	// fetch PVCs
 	podName := broker.PodName()
+
 	for _, vct := range broker.Spec.Storage.VolumeClaimTemplates {
 		pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
 		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: pvcName, Namespace: broker.Namespace}, &pvc); err == nil {
-			state.brokerPVCs = append(state.brokerPVCs, &pvc)
-		} else {
-			if apierrors.IsNotFound(err) {
-				// nil signals that it has to be created
-				state.brokerPVCs = append(state.brokerPVCs, nil)
-			} else {
-				return nil, errors.Wrapf(err, "cannot fetch PVCs for broker %s", broker.Name)
-			}
+		err := k8sClient.Get(ctx, client.ObjectKey{Namespace: broker.Namespace, Name: pvcName}, &pvc)
+		if client.IgnoreNotFound(err) != nil {
+			return nil, errors.Wrapf(err, "cannot fetch PVC %s for broker %s", pvcName, broker.Name)
 		}
+		if apierrors.IsNotFound(err) {
+			// we need to explicitly append nil, because in the IsNotFound case
+			// pvc becomes an empty corev1.PersistentVolumeClaim
+			state.brokerPVCs = append(state.brokerPVCs, nil)
+			continue
+		}
+		state.brokerPVCs = append(state.brokerPVCs, &pvc)
 	}
 
 	for _, vct := range broker.Spec.Storage.ExistingClaims {
 		var pvc corev1.PersistentVolumeClaim
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: vct.Name, Namespace: broker.Namespace}, &pvc); err == nil {
-			state.brokerExistingPVCs = append(state.brokerExistingPVCs, &pvc)
-		} else {
-			if apierrors.IsNotFound(err) {
-				// nil signals that it is missing
-				state.brokerExistingPVCs = append(state.brokerExistingPVCs, nil)
-			} else {
-				return nil, errors.Wrapf(err, "cannot fetch PVCs for broker %s", broker.Name)
-			}
+		err := k8sClient.Get(ctx, client.ObjectKey{Namespace: broker.Namespace, Name: vct.Name}, &pvc)
+		if client.IgnoreNotFound(err) != nil {
+			return nil, errors.Wrapf(err, "cannot fetch PVC %s for broker %s", vct.Name, broker.Name)
 		}
+		if apierrors.IsNotFound(err) {
+			// we need to explicitly append nil, because in the IsNotFound case
+			// pvc becomes an empty corev1.PersistentVolumeClaim
+			state.brokerExistingPVCs = append(state.brokerExistingPVCs, nil)
+			continue
+		}
+		state.brokerExistingPVCs = append(state.brokerExistingPVCs, &pvc)
 	}
 
 	var pod corev1.Pod
@@ -230,12 +233,9 @@ func (r *BrokerReconciler) fetchState(ctx context.Context, req mcreconcile.Reque
 	case apierrors.IsNotFound(err):
 		return state, nil
 	case err != nil:
-		return nil, err
+		return nil, errors.Wrapf(err, "cannot get pod for broker %s", broker.Name)
 	default:
 		state.pod = &pod
-	}
-
-	if state.pod != nil {
 		if isOwnedByDifferentBroker(state.pod, broker) {
 			// this can happen only when we're reconciling Broker TombStone.
 			// then, there's a chance the pod is already a new pod
@@ -337,33 +337,33 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 	for i, vct := range broker.Spec.Storage.VolumeClaimTemplates {
 		// check if it exists
 		pvc := state.brokerPVCs[i]
-		if pvc == nil {
-			// does not exist, create
-			pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
-			pvc = &corev1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      pvcName,
-					Namespace: broker.Namespace,
-					Labels:    broker.Spec.PodTemplate.Labels,
-					// thing to consider: maybe we should add a set of labels that will identify the Broker
-					// this way we can then simplify querying for PVC "belonging" to given broker.
-				},
-				Spec: vct.Spec,
-			}
-			l.Info("creating PVC", "name", pvcName)
-			if err := k8sClient.Create(ctx, pvc); err != nil {
-				return ctrl.Result{}, err
-			}
-		} else {
+		if pvc != nil && pvc.DeletionTimestamp.IsZero() {
+			continue
+		}
+		if pvc != nil && !pvc.DeletionTimestamp.IsZero() {
 			// A PVC mid-deletion (e.g. PV-affinity remediation) must be fully
 			// gone before recreating it or the pod: pvc-protection releases a
 			// Terminating PVC only once no pod references it, so recreating
 			// the pod first pins the old PVC forever and the pod never
 			// schedules.
-			if !pvc.DeletionTimestamp.IsZero() {
-				l.Info("waiting for PVC deletion to complete", "pvc", pvc.Name)
-				return ctrl.Result{RequeueAfter: requeueShort}, nil
-			}
+			l.Info("waiting for PVC deletion to complete", "pvc", pvc.Name)
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
+		// does not exist, create
+		pvcName := fmt.Sprintf("%s-%s", vct.Name, podName)
+		pvc = &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      pvcName,
+				Namespace: broker.Namespace,
+				Labels:    broker.Spec.PodTemplate.Labels,
+				// thing to consider: maybe we should add a set of labels that will identify the Broker
+				// this way we can then simplify querying for PVC "belonging" to given broker.
+			},
+			Spec: vct.Spec,
+		}
+		l.Info("creating PVC", "name", pvcName)
+		if err := k8sClient.Create(ctx, pvc); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{}, nil
@@ -456,23 +456,19 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 }
 
 func adoptionBarredByRollback(ctx context.Context, k8sClient client.Client, broker *redpandav1alpha2.Broker) bool {
-	owner := metav1.GetControllerOf(broker)
-	if owner == nil {
+	owner, found, err := getBrokerOwner(ctx, k8sClient, broker)
+	if err != nil {
+		return true
+	}
+	if !found {
+		// owner not set / set to a different kind than Redpanda / Cluster
 		return false
 	}
-	switch {
-	case owner.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(owner.APIVersion, redpandav1alpha2.GroupVersion.Group):
-		var rp redpandav1alpha2.Redpanda
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, &rp); err != nil {
-			return true
-		}
-		return !feature.V2UseBrokerCR.Get(ctx, &rp)
-	case owner.Kind == vectorizedv1alpha1.ClusterKind && strings.HasPrefix(owner.APIVersion, vectorizedv1alpha1.GroupVersion.Group):
-		var vectorizedCluster vectorizedv1alpha1.Cluster
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, &vectorizedCluster); err != nil {
-			return true
-		}
-		return !feature.V1UseBrokerCR.Get(ctx, &vectorizedCluster)
+	switch o := owner.(type) {
+	case *redpandav1alpha2.Redpanda:
+		return !feature.V2UseBrokerCR.Get(ctx, o)
+	case *vectorizedv1alpha1.Cluster:
+		return !feature.V1UseBrokerCR.Get(ctx, o)
 	}
 	return false
 }
@@ -575,7 +571,7 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 		}
 	}
 
-	err := r.deleteSnapshotPVCs(ctx, state, l, cluster, "disk-lost dismantle: deleting PVC")
+	err := r.deleteBrokerPVCs(ctx, l, k8sClient, broker)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -583,6 +579,10 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 	// make sure pod and pvcs are released, otherwise requeue
 	var pod corev1.Pod
 	err = k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &pod)
+	if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
 	if apierrors.IsNotFound(err) {
 		// check PVCs
 		for _, name := range broker.ClaimNames() {
@@ -603,8 +603,6 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 		broker.Status.DiskLost.ResourcesReleased = true
 		return ctrl.Result{RequeueAfter: requeueShort}, nil
 
-	} else if err != nil {
-		return ctrl.Result{}, err
 	}
 	l.Info("pod still not terminated", "pod", pod.Name)
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
@@ -814,31 +812,12 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		if broker.IsDiskLost() {
 			return ctrl.Result{}, nil
 		}
-		if err := r.deleteSnapshotPVCs(ctx, state, l, cluster, "deleting PVC after decommission"); err != nil {
+		if err := r.deleteBrokerPVCs(ctx, l, k8sClient, broker); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *BrokerReconciler) deleteSnapshotPVCs(ctx context.Context, state *brokerReconciliationState, l logr.Logger, cluster cluster.Cluster, msg string) error {
-	k8sClient := cluster.GetClient()
-	for _, pvc := range state.allBrokerPVCs() {
-		if pvc == nil {
-			// already deleted.
-			continue
-		}
-		if metav1.GetControllerOf(pvc) != nil {
-			l.Info("skipping PVC deletion because it has an ownerReference", "pvc", pvc.Name)
-			continue
-		}
-		l.Info(msg, "name", pvc.Name)
-		if err := k8sClient.Delete(ctx, pvc); err != nil && !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	return nil
 }
 
 func defaultPhase(broker *redpandav1alpha2.Broker, pod *corev1.Pod) redpandav1alpha2.BrokerPhase {
@@ -1060,13 +1039,26 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 
 	ownerTearingDown := r.ownerTearingDown(ctx, l, k8sClient, broker)
 	switch {
-	case broker.Spec.Decommission && !ownerTearingDown:
-		var pod *corev1.Pod
-		var live corev1.Pod
-		if err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, &live); err == nil {
-			pod = &live
-		} else if !apierrors.IsNotFound(err) {
+	case ownerTearingDown:
+		if broker.GetBrokerDeletionPolicy() == redpandav1alpha2.BrokerDeletionPolicyOrphan {
+			l.Info("cluster teardown with orphan policy: keeping broker's PVCs", "name", broker.Name)
+		} else {
+			l.Info("cluster teardown with cascade policy: deleting PVCs, pod is left to the GC", "name", broker.Name)
+			if !broker.IsDiskLost() {
+				err := r.deleteBrokerPVCs(ctx, l, k8sClient, broker)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		}
+	case broker.Spec.Decommission:
+		pod := &corev1.Pod{}
+		err := k8sClient.Get(ctx, client.ObjectKey{Name: podName, Namespace: broker.Namespace}, pod)
+		if err != nil && !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, err
+		}
+		if apierrors.IsNotFound(err) {
+			pod = nil
 		}
 
 		if broker.Status.BrokerID == nil {
@@ -1109,17 +1101,6 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 				return ctrl.Result{}, err
 			}
 		}
-
-	case ownerTearingDown:
-		if broker.GetBrokerDeletionPolicy() != redpandav1alpha2.BrokerDeletionPolicyOrphan {
-			l.Info("cluster teardown with cascade policy: deleting PVCs, pod is left to the GC", "name", broker.Name)
-			if !broker.IsDiskLost() {
-				if err := r.deleteBrokerPVCs(ctx, l, k8sClient, broker); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-		}
-		l.Info("cluster teardown with orphan policy: keeping broker's PVCs", "name", broker.Name)
 	default:
 		l.Info("releasing pod from deleted Broker CR", "podName", podName, "brokerName", broker.Name)
 		if err := stripPodOwnerRef(ctx, k8sClient, broker, podName); err != nil {
@@ -1165,31 +1146,39 @@ func stripPodOwnerRef(ctx context.Context, c client.Client, broker *redpandav1al
 	return nil
 }
 
+func getBrokerOwner(ctx context.Context, c client.Client, broker *redpandav1alpha2.Broker) (owner client.Object, found bool, err error) {
+	ref := metav1.GetControllerOf(broker)
+	if ref == nil {
+		return nil, false, nil
+	}
+	switch {
+	case ref.Kind == vectorizedv1alpha1.ClusterKind && strings.HasPrefix(ref.APIVersion, vectorizedv1alpha1.GroupVersion.Group):
+		owner = &vectorizedv1alpha1.Cluster{}
+	case ref.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(ref.APIVersion, redpandav1alpha2.GroupVersion.Group):
+		owner = &redpandav1alpha2.Redpanda{}
+	default:
+		return nil, false, nil
+	}
+	if err := c.Get(ctx, client.ObjectKey{Name: ref.Name, Namespace: broker.Namespace}, owner); err != nil {
+		return nil, false, err
+	}
+	return owner, true, nil
+}
+
 func (r *BrokerReconciler) ownerTearingDown(ctx context.Context, l logr.Logger, k8sClient client.Client, broker *redpandav1alpha2.Broker) bool {
-	owner := metav1.GetControllerOf(broker)
-	if owner == nil {
-		return false
-	}
-
-	var ownerObj client.Object
+	owner, found, err := getBrokerOwner(ctx, k8sClient, broker)
 	switch {
-	case owner.Kind == vectorizedv1alpha1.ClusterKind && strings.HasPrefix(owner.APIVersion, vectorizedv1alpha1.GroupVersion.Group):
-		ownerObj = &vectorizedv1alpha1.Cluster{}
-	case owner.Kind == redpandav1alpha2.RedpandaKind && strings.HasPrefix(owner.APIVersion, redpandav1alpha2.GroupVersion.Group):
-		ownerObj = &redpandav1alpha2.Redpanda{}
-	default:
-		return false
-	}
-
-	err := k8sClient.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: broker.Namespace}, ownerObj)
-	switch {
-	case err == nil:
-		return !ownerObj.GetDeletionTimestamp().IsZero()
 	case apierrors.IsNotFound(err):
+		// owner already deleted
 		return true
-	default:
-		l.Info("could not determine owner state, assuming it is alive", "owner", owner.Name, "error", err)
+	case err != nil:
+		l.Info("could not determine owner state, assuming it is alive", "error", err)
 		return false
+	case !found:
+		// owner not set in OwnerReferences / set to other kind than Redpanda / Cluster.
+		return false
+	default:
+		return !owner.GetDeletionTimestamp().IsZero()
 	}
 }
 
