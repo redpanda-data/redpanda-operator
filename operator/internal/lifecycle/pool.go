@@ -578,22 +578,12 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
 			if len(existing.revisions) == 0 {
 				// No owned ControllerRevisions means we cannot KNOW whether a
-				// pod is outdated — and "can't know" must not mean "restart
-				// the fleet". This state is transient (the StatefulSet
-				// controller mints the revision at creation; a StatefulSet
-				// restored by a Broker-CR rollback additionally has to adopt
-				// the orphaned revisions of its predecessor), and assuming
-				// roll here sent freshly re-adopted pods straight to the roll
-				// loop. Skip; genuine drift computes once revisions appear.
+				// pod is outdated — skip.
 				continue
 			} else if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] == "" {
 				// No revision label: this pod was ADOPTED, not created, by
 				// the StatefulSet (under OnDelete, kube labels pods only at
-				// creation) — a Broker-CR rollback hands such pods over. An
-				// empty label says nothing about outdatedness, and rolling
-				// on "can't know" restarted every adopted pod. The rollback
-				// stamps the restored revision onto them; until that write
-				// is visible here, leave them alone.
+				// creation) — a Broker-CR rollback hands such pods over. Skip.
 				continue
 			} else {
 				lastRevision := existing.revisions[len(existing.revisions)-1]

@@ -71,16 +71,6 @@ func (cfg *RollbackConfig) report(ctx context.Context, status corev1.ConditionSt
 	}
 }
 
-// VerifyRollbackPreconditions blocks rollback while a rotation or
-// decommission is mid-flight, reading only the Broker CRs: no Broker may be
-// mid-decommission and no Broker may hold an unexpired roll-grant (an
-// actively progressing rotation always holds one). Fully Decommissioned
-// brokers (scale-down leftovers) are inert and do not block. A missing pod
-// deliberately does NOT block: with no unexpired grant it is an abandoned
-// rotation (e.g. a wedged Broker controller) or a manual deletion, and the
-// restored StatefulSet recreates the pod — whose postStart hook clears
-// maintenance mode — so proceeding recovers toward a working cluster where
-// waiting would deadlock on the very controller being rolled away from.
 func VerifyRollbackPreconditions(l logr.Logger, brokers []redpandav1alpha2.Broker) error {
 	block := func(reason string) error {
 		l.Info("rollback blocked, waiting for in-flight operations to finish", "reason", reason)
@@ -141,15 +131,6 @@ func restoreStatefulSetsFromBackup(ctx context.Context, cfg RollbackConfig, cm *
 
 // Rollback cleans up Broker CRs when the migration annotation is removed,
 // allowing the StatefulSet to re-adopt pods. It returns true when it acted.
-//
-// Rollback is resumable at any point: a transient error aborts the pass and
-// bubbles out of the owning Reconcile, which requeues; the retry re-derives
-// everything from world state, and every mutation is idempotent. The backup
-// ConfigMap is the resume marker for the tail of the flow — it is deleted
-// only after the restored StatefulSets have re-adopted the pods, so a pass
-// interrupted after the last Broker CR was deleted still finishes the
-// restore-and-verify phase on the next reconcile (finalizeRollback keys on
-// the ConfigMap's existence, not on Broker CRs remaining).
 func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 	c, l := cfg.Client, cfg.Logger
 
@@ -174,8 +155,8 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 
 		l.Info("rollback: cleaning up Broker CRs", "count", len(brokers))
 
-		// Strip Broker CR ownerRefs from pods and PVCs so the STS can
-		// re-adopt. A strategic-merge $patch:delete keyed on the Broker's
+		// Strip Broker CR ownerRefs from pods so the STS can re-adopt.
+		// A strategic-merge $patch:delete keyed on the Broker's
 		// UID is a no-op when the object or the ref is already gone, and
 		// unlike a read-modify-Update it cannot conflict with concurrent
 		// writers (the Broker controller keeps reconciling until its CR is
@@ -186,24 +167,8 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 			if err := stripOwnerRef(ctx, c, pod, b.UID); err != nil {
 				return acted, errors.Wrapf(err, "stripping Broker ownerRef from pod %s", pod.Name)
 			}
-			for _, ec := range b.Spec.Storage.ExistingClaims {
-				pvc := &corev1.PersistentVolumeClaim{ObjectMeta: metav1.ObjectMeta{Name: ec.Name, Namespace: cfg.Owner.GetNamespace()}}
-				if err := stripOwnerRef(ctx, c, pvc, b.UID); err != nil {
-					return acted, errors.Wrapf(err, "stripping Broker ownerRef from PVC %s", ec.Name)
-				}
-			}
 		}
 
-		// Delete Broker CRs with orphan propagation, leaving each CR's
-		// finalizer alone: the Broker controller removes its own finalizer in
-		// reconcileDelete — the pod's ownerRef was stripped above, so it takes
-		// the no-decommission rollback branch (raw CR deletion never
-		// decommissions, RFC Q2). Removing the finalizer from here instead
-		// would race the Broker controller, which re-adds it on every
-		// reconcile of a live CR — a conflict tug-of-war that stalled
-		// rollback for minutes. Orphan propagation prevents the GC from
-		// cascade-deleting pods that the Broker controller re-adopted between
-		// our ownerRef strip above and the delete here.
 		for i := range brokers {
 			b := &brokers[i]
 			if b.DeletionTimestamp.IsZero() {
@@ -253,14 +218,7 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 			return err
 		}
 		if !cleanedThisPass {
-			// Steady state: no Broker CRs and no pending restore. The terminal
-			// RolledBack report from the pass that finished the rollback rides
-			// the owner's status write, which may never land (conflict, crash)
-			// — and the backup ConfigMap, the resume marker, is already gone
-			// by then. So, like migration Complete, the terminal state is
-			// observed rather than recorded: promote a lingering non-terminal
-			// condition here until the write sticks. Clusters that never
-			// migrated have no condition and report nothing.
+			// Steady state: no Broker CRs and no pending restore.
 			if cfg.Reporter != nil && cfg.Reporter.ShouldReportRolledBack(ctx) {
 				cfg.report(ctx, corev1.ConditionTrue,
 					MigrationReasonRolledBack, "Broker CRs removed; StatefulSet manages all pods")
@@ -319,28 +277,6 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 				return errors.Wrapf(err, "re-stripping Broker ownerRef from pod %s", pod.Name)
 			}
 		}
-		for _, vol := range pod.Spec.Volumes {
-			if vol.PersistentVolumeClaim == nil {
-				continue
-			}
-			var pvc corev1.PersistentVolumeClaim
-			if err := c.Get(ctx, types.NamespacedName{Name: vol.PersistentVolumeClaim.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
-				if apierrors.IsNotFound(err) {
-					// Not rollback's doing and nothing to strip, but a pod
-					// referencing a claim that does not exist is anomalous
-					// enough to surface.
-					l.Info("rollback: WARNING pod references a claim that does not exist", "pod", pod.Name, "pvc", vol.PersistentVolumeClaim.ClaimName)
-					continue
-				}
-				return errors.Wrapf(err, "checking claim %s for Broker ownerRefs", vol.PersistentVolumeClaim.ClaimName)
-			}
-			if owner := metav1.GetControllerOf(&pvc); owner != nil && owner.Kind == redpandav1alpha2.BrokerKind {
-				l.Info("rollback: re-stripping Broker ownerRef from claim", "pvc", pvc.Name)
-				if err := stripOwnerRef(ctx, c, &pvc, owner.UID); err != nil {
-					return errors.Wrapf(err, "re-stripping Broker ownerRef from claim %s", pvc.Name)
-				}
-			}
-		}
 		owner := metav1.GetControllerOf(pod)
 		if owner == nil || owner.Kind != "StatefulSet" {
 			msg := fmt.Sprintf("waiting for the StatefulSet to adopt pod %s", pod.Name)
@@ -349,14 +285,8 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 		}
 		// Pods the BROKER controller created (rotations, decommission
 		// replacements) carry no controller-revision-hash — only the
-		// StatefulSet controller stamps it, and under OnDelete it never
-		// re-labels adopted pods — so the revision-based roll planners would
-		// treat every such pod as outdated and restart the fleet right after
-		// rollback. Hand them over as CURRENT by stamping the restored
-		// StatefulSet's revision: the backup is the state being rolled back
-		// TO, and any genuine drift from the next render re-rolls through
-		// the ordinary health-gated flow. Stamped before the backup
-		// ConfigMap is deleted, so an interrupted pass resumes here.
+		// StatefulSet controller stamps it. We need to stamp them here,
+		// so in case of rollback, there's no pod rotation triggered by cluster (or Redpanda) controller.
 		if pod.Labels[appsv1.StatefulSetRevisionLabel] == "" {
 			rev, ok := revisions[owner.Name]
 			if !ok {

@@ -1072,11 +1072,6 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 				revisions: pool1Revisions,
 			}},
 		},
-		// A pod WITHOUT a revision label was adopted, not created, by the
-		// StatefulSet (under OnDelete kube labels pods only at creation) —
-		// the Broker-CR rollback hands such pods over and stamps them one
-		// pass later. Unknowable-from-label must not mean "roll": rolling
-		// here restarted every adopted pod right after rollback.
 		"adopted-pod-without-revision-label": {
 			expectedPodsToRoll: nil,
 			existingPools: []*poolWithOrdinals{{
@@ -1091,11 +1086,6 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 				revisions: pool1Revisions,
 			}},
 		},
-		// No owned ControllerRevisions means outdatedness is UNKNOWABLE, and
-		// unknowable must not restart the fleet: the state is transient (the
-		// StatefulSet controller mints the revision at creation; a StatefulSet
-		// restored by rollback has to adopt its predecessor's orphaned
-		// revisions first), so nothing rolls until revisions appear.
 		"no-revisions": {
 			expectedPodsToRoll: nil,
 			existingPools: []*poolWithOrdinals{{

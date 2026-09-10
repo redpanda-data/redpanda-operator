@@ -595,7 +595,7 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc)
 			switch {
 			case err == nil:
-				if owner := metav1.GetControllerOf(&pvc); owner == nil || metav1.IsControlledBy(&pvc, broker) {
+				if metav1.GetControllerOf(&pvc) == nil {
 					l.Info("pvc still terminating", "pvc", name)
 					return ctrl.Result{RequeueAfter: requeueShort}, nil // still terminating, requeue
 				}
