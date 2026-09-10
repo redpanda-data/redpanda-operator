@@ -198,8 +198,13 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 					t.Logf("[multicluster-diagnostics] failed to get logs for %s: %v", pod.Name, err)
 					continue
 				}
-				logBytes, _ := io.ReadAll(logStream)
-				_ = logStream.Close()
+				logBytes, err := io.ReadAll(logStream)
+				if err != nil {
+					t.Logf("[multicluster-diagnostics] failed to read logs for %s: %v", pod.Name, err)
+				}
+				if err := logStream.Close(); err != nil {
+					t.Logf("[multicluster-diagnostics] failed to close log stream for %s: %v", pod.Name, err)
+				}
 
 				logStr := string(logBytes)
 				dumpLayeredControllerLogs(t, pod.Name, logStr)
@@ -286,8 +291,13 @@ func dumpVClusterContainerLog(ctx context.Context, t framework.TestingT, k8sClie
 		t.Logf("[multicluster-diagnostics] failed to get logs for %s: %v", name, err)
 		return
 	}
-	logBytes, _ := io.ReadAll(stream)
-	_ = stream.Close()
+	logBytes, err := io.ReadAll(stream)
+	if err != nil {
+		t.Logf("[multicluster-diagnostics] failed to read logs for %s: %v", name, err)
+	}
+	if err := stream.Close(); err != nil {
+		t.Logf("[multicluster-diagnostics] failed to close log stream for %s: %v", name, err)
+	}
 	t.Logf("[multicluster-diagnostics] === logs %s (last %d lines) ===\n%s", name, tailLines, logBytes)
 }
 
