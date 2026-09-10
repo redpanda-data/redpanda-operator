@@ -12,8 +12,9 @@ Feature: Broker CRD migration from StatefulSet
         image: ${DEFAULT_REDPANDA_REPO}
         version: ${DEFAULT_REDPANDA_TAG}
         replicas: 3
-        # The harpoon k3d cluster defaults not-ready/unreachable tolerations
-        # to 10s (pkg/k3d) so node-failure tests evict fast. These scenarios
+        # The harpoon k3d cluster sets not-ready/unreachable tolerations to
+        # 10s (k3d.WithFastNodeFailureDetection) so node-failure tests evict
+        # fast. These scenarios
         # assert pod-UID stability — a transient agent-node blip must NOT
         # evict brokers mid-scenario.
         tolerations:

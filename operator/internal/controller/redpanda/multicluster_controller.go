@@ -275,9 +275,12 @@ func (r *MulticlusterReconciler) Reconcile(ctx context.Context, req mcreconcile.
 			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: requeueTimeout}, nil)
 		}
 
-		// All clusters are deleting — safe to proceed with cleanup.
+		// All clusters are deleting — safe to proceed with cleanup. Requeue
+		// while resources are still going away: nothing this controller
+		// watches fires when a Pod or StatefulSet finally disappears, so a
+		// bare result would fall through to the 3m periodicRequeue.
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
-			return r.syncStatus(ctx, cluster, state, ctrl.Result{}, err)
+			return r.syncStatus(ctx, cluster, state, ctrl.Result{RequeueAfter: requeueTimeout}, err)
 		}
 		if controllerutil.RemoveFinalizer(stretchCluster, FinalizerKey) {
 			if err := k8sClient.Update(ctx, stretchCluster); err != nil {

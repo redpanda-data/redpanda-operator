@@ -288,9 +288,12 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 
 	// Examine if the object is under deletion
 	if !rp.ObjectMeta.DeletionTimestamp.IsZero() {
-		// clean up all dependant resources
+		// clean up all dependant resources, requeueing while they are still
+		// going away: no watched object fires when a Pod or StatefulSet
+		// finally disappears, so a bare result would fall through to the 3m
+		// periodicRequeue.
 		if deleted, err := r.LifecycleClient.DeleteAll(ctx, state.cluster); deleted || err != nil {
-			return r.syncStatus(ctx, cluster, state, reconcile.Result{}, err)
+			return r.syncStatus(ctx, cluster, state, reconcile.Result{RequeueAfter: requeueTimeout}, err)
 		}
 		if controllerutil.RemoveFinalizer(rp, FinalizerKey) {
 			if err := k8sClient.Update(ctx, rp); err != nil {

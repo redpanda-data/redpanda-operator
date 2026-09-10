@@ -84,17 +84,18 @@ func (c clusterOpt) apply(config *clusterConfig) {
 }
 
 type clusterConfig struct {
-	agents           int
-	timeout          time.Duration
-	image            string
-	skipManifests    bool
-	serverNoSchedule bool
-	network          string
-	domain           string
-	port             int
-	portMappings     []PortMapping
-	clusterCIDR      string
-	serviceCIDR      string
+	agents                   int
+	timeout                  time.Duration
+	image                    string
+	skipManifests            bool
+	serverNoSchedule         bool
+	fastNodeFailureDetection bool
+	network                  string
+	domain                   string
+	port                     int
+	portMappings             []PortMapping
+	clusterCIDR              string
+	serviceCIDR              string
 }
 
 func defaultClusterConfig() *clusterConfig {
@@ -119,6 +120,18 @@ func WithAgents(agents int) clusterOpt {
 func WithServerNoSchedule() clusterOpt {
 	return func(config *clusterConfig) {
 		config.serverNoSchedule = true
+	}
+}
+
+// WithFastNodeFailureDetection drops the node-monitor grace period and the
+// not-ready/unreachable eviction tolerations from their kube defaults (40s and
+// 5m) to 10s so tests that kill nodes see pods evicted quickly. The grace
+// period then equals the kubelet's 10s heartbeat interval, so any late
+// heartbeat flaps the node NotReady; only enable it in suites that actually
+// delete or stop nodes.
+func WithFastNodeFailureDetection() clusterOpt {
+	return func(config *clusterConfig) {
+		config.fastNodeFailureDetection = true
 	}
 }
 
@@ -325,70 +338,7 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 		opt.apply(config)
 	}
 
-	args := []string{
-		"cluster",
-		"create",
-		name,
-		fmt.Sprintf("--agents=%d", config.agents),
-		fmt.Sprintf("--timeout=%s", config.timeout),
-		fmt.Sprintf("--image=%s", config.image),
-		// If k3d cluster create will fail please uncomment no-rollback flag
-		// "--no-rollback",
-		// See also https://github.com/k3d-io/k3d/blob/main/docs/faq/faq.md#passing-additional-argumentsflags-to-k3s-and-on-to-eg-the-kube-apiserver
-		// As the formatting is QUITE finicky.
-		// Halve the node-monitor-grace-period to speed up tests that rely on dead node detection.
-		`--k3s-arg`, `--kube-controller-manager-arg=node-monitor-grace-period=10s@server:*`,
-		// Dramatically decrease (5m -> 10s) the default tolerations to ensure
-		// Pod eviction happens in a timely fashion.
-		`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
-		`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
-		// Disable bundled k3s components that we don't use in tests.
-		`--k3s-arg`, `--disable=traefik@server:*`,
-		`--k3s-arg`, `--disable=servicelb@server:*`,
-		// Raise kubelet image-pull rate limits and allow parallel pulls. The
-		// kubelet defaults (registry-qps=5, registry-burst=10,
-		// serialize-image-pulls=true) throttle the burst of pulls when many
-		// pods start at once (e.g. several multicluster acceptance features
-		// each launching vclusters + Redpanda), surfacing as "pull QPS
-		// exceeded" events and slow/crashlooping pods. Apply to both server and
-		// agent kubelets since pods may schedule on either.
-		`--k3s-arg`, `--kubelet-arg=registry-qps=20@server:*`,
-		`--k3s-arg`, `--kubelet-arg=registry-burst=40@server:*`,
-		`--k3s-arg`, `--kubelet-arg=serialize-image-pulls=false@server:*`,
-		`--k3s-arg`, `--kubelet-arg=registry-qps=20@agent:*`,
-		`--k3s-arg`, `--kubelet-arg=registry-burst=40@agent:*`,
-		`--k3s-arg`, `--kubelet-arg=serialize-image-pulls=false@agent:*`,
-		`--network`, config.network,
-		`--verbose`,
-	}
-
-	for _, mapping := range config.portMappings {
-		args = append(args, `--port`, fmt.Sprintf("%d:%d@loadbalancer", mapping.Host, mapping.Target))
-	}
-
-	if config.domain != "" {
-		args = append(args, `--k3s-arg`, `--cluster-domain=`+config.domain+"@server:*")
-	}
-
-	if config.port != 0 {
-		args = append(args, `--api-port`, strconv.Itoa(config.port))
-	}
-
-	if config.clusterCIDR != "" {
-		args = append(args, `--k3s-arg`, `--cluster-cidr=`+config.clusterCIDR+`@server:*`)
-	}
-	if config.serviceCIDR != "" {
-		args = append(args, `--k3s-arg`, `--service-cidr=`+config.serviceCIDR+`@server:*`)
-	}
-
-	if config.serverNoSchedule {
-		args = append(args, []string{
-			// This can be useful for tests in which we don't want to accidentally
-			// kill the API server when we delete arbitrary nodes to simulate
-			// hardware failures
-			`--k3s-arg`, `--node-taint=server=true:NoSchedule@server:*`,
-		}...)
-	}
+	args := clusterCreateArgs(name, config)
 
 	// When Docker Hub credentials are available (CI), authenticate the
 	// cluster's containerd against docker.io so in-cluster image pulls
@@ -429,6 +379,77 @@ Use testutils.SkipIfNotIntegration or testutils.SkipIfNotAcceptance to gate test
 	clearImageMarkers(name)
 
 	return loadCluster(name, config)
+}
+
+func clusterCreateArgs(name string, config *clusterConfig) []string {
+	args := []string{
+		"cluster",
+		"create",
+		name,
+		fmt.Sprintf("--agents=%d", config.agents),
+		fmt.Sprintf("--timeout=%s", config.timeout),
+		fmt.Sprintf("--image=%s", config.image),
+		// If k3d cluster create will fail please uncomment no-rollback flag
+		// "--no-rollback",
+		// See also https://github.com/k3d-io/k3d/blob/main/docs/faq/faq.md#passing-additional-argumentsflags-to-k3s-and-on-to-eg-the-kube-apiserver
+		// As the formatting is QUITE finicky.
+		// Disable bundled k3s components that we don't use in tests.
+		`--k3s-arg`, `--disable=traefik@server:*`,
+		`--k3s-arg`, `--disable=servicelb@server:*`,
+		// Raise kubelet image-pull rate limits and allow parallel pulls. The
+		// kubelet defaults (registry-qps=5, registry-burst=10,
+		// serialize-image-pulls=true) throttle the burst of pulls when many
+		// pods start at once (e.g. several multicluster acceptance features
+		// each launching vclusters + Redpanda), surfacing as "pull QPS
+		// exceeded" events and slow/crashlooping pods. Apply to both server and
+		// agent kubelets since pods may schedule on either.
+		`--k3s-arg`, `--kubelet-arg=registry-qps=20@server:*`,
+		`--k3s-arg`, `--kubelet-arg=registry-burst=40@server:*`,
+		`--k3s-arg`, `--kubelet-arg=serialize-image-pulls=false@server:*`,
+		`--k3s-arg`, `--kubelet-arg=registry-qps=20@agent:*`,
+		`--k3s-arg`, `--kubelet-arg=registry-burst=40@agent:*`,
+		`--k3s-arg`, `--kubelet-arg=serialize-image-pulls=false@agent:*`,
+		`--network`, config.network,
+		`--verbose`,
+	}
+
+	if config.fastNodeFailureDetection {
+		args = append(args,
+			`--k3s-arg`, `--kube-controller-manager-arg=node-monitor-grace-period=10s@server:*`,
+			`--k3s-arg`, `--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
+			`--k3s-arg`, `--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
+		)
+	}
+
+	for _, mapping := range config.portMappings {
+		args = append(args, `--port`, fmt.Sprintf("%d:%d@loadbalancer", mapping.Host, mapping.Target))
+	}
+
+	if config.domain != "" {
+		args = append(args, `--k3s-arg`, `--cluster-domain=`+config.domain+"@server:*")
+	}
+
+	if config.port != 0 {
+		args = append(args, `--api-port`, strconv.Itoa(config.port))
+	}
+
+	if config.clusterCIDR != "" {
+		args = append(args, `--k3s-arg`, `--cluster-cidr=`+config.clusterCIDR+`@server:*`)
+	}
+	if config.serviceCIDR != "" {
+		args = append(args, `--k3s-arg`, `--service-cidr=`+config.serviceCIDR+`@server:*`)
+	}
+
+	if config.serverNoSchedule {
+		args = append(args, []string{
+			// This can be useful for tests in which we don't want to accidentally
+			// kill the API server when we delete arbitrary nodes to simulate
+			// hardware failures
+			`--k3s-arg`, `--node-taint=server=true:NoSchedule@server:*`,
+		}...)
+	}
+
+	return args
 }
 
 func loadCluster(name string, config *clusterConfig) (*Cluster, error) {
