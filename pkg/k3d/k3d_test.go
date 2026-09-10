@@ -16,6 +16,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
@@ -56,4 +57,28 @@ func TestIntegrationMultiInstance(t *testing.T) {
 	}
 
 	assert.NoError(t, errors.Join(errs...))
+}
+
+func TestClusterCreateArgs(t *testing.T) {
+	fastDetectionArgs := []string{
+		`--kube-controller-manager-arg=node-monitor-grace-period=10s@server:*`,
+		`--kube-apiserver-arg=default-not-ready-toleration-seconds=10@server:*`,
+		`--kube-apiserver-arg=default-unreachable-toleration-seconds=10@server:*`,
+	}
+
+	t.Run("kube default node health unless opted in", func(t *testing.T) {
+		args := clusterCreateArgs("test", defaultClusterConfig())
+		for _, arg := range fastDetectionArgs {
+			require.NotContains(t, args, arg)
+		}
+	})
+
+	t.Run("WithFastNodeFailureDetection", func(t *testing.T) {
+		config := defaultClusterConfig()
+		WithFastNodeFailureDetection().apply(config)
+		args := clusterCreateArgs("test", config)
+		for _, arg := range fastDetectionArgs {
+			require.Contains(t, args, arg)
+		}
+	})
 }
