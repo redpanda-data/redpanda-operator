@@ -840,6 +840,7 @@ func Run(
 			IDHash:              idHash,
 			Features:            features,
 			ConnectDefaultImage: opts.connectDefaultImage,
+			BrokerCREnabled:     opts.enableBrokerController,
 			Period:              opts.telemetryPeriod,
 		})
 		if err != nil {

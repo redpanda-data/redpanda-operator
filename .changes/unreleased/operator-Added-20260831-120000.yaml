@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: "Anonymous operator telemetry now reports the experimental Broker CR mode: the new `broker` section carries `enabled` (the operator's `--enable-broker` flag - whether the Broker controller runs at all) and `count` (the number of Broker CRs, i.e. broker pods managed as Broker CRs instead of by a StatefulSet), so `enabled: true` with `count: 0` reads as available but unused and `count > 0` as in use; Broker CRs are only ever created by the Redpanda and Cluster controllers, so their existence is direct evidence of use. Installs without the experimental Broker CRD, or without RBAC to list it, report `count: 0` and still send the rest of the report"
+time: 2026-08-31T12:00:00+02:00
