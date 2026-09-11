@@ -86,7 +86,7 @@
 {{- $volumes = (concat (default (list) $volumes) (list $v_2)) -}}
 {{- end -}}
 {{- $volumes = (concat (default (list) $volumes) (list (get (fromJson (include "redpanda.kubeTokenAPIVolume" (dict "a" (list "kube-api-access")))) "r"))) -}}
-{{- if (and $state.Values.tuning.tune_aio_events $state.Values.tuning.apply_host_tuners) -}}
+{{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.tuning.tune_aio_events false)))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.tuning.apply_host_tuners false)))) "r")) -}}
 {{- $volumes = (concat (default (list) $volumes) (default (list) (get (fromJson (include "redpanda.HostTunerVolumes" (dict "a" (list)))) "r"))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -178,7 +178,7 @@
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list (get (fromJson (include "redpanda.Listeners.TrustStores" (dict "a" (list $state.Values.listeners $state.Values.tls)))) "r"))))) "r") | int) (0 | int)) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "truststores" "mountPath" "/etc/truststores" "readOnly" true)))) -}}
 {{- end -}}
-{{- if (and $state.Values.tuning.tune_aio_events $state.Values.tuning.apply_host_tuners) -}}
+{{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.tuning.tune_aio_events false)))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.tuning.apply_host_tuners false)))) "r")) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (get (fromJson (include "redpanda.HostTunerStateVolumeMount" (dict "a" (list)))) "r"))) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -230,12 +230,12 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (not $state.Values.tuning.tune_aio_events) -}}
+{{- if (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.tuning.tune_aio_events false)))) "r")) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if $state.Values.tuning.apply_host_tuners -}}
+{{- if (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.tuning.apply_host_tuners false)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (get (fromJson (include "redpanda.statefulSetInitContainerTuningOnHost" (dict "a" (list $state)))) "r")) | toJson -}}
 {{- break -}}
@@ -633,7 +633,7 @@ chroot /host /bin/bash -c '
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $sets := (list (get (fromJson (include "redpanda.StatefulSet" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
+{{- $sets := (list (get (fromJson (include "redpanda.StatefulSet" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "replicas" 0 "updateStrategy" (dict) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0) "sideCars" (dict "image" (dict "repository" "" "tag" "") "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "")) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r")) -}}
 {{- range $_, $set := $state.Pools -}}
 {{- $sets = (concat (default (list) $sets) (list (get (fromJson (include "redpanda.StatefulSet" (dict "a" (list $state $set)))) "r"))) -}}
 {{- end -}}

@@ -54,7 +54,7 @@ func Secret(state *RenderState) *corev1.Secret {
 			"authentication-oidc-client-secret": ptr.Deref(state.Values.Secret.Authentication.OIDC.ClientSecret, ""),
 
 			// License
-			"license": state.Values.Secret.License,
+			"license": ptr.Deref(state.Values.Secret.License, ""),
 
 			// Redpanda
 			"redpanda-admin-api-password": ptr.Deref(state.Values.Secret.Redpanda.AdminAPI.Password, ""),

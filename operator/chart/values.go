@@ -17,6 +17,7 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 var (
@@ -28,8 +29,8 @@ var (
 )
 
 type Peer struct {
-	Name    string `json:"name,omitempty" jsonschema:"required"`
-	Address string `json:"address,omitempty" jsonschema:"required"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
 	// Annotations are merged on top of Multicluster.Service.Annotations
 	// on the peer placeholder Service rendered for this peer.
 	Annotations map[string]string `json:"annotations,omitempty"`
@@ -105,6 +106,7 @@ type Enterprise struct {
 }
 
 type Values struct {
+	Global                map[string]any                `json:"global,omitempty"`
 	Enterprise            *Enterprise                   `json:"enterprise,omitempty"`
 	NameOverride          string                        `json:"nameOverride"`
 	FullnameOverride      string                        `json:"fullnameOverride"`
@@ -121,7 +123,7 @@ type Values struct {
 	NodeSelector          map[string]string             `json:"nodeSelector"`
 	Tolerations           []corev1.Toleration           `json:"tolerations"`
 	PriorityClassName     string                        `json:"priorityClassName"`
-	Affinity              *corev1.Affinity              `json:"affinity" jsonschema:"deprecated"`
+	Affinity              *corev1.Affinity              `json:"affinity,omitempty" jsonschema:"deprecated"`
 	Strategy              appsv1.DeploymentStrategy     `json:"strategy"`
 	Annotations           map[string]string             `json:"annotations,omitempty"`
 	PodAnnotations        map[string]string             `json:"podAnnotations"`
@@ -144,7 +146,7 @@ type Values struct {
 
 type ConnectMonitoringConfig struct {
 	Enabled        bool              `json:"enabled"`
-	ScrapeInterval string            `json:"scrapeInterval,omitempty"`
+	ScrapeInterval *string           `json:"scrapeInterval,omitempty"`
 	Labels         map[string]string `json:"labels,omitempty"`
 }
 
@@ -203,8 +205,8 @@ type CRDs struct {
 }
 
 type PodTemplateSpec struct {
-	Metadata Metadata       `json:"metadata,omitempty"`
-	Spec     corev1.PodSpec `json:"spec,omitempty" jsonschema:"required"`
+	Metadata Metadata                              `json:"metadata"`
+	Spec     applycorev1.PodSpecApplyConfiguration `json:"spec"`
 }
 
 type Metadata struct {
@@ -214,7 +216,7 @@ type Metadata struct {
 
 type Image struct {
 	Repository string            `json:"repository"`
-	PullPolicy corev1.PullPolicy `json:"pullPolicy" jsonschema:"required,pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy."`
+	PullPolicy corev1.PullPolicy `json:"pullPolicy" jsonschema:"pattern=^(Always|Never|IfNotPresent)$,description=The Kubernetes Pod image pull policy."`
 	Tag        *string           `json:"tag,omitempty"`
 }
 

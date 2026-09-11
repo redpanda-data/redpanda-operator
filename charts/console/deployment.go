@@ -45,7 +45,7 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 
 	var replicas *int32
 	if !state.Values.Autoscaling.Enabled {
-		replicas = ptr.To(state.Values.ReplicaCount)
+		replicas = ptr.To(ptr.Deref(state.Values.ReplicaCount, 1))
 	}
 
 	var initContainers []corev1.Container
@@ -106,12 +106,12 @@ func Deployment(state *RenderState) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					ImagePullSecrets:             state.Values.ImagePullSecrets,
 					ServiceAccountName:           ServiceAccountName(state),
-					AutomountServiceAccountToken: &state.Values.AutomountServiceAccountToken,
+					AutomountServiceAccountToken: ptr.To(ptr.Deref(state.Values.AutomountServiceAccountToken, false)),
 					SecurityContext:              &state.Values.PodSecurityContext,
 					NodeSelector:                 state.Values.NodeSelector,
 					Affinity:                     &state.Values.Affinity,
 					TopologySpreadConstraints:    state.Values.TopologySpreadConstraints,
-					PriorityClassName:            state.Values.PriorityClassName,
+					PriorityClassName:            ptr.Deref(state.Values.PriorityClassName, ""),
 					Tolerations:                  state.Values.Tolerations,
 					Volumes:                      consolePodVolumes(state),
 					InitContainers:               initContainers,
@@ -341,7 +341,7 @@ func consoleContainerEnv(state *RenderState) []corev1.EnvVar {
 			},
 		},
 		{
-			Value: state.Values.Secret.License,
+			Value: ptr.Deref(state.Values.Secret.License, ""),
 			EnvVar: corev1.EnvVar{
 				Name: "LICENSE",
 				ValueFrom: &corev1.EnvVarSource{

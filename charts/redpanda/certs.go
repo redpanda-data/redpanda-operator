@@ -67,7 +67,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 		// hostname-verification failures.
 		names = append(names, gatewayServerCertDNSNames(state, name)...)
 
-		duration := helmette.Default("43800h", data.Duration)
+		duration := ptr.Deref(data.Duration, "43800h")
 		issuerRef := ptr.Deref(data.IssuerRef, cmmetav1.ObjectReference{
 			Kind:  "Issuer",
 			Group: "cert-manager.io",
@@ -121,7 +121,7 @@ func ClientCerts(state *RenderState) []*certmanagerv1.Certificate {
 			issuerRef.Group = "cert-manager.io"
 		}
 
-		duration := helmette.Default("43800h", data.Duration)
+		duration := ptr.Deref(data.Duration, "43800h")
 
 		certs = append(certs, &certmanagerv1.Certificate{
 			TypeMeta: metav1.TypeMeta{

@@ -36,6 +36,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -57,6 +61,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -68,6 +76,10 @@
                         "type": "integer"
                       }
                     },
+                    "required": [
+                      "weight",
+                      "preference"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -103,6 +115,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -124,6 +140,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -139,6 +159,9 @@
                   ]
                 }
               },
+              "required": [
+                "nodeSelectorTerms"
+              ],
               "type": "object"
             }
           },
@@ -176,6 +199,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -221,6 +248,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -244,12 +275,19 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "topologyKey"
+                        ],
                         "type": "object"
                       },
                       "weight": {
                         "type": "integer"
                       }
                     },
+                    "required": [
+                      "weight",
+                      "podAffinityTerm"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -285,6 +323,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -330,6 +372,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -353,6 +399,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "topologyKey"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -397,6 +446,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -442,6 +495,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -465,12 +522,19 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "topologyKey"
+                        ],
                         "type": "object"
                       },
                       "weight": {
                         "type": "integer"
                       }
                     },
+                    "required": [
+                      "weight",
+                      "podAffinityTerm"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -506,6 +570,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -551,6 +619,10 @@
                                   "type": "array"
                                 }
                               },
+                              "required": [
+                                "key",
+                                "operator"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -574,6 +646,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "topologyKey"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -617,6 +692,11 @@
           "type": "integer"
         }
       },
+      "required": [
+        "enabled",
+        "minReplicas",
+        "maxReplicas"
+      ],
       "type": "object"
     },
     "commonLabels": {
@@ -635,6 +715,9 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "create"
+      ],
       "type": "object"
     },
     "deployment": {
@@ -670,6 +753,9 @@
           ]
         }
       },
+      "required": [
+        "create"
+      ],
       "type": "object"
     },
     "enabled": {
@@ -697,6 +783,9 @@
                 "type": "string"
               }
             },
+            "required": [
+              "containerPort"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -750,6 +839,9 @@
                               "type": "boolean"
                             }
                           },
+                          "required": [
+                            "key"
+                          ],
                           "type": "object"
                         },
                         "fieldRef": {
@@ -762,6 +854,9 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "fieldPath"
+                          ],
                           "type": "object"
                         },
                         "fileKeyRef": {
@@ -780,6 +875,11 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "volumeName",
+                            "path",
+                            "key"
+                          ],
                           "type": "object"
                         },
                         "resourceFieldRef": {
@@ -803,6 +903,9 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "resource"
+                          ],
                           "type": "object"
                         },
                         "secretKeyRef": {
@@ -818,12 +921,18 @@
                               "type": "boolean"
                             }
                           },
+                          "required": [
+                            "key"
+                          ],
                           "type": "object"
                         }
                       },
                       "type": "object"
                     }
                   },
+                  "required": [
+                    "name"
+                  ],
                   "type": "object"
                 },
                 "type": "array"
@@ -905,6 +1014,10 @@
                                   "type": "string"
                                 }
                               },
+                              "required": [
+                                "name",
+                                "value"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -926,6 +1039,9 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "port"
+                        ],
                         "type": "object"
                       },
                       "sleep": {
@@ -935,6 +1051,9 @@
                             "type": "integer"
                           }
                         },
+                        "required": [
+                          "seconds"
+                        ],
                         "type": "object"
                       },
                       "tcpSocket": {
@@ -954,6 +1073,9 @@
                             ]
                           }
                         },
+                        "required": [
+                          "port"
+                        ],
                         "type": "object"
                       }
                     },
@@ -991,6 +1113,10 @@
                                   "type": "string"
                                 }
                               },
+                              "required": [
+                                "name",
+                                "value"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -1012,6 +1138,9 @@
                             "type": "string"
                           }
                         },
+                        "required": [
+                          "port"
+                        ],
                         "type": "object"
                       },
                       "sleep": {
@@ -1021,6 +1150,9 @@
                             "type": "integer"
                           }
                         },
+                        "required": [
+                          "seconds"
+                        ],
                         "type": "object"
                       },
                       "tcpSocket": {
@@ -1040,6 +1172,9 @@
                             ]
                           }
                         },
+                        "required": [
+                          "port"
+                        ],
                         "type": "object"
                       }
                     },
@@ -1079,6 +1214,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "port",
+                      "service"
+                    ],
                     "type": "object"
                   },
                   "httpGet": {
@@ -1098,6 +1237,10 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "name",
+                            "value"
+                          ],
                           "type": "object"
                         },
                         "type": "array"
@@ -1119,6 +1262,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "port"
+                    ],
                     "type": "object"
                   },
                   "initialDelaySeconds": {
@@ -1147,6 +1293,9 @@
                         ]
                       }
                     },
+                    "required": [
+                      "port"
+                    ],
                     "type": "object"
                   },
                   "terminationGracePeriodSeconds": {
@@ -1181,6 +1330,9 @@
                       "type": "string"
                     }
                   },
+                  "required": [
+                    "containerPort"
+                  ],
                   "type": "object"
                 },
                 "type": "array"
@@ -1213,6 +1365,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "port",
+                      "service"
+                    ],
                     "type": "object"
                   },
                   "httpGet": {
@@ -1232,6 +1388,10 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "name",
+                            "value"
+                          ],
                           "type": "object"
                         },
                         "type": "array"
@@ -1253,6 +1413,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "port"
+                    ],
                     "type": "object"
                   },
                   "initialDelaySeconds": {
@@ -1281,6 +1444,9 @@
                         ]
                       }
                     },
+                    "required": [
+                      "port"
+                    ],
                     "type": "object"
                   },
                   "terminationGracePeriodSeconds": {
@@ -1303,6 +1469,10 @@
                       "type": "string"
                     }
                   },
+                  "required": [
+                    "resourceName",
+                    "restartPolicy"
+                  ],
                   "type": "object"
                 },
                 "type": "array"
@@ -1321,6 +1491,9 @@
                           "type": "string"
                         }
                       },
+                      "required": [
+                        "name"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
@@ -1402,6 +1575,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "type"
+                    ],
                     "type": "object"
                   },
                   "capabilities": {
@@ -1468,6 +1644,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "type"
+                    ],
                     "type": "object"
                   },
                   "windowsOptions": {
@@ -1519,6 +1698,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "port",
+                      "service"
+                    ],
                     "type": "object"
                   },
                   "httpGet": {
@@ -1538,6 +1721,10 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "name",
+                            "value"
+                          ],
                           "type": "object"
                         },
                         "type": "array"
@@ -1559,6 +1746,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "port"
+                    ],
                     "type": "object"
                   },
                   "initialDelaySeconds": {
@@ -1587,6 +1777,9 @@
                         ]
                       }
                     },
+                    "required": [
+                      "port"
+                    ],
                     "type": "object"
                   },
                   "terminationGracePeriodSeconds": {
@@ -1624,6 +1817,10 @@
                       "type": "string"
                     }
                   },
+                  "required": [
+                    "name",
+                    "devicePath"
+                  ],
                   "type": "object"
                 },
                 "type": "array"
@@ -1654,6 +1851,10 @@
                       "type": "string"
                     }
                   },
+                  "required": [
+                    "name",
+                    "mountPath"
+                  ],
                   "type": "object"
                 },
                 "type": "array"
@@ -1662,6 +1863,9 @@
                 "type": "string"
               }
             },
+            "required": [
+              "name"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -1699,6 +1903,9 @@
                         "type": "boolean"
                       }
                     },
+                    "required": [
+                      "key"
+                    ],
                     "type": "object"
                   },
                   "fieldRef": {
@@ -1711,6 +1918,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "fieldPath"
+                    ],
                     "type": "object"
                   },
                   "fileKeyRef": {
@@ -1729,6 +1939,11 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "volumeName",
+                      "path",
+                      "key"
+                    ],
                     "type": "object"
                   },
                   "resourceFieldRef": {
@@ -1752,6 +1967,9 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "resource"
+                    ],
                     "type": "object"
                   },
                   "secretKeyRef": {
@@ -1767,12 +1985,18 @@
                         "type": "boolean"
                       }
                     },
+                    "required": [
+                      "key"
+                    ],
                     "type": "object"
                   }
                 },
                 "type": "object"
               }
             },
+            "required": [
+              "name"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -1853,6 +2077,10 @@
                 "type": "string"
               }
             },
+            "required": [
+              "name",
+              "mountPath"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -1884,6 +2112,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "volumeID"
+                ],
                 "type": "object"
               },
               "azureDisk": {
@@ -1908,6 +2139,10 @@
                     "type": "boolean"
                   }
                 },
+                "required": [
+                  "diskName",
+                  "diskURI"
+                ],
                 "type": "object"
               },
               "azureFile": {
@@ -1923,6 +2158,10 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "secretName",
+                  "shareName"
+                ],
                 "type": "object"
               },
               "cephfs": {
@@ -1956,6 +2195,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "monitors"
+                ],
                 "type": "object"
               },
               "cinder": {
@@ -1980,6 +2222,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "volumeID"
+                ],
                 "type": "object"
               },
               "configMap": {
@@ -2002,6 +2247,10 @@
                           "type": "string"
                         }
                       },
+                      "required": [
+                        "key",
+                        "path"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
@@ -2043,6 +2292,9 @@
                     "type": "object"
                   }
                 },
+                "required": [
+                  "driver"
+                ],
                 "type": "object"
               },
               "downwardAPI": {
@@ -2065,6 +2317,9 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "fieldPath"
+                          ],
                           "type": "object"
                         },
                         "mode": {
@@ -2094,9 +2349,15 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "resource"
+                          ],
                           "type": "object"
                         }
                       },
+                      "required": [
+                        "path"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
@@ -2233,6 +2494,12 @@
                                   "type": "string"
                                 }
                               },
+                              "required": [
+                                "apiVersion",
+                                "kind",
+                                "name",
+                                "uid"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -2271,6 +2538,11 @@
                                 "type": "string"
                               }
                             },
+                            "required": [
+                              "apiGroup",
+                              "kind",
+                              "name"
+                            ],
                             "type": "object"
                           },
                           "dataSourceRef": {
@@ -2289,6 +2561,11 @@
                                 "type": "string"
                               }
                             },
+                            "required": [
+                              "apiGroup",
+                              "kind",
+                              "name"
+                            ],
                             "type": "object"
                           },
                           "resources": {
@@ -2345,6 +2622,10 @@
                                       "type": "array"
                                     }
                                   },
+                                  "required": [
+                                    "key",
+                                    "operator"
+                                  ],
                                   "type": "object"
                                 },
                                 "type": "array"
@@ -2374,6 +2655,9 @@
                         "type": "object"
                       }
                     },
+                    "required": [
+                      "spec"
+                    ],
                     "type": "object"
                   }
                 },
@@ -2434,6 +2718,9 @@
                     "type": "object"
                   }
                 },
+                "required": [
+                  "driver"
+                ],
                 "type": "object"
               },
               "flocker": {
@@ -2464,6 +2751,9 @@
                     "type": "boolean"
                   }
                 },
+                "required": [
+                  "pdName"
+                ],
                 "type": "object"
               },
               "gitRepo": {
@@ -2479,6 +2769,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "repository"
+                ],
                 "type": "object"
               },
               "glusterfs": {
@@ -2494,6 +2787,10 @@
                     "type": "boolean"
                   }
                 },
+                "required": [
+                  "endpoints",
+                  "path"
+                ],
                 "type": "object"
               },
               "hostPath": {
@@ -2506,6 +2803,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "path"
+                ],
                 "type": "object"
               },
               "image": {
@@ -2566,6 +2866,11 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "targetPortal",
+                  "iqn",
+                  "lun"
+                ],
                 "type": "object"
               },
               "name": {
@@ -2584,6 +2889,10 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "server",
+                  "path"
+                ],
                 "type": "object"
               },
               "persistentVolumeClaim": {
@@ -2596,6 +2905,9 @@
                     "type": "boolean"
                   }
                 },
+                "required": [
+                  "claimName"
+                ],
                 "type": "object"
               },
               "photonPersistentDisk": {
@@ -2608,6 +2920,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "pdID"
+                ],
                 "type": "object"
               },
               "portworxVolume": {
@@ -2623,6 +2938,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "volumeID"
+                ],
                 "type": "object"
               },
               "projected": {
@@ -2658,6 +2976,10 @@
                                         "type": "array"
                                       }
                                     },
+                                    "required": [
+                                      "key",
+                                      "operator"
+                                    ],
                                     "type": "object"
                                   },
                                   "type": "array"
@@ -2684,6 +3006,9 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "path"
+                          ],
                           "type": "object"
                         },
                         "configMap": {
@@ -2703,6 +3028,10 @@
                                     "type": "string"
                                   }
                                 },
+                                "required": [
+                                  "key",
+                                  "path"
+                                ],
                                 "type": "object"
                               },
                               "type": "array"
@@ -2733,6 +3062,9 @@
                                         "type": "string"
                                       }
                                     },
+                                    "required": [
+                                      "fieldPath"
+                                    ],
                                     "type": "object"
                                   },
                                   "mode": {
@@ -2762,9 +3094,15 @@
                                         "type": "string"
                                       }
                                     },
+                                    "required": [
+                                      "resource"
+                                    ],
                                     "type": "object"
                                   }
                                 },
+                                "required": [
+                                  "path"
+                                ],
                                 "type": "object"
                               },
                               "type": "array"
@@ -2819,6 +3157,10 @@
                                     "type": "string"
                                   }
                                 },
+                                "required": [
+                                  "key",
+                                  "path"
+                                ],
                                 "type": "object"
                               },
                               "type": "array"
@@ -2845,6 +3187,9 @@
                               "type": "string"
                             }
                           },
+                          "required": [
+                            "path"
+                          ],
                           "type": "object"
                         }
                       },
@@ -2853,6 +3198,9 @@
                     "type": "array"
                   }
                 },
+                "required": [
+                  "sources"
+                ],
                 "type": "object"
               },
               "quobyte": {
@@ -2877,6 +3225,10 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "registry",
+                  "volume"
+                ],
                 "type": "object"
               },
               "rbd": {
@@ -2916,6 +3268,10 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "monitors",
+                  "image"
+                ],
                 "type": "object"
               },
               "scaleIO": {
@@ -2958,6 +3314,11 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "gateway",
+                  "system",
+                  "secretRef"
+                ],
                 "type": "object"
               },
               "secret": {
@@ -2980,6 +3341,10 @@
                           "type": "string"
                         }
                       },
+                      "required": [
+                        "key",
+                        "path"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
@@ -3036,9 +3401,15 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "volumePath"
+                ],
                 "type": "object"
               }
             },
+            "required": [
+              "name"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -3092,6 +3463,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "name"
+                ],
                 "type": "object"
               },
               "type": "array"
@@ -3108,6 +3482,13 @@
           "type": "string"
         }
       },
+      "required": [
+        "enabled",
+        "annotations",
+        "parentRefs",
+        "hostnames",
+        "path"
+      ],
       "type": "object"
     },
     "global": {
@@ -3129,6 +3510,12 @@
           "type": "string"
         }
       },
+      "required": [
+        "registry",
+        "repository",
+        "pullPolicy",
+        "tag"
+      ],
       "type": "object"
     },
     "imagePullSecrets": {
@@ -3185,11 +3572,17 @@
                           "type": "string"
                         }
                       },
+                      "required": [
+                        "path"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
                   }
                 },
+                "required": [
+                  "host"
+                ],
                 "type": "object"
               },
               "type": "array"
@@ -3225,6 +3618,12 @@
           ]
         }
       },
+      "required": [
+        "enabled",
+        "annotations",
+        "hosts",
+        "tls"
+      ],
       "type": "object"
     },
     "initContainers": {
@@ -3249,6 +3648,9 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "key"
+      ],
       "type": "object"
     },
     "livenessProbe": {
@@ -3286,6 +3688,10 @@
               "type": "string"
             }
           },
+          "required": [
+            "port",
+            "service"
+          ],
           "type": "object"
         },
         "httpGet": {
@@ -3307,6 +3713,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "name",
+                      "value"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -3333,6 +3743,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "initialDelaySeconds": {
@@ -3361,6 +3774,9 @@
               ]
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "terminationGracePeriodSeconds": {
@@ -3388,6 +3804,10 @@
           "type": "string"
         }
       },
+      "required": [
+        "enabled",
+        "labels"
+      ],
       "type": "object"
     },
     "nameOverride": {
@@ -3424,6 +3844,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "type"
+          ],
           "type": "object"
         },
         "fsGroup": {
@@ -3476,6 +3899,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "type"
+          ],
           "type": "object"
         },
         "supplementalGroups": {
@@ -3507,6 +3933,10 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "name",
+                  "value"
+                ],
                 "type": "object"
               },
               "type": "array"
@@ -3575,6 +4005,10 @@
               "type": "string"
             }
           },
+          "required": [
+            "port",
+            "service"
+          ],
           "type": "object"
         },
         "httpGet": {
@@ -3596,6 +4030,10 @@
                         "type": "string"
                       }
                     },
+                    "required": [
+                      "name",
+                      "value"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -3622,6 +4060,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "initialDelaySeconds": {
@@ -3650,6 +4091,9 @@
               ]
             }
           },
+          "required": [
+            "port"
+          ],
           "type": "object"
         },
         "terminationGracePeriodSeconds": {
@@ -3680,6 +4124,9 @@
                     "type": "string"
                   }
                 },
+                "required": [
+                  "name"
+                ],
                 "type": "object"
               },
               "type": "array"
@@ -3739,6 +4186,10 @@
               "type": "object"
             }
           },
+          "required": [
+            "jwtSigningKey",
+            "oidc"
+          ],
           "type": "object"
         },
         "create": {
@@ -3793,6 +4244,9 @@
               "type": "object"
             }
           },
+          "required": [
+            "adminApi"
+          ],
           "type": "object"
         },
         "schemaRegistry": {
@@ -3826,6 +4280,14 @@
           "type": "object"
         }
       },
+      "required": [
+        "create",
+        "kafka",
+        "authentication",
+        "redpanda",
+        "serde",
+        "schemaRegistry"
+      ],
       "type": "object"
     },
     "secretMounts": {
@@ -3850,6 +4312,11 @@
                 "type": "string"
               }
             },
+            "required": [
+              "name",
+              "secretName",
+              "path"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -3875,6 +4342,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "type"
+          ],
           "type": "object"
         },
         "capabilities": {
@@ -3955,6 +4425,9 @@
               "type": "string"
             }
           },
+          "required": [
+            "type"
+          ],
           "type": "object"
         },
         "windowsOptions": {
@@ -4000,6 +4473,11 @@
           "type": "string"
         }
       },
+      "required": [
+        "type",
+        "port",
+        "annotations"
+      ],
       "type": "object"
     },
     "serviceAccount": {
@@ -4021,6 +4499,12 @@
           "type": "string"
         }
       },
+      "required": [
+        "create",
+        "automountServiceAccountToken",
+        "annotations",
+        "name"
+      ],
       "type": "object"
     },
     "strategy": {
@@ -4065,6 +4549,9 @@
           "type": "boolean"
         }
       },
+      "required": [
+        "enabled"
+      ],
       "type": "object"
     },
     "tolerations": {
@@ -4124,6 +4611,10 @@
                           "type": "array"
                         }
                       },
+                      "required": [
+                        "key",
+                        "operator"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
@@ -4162,6 +4653,11 @@
                 "type": "string"
               }
             },
+            "required": [
+              "maxSkew",
+              "topologyKey",
+              "whenUnsatisfiable"
+            ],
             "type": "object"
           },
           "type": "array"
@@ -4172,5 +4668,42 @@
       ]
     }
   },
+  "required": [
+    "commonLabels",
+    "image",
+    "imagePullSecrets",
+    "serviceAccount",
+    "annotations",
+    "podAnnotations",
+    "podLabels",
+    "podSecurityContext",
+    "securityContext",
+    "service",
+    "ingress",
+    "gateway",
+    "resources",
+    "autoscaling",
+    "nodeSelector",
+    "tolerations",
+    "affinity",
+    "topologySpreadConstraints",
+    "config",
+    "extraEnv",
+    "extraEnvFrom",
+    "extraVolumes",
+    "extraVolumeMounts",
+    "extraContainers",
+    "extraContainerPorts",
+    "initContainers",
+    "secretMounts",
+    "secret",
+    "livenessProbe",
+    "readinessProbe",
+    "configmap",
+    "deployment",
+    "strategy",
+    "monitoring",
+    "tests"
+  ],
   "type": "object"
 }
