@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
@@ -449,6 +450,9 @@ func TestClientWatchResources(t *testing.T) {
 	for name, tt := range map[string]struct {
 		watchedResources []string
 		ownedResources   []string
+		clusterNames     []string
+		forOpts          []mcbuilder.ForOption
+		traceLogging     bool
 		testParams       clientTest
 	}{
 		"base": {
@@ -476,12 +480,53 @@ func TestClientWatchResources(t *testing.T) {
 				},
 			},
 		},
+		// StatefulSets are the node-pool type and are always watched via the
+		// dedicated owns registration; a renderer that also lists them in
+		// WatchedResourceTypes must not produce a second watch.
+		"statefulset-in-watched-types-not-duplicated": {
+			ownedResources: []string{"*v1.StatefulSet"},
+			testParams: clientTest{
+				watchedResources: []client.Object{
+					&appsv1.StatefulSet{},
+				},
+			},
+		},
+		// The multicluster path (traceLogging on, as both production
+		// constructors set) registers one watch per cluster name for every
+		// resource type, so events on peer clusters enqueue reconciles too.
+		"multicluster-per-cluster-watches": {
+			traceLogging: true,
+			clusterNames: []string{mcmanager.LocalCluster, "peer-a"},
+			watchedResources: []string{
+				"*v1.StatefulSet", "*v1.StatefulSet",
+				"*v1.Secret", "*v1.Secret",
+				"*v1.PersistentVolume", "*v1.PersistentVolume",
+			},
+			forOpts: []mcbuilder.ForOption{
+				mcbuilder.WithEngageWithLocalCluster(true),
+				mcbuilder.WithEngageWithProviderClusters(true),
+			},
+			testParams: clientTest{
+				watchedResources: []client.Object{
+					&appsv1.StatefulSet{},
+					&corev1.Secret{},
+					&corev1.PersistentVolume{},
+				},
+			},
+		},
 	} {
 		tt.testParams.Run(parentCtx, t, name, func(t *testing.T, instances *clientTestInstances, cluster *MockCluster) {
 			builder := NewMockBuilder(instances.manager)
+			instances.resourceClient.traceLogging = tt.traceLogging
 
-			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}, []string{mcmanager.LocalCluster}))
+			clusterNames := tt.clusterNames
+			if clusterNames == nil {
+				clusterNames = []string{mcmanager.LocalCluster}
+			}
+
+			require.NoError(t, instances.resourceClient.WatchResources(builder, &MockCluster{}, clusterNames, tt.forOpts...))
 			require.Equal(t, "*lifecycle.MockCluster", builder.Base())
+			require.Len(t, builder.ForOptions(), len(tt.forOpts))
 
 			require.ElementsMatch(t, tt.ownedResources, builder.Owned())
 			require.ElementsMatch(t, tt.watchedResources, builder.Watched())

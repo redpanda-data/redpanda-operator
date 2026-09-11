@@ -2075,47 +2075,63 @@ func SetupMulticlusterController(ctx context.Context, mgr multicluster.Manager, 
 	if factory == nil {
 		return errors.New("SetupMulticlusterController requires a non-nil client factory")
 	}
-	return mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+	lifecycleClient := lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration)
+
+	builder := mcbuilder.ControllerManagedBy(mgr).WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
 		// NB: This is gross, but currently the multicluster runtime doesn't hand this global option off to the controller
 		// registration properly, so we can't boot multiple controllers in test without doing this.
 		// Consider an upstream fix.
 		SkipNameValidation: ptr.To(true),
-	}).For(
-		&redpandav1alpha2.StretchCluster{},
+	})
+
+	// Watch the StretchCluster itself plus every resource the lifecycle
+	// renderers create (StatefulSets, Services, ConfigMaps, Secrets, ...), so
+	// drift in an owned resource triggers reconciliation instead of waiting
+	// for the periodic requeue. Watches are keyed by the union of registered
+	// and configured cluster names: setup runs before the provider registers
+	// any raft peer, so GetClusterNames() alone would leave every peer's
+	// resources unwatched.
+	watchClusters := unionClusterNames(mgr.GetClusterNames(), mgr.GetConfiguredClusterNames())
+	if err := lifecycleClient.WatchResources(builder, &redpandav1alpha2.StretchCluster{}, watchClusters,
 		mcbuilder.WithEngageWithLocalCluster(true),
-		mcbuilder.WithEngageWithProviderClusters(true)).
-		Watches(&redpandav1alpha2.RedpandaBrokerPool{}, func(clusterName string, _ cluster.Cluster) mchandler.EventHandler {
-			return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
-				l := log.FromContext(ctx).WithName("MulticlusterReconciler.RedpandaBrokerPoolWatch").V(log.TraceLevel)
-				np, ok := object.(*redpandav1alpha2.RedpandaBrokerPool)
-				if !ok {
-					return nil
-				}
-				if !np.Spec.ClusterRef.IsStretchCluster() {
-					return nil
-				}
-				l.V(log.TraceLevel).Info("RedpandaBrokerPool event received", "brokerPool", client.ObjectKeyFromObject(np).String(), "clusterRef", np.Spec.ClusterRef.Name)
-				return []mcreconcile.Request{{
-					Request: reconcile.Request{
-						NamespacedName: types.NamespacedName{
-							Namespace: np.Namespace,
-							Name:      np.Spec.ClusterRef.Name,
-						},
+		mcbuilder.WithEngageWithProviderClusters(true),
+	); err != nil {
+		return err
+	}
+
+	builder.Watches(&redpandav1alpha2.RedpandaBrokerPool{}, func(clusterName string, _ cluster.Cluster) mchandler.EventHandler {
+		return mchandler.TypedEnqueueRequestsFromMapFuncWithClusterPreservation(func(ctx context.Context, object client.Object) []mcreconcile.Request {
+			l := log.FromContext(ctx).WithName("MulticlusterReconciler.RedpandaBrokerPoolWatch").V(log.TraceLevel)
+			np, ok := object.(*redpandav1alpha2.RedpandaBrokerPool)
+			if !ok {
+				return nil
+			}
+			if !np.Spec.ClusterRef.IsStretchCluster() {
+				return nil
+			}
+			l.V(log.TraceLevel).Info("RedpandaBrokerPool event received", "brokerPool", client.ObjectKeyFromObject(np).String(), "clusterRef", np.Spec.ClusterRef.Name)
+			return []mcreconcile.Request{{
+				Request: reconcile.Request{
+					NamespacedName: types.NamespacedName{
+						Namespace: np.Namespace,
+						Name:      np.Spec.ClusterRef.Name,
 					},
-					ClusterName: clusterName,
-				}}
-			})
-		}).
-		Complete(
-			observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
-				Manager:                        mgr,
-				LifecycleClient:                lifecycle.NewMulticlusterResourceClient(mgr, lifecycle.StretchClusterResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(brokerPodNodeUnavailableToleration),
-				ClientFactory:                  factory,
-				ReconcileTimeout:               reconcileTimeout,
-				PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
-				WaitForSchemaRegistrySync:      waitForSchemaRegistrySync,
-				MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
-				StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
-			}, "StretchCluster", periodicRequeue),
-		)
+				},
+				ClusterName: clusterName,
+			}}
+		})
+	})
+
+	return builder.Complete(
+		observability.Wrap[mcreconcile.Request](&MulticlusterReconciler{
+			Manager:                        mgr,
+			LifecycleClient:                lifecycleClient,
+			ClientFactory:                  factory,
+			ReconcileTimeout:               reconcileTimeout,
+			PostRestartCaughtUpPercent:     postRestartCaughtUpPercent,
+			WaitForSchemaRegistrySync:      waitForSchemaRegistrySync,
+			MaintenanceModeClearThreshold:  clearMaintenanceModeAfter,
+			StaleDiskWipeNotReadyThreshold: staleDiskWipeNotReadyThreshold,
+		}, "StretchCluster", periodicRequeue),
+	)
 }

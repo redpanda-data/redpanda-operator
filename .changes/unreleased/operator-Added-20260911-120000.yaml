@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'The StretchCluster controller now watches the resources rendered by the lifecycle package (StatefulSets, Services, ConfigMaps, Secrets, certificates, ...) across every configured member cluster, so drift in an owned resource triggers reconciliation immediately instead of waiting for the periodic requeue'
+time: 2026-09-11T12:00:00.000000000+02:00

@@ -725,7 +725,9 @@ func wrapLoggingHandler[T client.Object](_ T, h handler.TypedEventHandler[T, mcr
 }
 
 // WatchResources configures resource watching for the given cluster, including StatefulSets and other resources.
-func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object, clusterNames []string) error {
+// forOpts is applied to the For registration of the cluster object itself; multicluster
+// controllers use it to engage both the local and every provider cluster.
+func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Object, clusterNames []string, forOpts ...mcbuilder.ForOption) error {
 	// NB: we use localcluster here because the RESTMapper and scheme should be identical across all clusters
 	ctl, err := r.ctl(context.Background(), mcmanager.LocalCluster)
 	if err != nil {
@@ -733,7 +735,7 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 	}
 
 	// set that this is for the cluster
-	builder.For(cluster)
+	builder.For(cluster, forOpts...)
 
 	owns := func(obj client.Object) {
 		if r.traceLogging {
@@ -750,6 +752,13 @@ func (r *ResourceClient[T, U]) WatchResources(builder Builder, cluster client.Ob
 	owns(&appsv1.StatefulSet{})
 
 	for _, resourceType := range r.simpleResourceRenderer.WatchedResourceTypes() {
+		// StatefulSets are the node-pool type and were already registered via
+		// owns above; renderers that list them in WatchedResourceTypes would
+		// otherwise produce a duplicate watch.
+		if _, ok := resourceType.(*appsv1.StatefulSet); ok {
+			continue
+		}
+
 		gvk, err := kube.GVKFor(ctl.Scheme(), resourceType)
 		if err != nil {
 			return err
