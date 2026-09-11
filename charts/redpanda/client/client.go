@@ -27,7 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 )
 
 // permitOutOfClusterDNS controls whether or not this package will use the
@@ -42,7 +42,7 @@ type DialContextFunc = func(ctx context.Context, network, host string) (net.Conn
 
 // AdminClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
-func AdminClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
+func AdminClient(state *redpandachart.RenderState, dialer DialContextFunc, opts ...rpadmin.Opt) (*rpadmin.AdminAPI, error) {
 	params, err := AdminClientConnectionInfo(state, dialer)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ type AdminConnectionParams struct {
 	TLSConfig       *tls.Config
 }
 
-func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFunc) (*AdminConnectionParams, error) {
+func AdminClientConnectionInfo(state *redpandachart.RenderState, dialer DialContextFunc) (*AdminConnectionParams, error) {
 	var err error
 
 	params := &AdminConnectionParams{}
@@ -121,7 +121,7 @@ func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFu
 		params.AdminAuthParams.Username = username
 	}
 
-	records, err := srvLookup(state, dialer, redpanda.InternalAdminAPIPortName)
+	records, err := srvLookup(state, dialer, redpandachart.InternalAdminAPIPortName)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func AdminClientConnectionInfo(state *redpanda.RenderState, dialer DialContextFu
 
 // SchemaRegistryClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
-func SchemaRegistryClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...sr.ClientOpt) (*sr.Client, error) {
+func SchemaRegistryClient(state *redpandachart.RenderState, dialer DialContextFunc, opts ...sr.ClientOpt) (*sr.Client, error) {
 	prefix := "http://"
 
 	// These transport values come from the TLS client options found here:
@@ -183,7 +183,7 @@ func SchemaRegistryClient(state *redpanda.RenderState, dialer DialContextFunc, o
 		copts = append(copts, sr.BasicAuth(username, password))
 	}
 
-	records, err := srvLookup(state, dialer, redpanda.InternalSchemaRegistryPortName)
+	records, err := srvLookup(state, dialer, redpandachart.InternalSchemaRegistryPortName)
 	if err != nil {
 		return nil, err
 	}
@@ -207,8 +207,8 @@ func SchemaRegistryClient(state *redpanda.RenderState, dialer DialContextFunc, o
 
 // KafkaClient creates a client to talk to a Redpanda cluster based on its helm
 // configuration over its internal listeners.
-func KafkaClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...kgo.Opt) (*kgo.Client, error) {
-	records, err := srvLookup(state, dialer, redpanda.InternalKafkaPortName)
+func KafkaClient(state *redpandachart.RenderState, dialer DialContextFunc, opts ...kgo.Opt) (*kgo.Client, error) {
+	records, err := srvLookup(state, dialer, redpandachart.InternalKafkaPortName)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +253,7 @@ func KafkaClient(state *redpanda.RenderState, dialer DialContextFunc, opts ...kg
 	return client, nil
 }
 
-func authFromState(state *redpanda.RenderState) (username string, password string, mechanism string, err error) {
+func authFromState(state *redpandachart.RenderState) (username string, password string, mechanism string, err error) {
 	// shim in the panic handler from helmette since the call to
 	// redpanda.SecretBootstrapUser can fail if something about the
 	// client connection dies unexpectedly, and, when it fails, due
@@ -272,7 +272,7 @@ func authFromState(state *redpanda.RenderState) (username string, password strin
 		return state.Values.Auth.SASL.BootstrapUser.Username(), state.BootstrapUserPassword, state.Values.Auth.SASL.BootstrapUser.GetMechanism(), nil
 	}
 
-	if redpanda.SecretSASLUsers(state) != nil {
+	if redpandachart.SecretSASLUsers(state) != nil {
 		return state.FetchSASLUsers()
 	}
 
@@ -327,7 +327,7 @@ func WrapTLSDialer(dialer DialContextFunc, config *tls.Config) DialContextFunc {
 // a Kubernetes and performs a DNS query through the default resolver.
 //
 // See also: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#srv-records
-func srvLookup(state *redpanda.RenderState, dialer DialContextFunc, service string) ([]*net.SRV, error) {
+func srvLookup(state *redpandachart.RenderState, dialer DialContextFunc, service string) ([]*net.SRV, error) {
 	// To preserve backwards compatibility of the top level client
 	// constructor's methods, we use a context with a static timeout.
 	// While less than ideal, 30s should be a reasonable upper limit for this method.
@@ -396,7 +396,7 @@ func srvLookup(state *redpanda.RenderState, dialer DialContextFunc, service stri
 		}
 	}
 
-	_, records, err := resolver.LookupSRV(ctx, service, "tcp", redpanda.InternalDomain(state))
+	_, records, err := resolver.LookupSRV(ctx, service, "tcp", redpandachart.InternalDomain(state))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

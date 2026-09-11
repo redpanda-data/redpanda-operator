@@ -20,7 +20,7 @@ import (
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 )
 
 var (
@@ -63,17 +63,17 @@ var (
 func ClusterSpecConfig() rapid.MakeConfig {
 	return rapid.MakeConfig{
 		Types: map[reflect.Type]*rapid.Generator[any]{
-			reflect.TypeFor[intstr.IntOrString]():        IntOrString.AsAny(),
-			reflect.TypeFor[*resource.Quantity]():        Quantity.AsAny(),
-			reflect.TypeFor[metav1.Duration]():           Duration.AsAny(),
-			reflect.TypeFor[metav1.Time]():               Time.AsAny(),
-			reflect.TypeFor[any]():                       rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
-			reflect.TypeFor[*metav1.FieldsV1]():          rapid.Just[any](nil), // Return nil for K8s accounting fields.
-			reflect.TypeFor[corev1.Probe]():              Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
-			reflect.TypeFor[*redpanda.PartialSidecars](): rapid.Just[any](nil), // Intentionally not included in the operator as the operator handles this itself.
+			reflect.TypeFor[intstr.IntOrString]():             IntOrString.AsAny(),
+			reflect.TypeFor[*resource.Quantity]():             Quantity.AsAny(),
+			reflect.TypeFor[metav1.Duration]():                Duration.AsAny(),
+			reflect.TypeFor[metav1.Time]():                    Time.AsAny(),
+			reflect.TypeFor[any]():                            rapid.Just[any](nil), // Return nil for all untyped (any, interface{}) fields.
+			reflect.TypeFor[*metav1.FieldsV1]():               rapid.Just[any](nil), // Return nil for K8s accounting fields.
+			reflect.TypeFor[corev1.Probe]():                   Probe.AsAny(),        // We use the Probe type to simplify typing but it's serialization isn't fully "partial" which is acceptable.
+			reflect.TypeFor[*redpandachart.PartialSidecars](): rapid.Just[any](nil), // Intentionally not included in the operator as the operator handles this itself.
 		},
 		Fields: map[reflect.Type]map[string]*rapid.Generator[any]{
-			reflect.TypeFor[redpanda.PartialValues](): {
+			reflect.TypeFor[redpandachart.PartialValues](): {
 				"Console":           rapid.Just[any](nil), // Asserted in their own test.
 				"Connectors":        rapid.Just[any](nil), // Asserted in their own test.
 				"CommonAnnotations": rapid.Just[any](nil), // This was accidentally added and shouldn't exist.
@@ -83,21 +83,21 @@ func ClusterSpecConfig() rapid.MakeConfig {
 				// do any back conversion in the operator, and only convert CRD --> chart manually.
 				"PodTemplate": rapid.Just[any](nil),
 			},
-			reflect.TypeFor[redpanda.PartialStorage](): {
+			reflect.TypeFor[redpandachart.PartialStorage](): {
 				"TieredStorageHostPath":         rapid.Just[any](nil), // Deprecated field, not worth fixing.
 				"TieredStoragePersistentVolume": rapid.Just[any](nil), // Deprecated field, not worth fixing.
 			},
-			reflect.TypeFor[redpanda.PartialStatefulset](): {
+			reflect.TypeFor[redpandachart.PartialStatefulset](): {
 				"SecurityContext":    rapid.Just[any](nil), // Deprecated field, not worth fixing.
 				"PodSecurityContext": rapid.Just[any](nil), // Deprecated field, not worth fixing.
 				"UpdateStrategy":     rapid.Just[any](nil),
 			},
-			reflect.TypeFor[redpanda.PartialTieredStorageCredentials](): {
+			reflect.TypeFor[redpandachart.PartialTieredStorageCredentials](): {
 				"ConfigurationKey": rapid.Just[any](nil), // Deprecated field, not worth fixing.
 				"Key":              rapid.Just[any](nil), // Deprecated field, not worth fixing.
 				"Name":             rapid.Just[any](nil), // Deprecated field, not worth fixing.
 			},
-			reflect.TypeFor[redpanda.PartialTLSCert](): {
+			reflect.TypeFor[redpandachart.PartialTLSCert](): {
 				// Duration is incorrectly typed as a *string. Ensure it's a valid [metav1.]
 				"Duration": rapid.Custom(func(t *rapid.T) *string {
 					dur := rapid.Ptr(rapid.Int64(), true).Draw(t, "Duration")
@@ -107,16 +107,16 @@ func ClusterSpecConfig() rapid.MakeConfig {
 					return ptr.To(time.Duration(*dur).String())
 				}).AsAny(),
 			},
-			reflect.TypeFor[redpanda.PartialBootstrapUser](): {
+			reflect.TypeFor[redpandachart.PartialBootstrapUser](): {
 				"Password": rapid.Just[any](nil), // This field is intentionally not documented or added to the CRD
 			},
-			reflect.TypeFor[redpanda.PartialServiceAccountCfg](): {
+			reflect.TypeFor[redpandachart.PartialServiceAccountCfg](): {
 				"AutomountServiceAccountToken": rapid.Just[any](nil),
 			},
 			reflect.TypeFor[corev1.SecretKeySelector](): {
 				"Optional": rapid.Just[any](nil),
 			},
-			reflect.TypeFor[redpanda.PartialClusterConfigValue](): {
+			reflect.TypeFor[redpandachart.PartialClusterConfigValue](): {
 				// Work around for divergences in the omitempty behavior of bool vs *bool.
 				"UseRawValue": rapid.Just(ptr.To(true)).AsAny(),
 				// Work around for a type that we do not control.

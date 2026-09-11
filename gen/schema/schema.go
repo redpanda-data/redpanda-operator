@@ -26,14 +26,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	operator "github.com/redpanda-data/redpanda-operator/operator/chart"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
 var schemas = map[string]any{
 	"console":  &consolechart.Values{},
-	"redpanda": &redpanda.Values{},
+	"redpanda": &redpandachart.Values{},
 	"operator": &operator.Values{},
 }
 

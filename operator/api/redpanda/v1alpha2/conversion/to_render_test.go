@@ -21,7 +21,7 @@ import (
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/fuzzing"
@@ -31,7 +31,7 @@ import (
 
 func TestNodepoolConversion(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		values := rapid.MakeCustom[redpanda.Values](rapidutil.KubernetesTypes).Draw(t, "values")
+		values := rapid.MakeCustom[redpandachart.Values](rapidutil.KubernetesTypes).Draw(t, "values")
 		pools := rapid.SliceOf(rapid.MakeCustom[redpandav1alpha2.NodePool](rapidutil.KubernetesTypes)).Draw(t, "pools")
 		_, err := convertV2NodepoolsToPools(values, functional.MapFn(ptr.To, pools), &V2Defaulters{})
 		require.NoError(t, err)
@@ -91,13 +91,13 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Run convertV2Fields to populate the cluster-level value into state.Values,
 			// mirroring what ConvertV2ToRenderState does before per-pool conversion.
-			values := redpanda.Values{}
+			values := redpandachart.Values{}
 			clusterSpec := &redpandav1alpha2.RedpandaClusterSpec{
 				Statefulset: &redpandav1alpha2.Statefulset{
 					PersistentVolumeClaimRetentionPolicy: tc.clusterSet,
 				},
 			}
-			state := &redpanda.RenderState{Values: values}
+			state := &redpandachart.RenderState{Values: values}
 			require.NoError(t, convertV2Fields(state, &state.Values, clusterSpec))
 
 			pool := &redpandav1alpha2.NodePool{
@@ -125,15 +125,15 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 // startupProbe were written to an orphaned copy and silently dropped from
 // the broker container — they only ever landed on the sidecar.
 func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
-	dot, err := redpanda.Chart.Dot(nil, helmette.Release{
+	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{
 		Name:      "redpanda",
 		Namespace: "redpanda",
 		Service:   "Helm",
 	}, struct{}{})
 	require.NoError(t, err)
 
-	state := &redpanda.RenderState{Dot: dot}
-	values := redpanda.Values{}
+	state := &redpandachart.RenderState{Dot: dot}
+	values := redpandachart.Values{}
 	spec := &redpandav1alpha2.Statefulset{
 		ExtraVolumeMounts: ptr.To("- name: io-config\n  mountPath: /etc/redpanda-io-config"),
 		LivenessProbe: &redpandav1alpha2.LivenessProbe{
@@ -161,14 +161,14 @@ func TestConvertStatefulsetV2FieldsBrokerContainer(t *testing.T) {
 		}, container.VolumeMounts)
 	}
 
-	broker := containerByName(redpanda.RedpandaContainerName)
+	broker := containerByName(redpandachart.RedpandaContainerName)
 	require.Contains(t, mountNames(broker), "io-config", "extraVolumeMounts must land on the broker container")
 	require.NotNil(t, broker.LivenessProbe)
 	require.Equal(t, ptr.To(int32(33)), broker.LivenessProbe.InitialDelaySeconds, "livenessProbe must land on the broker container")
 	require.NotNil(t, broker.StartupProbe)
 	require.Equal(t, ptr.To(int32(44)), broker.StartupProbe.InitialDelaySeconds, "startupProbe must land on the broker container")
 
-	sidecar := containerByName(redpanda.SidecarContainerName)
+	sidecar := containerByName(redpandachart.SidecarContainerName)
 	require.Contains(t, mountNames(sidecar), "io-config", "extraVolumeMounts must also land on the sidecar container")
 }
 
@@ -200,13 +200,13 @@ func TestDuplicateBrokerContainerOverridesSurviveRender(t *testing.T) {
 						Spec: &applycorev1.PodSpecApplyConfiguration{
 							Containers: []applycorev1.ContainerApplyConfiguration{
 								{
-									Name: ptr.To(redpanda.RedpandaContainerName),
+									Name: ptr.To(redpandachart.RedpandaContainerName),
 									Env: []applycorev1.EnvVarApplyConfiguration{
 										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
 									},
 								},
 								{
-									Name: ptr.To(redpanda.RedpandaContainerName),
+									Name: ptr.To(redpandachart.RedpandaContainerName),
 									Env: []applycorev1.EnvVarApplyConfiguration{
 										{Name: ptr.To("FROM_LAST_DUPLICATE"), Value: ptr.To("1")},
 									},
@@ -222,12 +222,12 @@ func TestDuplicateBrokerContainerOverridesSurviveRender(t *testing.T) {
 	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{}, cluster, nil)
 	require.NoError(t, err)
 
-	sets := redpanda.StatefulSets(state)
+	sets := redpandachart.StatefulSets(state)
 	require.NotEmpty(t, sets)
 
 	var broker *corev1.Container
 	for i, container := range sets[0].Spec.Template.Spec.Containers {
-		if container.Name == redpanda.RedpandaContainerName {
+		if container.Name == redpandachart.RedpandaContainerName {
 			require.Nil(t, broker, "rendered pod spec must contain exactly one redpanda container")
 			broker = &sets[0].Spec.Template.Spec.Containers[i]
 		}
@@ -266,13 +266,13 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 						Configurator: &redpandav1alpha2.Configurator{
 							ExtraVolumeMounts: ptr.To("- name: cfg-extra\n  mountPath: /cfg-extra"),
 						},
-						ExtraInitContainers: ptr.To("- name: " + redpanda.RedpandaConfiguratorContainerName + "\n  env:\n  - name: FROM_LAST_DUPLICATE\n    value: \"1\""),
+						ExtraInitContainers: ptr.To("- name: " + redpandachart.RedpandaConfiguratorContainerName + "\n  env:\n  - name: FROM_LAST_DUPLICATE\n    value: \"1\""),
 					},
 					PodTemplate: &redpandav1alpha2.PodTemplate{
 						Spec: &applycorev1.PodSpecApplyConfiguration{
 							InitContainers: []applycorev1.ContainerApplyConfiguration{
 								{
-									Name: ptr.To(redpanda.RedpandaConfiguratorContainerName),
+									Name: ptr.To(redpandachart.RedpandaConfiguratorContainerName),
 									Env: []applycorev1.EnvVarApplyConfiguration{
 										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
 									},
@@ -288,12 +288,12 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{}, cluster, nil)
 	require.NoError(t, err)
 
-	sets := redpanda.StatefulSets(state)
+	sets := redpandachart.StatefulSets(state)
 	require.NotEmpty(t, sets)
 
 	var configurator *corev1.Container
 	for i, container := range sets[0].Spec.Template.Spec.InitContainers {
-		if container.Name == redpanda.RedpandaConfiguratorContainerName {
+		if container.Name == redpandachart.RedpandaConfiguratorContainerName {
 			require.Nil(t, configurator, "rendered pod spec must contain exactly one configurator init container")
 			configurator = &sets[0].Spec.Template.Spec.InitContainers[i]
 		}
@@ -310,11 +310,11 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 
 func TestConvertV2Fields(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		partialValues := rapid.MakeCustom[redpanda.PartialValues](fuzzing.ClusterSpecConfig()).Draw(t, "values")
+		partialValues := rapid.MakeCustom[redpandachart.PartialValues](fuzzing.ClusterSpecConfig()).Draw(t, "values")
 		if partialValues.Storage != nil && partialValues.Storage.Tiered != nil && partialValues.Storage.Tiered.PersistentVolume != nil {
 			partialValues.Storage.Tiered.PersistentVolume.Size = nil
 		}
-		values := redpanda.Values{}
+		values := redpandachart.Values{}
 		clusterSpec := &redpandav1alpha2.RedpandaClusterSpec{
 			Affinity: &corev1.Affinity{},
 			Statefulset: &redpandav1alpha2.Statefulset{
@@ -326,7 +326,7 @@ func TestConvertV2Fields(t *testing.T) {
 
 		require.NoError(t, json.Unmarshal(marshaled, clusterSpec))
 		require.NoError(t, json.Unmarshal(marshaled, &values))
-		state := &redpanda.RenderState{
+		state := &redpandachart.RenderState{
 			Values: values,
 		}
 		err = convertV2Fields(state, &state.Values, clusterSpec)

@@ -16,7 +16,7 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
@@ -138,7 +138,7 @@ func NodePoolSchemaRegistryBrokerClients(
 	cluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	tlsProvider resourcetypes.AdminTLSConfigProvider,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	pods ...string,
 ) ([]schemaregistry.Broker, error) {
 	if cluster.SchemaRegistryInternalListener() == nil {

@@ -34,7 +34,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
@@ -136,7 +136,7 @@ type StatefulSetResource struct {
 	// duration semantics (0=off, positive=seconds, negative=forever).
 	brokerPodNodeUnavailableToleration time.Duration
 	timeout                            time.Duration
-	dialer                             redpanda.DialContextFunc
+	dialer                             redpandaclient.DialContextFunc
 }
 
 func (r *StatefulSetResource) GetNodePool() *vectorizedv1alpha1.NodePoolSpecWithDeleted {
@@ -158,7 +158,7 @@ func NewStatefulSet(
 	cfg *clusterconfiguration.CombinedCfg,
 	adminAPIClientFactory adminutils.NodePoolAdminAPIClientFactory,
 	schemaRegistryClientFactory SchemaRegistryClientsFactory,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	decommissionWaitInterval time.Duration,
 	logger logr.Logger,
 	metricsTimeout time.Duration,

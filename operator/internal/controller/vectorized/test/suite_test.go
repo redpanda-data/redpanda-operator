@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/vectorized"
@@ -135,7 +135,7 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 		cluster *vectorizedv1alpha1.Cluster,
 		_ string,
 		_ types.AdminTLSConfigProvider,
-		_ redpanda.DialContextFunc,
+		_ redpandaclient.DialContextFunc,
 		_ time.Duration,
 		pods ...string,
 	) (adminutils.AdminAPIClient, error) {

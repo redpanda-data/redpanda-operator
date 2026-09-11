@@ -38,7 +38,7 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 
-	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3"
+	"github.com/redpanda-data/redpanda-operator/charts/console/v3"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -318,16 +318,16 @@ func TestController(t *testing.T) {
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels
-func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, console *redpandav1alpha2.Console) []kube.Object {
+func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, c *redpandav1alpha2.Console) []kube.Object {
 	// Get ownership labels used by the controller
 	ownershipLabels := map[string]string{
 		"app.kubernetes.io/name":       "console",
 		"app.kubernetes.io/managed-by": "redpanda-operator",
-		"app.kubernetes.io/instance":   console.Name,
+		"app.kubernetes.io/instance":   c.Name,
 	}
 
 	var objects []kube.Object
-	for _, objType := range consolechart.Types() {
+	for _, objType := range console.Types() {
 		// skip ServiceMonitor here as it is optional and created only when monitoring.enabled is true
 		if _, ok := objType.(*monitoringv1.ServiceMonitor); ok {
 			continue
@@ -337,7 +337,7 @@ func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, console *redpandav1alp
 
 		err = ctl.List(
 			t.Context(),
-			console.Namespace,
+			c.Namespace,
 			list,
 			client.MatchingLabels(ownershipLabels),
 		)
@@ -353,7 +353,7 @@ func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, console *redpandav1alp
 	}
 
 	// If a JWT secret has been created, pull that as well.
-	secret, err := kube.Get[corev1.Secret](t.Context(), ctl, kube.ObjectKey{Namespace: console.Namespace, Name: console.Name + "-jwt-secret"})
+	secret, err := kube.Get[corev1.Secret](t.Context(), ctl, kube.ObjectKey{Namespace: c.Namespace, Name: c.Name + "-jwt-secret"})
 	if err == nil {
 		cleanObjectForGolden(ctl.Scheme(), secret)
 		objects = append(objects, secret)

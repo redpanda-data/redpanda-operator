@@ -1,5 +1,5 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
-{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/post_install_upgrade_job.go" */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart/post_install_upgrade_job.go" */ -}}
 
 {{- define "redpanda.BootstrapTemplateEnvVars" -}}
 {{- $state := (index .a 0) -}}

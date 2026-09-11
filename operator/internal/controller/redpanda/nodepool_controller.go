@@ -32,7 +32,7 @@ import (
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -78,7 +78,7 @@ func (r *NodePoolReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 			}
 
 			namespace := labels[lifecycle.DefaultNamespaceLabel]
-			name := labels[redpanda.NodePoolLabelName]
+			name := labels[redpandachart.NodePoolLabelName]
 
 			if namespace == "" || name == "" {
 				return nil
@@ -190,7 +190,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	var statefulSets appsv1.StatefulSetList
 	if err := k8sClient.List(ctx, &statefulSets, client.MatchingLabels{
 		lifecycle.DefaultNamespaceLabel: pool.Namespace,
-		redpanda.NodePoolLabelName:      pool.Name,
+		redpandachart.NodePoolLabelName: pool.Name,
 	}); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -211,7 +211,7 @@ func (r *NodePoolReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 	if sts != nil {
 		stsLabels := sts.GetLabels()
 		if stsLabels != nil {
-			generationString := stsLabels[redpanda.NodePoolLabelGeneration]
+			generationString := stsLabels[redpandachart.NodePoolLabelGeneration]
 			if generationString != "" {
 				// if we have a parsing error, just skip the generation propagation
 				if generation, err := strconv.ParseInt(generationString, 10, 0); err == nil {

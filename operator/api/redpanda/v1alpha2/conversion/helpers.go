@@ -20,13 +20,13 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/valuesutil"
 )
 
-func convertYAMLArrayNotNil[T any](state *redpanda.RenderState, from *string, to *[]T) (err error) {
+func convertYAMLArrayNotNil[T any](state *redpandachart.RenderState, from *string, to *[]T) (err error) {
 	if from == nil {
 		return nil
 	}
@@ -45,7 +45,7 @@ func convertYAMLArrayNotNil[T any](state *redpanda.RenderState, from *string, to
 	return yaml.Unmarshal([]byte(result), to)
 }
 
-func convertAndAppendYAMLNotNil[T any](state *redpanda.RenderState, from *string, to *[]T) error {
+func convertAndAppendYAMLNotNil[T any](state *redpandachart.RenderState, from *string, to *[]T) error {
 	converted := []T{}
 	if err := convertYAMLArrayNotNil(state, from, &converted); err != nil {
 		return err
@@ -131,7 +131,7 @@ type containerSpec interface {
 	GetExtraVolumeMounts() *string
 }
 
-func convertInitContainer(state *redpanda.RenderState, values *redpanda.Values, name string, spec containerSpec) error {
+func convertInitContainer(state *redpandachart.RenderState, values *redpandachart.Values, name string, spec containerSpec) error {
 	if reflect.ValueOf(spec).IsNil() {
 		return nil
 	}
@@ -162,7 +162,7 @@ func convertAndInitializeAffinityNotNil(spec *corev1.PodAffinity, affinity *appl
 	return convertJSON(spec, affinity.PodAffinity)
 }
 
-func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *redpandav1alpha2.PodAntiAffinity, affinity *applycorev1.AffinityApplyConfiguration) {
+func convertAndInitializeAntiAffinityNotNil(state *redpandachart.RenderState, spec *redpandav1alpha2.PodAntiAffinity, affinity *applycorev1.AffinityApplyConfiguration) {
 	if spec == nil {
 		return
 	}
@@ -174,7 +174,7 @@ func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *r
 				{
 					TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
 					LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
-						MatchLabels: redpanda.StatefulSetPodLabelsSelector(state, redpanda.Pool{Statefulset: state.Values.Statefulset}),
+						MatchLabels: redpandachart.StatefulSetPodLabelsSelector(state, redpandachart.Pool{Statefulset: state.Values.Statefulset}),
 					},
 				},
 			},
@@ -188,7 +188,7 @@ func convertAndInitializeAntiAffinityNotNil(state *redpanda.RenderState, spec *r
 					PodAffinityTerm: &applycorev1.PodAffinityTermApplyConfiguration{
 						TopologyKey: ptr.To(ptr.Deref(spec.TopologyKey, "kubernetes.io/hostname")),
 						LabelSelector: &applymetav1.LabelSelectorApplyConfiguration{
-							MatchLabels: redpanda.StatefulSetPodLabelsSelector(state, redpanda.Pool{Statefulset: state.Values.Statefulset}),
+							MatchLabels: redpandachart.StatefulSetPodLabelsSelector(state, redpandachart.Pool{Statefulset: state.Values.Statefulset}),
 						},
 					},
 				},

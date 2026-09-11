@@ -14,10 +14,10 @@ import (
 	"crypto/tls"
 	"net"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 )
 
-func wrapTLSDialer(dialer redpanda.DialContextFunc, config *tls.Config) redpanda.DialContextFunc {
+func wrapTLSDialer(dialer redpandaclient.DialContextFunc, config *tls.Config) redpandaclient.DialContextFunc {
 	return func(ctx context.Context, network, host string) (net.Conn, error) {
 		conn, err := dialer(ctx, network, host)
 		if err != nil {
