@@ -577,8 +577,14 @@ func (p *PoolTracker) PodsToRoll() []*MulticlusterPod {
 		for _, withOrdinals := range existing.pods {
 			// the CurrentRevision on the StatefulSet can't be used here due to leveraging onDelete
 			if len(existing.revisions) == 0 {
-				// we have no revisions, just assume this needs to be rolled
-				pods = append(pods, newMulticlusterPod(withOrdinals.pod.DeepCopy(), existing.set.clusterName, existing.set.canonicalClusterName))
+				// No owned ControllerRevisions means we cannot KNOW whether a
+				// pod is outdated — skip.
+				continue
+			} else if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] == "" {
+				// No revision label: this pod was ADOPTED, not created, by
+				// the StatefulSet (under OnDelete, kube labels pods only at
+				// creation) — a Broker-CR rollback hands such pods over. Skip.
+				continue
 			} else {
 				lastRevision := existing.revisions[len(existing.revisions)-1]
 				if withOrdinals.pod.Labels[appsv1.StatefulSetRevisionLabel] != lastRevision.Name {

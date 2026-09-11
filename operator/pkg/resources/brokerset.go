@@ -113,6 +113,8 @@ func NewBrokerSet(
 	}
 }
 
+// Key exists solely to satisfy the [Resource] interface.
+// Don't use it.
 func (r *BrokerSetResource) Key() types.NamespacedName {
 	return types.NamespacedName{
 		Name:      fmt.Sprintf("brokerset-%s", r.nodePool.Name),
@@ -257,7 +259,7 @@ func MarkBrokersForRestart(ctx context.Context, c k8sclient.Client, cluster *vec
 // RollbackBrokerCRs cleans up Broker CRs when the migration annotation is
 // removed, allowing the StatefulSet to re-adopt pods.
 func RollbackBrokerCRs(ctx context.Context, c k8sclient.Client, scheme *runtime.Scheme, cluster *vectorizedv1alpha1.Cluster, l logr.Logger) error {
-	return brokerset.Rollback(ctx, brokerset.RollbackConfig{
+	_, err := brokerset.Rollback(ctx, brokerset.RollbackConfig{
 		Client:          c,
 		Scheme:          scheme,
 		Owner:           cluster,
@@ -269,12 +271,13 @@ func RollbackBrokerCRs(ctx context.Context, c k8sclient.Client, scheme *runtime.
 		},
 		Logger: l,
 	})
+	return err
 }
 
 // NewMigrationPoolReporter returns the migration reporter for one node pool:
 // reports accumulate into agg (the cluster controller flushes one aggregate
-// after all pools reconcile), while NeedsCompletion keeps reading the
-// Cluster's BrokerMigration condition.
+// after all pools reconcile), while the ShouldReport* predicates keep
+// reading the Cluster's BrokerMigration condition.
 func NewMigrationPoolReporter(agg *brokerset.MigrationAggregator, pool string, c k8sclient.Client, cluster *vectorizedv1alpha1.Cluster, l logr.Logger) brokerset.MigrationReporter {
 	return agg.PoolReporter(pool, &v1MigrationReporter{client: c, cluster: cluster, logger: l})
 }
@@ -307,9 +310,21 @@ func (rep *v1MigrationReporter) Report(ctx context.Context, status corev1.Condit
 	setMigrationCondition(ctx, rep.client, rep.cluster, rep.logger, status, reason, message)
 }
 
-func (rep *v1MigrationReporter) NeedsCompletion(context.Context) bool {
+// shouldReport reports whether migration progress was previously recorded
+// on the Cluster's BrokerMigration condition and the condition has not yet
+// reached the given terminal reason. Clusters that never migrated have no
+// condition and must never gain one from a steady-state promotion.
+func (rep *v1MigrationReporter) shouldReport(terminalReason string) bool {
 	cond := rep.cluster.Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType)
-	return cond != nil && cond.Reason != brokerset.MigrationReasonComplete
+	return cond != nil && cond.Reason != terminalReason
+}
+
+func (rep *v1MigrationReporter) ShouldReportComplete(context.Context) bool {
+	return rep.shouldReport(brokerset.MigrationReasonComplete)
+}
+
+func (rep *v1MigrationReporter) ShouldReportRolledBack(context.Context) bool {
+	return rep.shouldReport(brokerset.MigrationReasonRolledBack)
 }
 
 // setMigrationCondition records STS→Broker migration progress on the Cluster

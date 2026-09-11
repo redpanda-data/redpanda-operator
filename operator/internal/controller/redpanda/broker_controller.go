@@ -393,6 +393,11 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 				return ctrl.Result{}, nil
 			}
 		}
+		if adoptionBarredByRollback(ctx, k8sClient, broker) {
+			l.Info("owning cluster left broker mode; not creating a pod", "name", podName)
+			state.phase = redpandav1alpha2.BrokerPhasePending
+			return ctrl.Result{RequeueAfter: requeueShort}, nil
+		}
 		l.Info("creating pod (no existing pod found)", "name", podName)
 		newPod := broker.BuildPod(podName)
 		if err := controllerutil.SetControllerReference(broker, newPod, scheme); err != nil {
@@ -590,7 +595,7 @@ func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger,
 			err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: broker.Namespace}, &pvc)
 			switch {
 			case err == nil:
-				if owner := metav1.GetControllerOf(&pvc); owner == nil || metav1.IsControlledBy(&pvc, broker) {
+				if metav1.GetControllerOf(&pvc) == nil {
 					l.Info("pvc still terminating", "pvc", name)
 					return ctrl.Result{RequeueAfter: requeueShort}, nil // still terminating, requeue
 				}
