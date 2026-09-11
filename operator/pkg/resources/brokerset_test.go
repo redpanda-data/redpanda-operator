@@ -608,6 +608,87 @@ func TestRollbackWithoutBackupFallsBack(t *testing.T) {
 	assert.True(t, apierrors.IsNotFound(err), "no STS should be restored without a backup")
 }
 
+// TestPodsBornFromRenderNotOutdatedByMarkForRestart: MarkForRestart stamps
+// the current config version unconditionally, so a pod born from the
+// rendered template must already carry it — otherwise the first stamp marks
+// the whole fleet PodOutdated and rolls it for no config change.
+func TestPodsBornFromRenderNotOutdatedByMarkForRestart(t *testing.T) {
+	ctx := context.Background()
+	scheme := brokerSetTestScheme(t)
+	cluster := brokerSetTestCluster()
+
+	sts := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{Name: cluster.Name, Namespace: cluster.Namespace},
+		Spec: appsv1.StatefulSetSpec{
+			Replicas: ptr.To(int32(2)),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{ConfigMapHashAnnotationKey: testCurrentChecksum},
+				},
+			},
+		},
+	}
+	nodePool := vectorizedv1alpha1.NodePoolSpecWithDeleted{
+		NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default", Replicas: ptr.To(int32(2))},
+	}
+	r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+
+	core := r.core(ctrl.Log)
+	core.ClusterConfigVersion = "config-v1"
+	rendered, err := core.RenderBrokers(sts, 2, false)
+	require.NoError(t, err)
+	require.Len(t, rendered, 2)
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+	for i := range rendered {
+		// The engine names CRs at create time (GenerateName); pin names here.
+		rendered[i].Name = fmt.Sprintf("rp-broker-%d", i)
+		require.NoError(t, controllerutil.SetControllerReference(cluster, &rendered[i], scheme))
+		require.NoError(t, c.Create(ctx, &rendered[i]))
+	}
+
+	require.NoError(t, brokerset.MarkForRestart(ctx, c, cluster,
+		labels.ForCluster(cluster).AsClientSelector(), "config-v1"))
+
+	for i := range rendered {
+		pod := rendered[i].BuildPod(rendered[i].PodName())
+
+		var fresh redpandav1alpha2.Broker
+		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: rendered[i].Name, Namespace: rendered[i].Namespace}, &fresh))
+		assert.Falsef(t, fresh.PodOutdated(pod),
+			"pod %q born from the rendered template is considered outdated after the current config version was stamped — this rolls the whole fleet for no config change", pod.Name)
+	}
+}
+
+// TestUpdateBrokerNeverRegressesRestartMarker: on a live CR MarkForRestart is
+// the sole writer of the restart marker; a spec sync carrying the stale
+// rendered version must not overwrite a fresh stamp, which would roll pods
+// for no change.
+func TestUpdateBrokerNeverRegressesRestartMarker(t *testing.T) {
+	failWrites := interceptor.Funcs{
+		Update: func(ctx context.Context, client k8sclient.WithWatch, obj k8sclient.Object, opts ...k8sclient.UpdateOption) error {
+			t.Fatalf("unexpected Update of %T %s — the stale rendered version must not dirty a freshly stamped CR", obj, obj.GetName())
+			return nil
+		},
+	}
+	r, c := buildBrokerSet(t, true, []testBroker{
+		{index: 0, podChecksum: testCurrentChecksum, podReady: true},
+	}, failWrites)
+
+	var existing redpandav1alpha2.Broker
+	require.NoError(t, c.Get(context.Background(), types.NamespacedName{Name: "rp-broker-0", Namespace: "test"}, &existing))
+	// The CR as MarkForRestart just left it.
+	existing.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = "v2-freshly-stamped"
+	// The desired render, built from a persisted status that still says v1.
+	desired := existing.DeepCopy()
+	desired.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = "v1-stale"
+
+	require.NoError(t, r.core(ctrl.Log).UpdateBroker(context.Background(), ctrl.Log, &existing, desired))
+	require.Equal(t, "v2-freshly-stamped",
+		desired.Spec.PodTemplate.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation],
+		"the live CR's stamped version must be carried forward over the rendered one")
+}
+
 func TestUpdateBrokerSkipsNoopWrites(t *testing.T) {
 	// updateBroker must not issue an API write when the PodTemplate is
 	// unchanged — an unconditional write here previously caused a

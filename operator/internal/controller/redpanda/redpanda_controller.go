@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"net"
 	"net/http"
 	"sort"
@@ -27,9 +28,13 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/trace"
 	"github.com/redpanda-data/common-go/rpadmin"
 	"go.opentelemetry.io/otel/attribute"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8slabels "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,6 +50,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/syncclusterconfig"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -55,6 +61,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
+
+// errBrokerModeFlagOff names the misconfiguration where a broker-mode
+// cluster is reconciled without --enable-broker. Logging only; the
+// reconcile refuses pool mutations instead of erroring.
+var errBrokerModeFlagOff = errors.New("broker mode requires --enable-broker")
 
 const (
 	FinalizerKey = "operator.redpanda.com/finalizer"
@@ -103,6 +114,10 @@ type RedpandaReconciler struct {
 	ClientFactory        internalclient.ClientFactory
 	CloudSecretsExpander *pkgsecrets.CloudExpander
 	UseNodePools         bool
+	// BrokerCREnabled is the operator-level gate (--enable-broker) for
+	// Broker CR management; the per-cluster use-broker-cr annotation
+	// selects broker mode on top of it.
+	BrokerCREnabled bool
 	// PostRestartCaughtUpPercent is the load_reclaimed_pc a just-restarted
 	// broker must report (via the post-restart probe) before the rolling
 	// restart proceeds to the next broker. Defaults to
@@ -199,6 +214,31 @@ func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multiclus
 		}
 	}
 
+	if r.BrokerCREnabled {
+		for _, clusterName := range mgr.GetClusterNames() {
+			// Decommission progress, roll completion, and phase transitions
+			// all surface as Broker status updates.
+			enqueueClusterFromBroker := mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+				for _, ref := range o.GetOwnerReferences() {
+					if !ptr.Deref(ref.Controller, false) || ref.Kind != redpandav1alpha2.RedpandaKind {
+						continue
+					}
+					if gv, err := schema.ParseGroupVersion(ref.APIVersion); err != nil || gv.Group != redpandav1alpha2.GroupVersion.Group {
+						continue
+					}
+					return []reconcile.Request{{
+						NamespacedName: types.NamespacedName{
+							Name:      ref.Name,
+							Namespace: o.GetNamespace(),
+						},
+					}}
+				}
+				return nil
+			})
+			builder.Watches(&redpandav1alpha2.Broker{}, enqueueClusterFromBroker, controller.WatchOptions(clusterName)...)
+		}
+	}
+
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, observability.Wrap[mcreconcile.Request](r, "Redpanda", periodicRequeue)))
 }
 
@@ -212,6 +252,45 @@ type clusterReconciliationState struct {
 	// (memoized: at most one render per pass, and none when no remediation
 	// step needs an endpoint). Set alongside admin by initAdminClient.
 	podEndpoints lazyEndpoints
+	// brokerMode is true when this cluster manages brokers via Broker CRs
+	// (--enable-broker plus the use-broker-cr annotation).
+	brokerMode bool
+	// brokerRequeue collects requeue requests from the broker machinery
+	// (blocked migration, roll in flight) without aborting the chain — the
+	// cluster-level recovery steps must still run. Applied at the end of
+	// Reconcile.
+	brokerRequeue time.Duration
+	// brokerMigrationConditionChanged marks that the BrokerMigration
+	// condition changed this pass, so syncStatus writes even when the
+	// generated conditions report no diff. The condition can't be generated:
+	// it is latched (RolledBack must persist after the state that produced
+	// it is gone), not recomputed from observable state.
+	brokerMigrationConditionChanged bool
+	// arbitration shares this pass's disruptive-write state across every
+	// pool's BrokerSet, so the one-disruptive-operation-at-a-time gates see
+	// writes the informer cache has not observed yet.
+	arbitration *brokerset.Arbitration
+	// migration accumulates per-pool migration reports into one aggregate
+	// BrokerMigration condition, so a finished pool never declares Complete
+	// while another still has a live StatefulSet.
+	migration *brokerset.MigrationAggregator
+}
+
+// stashRequeue records the soonest broker-machinery requeue for this pass.
+func (s *clusterReconciliationState) stashRequeue(d time.Duration) {
+	s.brokerRequeue = soonestRequeue(s.brokerRequeue, d)
+}
+
+// soonestRequeue returns the earlier of two requeue delays, treating zero
+// (and negatives) as unset.
+func soonestRequeue(a, b time.Duration) time.Duration {
+	if a <= 0 {
+		return max(b, 0)
+	}
+	if b <= 0 {
+		return a
+	}
+	return min(a, b)
 }
 
 func (s *clusterReconciliationState) cleanup() {
@@ -341,6 +420,12 @@ func (r *RedpandaReconciler) Reconcile(ctx context.Context, req mcreconcile.Requ
 		logger.V(log.DebugLevel).Info("cluster not settled; scheduling fast poll", "requeueAfter", requeueTimeout)
 		pollResult.RequeueAfter = requeueTimeout
 	}
+	// Broker-machinery waits (blocked migration or rollback, roll in flight)
+	// are stashed rather than aborting the chain — apply the soonest one.
+	if d := soonestRequeue(pollResult.RequeueAfter, state.brokerRequeue); d != pollResult.RequeueAfter {
+		logger.V(log.DebugLevel).Info("broker machinery waiting; scheduling poll", "requeueAfter", d)
+		pollResult.RequeueAfter = d
+	}
 	logger.V(log.TraceLevel).Info("finished normal reconciliation loop")
 	return r.syncStatus(ctx, cluster, state, pollResult, nil)
 }
@@ -417,10 +502,15 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 	if restartOnConfigChange {
 		injectedConfigVersion = rp.Status.ConfigVersion
 	}
+	brokerMode := r.BrokerCREnabled && feature.V2UseBrokerCR.Get(ctx, rp)
 	// Single-cluster path: only the local cluster exists. nodePoolsObserved=nil
 	// is fine because FetchExistingAndDesiredPools unconditionally marks the
 	// local cluster as observed regardless of the map.
-	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rpcluster, injectedConfigVersion, nil, false)
+	//
+	// Broker-backed pools are fetched whenever the operator runs with
+	// --enable-broker, even for clusters without the feature.V2UseBrokerCR
+	// annotation, so a cluster mid-rollback keeps accurate pool status.
+	pools, err := r.LifecycleClient.FetchExistingAndDesiredPools(ctx, rpcluster, injectedConfigVersion, nil, r.BrokerCREnabled)
 	if err != nil {
 		logger.Error(err, "fetching pools")
 		return nil, err
@@ -445,6 +535,8 @@ func (r *RedpandaReconciler) fetchInitialState(ctx context.Context, rp *redpanda
 		pools:                 pools,
 		status:                status,
 		restartOnConfigChange: restartOnConfigChange,
+		brokerMode:            brokerMode,
+		arbitration:           &brokerset.Arbitration{},
 	}, nil
 }
 
@@ -505,6 +597,69 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 		trace.EndSpan(span, err)
 	}()
 
+	if !r.BrokerCREnabled && feature.V2UseBrokerCR.Get(ctx, state.cluster.Redpanda) {
+		// Without the flag the broker-backed pools are invisible to the pool
+		// tracker, so proceeding would render a fresh StatefulSet that fights
+		// the Broker controller for the pods. The non-zero RequeueAfter
+		// deliberately aborts the chain: no downstream step can do useful
+		// work against a pool view blind to the broker pods.
+		msg := fmt.Sprintf("cluster is managed via Broker CRs (%s annotation) but the operator is running without --enable-broker; pool management suspended — restore the flag, or roll back to StatefulSet mode before downgrading", feature.V2UseBrokerCR.Key)
+		logger.Error(errBrokerModeFlagOff, "refusing pool mutations", "cluster", client.ObjectKeyFromObject(state.cluster.Redpanda).String())
+		state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, msg)
+		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+	}
+
+	if r.BrokerCREnabled && !state.brokerMode {
+		// Roll any leftover Broker CRs back to StatefulSet management. While
+		// rollback is blocked — and right after it acted, when the pool
+		// tracker predates the restored StatefulSet — pool mutations are
+		// skipped: a (re)created StatefulSet would fight the Broker
+		// controller over the pods. Requeues are stashed, not returned, so
+		// the cluster-level recovery steps still run.
+		acted, err := r.rollbackBrokerCRs(ctx, state, cluster)
+		if err != nil {
+			var requeueErr *brokerset.RequeueAfterError
+			if errors.As(err, &requeueErr) {
+				logger.Info(requeueErr.Error())
+				state.stashRequeue(requeueErr.RequeueAfter)
+				return ctrl.Result{}, nil
+			}
+			return ctrl.Result{}, errors.Wrap(err, "rolling back Broker CRs")
+		}
+		if acted {
+			logger.Info("rolled Broker CRs back to StatefulSet management; deferring pool mutations to the next pass")
+			state.stashRequeue(requeueTimeout)
+			return ctrl.Result{}, nil
+		}
+	}
+
+	if state.brokerMode {
+		// StatefulSet mutations here only ever hit pools still mid-migration:
+		// completed pools are broker-backed facades, excluded from the STS
+		// planners.
+		if state.pools.CheckScale(ctx) {
+			for _, set := range state.pools.ToScaleUp() {
+				logger.V(log.TraceLevel).Info("scaling up still-live StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+				if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
+					return ctrl.Result{}, errors.Wrap(err, "scaling up statefulset")
+				}
+			}
+			for _, set := range state.pools.RequiresUpdate() {
+				logger.V(log.TraceLevel).Info("updating out-of-date still-live StatefulSet", "StatefulSet", client.ObjectKeyFromObject(set).String())
+				if err := r.LifecycleClient.PatchPoolSet(ctx, state.cluster, set); err != nil {
+					return ctrl.Result{}, errors.Wrap(err, "updating statefulset")
+				}
+			}
+		} else {
+			logger.V(log.TraceLevel).Info("scale operation currently underway; skipping StatefulSet scale-up/update patches this pass")
+		}
+
+		// reconcileBrokerPools below deliberately runs even while CheckScale
+		// reports false: a mid-rotation broker's grant must be updated to a new
+		// template hash exactly while its pod is being replaced.
+		return ctrl.Result{}, r.reconcileBrokerPools(ctx, state, cluster)
+	}
+
 	if !state.pools.CheckScale(ctx) {
 		// A scale/roll is underway — skip pool mutations this pass so we don't
 		// stack changes mid-scale. Do NOT abort: reconcilePools runs in the same
@@ -555,6 +710,290 @@ func (r *RedpandaReconciler) reconcilePools(ctx context.Context, state *clusterR
 	return ctrl.Result{}, nil
 }
 
+// reconcileBrokerPools drives Broker CR management for every desired pool,
+// plus the drain of broker-backed pools removed from the spec. Waits surface
+// as stashed requeues rather than chain aborts.
+func (r *RedpandaReconciler) reconcileBrokerPools(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (err error) {
+	ctx, span := trace.Start(ctx, "reconcileBrokerPools")
+	logger := log.FromContext(ctx)
+
+	defer func() {
+		if err != nil {
+			logger.Error(err, "error reconciling broker pools")
+			if internalclient.IsTerminalClientError(err) {
+				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonTerminalError, err.Error())
+			} else {
+				state.status.Status.SetResourcesSynced(statuses.ClusterResourcesSyncedReasonError, err.Error())
+			}
+		}
+		trace.EndSpan(span, err)
+	}()
+
+	// An error return skips the aggregate flush below — the information is
+	// partial and writing would flap the condition on stale data.
+	state.migration = brokerset.NewMigrationAggregator()
+
+	ensure := func(set *lifecycle.MulticlusterStatefulSet, desired *appsv1.StatefulSet, replicas int32) error {
+		bs, err := r.brokerSetFor(ctx, state, cluster, set)
+		if err != nil {
+			return err
+		}
+
+		err = bs.Ensure(ctx, client.ObjectKeyFromObject(set), desired, replicas)
+		var requeueErr *brokerset.RequeueAfterError
+		if errors.As(err, &requeueErr) {
+			logger.V(log.DebugLevel).Info("broker pool waiting", "pool", set.Name, "reason", requeueErr.Msg)
+			state.stashRequeue(requeueErr.RequeueAfter)
+			return nil
+		}
+		return err
+	}
+
+	for _, set := range state.pools.DesiredPools() {
+		if err := ensure(set, set.StatefulSet, ptr.Deref(set.Spec.Replicas, 0)); err != nil {
+			return errors.Wrapf(err, "ensuring Broker pool %q", set.Name)
+		}
+	}
+
+	// Pools removed from the spec entirely: no desired render exists, so
+	// drain their brokers one decommission at a time.
+	for _, set := range state.pools.BrokerBackedPoolsWithoutDesired() {
+		if err := ensure(set, nil, 0); err != nil {
+			return errors.Wrapf(err, "draining removed Broker pool %q", set.Name)
+		}
+	}
+
+	if status, reason, message, ok := state.migration.Aggregate(); ok {
+		(&v2MigrationReporter{state: state}).Report(ctx, status, reason, message)
+	}
+
+	return nil
+}
+
+// brokerSetFor assembles the brokerset engine for one desired pool. Brokers
+// point their ClusterRef at whichever resource defines their pool (NodePool,
+// or the Redpanda itself for the implicit default pool); the Broker
+// controller resolves its admin client through that reference.
+func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster, set *lifecycle.MulticlusterStatefulSet) (*brokerset.BrokerSet, error) {
+	rp := state.cluster.Redpanda
+
+	var configVersion string
+	if state.restartOnConfigChange {
+		configVersion = rp.Status.ConfigVersion
+	}
+
+	poolName := set.Labels[redpanda.NodePoolLabelName]
+	// Broker-backed facades carry the operator's pool label instead of the
+	// chart's render label; "default" marks the implicit pool.
+	if v := set.Labels[redpandav1alpha2.NodePoolLabel]; poolName == "" && !strings.EqualFold(v, redpandav1alpha2.DefaultNodePoolName) {
+		poolName = v
+	}
+	isNodePool := poolName != ""
+
+	// Broker.PodName derives pod names from ClusterRef + labels; they must
+	// match the ordinal pod names of the rendered StatefulSet.
+	clusterName := set.Name
+	if clusterName != rp.Name && !isNodePool {
+		// For the default pool, Broker.PodName's base is the Redpanda name —
+		// a fullnameOverride would produce pods the Broker controller cannot
+		// resolve.
+		return nil, errors.Newf("rendered StatefulSet name %q differs from the Redpanda name %q (fullnameOverride?); Broker CR mode requires matching names", set.Name, rp.Name)
+	}
+
+	nodePoolLabelValue := redpandav1alpha2.DefaultNodePoolName
+	// Kind is stamped explicitly even though "Redpanda" is the default: the
+	// CRD's "Owner Kind" printer column reads .spec.clusterRef.kind verbatim
+	// and would otherwise show an empty cell.
+	clusterRef := redpandav1alpha2.ClusterRef{Kind: ptr.To(redpandav1alpha2.RedpandaKind), Name: rp.Name}
+	if isNodePool {
+		if strings.EqualFold(poolName, redpandav1alpha2.DefaultNodePoolName) {
+			return nil, errors.Newf("NodePool name %q conflicts with the implicit default pool in broker mode", poolName)
+		}
+		clusterName = clusterNameFromPoolSet(set.Name, poolName)
+		nodePoolLabelValue = poolName
+		clusterRef = redpandav1alpha2.ClusterRef{
+			Kind: ptr.To(redpandav1alpha2.NodePoolKind),
+			Name: poolName,
+		}
+	}
+
+	ownerLabels := r.LifecycleClient.GetOwnerLabels(state.cluster)
+
+	// Pods the Broker controller creates must keep matching the chart's
+	// label selectors (headless service DNS, PDB, monitoring); owner and
+	// pool labels overlay for the operator's own selection.
+	brokerLabels := maps.Clone(set.Spec.Template.Labels)
+	if brokerLabels == nil {
+		brokerLabels = map[string]string{}
+	}
+	maps.Copy(brokerLabels, ownerLabels)
+	brokerLabels[redpandav1alpha2.NodePoolLabel] = nodePoolLabelValue
+	brokerLabels[redpandav1alpha2.ClusterNameLabel] = clusterName
+	// Carried onto the Broker CRs so the NodePool controller can report
+	// DeployedGeneration in broker mode, where no StatefulSet exists.
+	if gen := set.Labels[redpanda.NodePoolLabelGeneration]; gen != "" {
+		brokerLabels[redpanda.NodePoolLabelGeneration] = gen
+	}
+
+	poolLabels := maps.Clone(ownerLabels)
+	poolLabels[redpandav1alpha2.NodePoolLabel] = nodePoolLabelValue
+
+	podSelector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	if err != nil {
+		return nil, errors.Wrap(err, "constructing pod selector")
+	}
+
+	return &brokerset.BrokerSet{
+		Client:               cluster.GetClient(),
+		Scheme:               cluster.GetScheme(),
+		Owner:                rp,
+		ClusterRef:           clusterRef,
+		PoolName:             nodePoolLabelValue,
+		BrokerLabels:         brokerLabels,
+		PoolSelector:         k8slabels.SelectorFromSet(poolLabels),
+		ClusterSelector:      k8slabels.SelectorFromSet(ownerLabels),
+		PodSelector:          podSelector,
+		ConfigChecksumKey:    redpandav1alpha2.BrokerConfigChecksumAnnotation,
+		ClusterConfigVersion: configVersion,
+		Hooks:                &v2OwnerHooks{r: r, state: state},
+		Reporter:             state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
+		Arbitration:          state.arbitration,
+		Logger:               log.FromContext(ctx),
+	}, nil
+}
+
+// clusterNameFromPoolSet recovers the cluster name from a NodePool pool's
+// StatefulSet name ("<cluster>-<pool>"); Broker.PodName re-derives pod names
+// from the cluster-name label, so this must invert that composition exactly.
+func clusterNameFromPoolSet(setName, poolName string) string {
+	return strings.TrimSuffix(setName, "-"+poolName)
+}
+
+// v2OwnerHooks is the Redpanda owner's view of cluster state for the
+// brokerset engine, scoped to one reconcile pass.
+type v2OwnerHooks struct {
+	r     *RedpandaReconciler
+	state *clusterReconciliationState
+}
+
+var _ brokerset.OwnerHooks = (*v2OwnerHooks)(nil)
+
+func (h *v2OwnerHooks) IsClusterHealthy(ctx context.Context) error {
+	return h.r.clusterHealthCheck(h.state)(ctx)
+}
+
+// OnQuiesced is a no-op: unlike V1, V2 keeps no Restarting status
+// bookkeeping to clear — rolls converge purely from pod state.
+func (h *v2OwnerHooks) OnQuiesced(context.Context) error { return nil }
+
+// MigrationBlockedReason returns a non-empty reason while a scale, pod
+// replacement, or roll is in flight.
+func (h *v2OwnerHooks) MigrationBlockedReason(ctx context.Context) string {
+	if !h.state.pools.CheckScale(ctx) {
+		return "a scale or pod replacement is in progress"
+	}
+	if len(h.state.pools.PodsToRoll()) > 0 {
+		return "pods are pending a rolling update"
+	}
+	return ""
+}
+
+// v2MigrationReporter records migration progress as the BrokerMigration
+// condition on the in-memory Redpanda status; the write rides the
+// end-of-reconcile syncStatus, keeping the V2 single-status-writer
+// discipline.
+type v2MigrationReporter struct {
+	state *clusterReconciliationState
+}
+
+var _ brokerset.MigrationReporter = (*v2MigrationReporter)(nil)
+
+func (rep *v2MigrationReporter) Report(_ context.Context, status corev1.ConditionStatus, reason, message string) {
+	rp := rep.state.cluster.Redpanda
+	if apimeta.SetStatusCondition(&rp.Status.Conditions, metav1.Condition{
+		Type:               redpandav1alpha2.BrokerMigrationConditionType,
+		Status:             metav1.ConditionStatus(status),
+		Reason:             reason,
+		Message:            message,
+		ObservedGeneration: rp.Generation,
+	}) {
+		rep.state.brokerMigrationConditionChanged = true
+	}
+}
+
+// shouldReport reports whether the BrokerMigration condition exists and has
+// not yet reached the given terminal reason. The status write is best-effort
+// (conflicts are swallowed), so the steady state re-reports the terminal
+// reason until the write actually lands.
+func (rep *v2MigrationReporter) shouldReport(terminalReason string) bool {
+	cond := apimeta.FindStatusCondition(rep.state.cluster.Redpanda.Status.Conditions, redpandav1alpha2.BrokerMigrationConditionType)
+	return cond != nil && cond.Reason != terminalReason
+}
+
+func (rep *v2MigrationReporter) ShouldReportComplete(context.Context) bool {
+	return rep.shouldReport(brokerset.MigrationReasonComplete)
+}
+
+func (rep *v2MigrationReporter) ShouldReportRolledBack(context.Context) bool {
+	return rep.shouldReport(brokerset.MigrationReasonRolledBack)
+}
+
+// clusterHealthCheck returns a function reporting whether the admin API
+// considers the cluster healthy, returning a *RequeueAfterError when it does
+// not. Memoizes the admin client onto the reconcile state.
+func (r *RedpandaReconciler) clusterHealthCheck(state *clusterReconciliationState) func(ctx context.Context) error {
+	return func(ctx context.Context) error {
+		if err := r.ensureAdminClient(ctx, state); err != nil {
+			return errors.Wrap(err, "fetching redpanda admin client")
+		}
+		health, err := state.admin.GetHealthOverview(ctx)
+		if err != nil {
+			return errors.Wrap(err, "fetching cluster health")
+		}
+		if !health.IsHealthy {
+			return &brokerset.RequeueAfterError{
+				RequeueAfter: requeueTimeout,
+				Msg:          "cluster is not healthy",
+			}
+		}
+		return nil
+	}
+}
+
+// rollbackBrokerCRs walks a cluster with leftover Broker CRs back to
+// StatefulSet management (the use-broker-cr annotation was removed).
+func (r *RedpandaReconciler) rollbackBrokerCRs(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (bool, error) {
+	return brokerset.Rollback(ctx, brokerset.RollbackConfig{
+		Client:          cluster.GetClient(),
+		Scheme:          cluster.GetScheme(),
+		Owner:           state.cluster.Redpanda,
+		ClusterSelector: k8slabels.SelectorFromSet(r.LifecycleClient.GetOwnerLabels(state.cluster)),
+		Reporter:        &v2MigrationReporter{state: state},
+		// The tracker's desired pools are this pass's fresh render — the
+		// same one the plain path will create the StatefulSets from.
+		DesiredStatefulSets: func(context.Context) ([]*appsv1.StatefulSet, error) {
+			var sets []*appsv1.StatefulSet
+			for _, set := range state.pools.DesiredPools() {
+				sets = append(sets, set.StatefulSet)
+			}
+			return sets, nil
+		},
+		Logger: log.FromContext(ctx),
+	})
+}
+
+func (r *RedpandaReconciler) ensureAdminClient(ctx context.Context, state *clusterReconciliationState) error {
+	if state.admin != nil {
+		return nil
+	}
+	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.Redpanda)
+	if err != nil {
+		return err
+	}
+	state.admin = admin
+	return nil
+}
+
 func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
 	if state.pools.AllZero() {
 		return ctrl.Result{}, nil
@@ -562,12 +1001,10 @@ func (r *RedpandaReconciler) initAdminClient(ctx context.Context, state *cluster
 
 	logger := log.FromContext(ctx)
 
-	admin, err := r.ClientFactory.RedpandaAdminClient(ctx, state.cluster.Redpanda)
-	if err != nil {
+	if err := r.ensureAdminClient(ctx, state); err != nil {
 		logger.Error(err, "error fetching redpanda admin client")
 		return ctrl.Result{}, err
 	}
-	state.admin = admin
 	// Rendering the per-pod admin endpoints builds the full chart render
 	// state, so it is deferred until a remediation step actually needs an
 	// endpoint and shared (memoized) across every step of this pass.
@@ -998,6 +1435,18 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 	didConfigChange := state.cluster.Redpanda.Status.ConfigVersion != version
 	state.status.ConfigVersion = ptr.To(version)
 
+	if state.brokerMode && state.restartOnConfigChange {
+		// Broker-mode counterpart of the injected config-version label.
+		// Stamped whenever the version was computed, not only on change, so
+		// a crash between the status sync and this write can't lose the
+		// restart; MarkForRestart skips Brokers already carrying it.
+		if err := brokerset.MarkForRestart(ctx, cluster.GetClient(), state.cluster.Redpanda,
+			k8slabels.SelectorFromSet(r.LifecycleClient.GetOwnerLabels(state.cluster)), version); err != nil {
+			logger.Error(err, "marking Brokers for restart")
+			return ctrl.Result{}, errors.WithStack(err)
+		}
+	}
+
 	result := ctrl.Result{}
 	shouldRequeue := didConfigChange && state.restartOnConfigChange
 
@@ -1084,7 +1533,7 @@ func (r *RedpandaReconciler) clusterConfigFor(ctx context.Context, rp *redpandav
 // no more reconciliation should occur.
 func (r *RedpandaReconciler) syncStatus(ctx context.Context, cluster cluster.Cluster, state *clusterReconciliationState, result ctrl.Result, err error) (ctrl.Result, error) {
 	original := state.cluster.Redpanda.Status.DeepCopy()
-	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) {
+	if r.LifecycleClient.SetClusterStatus(state.cluster, state.status) || state.brokerMigrationConditionChanged {
 		log.FromContext(ctx).V(log.TraceLevel).Info("setting cluster status from diff", "original", original, "new", state.cluster.Redpanda.Status)
 		syncErr := cluster.GetClient().Status().Update(ctx, state.cluster.Redpanda)
 		err = errors.Join(syncErr, err)

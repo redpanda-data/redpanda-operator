@@ -30,10 +30,15 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
+	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -138,6 +143,9 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 				lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
 			)),
 			UseNodePools: true,
+			// Inert for the manually-choreographed tests: their clusters are
+			// paused before Broker CRs are hand-built.
+			BrokerCREnabled: true,
 		}).SetupWithManager(ctx, mgr, ""))
 
 		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)
@@ -1130,12 +1138,8 @@ func (s *BrokerControllerSuite) TestOrphanedPodAdoptionIsEventDriven() {
 			"foreign-owned pod should park the Broker in shadow mode")
 	}, time.Minute, time.Second)
 
-	// Let the event flurry from the ownership change drain completely, so
-	// adoption below can only be triggered by the orphaning event itself.
-	time.Sleep(10 * time.Second)
-
-	// The handover moment: the pod becomes ownerless (what GC does after the
-	// StatefulSet's orphan-delete).
+	// The pod becomes ownerless (what GC does after the StatefulSet's
+	// orphan-delete).
 	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
 	p = client.MergeFrom(pod.DeepCopy())
 	pod.OwnerReferences = nil
@@ -1156,4 +1160,513 @@ func (s *BrokerControllerSuite) TestOrphanedPodAdoptionIsEventDriven() {
 		assert.Equal(ct, target.Name, owner.Name)
 	}, time.Minute, time.Second,
 		"orphaned pod was not adopted within a minute — adoption is waiting for the periodic requeue instead of the orphaning event")
+}
+
+// TestV2MigrationAndRollback exercises the annotation-driven StatefulSet →
+// Broker CR migration end to end: adoption in place, scaling without a
+// StatefulSet, and rollback — all without pod recreation.
+func (s *BrokerControllerSuite) TestV2MigrationAndRollback() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+	s.applyAndWait(t, ctx, c, rp)
+
+	uidsBefore := s.brokerPodUIDs(t, ctx, c, rp, 3)
+
+	// Opt in: migration must adopt the pods in place.
+	s.setMigrationAnnotation(t, ctx, c, rp, ptr.To("true"))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)
+		assert.True(ct, apierrors.IsNotFound(err), "StatefulSet should be orphan-deleted")
+
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 3) {
+			return
+		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase, "broker %q should be Running", b.Name)
+			assert.True(ct, metav1.IsControlledBy(&b, rp), "broker %q should be controller-owned by the Redpanda", b.Name)
+
+			var pod corev1.Pod
+			if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: b.PodName(), Namespace: rp.Namespace}, &pod)) {
+				continue
+			}
+			assert.Equal(ct, uidsBefore[pod.Name], pod.UID, "pod %q must be adopted in place, not recreated", pod.Name)
+			ref := metav1.GetControllerOf(&pod)
+			if assert.NotNil(ct, ref, "pod %q should have a controller owner", pod.Name) {
+				assert.Equal(ct, "Broker", ref.Kind, "pod %q should be owned by its Broker", pod.Name)
+			}
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	s.waitForMigrationCondition(t, ctx, c, rp, "Complete")
+
+	// Adoption copied the live checksums, so nothing may be pending a
+	// rotation and no roll grant may be outstanding.
+	generations := map[string]int64{}
+	for _, b := range s.listBrokers(t, ctx, c, rp) {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: b.PodName(), Namespace: rp.Namespace}, &pod))
+		require.False(t, b.PodOutdated(&pod), "broker %q must not be pending a rotation after adoption", b.Name)
+		require.False(t, b.HasRollGrant(), "broker %q must not hold a roll grant after adoption", b.Name)
+		generations[b.Name] = b.Generation
+	}
+
+	// A desired render that doesn't compare equal to the stored
+	// (API-defaulted) object would generation-bump every Broker CR on every
+	// pass — force a reconcile and verify specs don't churn.
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	poke := client.MergeFrom(rp.DeepCopy())
+	rp.Annotations["test.redpanda.com/quiescence-poke"] = "1"
+	require.NoError(t, c.Patch(ctx, rp, poke))
+	require.Never(t, func() bool {
+		for _, b := range s.listBrokers(t, ctx, c, rp) {
+			if b.Generation != generations[b.Name] {
+				t.Logf("broker %q generation %d -> %d", b.Name, generations[b.Name], b.Generation)
+				return true
+			}
+		}
+		return false
+	}, 20*time.Second, 2*time.Second, "Broker specs churned across reconciles on a converged cluster")
+
+	// Scale up without a StatefulSet.
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(4)
+	s.applyAndWait(t, ctx, c, rp)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)
+		assert.True(ct, apierrors.IsNotFound(err), "no StatefulSet may reappear on scale-up")
+
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 4) {
+			return
+		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase, "broker %q should be Running", b.Name)
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	// The original pods must not have been touched by the scale-up.
+	for name, uid := range uidsBefore {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod))
+		require.Equal(t, uid, pod.UID, "pod %q must survive the scale-up untouched", name)
+	}
+
+	// Scale down: the excess broker decommissions and its CR is deleted.
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+	s.applyAndWait(t, ctx, c, rp)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 3) {
+			return
+		}
+		for _, b := range brokers {
+			assert.False(ct, b.Spec.Decommission, "broker %q should not carry decommission intent", b.Name)
+		}
+		var pod corev1.Pod
+		err := c.Get(ctx, client.ObjectKey{Name: fmt.Sprintf("%s-3", rp.Name), Namespace: rp.Namespace}, &pod)
+		assert.True(ct, apierrors.IsNotFound(err), "the decommissioned broker's pod should be gone")
+	}, 10*time.Minute, 5*time.Second)
+
+	// Rollback.
+	s.setMigrationAnnotation(t, ctx, c, rp, nil)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		assert.Empty(ct, brokers, "all Broker CRs should be removed on rollback")
+
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		assert.Equal(ct, int32(3), sts.Status.ReadyReplicas, "restored StatefulSet should re-adopt all pods")
+	}, 5*time.Minute, 5*time.Second)
+
+	s.waitForMigrationCondition(t, ctx, c, rp, "RolledBack")
+
+	for name, uid := range uidsBefore {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod))
+		require.Equal(t, uid, pod.UID, "pod %q must survive the rollback untouched", name)
+		ref := metav1.GetControllerOf(&pod)
+		if assert.NotNil(t, ref) {
+			assert.Equal(t, "StatefulSet", ref.Kind, "pod %q should be re-adopted by the StatefulSet", name)
+		}
+	}
+}
+
+// TestV2BrokerModeFlagOffOperatorDoesNotCreateStatefulSet pins downgrade
+// safety: a reconciler without --enable-broker is blind to broker-backed
+// pools, and unguarded it would render a fresh StatefulSet that fights the
+// Broker controller over the pods.
+func (s *BrokerControllerSuite) TestV2BrokerModeFlagOffOperatorDoesNotCreateStatefulSet() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(1)
+	s.applyAndWait(t, ctx, c, rp)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 1) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, brokers[0].Status.Phase)
+	}, 5*time.Minute, 5*time.Second)
+	uids := s.brokerPodUIDs(t, ctx, c, rp, 1)
+
+	// Identical wiring, --enable-broker off.
+	flagOff := &redpanda.RedpandaReconciler{
+		Manager:       s.mgr,
+		ClientFactory: s.clientFactory,
+		LifecycleClient: lifecycle.NewResourceClient(s.mgr, lifecycle.V2ResourceManagers(
+			lifecycle.Image{Repository: os.Getenv("TEST_REDPANDA_REPO"), Tag: os.Getenv("TEST_REDPANDA_VERSION")},
+			lifecycle.Image{Repository: "localhost/redpanda-operator", Tag: "dev"},
+			lifecycle.CloudSecretsFlags{CloudSecretsEnabled: false},
+		)),
+		UseNodePools:    true,
+		BrokerCREnabled: false,
+	}
+	req := mcreconcile.Request{
+		Request:     reconcile.Request{NamespacedName: client.ObjectKeyFromObject(rp)},
+		ClusterName: mcmanager.LocalCluster,
+	}
+	for range 3 {
+		if _, err := flagOff.Reconcile(ctx, req); err != nil {
+			// Errors are acceptable (refusing loudly is a valid guard);
+			// creating a StatefulSet is not.
+			t.Logf("flag-off reconcile returned error: %v", err)
+		}
+	}
+
+	var sts appsv1.StatefulSet
+	err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)
+	require.Truef(t, apierrors.IsNotFound(err),
+		"a reconciler without --enable-broker created StatefulSet %q for a broker-mode cluster; it would fight the Broker controller for the pods", rp.Name)
+	for name, uid := range uids {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod))
+		require.Equal(t, uid, pod.UID, "pod %q must survive flag-off reconciles untouched", name)
+	}
+}
+
+// TestV2RollbackAdoptsBrokerCreatedPodsWithoutRoll: pods the Broker
+// controller created carry no controller-revision-hash, so rollback must
+// stamp them with the restored StatefulSet's revision — otherwise the
+// revision-based roll loop restarts the fleet right after rollback.
+func (s *BrokerControllerSuite) TestV2RollbackAdoptsBrokerCreatedPodsWithoutRoll() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(2)
+	s.applyAndWait(t, ctx, c, rp)
+
+	// On failure, dump the revision bookkeeping before the namespace goes
+	// away — every spurious-roll hypothesis lives or dies on it.
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		dumpCtx, dumpCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer dumpCancel()
+		var revs appsv1.ControllerRevisionList
+		if err := c.List(dumpCtx, &revs, client.InNamespace(rp.Namespace)); err == nil {
+			for _, r := range revs.Items {
+				t.Logf("POSTMORTEM: controllerrevision %s revision=%d owner=%v", r.Name, r.Revision, metav1.GetControllerOf(&r))
+			}
+		}
+		var sts appsv1.StatefulSet
+		if err := c.Get(dumpCtx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts); err == nil {
+			t.Logf("POSTMORTEM: sts currentRevision=%s updateRevision=%s generation=%d observedGeneration=%d",
+				sts.Status.CurrentRevision, sts.Status.UpdateRevision, sts.Generation, sts.Status.ObservedGeneration)
+		}
+		var pods corev1.PodList
+		if err := c.List(dumpCtx, &pods, client.InNamespace(rp.Namespace)); err == nil {
+			for _, p := range pods.Items {
+				t.Logf("POSTMORTEM: pod %s uid=%s revision-label=%q", p.Name, p.UID, p.Labels[appsv1.StatefulSetRevisionLabel])
+			}
+		}
+	})
+
+	// Migrate.
+	s.setMigrationAnnotation(t, ctx, c, rp, ptr.To("true"))
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)
+		assert.True(ct, apierrors.IsNotFound(err), "StatefulSet should be orphan-deleted")
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 2) {
+			return
+		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase)
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	// Replace one pod in broker mode: index 1's pod becomes
+	// Broker-controller-created, with no controller-revision-hash.
+	var condemned *redpandav1alpha2.Broker
+	for _, b := range s.listBrokers(t, ctx, c, rp) {
+		if ptr.Deref(b.Spec.NetworkIndex, -1) == 1 {
+			condemned = &b
+			break
+		}
+	}
+	require.NotNil(t, condemned, "no Broker at index 1")
+	patch := client.MergeFrom(condemned.DeepCopy())
+	condemned.Spec.Decommission = true
+	require.NoError(t, c.Patch(ctx, condemned, patch))
+
+	// This UID is the discriminating signal: the buggy behavior ends in the
+	// same world state except the roll loop got there by deleting this pod
+	// and letting the StatefulSet recreate it.
+	var replacedPodUID types.UID
+	replacedPodName := fmt.Sprintf("%s-1", rp.Name)
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 2) {
+			return
+		}
+		for _, b := range brokers {
+			if !assert.False(ct, b.Spec.Decommission, "the condemned Broker should have been replaced") {
+				return
+			}
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase)
+		}
+		var pod corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: replacedPodName, Namespace: rp.Namespace}, &pod)) {
+			return
+		}
+		if !assert.NotContains(ct, pod.Labels, appsv1.StatefulSetRevisionLabel,
+			"precondition: a Broker-created pod carries no controller-revision-hash") {
+			return
+		}
+		replacedPodUID = pod.UID
+	}, 10*time.Minute, 5*time.Second)
+	require.NotEmpty(t, replacedPodUID)
+
+	// Roll back.
+	s.setMigrationAnnotation(t, ctx, c, rp, nil)
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		assert.Empty(ct, brokers, "all Broker CRs should be removed on rollback")
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		assert.Equal(ct, int32(2), sts.Status.ReadyReplicas, "restored StatefulSet should re-adopt all pods")
+	}, 5*time.Minute, 5*time.Second)
+
+	// Same pod (UID from before rollback), stamped with the restored
+	// StatefulSet's revision — a recreated pod would also end up labeled, so
+	// the UID equality is what separates adoption in place from a restart.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		var pod corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: replacedPodName, Namespace: rp.Namespace}, &pod)) {
+			return
+		}
+		if !assert.Equal(ct, replacedPodUID, pod.UID,
+			"the Broker-created pod was recreated during/after rollback — the roll loop rolled an adopted pod") {
+			return
+		}
+		assert.NotEmpty(ct, sts.Status.UpdateRevision)
+		assert.Equal(ct, sts.Status.UpdateRevision, pod.Labels[appsv1.StatefulSetRevisionLabel],
+			"rollback must stamp the restored StatefulSet's revision onto Broker-created pods")
+	}, 2*time.Minute, 5*time.Second)
+
+	// Nothing changed in the desired state, so no pod may be restarted after
+	// rollback; on a violation, dump the state that explains it before
+	// failing.
+	require.Never(t, func() bool {
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: replacedPodName, Namespace: rp.Namespace}, &pod))
+		violation := pod.UID != replacedPodUID || !pod.DeletionTimestamp.IsZero()
+		for _, cs := range pod.Status.ContainerStatuses {
+			if cs.RestartCount != 0 {
+				t.Logf("VIOLATION: container %q restarted %d time(s)", cs.Name, cs.RestartCount)
+				violation = true
+			}
+		}
+		if !violation {
+			return false
+		}
+		t.Logf("VIOLATION: pod %s uid=%s (want %s) deletionTimestamp=%v", pod.Name, pod.UID, replacedPodUID, pod.DeletionTimestamp)
+		var sts appsv1.StatefulSet
+		if err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts); err == nil {
+			t.Logf("VIOLATION state: sts currentRevision=%s updateRevision=%s", sts.Status.CurrentRevision, sts.Status.UpdateRevision)
+		}
+		var revs appsv1.ControllerRevisionList
+		if err := c.List(ctx, &revs, client.InNamespace(rp.Namespace)); err == nil {
+			for _, r := range revs.Items {
+				t.Logf("VIOLATION state: controllerrevision %s revision=%d", r.Name, r.Revision)
+			}
+		}
+		var pods corev1.PodList
+		if err := c.List(ctx, &pods, client.InNamespace(rp.Namespace)); err == nil {
+			for _, p := range pods.Items {
+				t.Logf("VIOLATION state: pod %s uid=%s deletionTimestamp=%v revision-label=%q",
+					p.Name, p.UID, p.DeletionTimestamp, p.Labels[appsv1.StatefulSetRevisionLabel])
+			}
+		}
+		return true
+	}, 45*time.Second, 2*time.Second,
+		"the Broker-created pod was restarted, recreated, or deleted after rollback")
+}
+
+// TestV2BrokerBornRollbackKeepsPodsRollable covers a broker-born cluster
+// (created with the annotation already set): it must provision Broker CRs
+// with VolumeClaimTemplates and never a StatefulSet, and its rollback — the
+// path with no migration backup — must give the rendered StatefulSet's
+// adopted pods revision bookkeeping, or the roll planner skips them forever
+// and future template changes silently never apply.
+func (s *BrokerControllerSuite) TestV2BrokerBornRollbackKeepsPodsRollable() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+	s.applyAndWait(t, ctx, c, rp)
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		err := c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)
+		assert.True(ct, apierrors.IsNotFound(err), "a fresh broker-mode cluster must never create a StatefulSet")
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 3) {
+			return
+		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase)
+			assert.NotEmpty(ct, b.Spec.Storage.VolumeClaimTemplates, "fresh brokers use volume claim templates, not existing claims")
+		}
+	}, 5*time.Minute, 5*time.Second)
+
+	// Roll back the broker-born cluster.
+	s.setMigrationAnnotation(t, ctx, c, rp, nil)
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		assert.Empty(ct, brokers, "all Broker CRs should be removed on rollback")
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		assert.Equal(ct, int32(3), sts.Status.ReadyReplicas, "rendered StatefulSet should adopt all pods")
+	}, 5*time.Minute, 5*time.Second)
+
+	// Adopted pods must carry the StatefulSet's revision.
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var sts appsv1.StatefulSet
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: rp.Name, Namespace: rp.Namespace}, &sts)) {
+			return
+		}
+		if !assert.NotEmpty(ct, sts.Status.UpdateRevision) {
+			return
+		}
+		for i := 0; i < 3; i++ {
+			var pod corev1.Pod
+			if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: fmt.Sprintf("%s-%d", rp.Name, i), Namespace: rp.Namespace}, &pod)) {
+				return
+			}
+			assert.Equalf(ct, sts.Status.UpdateRevision, pod.Labels[appsv1.StatefulSetRevisionLabel],
+				"pod %q must be adopted carrying the StatefulSet's revision — an unlabeled adopted pod is invisible to every future roll", pod.Name)
+		}
+	}, 3*time.Minute, 5*time.Second)
+
+	// A template change after the rollback must actually roll the pods.
+	uids := s.brokerPodUIDs(t, ctx, c, rp, 3)
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	patch := client.MergeFrom(rp.DeepCopy())
+	rp.Spec.ClusterSpec.Config = &redpandav1alpha2.Config{
+		Node: &runtime.RawExtension{Raw: []byte(`{"crash_loop_limit": 7}`)},
+	}
+	require.NoError(t, c.Patch(ctx, rp, patch))
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		rolled := 0
+		for name, uid := range uids {
+			var pod corev1.Pod
+			if err := c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod); err != nil {
+				return
+			}
+			if pod.UID != uid {
+				rolled++
+			}
+		}
+		assert.Equalf(ct, 3, rolled,
+			"a post-rollback config change must roll every adopted pod; %d of 3 rolled — unrolled pods are running stale config silently", rolled)
+	}, 8*time.Minute, 5*time.Second)
+}
+
+func (s *BrokerControllerSuite) brokerPodUIDs(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda, replicas int) map[string]types.UID {
+	t.Helper()
+
+	uids := map[string]types.UID{}
+	for i := range replicas {
+		name := fmt.Sprintf("%s-%d", rp.Name, i)
+		var pod corev1.Pod
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: rp.Namespace}, &pod))
+		uids[name] = pod.UID
+	}
+	return uids
+}
+
+func (s *BrokerControllerSuite) setMigrationAnnotation(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda, value *string) {
+	t.Helper()
+
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(rp), rp))
+	patch := client.MergeFrom(rp.DeepCopy())
+	if value == nil {
+		delete(rp.Annotations, redpandav1alpha2.AnnotationUseBrokerCR)
+	} else {
+		if rp.Annotations == nil {
+			rp.Annotations = map[string]string{}
+		}
+		rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = *value
+	}
+	require.NoError(t, c.Patch(ctx, rp, patch))
+}
+
+func (s *BrokerControllerSuite) listBrokers(t require.TestingT, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda) []redpandav1alpha2.Broker {
+	var list redpandav1alpha2.BrokerList
+	require.NoError(t, c.List(ctx, &list, client.InNamespace(rp.Namespace)))
+
+	var owned []redpandav1alpha2.Broker
+	for _, b := range list.Items {
+		if metav1.IsControlledBy(&b, rp) {
+			owned = append(owned, b)
+		}
+	}
+	return owned
+}
+
+func (s *BrokerControllerSuite) waitForMigrationCondition(t testing.TB, ctx context.Context, c client.Client, rp *redpandav1alpha2.Redpanda, reason string) {
+	t.Helper()
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(rp), rp)) {
+			return
+		}
+		cond := apimeta.FindStatusCondition(rp.Status.Conditions, redpandav1alpha2.BrokerMigrationConditionType)
+		if !assert.NotNil(ct, cond, "BrokerMigration condition should exist") {
+			return
+		}
+		assert.Equal(ct, reason, cond.Reason)
+	}, 5*time.Minute, 5*time.Second)
 }

@@ -13,6 +13,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 	"time"
@@ -553,6 +554,35 @@ func removeAnnotationFromV1Cluster(ctx context.Context, t framework.TestingT, an
 	t.Logf("Removed annotation %s from V1 cluster %q", annotationKey, clusterName)
 }
 
+func setAnnotationOnRedpanda(ctx context.Context, t framework.TestingT, annotationKey, annotationValue, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var cluster redpandav1alpha2.Redpanda
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			return err
+		}
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations[annotationKey] = annotationValue
+		return t.Update(ctx, &cluster)
+	}))
+	t.Logf("Set annotation %s=%s on Redpanda %q", annotationKey, annotationValue, clusterName)
+}
+
+func removeAnnotationFromRedpanda(ctx context.Context, t framework.TestingT, annotationKey, clusterName string) {
+	key := t.ResourceKey(clusterName)
+	require.NoError(t, retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var cluster redpandav1alpha2.Redpanda
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			return err
+		}
+		delete(cluster.Annotations, annotationKey)
+		return t.Update(ctx, &cluster)
+	}))
+	t.Logf("Removed annotation %s from Redpanda %q", annotationKey, clusterName)
+}
+
 func statefulSetShouldExistForCluster(ctx context.Context, t framework.TestingT, clusterName string) {
 	key := t.ResourceKey(clusterName)
 	var stsList appsv1.StatefulSetList
@@ -607,20 +637,55 @@ func snapshotPodUIDs(ctx context.Context, t framework.TestingT, clusterName stri
 	return context.WithValue(ctx, podUIDSnapshotKey{clusterName}, uids)
 }
 
-func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, clusterName string) {
-	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
-	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
-
+// podsShouldHaveNoContainerRestarts asserts that no container of any of the
+// cluster's pods has ever restarted. Complements the pod-UID checks: a pod
+// can keep its UID while a container crash-loops, and a recreated pod resets
+// to zero restarts, so neither check subsumes the other.
+func podsShouldHaveNoContainerRestarts(ctx context.Context, t framework.TestingT, clusterName string) {
 	key := t.ResourceKey(clusterName)
 	var pods corev1.PodList
 	require.NoError(t, t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
 		"app.kubernetes.io/instance": clusterName,
 		"app.kubernetes.io/name":     "redpanda",
 	}))
-	current := map[string]string{}
+	require.NotEmpty(t, pods.Items, "no pods found for cluster %q", clusterName)
 	for _, p := range pods.Items {
-		current[p.Name] = string(p.UID)
+		for _, cs := range p.Status.ContainerStatuses {
+			require.Zerof(t, cs.RestartCount, "container %q of pod %q restarted %d time(s)", cs.Name, p.Name, cs.RestartCount)
+		}
 	}
+	t.Logf("All containers of %d pods for cluster %q have zero restarts", len(pods.Items), clusterName)
+}
+
+func podUIDsShouldBeUnchanged(ctx context.Context, t framework.TestingT, clusterName string) {
+	snap, ok := ctx.Value(podUIDSnapshotKey{clusterName}).(map[string]string)
+	require.True(t, ok, "no pod UID snapshot found for cluster %q", clusterName)
+
+	key := t.ResourceKey(clusterName)
+	// Extra or lagging pods (e.g. Terminating after a scale-down) converge,
+	// so retry on them; a changed UID never converges, so bail immediately
+	// and let the assertion below report it.
+	var current map[string]string
+	require.Eventually(t, func() bool {
+		var pods corev1.PodList
+		if err := t.List(ctx, &pods, runtimeclient.InNamespace(key.Namespace), runtimeclient.MatchingLabels{
+			"app.kubernetes.io/instance": clusterName,
+			"app.kubernetes.io/name":     "redpanda",
+		}); err != nil {
+			t.Logf("failed to list pods: %v", err)
+			return false
+		}
+		current = map[string]string{}
+		for _, p := range pods.Items {
+			current[p.Name] = string(p.UID)
+		}
+		for name, oldUID := range snap {
+			if newUID, ok := current[name]; ok && newUID != oldUID {
+				return true
+			}
+		}
+		return maps.Equal(snap, current)
+	}, 2*time.Minute, 2*time.Second, "pod set for cluster %q never converged to the UID snapshot; snapshot: %v, last seen: %v", clusterName, snap, current)
 	for name, oldUID := range snap {
 		newUID, exists := current[name]
 		if !exists {
