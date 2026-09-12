@@ -576,6 +576,9 @@ storage:
       cloud_storage_cache_size: 5368709120
 
 post_install_job:
+  # -- Whether to run the post-install and post-upgrade Job, which syncs the
+  # cluster configuration and the users listed under `auth.sasl` into the
+  # running cluster.
   enabled: true
   # Resource requests and limits for the post-install batch job
   # resources:
@@ -605,6 +608,9 @@ post_install_job:
 statefulset:
   # -- Number of Redpanda brokers (Redpanda Data recommends setting this to the number of worker nodes in the cluster)
   replicas: 3
+  # -- Update strategy for the StatefulSet.
+  # For details,
+  # see the [Kubernetes documentation](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#rolling-update).
   updateStrategy:
     type: RollingUpdate
   # -- Controls the lifecycle of PersistentVolumeClaims created from the StatefulSet's
@@ -617,6 +623,9 @@ statefulset:
     whenDeleted: Retain
     whenScaled: Retain
   budget:
+    # -- Maximum number of brokers the rendered PodDisruptionBudget allows to
+    # be unavailable at once during a voluntary disruption, such as a node
+    # drain.
     maxUnavailable: 1
   # -- Additional labels to be added to statefulset label selector.
   # For example, `my.k8s.service: redpanda`.
@@ -705,7 +714,9 @@ statefulset:
     custom: {}
   sideCars:
     image:
+      # -- Tag of the sidecar container image.
       tag: v26.2.1
+      # -- Repository of the sidecar container image.
       repository: docker.redpanda.com/redpandadata/redpanda-operator
     # Additional arguments to pass to the sidecar command. Reserved for internal testing.
     # @ignored
@@ -718,6 +729,9 @@ statefulset:
       # ClusterRole that grants the Pod's ServiceAccount cluster-wide read access to Nodes,
       # regardless of the other pvcUnbinder settings.
       enabled: false
+      # -- How long a broker Pod must stay in `Pending` before the PVCUnbinder
+      # deletes its PersistentVolumeClaim to re-trigger volume provisioning.
+      # Applies only when `pvcUnbinder.enabled` is `true`.
       unbindAfter: 60s
       # -- Renders `--disable-pvc-rebinding-gate-exemption`: turns off the pvc-rebinding gate's
       # stuck-claim exemption (an escape hatch if its proof chain misfires in your environment)
@@ -729,10 +743,18 @@ statefulset:
     # multiple times across the `decommissionAfter` window. A `decommissionRequeueTimeout` values can be specified to override how
     # often the decommissioner rechecks a cluster that has a broker which has been flagged as invalid. 
     brokerDecommissioner:
+      # -- Whether to run the BrokerDecommissioner sidecar controller.
       enabled: false
+      # -- How long a broker must keep being detected as invalid before the
+      # decommission operation starts. Applies only when
+      # `brokerDecommissioner.enabled` is `true`.
       decommissionAfter: 60s
+      # -- How often the decommissioner rechecks a cluster that has a broker
+      # flagged as invalid. Applies only when `brokerDecommissioner.enabled`
+      # is `true`.
       decommissionRequeueTimeout: 10s
     configWatcher:
+      # -- Whether to run the config-watcher sidecar.
       enabled: true
     # -- Keeps the in-pod rpk configuration fresh after node operations
     # (scale, NodePool swap) without a pod restart (K8S-755). Enabled by
@@ -740,12 +762,19 @@ statefulset:
     rpkProfileWatcher:
       enabled: true
     controllers:
+      # -- Whether to run the sidecar controllers.
       enabled: false
       # -- DEPRECATED: Use `rbac.enabled` to control RBAC chart wide or control RBAC by selectively enabling/disabling specific sidecar controllers.
       # Setting this field has no effect.
       createRBAC: true
+      # -- Address on which the sidecar controllers serve health probes.
+      # Applies only when `controllers.enabled` is `true`.
       healthProbeAddress: ":8085"
+      # -- Address on which the sidecar controllers serve Prometheus metrics.
+      # Applies only when `controllers.enabled` is `true`.
       metricsAddress: ":9082"
+      # -- Address on which the sidecar controllers serve pprof profiles.
+      # Applies only when `controllers.enabled` is `true`.
       pprofAddress: ":9083"
       # -- DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset.sideCars.pvcUnbinder
       # Setting this field has no effect.
@@ -753,16 +782,25 @@ statefulset:
         - all
   initContainers:
     fsValidator:
+      # -- Whether to run the filesystem-validator init container, which
+      # refuses to start a broker whose data directory is not on the expected
+      # filesystem.
       enabled: false
+      # -- Filesystem the validator requires on the data directory, for
+      # example `xfs`. Applies only when `fsValidator.enabled` is `true`.
       expectedFS: xfs
     setDataDirOwnership:
       # -- In environments where root is not allowed, you cannot change the ownership of files and directories.
       # Enable `setDataDirOwnership` when using default minikube cluster configuration.
       enabled: false
     configurator:
+      # -- Additional command-line arguments passed to the configurator init
+      # container.
       additionalCLIArgs: []
   initContainerImage:
+    # -- Repository of the image used for the chart's own init containers.
     repository: busybox
+    # -- Tag of the image used for the chart's own init containers.
     tag: latest
   # -- Additional flags to pass to redpanda,
   additionalRedpandaCmdFlags: []
