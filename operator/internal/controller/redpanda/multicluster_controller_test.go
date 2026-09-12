@@ -244,33 +244,19 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 	}, 1*time.Minute, 1*time.Second, "SpecSynced condition never went back to True after fixing drift")
 }
 
-// TestOwnedResourceDeletionTriggersResync verifies that the controller watches
-// the resources rendered by the lifecycle package: deleting an owned resource
-// triggers a watch-driven reconcile that recreates it well before the next
-// periodic requeue.
-//
-// The StretchCluster deliberately has no BrokerPools: with a pool the
-// controller fast-polls while pods are unready, which would recreate the
-// resource with or without a watch. With zero pools the controller quiesces
-// to the 3 minute periodic requeue, so a sub-minute recreation can only be
-// watch-driven. Inline SASL users are used because the rendered users Secret
-// is the one simple resource emitted without any pools.
 func (s *MulticlusterControllerSuite) TestOwnedResourceDeletionTriggersResync() {
 	t, ctx, cancel, ns := s.setup()
 	defer cancel()
 
 	// scQuiesceWindow is how long the StretchCluster's resourceVersion must
 	// stay unchanged on every cluster before the controller is considered
-	// settled. stretchPeriodicRequeue mirrors the controller's unexported
-	// periodicRequeue — the reconcile cadence of a settled StretchCluster.
-	// recreateBound is the deadline for watch-driven recreation; it must stay
-	// well below stretchPeriodicRequeue-scQuiesceWindow, the earliest a
+	// settled. recreateBound is the deadline for watch-driven recreation; it
+	// must stay well below periodicRequeue-scQuiesceWindow, the earliest a
 	// periodic pass could recreate the Secret without any watch (the last
 	// pass may have run up to scQuiesceWindow before the delete).
 	const (
-		scQuiesceWindow        = 15 * time.Second
-		stretchPeriodicRequeue = 3 * time.Minute
-		recreateBound          = 45 * time.Second
+		scQuiesceWindow = 15 * time.Second
+		recreateBound   = 45 * time.Second
 	)
 
 	const scName = "watch-resync"
@@ -336,7 +322,6 @@ func (s *MulticlusterControllerSuite) TestOwnedResourceDeletionTriggersResync() 
 	var secret corev1.Secret
 	require.NoError(t, s.mc.Envs[1].Client().Get(ctx, secretKey, &secret))
 	deletedUID := secret.UID
-	deletedAt := time.Now()
 	require.NoError(t, s.mc.Envs[1].Client().Delete(ctx, &secret))
 
 	require.Eventually(t, func() bool {
@@ -344,7 +329,7 @@ func (s *MulticlusterControllerSuite) TestOwnedResourceDeletionTriggersResync() 
 		if err := s.mc.Envs[1].Client().Get(ctx, secretKey, &recreated); err != nil {
 			return false
 		}
-		return recreated.UID != deletedUID && time.Since(deletedAt) < stretchPeriodicRequeue-scQuiesceWindow
+		return recreated.UID != deletedUID
 	}, recreateBound, 1*time.Second, "users Secret was never recreated after deletion; owned-resource watch not firing")
 }
 
