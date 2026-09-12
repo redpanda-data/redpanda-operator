@@ -244,6 +244,95 @@ func (s *MulticlusterControllerSuite) TestSpecConsistencyConditionSetOnDrift() {
 	}, 1*time.Minute, 1*time.Second, "SpecSynced condition never went back to True after fixing drift")
 }
 
+func (s *MulticlusterControllerSuite) TestOwnedResourceDeletionTriggersResync() {
+	t, ctx, cancel, ns := s.setup()
+	defer cancel()
+
+	// scQuiesceWindow is how long the StretchCluster's resourceVersion must
+	// stay unchanged on every cluster before the controller is considered
+	// settled. recreateBound is the deadline for watch-driven recreation; it
+	// must stay well below periodicRequeue-scQuiesceWindow, the earliest a
+	// periodic pass could recreate the Secret without any watch (the last
+	// pass may have run up to scQuiesceWindow before the delete).
+	const (
+		scQuiesceWindow = 15 * time.Second
+		recreateBound   = 45 * time.Second
+	)
+
+	const scName = "watch-resync"
+	usersSecretName := scName + "-users"
+	nn := types.NamespacedName{Name: scName, Namespace: ns.Name}
+
+	s.mc.ApplyAllInNamespace(t, ctx, ns.Name, &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: scName},
+		Spec: redpandav1alpha2.StretchClusterSpec{
+			Auth: &redpandav1alpha2.Auth{
+				SASL: &redpandav1alpha2.SASL{
+					Enabled:   ptr.To(true),
+					SecretRef: ptr.To(usersSecretName),
+					Users: []redpandav1alpha2.UsersItems{{
+						Name:     ptr.To("admin"),
+						Password: ptr.To("changeme"),
+					}},
+				},
+			},
+		},
+	})
+
+	// Wait until every cluster has the rendered users Secret — i.e. the
+	// reconciler completed at least one resource sync pass everywhere.
+	secretKey := client.ObjectKey{Namespace: ns.Name, Name: usersSecretName}
+	for i, env := range s.mc.Envs {
+		cl := env.Client()
+		require.Eventually(t, func() bool {
+			var secret corev1.Secret
+			if err := cl.Get(ctx, secretKey, &secret); err != nil {
+				t.Logf("[TestOwnedResourceDeletionTriggersResync] waiting for users secret in cluster %d: %v", i, err)
+				return false
+			}
+			return true
+		}, 2*time.Minute, 2*time.Second, "rendered users Secret never appeared in cluster %d", i)
+	}
+
+	// Wait for the controller to quiesce: creation-time passes write status
+	// (finalizer, conditions, bootstrap-user bookkeeping) to every cluster,
+	// and each write re-triggers a reconcile whose SyncAll would recreate the
+	// Secret and mask a missing watch. A pass resets its periodic requeue to
+	// 3 minutes out, so once the StretchCluster's resourceVersion has been
+	// stable everywhere for a while, the only thing that can recreate the
+	// Secret within the assertion window below is the owned-resource watch.
+	for i, env := range s.mc.Envs {
+		var lastRV string
+		var stableSince time.Time
+		cl := env.Client()
+		require.Eventually(t, func() bool {
+			var live redpandav1alpha2.StretchCluster
+			if err := cl.Get(ctx, nn, &live); err != nil {
+				return false
+			}
+			if live.ResourceVersion != lastRV {
+				lastRV = live.ResourceVersion
+				stableSince = time.Now()
+				return false
+			}
+			return time.Since(stableSince) > scQuiesceWindow
+		}, 2*time.Minute, 1*time.Second, "StretchCluster on cluster %d never quiesced", i)
+	}
+
+	var secret corev1.Secret
+	require.NoError(t, s.mc.Envs[1].Client().Get(ctx, secretKey, &secret))
+	deletedUID := secret.UID
+	require.NoError(t, s.mc.Envs[1].Client().Delete(ctx, &secret))
+
+	require.Eventually(t, func() bool {
+		var recreated corev1.Secret
+		if err := s.mc.Envs[1].Client().Get(ctx, secretKey, &recreated); err != nil {
+			return false
+		}
+		return recreated.UID != deletedUID
+	}, recreateBound, 1*time.Second, "users Secret was never recreated after deletion; owned-resource watch not firing")
+}
+
 // TestIssuerRef verifies that when a user provides their own CA and Issuers
 // (Option 1), the operator:
 //   - Does NOT generate or distribute root-certificate secrets for certs with IssuerRef

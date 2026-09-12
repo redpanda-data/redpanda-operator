@@ -51,6 +51,7 @@ func init() {
 type MockBuilder struct {
 	*mcbuilder.Builder
 	base    string
+	forOpts []mcbuilder.ForOption
 	watches []string
 	owns    []string
 }
@@ -65,6 +66,10 @@ func (b *MockBuilder) Base() string {
 	return b.base
 }
 
+func (b *MockBuilder) ForOptions() []mcbuilder.ForOption {
+	return b.forOpts
+}
+
 func (b *MockBuilder) Owned() []string {
 	return b.owns
 }
@@ -75,6 +80,7 @@ func (b *MockBuilder) Watched() []string {
 
 func (b *MockBuilder) For(object client.Object, opts ...mcbuilder.ForOption) *mcbuilder.Builder {
 	b.base = fmt.Sprintf("%T", object)
+	b.forOpts = opts
 	return b.Builder.For(object, opts...)
 }
 
