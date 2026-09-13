@@ -35,6 +35,8 @@ const (
 	SchemaRegistryExternalListenerName = "schema-registry"
 	// PandaproxyExternalListenerName is the default name of an external pandaproxy listener
 	PandaproxyExternalListenerName = "proxy-external"
+	// ClusterKind is "Cluster", use it to detect kind ref in dependant object.
+	ClusterKind = "Cluster"
 )
 
 const DefaultNodePoolName = "default"

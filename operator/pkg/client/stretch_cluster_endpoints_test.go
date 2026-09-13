@@ -292,6 +292,37 @@ func TestStretchClusterEndpointsSkipsUndialablePods(t *testing.T) {
 		"the terminating pool's broker must not be offered to the admin client")
 }
 
+// TestStretchClusterEndpointsSkipsDeletingPool pins the pool-level skip: a pool
+// with a deletion timestamp is left out of the admin endpoints even when its
+// pod is still dialable, so the decommission/health reads that clean the pool
+// up never route through the broker being removed.
+func TestStretchClusterEndpointsSkipsDeletingPool(t *testing.T) {
+	scheme := endpointsScheme(t)
+	now := metav1.Now()
+
+	deletingPool := brokerPool("pool-b", "sc")
+	deletingPool.DeletionTimestamp = &now
+	deletingPool.Finalizers = []string{"keep/for-fake-client"}
+
+	c := &Factory{mgr: &stubManager{clients: map[string]client.Client{
+		"cluster-1": fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+			brokerPool("pool-a", "sc"), pod("sc-pool-a-0"),
+			brokerPool("pool-c", "sc"), pod("sc-pool-c-0"),
+			// pool-b is being deleted, but its pod is still Running (dialable).
+			deletingPool, pod("sc-pool-b-0"),
+		).Build(),
+	}}}
+
+	sc := &redpandav1alpha2.StretchCluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "sc", Namespace: "redpanda"},
+	}
+
+	endpoints, err := c.stretchClusterEndpoints(t.Context(), sc, 9644)
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"sc-pool-a-0.redpanda:9644", "sc-pool-c-0.redpanda:9644"}, endpoints,
+		"a pool with a deletion timestamp must not be offered even if its pod is dialable")
+}
+
 // TestStretchClusterEndpointsTwoHostFloor pins the floor end to end: with one
 // dialable broker left, the list is padded back to two so rpadmin keeps
 // leader resolution and try-every-host reads, preferring a pod-less endpoint

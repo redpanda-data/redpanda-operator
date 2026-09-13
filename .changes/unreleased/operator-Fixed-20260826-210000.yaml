@@ -1,0 +1,5 @@
+project: operator
+kind: Fixed
+body: |-
+    Setting `post_install_job.enabled=false` no longer prevents cluster configuration from being applied. It is now derived from chart values instead of the post-install job, so environment injected via `post_install_job.podTemplate` no longer feeds cluster config — use `config.extraClusterConfiguration` or `storage.tiered.credentialsSecretRef` instead.
+time: 2026-08-26T21:00:00-07:00

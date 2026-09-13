@@ -351,6 +351,15 @@ func (c *Factory) stretchClusterEndpoints(ctx context.Context, sc *redpandav1alp
 			if !ref.IsStretchCluster() || ref.Name != sc.Name {
 				continue
 			}
+			// A pool being deleted has a broker the operator is tearing down; its
+			// admin API goes away (io.EOF, surfaced by rpadmin as "expected a tls
+			// connection") mid-decommission. Keep it out of the admin endpoint set
+			// so cluster-health and decommission reads route through surviving
+			// brokers rather than the one being removed — otherwise the pool's own
+			// StatefulSet cleanup can wedge on a read to its dying broker.
+			if !pool.GetDeletionTimestamp().IsZero() {
+				continue
+			}
 			for j := int32(0); j < pool.GetReplicas(); j++ {
 				poolFullname := tplutil.CleanForK8s(sc.Name) + pool.Suffix()
 				name := rendermulticluster.PerPodServiceName(poolFullname, j)

@@ -31,7 +31,6 @@ import (
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -162,10 +161,7 @@ func grantRollGrantToBroker(ctx context.Context, t framework.TestingT, brokerNam
 	require.NotEmpty(t, templateHash, "broker %q missing pod-template hash", brokerName)
 
 	patch := runtimeclient.MergeFrom(broker.DeepCopy())
-	if broker.Annotations == nil {
-		broker.Annotations = map[string]string{}
-	}
-	broker.Annotations[feature.RollGrant.Key] = feature.FormatRollGrant(templateHash, time.Now().Add(feature.RollGrantTTL))
+	broker.SetRollGrant(templateHash, time.Now().Add(redpandav1alpha2.RollGrantTTL))
 	require.NoError(t, t.Patch(ctx, &broker, patch))
 	t.Logf("Granted roll-grant to Broker %q", brokerName)
 }

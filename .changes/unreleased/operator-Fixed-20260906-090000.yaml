@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    Deleting a Redpanda or StretchCluster no longer waits for the 3-minute
+    periodic requeue before its finalizer is removed. While owned resources
+    are still being deleted the controller requeues every 10s instead of
+    relying on an incidental event.
+time: 2026-09-06T09:00:00.000000-07:00

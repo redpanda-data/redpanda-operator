@@ -616,7 +616,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "address" "0.0.0.0" "port" ($state.Values.listeners.rpc.port | int))) | toJson -}}
+{{- (dict "r" (dict "address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.listeners.rpc.address "0.0.0.0")))) "r") "port" ($state.Values.listeners.rpc.port | int))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

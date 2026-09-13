@@ -866,6 +866,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -2308,6 +2309,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -3600,6 +3602,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -5086,6 +5089,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -6492,6 +6496,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -8160,6 +8165,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -9803,6 +9809,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -11488,6 +11495,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -13046,6 +13054,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -14668,6 +14677,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -16289,6 +16299,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -17847,6 +17858,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -19223,6 +19235,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -20578,6 +20591,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -22167,6 +22181,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -23725,6 +23740,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -25286,6 +25302,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -26897,6 +26914,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -28524,6 +28542,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -30151,6 +30170,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -31730,6 +31750,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -33356,6 +33377,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -35001,6 +35023,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -36646,6 +36669,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -38244,6 +38268,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -39889,6 +39914,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -41534,6 +41560,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -43179,6 +43206,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -44777,6 +44805,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -46373,6 +46402,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -47931,6 +47961,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -49490,6 +49521,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -51128,6 +51160,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -52694,6 +52727,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -54313,6 +54347,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -55912,6 +55947,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -57475,6 +57511,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -59065,6 +59102,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -60658,6 +60696,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -62020,6 +62059,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -63730,6 +63770,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -65263,6 +65304,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -66935,6 +66977,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -68500,6 +68543,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -70090,6 +70134,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -71676,6 +71721,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -73122,6 +73168,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -74741,6 +74788,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -76387,6 +76435,8 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations:
+    my.co/team: platform
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -78060,6 +78110,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -79677,6 +79728,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -81322,6 +81374,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -82929,6 +82982,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -84536,6 +84590,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -86109,6 +86164,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -87716,6 +87772,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -89323,6 +89380,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -90884,6 +90942,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -92491,6 +92550,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -94098,6 +94158,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -95659,6 +95720,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -97266,6 +97328,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -98873,6 +98936,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -100434,6 +100498,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -102041,6 +102106,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -103648,6 +103714,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -105209,6 +105276,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -106816,6 +106884,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -108423,6 +108492,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -109984,6 +110054,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -111348,6 +111419,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -112713,6 +112785,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -114370,6 +114443,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -116092,6 +116166,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -117752,6 +117827,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -119426,6 +119502,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -121281,6 +121358,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -123043,6 +123121,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -124793,6 +124872,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -126419,6 +126499,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -128136,6 +128217,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: not-redpanda
     app.kubernetes.io/instance: redpanda
@@ -129694,6 +129776,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -131252,6 +131335,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -132808,6 +132892,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -134393,6 +134478,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -135964,6 +136050,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -137623,6 +137710,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -139264,6 +139352,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -140871,6 +140960,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -142478,6 +142568,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -144039,6 +144130,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -145646,6 +145738,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -147253,6 +147346,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -148821,6 +148915,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -150534,6 +150629,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -151909,6 +152005,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -153474,6 +153571,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda
@@ -155150,6 +155248,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  annotations: {}
   labels:
     app.kubernetes.io/component: redpanda
     app.kubernetes.io/instance: redpanda

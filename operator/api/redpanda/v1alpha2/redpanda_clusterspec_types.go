@@ -1001,6 +1001,8 @@ type Listeners struct {
 
 // RPC configures settings for the RPC API listeners.
 type RPC struct {
+	// The address to bind this listener to. Default 0.0.0.0
+	Address *string `json:"address,omitempty"`
 	// Specifies the container port number for the internal listener.
 	Port *int `json:"port,omitempty"`
 	// Configures TLS settings for the internal listener.
@@ -1008,6 +1010,8 @@ type RPC struct {
 }
 
 type Listener struct {
+	// The address to bind this listener to. Default 0.0.0.0
+	Address *string `json:"address,omitempty"`
 	// Specifies whether this Listener is enabled.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`.

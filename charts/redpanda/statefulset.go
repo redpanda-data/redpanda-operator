@@ -1304,6 +1304,9 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 			Labels: helmette.Merge(map[string]string{
 				"app.kubernetes.io/component": fmt.Sprintf("%s%s", Name(state), pool.Suffix()),
 			}, poolLabels, FullLabels(state)),
+			// Only the StatefulSet object itself. Its volumeClaimTemplates are
+			// immutable, and annotating the Pod template would roll every broker.
+			Annotations: FullAnnotations(state),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{

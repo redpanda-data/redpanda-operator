@@ -1,0 +1,6 @@
+apiVersion: v2
+name: explicit-nulls
+type: application
+version: 0.0.1
+appVersion: v1.0.0
+kubeVersion: ">= 1.25.0-0"

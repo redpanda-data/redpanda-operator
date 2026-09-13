@@ -11,6 +11,7 @@ package testenv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os/exec"
@@ -120,6 +121,10 @@ func NewMulticluster(t *testing.T, ctx context.Context, opts MulticlusterOptions
 			k3dOpts := []k3d.ClusterOpt{
 				k3d.WithAgents(1),
 				k3d.WithNetwork(opts.Name),
+				// The server container also runs the k3s control plane; a
+				// busy-polling broker scheduled next to it competes with the
+				// apiserver for the same CPU budget.
+				k3d.WithServerNoSchedule(),
 			}
 			// Non-overlapping CIDRs so pods can communicate across clusters.
 			k3dOpts = append(k3dOpts, k3d.WithCIDRs(
@@ -263,7 +268,12 @@ func (m *MulticlusterEnv) CreateTestNamespace(t *testing.T) *MulticlusterTestNam
 		nsClient := client.NewNamespacedClient(rawClient, tn.Name)
 		clients = append(clients, nsClient)
 
+		env.recordLogs(t, tn.Name)
+
 		t.Cleanup(func() {
+			if t.Failed() {
+				env.diagnosticsFor(t, tn.Name).dump()
+			}
 			if !testutil.Retain() {
 				_ = rawClient.Delete(context.Background(), ns)
 			}
@@ -351,8 +361,7 @@ func (m *MulticlusterEnv) DialContext(ctx context.Context, network, address stri
 				if addr.TargetRef != nil && addr.TargetRef.Kind == "Pod" {
 					// Found the pod — dial it via this cluster's PodDialer.
 					podAddress := net.JoinHostPort(addr.TargetRef.Name+"."+ns, port)
-					dialer := kube.NewPodDialer(m.Envs[i].RESTConfig())
-					return dialer.DialContext(ctx, network, podAddress)
+					return m.dialPod(ctx, i, network, podAddress)
 				}
 			}
 		}
@@ -363,24 +372,35 @@ func (m *MulticlusterEnv) DialContext(ctx context.Context, network, address stri
 				podName, podClusterIdx := m.findPodByIP(ctx, ns, addr.IP)
 				if podName != "" {
 					podAddress := net.JoinHostPort(podName+"."+ns, port)
-					dialer := kube.NewPodDialer(m.Envs[podClusterIdx].RESTConfig())
-					return dialer.DialContext(ctx, network, podAddress)
+					return m.dialPod(ctx, podClusterIdx, network, podAddress)
 				}
 			}
 		}
 	}
 
-	// Fallback: try each cluster's PodDialer directly (maybe the service name IS the pod name).
-	var lastErr error
-	for _, env := range m.Envs {
-		dialer := kube.NewPodDialer(env.RESTConfig())
-		conn, err := dialer.DialContext(ctx, network, address)
+	// Fallback: try each cluster's PodDialer directly (maybe the service name
+	// IS the pod name). The pod lives on exactly one cluster, so its error is
+	// the one that matters; report every cluster's rather than letting a
+	// peer's "not found" mask it.
+	var errs []error
+	for i := range m.Envs {
+		conn, err := m.dialPod(ctx, i, network, address)
 		if err == nil {
 			return conn, nil
 		}
-		lastErr = err
+		errs = append(errs, err)
 	}
-	return nil, fmt.Errorf("multicluster dial failed for %s: %w", address, lastErr)
+	return nil, fmt.Errorf("multicluster dial failed for %s: %w", address, errors.Join(errs...))
+}
+
+// dialPod port-forwards to a pod through cluster idx's API server, naming the
+// cluster in any error.
+func (m *MulticlusterEnv) dialPod(ctx context.Context, idx int, network, podAddress string) (net.Conn, error) {
+	conn, err := kube.NewPodDialer(m.Envs[idx].RESTConfig()).DialContext(ctx, network, podAddress)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", m.Envs[idx].Name, err)
+	}
+	return conn, nil
 }
 
 // findPodByIP searches all clusters for a pod with the given IP in the given namespace.

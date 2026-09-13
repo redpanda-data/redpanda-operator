@@ -22,7 +22,6 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
@@ -38,7 +37,7 @@ import (
 //     handed to another broker, since the holder may be half drained and
 //     only one broker may be in maintenance mode at a time.
 //  2. If any unexpired grant remains, wait — never double-grant. Expired
-//     grants are treated as released (feature.RollGrantTTL is a safety valve
+//     grants are treated as released (RollGrantTTL is a safety valve
 //     against controller restarts and wedged rolls).
 //  3. Hold off while any decommission is in flight: one disruptive operation
 //     at a time. DiskLost tombstones (dead incarnations) are never candidates;
@@ -78,7 +77,7 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 			// may already belong to the replacement CR. A grant it may
 			// still hold (node died mid-roll) must not serialize the fleet
 			// against a broker that will never complete a roll.
-			if b.Annotations[feature.RollGrant.Key] != "" {
+			if b.HasRollGrant() {
 				l.Info("revoking roll-grant stranded on a DiskLost tombstone", "broker", b.Name)
 				if err := s.revokeRollGrant(ctx, b); err != nil {
 					return err
@@ -105,11 +104,11 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 			utils.IsPodReady(pod) &&
 			apimeta.IsStatusConditionTrue(b.Status.Conditions, "BrokerRegistered")
 
-		if grant := b.Annotations[feature.RollGrant.Key]; grant != "" {
-			grantChecksum, deadline, ok := feature.ParseRollGrant(grant)
+		if b.HasRollGrant() {
+			grantChecksum, deadline, ok := b.ParseRollGrant()
 			switch {
 			case !ok:
-				l.Info("revoking malformed roll-grant", "broker", b.Name, "grant", grant)
+				l.Info("revoking malformed roll-grant", "broker", b.Name)
 				if err := s.revokeRollGrant(ctx, b); err != nil {
 					return err
 				}
@@ -178,8 +177,8 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 	// Expired-grant holders (mid-roll) first, then node pool + index for a
 	// deterministic order.
 	sort.Slice(candidates, func(i, j int) bool {
-		gi := candidates[i].Annotations[feature.RollGrant.Key] != ""
-		gj := candidates[j].Annotations[feature.RollGrant.Key] != ""
+		gi := candidates[i].HasRollGrant()
+		gj := candidates[j].HasRollGrant()
 		if gi != gj {
 			return gi
 		}
@@ -219,7 +218,7 @@ func (s *BrokerSet) grantRoll(ctx context.Context, b *redpandav1alpha2.Broker, t
 	if b.Annotations == nil {
 		b.Annotations = map[string]string{}
 	}
-	b.Annotations[feature.RollGrant.Key] = feature.FormatRollGrant(templateHash, now.Add(feature.RollGrantTTL))
+	b.SetRollGrant(templateHash, now.Add(redpandav1alpha2.RollGrantTTL))
 	if err := s.Client.Patch(ctx, b, p); err != nil {
 		return errors.Wrapf(err, "granting roll to Broker %s", b.Name)
 	}
@@ -229,7 +228,10 @@ func (s *BrokerSet) grantRoll(ctx context.Context, b *redpandav1alpha2.Broker, t
 
 func (s *BrokerSet) revokeRollGrant(ctx context.Context, b *redpandav1alpha2.Broker) error {
 	p := k8sclient.MergeFrom(b.DeepCopy())
-	delete(b.Annotations, feature.RollGrant.Key)
+	if removed := b.RemoveRollGrant(); !removed {
+		// grant was already removed, no need to patch
+		return nil
+	}
 	if err := s.Client.Patch(ctx, b, p); err != nil {
 		return errors.Wrapf(err, "revoking roll-grant on Broker %s", b.Name)
 	}

@@ -4713,6 +4713,16 @@
         "admin": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -4735,6 +4745,16 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"
@@ -4908,6 +4928,16 @@
         "http": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -4934,6 +4964,16 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"
@@ -5111,6 +5151,16 @@
         "kafka": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -5138,6 +5188,16 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"
@@ -5316,6 +5376,16 @@
         "rpc": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "port": {
               "type": "integer"
             },
@@ -5386,6 +5456,16 @@
         "schemaRegistry": {
           "additionalProperties": false,
           "properties": {
+            "address": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "appProtocol": {
               "type": "string"
             },
@@ -5408,6 +5488,16 @@
                 "^[A-Za-z_][A-Za-z0-9_]*$": {
                   "additionalProperties": false,
                   "properties": {
+                    "address": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
                     "advertisedPorts": {
                       "items": {
                         "type": "integer"

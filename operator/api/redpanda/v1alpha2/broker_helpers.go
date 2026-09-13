@@ -123,3 +123,15 @@ func (b *Broker) BuildPod(podName string) *corev1.Pod {
 	}
 	return pod
 }
+
+func (b *Broker) ClaimNames() []string {
+	podName := b.PodName()
+	claimNames := make([]string, 0, len(b.Spec.Storage.VolumeClaimTemplates)+len(b.Spec.Storage.ExistingClaims))
+	for _, vct := range b.Spec.Storage.VolumeClaimTemplates {
+		claimNames = append(claimNames, fmt.Sprintf("%s-%s", vct.Name, podName))
+	}
+	for _, ec := range b.Spec.Storage.ExistingClaims {
+		claimNames = append(claimNames, ec.Name)
+	}
+	return claimNames
+}

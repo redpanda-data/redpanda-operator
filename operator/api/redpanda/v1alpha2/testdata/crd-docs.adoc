@@ -234,6 +234,7 @@ Admin configures settings for the Admin API listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
 | *`appProtocol`* __string__ |  |  | 
@@ -1273,6 +1274,7 @@ ExternalListener configures settings for the external listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
 | *`appProtocol`* __string__ |  |  | 
@@ -1578,6 +1580,7 @@ HTTP configures settings for the HTTP Proxy listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
 | *`appProtocol`* __string__ |  |  | 
@@ -1778,6 +1781,7 @@ Kafka configures settings for the Kafka API listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
 | *`appProtocol`* __string__ |  |  | 
@@ -2012,6 +2016,7 @@ LicenseSecretRef is deprecated. Use `EnterpriseLicenseSecretRef` instead.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
 | *`appProtocol`* __string__ |  |  | 
@@ -3116,6 +3121,7 @@ RPC configures settings for the RPC API listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`port`* __integer__ | Specifies the container port number for the internal listener. + |  | 
 | *`tls`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-listenertls[$$ListenerTLS$$]__ | Configures TLS settings for the internal listener. + |  | 
 |===
@@ -3973,6 +3979,7 @@ SchemaRegistry configures settings for the Schema Registry listeners.
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
+| *`address`* __string__ | The address to bind this listener to. Default 0.0.0.0 + |  | 
 | *`enabled`* __boolean__ | Specifies whether this Listener is enabled. + |  | 
 | *`authenticationMethod`* __string__ | Specifies the authentication method for this listener. For example, 'mtls_identity', `sasl` or `http_basic`. + |  | 
 | *`appProtocol`* __string__ |  |  | 

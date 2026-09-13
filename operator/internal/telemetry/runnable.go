@@ -49,6 +49,9 @@ type Options struct {
 	// they neither list a type their scheme deliberately omits nor spend an API
 	// server round trip on it.
 	SkipV1Collection bool
+	// BrokerCREnabled is the operator's --enable-broker flag, reported as
+	// broker.enabled.
+	BrokerCREnabled bool
 	// Delay is the wait before the first report; zero means the shared library default (5m).
 	Delay  time.Duration
 	Period time.Duration
@@ -93,6 +96,7 @@ func NewRunnable(reader client.Reader, disco discovery.ServerVersionInterface, l
 		Discovery:           disco,
 		ConnectDefaultImage: opts.ConnectDefaultImage,
 		SkipV1Collection:    opts.SkipV1Collection,
+		BrokerCREnabled:     opts.BrokerCREnabled,
 	}
 
 	return &Runnable{reporter: &commontelemetry.Reporter{

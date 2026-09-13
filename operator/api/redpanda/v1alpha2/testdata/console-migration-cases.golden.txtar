@@ -1,9 +1,5 @@
 -- 00-empty --
-config:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
+config: {}
 secret: {}
 
 -- 01-disabled --
@@ -40,11 +36,7 @@ config:
 secret: {}
 
 -- 04-enterprise-and-license-ref --
-config:
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
+config: {}
 licenseSecretRef:
   key: license
   name: license
@@ -56,10 +48,6 @@ config:
     roleBindings:
     - roleName: admin
       users: []
-  kafka:
-    sasl:
-      enabled: true
-      impersonateUser: true
 secret: {}
 warnings:
 - Removed group subject from role binding 'admin'. Groups are not supported in v3.

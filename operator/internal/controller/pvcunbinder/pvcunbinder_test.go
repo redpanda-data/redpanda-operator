@@ -139,7 +139,7 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 	log.SetGlobals(logger)
 	ctx = log.IntoContext(ctx, logger)
 
-	cluster, err := k3d.NewCluster(t.Name())
+	cluster, err := k3d.NewCluster(t.Name(), k3d.WithFastNodeFailureDetection())
 	require.NoError(t, err)
 	t.Logf("created cluster %T %q", cluster, cluster.Name)
 

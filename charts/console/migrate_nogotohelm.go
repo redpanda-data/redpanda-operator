@@ -71,8 +71,9 @@ type mapping struct {
 }
 
 // mappings is a slice of destination path to JQ query that together migrate a
-// Console v2 config to a Console v3 config. Its behavior is exactly the same
-// as the converter in our public docs (Thanks Jake!)
+// Console v2 config to a Console v3 config. Its behavior matches the converter
+// in our public docs (Thanks Jake!) except that the kafka.sasl defaults are
+// gated on a configured login.
 // https://github.com/redpanda-data/docs-ui/blob/d55545f392e0a9aaa0dbd193606a2b629d779699/console-config-migrator/main.go#L25
 // Due to module dependency conflicts and the quasi closed source nature of
 // console typing the configurations was deemed a non-option. JQ was elected as
@@ -93,8 +94,11 @@ var mappings = compileMappings([]mappingSpec{
 	{"schemaRegistry", `.kafka.schemaRegistry | del(.username, .password, .bearerToken)`},
 
 	// Kafka
-	{"kafka.sasl.enabled", "true"},
-	{"kafka.sasl.impersonateUser", "true"},
+	// Unlike the docs converter, the SASL defaults are only emitted when v2
+	// configured a login: Console refuses to start with impersonateUser set
+	// while its own authentication is disabled.
+	{"kafka.sasl.enabled", ".login | select(.) | true"},
+	{"kafka.sasl.impersonateUser", ".login | select(.) | true"},
 	{"kafka", `.kafka | del(.schemaRegistry, .protobuf, .cbor, .messagePack)`},
 
 	// Serde

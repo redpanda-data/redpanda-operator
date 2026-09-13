@@ -927,8 +927,9 @@ func mTLSValuesUsingCertManager() *redpanda.PartialValues {
 				},
 			},
 			RPC: &struct {
-				Port *int32                       `json:"port,omitempty" jsonschema:"required"`
-				TLS  *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
+				Address *string                      `json:"address,omitempty"`
+				Port    *int32                       `json:"port,omitempty" jsonschema:"required"`
+				TLS     *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
 			}{
 				TLS: &redpanda.PartialInternalTLS{
 					Cert:              ptr.To("rpc"),
@@ -993,8 +994,9 @@ func mTLSValuesWithProvidedCerts(serverTLSSecretName, clientTLSSecretName string
 				},
 			},
 			RPC: &struct {
-				Port *int32                       `json:"port,omitempty" jsonschema:"required"`
-				TLS  *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
+				Address *string                      `json:"address,omitempty"`
+				Port    *int32                       `json:"port,omitempty" jsonschema:"required"`
+				TLS     *redpanda.PartialInternalTLS `json:"tls,omitempty" jsonschema:"required"`
 			}{
 				TLS: &redpanda.PartialInternalTLS{
 					RequireClientAuth: ptr.To(true),
@@ -1086,14 +1088,11 @@ func TestLabels(t *testing.T) {
 			Console: &consolechart.PartialValues{Enabled: ptr.To(false)},
 		}
 
-		helmValues, err := redpanda.Chart.LoadValues(values)
-		require.NoError(t, err)
-
 		dot, err := redpanda.Chart.Dot(nil, helmette.Release{
 			Name:      "redpanda",
 			Namespace: "redpanda",
 			Service:   "Helm",
-		}, helmValues)
+		}, values)
 		require.NoError(t, err)
 
 		state, err := redpanda.RenderStateFromDot(dot)
@@ -1181,14 +1180,15 @@ func TestAnnotations(t *testing.T) {
 			require.Subset(t, expected, annotations, "FullAnnotations does not contain CommonAnnotations")
 
 			for _, obj := range objs {
-				// The StatefulSet is deliberately NOT annotated — object, pod
-				// template, or volume claim templates. The VCTs are immutable on
-				// a live StatefulSet, so stamping commonAnnotations there makes
-				// adding/changing/removing the value fail with Forbidden; the
-				// object and pod template are left alone for consistency.
+				// The StatefulSet object is annotated, but neither its pod
+				// template nor its volume claim templates are. VCTs are
+				// immutable on a live StatefulSet, so stamping commonAnnotations
+				// there makes adding/changing/removing the value fail with
+				// Forbidden, and annotating the pod template would roll every
+				// broker.
 				if sts, ok := obj.(*appsv1.StatefulSet); ok {
+					require.Subset(t, sts.GetAnnotations(), expected, "%T/%s", sts, sts.Name)
 					for key := range annotations {
-						require.NotContains(t, sts.GetAnnotations(), key, "%T/%s", sts, sts.Name)
 						require.NotContains(t, sts.Spec.Template.GetAnnotations(), key, "%T/%s's pod template", sts, sts.Name)
 						for _, pvc := range sts.Spec.VolumeClaimTemplates {
 							require.NotContains(t, pvc.GetAnnotations(), key, "%T/%s's PVC %q", sts, sts.Name, pvc.Name)

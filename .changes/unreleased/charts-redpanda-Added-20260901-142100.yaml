@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Added
+body: 'Added ability to override redpanda listen address using address value in listeners to enable IPv6 address :: to be used for listening, instead of IPv4-only 0.0.0.0 default'
+time: 2026-09-01T14:21:00+00:00

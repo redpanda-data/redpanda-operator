@@ -68,12 +68,22 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 	steps.DefaultRedpandaTag = os.Getenv("TEST_REDPANDA_VERSION")
 	steps.OperatorNamespace = sharedOperatorNamespace
 
+	// Fast (10s) node-failure detection is only for the acceptance suite's
+	// "Tolerating Node Failure" scenario. The multicluster suite must keep the
+	// Kubernetes defaults: on its shared k3d cluster the 10s grace flaps
+	// loaded nodes and tears down vclusters. HARPOON_GROUPS=multicluster is how
+	// the multicluster acceptance job selects itself.
+	k3dProvider := providers.NewK3D(5).RetainCluster()
+	if !strings.Contains(os.Getenv("HARPOON_GROUPS"), "multicluster") {
+		k3dProvider = k3dProvider.WithFastNodeFailureDetection()
+	}
+
 	builder := framework.SuiteBuilderFromFlags().
 		Strict().
 		RegisterProvider("eks", framework.NoopProvider).
 		RegisterProvider("gke", framework.NoopProvider).
 		RegisterProvider("aks", framework.NoopProvider).
-		RegisterProvider("k3d", providers.NewK3D(5).RetainCluster()).
+		RegisterProvider("k3d", k3dProvider).
 		WithDefaultProvider("k3d").
 		WithImportedImages([]string{
 			imageRepo + ":" + imageTag,

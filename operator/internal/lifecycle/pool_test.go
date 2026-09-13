@@ -1072,8 +1072,22 @@ func TestPoolTrackerPodsToRoll(t *testing.T) {
 				revisions: pool1Revisions,
 			}},
 		},
+		"adopted-pod-without-revision-label": {
+			expectedPodsToRoll: nil,
+			existingPools: []*poolWithOrdinals{{
+				pods: []*podsWithOrdinals{{
+					pod: &corev1.Pod{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "pod-1",
+						},
+					},
+				}},
+				set:       pool1,
+				revisions: pool1Revisions,
+			}},
+		},
 		"no-revisions": {
-			expectedPodsToRoll: []string{"canonical-1//pod-1", "canonical-1//pod-2"},
+			expectedPodsToRoll: nil,
 			existingPools: []*poolWithOrdinals{{
 				pods: []*podsWithOrdinals{{
 					pod: &corev1.Pod{

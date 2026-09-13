@@ -17,15 +17,16 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chartutil"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
-	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 )
 
 type RenderFunc func(*helmette.Dot) []kube.Object
@@ -214,20 +215,91 @@ func (c *GoChart) Write(dir string) error {
 	return nil
 }
 
-// LoadValues coheres the provided values into a [helmette.Values] and merges
-// it with the default values of this chart. Dependencies are not loaded.
+// LoadValues coheres the provided values into a [helmette.Values] with helm's
+// own values pipeline. It merges in the chart's default values, processes
+// dependencies, and "coalesces" the output.
+//
+// Coalescing is NOT an idempotent process. The output of [LoadValues] should
+// not be passed to other GoChart functions. Doing so will cause divergence
+// from helm's behavior and significantly increase the chances acquiring coal
+// on December 25th.
 func (c *GoChart) LoadValues(values any) (helmette.Values, error) {
-	valuesYaml, err := yaml.Marshal(values)
+	_, merged, err := c.coalesce(values)
+	return merged, err
+}
+
+// coalesce hydrates the [chart.Chart] tree equivalent of this GoChart and runs
+// helm's values pipeline over the provided values, returning both. Subcharts
+// disabled by a condition or tag are pruned from the returned tree.
+//
+// To "coalesce" values helm walks the charts defaults. If any user provided
+// values at those paths are `null`, they are pruned. User provided nulls at
+// paths not in the chart defaults as preserved.
+func (c *GoChart) coalesce(values any) (*chart.Chart, helmette.Values, error) {
+	valuesYAML, err := yaml.Marshal(values)
 	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	var provided map[string]any
+	if err := yaml.Unmarshal(valuesYAML, &provided); err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	hc, err := c.helmChart()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Order matters and mirrors `helm install`: resolving conditions first
+	// prunes disabled subcharts from the tree, which is what leaves their
+	// stanza holding only the caller's values instead of the subchart's
+	// defaults.
+	// https://github.com/helm/helm/blob/v3.18.5/pkg/action/install.go#L249-L304
+	if err := chartutil.ProcessDependenciesWithMerge(hc, provided); err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	merged, err := chartutil.CoalesceValues(hc, provided)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	return hc, merged, nil
+}
+
+// helmChart hydrates the [chart.Chart] tree equivalent of this GoChart and its
+// dependencies, transitively. A fresh tree is returned on every call as helm's
+// dependency processing mutates all of it in place.
+func (c *GoChart) helmChart() (*chart.Chart, error) {
+	var values map[string]any
+	if err := yaml.Unmarshal(c.defaultValues, &values); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	merged, err := helm.MergeYAMLValues(c.defaultValues, valuesYaml)
-	if err != nil {
-		return nil, errors.WithStack(err)
+	// NB: Clone preserves nil-ness, which matters as
+	// chartutil.processDependencyEnabled short circuits a LOT of work on
+	// .Dependencies == nil.
+	metadata := c.metadata
+	metadata.Dependencies = slices.Clone(c.metadata.Dependencies)
+	for i, dep := range metadata.Dependencies {
+		cloned := *dep
+		metadata.Dependencies[i] = &cloned
 	}
 
-	return merged, nil
+	hc := &chart.Chart{Metadata: &metadata, Values: values}
+
+	deps := make([]*chart.Chart, 0, len(c.dependencies))
+	for _, dep := range c.dependencies {
+		subchart, err := dep.GoChart.helmChart()
+		if err != nil {
+			return nil, err
+		}
+		deps = append(deps, subchart)
+	}
+	hc.SetDependencies(deps...)
+
+	return hc, nil
 }
 
 // WithSyntheticKubeVersion allows a caller to override the KubeVersion passed
@@ -295,69 +367,58 @@ func (c *GoChart) resolveCapabilities(cfg *kube.RESTConfig) (helmette.Capabiliti
 }
 
 // Dot constructs a [helmette.Dot] for this chart and any dependencies it has,
-// taking into consideration the dependencies' condition.
+// taking into consideration the dependencies' conditions and tags. `values`
+// should be raw user values. DO NOT pass the results of [GoChart.LoadValues]
+// in.
 func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any) (*helmette.Dot, error) {
+	hc, merged, err := c.coalesce(values)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.dot(cfg, release, hc, merged)
+}
+
+// dot builds the [helmette.Dot] for hc, the [chart.Chart] equivalent of c, from
+// an already coalesced set of values. It is helm's engine.recAllTpls.
+// https://github.com/helm/helm/blob/v3.18.5/pkg/engine/engine.go#L389-L423
+func (c *GoChart) dot(cfg *kube.RESTConfig, release helmette.Release, hc *chart.Chart, values helmette.Values) (*helmette.Dot, error) {
+	// Keyed by Dependency.Key, which is the alias of an aliased dependency --
+	// exactly what ProcessDependencies renames the subchart to.
+	goCharts := make(map[string]*GoChart, len(c.dependencies))
+	for _, dep := range c.dependencies {
+		goCharts[dep.Key()] = dep.GoChart
+	}
+
 	subcharts := map[string]*helmette.Dot{}
 
-	parentValues, err := c.LoadValues(values)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	// NB: hc.Dependencies() holds only the subcharts that survived
+	// ProcessDependencies, which is the set helm's engine renders.
+	for _, subchart := range hc.Dependencies() {
+		goChart, ok := goCharts[subchart.Name()]
+		if !ok {
+			return nil, errors.Newf("no GoChart registered for subchart %q of %q", subchart.Name(), hc.Name())
+		}
 
-	// Respect/support for helm's special "global" stanza.
-	// NB: global's are injected to subcharts regardless of whether or not it's
-	// present in the parent. IT IS NOT injected in the parent.
-	globals, ok := parentValues["global"]
-	if !ok {
-		globals = struct{}{}
-	}
-
-	// Helm's behavior here is mind boggling but it's most simply represented as:
-	// 1. Load `subchart`'s values with it's stanza from the parent's values
-	// 2. Inject subchart's loaded values back into it's stanza in the parent's values
-	// 3. Evaluate `enabled` on the now merged parent values
-	// 4. If 4 evaluated to false, restore the subchart stanza to it's original value.
-	for _, dep := range c.dependencies {
-		depValues, err := parentValues.Table(dep.Key())
+		// CoalesceValues has already placed the subchart's values, helm's
+		// special "global" stanza included, into the parent's.
+		subchartValues, err := values.Table(subchart.Name())
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		// 1. Load up the subchart's values with our subchart's stanza from the
-		// parent as a base. Propagate any synthetic KubeVersion override to
-		// the subchart so it sees the same capabilities as the parent.
-		depChart := dep.GoChart
+		// Propagate any synthetic KubeVersion override so the subchart sees the
+		// same capabilities as the parent.
 		if c.kubeversion != nil {
-			depChart = depChart.WithSyntheticKubeVersion(c.kubeversion)
+			goChart = goChart.WithSyntheticKubeVersion(c.kubeversion)
 		}
-		subchartDot, err := depChart.Dot(cfg, release, depValues)
+
+		subchartDot, err := goChart.dot(cfg, release, subchart, subchartValues)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
 
-		// Inject globals into the merged .Values of the subchart.
-		subchartDot.Values["global"] = globals
-
-		// If a dependency has an alias assigned to it, it's Chart.Name get's
-		// set to the value of the alias.
-		subchartDot.Chart.Name = dep.Key()
-
-		// 2. Inject the loaded values into parent's values.
-		parentValues[dep.Key()] = subchartDot.Values
-
-		// 3. Evaluate `enabled` on the merged values.
-		enabled, err := dep.Enabled(parentValues)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		// 4. If our dependency is enabled, register it in subcharts.
-		// Otherwise, revert the stanza back to its original value.
-		if enabled {
-			subcharts[dep.Key()] = subchartDot
-		} else {
-			parentValues[dep.Key()] = depValues
-		}
+		subcharts[subchart.Name()] = subchartDot
 	}
 
 	templates, err := fs.Sub(c.fs, "templates")
@@ -377,14 +438,16 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		KubeConfig:   cfg,
 		Release:      release,
 		Subcharts:    subcharts,
-		Values:       parentValues,
+		Values:       values,
 		Templates:    templates,
 		Files:        helmette.NewFiles(c.fs),
 		Capabilities: capabilities,
 		Chart: helmette.Chart{
-			Name:       c.metadata.Name,
-			Version:    c.metadata.Version,
-			AppVersion: c.metadata.AppVersion,
+			// NB: hc.Metadata, not c.metadata. helm renames aliased subcharts
+			// to their alias.
+			Name:       hc.Metadata.Name,
+			Version:    hc.Metadata.Version,
+			AppVersion: hc.Metadata.AppVersion,
 		},
 	}, nil
 }
@@ -478,23 +541,4 @@ func (d *Dependency) Key() string {
 		return d.HelmDep.Alias
 	}
 	return d.HelmDep.Name
-}
-
-func (d *Dependency) Enabled(merged helmette.Values) (bool, error) {
-	// https://github.com/helm/helm/blob/145d12f82fc7a2e39a17713340825686b661e0a1/pkg/chartutil/dependencies.go#L48
-	if d.HelmDep.Condition == "" {
-		return true, nil
-	}
-
-	enabled, err := merged.PathValue(d.HelmDep.Condition)
-	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	asBool, ok := enabled.(bool)
-	if !ok {
-		return false, errors.Newf("evaluating subchart %q condition %q, expected %t; got: %t (%v)", d.Key(), d.HelmDep.Condition, true, enabled, enabled)
-	}
-
-	return asBool, nil
 }
