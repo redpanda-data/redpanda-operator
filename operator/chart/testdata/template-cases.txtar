@@ -255,9 +255,15 @@ enterprise:
     key: license
 
 -- common-annotations --
+# Every object the chart renders, including the ServiceMonitor and
+# PrometheusRule that used to render `annotations: null`, should carry both
+# annotations; the Deployment's Pod template should not.
 commonAnnotations:
   owner: "platform-team@example.com"
   environment: "production"
+monitoring:
+  enabled: true
+  rulesEnabled: true
 
 -- connect-monitoring-enabled --
 connectController:

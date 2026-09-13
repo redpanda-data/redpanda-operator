@@ -96,7 +96,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "reconcile-health"),
 			Labels:      Labels(dot),
 			Namespace:   dot.Release.Namespace,
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: monitoringv1.PrometheusRuleSpec{
 			Groups: []monitoringv1.RuleGroup{

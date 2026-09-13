@@ -135,7 +135,7 @@ type Values struct {
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
 	VectorizedControllers VectorizedControllers         `json:"vectorizedControllers"`
-	CommonAnnotations     map[string]string             `json:"commonAnnotations"`
+	ConnectAnnotations    map[string]string             `json:"connectAnnotations"`
 	ConnectController     ConnectController             `json:"connectController"`
 	Controllers           Controllers                   `json:"controllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
