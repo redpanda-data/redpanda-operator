@@ -1,5 +1,5 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
-{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/secrets.go" */ -}}
+{{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart/secrets.go" */ -}}
 
 {{- define "redpanda.Secrets" -}}
 {{- $state := (index .a 0) -}}
