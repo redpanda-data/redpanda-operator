@@ -1,5 +1,5 @@
 project: charts/redpanda
 kind: Added
 body: |-
-    New `commonAnnotations` value adds the given annotations to every object the chart renders, except the StatefulSet — its object, Pod template, and volume claim templates are left unannotated so the value can be added, changed, or removed on a live cluster without hitting the StatefulSet's immutable-field restrictions. Annotations set on an individual resource take precedence. Useful for policy-engine required annotations or ArgoCD sync waves, for example `argocd.argoproj.io/sync-wave: "1"`.
+    New `commonAnnotations` value adds the given annotations to every object the chart renders, including the StatefulSet itself. The StatefulSet's Pod template and volume claim templates are deliberately left unannotated: the claim templates are immutable on a live cluster, and annotating the Pod template would restart every broker. Annotations set on an individual resource take precedence. Useful for policy-engine required annotations or ArgoCD sync waves, for example `argocd.argoproj.io/sync-wave: "1"`.
 time: 2026-09-08T16:00:00.000000-07:00
