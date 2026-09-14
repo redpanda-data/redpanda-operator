@@ -376,7 +376,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if ok, requeueAfter := r.ShouldRemediate(ctx, &pod); !ok || requeueAfter > 0 {
 		logger.Info("shouldn't remediate Pod; skipping", "name", pod.Name, "ok", ok, "requeue-after", requeueAfter)
-		return ctrl.Result{RequeueAfter: requeueAfter, Requeue: ok}, nil
+		return ctrl.Result{RequeueAfter: requeueAfter, Requeue: ok}, nil //nolint:staticcheck
 	}
 
 	// The cached read above is only a cheap pre-filter. Everything
@@ -402,7 +402,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	pod = freshPod
 	if ok, requeueAfter := r.ShouldRemediate(ctx, &pod); !ok || requeueAfter > 0 {
 		logger.Info("Pod no longer qualifies on the uncached re-read; skipping", "name", pod.Name, "ok", ok, "requeue-after", requeueAfter)
-		return ctrl.Result{RequeueAfter: requeueAfter, Requeue: ok}, nil
+		return ctrl.Result{RequeueAfter: requeueAfter, Requeue: ok}, nil //nolint:staticcheck
 	}
 
 	// Gates 0 and 4 share one uncached scan over the cluster's

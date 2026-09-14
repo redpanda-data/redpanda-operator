@@ -81,15 +81,13 @@ func (v vclusterNodes) dumpDiagnostics(_ context.Context, t framework.TestingT) 
 		t.Logf("[multicluster-diagnostics] === vcluster %s (host namespace: %s) ===", node.Name(), node.Name())
 
 		// Dump pods from the host namespace (where vcluster components run).
-		if hostClient != nil {
-			var hostPods corev1.PodList
-			if err := hostClient.List(diagCtx, &hostPods, client.InNamespace(node.Name())); err != nil {
-				t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
-			} else {
-				for _, pod := range hostPods.Items {
-					t.Logf("[multicluster-diagnostics] host pod %s: phase=%s node=%s", pod.Name, pod.Status.Phase, pod.Spec.NodeName)
-					logContainerStatuses(t, pod.Status.ContainerStatuses)
-				}
+		var hostPods corev1.PodList
+		if err := hostClient.List(diagCtx, &hostPods, client.InNamespace(node.Name())); err != nil {
+			t.Logf("[multicluster-diagnostics] failed to list host pods: %v", err)
+		} else {
+			for _, pod := range hostPods.Items {
+				t.Logf("[multicluster-diagnostics] host pod %s: phase=%s node=%s", pod.Name, pod.Status.Phase, pod.Spec.NodeName)
+				logContainerStatuses(t, pod.Status.ContainerStatuses)
 			}
 		}
 
