@@ -11,7 +11,6 @@ package testenv
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os/exec"
@@ -19,6 +18,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"

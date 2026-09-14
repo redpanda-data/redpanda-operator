@@ -12,7 +12,6 @@ package configwatcher
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"

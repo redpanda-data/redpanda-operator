@@ -10,10 +10,10 @@
 package multicluster
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"go.etcd.io/raft/v3"
 )

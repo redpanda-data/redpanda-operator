@@ -57,6 +57,12 @@ linters:
         # cockroachdb errors is the most complete error library. It automatically
         # adds stack traces and has a very pleasant %v formatting.
         errors:
+          # reaper is the envtest shim: a nix package (flake.nix, pinned
+          # vendorHash) whose only deps are x/sync and x/sys. It forwards exit
+          # codes and never prints an error, so stack traces buy nothing there,
+          # and it uses errors.AsType, which cockroachdb/errors v1.12.0 lacks.
+          files:
+          - "!**/reaper/**"
           deny:
           - pkg: "errors"
             desc: 'use "github.com/cockroachdb/errors"'
