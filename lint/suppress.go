@@ -23,16 +23,29 @@ import (
 // applied after a linter reported, and which a bare analysis driver has none
 // of: nolint directives, the exclusions from .golangci.yml, and generated
 // files. The analyzer gets a copy of the pass whose Report is ours; that is
-// the one interception point in the go/analysis contract.
+// the one interception point in the go/analysis contract. It is also where a
+// finding gets the name that suppresses it: the text printer under go vet
+// writes only position and message.
 func watch(a *analysis.Analyzer, linter string) *analysis.Analyzer {
 	run := a.Run
+
+	// govet and staticcheck bundle many analyzers under one nolint name; the
+	// analyzer's own name is what a reader looks up.
+	tag := linter
+	if a.Name != linter {
+		tag = linter + "/" + a.Name
+	}
 
 	a.Run = func(pass *analysis.Pass) (any, error) {
 		filtered := *pass
 		filtered.Report = func(d analysis.Diagnostic) {
-			if !suppressed(pass, linter, d) {
-				pass.Report(d)
+			// exclusions.rules.text match the message as the analyzer wrote it.
+			if suppressed(pass, linter, d) {
+				return
 			}
+
+			d.Message = "(" + tag + ") " + d.Message
+			pass.Report(d)
 		}
 
 		return run(&filtered)

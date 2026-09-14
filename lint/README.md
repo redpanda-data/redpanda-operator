@@ -155,6 +155,11 @@ anywhere inside a comment group, which then covers the whole group -- and
 against the same names: `staticcheck` covers SA, S, ST and QF; `unused` covers
 U1000. There is no second syntax.
 
+Every finding is printed as `file:line:col: (<name>) message`, and `<name>` is
+what goes in the directive. A linter that bundles many analyzers shows which
+one fired, as `staticcheck/SA1019` or `govet/printf`; the part before the
+slash is still the name to suppress with.
+
 ## What golangci-lint did that this does not
 
 - **nolintlint** -- nothing reports a `//nolint` that no longer suppresses
