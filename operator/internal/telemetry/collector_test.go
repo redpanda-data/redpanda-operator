@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +36,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 )
 
 // fakeServerVersion is a discovery.ServerVersionInterface stub for tests.
@@ -53,6 +55,17 @@ func testScheme(t *testing.T) *apimachineryruntime.Scheme {
 	require.NoError(t, redpandav1alpha2.Install(scheme))
 	require.NoError(t, vectorizedv1alpha1.Install(scheme))
 	return scheme
+}
+
+var (
+	redpandaGVK          = redpandav1alpha2.SchemeGroupVersion.WithKind(redpandav1alpha2.RedpandaKind)
+	vectorizedClusterGVK = vectorizedv1alpha1.SchemeGroupVersion.WithKind(vectorizedv1alpha1.ClusterKind)
+)
+
+// ownedBy returns the controller ownerReference the brokerset engine stamps on
+// every Broker CR it creates for the given cluster resource.
+func ownedBy(gvk schema.GroupVersionKind, name string, uid types.UID) []metav1.OwnerReference {
+	return []metav1.OwnerReference{*metav1.NewControllerRef(&metav1.ObjectMeta{Name: name, UID: uid}, gvk)}
 }
 
 func TestCollect_PopulatedCluster(t *testing.T) {
@@ -119,14 +132,26 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 					},
 				},
 			},
+			// Migrated from its StatefulSet to Broker CRs in place.
+			Status: vectorizedv1alpha1.ClusterStatus{Conditions: []vectorizedv1alpha1.ClusterCondition{{
+				Type:   vectorizedv1alpha1.BrokerMigrationConditionType,
+				Status: corev1.ConditionTrue,
+				Reason: brokerset.MigrationReasonComplete,
+			}}},
 		},
+		// Broker mode on both reconciler paths: rp-1 (V2) with two Brokers,
+		// v1-1 (V1) with one.
 		&redpandav1alpha2.Broker{
-			ObjectMeta: metav1.ObjectMeta{Name: "rp-1-0", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: "rp-1-0", Namespace: "default", OwnerReferences: ownedBy(redpandaGVK, "rp-1", "rp-1-uid")},
 			Spec:       redpandav1alpha2.BrokerSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp-1"}},
 		},
 		&redpandav1alpha2.Broker{
-			ObjectMeta: metav1.ObjectMeta{Name: "rp-1-1", Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: "rp-1-1", Namespace: "default", OwnerReferences: ownedBy(redpandaGVK, "rp-1", "rp-1-uid")},
 			Spec:       redpandav1alpha2.BrokerSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "rp-1"}},
+		},
+		&redpandav1alpha2.Broker{
+			ObjectMeta: metav1.ObjectMeta{Name: "v1-1-0", Namespace: "default", OwnerReferences: ownedBy(vectorizedClusterGVK, "v1-1", "v1-1-uid")},
+			Spec:       redpandav1alpha2.BrokerSpec{ClusterRef: redpandav1alpha2.ClusterRef{Name: "v1-1"}},
 		},
 		&redpandav1alpha2.Redpanda{
 			ObjectMeta: metav1.ObjectMeta{Name: "rp-1", Namespace: "default"},
@@ -162,6 +187,13 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 					},
 				},
 			},
+			// Mid-migration: the StatefulSet is still authoritative while the
+			// shadow Broker CRs above come up.
+			Status: redpandav1alpha2.RedpandaStatus{Conditions: []metav1.Condition{{
+				Type:   redpandav1alpha2.BrokerMigrationConditionType,
+				Status: metav1.ConditionFalse,
+				Reason: brokerset.MigrationReasonInProgress,
+			}}},
 		},
 		&corev1.PersistentVolumeClaim{
 			ObjectMeta: metav1.ObjectMeta{
@@ -256,10 +288,12 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Console.HTTPRoute)
 	require.Equal(t, 1, payload.Console.Ingress)
 
-	// Broker CR mode: the controller is enabled and rp-1's two brokers are
-	// managed as Broker CRs.
+	// Broker CR mode: three Broker CRs across two clusters, one per reconciler
+	// path; v1-1 finished its in-place migration, rp-1 is still migrating.
 	require.True(t, payload.Broker.Enabled)
-	require.Equal(t, 2, payload.Broker.Count)
+	require.Equal(t, 3, payload.Broker.Count)
+	require.Equal(t, BrokerClusterStats{Total: 2, Vectorized: 1, Redpanda: 1}, payload.Broker.Clusters)
+	require.Equal(t, BrokerMigrationStats{InProgress: 1, Complete: 1}, payload.Broker.Migration)
 
 	require.Equal(t, 1, payload.CRDCount)
 	// PVC Unbinder usage is reported via the features map, not a dedicated field.
@@ -319,6 +353,8 @@ func TestCollect_EmptyCluster(t *testing.T) {
 	require.Equal(t, 0, payload.CRDCount)
 	require.False(t, payload.Broker.Enabled)
 	require.Equal(t, 0, payload.Broker.Count)
+	require.Zero(t, payload.Broker.Clusters)
+	require.Zero(t, payload.Broker.Migration)
 }
 
 // TestAggregateRedpandas_GatewayCountRequiresParentRefs locks the telemetry
@@ -1001,4 +1037,138 @@ func TestCollect_BrokerEnabledTracksFlagNotUsage(t *testing.T) {
 			require.Equal(t, tc.count, raw.Broker.Count)
 		})
 	}
+}
+
+// TestCollect_BrokerClustersByOwner pins clusters-in-broker-mode to distinct
+// controller-owner UIDs split by owner kind. Owner rather than
+// spec.clusterRef: a NodePool's Brokers name the pool in clusterRef but are
+// owned by the Redpanda, so clusterRef would count a pooled cluster once per
+// pool.
+func TestCollect_BrokerClustersByOwner(t *testing.T) {
+	scheme := testScheme(t)
+	broker := func(namespace, name string, owners []metav1.OwnerReference) client.Object {
+		return &redpandav1alpha2.Broker{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace, OwnerReferences: owners}}
+	}
+
+	for _, tc := range []struct {
+		name     string
+		brokers  []client.Object
+		count    int
+		clusters BrokerClusterStats
+	}{
+		{
+			name: "pools share their cluster's owner",
+			brokers: []client.Object{
+				broker("default", "rp-1-0", ownedBy(redpandaGVK, "rp-1", "rp-1")),
+				broker("default", "rp-1-1", ownedBy(redpandaGVK, "rp-1", "rp-1")),
+				broker("default", "rp-1-tier-0", ownedBy(redpandaGVK, "rp-1", "rp-1")),
+			},
+			count:    3,
+			clusters: BrokerClusterStats{Total: 1, Redpanda: 1},
+		},
+		{
+			name: "split by owner kind",
+			brokers: []client.Object{
+				broker("default", "rp-1-0", ownedBy(redpandaGVK, "rp-1", "rp-1")),
+				broker("default", "rp-2-0", ownedBy(redpandaGVK, "rp-2", "rp-2")),
+				broker("default", "v1-1-0", ownedBy(vectorizedClusterGVK, "v1-1", "v1-1")),
+			},
+			count:    3,
+			clusters: BrokerClusterStats{Total: 3, Vectorized: 1, Redpanda: 2},
+		},
+		{
+			name: "same-named clusters in two namespaces are told apart by UID",
+			brokers: []client.Object{
+				broker("team-a", "redpanda-0", ownedBy(redpandaGVK, "redpanda", "uid-a")),
+				broker("team-b", "redpanda-0", ownedBy(redpandaGVK, "redpanda", "uid-b")),
+			},
+			count:    2,
+			clusters: BrokerClusterStats{Total: 2, Redpanda: 2},
+		},
+		{
+			// A version bump on either API must not zero its half of the split.
+			name:     "owner kind is matched without its version",
+			brokers:  []client.Object{broker("default", "rp-1-0", ownedBy(redpandaGVK.GroupKind().WithVersion("v1beta1"), "rp-1", "rp-1"))},
+			count:    1,
+			clusters: BrokerClusterStats{Total: 1, Redpanda: 1},
+		},
+		{
+			name:     "an owner of another kind is a cluster in neither split",
+			brokers:  []client.Object{broker("default", "x-0", ownedBy(schema.GroupVersionKind{Group: "example.com", Version: "v1", Kind: "Thing"}, "x", "x"))},
+			count:    1,
+			clusters: BrokerClusterStats{Total: 1},
+		},
+		{
+			name: "a Broker without a controller owner belongs to no cluster",
+			brokers: []client.Object{
+				broker("default", "orphan", nil),
+				broker("default", "weak", []metav1.OwnerReference{{APIVersion: redpandaGVK.GroupVersion().String(), Kind: redpandaGVK.Kind, Name: "rp-1", UID: "rp-1"}}),
+			},
+			count: 2,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.brokers...).Build()
+
+			raw, err := (&Collector{Reader: c}).Collect(t.Context())
+			require.NoError(t, err)
+
+			require.Equal(t, tc.count, raw.Broker.Count)
+			require.Equal(t, tc.clusters, raw.Broker.Clusters)
+		})
+	}
+}
+
+// TestCollect_BrokerMigrationByCondition pins the migration tally to the
+// BrokerMigration condition's reason on both cluster kinds — the V2
+// Redpanda's metav1.Condition and the V1 Cluster's typed ClusterCondition.
+// Clusters without the condition (never migrated, or born in broker mode)
+// and reasons outside the brokerset vocabulary count nowhere.
+func TestCollect_BrokerMigrationByCondition(t *testing.T) {
+	scheme := testScheme(t)
+	redpanda := func(name string, status metav1.ConditionStatus, reason string) client.Object {
+		return &redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
+			Status: redpandav1alpha2.RedpandaStatus{Conditions: []metav1.Condition{
+				{Type: redpandav1alpha2.BrokerMigrationConditionType, Status: status, Reason: reason},
+			}},
+		}
+	}
+	cluster := func(name string, status corev1.ConditionStatus, reason string) client.Object {
+		return &vectorizedv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
+			Status: vectorizedv1alpha1.ClusterStatus{Conditions: []vectorizedv1alpha1.ClusterCondition{
+				{Type: vectorizedv1alpha1.BrokerMigrationConditionType, Status: status, Reason: reason},
+			}},
+		}
+	}
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		redpanda("rp-blocked", metav1.ConditionFalse, brokerset.MigrationReasonBlocked),
+		redpanda("rp-in-progress-1", metav1.ConditionFalse, brokerset.MigrationReasonInProgress),
+		redpanda("rp-in-progress-2", metav1.ConditionFalse, brokerset.MigrationReasonInProgress),
+		redpanda("rp-complete", metav1.ConditionTrue, brokerset.MigrationReasonComplete),
+		redpanda("rp-rolled-back", metav1.ConditionTrue, brokerset.MigrationReasonRolledBack),
+		redpanda("rp-unknown-reason", metav1.ConditionFalse, "Paused"),
+		&redpandav1alpha2.Redpanda{ObjectMeta: metav1.ObjectMeta{Name: "rp-never-migrated", Namespace: "default"}},
+		cluster("blocked-1", corev1.ConditionFalse, brokerset.MigrationReasonBlocked),
+		cluster("blocked-2", corev1.ConditionFalse, brokerset.MigrationReasonBlocked),
+		cluster("in-progress", corev1.ConditionFalse, brokerset.MigrationReasonInProgress),
+		cluster("complete-1", corev1.ConditionTrue, brokerset.MigrationReasonComplete),
+		cluster("complete-2", corev1.ConditionTrue, brokerset.MigrationReasonComplete),
+		cluster("rolled-back", corev1.ConditionTrue, brokerset.MigrationReasonRolledBack),
+		cluster("unknown-reason", corev1.ConditionFalse, "Paused"),
+		&vectorizedv1alpha1.Cluster{
+			ObjectMeta: metav1.ObjectMeta{Name: "never-migrated", Namespace: "default"},
+			Status: vectorizedv1alpha1.ClusterStatus{Conditions: []vectorizedv1alpha1.ClusterCondition{
+				{Type: vectorizedv1alpha1.ClusterConfiguredConditionType, Status: corev1.ConditionTrue},
+			}},
+		},
+	).Build()
+
+	raw, err := (&Collector{Reader: c}).Collect(t.Context())
+	require.NoError(t, err)
+
+	require.Equal(t, BrokerMigrationStats{Blocked: 3, InProgress: 3, Complete: 3, RolledBack: 2}, raw.Broker.Migration)
+	require.Equal(t, 7, raw.Redpanda.Count, "every cluster is still in its fleet count")
+	require.Equal(t, 8, raw.VectorizedClusters.Count, "every cluster is still in its fleet count")
 }
