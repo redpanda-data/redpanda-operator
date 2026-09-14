@@ -160,7 +160,7 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 // 5. Check that the AdminAPI is reporting that we have more brokers than the number of requestedReplicas of the sts resource
 // 6. If we have this situation, we are most likely decommission since we have a signal of scaling, set condition and requeue
 // The requeue process at the end of the above process allows time the node to get enter maintenance mode.
-// nolint:funlen // the length is ok
+// nolint:funlen,laconiccomments // the length is ok
 func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, sts *appsv1.StatefulSet, log logr.Logger) (ctrl.Result, error) {
 	log = log.WithName("verifyIfNeedDecommission")
 	log.V(logger.DebugLevel).Info("verify if we need to decommission", "statefulset-namespace", sts.Namespace, "statefulset-name", sts.Name)
@@ -290,7 +290,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 // 10. Attempt to delete the pvc and retain volumes if possible.
 // 11. Finally, reset condition state to unknown if we have been successful so far.
 //
-//nolint:funlen // length looks good
+//nolint:funlen,laconiccomments // length looks good
 func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log logr.Logger, sts *appsv1.StatefulSet) (ctrl.Result, error) {
 	log = log.WithName("reconcileDecommission")
 
@@ -533,6 +533,7 @@ func (r *DecommissionReconciler) tryToDeletePVC(log logr.Logger, ctx context.Con
 
 	// here we sort the list of items, should be ordered by ordinal, and we remove the last first so we sort first then remove
 	// only the first n matching the number of replicas
+	//nolint:laconiccomments
 	keys := make([]string, 0)
 	for k := range isBoundList {
 		keys = append(keys, k)

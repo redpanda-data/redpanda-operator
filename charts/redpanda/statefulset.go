@@ -92,6 +92,8 @@ func ClusterPodLabelsSelector(state *RenderState) map[string]string {
 
 // StatefulSetPodLabelsSelector returns the label selector for the Redpanda StatefulSet.
 // If this helm release is an upgrade, the existing statefulset's label selector will be used as it's an immutable field.
+//
+//nolint:laconiccomments
 func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]string {
 	// StatefulSets cannot change their selector. Use the existing one even if it's broken.
 	// New installs will get better selectors.
@@ -117,6 +119,8 @@ func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]stri
 
 // StatefulSetPodLabels returns the label that includes label selector for the Redpanda PodTemplate.
 // If this helm release is an upgrade, the existing statefulset's pod template labels will be used as it's an immutable field.
+//
+//nolint:laconiccomments
 func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 	// NB: the name check means we only memoize the default StatefulSet labels
 	if state.StatefulSetPodLabels != nil && pool.Name == "" {
@@ -244,6 +248,8 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 // volumes list and add these paths to `allowedHostPaths` (or use the
 // built-in `privileged` SCC). On PSA clusters, the namespace must be
 // labeled `privileged`.
+//
+//nolint:laconiccomments
 func HostTunerVolumes() []corev1.Volume {
 	vols := []corev1.Volume{}
 	for _, dir := range HostTunerDirs() {
@@ -523,6 +529,8 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 //     on the same kernel parameters.
 //   - the pod's ServiceAccount is bound to an SCC / PSA level that
 //     allows hostPath volumes and privileged: true.
+//
+//nolint:laconiccomments
 func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container {
 	return &corev1.Container{
 		Name:    RedpandaTuningContainerName,
@@ -562,6 +570,8 @@ func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container 
 //   - The tuner state file needs no dedicated mount here: rpk writes
 //     its default state path (HostTunerStateFilePath, under /var/run)
 //     straight through the /host/var and /host/run binds.
+//
+//nolint:laconiccomments
 func HostTunerVolumeMounts() []corev1.VolumeMount {
 	readOnlyDirs := map[string]bool{
 		"bin":   true,
@@ -670,6 +680,8 @@ func HostTunerStateVolumeMount() corev1.VolumeMount {
 // The chroot shell is /bin/bash (not /usr/bin/bash): COS is not
 // usr-merged and only has /bin/bash; usr-merged hosts resolve
 // /bin/bash to the same binary via the /bin symlink.
+//
+//nolint:laconiccomments
 func HostTunerScript() string {
 	return `set -xeuo pipefail
 umask 077

@@ -296,6 +296,8 @@ type MonitoringConfig struct {
 // Off by default: one cluster reporting to its own Prometheus has nothing to
 // disambiguate, and adding a label to everyone's metrics would churn existing
 // dashboards and recording rules.
+//
+//nolint:laconiccomments
 type ClusterLabel struct {
 	// Enabled adds the label to every series scraped from this operator.
 	Enabled bool `json:"enabled"`

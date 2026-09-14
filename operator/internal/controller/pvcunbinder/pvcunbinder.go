@@ -881,6 +881,8 @@ type pvGateState struct {
 // annotation.
 //
 // clusterKey == "" (pod without the instance label) engages no gates.
+//
+//nolint:laconiccomments
 func (r *Controller) checkPVGates(ctx context.Context, clusterKey string, pod *corev1.Pod) (pvGateState, error) {
 	var state pvGateState
 	if clusterKey == "" {
@@ -1438,6 +1440,8 @@ func (r *Controller) listClusterPVCsByName(ctx context.Context, reader client.Re
 // Claims with no Pod at all (for example, orphaned by an aborted
 // scale-up) always defer. Names need no namespace: every list here is
 // scoped to pod.Namespace.
+//
+//nolint:laconiccomments
 func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbound []string) (map[string]struct{}, bool, error) {
 	// StorageClass binding modes are memoized for the whole exemption
 	// run (reconciled Pod + every sibling): a cluster's claims almost
@@ -1536,6 +1540,8 @@ func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbou
 // exact gap this exemption closes. Freeing a claim that is dead-ended
 // on an unavailable node is never harmful; at worst it is not enough
 // by itself.
+//
+//nolint:laconiccomments
 func (r *Controller) exemptClaimNames(ctx context.Context, pod *corev1.Pod, scWFFC map[string]bool) (map[string]struct{}, bool, error) {
 	mispinned, err := r.podHasMispinnedBoundClaim(ctx, pod)
 	if err != nil {
@@ -1598,6 +1604,8 @@ func (r *Controller) unboundWFFCClaimNames(ctx context.Context, pod *corev1.Pod,
 // would fabricate the evidence. The PV read stays cached because the
 // fields used (NodeAffinity, HostPath/Local, ClaimRef UID) never
 // change on a live Bound PV.
+//
+//nolint:laconiccomments
 func (r *Controller) podHasMispinnedBoundClaim(ctx context.Context, pod *corev1.Pod) (bool, error) {
 	for _, key := range StsPVCs(pod) {
 		var pvc corev1.PersistentVolumeClaim
@@ -1766,6 +1774,8 @@ const (
 // OWN past actions. Shared between the unbinder's Gate 3 exemption
 // chain (via [claimMispinnedForPod]) and the Broker controller's
 // PV-affinity remediation ([MispinnedPVCs]).
+//
+//nolint:laconiccomments
 func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hostname string, pod *corev1.Pod) (bool, error) {
 	var nodeList corev1.NodeList
 	if err := reader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
@@ -1901,6 +1911,8 @@ const hostnameTopologyKey = corev1.LabelHostname
 // Gate 3 keep deferring (alertable via the gate metric); it can never
 // falsely open the gate. An invalid LabelSelector is skipped the same
 // way.
+//
+//nolint:laconiccomments
 func podRequiredAntiAffinityMatches(pod, occupant *corev1.Pod) bool {
 	for _, term := range pod.Spec.Affinity.PodAntiAffinity.RequiredDuringSchedulingIgnoredDuringExecution {
 		if term.TopologyKey != hostnameTopologyKey {
@@ -1990,6 +2002,8 @@ func podUnconditionallyTolerates(tolerations []corev1.Toleration, taint *corev1.
 // a per-run parameter rather than a Controller field precisely because
 // the uncached read must not be cached ACROSS runs — a delete-recreate
 // of the class between reconciles must be observed.
+//
+//nolint:laconiccomments
 func (r *Controller) claimUsesWaitForFirstConsumer(ctx context.Context, pvc *corev1.PersistentVolumeClaim, scWFFC map[string]bool) (bool, error) {
 	var name string
 	if class, found := pvc.Annotations[corev1.BetaStorageClassAnnotation]; found {

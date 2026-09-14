@@ -164,6 +164,7 @@ func Notes(state *RenderState) []string {
 
 // Any rpk command that's given to the user in in this file must be defined in _example-commands.tpl and tested in a test.
 // These are all tested in `tests/test-kafka-sasl-status.yaml`
+//nolint:laconiccomments
 
 func RpkACLUserCreate(state *RenderState) string {
 	return fmt.Sprintf(`rpk acl user create myuser --new-password changeme --mechanism %s`, GetSASLMechanism(state))

@@ -119,6 +119,8 @@ func newNodePoolInternalKafkaAPI(
 
 // newNodePoolInternalSchemaRegistryAPI is used to construct a nodepool specific admin API client that talks to the cluster via
 // the internal interface.
+//
+//nolint:laconiccomments
 func newNodePoolInternalSchemaRegistryAPI(
 	ctx context.Context,
 	k8sClient client.Client,

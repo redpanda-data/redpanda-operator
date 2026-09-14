@@ -49,6 +49,8 @@ import (
 
 // BrokerPoolReconciler reconciles a RedpandaBrokerPool object. This reconciler in particular should only update status
 // fields and finalizers on the RedpandaBrokerPool objects, rendering of RedpandaBrokerPools takes place within the StretchClusterReconciler.
+//
+//nolint:laconiccomments
 type BrokerPoolReconciler struct {
 	Manager multicluster.Manager
 }

@@ -21,6 +21,8 @@ import (
 
 // TemplateRPKProfileYaml expands the rpk profile file
 // This takes an input template, resolves any remaining external references, then writes out the resulting rpk profile file
+//
+//nolint:laconiccomments
 func TemplateRPKProfileYaml(ctx context.Context, inFile, outFile, fixups string) error {
 	if inFile == "" {
 		return fmt.Errorf("rpkProfile input path can not be empty")
