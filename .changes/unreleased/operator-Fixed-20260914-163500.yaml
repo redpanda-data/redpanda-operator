@@ -1,0 +1,22 @@
+project: operator
+kind: Fixed
+body: |-
+    StatefulSet decommissioner fixes: the PersistentVolumeClaims of live brokers are no longer deleted during a rolling restart, and on Redpanda (v2) clusters the operator-wide decommissioner deletes claims only when `--auto-delete-pvcs` is set.
+
+      The decommissioner resolved a StatefulSet's pods through the labels of the
+      desired pod template. The template carries labels that change on every
+      upgrade (`helm.sh/chart`), while the `OnDelete` update strategy leaves
+      existing pods on the previous template's labels until they are rolled, so
+      updating a StatefulSet made every not-yet-rolled pod invisible and their
+      still-mounted claims looked orphaned. A claim seen unbound on two
+      reconciles at least 30s apart was deleted; the affected pods then came
+      back onto empty volumes and rejoined the cluster as new brokers. Pods are
+      now matched with the StatefulSet's immutable `spec.selector`, which every
+      pod of the StatefulSet satisfies regardless of template changes.
+
+      The decommissioner started by `--additional-controllers=decommission` (or
+      `all`) also deleted claims by default. It now does so only when
+      `--auto-delete-pvcs` is passed, matching that flag's stated purpose.
+      Operators relying on it to remove the claims a scale-down leaves behind
+      must pass the flag.
+time: 2026-09-14T16:35:00.000000-04:00

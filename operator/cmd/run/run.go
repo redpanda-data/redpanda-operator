@@ -234,7 +234,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.disablePVCRebindingGateExemption, "disable-pvc-rebinding-gate-exemption", false, "Escape hatch: turn off the PVCUnbinder's stuck-claim exemption so its pvc-rebinding gate defers on every unbound claim (the pre-exemption behavior). Use if the exemption's proof chain misfires in your environment; unlike the pause annotation it keeps the rest of the unbinder running.")
 	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
 	cmd.Flags().DurationVar(&o.brokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
-	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
+	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete. Also lets the decommission controller (--additional-controllers=decommission) delete the PVCs a Redpanda StatefulSet leaves behind on scale down; without it that controller only decommissions brokers.")
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 	cmd.Flags().IntVar(&o.postRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
@@ -705,7 +705,7 @@ func Run(
 		}
 		adapter := redpandaDecommissionerAdapter{client: mgr.GetClient(), factory: factory}
 
-		setupLog.Info("starting StatefulSetDecommissioner controller", "selector", selector.String())
+		setupLog.Info("starting StatefulSetDecommissioner controller", "selector", selector.String(), "cleanupPVCs", opts.autoDeletePVCs)
 
 		d := decommissioning.NewStatefulSetDecommissioner(
 			mgr,
@@ -717,6 +717,9 @@ func Run(
 			// replicas, while the per-pool scale-down decision uses each
 			// StatefulSet's own replicas (handled inside the decommissioner).
 			decommissioning.WithDesiredReplicasFetcher(adapter.desiredReplicas),
+			// Deleting a claim is destructive; require an explicit opt-in via
+			// --auto-delete-pvcs rather than inheriting the constructor default.
+			decommissioning.WithCleanupPVCs(opts.autoDeletePVCs),
 		)
 
 		if err := d.SetupWithManager(mgr); err != nil {
