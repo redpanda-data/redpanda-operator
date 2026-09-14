@@ -163,7 +163,12 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.unbindPVCsAfter, "unbind-pvcs-after", 0, "if not zero, runs the PVCUnbinder controller which attempts to 'unbind' the PVCs' of Pods that are Pending for longer than the given duration")
 	cmd.Flags().BoolVar(&o.allowPVRebinding, "allow-pv-rebinding", false, "controls whether or not PVs unbound by the PVCUnbinder have their .ClaimRef cleared, which allows them to be reused")
 	cmd.Flags().Var(&o.unbinderSelector, "unbinder-label-selector", "if provided, a Kubernetes label selector that will filter Pods to be considered by the PVCUnbinder.")
+<<<<<<< HEAD
 	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete.")
+=======
+	cmd.Flags().DurationVar(&o.brokerPodNodeUnavailableToleration, "broker-pod-node-unavailable-toleration", 0, "Controls injection of node.kubernetes.io/not-ready and node.kubernetes.io/unreachable NoExecute tolerations onto broker pods. 0 (default) = feature off, no tolerations injected. Positive = tolerationSeconds set to this duration. Negative (-1s or any negative value) = tolerate forever, no tolerationSeconds field (appropriate for cloud K8s where Node-object deletion is the authoritative signal of permanent node loss). User-set tolerations for these taint keys are always preserved.")
+	cmd.Flags().BoolVar(&o.autoDeletePVCs, "auto-delete-pvcs", false, "Use StatefulSet PersistentVolumeClaimRetentionPolicy to auto delete PVCs on scale down and Cluster resource delete. Also lets the decommission controller (--additional-controllers=decommission) delete the PVCs a Redpanda StatefulSet leaves behind on scale down; without it that controller only decommissions brokers.")
+>>>>>>> 76fc6bf1 (StatefulSet decommissioner fixes: the PersistentVolumeClaims of live brokers are no longer deleted during a rolling restart, and on Redpanda (v2) clusters the operator-wide decommissioner deletes claims only when `--auto-delete-pvcs` is set. (#1866))
 	cmd.Flags().BoolVar(&o.enableGhostBrokerDecommissioner, "enable-ghost-broker-decommissioner", false, "Enable ghost broker decommissioner.")
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 	cmd.Flags().BoolVar(&o.waitForSchemaRegistrySync, "wait-for-schema-registry-sync", true, "During a rolling restart, wait for each broker's Schema Registry store to report caught up on _schemas (GET /status/ready on the SR listener) before the next broker is rolled, so overlapping SR replay windows can't leave the cluster without a consistent Schema Registry endpoint mid-upgrade. Applies to both the V1 (Cluster) and V2 (Redpanda) controllers; skipped on clusters without a Schema Registry listener. Set to false to roll without waiting on Schema Registry.")
@@ -510,6 +515,48 @@ func Run(
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	if runDecommission {
+		// NodePool-aware, centralized decommissioner for V2 (Redpanda) clusters.
+		// Watches chart-rendered Redpanda StatefulSets and resolves each back to
+		// its Redpanda CR (via the app.kubernetes.io/instance label) for the admin
+		// client and the cluster-wide desired replica count.
+		//
+		// The selector gates which objects the controller watches (notably PVCs,
+		// which have no owner ref and so are matched by label). It must NOT key off
+		// app.kubernetes.io/name (see redpandaDecommissionerSelector): that label
+		// carries the chart's nameOverride and would exclude clusters that set it.
+		selector, err := redpandaDecommissionerSelector()
+		if err != nil {
+			return err
+		}
+		adapter := redpandaDecommissionerAdapter{client: mgr.GetClient(), factory: factory}
+
+		setupLog.Info("starting StatefulSetDecommissioner controller", "selector", selector.String(), "cleanupPVCs", opts.autoDeletePVCs)
+
+		d := decommissioning.NewStatefulSetDecommissioner(
+			mgr,
+			adapter.getAdminClient,
+			decommissioning.WithSelector(selector),
+			decommissioning.WithFilter(adapter.filter),
+			// A V2 cluster may span multiple StatefulSets (NodePools); the
+			// excess-broker gate must compare against the sum of every pool's
+			// replicas, while the per-pool scale-down decision uses each
+			// StatefulSet's own replicas (handled inside the decommissioner).
+			decommissioning.WithDesiredReplicasFetcher(adapter.desiredReplicas),
+			// Deleting a claim is destructive; require an explicit opt-in via
+			// --auto-delete-pvcs rather than inheriting the constructor default.
+			decommissioning.WithCleanupPVCs(opts.autoDeletePVCs),
+		)
+
+		if err := d.SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "StatefulSetDecommissioner")
+			return err
+		}
+	}
+
+>>>>>>> 76fc6bf1 (StatefulSet decommissioner fixes: the PersistentVolumeClaims of live brokers are no longer deleted during a rolling restart, and on Redpanda (v2) clusters the operator-wide decommissioner deletes claims only when `--auto-delete-pvcs` is set. (#1866))
 	// The unbinder gets to run in any mode, if it's enabled.
 	if opts.unbindPVCsAfter <= 0 {
 		setupLog.Info("PVCUnbinder controller not active", "unbind-after", opts.unbindPVCsAfter, "selector", opts.unbinderSelector, "allow-pv-rebinding", opts.allowPVRebinding)

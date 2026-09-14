@@ -658,9 +658,12 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 // Much of this code is copied from the original decommissioner and refactored, but the basic idea
 // is:
 //
-// 1. Pull any pods matching the labels for the stateful set's pod template that are in the same namespace
+// 1. Pull any pods matching the stateful set's selector that are in the same namespace
 // 2. Pull any pvcs matching the labels for the stateful set's volume claim template (though the component adds a "NAME-statefulset")
 // 3. Find unbound volumes by checking that the pods we pulled reference every volume claim
+//
+// NB: Pods are matched with spec.selector, never spec.template.labels. The template is the desired state and
+// carries labels that change on every upgrade (e.g. helm.sh/chart).
 //
 // NB: this bit follows the original implementation that has a potential race-condition in the cache, where a PVC may come online
 // and be in-cache but the corresponding pod has not yet populated into the cache. In this case the PVC could be marked for deletion
@@ -671,8 +674,18 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 // as unbound n times with m amount of time between checks. This gives the pod and PVC time to both enter cache
 // so that the PVC will not be decommissioned while still being legitimately bound to a pod.
 func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, set *appsv1.StatefulSet) ([]*corev1.PersistentVolumeClaim, error) {
+	// The API server rejects a nil selector, but LabelSelectorAsSelector would
+	// turn one into labels.Nothing() and report every claim as unbound.
+	if set.Spec.Selector == nil {
+		return nil, fmt.Errorf("StatefulSet %s has no selector", client.ObjectKeyFromObject(set))
+	}
+	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	if err != nil {
+		return nil, fmt.Errorf("parsing StatefulSet selector: %w", err)
+	}
+
 	pods := &corev1.PodList{}
-	if err := s.client.List(ctx, pods, client.InNamespace(set.Namespace), client.MatchingLabels(set.Spec.Template.Labels)); err != nil {
+	if err := s.client.List(ctx, pods, client.InNamespace(set.Namespace), client.MatchingLabelsSelector{Selector: selector}); err != nil {
 		return nil, fmt.Errorf("listing pods: %w", err)
 	}
 
