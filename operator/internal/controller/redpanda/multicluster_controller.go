@@ -547,6 +547,8 @@ func (r *MulticlusterReconciler) findAliveCluster(ctx context.Context, sc *redpa
 // becomes reachable (health.go's unreachable→reachable transition also
 // wakes the engage loop directly, so this typically resolves within one
 // probe interval).
+//
+//nolint:laconiccomments
 func (r *MulticlusterReconciler) checkBrokerPoolViewComplete(ctx context.Context, state *stretchClusterReconciliationState) (incomplete bool, _ ctrl.Result) {
 	if len(state.unobservedBrokerPoolClusters) == 0 {
 		return false, ctrl.Result{}
@@ -1492,6 +1494,7 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// brokerIDForPod treats a bucket with more than one entry as ambiguous
 	// rather than guessing (see its doc comment) instead of the operator
 	// decommissioning, or skipping the pre-restart probe for, the wrong broker.
+	//nolint:laconiccomments
 	brokerMap := map[string][]int{}
 	downNodes := map[int]bool{}
 	for _, brokerID := range health.AllNodes {

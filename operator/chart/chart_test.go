@@ -117,6 +117,7 @@ func TestIntegrationChart(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create Redpanda resource in namespace where operator is deployed along with 2 new Redpandas custom resources in different namespaces
+		//nolint:laconiccomments
 		require.NoError(t, kube.ApplyAll(t.Context(), ctl,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{Name: "rp-2"},
@@ -180,6 +181,7 @@ func TestIntegrationChart(t *testing.T) {
 
 		// Create Redpanda resource in namespace where operator is deployed, but other Redpanda resources in different namespaces
 		// will not be reconciled
+		//nolint:laconiccomments
 		require.NoError(t, kube.ApplyAll(t.Context(), ctl,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{Name: "rp-2"},

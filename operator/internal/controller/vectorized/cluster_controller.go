@@ -869,6 +869,8 @@ func (r *ClusterReconciler) WithConfiguratorSettings(
 }
 
 // WithSkipNameValidation set the skip name validation. It's used in test when multiple ClusterReconcilers are registered in manager
+//
+//nolint:laconiccomments
 func (r *ClusterReconciler) WithSkipNameValidation(
 	skipNameValidation bool,
 ) *ClusterReconciler {

@@ -41,6 +41,8 @@ import (
 // toleration on the same key does NOT count as covering, since the
 // pod would still be evicted on NoExecute; in that case the operator
 // appends its own toleration alongside the user's.
+//
+//nolint:laconiccomments
 func InjectNodeUnavailableTolerations(existing []corev1.Toleration, seconds *int64) []corev1.Toleration {
 	hasNotReady := false
 	hasUnreachable := false

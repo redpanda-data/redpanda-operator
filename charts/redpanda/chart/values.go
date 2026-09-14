@@ -377,6 +377,8 @@ type Monitoring struct {
 // Explicit mode offers better control and aligns with Kubernetes best
 // practices. Legacy mode is a fallback for users who have not defined `Limits`
 // and `Requests`.
+//
+//nolint:laconiccomments
 type RedpandaResources struct {
 	Limits   *corev1.ResourceList `json:"limits,omitempty"`
 	Requests *corev1.ResourceList `json:"requests,omitempty"`
@@ -388,6 +390,7 @@ type RedpandaResources struct {
 	// Memory resources
 	// For details,
 	// see the [Pod resources documentation](https://docs.redpanda.com/docs/manage/kubernetes/manage-resources/#configure-memory-resources).
+	//nolint:laconiccomments
 	Memory struct {
 		// Enables memory locking.
 		// For production, set to `true`.
@@ -951,6 +954,7 @@ type Tuning struct {
 	// This setting must NOT be combined with running multiple Redpanda
 	// pods per node — concurrent tuners will race on the same kernel
 	// parameters. Use a pod anti-affinity rule that disallows co-location.
+	//nolint:laconiccomments
 	ApplyHostTuners bool `json:"apply_host_tuners,omitempty"`
 }
 

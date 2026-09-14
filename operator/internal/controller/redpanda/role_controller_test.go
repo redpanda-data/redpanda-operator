@@ -932,6 +932,7 @@ func TestRoleRename(t *testing.T) {
 	//   - DeleteByName() succeeds this time
 	//   - createPatch(nil) updates status to currentEffectiveName
 	//   - Rename complete, no orphaned roles
+	//nolint:laconiccomments
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()

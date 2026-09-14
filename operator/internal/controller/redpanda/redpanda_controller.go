@@ -173,6 +173,7 @@ type RedpandaReconciler struct {
 // sidecar resources
 // The leases is used by controller-runtime in sidecar. Operator main reconciliation needs to have leases permissions in order to create role that have the same permissions.
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
+//nolint:laconiccomments
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedpandaReconciler) SetupWithManager(ctx context.Context, mgr multicluster.Manager, namespace string) error {
@@ -943,6 +944,7 @@ func (r *RedpandaReconciler) reconcileClusterConfig(ctx context.Context, state *
 	// This could cause issues of staleness where we have to wait for retrigger of reconciliation either via some watched resource
 	// change, or, in worst case, the default runtime cache-sync interval of ~10 hours. On the flip-side, it causes us to hammer
 	// the API less often.
+	//nolint:laconiccomments
 	if statuses.HasRecentCondition(state.cluster.Redpanda, statuses.ClusterConfigurationApplied, metav1.ConditionTrue, time.Minute) {
 		state.status.Status.SetConfigurationApplied(statuses.ClusterConfigurationAppliedReasonApplied)
 		return ctrl.Result{}, nil
@@ -1130,6 +1132,8 @@ func (r *RedpandaReconciler) syncStatus(ctx context.Context, cluster cluster.Clu
 // for this pod" (the roll loop's and scaleDown's orphan-pod paths), whereas
 // ambiguous means "this pod maps to more than one real broker and guessing
 // could apply a safety check or a decommission to the wrong one."
+//
+//nolint:laconiccomments
 func brokerIDForPod(brokerMap map[string][]int, podName, podIP string) (brokerID int, resolved bool, ambiguous bool) {
 	if ids, ok := brokerMap[podName]; ok {
 		if len(ids) > 1 {

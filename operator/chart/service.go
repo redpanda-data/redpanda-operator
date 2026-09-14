@@ -108,6 +108,8 @@ func OperatorService(dot *helmette.Dot) *corev1.Service {
 // peer's own Peer.Annotations (peer wins on conflict), so a user can
 // set mesh-wide defaults and peer-specific overrides like Cilium
 // `service.cilium.io/affinity: <cluster-name>`.
+//
+//nolint:laconiccomments
 func OperatorPeerServices(dot *helmette.Dot) []corev1.Service {
 	values := helmette.Unwrap[Values](dot.Values)
 

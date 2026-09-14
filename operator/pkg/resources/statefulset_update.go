@@ -293,6 +293,7 @@ func (r *StatefulSetResource) maybeAddLegacyPods(ctx context.Context, podList *c
 
 	// Special case: if there's still pods w/o nodepool annotation, mark these.
 	// We can just mark them, because at this point the STS has been modified accordingly already, and the label was added to pod template
+	//nolint:laconiccomments
 	if r.nodePool.Name == vectorizedv1alpha1.DefaultNodePoolName {
 		withoutPodLabels, err := r.getPodListWithoutNodePoolLabel(ctx)
 		if err != nil {

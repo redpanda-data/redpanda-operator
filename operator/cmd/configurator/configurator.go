@@ -712,6 +712,8 @@ type allListenersTemplateSpec struct {
 // sample listeners config string:
 //   - structured JSON: {"pandaproxy.advertised_pandaproxy_api":[{"name":"private-link-proxy","address:"{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com","port":{{39282 | add .Index}}}],"pandaproxy.pandaproxy_api":[{"name":"private-link-proxy","address":"0.0.0.0","port":"port":{{39282 | add .Index}}}]}
 //   - legacy format:   {"pandaproxy.advertised_pandaproxy_api":"[{'name':'private-link-proxy','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com','port':{{39282 | add .Index}}}]","pandaproxy.pandaproxy_api":"[{'name':'private-link-proxy','address':'0.0.0.0','port':'port':{{39282 | add .Index}}}]"}
+//
+//nolint:laconiccomments
 func setAdditionalListeners(additionalListenersCfgLegacy, additionalListenersCfgJSON, hostIP string, hostIndex int, cfg *config.RedpandaYaml, hostIndexOffset int) error {
 	if (additionalListenersCfgLegacy == "" || additionalListenersCfgLegacy == "{}") && (additionalListenersCfgJSON == "" || additionalListenersCfgJSON == "{}") {
 		return nil
@@ -823,6 +825,8 @@ func advertisedListenerNames(listeners []config.NamedSocketAddress) []string {
 
 // setAuthnAdditionalListeners populates the authentication config in the addtiional listeners with the config from the external listener,
 // and append the additional listeners to the input listeners.
+//
+//nolint:laconiccomments
 func setAuthnAdditionalListeners(externalListenerName string, listeners *[]config.NamedAuthNSocketAddress, additionalListeners []config.NamedAuthNSocketAddress) {
 	var externalListenerCfg *config.NamedAuthNSocketAddress
 	for i := 0; i < len(*listeners); i++ {
@@ -848,6 +852,8 @@ func setAuthnAdditionalListeners(externalListenerName string, listeners *[]confi
 
 // setAdditionalAdvertisedListeners populates the TLS config and address in the addtiional listeners with the config from the external listener,
 // and append the additional listeners to the input advertised listeners and TLS configs.
+//
+//nolint:laconiccomments
 func setAdditionalAdvertisedListeners(externalListenerName string, advListeners *[]config.NamedSocketAddress, tlsCfgs *[]config.ServerTLS, additionalAdvListeners []config.NamedSocketAddress, additionalTLSCfgs []config.ServerTLS) {
 	var externalAPICfg *config.NamedSocketAddress
 	i := slices.IndexFunc(*advListeners, func(l config.NamedSocketAddress) bool { return l.Name == externalListenerName })

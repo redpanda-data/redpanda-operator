@@ -2834,6 +2834,8 @@ func (s *BrokerStatus) getStable(conditions []metav1.Condition) metav1.Condition
 
 // HasRecentCondition returns whether or not an object has a given condition with the given value that is up-to-date and set
 // within the given time period.
+//
+//nolint:laconiccomments
 func HasRecentCondition[T ~string](o client.Object, conditionType T, value metav1.ConditionStatus, period time.Duration) bool {
 	condition := apimeta.FindStatusCondition(GetConditions(o), string(conditionType))
 	if condition == nil {
@@ -2869,6 +2871,8 @@ func GetConditions(o client.Object) []metav1.Condition {
 // than only change the .LastTransitionTime if the .Status field of the condition changes, it
 // sets it if .Status, .Reason, .Message, or .ObservedGeneration changes, which works nicely with our recent check leveraged
 // for rate limiting above. It also normalizes this to be the same as what status.ConditionApplyConfigs does
+//
+//nolint:laconiccomments
 func setStatusCondition(conditions *[]metav1.Condition, newCondition ratelimitedCondition) (changed bool) {
 	if conditions == nil {
 		return false

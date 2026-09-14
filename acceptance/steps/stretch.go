@@ -654,6 +654,8 @@ func checkDataDirPVCAnnotations(ctx context.Context, t framework.TestingT, clust
 // Cleanup deletes the base manifest in every region; kubectl delete keys
 // off metadata.name, so the override region's pool is removed correctly
 // despite cleanup using the un-augmented body.
+//
+//nolint:laconiccomments
 func applyBrokerPoolsWithRegionOverride(ctx context.Context, t framework.TestingT, clusterName, regionName string, content *godog.DocString) {
 	parts := strings.SplitN(content.Content, "\n---\n", 2)
 	require.Len(t, parts, 2,
