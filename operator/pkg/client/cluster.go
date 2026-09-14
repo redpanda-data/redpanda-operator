@@ -59,7 +59,8 @@ func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpanda
 	return client, nil
 }
 
-// redpandaAdminForV1Cluster returns a simple rpadmin.AdminAPI able to communicate with the given V1 cluster through its internal admin listener.
+// redpandaAdminForV1Cluster returns rpadmin.AdminAPI
+// to communicate with the given V1 cluster through its internal admin listener.
 func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*rpadmin.AdminAPI, error) {
 	k8sClient, err := c.GetClient(ctx, clusterName)
 	if err != nil {

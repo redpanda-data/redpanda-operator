@@ -160,7 +160,7 @@ tasks:
       # charts:generate embeds the itemized RBAC that k8s:generate writes into
       # charts/redpanda/chart/files, so it has to follow it.
       - task: charts:generate
-      - task: fmt:fix # Format any newly generated files.
+      - task: fmt # Format any newly generated files.
       - nix fmt . # Ensure flake.nix has been formatted.
 
   # Stages that share no inputs or outputs, fanned out.
