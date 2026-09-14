@@ -34,7 +34,7 @@ import (
 // this is a nasty hack due to the fact that we can't disable the linter for typecheck
 // that reports sigs.k8s.io/controller-runtime/pkg/client as unused when it's solely used
 // for type assertions
-var _ client.Object = (client.Object)(nil)
+var _ client.Object = client.Object(nil)
 
 func podWillEventuallyBeInPhase(ctx context.Context, t framework.TestingT, podName string, phase string) {
 	require.EventuallyWithT(t, func(c *assert.CollectT) {

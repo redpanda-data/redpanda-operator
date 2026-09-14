@@ -236,7 +236,7 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 		log.Error(err, "fetching StatefulSet")
 
 		// avoid the internal controller runtime stacktrace
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: defaultRequeueTimeout / 10}, nil
 	}
 
 	// skip objects already being deleted
@@ -264,7 +264,7 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 	if err != nil {
 		// we already logged any error, just requeue directly, delegating to the
 		// exponential backoff behavior
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: defaultRequeueTimeout / 10}, nil
 	}
 
 	if requeue {

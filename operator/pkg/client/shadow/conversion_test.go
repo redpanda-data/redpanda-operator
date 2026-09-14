@@ -158,13 +158,13 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 	// CRD, where a boolean toggled schema replication (mode did not exist).
 	t.Run("deprecated enabled=false turns schema replication off", func(t *testing.T) {
 		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
-			Enabled: ptr.To(false),
+			Enabled: ptr.To(false), //nolint:staticcheck // the deprecated field is what this case covers
 		}, nil))
 	})
 
 	t.Run("deprecated enabled=true without api maps to topic", func(t *testing.T) {
 		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
-			Enabled: ptr.To(true),
+			Enabled: ptr.To(true), //nolint:staticcheck // the deprecated field is what this case covers
 		}, nil)
 		require.NotNil(t, options)
 		require.NotNil(t, options.GetShadowSchemaRegistryTopic())
@@ -173,7 +173,7 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 
 	t.Run("deprecated enabled=true with api options maps to api", func(t *testing.T) {
 		options := convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
-			Enabled: ptr.To(true),
+			Enabled: ptr.To(true), //nolint:staticcheck // the deprecated field is what this case covers
 			ShadowSchemaRegistryAPI: &redpandav1alpha2.ShadowLinkSchemaRegistryAPIOptions{
 				SourceURL: "https://registry.example.com",
 			},
@@ -187,7 +187,7 @@ func TestConvertSchemaRegistrySyncOptions(t *testing.T) {
 		// enabled=true would imply topic, but an explicit disabled mode wins.
 		require.Nil(t, convertCRDToAPISchemaRegistrySyncOptions(&redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptions{
 			Mode:    redpandav1alpha2.ShadowLinkSchemaRegistrySyncOptionsModeDisabled,
-			Enabled: ptr.To(true),
+			Enabled: ptr.To(true), //nolint:staticcheck // the deprecated field is what this case covers
 		}, nil))
 	})
 

@@ -122,7 +122,7 @@ func (r *DecommissionReconciler) Reconcile(c context.Context, req ctrl.Request) 
 			}
 			log.Info("Updating true condition successfully")
 		}
-		result = ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}
+		result = ctrl.Result{RequeueAfter: 10 * time.Second}
 	case corev1.ConditionTrue:
 		// condition updated to true, so we proceed to decommission
 		log.Info("decommission started")
@@ -271,7 +271,7 @@ func (r *DecommissionReconciler) verifyIfNeedDecommission(ctx context.Context, s
 
 		log.Info("we are entering decommission and updated conditions, waiting to begin")
 		// we exit but requeue to allow actual decommission later
-		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -312,7 +312,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 	// avoid decommissioning the wrong node (broker) id
 	if statusReplicas != requestedReplicas && sts.Status.UpdatedReplicas == 0 {
 		log.Info("have not finished terminating and restarted largest ordinal, requeue here", "statusReplicas", statusReplicas, "availableReplicas", availableReplicas)
-		return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+		return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	valuesMap, err := getHelmValues(ctx, r, log, releaseName, namespace, r.OperatorMode)
@@ -349,7 +349,7 @@ func (r *DecommissionReconciler) reconcileDecommission(ctx context.Context, log 
 		// this happens when the controllerID node is being terminated, may show more than one node down at this point
 		if health.ControllerID < 0 {
 			log.Info("controllerID is not defined yet, we will requeue")
-			return ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
 		nodesDownMap := collections.NewSet[int]()
