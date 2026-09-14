@@ -11,7 +11,6 @@
 package applyconfigcopy
 
 import (
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -20,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 )

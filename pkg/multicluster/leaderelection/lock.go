@@ -12,13 +12,13 @@ package leaderelection
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"io"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 
