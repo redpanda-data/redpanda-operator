@@ -157,6 +157,8 @@ func init() {
 	framework.RegisterStep(`^the "([^"]*)" port of service "([^"]*)" should publish pods "([^"]*)"$`, servicePortShouldPublishPods)
 	framework.RegisterStep(`^I block ingress to port (\d+) of pod "([^"]*)"$`, iBlockIngressToPortOfPod)
 	framework.RegisterStep(`^I unblock ingress to pod "([^"]*)"$`, iUnblockIngressToPod)
+	framework.RegisterStep(`^port (\d+) of pod "([^"]*)" should be unreachable$`, podPortShouldBeUnreachable)
+	framework.RegisterStep(`^port (\d+) of pod "([^"]*)" should be reachable$`, podPortShouldBeReachable)
 	framework.RegisterStep(`^pod "([^"]*)" should be ready$`, podShouldBeReady)
 	framework.RegisterStep(`^rpk is configured correctly in "([^"]*)" cluster$`, checkRPKCommands)
 	framework.RegisterStep("running `(.*)` will output:$", runScriptInClusterCheckOutput)

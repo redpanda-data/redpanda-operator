@@ -13,7 +13,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -260,6 +262,79 @@ func iBlockIngressToPortOfPod(ctx context.Context, t framework.TestingT, port in
 	t.Cleanup(func(ctx context.Context) {
 		_ = t.Delete(ctx, policy)
 	})
+}
+
+// podPortShouldBeUnreachable and podPortShouldBeReachable assert, from
+// inside the cluster, whether a pod's port can be connected to. Blocking a
+// port with a NetworkPolicy is not synchronous -- k3s's policy controller
+// programs its rules on a sync loop that has taken minutes under CI load --
+// so a test that blocks a port and immediately asserts on the consequence
+// is really asserting that the block landed in time. These make that a
+// precondition of its own, with its own failure message.
+func podPortShouldBeUnreachable(ctx context.Context, t framework.TestingT, port int, podName string) {
+	requirePodPortReachability(ctx, t, port, podName, false)
+}
+
+func podPortShouldBeReachable(ctx context.Context, t framework.TestingT, port int, podName string) {
+	requirePodPortReachability(ctx, t, port, podName, true)
+}
+
+func requirePodPortReachability(ctx context.Context, t framework.TestingT, port int, podName string, want bool) {
+	ctl, err := kube.FromRESTConfig(t.RestConfig())
+	require.NoError(t, err)
+
+	target, err := kube.Get[corev1.Pod](ctx, ctl, kube.ObjectKey{Namespace: t.Namespace(), Name: podName})
+	require.NoErrorf(t, err, "Pod with name %q not found", podName)
+	require.NotEmptyf(t, target.Status.PodIP, "Pod %q has no address to connect to", podName)
+
+	// Dial from a sibling pod: a pod reaches itself without leaving the node,
+	// which an ingress policy does not govern.
+	from := siblingPod(ctx, t, ctl, target)
+
+	state := func(reachable bool) string {
+		if reachable {
+			return "reachable"
+		}
+		return "unreachable"
+	}
+	// curl reports any connect failure as a non-zero exit, which is what
+	// "unreachable" means here -- the port is not answering, whatever the
+	// reason.
+	cmd := fmt.Sprintf("curl -sS -m 2 -o /dev/null http://%s >/dev/null 2>&1 && echo reachable || echo unreachable",
+		net.JoinHostPort(target.Status.PodIP, strconv.Itoa(port)))
+
+	t.Logf("Checking port %d of pod %q is %s from pod %q", port, podName, state(want), from.Name)
+	var last string
+	require.Eventually(t, func() bool {
+		var stdout bytes.Buffer
+		if err := ctl.Exec(ctx, from, kube.ExecOptions{Command: []string{"sh", "-c", cmd}, Stdout: &stdout}); err != nil {
+			t.Logf("exec in pod %q failed: %v", from.Name, err)
+			return false
+		}
+		last = strings.TrimSpace(stdout.String())
+		return last == state(want)
+	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+		return fmt.Sprintf("port %d of pod %q never became %s from pod %q (last result: %q)", port, podName, state(want), from.Name, last)
+	}))
+}
+
+// siblingPod returns another running pod of the same cluster as pod, to dial
+// from.
+func siblingPod(ctx context.Context, t framework.TestingT, ctl *kube.Ctl, pod *corev1.Pod) *corev1.Pod {
+	pods, err := kube.List[corev1.PodList](ctx, ctl, t.Namespace(), client.MatchingLabels{
+		"app.kubernetes.io/instance": pod.Labels["app.kubernetes.io/instance"],
+		"app.kubernetes.io/name":     pod.Labels["app.kubernetes.io/name"],
+	})
+	require.NoError(t, err)
+
+	for i := range pods.Items {
+		sibling := &pods.Items[i]
+		if sibling.Name != pod.Name && sibling.Status.Phase == corev1.PodRunning && sibling.DeletionTimestamp == nil {
+			return sibling
+		}
+	}
+	t.Fatalf("no running sibling of pod %q to dial from", pod.Name)
+	return nil
 }
 
 // allTCPPortsExcept is every TCP port but one, as the ranges a
