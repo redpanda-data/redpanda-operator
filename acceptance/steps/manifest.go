@@ -101,6 +101,8 @@ func PatchManifest(t framework.TestingT, content string) string {
 			return DefaultRedpandaTag
 		case "NAMESPACE":
 			return t.Namespace()
+		case "CLUSTER_DOMAIN":
+			return t.ClusterDomain()
 		}
 
 		// Pass through Redpanda Connect runtime env var interpolations
