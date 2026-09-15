@@ -10,9 +10,11 @@
 package steps
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -22,13 +24,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/jsonpath"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -232,55 +231,6 @@ func execInPod(
 	}, 5*time.Minute, 5*time.Second)
 }
 
-// blockedPodLabel marks the NetworkPolicies iBlockIngressToPortOfPod creates
-// with the pod they target, so iUnblockIngressToPod can find them.
-const blockedPodLabel = "acceptance.redpanda.com/blocked-pod"
-
-// iBlockIngressToPortOfPod denies traffic to one port of a pod and nothing
-// else, through a NetworkPolicy that allows every other TCP port: a Schema
-// Registry nobody can reach on a broker that is otherwise healthy and Ready.
-func iBlockIngressToPortOfPod(ctx context.Context, t framework.TestingT, port int, podName string) {
-	policy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("block-%s-%d", podName, port),
-			Namespace: t.Namespace(),
-			Labels:    map[string]string{blockedPodLabel: podName},
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{"statefulset.kubernetes.io/pod-name": podName}},
-			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{{
-				// No peers: any source, on every TCP port but the blocked one.
-				Ports: allTCPPortsExcept(int32(port)),
-			}},
-		},
-	}
-	t.Logf("Blocking ingress to port %d of pod %q", port, podName)
-	require.NoError(t, t.Create(ctx, policy))
-	t.Cleanup(func(ctx context.Context) {
-		_ = t.Delete(ctx, policy)
-	})
-}
-
-// allTCPPortsExcept is every TCP port but one, as the ranges a
-// NetworkPolicy ingress rule takes.
-func allTCPPortsExcept(port int32) []networkingv1.NetworkPolicyPort {
-	tcp := ptr.To(corev1.ProtocolTCP)
-	var ports []networkingv1.NetworkPolicyPort
-	if port > 1 {
-		ports = append(ports, networkingv1.NetworkPolicyPort{Protocol: tcp, Port: ptr.To(intstr.FromInt32(1)), EndPort: ptr.To(port - 1)})
-	}
-	if port < 65535 {
-		ports = append(ports, networkingv1.NetworkPolicyPort{Protocol: tcp, Port: ptr.To(intstr.FromInt32(port + 1)), EndPort: ptr.To(int32(65535))})
-	}
-	return ports
-}
-
-func iUnblockIngressToPod(ctx context.Context, t framework.TestingT, podName string) {
-	t.Logf("Unblocking ingress to pod %q", podName)
-	require.NoError(t, t.DeleteAllOf(ctx, &networkingv1.NetworkPolicy{}, client.InNamespace(t.Namespace()), client.MatchingLabels{blockedPodLabel: podName}))
-}
-
 // podShouldBeReady asserts the pod is Ready right now -- not eventually. It
 // pins that steering a port never touched pod readiness.
 func podShouldBeReady(ctx context.Context, t framework.TestingT, podName string) {
@@ -293,4 +243,66 @@ func podShouldBeReady(ctx context.Context, t framework.TestingT, podName string)
 		}
 	}
 	t.Fatalf("pod %q reports no Ready condition", podName)
+}
+
+// operatorLogMatchLimit caps how many matching operator log lines are
+// reported, keeping the newest.
+const operatorLogMatchLimit = 300
+
+// dumpOperatorLogsMatching reports the shared operator's log lines that
+// mention needle. The per-feature diagnostics already dump the tail of that
+// log, but one busy reconciler can fill it in a second, so anything about a
+// specific resource has to be selected by name out of the whole log.
+func dumpOperatorLogsMatching(ctx context.Context, t framework.TestingT, needle string) {
+	var pods corev1.PodList
+	if err := t.List(ctx, &pods, client.InNamespace(OperatorNamespace)); err != nil {
+		t.Logf("[operator-logs] listing pods in %q: %v", OperatorNamespace, err)
+		return
+	}
+
+	clientset, err := kubernetes.NewForConfig(t.RestConfig())
+	if err != nil {
+		t.Logf("[operator-logs] building clientset: %v", err)
+		return
+	}
+
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		for _, container := range pod.Spec.Containers {
+			stream, err := clientset.CoreV1().Pods(OperatorNamespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container.Name,
+			}).Stream(ctx)
+			if err != nil {
+				t.Logf("[operator-logs] streaming %s/%s: %v", pod.Name, container.Name, err)
+				continue
+			}
+			matches := matchingLines(stream, needle)
+			_ = stream.Close()
+
+			if len(matches) == 0 {
+				t.Logf("[operator-logs] %s/%s said nothing about %q", pod.Name, container.Name, needle)
+				continue
+			}
+			t.Logf("[operator-logs] %s/%s on %q (%d lines):\n%s", pod.Name, container.Name, needle, len(matches), strings.Join(matches, "\n"))
+		}
+	}
+}
+
+// matchingLines returns the lines of r containing needle, at most
+// operatorLogMatchLimit of them, keeping the newest.
+func matchingLines(r io.Reader, needle string) []string {
+	var matches []string
+	scanner := bufio.NewScanner(r)
+	// Structured log lines carrying a stack trace run well past the default
+	// 64KiB.
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		if line := scanner.Text(); strings.Contains(line, needle) {
+			matches = append(matches, line)
+			if len(matches) > operatorLogMatchLimit {
+				matches = matches[1:]
+			}
+		}
+	}
+	return matches
 }

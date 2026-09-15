@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
@@ -85,7 +86,7 @@ func servicePortShouldPublishPods(ctx context.Context, t framework.TestingT, por
 	var got []string
 
 	t.Logf("Checking port %q of service %q publishes pods %v", portName, serviceName, want)
-	require.Eventually(t, func() bool {
+	published := assert.Eventually(t, func() bool {
 		endpointSlices, err := operatorManagedSlices(ctx, t, serviceName)
 		if err != nil {
 			t.Logf("Failed to list EndpointSlices of service %q: %v", serviceName, err)
@@ -93,10 +94,86 @@ func servicePortShouldPublishPods(ctx context.Context, t framework.TestingT, por
 		}
 		got = publishedPods(endpointSlices, portName)
 		return slices.Equal(got, want)
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
-		return fmt.Sprintf("port %q of service %q published %v, wanted %v", portName, serviceName, got, want)
-	}))
+	}, 5*time.Minute, 5*time.Second)
+	if !published {
+		// Which pods a port ends up with is a conclusion the operator
+		// reached from the Service, the pods, and a probe of each one, so
+		// report all three rather than only the conclusion. The shared
+		// operator's own log is dumped for every feature, but a V1 cluster's
+		// reconciler alone outruns the tail, so the lines about this Service
+		// have to be pulled out by name.
+		dumpSteeringDiagnostics(ctx, t, serviceName)
+		require.Failf(t, "endpoints never matched",
+			"port %q of service %q published %v, wanted %v", portName, serviceName, got, want)
+	}
 	t.Logf("Port %q of service %q publishes pods %v!", portName, serviceName, want)
+}
+
+// dumpSteeringDiagnostics reports everything that decides a steered
+// Service's endpoints: the Service itself, every slice published for it
+// whoever owns it, any NetworkPolicy that could be shaping the probes, and
+// the operator's own account of the decision.
+func dumpSteeringDiagnostics(ctx context.Context, t framework.TestingT, serviceName string) {
+	var service corev1.Service
+	if err := t.Get(ctx, t.ResourceKey(serviceName), &service); err != nil {
+		t.Logf("[steering] service %q: %v", serviceName, err)
+	} else {
+		t.Logf("[steering] service %q: selector=%v publishNotReadyAddresses=%v annotations=%v ports=%s",
+			serviceName, service.Spec.Selector, service.Spec.PublishNotReadyAddresses, service.Annotations, formatServicePorts(service.Spec.Ports))
+	}
+
+	var endpointSlices discoveryv1.EndpointSliceList
+	if err := t.List(ctx, &endpointSlices, runtimeclient.InNamespace(t.Namespace()), runtimeclient.MatchingLabels{
+		discoveryv1.LabelServiceName: serviceName,
+	}); err != nil {
+		t.Logf("[steering] listing EndpointSlices of service %q: %v", serviceName, err)
+	}
+	for i := range endpointSlices.Items {
+		slice := &endpointSlices.Items[i]
+		t.Logf("[steering] endpointslice %q: managed-by=%q ports=%s endpoints=%s",
+			slice.Name, slice.Labels[discoveryv1.LabelManagedBy], formatSlicePorts(slice.Ports), formatSliceEndpoints(slice.Endpoints))
+	}
+
+	var pods corev1.PodList
+	if err := t.List(ctx, &pods, runtimeclient.InNamespace(t.Namespace()), runtimeclient.MatchingLabels(service.Spec.Selector)); err != nil {
+		t.Logf("[steering] listing pods: %v", err)
+	}
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		t.Logf("[steering] pod %q: phase=%s address=%s subdomain=%q node=%q labels=%v",
+			pod.Name, pod.Status.Phase, pod.Status.PodIP, pod.Spec.Subdomain, pod.Spec.NodeName, pod.Labels)
+	}
+
+	dumpOperatorLogsMatching(ctx, t, serviceName)
+}
+
+func formatServicePorts(ports []corev1.ServicePort) string {
+	descriptions := make([]string, len(ports))
+	for i, port := range ports {
+		descriptions[i] = fmt.Sprintf("%s/%s:%d->%s", port.Name, port.Protocol, port.Port, port.TargetPort.String())
+	}
+	return "[" + strings.Join(descriptions, " ") + "]"
+}
+
+func formatSlicePorts(ports []discoveryv1.EndpointPort) string {
+	descriptions := make([]string, len(ports))
+	for i, port := range ports {
+		descriptions[i] = fmt.Sprintf("%s:%d", ptr.Deref(port.Name, ""), ptr.Deref(port.Port, 0))
+	}
+	return "[" + strings.Join(descriptions, " ") + "]"
+}
+
+func formatSliceEndpoints(endpoints []discoveryv1.Endpoint) string {
+	descriptions := make([]string, len(endpoints))
+	for i, endpoint := range endpoints {
+		var name string
+		if endpoint.TargetRef != nil {
+			name = endpoint.TargetRef.Name
+		}
+		descriptions[i] = fmt.Sprintf("%s(%v ready=%v serving=%v terminating=%v)", name, endpoint.Addresses,
+			ptr.Deref(endpoint.Conditions.Ready, false), ptr.Deref(endpoint.Conditions.Serving, false), ptr.Deref(endpoint.Conditions.Terminating, false))
+	}
+	return "[" + strings.Join(descriptions, " ") + "]"
 }
 
 // operatorManagedSlices lists the EndpointSlices the operator's endpoint

@@ -344,6 +344,6 @@ multicluster:
 
 endpointSteering:
   enabled: false
-  
+
 telemetry:
   enabled: true
