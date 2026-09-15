@@ -242,6 +242,7 @@ func TestCheckPVGates(t *testing.T) {
 		state, err := r.checkPVGates(ctx, key, owner)
 		require.NoError(t, err)
 		require.False(t, state.unbindInFlight, "a pod must be allowed to finish its own unbind")
+		require.True(t, state.ownUnbindInFlight, "the reserved-pv hold must know the pod's own unbind is unfinished, or it would defer the retry forever")
 	})
 
 	t.Run("in-flight: intact old claim settles and clears annotations (deadlock guard)", func(t *testing.T) {
@@ -1911,6 +1912,41 @@ func TestReconcileGate3StuckClaimExemption(t *testing.T) {
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod))
 	})
 
+	t.Run("exemption paper trail is not recorded while the reserved-pv hold defers", func(t *testing.T) {
+		// Same poisoning risk as the freed-pv variant above, for the
+		// hold that is decided even later: a reconcile that passes
+		// Gate 3 via the exemption but then waits on its own reserved
+		// disk (mis-pinned to a cordoned, still-present node) proceeds
+		// to nothing — no pass may be counted and no Warning emitted.
+		pod, datadir, shadow, pv := stuckBroker("rp-1")
+		pv.Annotations = map[string]string{ReservedPVAnnotation: "ns/shadow-index-cache-rp-1"}
+		cordoned := newNode("node-a")
+		cordoned.Spec.Unschedulable = true
+		recorder := &events.FakeRecorder{Events: make(chan string, 8)}
+		r := newController(t, s, wffc, pod, datadir, shadow, pv, cordoned)
+		r.Recorder = recorder
+
+		exemptedBefore := promtestutil.ToFloat64(observability.PVCUnbinderGateExempted)
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Equal(t, requeueDuringDisruption, res.RequeueAfter, "the reserved-pv hold must defer while the cordoned node may return")
+		require.Equal(t, exemptedBefore, promtestutil.ToFloat64(observability.PVCUnbinderGateExempted), "the exempted metric must not count a gate pass that never proceeded")
+
+		close(recorder.Events)
+		for ev := range recorder.Events {
+			require.NotContains(t, ev, eventReasonGateExempted, "no exemption event may be recorded on a reconcile that defers at the reserved-pv hold")
+		}
+
+		// Nothing was touched — in particular no in-flight stamp.
+		var gotPV corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-shadow-rp-1"}, &gotPV))
+		require.NotContains(t, gotPV.Annotations, InFlightAnnotation)
+		var gotPVC corev1.PersistentVolumeClaim
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC))
+		var gotPod corev1.Pod
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod))
+	})
+
 	t.Run("sibling stuck on a generic scheduling failure without a mis-pinned bound claim still defers", func(t *testing.T) {
 		// The weak signature (schedulingFailureRE) alone is not enough
 		// to grant the exemption: a sibling Pending on "0/N nodes are
@@ -2127,13 +2163,17 @@ func TestPrepareForUnbind(t *testing.T) {
 }
 
 // TestReconcileReservedPV walks the reservation lifecycle through the
-// full pipeline: an unbind with the pinned node still present reserves
-// the PV for its recreated claim; while the node keeps existing the
-// pod's reconciles defer (the rebound reserved disk means the pod is
-// waiting for the node, and re-unbinding would churn the same claim
-// every Timeout); once the Node object is deleted, the next unbind
+// full pipeline: an unbind whose pinned node may yet return reserves
+// the PV for its recreated claim; while that holds the pod's
+// reconciles defer (the rebound reserved disk means the pod is waiting
+// for the node, and re-unbinding would churn the same claim every
+// Timeout); once no pinned node can ever host the pod — Node object
+// deleted, or a hard-anti-affinity occupant in place — the unbind
 // leaves the PV as a Released dead end so the recreated claim
-// provisions a fresh disk.
+// provisions a fresh disk. It also covers the two states that must
+// override the deferral and the reserve: a crash-interrupted unbind
+// (resume, or Gate 0 wedges forever) and a stale dead-ended PV that
+// merely NAMES the claim (never write to it, or old data resurrects).
 func TestReconcileReservedPV(t *testing.T) {
 	ctx := context.Background()
 	s := newScheme(t, false, false, false)
@@ -2232,14 +2272,114 @@ func TestReconcileReservedPV(t *testing.T) {
 		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod)
 		require.True(t, apierrors.IsNotFound(err))
 	})
+
+	t.Run("crash-interrupted unbind resumes through the pod delete instead of deferring", func(t *testing.T) {
+		// The state after a crash between the reserve (step 4) and the
+		// pod delete (step 5): the PV is reserved and still carries the
+		// in-flight stamp, the claim is already gone, the pod remains.
+		// The reserved-pv hold must yield — deferring here would never
+		// delete the pod, the claim would never settle, and Gate 0
+		// would hold every sibling forever.
+		pod, _, pv := fixtures("uid-1")
+		pv.Spec.ClaimRef.UID = ""
+		pv.Spec.PersistentVolumeReclaimPolicy = corev1.PersistentVolumeReclaimRetain
+		pv.Annotations = map[string]string{
+			ReservedPVAnnotation:    "ns/datadir-rp-1",
+			InFlightAnnotation:      "/ns/redpanda",
+			InFlightClaimAnnotation: "ns/datadir-rp-1/uid-1",
+		}
+		node := newNode("node-a")
+		node.Spec.Unschedulable = true
+		r := newController(t, s, pod, pv, node)
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter, "the pod's own unfinished unbind must resume, not defer")
+
+		var gotPod corev1.Pod
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod)
+		require.True(t, apierrors.IsNotFound(err), "the resumed unbind must finish by deleting the pod")
+	})
+
+	t.Run("stale dead-ended PV from an earlier incident is not re-armed", func(t *testing.T) {
+		// pv-stale was dead-ended long ago: Released, its ClaimRef
+		// still NAMES datadir-rp-1 but carries the UID of a claim
+		// generation that no longer exists, and its node has since
+		// been repaired. Reserving it now would resurrect months-old
+		// data as a prebound match for the next claim recreation. Only
+		// the live binding (pv-0, matching UID) may be written to.
+		pod, pvc, pv := fixtures("uid-2")
+		stale := newPVWithAffinity("pv-stale", "ns", "datadir-rp-1", "node-b")
+		stale.Spec.ClaimRef.UID = "uid-1"
+		stale.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
+			HostPath: &corev1.HostPathVolumeSource{Path: "/data"},
+		}
+		stale.Status.Phase = corev1.VolumeReleased
+		// node-a (pv-0's) is gone -> the live PV dead-ends; node-b
+		// (pv-stale's) is back and healthy -> reserving it would arm
+		// the landmine.
+		r := newController(t, s, pod, pvc, pv, stale, newNode("node-b"))
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter)
+
+		var gotStale corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-stale"}, &gotStale))
+		require.Equal(t, types.UID("uid-1"), gotStale.Spec.ClaimRef.UID, "a stale PV's ClaimRef must stay dead-ended")
+		require.Empty(t, gotStale.Annotations, "a stale PV must receive neither the reservation nor the in-flight stamp")
+
+		var gotPV corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &gotPV))
+		require.Equal(t, types.UID("uid-2"), gotPV.Spec.ClaimRef.UID, "the live PV dead-ends: its node is gone")
+	})
+
+	t.Run("Ready node blocked by the pod's own hard anti-affinity dead-ends instead of reserving", func(t *testing.T) {
+		// The bootstrap mis-provisioning incident: the PV landed on a
+		// node a sibling broker occupies. The occupant never leaves,
+		// so reserving would re-bind the recreated claim straight back
+		// to the unusable node and hold the pod forever — the exact
+		// deadlock the Gate-3 exemption work fixed. The disk must be
+		// released for fresh provisioning.
+		pod, pvc, pv := fixtures("uid-3")
+		pod.Spec.Affinity = &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
+					LabelSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "redpanda"}},
+					TopologyKey:   corev1.LabelHostname,
+				}},
+			},
+		}
+		occupant := newPod("rp-0", "ns", "redpanda")
+		occupant.Labels["app"] = "redpanda"
+		occupant.Spec.NodeName = "node-a"
+		occupant.Status.Phase = corev1.PodRunning
+		r := newController(t, s, pod, pvc, pv, newNode("node-a"), occupant)
+
+		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
+		require.NoError(t, err)
+		require.Zero(t, res.RequeueAfter)
+
+		var gotPV corev1.PersistentVolume
+		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &gotPV))
+		require.Equal(t, types.UID("uid-3"), gotPV.Spec.ClaimRef.UID, "an occupied node's PV must dead-end, not reserve")
+		require.NotContains(t, gotPV.Annotations, ReservedPVAnnotation)
+
+		var gotPVC corev1.PersistentVolumeClaim
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-rp-1"}, &gotPVC)
+		require.True(t, apierrors.IsNotFound(err))
+		var gotPod corev1.Pod
+		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod)
+		require.True(t, apierrors.IsNotFound(err))
+	})
 }
 
 // TestMaybeReservePersistentVolume verifies the reservation write
-// side: with the pinned node present the ClaimRef keeps its
-// namespace+name and loses UID and ResourceVersion (stamping
-// [ReservedPVAnnotation] in the same patch); with the node gone the
-// ClaimRef is left as a dead end and a stale reservation annotation is
-// dropped. Converged states must produce no write.
+// side: an awaitable fate keeps the ClaimRef's namespace+name and
+// clears UID and ResourceVersion (stamping [ReservedPVAnnotation] in
+// the same patch); a dead-end fate leaves the ClaimRef alone and drops
+// a stale reservation annotation. Converged states must produce no
+// write.
 func TestMaybeReservePersistentVolume(t *testing.T) {
 	ctx := context.Background()
 	s := newScheme(t, false, false, false)
@@ -2255,10 +2395,10 @@ func TestMaybeReservePersistentVolume(t *testing.T) {
 		return pv
 	}
 
-	t.Run("node exists: reserves the ClaimRef for the recreated claim", func(t *testing.T) {
+	t.Run("awaitable: reserves the ClaimRef for the recreated claim", func(t *testing.T) {
 		pv := releasedPV()
-		r := newController(t, s, pv, newNode("node-a"))
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
+		r := newController(t, s, pv)
+		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv, pvNodeFateAwaitable))
 
 		var got corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
@@ -2270,11 +2410,11 @@ func TestMaybeReservePersistentVolume(t *testing.T) {
 		require.NotContains(t, got.Annotations, FreedPVAnnotation)
 	})
 
-	t.Run("node exists: the deprecated AllowRebinding no longer clears the ClaimRef to nil", func(t *testing.T) {
+	t.Run("awaitable: the deprecated AllowRebinding no longer clears the ClaimRef to nil", func(t *testing.T) {
 		pv := releasedPV()
-		r := newController(t, s, pv, newNode("node-a"))
+		r := newController(t, s, pv)
 		r.AllowRebinding = true
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
+		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv, pvNodeFateAwaitable))
 
 		var got corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
@@ -2284,13 +2424,13 @@ func TestMaybeReservePersistentVolume(t *testing.T) {
 		require.NotContains(t, got.Annotations, FreedPVAnnotation)
 	})
 
-	t.Run("node gone: leaves the dead end without a write", func(t *testing.T) {
+	t.Run("dead end: leaves the ClaimRef without a write", func(t *testing.T) {
 		pv := releasedPV()
 		r := newController(t, s, pv)
 		var before corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &before))
 
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
+		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv, pvNodeFateDeadEnd))
 
 		var got corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
@@ -2299,11 +2439,11 @@ func TestMaybeReservePersistentVolume(t *testing.T) {
 		require.Equal(t, before.ResourceVersion, got.ResourceVersion, "the dead end is the no-write converged state")
 	})
 
-	t.Run("node gone: drops a stale reservation annotation", func(t *testing.T) {
+	t.Run("dead end: drops a stale reservation annotation", func(t *testing.T) {
 		pv := releasedPV()
 		pv.Annotations = map[string]string{ReservedPVAnnotation: "ns/datadir-rp-0"}
 		r := newController(t, s, pv)
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
+		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv, pvNodeFateDeadEnd))
 
 		var got corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
@@ -2316,41 +2456,130 @@ func TestMaybeReservePersistentVolume(t *testing.T) {
 		pv.Spec.ClaimRef.UID = ""
 		pv.Spec.ClaimRef.ResourceVersion = ""
 		pv.Annotations = map[string]string{ReservedPVAnnotation: "ns/datadir-rp-0"}
-		r := newController(t, s, pv, newNode("node-a"))
+		r := newController(t, s, pv)
 		var before corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &before))
 
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
+		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv, pvNodeFateAwaitable))
 
 		var got corev1.PersistentVolume
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
 		require.Equal(t, before.ResourceVersion, got.ResourceVersion, "a retried reconcile must not re-patch a reserved PV")
 	})
 
-	t.Run("unresolvable node affinity reserves conservatively", func(t *testing.T) {
-		// A node set that can't be resolved must not be read as "no
-		// eligible nodes": dead-ending is irreversible, while a
-		// reservation that never binds stays alertable via the
-		// reserved-pv deferral.
-		pv := releasedPV()
-		pv.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions = append(
-			pv.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions,
-			corev1.NodeSelectorRequirement{Key: "zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"z1"}},
-		)
-		r := newController(t, s, pv)
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
-
-		var got corev1.PersistentVolume
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Name: "pv-0"}, &got))
-		require.Empty(t, got.Spec.ClaimRef.UID)
-		require.Equal(t, "ns/datadir-rp-0", got.Annotations[ReservedPVAnnotation])
-	})
-
 	t.Run("nil ClaimRef is a no-op", func(t *testing.T) {
 		pv := releasedPV()
 		pv.Spec.ClaimRef = nil
 		r := newController(t, s, pv)
-		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv))
+		require.NoError(t, r.maybeReservePersistentVolume(ctx, pv, pvNodeFateAwaitable))
+	})
+}
+
+// TestPVNodeFate verifies the reserve-vs-dead-end classification. A PV
+// is worth keeping (awaitable) while some pinned node could still host
+// the pod — usable, down-but-present, or unresolvable — and must be
+// dead-ended only when no pinned node ever can: object gone, or Ready
+// but permanently blocked by the pod's own hard anti-affinity (the
+// bootstrap mis-provisioning shape, where waiting on the occupant
+// would re-create the deadlock the Gate-3 exemption exists to break).
+func TestPVNodeFate(t *testing.T) {
+	ctx := context.Background()
+	s := newScheme(t, false, false, false)
+
+	pv := func(hostnames ...string) *corev1.PersistentVolume {
+		p := newPVWithAffinity("pv-0", "ns", "datadir-rp-1", hostnames[0])
+		p.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions[0].Values = hostnames
+		return p
+	}
+	pod := func() *corev1.Pod {
+		p := withPVC(podWithVolumeAffinityFailure("rp-1", "ns", "redpanda"), "datadir-rp-1")
+		p.Spec.Affinity = &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
+					LabelSelector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "redpanda"}},
+					TopologyKey:   corev1.LabelHostname,
+				}},
+			},
+		}
+		return p
+	}
+	occupant := func(node string) *corev1.Pod {
+		o := newPod("rp-0", "ns", "redpanda")
+		o.Labels["app"] = "redpanda"
+		o.Spec.NodeName = node
+		o.Status.Phase = corev1.PodRunning
+		return o
+	}
+
+	t.Run("node object gone dead-ends", func(t *testing.T) {
+		r := newController(t, s)
+		fate, err := r.pvNodeFate(ctx, pv("node-a"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateDeadEnd, fate)
+	})
+
+	t.Run("cordoned node is awaitable (it may return)", func(t *testing.T) {
+		node := newNode("node-a")
+		node.Spec.Unschedulable = true
+		r := newController(t, s, node)
+		fate, err := r.pvNodeFate(ctx, pv("node-a"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateAwaitable, fate)
+	})
+
+	t.Run("NotReady node is awaitable", func(t *testing.T) {
+		node := newNode("node-a")
+		node.Status.Conditions = []corev1.NodeCondition{{Type: corev1.NodeReady, Status: corev1.ConditionUnknown}}
+		r := newController(t, s, node)
+		fate, err := r.pvNodeFate(ctx, pv("node-a"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateAwaitable, fate)
+	})
+
+	t.Run("Ready node blocked by the pod's own hard anti-affinity dead-ends", func(t *testing.T) {
+		r := newController(t, s, newNode("node-a"), occupant("node-a"))
+		fate, err := r.pvNodeFate(ctx, pv("node-a"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateDeadEnd, fate, "waiting on a permanent sibling occupant never ends; the disk must be released for fresh provisioning")
+	})
+
+	t.Run("Ready node with no occupancy proof is awaitable", func(t *testing.T) {
+		r := newController(t, s, newNode("node-a"))
+		fate, err := r.pvNodeFate(ctx, pv("node-a"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateAwaitable, fate)
+	})
+
+	t.Run("one gone and one down hostname is awaitable (the down one may return)", func(t *testing.T) {
+		down := newNode("node-b")
+		down.Spec.Unschedulable = true
+		r := newController(t, s, down)
+		fate, err := r.pvNodeFate(ctx, pv("node-a", "node-b"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateAwaitable, fate)
+	})
+
+	t.Run("unresolvable node affinity is awaitable (conservative)", func(t *testing.T) {
+		p := pv("node-a")
+		p.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions = append(
+			p.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions,
+			corev1.NodeSelectorRequirement{Key: "zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"z1"}},
+		)
+		r := newController(t, s)
+		fate, err := r.pvNodeFate(ctx, p, pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateAwaitable, fate)
+	})
+
+	t.Run("two nodes sharing one hostname label are awaitable (ambiguous)", func(t *testing.T) {
+		doppelA := newNode("node-x")
+		doppelA.Labels[corev1.LabelHostname] = "node-a"
+		doppelB := newNode("node-y")
+		doppelB.Labels[corev1.LabelHostname] = "node-a"
+		r := newController(t, s, doppelA, doppelB)
+		fate, err := r.pvNodeFate(ctx, pv("node-a"), pod())
+		require.NoError(t, err)
+		require.Equal(t, pvNodeFateAwaitable, fate)
 	})
 }
 

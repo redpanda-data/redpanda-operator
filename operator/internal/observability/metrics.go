@@ -92,11 +92,15 @@ var (
 	// counts), "freed-pv" (Gate 4, legacy: a PV whose ClaimRef an
 	// older operator's --allow-pv-rebinding path cleared to nil is
 	// still Available with a live node — unbinding more pods could
-	// mis-pair disks), and "reserved-pv" (the pod's disk was already
-	// handed back to it as a PV reserved for its claim and the PV's
-	// pinned node still exists, so the unbinder waits for the node
-	// instead of re-unbinding the same claim in a loop; holds until
-	// the node returns or its Node object is deleted).
+	// mis-pair disks), and "reserved-pv" (the pod's disks were already
+	// handed back to it as PVs reserved for its claims and their
+	// pinned nodes may yet host it, so the unbinder waits instead of
+	// re-unbinding the same claims in a loop; holds until the node
+	// returns, or until no pinned node can ever host the pod — its
+	// Node object deleted, or blocked by the pod's own hard
+	// anti-affinity — at which point the unbind dead-ends the PV;
+	// deleting the Node object is the operator action that releases a
+	// waiting disk).
 	// Note: the "multi-node" gate also holds the known unfixed sibling
 	// of the mis-pinned-claim deadlock — when two victims' PVs land on
 	// two different occupied nodes, the unbinder defers there and

@@ -1,0 +1,34 @@
+project: operator
+kind: Changed
+body: |-
+    The PVCUnbinder now reserves a freed PersistentVolume for the claim it served — the recreated claim gets its own disk back, and no other claim ever can — instead of leaving the volume unreachable, or bindable by any claim under the deprecated `--allow-pv-rebinding`.
+
+      Previously a freed PV's `spec.claimRef` was either left fully populated
+      (the default: the volume dead-ends as `Released`, so the disk keeps its
+      data but no claim can ever bind it again and the recreated claim always
+      provisions a fresh, empty disk) or cleared to nil under
+      `--allow-pv-rebinding` (the volume becomes bindable by ANY claim, which
+      can hand one broker another broker's disk — the cross-broker swap). The
+      unbinder now clears the UID (and `resourceVersion`) from `spec.claimRef`,
+      keeping the namespace and name, whenever the volume's pinned node could
+      still host the pod: the broker waits for its node and gets its own data
+      back. While waiting, reconciles defer with a `reserved-pv` gate Event and
+      metric label instead of re-unbinding the same claim in a loop.
+
+      When no pinned node can ever host the pod again — the Node object was
+      deleted, or the node is permanently blocked by the pod's own hard
+      anti-affinity — the unbind leaves the volume as a `Released` dead end so
+      the recreated claim provisions a fresh disk elsewhere, and the orphaned
+      volume retains the data for manual recovery. This changes the default
+      recovery semantics on clusters that retain dead Node objects: the broker
+      now waits (visibly, via the `reserved-pv` deferral) instead of being
+      rebuilt on an empty disk. Deleting the dead Node object is the operator
+      action that releases the disk and lets fresh provisioning proceed.
+      Reserved volumes left behind by an uninstalled cluster stay reserved for
+      their claim name; remove them (or their reservation annotation
+      `operator.redpanda.com/pvc-unbinder-reserved`) during teardown.
+
+      `--allow-pv-rebinding` no longer clears ClaimRefs; its only remaining
+      effect is to force the pvc-rebinding gate's most conservative behavior
+      (no stuck-claim exemption).
+time: 2026-09-15T12:00:00.000000+02:00
