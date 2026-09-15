@@ -29,7 +29,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=schemas,verbs=get;list;watch;update;patch
@@ -88,9 +87,7 @@ func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceR
 	return nil
 }
 
-func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
-	factory := internalclient.NewFactory(mgr, expander)
-
+func SetupSchemaController(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Schema{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 

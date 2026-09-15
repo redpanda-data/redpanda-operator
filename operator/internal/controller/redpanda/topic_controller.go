@@ -42,7 +42,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 const (
@@ -146,10 +145,10 @@ func (r *TopicReconciler) getRecorder(c cluster.Cluster) record.EventRecorder {
 	return nil
 }
 
-func SetupTopicController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
+func SetupTopicController(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	r := &TopicReconciler{
 		Manager:      mgr,
-		Factory:      internalclient.NewFactory(mgr, expander),
+		Factory:      factory,
 		SyncInterval: intervalOrDefault(syncInterval, DefaultTopicSyncInterval),
 	}
 
