@@ -104,17 +104,7 @@ func (c *Factory) schemaRegistryForCluster(ctx context.Context, cluster *redpand
 		return nil, NoSchemaRegistryAPI
 	}
 
-	config, err := c.GetConfig(ctx, clusterName)
-	if err != nil {
-		return nil, err
-	}
-
-	dot, err := cluster.GetDot(config)
-	if err != nil {
-		return nil, err
-	}
-
-	state, err := redpandachart.RenderStateFromDot(dot)
+	state, err := c.redpandaRenderState(ctx, cluster, clusterName)
 	if err != nil {
 		return nil, err
 	}

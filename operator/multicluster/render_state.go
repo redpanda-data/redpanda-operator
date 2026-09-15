@@ -237,7 +237,14 @@ func (r *RenderState) isLocalPool(pool *redpandav1alpha2.RedpandaBrokerPool) boo
 }
 
 func (r *RenderState) fullname() string {
-	return tplutil.CleanForK8s(r.releaseName)
+	return ClusterServiceName(r.releaseName)
+}
+
+// ClusterServiceName is the name of the cluster-wide headless Service of the
+// StretchCluster deployed under releaseName (sc.Name). Every broker pod names
+// it in spec.subdomain; it is the pods' DNS parent.
+func ClusterServiceName(releaseName string) string {
+	return tplutil.CleanForK8s(releaseName)
 }
 
 func (r *RenderState) commonLabels() map[string]string {

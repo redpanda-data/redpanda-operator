@@ -785,6 +785,15 @@
       },
       "type": "object"
     },
+    "endpointSteering": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "enterprise": {
       "additionalProperties": false,
       "properties": {
