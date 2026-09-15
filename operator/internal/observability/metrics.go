@@ -89,9 +89,14 @@ var (
 	// so do NOT exclude stuck Pods from alerts on this gate; under
 	// --allow-pv-rebinding or --disable-pvc-rebinding-gate-exemption
 	// the exemption is disabled entirely and every unbound claim
-	// counts), and "freed-pv" (Gate 4, a PV whose
-	// ClaimRef we cleared under --allow-pv-rebinding is still Available
-	// with a live node — unbinding more pods could mis-pair disks).
+	// counts), "freed-pv" (Gate 4, legacy: a PV whose ClaimRef an
+	// older operator's --allow-pv-rebinding path cleared to nil is
+	// still Available with a live node — unbinding more pods could
+	// mis-pair disks), and "reserved-pv" (the pod's disk was already
+	// handed back to it as a PV reserved for its claim and the PV's
+	// pinned node still exists, so the unbinder waits for the node
+	// instead of re-unbinding the same claim in a loop; holds until
+	// the node returns or its Node object is deleted).
 	// Note: the "multi-node" gate also holds the known unfixed sibling
 	// of the mis-pinned-claim deadlock — when two victims' PVs land on
 	// two different occupied nodes, the unbinder defers there and
