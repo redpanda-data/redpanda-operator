@@ -16,6 +16,7 @@ import (
 	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/sr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
@@ -64,20 +65,10 @@ func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vector
 		return nil, err
 	}
 
-	// v1ClusterCerts resolves the certificate groups of every API, so it fails
-	// when any listener's Issuer or node secret is unreadable - including
-	// listeners this client never touches. Only resolve it when the internal
-	// admin listener actually needs TLS; NewNodePoolInternalAdminAPI rejects a
-	// nil provider on a TLS listener rather than silently downgrading.
-	domain := c.domain()
-	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster, domain)
-	var certs resourcetypes.AdminTLSConfigProvider
-	if internal := cluster.AdminAPIInternal(); internal != nil && internal.TLS.Enabled {
-		clusterCerts, err := v1ClusterCertsForFQDN(ctx, k8sClient, cluster, fqdn, domain)
-		if err != nil {
-			return nil, err
-		}
-		certs = clusterCerts
+	internal := cluster.AdminAPIInternal()
+	fqdn, certs, err := c.v1ClusterTLS(ctx, k8sClient, cluster, internal != nil && internal.TLS.Enabled)
+	if err != nil {
+		return nil, err
 	}
 
 	a, err := admin.NewNodePoolInternalAdminAPI(ctx, k8sClient, cluster, fqdn, certs, c.dialer, c.adminClientTimeout)
@@ -99,6 +90,28 @@ func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vector
 	}
 
 	return adminClient, nil
+}
+
+// v1ClusterTLS resolves the headless service FQDN of a V1 cluster and, only
+// when needsTLS, the provider for its certificates. Building the provider
+// resolves the certificate groups of EVERY API, so it fails when any
+// listener's Issuer or node secret is unreadable - including listeners the
+// caller never touches. Each builder therefore asks only for what its own
+// listener needs; they all reject a nil provider on a TLS listener rather than
+// silently downgrading to plaintext.
+func (c *Factory) v1ClusterTLS(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster, needsTLS bool) (string, resourcetypes.AdminTLSConfigProvider, error) {
+	domain := c.domain()
+	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster, domain)
+	if !needsTLS {
+		return fqdn, nil, nil
+	}
+
+	certs, err := v1ClusterCertsForFQDN(ctx, k8sClient, cluster, fqdn, domain)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return fqdn, certs, nil
 }
 
 // schemaRegistryForCluster returns a simple sr.Client able to communicate with the given cluster specified via a Redpanda cluster.
@@ -145,7 +158,8 @@ func (c *Factory) schemaRegistryForV1Cluster(ctx context.Context, cluster *vecto
 		return nil, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
+	listener := cluster.SchemaRegistryInternalListener()
+	fqdn, certs, err := c.v1ClusterTLS(ctx, client, cluster, listener != nil && listener.TLS != nil && listener.TLS.Enabled)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +272,8 @@ func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1al
 		return nil, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
+	listener := cluster.InternalListener()
+	fqdn, certs, err := c.v1ClusterTLS(ctx, client, cluster, listener != nil && listener.TLS.Enabled)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +309,8 @@ func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster
 		return settings, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
+	listener := cluster.InternalListener()
+	fqdn, certs, err := c.v1ClusterTLS(ctx, client, cluster, listener != nil && listener.TLS.Enabled)
 	if err != nil {
 		return settings, err
 	}

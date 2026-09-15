@@ -278,6 +278,69 @@ func TestRedpandaAdminForV1Cluster(t *testing.T) {
 	}
 }
 
+// Resolving a V1 cluster's certificates walks every API's listeners and reads
+// the Issuers they reference, so it fails when ANY listener is misconfigured.
+// Each builder must therefore resolve certificates only for its own listener,
+// or one broken listener takes down clients that never touch it.
+func TestV1BuildersIgnoreOtherListenersCertificates(t *testing.T) {
+	ctx := context.Background()
+
+	// An admin listener whose Issuer does not exist. Every case below leaves
+	// the listener its builder uses plaintext.
+	brokenAdminTLS := []vectorizedv1alpha1.AdminAPI{{
+		Port: 9644,
+		TLS: vectorizedv1alpha1.AdminAPITLS{
+			Enabled:   true,
+			IssuerRef: &cmmetav1.ObjectReference{Kind: "Issuer", Name: "missing"},
+		},
+	}}
+
+	for name, build := range map[string]func(*Factory, *vectorizedv1alpha1.Cluster) error{
+		"kafka": func(f *Factory, c *vectorizedv1alpha1.Cluster) error {
+			kClient, err := f.kafkaForV1Cluster(ctx, c, "v1")
+			if kClient != nil {
+				kClient.Close()
+			}
+			return err
+		},
+		"schema registry": func(f *Factory, c *vectorizedv1alpha1.Cluster) error {
+			_, err := f.schemaRegistryForV1Cluster(ctx, c, "v1")
+			return err
+		},
+		"remote cluster settings": func(f *Factory, c *vectorizedv1alpha1.Cluster) error {
+			_, err := f.remoteClusterSettingsForV1Cluster(ctx, c, "v1")
+			return err
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			cluster := &vectorizedv1alpha1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+				Spec: vectorizedv1alpha1.ClusterSpec{
+					Configuration: vectorizedv1alpha1.RedpandaConfig{
+						RPCServer:         vectorizedv1alpha1.SocketAddress{Port: 33145},
+						KafkaAPI:          []vectorizedv1alpha1.KafkaAPI{{Port: 9092}},
+						SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{{Port: 8081}},
+						AdminAPI:          brokenAdminTLS,
+					},
+				},
+			}
+
+			brokerPod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-0",
+				Namespace: cluster.Namespace,
+				Labels:    labels.ForCluster(cluster),
+			}}
+			k8sClient := fake.NewClientBuilder().WithScheme(controller.UnifiedScheme).
+				WithObjects(brokerPod).
+				Build()
+
+			factory := &Factory{mgr: &stubManager{clients: map[string]client.Client{"v1": k8sClient}}}
+
+			require.NoError(t, build(factory, cluster))
+		})
+	}
+}
+
 // adminServer stands in for a broker's admin API. Its dialer records the
 // address the client asked for and connects it to the server instead, so a
 // test can pin the URL the builder derives without reaching into rpadmin, and

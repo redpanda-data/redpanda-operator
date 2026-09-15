@@ -210,21 +210,9 @@ func v1ClusterFQDN(ctx context.Context, k8sClient client.Client, cluster *vector
 	return headlessSvc.HeadlessServiceFQDN(clusterDomain)
 }
 
-// v1ClusterCerts returns the headless service FQDN of a V1 cluster together
-// with the TLS provider for its listeners. Building the provider resolves the
-// certificate groups of every API, which reads the Issuers and node secrets
-// the listeners reference.
-func v1ClusterCerts(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster, clusterDomain string) (string, *certmanager.ClusterCertificates, error) {
-	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster, clusterDomain)
-	certs, err := v1ClusterCertsForFQDN(ctx, k8sClient, cluster, fqdn, clusterDomain)
-	if err != nil {
-		return "", nil, err
-	}
-	return fqdn, certs, nil
-}
-
-// v1ClusterCertsForFQDN is v1ClusterCerts for callers that already derived the
-// headless service FQDN.
+// v1ClusterCertsForFQDN builds the TLS provider for a V1 cluster's listeners.
+// Doing so resolves the certificate groups of every API, reading the Issuers
+// and node secrets each listener references.
 func v1ClusterCertsForFQDN(ctx context.Context, k8sClient client.Client, cluster *vectorizedv1alpha1.Cluster, fqdn, clusterDomain string) (*certmanager.ClusterCertificates, error) {
 	clusterSvc := resources.NewClusterService(k8sClient, cluster, controller.UnifiedScheme, nil, log.FromContext(ctx))
 	return certmanager.NewClusterCertificates(ctx, cluster, certmanager.KeyStoreKey(cluster), k8sClient, fqdn, clusterSvc.ServiceFQDN(clusterDomain), controller.UnifiedScheme, log.FromContext(ctx))
