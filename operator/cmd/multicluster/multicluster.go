@@ -35,6 +35,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/version"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	redpandacontrollers "github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -472,6 +473,20 @@ func Run(
 
 	if err := redpandacontrollers.SetupMulticlusterController(ctx, manager, redpandaImage, sidecarImage, cloudSecrets, factory, opts.ReconcileTimeout, opts.BrokerPodNodeUnavailableToleration, opts.PostRestartCaughtUpPercent, opts.WaitForSchemaRegistrySync, opts.ClearMaintenanceModeAfter, opts.StaleDiskWipeNotReadyThreshold); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Multicluster")
+		return err
+	}
+
+	// A StretchCluster's own Services are left to the native EndpointSlice
+	// controller: the renderer writes the cluster-wide Service into every
+	// member Kubernetes cluster, and a peer whose operator is a version
+	// behind would have no publisher for a selectorless one. Services that
+	// opt in by annotation are steered, each by the operator local to the
+	// pods it publishes.
+	localMgr := manager.GetLocalManager()
+	if err := endpointsteering.Setup(localMgr, endpointsteering.Options{
+		Resolver: endpointsteering.StretchResolver(localMgr.GetClient(), factory),
+	}); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "EndpointSteering")
 		return err
 	}
 

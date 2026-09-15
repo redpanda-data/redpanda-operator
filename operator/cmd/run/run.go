@@ -41,6 +41,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	pipelinecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/pipeline"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
@@ -148,6 +149,7 @@ type RunOptions struct {
 	ghostBrokerDecommissionerSyncPeriod time.Duration
 	postRestartCaughtUpPercent          int
 	waitForSchemaRegistrySync           bool
+	enableEndpointSteering              bool
 	clearMaintenanceModeAfter           time.Duration
 	wipeStaleDiskAfter                  time.Duration
 	cloudSecretsEnabled                 bool
@@ -239,6 +241,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&o.ghostBrokerDecommissionerSyncPeriod, "ghost-broker-decommissioner-sync-period", time.Minute*5, "Ghost broker sync period. The Ghost Broker Decommissioner is guaranteed to be called after this period.")
 	cmd.Flags().IntVar(&o.postRestartCaughtUpPercent, "post-restart-caught-up-percent", probes.DefaultPostRestartCaughtUpPercent, "During a rolling restart, the per-broker post-restart probe load_reclaimed_pc (0-100) a just-restarted broker must report before the next broker is rolled. Default 100 (require full recovery); lower to accept partial recovery at the gate.")
 	cmd.Flags().BoolVar(&o.waitForSchemaRegistrySync, "wait-for-schema-registry-sync", true, "During a rolling restart, wait for each broker's Schema Registry store to report caught up on _schemas (GET /status/ready on the SR listener) before the next broker is rolled, so overlapping SR replay windows can't leave the cluster without a consistent Schema Registry endpoint mid-upgrade. Applies to both the V1 (Cluster) and V2 (Redpanda) controllers; skipped on clusters without a Schema Registry listener. Set to false to roll without waiting on Schema Registry.")
+	cmd.Flags().BoolVar(&o.enableEndpointSteering, "enable-endpoint-steering", false, "Hand the internal Services of V1 (Cluster) and V2 (Redpanda) clusters to the operator's endpoint steering controller, which publishes their EndpointSlices in place of the native EndpointSlice controller and decides membership per port: a broker whose Schema Registry store is still replaying _schemas (GET /status/ready on its SR listener not answering) is unpublished from the Schema Registry port while it keeps serving Kafka. Those Services are then rendered without a selector and annotated cluster.redpanda.com/endpoints-for=<cluster name>. The operator owns their endpoints from then on: while it is down, endpoint changes such as a restarted broker's new IP are not published. Independently of this flag, any selectorless Service carrying that annotation is steered the same way -- that is the opt-in for a Service the operator doesn't render, such as a load balancer Service, and for StretchClusters, whose own Services are never steered.")
 	cmd.Flags().DurationVar(&o.clearMaintenanceModeAfter, "clear-maintenance-mode-after", 30*time.Minute, "How long a broker may stay down (its pod not-Ready) while stuck in maintenance mode before the operator clears the maintenance flag so the Redpanda partition balancer can auto-decommission it. A broker left in maintenance mode is excluded from auto-decommission. There's no signal distinguishing a stuck broker from one intentionally in a longer planned maintenance window, so raise this if your maintenance windows commonly run longer. This threshold does not apply to ghost brokers — dead broker ids superseded at their own advertised address, either by a live registered broker under a different id or by the pod itself reporting that it runs a different broker identity — whose leaked maintenance flag is cleared immediately since they can never rejoin. Default 30m.")
 	cmd.Flags().DurationVar(&o.wipeStaleDiskAfter, "wipe-stale-disk-after", 0, "How long a broker pod must stay not-Ready with a stale on-disk identity (a decommissioned-broker bad_rejoin, K8S-843) before the operator wipes it — deleting the pod's data-dir PVC (if any) and the pod so it reschedules with a fresh identity. Destructive but heavily guarded. Opt-in on the single-cluster operator: 0 (the default) disables, a positive duration enables.")
 
@@ -518,7 +521,7 @@ func Run(
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
 			Manager:                        mcmanager,
-			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
+			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets, lifecycle.WithEndpointSteering(opts.enableEndpointSteering))).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
 			ClientFactory:                  factory,
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
@@ -667,6 +670,34 @@ func Run(
 		setupLog.Info("setting up vectorized controllers")
 		if err := setupVectorizedControllers(ctx, mgr, factory, cloudExpander, opts); err != nil {
 			return err
+		}
+	}
+
+	if opts.enableEndpointSteering {
+		// Steering resolves a Service's cluster through the manager's cache, so
+		// it can only look up the cluster kinds whose controllers -- and hence
+		// informers -- are running; with none there is nothing to steer.
+		//
+		// The controller runs whatever --enable-endpoint-steering says, because
+		// the annotation is the per-Service opt-in: the flag decides only whether
+		// the operator puts it on its own clusters' Services, and a Service that
+		// loses the annotation needs this controller running to hand its
+		// endpoints back to the native one.
+		var resolvers endpointsteering.Resolvers
+		if v2Controllers {
+			resolvers = append(resolvers, endpointsteering.V2Resolver(mgr.GetClient(), factory))
+		}
+		if v1Controllers {
+			resolvers = append(resolvers, endpointsteering.V1Resolver(mgr.GetClient(), factory))
+		}
+		if len(resolvers) > 0 {
+			if err := endpointsteering.Setup(mgr, endpointsteering.Options{
+				Resolver:      resolvers,
+				ClusterDomain: opts.clusterDomain,
+			}); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "EndpointSteering")
+				return err
+			}
 		}
 	}
 
@@ -908,6 +939,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 		AutoDeletePVCs:                     opts.autoDeletePVCs,
 		BrokerPodNodeUnavailableToleration: opts.brokerPodNodeUnavailableToleration,
 		BrokerCREnabled:                    opts.enableBrokerController,
+		EndpointSteering:                   opts.enableEndpointSteering,
 		CloudSecretsExpander:               cloudExpander,
 		Timeout:                            opts.rpClientTimeout,
 	}).WithClusterDomain(opts.clusterDomain).WithConfiguratorSettings(configurator).SetupWithManager(mgr); err != nil {

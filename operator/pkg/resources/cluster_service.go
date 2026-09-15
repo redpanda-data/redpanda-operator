@@ -22,6 +22,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
@@ -32,10 +33,11 @@ var _ Resource = &ClusterServiceResource{}
 // focusing on the internal connectivity management of redpanda cluster
 type ClusterServiceResource struct {
 	k8sclient.Client
-	scheme       *runtime.Scheme
-	pandaCluster *vectorizedv1alpha1.Cluster
-	svcPorts     []NamedServicePort
-	logger       logr.Logger
+	scheme           *runtime.Scheme
+	pandaCluster     *vectorizedv1alpha1.Cluster
+	svcPorts         []NamedServicePort
+	logger           logr.Logger
+	endpointSteering bool
 }
 
 // NewClusterService creates ClusterServiceResource
@@ -47,14 +49,25 @@ func NewClusterService(
 	logger logr.Logger,
 ) *ClusterServiceResource {
 	return &ClusterServiceResource{
-		client,
-		scheme,
-		pandaCluster,
-		svcPorts,
-		logger.WithValues(
+		Client:       client,
+		scheme:       scheme,
+		pandaCluster: pandaCluster,
+		svcPorts:     svcPorts,
+		logger: logger.WithValues(
 			"ServiceType", corev1.ServiceTypeClusterIP,
 		),
 	}
+}
+
+// WithEndpointSteering hands this Service's EndpointSlices to the operator's
+// endpoint steering controller, which publishes them per port. This is the
+// Service a v1 cluster serves its Schema Registry on; the headless Service
+// is deliberately left to the native controller, since it carries broker
+// discovery and no Schema Registry port, so steering it would make seed and
+// admin DNS depend on the operator being up for nothing in return.
+func (r *ClusterServiceResource) WithEndpointSteering(enabled bool) *ClusterServiceResource {
+	r.endpointSteering = enabled
+	return r
 }
 
 // Ensure will manage kubernetes v1.Service for redpanda.vectorized.io custom resource
@@ -111,6 +124,9 @@ func (r *ClusterServiceResource) obj() (k8sclient.Object, error) {
 			Ports:                    ports,
 			Selector:                 objLabels.AsAPISelector().MatchLabels,
 		},
+	}
+	if r.endpointSteering {
+		redpandachart.SteerEndpoints(svc, r.pandaCluster.Name)
 	}
 
 	err := controllerutil.SetControllerReference(r.pandaCluster, svc, r.scheme)

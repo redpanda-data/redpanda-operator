@@ -410,6 +410,10 @@ func operatorArguments(dot *helmette.Dot) []string {
 		defaults["--enable-shadowlinks"] = "true"
 	}
 
+	if values.EndpointSteering.Enabled {
+		defaults["--enable-endpoint-steering"] = "true"
+	}
+
 	if len(values.CommonAnnotations) > 0 {
 		// Build comma-separated key=value pairs for --common-annotations flag.
 		annotationArg := ""
