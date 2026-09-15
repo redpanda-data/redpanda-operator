@@ -12,6 +12,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -225,7 +226,7 @@ func (r *PreStartStopScriptResource) composeCURLGetNodeIDCommand(
 			cmd += "--cacert /etc/tls/certs/admin/tls.crt "
 		}
 	}
-	cmd += fmt.Sprintf("%s://${POD_NAME}.%s.%s.svc.cluster.local:%d", proto, r.pandaCluster.Name, r.pandaCluster.Namespace, adminAPI.Port)
+	cmd += fmt.Sprintf("%s://${POD_NAME}.%s:%d", proto, r.adminAPIHost(), adminAPI.Port)
 	cmd += "/v1/node_config"
 	return cmd
 }
@@ -247,11 +248,18 @@ func (r *PreStartStopScriptResource) composeCURLMaintenanceCommand(
 			cmd += "--cacert /etc/tls/certs/admin/tls.crt "
 		}
 	}
-	cmd += fmt.Sprintf("%s://${POD_NAME}.%s.%s.svc.cluster.local:%d", proto, r.pandaCluster.Name, r.pandaCluster.Namespace, adminAPI.Port)
+	cmd += fmt.Sprintf("%s://${POD_NAME}.%s:%d", proto, r.adminAPIHost(), adminAPI.Port)
 	if urlOverwrite == nil {
 		cmd += "/v1/brokers/${NODE_ID}/maintenance"
 	} else {
 		cmd += *urlOverwrite
 	}
 	return cmd
+}
+
+// adminAPIHost is the headless service host the hooks curl, derived from the
+// operator's --cluster-domain. The trailing dot is dropped so the host matches
+// the node certificate SANs, which NewNodeCertificate mints without it.
+func (r *PreStartStopScriptResource) adminAPIHost() string {
+	return strings.TrimSuffix(r.serviceFQDN, ".")
 }

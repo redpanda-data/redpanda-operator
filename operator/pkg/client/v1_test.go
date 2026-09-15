@@ -17,6 +17,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 
@@ -113,6 +114,9 @@ func TestRedpandaAdminForV1Cluster(t *testing.T) {
 		secrets  []client.Object
 		server   *tls.Config
 		userAuth *UserAuth
+		// clusterDomain overrides the Factory's cluster domain; empty means
+		// the default.
+		clusterDomain string
 
 		// buildErr is a substring of the error the builder must return; the
 		// remaining expectations are skipped when it is set.
@@ -134,6 +138,24 @@ func TestRedpandaAdminForV1Cluster(t *testing.T) {
 			adminAPI: []vectorizedv1alpha1.AdminAPI{plaintext},
 			mutate:   func(c *vectorizedv1alpha1.Cluster) { c.Spec.DNSTrailingDotDisabled = true },
 			dialed:   "test-0.test.default.svc.cluster.local:9644",
+		},
+		// The Factory's cluster domain replaces the hardcoded cluster.local in
+		// the FQDN the client dials.
+		"plaintext admin listener on a custom cluster domain": {
+			adminAPI:      []vectorizedv1alpha1.AdminAPI{plaintext},
+			clusterDomain: "k8s.example",
+			dialed:        "test-0.test.default.svc.k8s.example.:9644",
+		},
+		// The V1 controller mints the node certificate SANs from the same
+		// domain. This server certificate carries cluster.local SANs, so a
+		// client on another domain must reject it: the domain reaches the
+		// hostname the TLS client verifies, not only the address it dials.
+		"TLS admin listener on a cluster domain the certificate does not cover": {
+			adminAPI:      []vectorizedv1alpha1.AdminAPI{withTLS},
+			secrets:       []client.Object{nodeSecret},
+			server:        serverTLS,
+			clusterDomain: "k8s.example",
+			callErr:       "x509",
 		},
 		// Cluster.AdminAPITLS() matches any listener with TLS, internal or
 		// external, so this used to be rejected even though the operator only
@@ -229,11 +251,11 @@ func TestRedpandaAdminForV1Cluster(t *testing.T) {
 				Build()
 
 			server := newAdminServer(t, tc.server)
-			factory := &Factory{
+			factory := (&Factory{
 				mgr:      &stubManager{clients: map[string]client.Client{"v1": k8sClient}},
 				dialer:   server.dial,
 				userAuth: tc.userAuth,
-			}
+			}).WithClusterDomain(tc.clusterDomain)
 
 			adminClient, err := factory.redpandaAdminForV1Cluster(ctx, cluster, "v1")
 			if tc.buildErr != "" {
@@ -250,8 +272,8 @@ func TestRedpandaAdminForV1Cluster(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			require.Equal(t, []string{tc.dialed}, server.dialed)
-			require.Equal(t, []string{tc.authorization}, server.authorization)
+			require.Equal(t, []string{tc.dialed}, server.dialedAddrs())
+			require.Equal(t, []string{tc.authorization}, server.authorizationHeaders())
 		})
 	}
 }
@@ -298,6 +320,21 @@ func (s *adminServer) dial(ctx context.Context, network, addr string) (net.Conn,
 	s.mu.Unlock()
 
 	return (&net.Dialer{}).DialContext(ctx, network, s.srv.Listener.Addr().String())
+}
+
+// dialedAddrs and authorizationHeaders take the lock: the dialer runs on the
+// client goroutine and the handler on the server's, so an unguarded read from
+// the test goroutine is a race.
+func (s *adminServer) dialedAddrs() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.dialed)
+}
+
+func (s *adminServer) authorizationHeaders() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.authorization)
 }
 
 func keyPair(t *testing.T, cert *bootstrap.Certificate) tls.Certificate {

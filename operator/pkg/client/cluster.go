@@ -64,14 +64,20 @@ func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vector
 		return nil, err
 	}
 
-	// A zero resourcetypes.AdminTLSConfigProvider indicates no TLS.
-	// v1ClusterCerts errors if ANY listener errors. Only attempt to pull certs if they're need.
-	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster)
+	// v1ClusterCerts resolves the certificate groups of every API, so it fails
+	// when any listener's Issuer or node secret is unreadable - including
+	// listeners this client never touches. Only resolve it when the internal
+	// admin listener actually needs TLS; NewNodePoolInternalAdminAPI rejects a
+	// nil provider on a TLS listener rather than silently downgrading.
+	domain := c.domain()
+	fqdn := v1ClusterFQDN(ctx, k8sClient, cluster, domain)
 	var certs resourcetypes.AdminTLSConfigProvider
 	if internal := cluster.AdminAPIInternal(); internal != nil && internal.TLS.Enabled {
-		if _, certs, err = v1ClusterCerts(ctx, k8sClient, cluster); err != nil {
+		clusterCerts, err := v1ClusterCertsForFQDN(ctx, k8sClient, cluster, fqdn, domain)
+		if err != nil {
 			return nil, err
 		}
+		certs = clusterCerts
 	}
 
 	a, err := admin.NewNodePoolInternalAdminAPI(ctx, k8sClient, cluster, fqdn, certs, c.dialer, c.adminClientTimeout)
@@ -139,7 +145,7 @@ func (c *Factory) schemaRegistryForV1Cluster(ctx context.Context, cluster *vecto
 		return nil, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +258,7 @@ func (c *Factory) kafkaForV1Cluster(ctx context.Context, cluster *vectorizedv1al
 		return nil, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +294,7 @@ func (c *Factory) remoteClusterSettingsForV1Cluster(ctx context.Context, cluster
 		return settings, err
 	}
 
-	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster)
+	fqdn, certs, err := v1ClusterCerts(ctx, client, cluster, c.domain())
 	if err != nil {
 		return settings, err
 	}
