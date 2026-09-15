@@ -11,6 +11,10 @@ let
       url = "https://github.com/elastic/crd-ref-docs/releases/download/v${version}/crd-ref-docs_${version}_Darwin_arm64.tar.gz";
       hash = "sha256-ltqMJtm1A4GaXrvNJKF718qANkp1EH9pyByrRvHxY5I=";
     };
+    aarch64-linux = fetchurl {
+      url = "https://github.com/elastic/crd-ref-docs/releases/download/v${version}/crd-ref-docs_${version}_Linux_arm64.tar.gz";
+      hash = "sha256-tZRP25JJJckFrnGGPPHIsahV5VNGx/rtWqXAIsOC+aI=";
+    };
     x86_64-linux = fetchurl {
       url = "https://github.com/elastic/crd-ref-docs/releases/download/v${version}/crd-ref-docs_${version}_Linux_x86_64.tar.gz";
       hash = "sha256-HqXPxRys1Sv/OjtQ1lszzkv2E1Lw6XZiN/aJrNbRlao=";
