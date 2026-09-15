@@ -10,6 +10,10 @@ let
       url = "https://get.helm.sh/helm-v${version}-darwin-arm64.tar.gz";
       hash = "sha256-3W/piPZvkyrGOLCgghn7j9CgNxAVvWn1kwFb8Von9Ko=";
     };
+    aarch64-linux = fetchzip {
+      url = "https://get.helm.sh/helm-v${version}-linux-arm64.tar.gz";
+      hash = "sha256-MGgI4iadlggT6nI22+D1xWH6q3E5x8gtJ5M6FhnCMgE=";
+    };
     x86_64-linux = fetchzip {
       url = "https://get.helm.sh/helm-v${version}-linux-amd64.tar.gz";
       hash = "sha256-XAtiT7vaSBrfrj03gbcQUmUMQSZ9+5nymxfVSOnQ+sM=";
