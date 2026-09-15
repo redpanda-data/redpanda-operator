@@ -11,6 +11,10 @@ let
       url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-darwin-arm64";
       hash = "sha256-hJ1TRyvVyBQIXmiUKSCfQqjfwkKpG+KguQ2uxY7TYOA=";
     };
+    aarch64-linux = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-linux-arm64";
+      hash = "sha256-tqVfGHmxvoIvQZ7+LBiV+Bf1nJJwPBU7SMyHz2ZFLT4=";
+    };
     x86_64-linux = fetchurl {
       url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-linux-amd64";
       hash = "sha256-VboKH3IFy1KbA8Ca8O4dN+D/MFRLE1acC/eHOXavbvM=";
