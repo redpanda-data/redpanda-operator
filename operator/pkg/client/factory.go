@@ -527,7 +527,13 @@ func (c *Factory) RolesForCluster(ctx context.Context, obj redpandav1alpha2.Clus
 		return nil, err
 	}
 
-	return roles.NewClient(ctx, adminClient, opts...)
+	rolesClient, err := roles.NewClient(ctx, adminClient, opts...)
+	if err != nil {
+		adminClient.Close()
+		return nil, err
+	}
+
+	return rolesClient, nil
 }
 
 func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...roles.Option) (*roles.Client, error) {
