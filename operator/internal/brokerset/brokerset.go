@@ -165,6 +165,12 @@ type BrokerSet struct {
 	// Its value is copied to BrokerConfigChecksumAnnotation — one of the three
 	// rotation-identity keys.
 	ConfigChecksumKey string
+	// ClusterConfigVersion is the owner's persisted restart-requiring
+	// cluster-config version (V2: Redpanda.Status.ConfigVersion). When set,
+	// RenderBrokers stamps it into pod templates so pods are born current —
+	// MarkForRestart re-stamps unconditionally, and a pod born from an
+	// unstamped template would be rolled for no config change. Optional.
+	ClusterConfigVersion string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.
 	Hooks OwnerHooks
@@ -552,6 +558,9 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
+		if s.ClusterConfigVersion != "" {
+			podAnnotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = s.ClusterConfigVersion
+		}
 
 		brokerLabels := maps.Clone(s.BrokerLabels)
 		brokerLabels[NetworkIndexLabelKey] = fmt.Sprintf("%d", i)
@@ -683,26 +692,45 @@ func (s *BrokerSet) createBroker(ctx context.Context, l logr.Logger, stsName str
 // UpdateBroker syncs the desired pod template (and propagated annotations)
 // onto an existing Broker CR, skipping no-op writes.
 func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, desired *redpandav1alpha2.Broker) error {
-	// Preserve the restart marker: it is stamped by MarkForRestart, not by
-	// the renderer, and must survive PodTemplate syncs until the restart has
-	// rolled through.
+	// On a live CR, MarkForRestart is the only writer of the restart marker.
+	// The rendered value comes from the owner's persisted status, which
+	// trails a fresh stamp, so letting it overwrite would roll pods for no
+	// change.
 	restartKey := redpandav1alpha2.BrokerClusterConfigVersionAnnotation
 	if v, ok := existing.Spec.PodTemplate.Annotations[restartKey]; ok {
 		if desired.Spec.PodTemplate.Annotations == nil {
 			desired.Spec.PodTemplate.Annotations = map[string]string{}
 		}
-		if _, set := desired.Spec.PodTemplate.Annotations[restartKey]; !set {
-			desired.Spec.PodTemplate.Annotations[restartKey] = v
+		desired.Spec.PodTemplate.Annotations[restartKey] = v
+	}
+
+	// Labels are synced by merge — nothing is removed. The NodePool
+	// generation label rides here; labels frozen at creation would freeze
+	// NodePool.Status.DeployedGeneration.
+	labelsChanged := false
+	for k, v := range desired.Labels {
+		if existing.Labels[k] != v {
+			labelsChanged = true
+			break
 		}
 	}
 
-	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) {
+	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) &&
+		equality.Semantic.DeepEqual(existing.Spec.ClusterRef, desired.Spec.ClusterRef) &&
+		!labelsChanged {
 		return nil
 	}
 	// Spec.Decommission is deliberately not synced: decommission intent is
 	// never unset by the operator, not even when the index is desired again.
 	// Terminal brokers at desired indices are replaced by EnsureDesiredBroker.
+	existing.Spec.ClusterRef = desired.Spec.ClusterRef
 	existing.Spec.PodTemplate = desired.Spec.PodTemplate
+	if existing.Labels == nil && len(desired.Labels) > 0 {
+		existing.Labels = map[string]string{}
+	}
+	for k, v := range desired.Labels {
+		existing.Labels[k] = v
+	}
 
 	l.V(1).Info("updating Broker CR", "name", existing.Name, "index", *existing.Spec.NetworkIndex)
 	return s.Client.Update(ctx, existing)
