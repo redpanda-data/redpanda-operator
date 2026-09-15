@@ -2,7 +2,10 @@
 Feature: Upgrading the operator with Console installed
   @skip:gke @skip:aks @skip:eks
   Scenario: Console v2 to v3 no warnings
-    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
+    # Install from the GitHub release tarball rather than the repo:
+    # charts.redpanda.com only serves charts for supported (non-EOL) release
+    # lines, so pre-25.3 versions are no longer in its index.
+    Given I helm install "redpanda-operator" "https://github.com/redpanda-data/redpanda-operator/releases/download/operator/v25.1.3/operator-25.1.3.tgz" with values:
     """
     image:
       repository: redpandadata/redpanda-operator
@@ -49,7 +52,8 @@ Feature: Upgrading the operator with Console installed
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Console v2 to v3 with warnings
-    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.1.3 with values:
+    # See the comment on the previous scenario's install step.
+    Given I helm install "redpanda-operator" "https://github.com/redpanda-data/redpanda-operator/releases/download/operator/v25.1.3/operator-25.1.3.tgz" with values:
     """
     image:
       repository: redpandadata/redpanda-operator

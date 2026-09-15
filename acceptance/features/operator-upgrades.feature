@@ -2,7 +2,10 @@
 Feature: Upgrading the operator
   @skip:gke @skip:aks @skip:eks
   Scenario: Operator upgrade from 25.2.2
-    Given I helm install "redpanda-operator" "redpanda/operator" --version v25.2.2 with values:
+    # Install from the GitHub release tarball rather than the repo:
+    # charts.redpanda.com only serves charts for supported (non-EOL) release
+    # lines, so pre-25.3 versions are no longer in its index.
+    Given I helm install "redpanda-operator" "https://github.com/redpanda-data/redpanda-operator/releases/download/operator/v25.2.2/operator-25.2.2.tgz" with values:
     """
     image:
       repository: redpandadata/redpanda-operator
