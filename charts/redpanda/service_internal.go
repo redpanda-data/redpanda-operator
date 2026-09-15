@@ -91,7 +91,7 @@ func ServiceInternal(state *RenderState) *corev1.Service {
 			Name:        ServiceName(state),
 			Namespace:   state.Release.Namespace,
 			Labels:      helmette.Merge(FullLabels(state), MonitoringEnabledLabel(state)),
-			Annotations: annotations,
+			Annotations: helmette.Merge(annotations, FullAnnotations(state)),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:                     corev1.ServiceTypeClusterIP,

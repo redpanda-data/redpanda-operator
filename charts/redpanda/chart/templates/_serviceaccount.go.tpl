@@ -37,7 +37,7 @@
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ServiceAccount")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.ServiceAccountName" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") "annotations" $state.Values.serviceAccount.annotations)) "automountServiceAccountToken" false))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "ServiceAccount")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.ServiceAccountName" (dict "a" (list $state)))) "r") "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") "annotations" (merge (dict) $state.Values.serviceAccount.annotations (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r")))) "automountServiceAccountToken" false))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

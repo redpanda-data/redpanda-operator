@@ -124,6 +124,7 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 					"helm.sh/hook-delete-policy": "before-hook-creation",
 					"helm.sh/hook-weight":        "-5",
 				},
+				FullAnnotations(state),
 			),
 		},
 		Spec: batchv1.JobSpec{
@@ -138,6 +139,7 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 								postInstallJobPodLabels(state),
 								helmette.Default(map[string]string{}, state.Values.CommonLabels),
 							),
+							Annotations: FullAnnotations(state),
 						},
 						Spec: corev1.PodSpec{
 							RestartPolicy:                corev1.RestartPolicyNever,

@@ -120,7 +120,7 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        cleanForK8sWithSuffix(Fullname(dot)+"-"+dot.Release.Namespace, "metrics-reader"),
 				Labels:      Labels(dot),
-				Annotations: values.Annotations,
+				Annotations: Annotations(dot, nil),
 			},
 			Rules: []rbacv1.PolicyRule{
 				{
@@ -153,12 +153,9 @@ func ClusterRoles(dot *helmette.Dot) []rbacv1.ClusterRole {
 				Kind:       "ClusterRole",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   bundle.Name + "-" + dot.Release.Namespace,
-				Labels: Labels(dot),
-				Annotations: helmette.Merge(
-					helmette.Default(map[string]string{}, values.Annotations),
-					helmette.Default(map[string]string{}, bundle.Annotations),
-				),
+				Name:        bundle.Name + "-" + dot.Release.Namespace,
+				Labels:      Labels(dot),
+				Annotations: Annotations(dot, bundle.Annotations),
 			},
 			Rules: rules,
 		})
@@ -192,7 +189,7 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        metricsRoleName,
 				Labels:      Labels(dot),
-				Annotations: values.Annotations,
+				Annotations: Annotations(dot, nil),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
@@ -219,12 +216,9 @@ func ClusterRoleBindings(dot *helmette.Dot) []rbacv1.ClusterRoleBinding {
 				Kind:       "ClusterRoleBinding",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   bundle.Name + "-" + dot.Release.Namespace,
-				Labels: Labels(dot),
-				Annotations: helmette.Merge(
-					helmette.Default(map[string]string{}, values.Annotations),
-					helmette.Default(map[string]string{}, bundle.Annotations),
-				),
+				Name:        bundle.Name + "-" + dot.Release.Namespace,
+				Labels:      Labels(dot),
+				Annotations: Annotations(dot, bundle.Annotations),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",

@@ -27,6 +27,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/txtar"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
@@ -553,6 +555,63 @@ func TestGenerateCases(t *testing.T) {
 	})
 
 	require.NoError(t, os.WriteFile("testdata/template-cases-generated.txtar", archive, 0o644))
+}
+
+// TestAnnotations asserts that the chart's `annotations` value reaches every
+// object the chart renders except Pod templates, that no object is rendered
+// with a nil annotations map (#1085), and that the value cannot change the Helm
+// hook annotations on the chart's hook Jobs, ServiceAccounts and RBAC.
+func TestAnnotations(t *testing.T) {
+	hookKeys := []string{"helm.sh/hook", "helm.sh/hook-weight", "helm.sh/hook-delete-policy"}
+
+	render := func(t *testing.T, values PartialValues) map[string]map[string]string {
+		values.CRDs = &PartialCRDs{Enabled: ptr.To(true)}
+		values.Monitoring = &PartialMonitoringConfig{Enabled: ptr.To(true), RulesEnabled: ptr.To(true)}
+		values.Webhook = &PartialWebhook{Enabled: ptr.To(true)}
+
+		objs, err := Chart.Render(nil, helmette.Release{Name: "operator", Namespace: "redpanda"}, values)
+		require.NoError(t, err)
+
+		annotations := map[string]map[string]string{}
+		for _, obj := range objs {
+			key := fmt.Sprintf("%T %q", obj, obj.GetName())
+			got := obj.GetAnnotations()
+			require.NotNil(t, got, "%s has nil annotations (#1085)", key)
+			annotations[key] = got
+
+			switch obj := obj.(type) {
+			case *appsv1.Deployment:
+				require.NotContains(t, obj.Spec.Template.Annotations, "my.co/owner", "%s pod template", key)
+			case *batchv1.Job:
+				require.NotContains(t, obj.Spec.Template.Annotations, "my.co/owner", "%s pod template", key)
+			}
+		}
+		return annotations
+	}
+
+	base := render(t, PartialValues{})
+	got := render(t, PartialValues{
+		Annotations: map[string]string{
+			"my.co/owner":                "ops",
+			"helm.sh/hook":               "bogus",
+			"helm.sh/hook-weight":        "999",
+			"helm.sh/hook-delete-policy": "bogus",
+		},
+	})
+	require.Equal(t, len(base), len(got))
+
+	var hooks int
+	for key, annotations := range got {
+		require.Equal(t, "ops", annotations["my.co/owner"], key)
+
+		if _, isHook := base[key]["helm.sh/hook"]; isHook {
+			hooks++
+			for _, hookKey := range hookKeys {
+				require.Equal(t, base[key][hookKey], annotations[hookKey], "%s: %s", key, hookKey)
+			}
+		}
+	}
+	require.NotZero(t, hooks, "expected hook objects to be rendered")
 }
 
 func makeSureTagIsNotEmptyString(values PartialValues, fuzzer *fuzz.Fuzzer) {
