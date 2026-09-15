@@ -54,6 +54,10 @@ const (
 	ExitBehaviorTestFail         ExitBehavior = "fail"
 )
 
+// DefaultClusterDomain is the Kubernetes cluster domain a test runs on unless
+// it asked for another one via VCluster.
+const DefaultClusterDomain = "cluster.local"
+
 // TestingOptions are configurable options for the testing environment
 type TestingOptions struct {
 	// RetainOnFailure tells the testing environment to retain
@@ -78,7 +82,8 @@ type TestingOptions struct {
 	// additional diagnostic information beyond the feature namespace.
 	DiagnosticHooks []func(ctx context.Context, t *TestingT)
 
-	variant string
+	variant       string
+	clusterDomain string
 }
 
 func (o *TestingOptions) Clone() *TestingOptions {
@@ -93,6 +98,7 @@ func (o *TestingOptions) Clone() *TestingOptions {
 		Images:            o.Images,
 		DiagnosticHooks:   o.DiagnosticHooks,
 		variant:           o.variant,
+		clusterDomain:     o.clusterDomain,
 	}
 }
 
@@ -403,9 +409,24 @@ func (t *TestingT) Variant() string {
 	return t.options.variant
 }
 
+// ClusterDomain returns the Kubernetes cluster domain the test's cluster
+// serves: DefaultClusterDomain, or the one requested through VCluster.
+func (t *TestingT) ClusterDomain() string {
+	if t.options.clusterDomain == "" {
+		return DefaultClusterDomain
+	}
+	return t.options.clusterDomain
+}
+
 // VCluster creates a vcluster instance and sets up the test routines to use it.
-func (t *TestingT) VCluster(ctx context.Context) string {
-	cluster, err := vcluster.New(ctx, t.restConfig)
+// A non-empty clusterDomain configures the vcluster's DNS to serve that domain
+// instead of cluster.local.
+func (t *TestingT) VCluster(ctx context.Context, clusterDomain string) string {
+	var opts []vcluster.Option
+	if clusterDomain != "" {
+		opts = append(opts, vcluster.WithClusterDomain(clusterDomain))
+	}
+	cluster, err := vcluster.New(ctx, t.restConfig, opts...)
 	require.NoError(t, err)
 
 	configPath, err := os.CreateTemp("", "vcluster.yaml")
@@ -419,6 +440,9 @@ func (t *TestingT) VCluster(ctx context.Context) string {
 
 	oldOptions := t.options.KubectlOptions
 	oldClient := t.Client
+	oldRESTConfig := t.restConfig
+	oldHelmClient := t.helmClient
+	oldClusterDomain := t.options.clusterDomain
 
 	newOptions := &KubectlOptions{
 		ConfigPath: configPath.Name(),
@@ -429,11 +453,23 @@ func (t *TestingT) VCluster(ctx context.Context) string {
 	for k, v := range oldOptions.Env {
 		newOptions.Env[k] = v
 	}
-	newClient, err := kubernetesClient(t.options.SchemeRegisterers, t.options.KubectlOptions)
+
+	// Every cluster handle on this TestingT has to move together. Scenario
+	// TestingTs are rebuilt from the options below and so reach the vcluster
+	// either way, but feature-level hooks keep using these fields.
+	newClient, err := kubernetesClient(t.options.SchemeRegisterers, newOptions)
+	require.NoError(t, err)
+
+	newHelmClient, err := helm.New(helm.Options{
+		KubeConfig: rest.CopyConfig(restConfig),
+	})
 	require.NoError(t, err)
 
 	t.options.KubectlOptions = newOptions
 	t.Client = newClient
+	t.restConfig = restConfig
+	t.helmClient = newHelmClient
+	t.options.clusterDomain = clusterDomain
 
 	t.Logf("Switching to newly created vcluster %q", cluster.Name())
 
@@ -442,6 +478,9 @@ func (t *TestingT) VCluster(ctx context.Context) string {
 		require.NoError(t, cluster.Delete())
 		t.options.KubectlOptions = oldOptions
 		t.Client = oldClient
+		t.restConfig = oldRESTConfig
+		t.helmClient = oldHelmClient
+		t.options.clusterDomain = oldClusterDomain
 		require.NoError(t, os.RemoveAll(configPath.Name()))
 		t.Logf("Switching from vcluster %q", cluster.Name())
 	})
