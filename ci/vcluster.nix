@@ -12,6 +12,10 @@ let
       url = "https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-darwin-arm64";
       hash = "sha256-esAAQM6RkKTbNuTcPBucr3RMeBkJ3sC25amdn6vRMdU=";
     };
+    aarch64-linux = fetchurl {
+      url = "https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-linux-arm64";
+      hash = "sha256-NXQdUoQ5AnoB6r2j48ozT1xuSHlY4om7/xjmR+RmC9w=";
+    };
     x86_64-linux = fetchurl {
       url = "https://github.com/loft-sh/vcluster/releases/download/v${version}/vcluster-linux-amd64";
       hash = "sha256-Q1IiL/XE1uO+dMTa10maWqUN1TNqFL8yrhkGG/zo10g=";
