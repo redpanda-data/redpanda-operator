@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -55,7 +55,7 @@ func newNodePoolInternalKafkaAPI(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	tlsProvider resourcetypes.AdminTLSConfigProvider,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	opts []kgo.Opt,
 	pods ...string,
 ) (*kgo.Client, error) {
@@ -125,7 +125,7 @@ func newNodePoolInternalSchemaRegistryAPI(
 	redpandaCluster *vectorizedv1alpha1.Cluster,
 	fqdn string,
 	tlsProvider resourcetypes.AdminTLSConfigProvider,
-	dialer redpanda.DialContextFunc,
+	dialer redpandaclient.DialContextFunc,
 	opts []sr.ClientOpt,
 	pods ...string,
 ) (*sr.Client, error) {

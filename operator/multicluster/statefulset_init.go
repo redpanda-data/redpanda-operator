@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -87,7 +87,7 @@ func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerP
 	return corev1.Container{
 		Name:    redpandaTuningContainerName,
 		Image:   pool.RedpandaImage(),
-		Command: []string{`/bin/bash`, `-c`, redpanda.HostTunerScript()},
+		Command: []string{`/bin/bash`, `-c`, redpandachart.HostTunerScript()},
 		SecurityContext: &corev1.SecurityContext{
 			// privileged: true already grants every capability;
 			// explicit Add entries would be redundant noise.
@@ -96,7 +96,7 @@ func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerP
 			RunAsUser:    ptr.To(int64(0)),
 			RunAsGroup:   ptr.To(int64(0)),
 		},
-		VolumeMounts: redpanda.HostTunerVolumeMounts(),
+		VolumeMounts: redpandachart.HostTunerVolumeMounts(),
 	}
 }
 
