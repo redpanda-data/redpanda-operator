@@ -234,8 +234,8 @@ func execInPod(
 	}, 5*time.Minute, 5*time.Second)
 }
 
-// blockedPodLabel marks the NetworkPolicies iBlockIngressToPortOfPod creates
-// with the pod they target, so iUnblockIngressToPod can find them.
+// blockedPodLabel records which pod a NetworkPolicy created by
+// iBlockIngressToPortOfPod targets, so one is identifiable in diagnostics.
 const blockedPodLabel = "acceptance.redpanda.com/blocked-pod"
 
 // iBlockIngressToPortOfPod denies traffic to one port of a pod and nothing
@@ -264,22 +264,26 @@ func iBlockIngressToPortOfPod(ctx context.Context, t framework.TestingT, port in
 	})
 }
 
-// podPortShouldBeUnreachable and podPortShouldBeReachable assert, from
-// inside the cluster, whether a pod's port can be connected to. Blocking a
-// port with a NetworkPolicy is not synchronous -- k3s's policy controller
-// programs its rules on a sync loop that has taken minutes under CI load --
-// so a test that blocks a port and immediately asserts on the consequence
-// is really asserting that the block landed in time. These make that a
-// precondition of its own, with its own failure message.
+// sustainedUnreachableChecks is how many consecutive failed dials it takes to
+// believe a port is shut, and the gap between them. A Redpanda broker's
+// Schema Registry listener goes down and comes back on its own -- a restart,
+// or a V1 broker failing its whole-cluster readiness probe -- so one failed
+// dial does not distinguish "the NetworkPolicy is in force" from "the
+// listener blinked", and a precondition that accepts the blink hands the
+// assertion after it a port that is still open.
+const (
+	sustainedUnreachableChecks = 6
+	sustainedUnreachableGap    = 3 * time.Second
+)
+
+// podPortShouldBeUnreachable asserts from inside the cluster that a pod's
+// port cannot be connected to. Blocking a port with a NetworkPolicy is not
+// synchronous -- k3s's policy controller programs its rules on a sync loop
+// that has taken minutes under CI load -- so a test that blocks a port and
+// asserts straight away on the consequence is really asserting that the
+// block landed in time. This makes it a precondition of its own, with its
+// own failure message.
 func podPortShouldBeUnreachable(ctx context.Context, t framework.TestingT, port int, podName string) {
-	requirePodPortReachability(ctx, t, port, podName, false)
-}
-
-func podPortShouldBeReachable(ctx context.Context, t framework.TestingT, port int, podName string) {
-	requirePodPortReachability(ctx, t, port, podName, true)
-}
-
-func requirePodPortReachability(ctx context.Context, t framework.TestingT, port int, podName string, want bool) {
 	ctl, err := kube.FromRESTConfig(t.RestConfig())
 	require.NoError(t, err)
 
@@ -291,30 +295,35 @@ func requirePodPortReachability(ctx context.Context, t framework.TestingT, port 
 	// which an ingress policy does not govern.
 	from := siblingPod(ctx, t, ctl, target)
 
-	state := func(reachable bool) string {
-		if reachable {
-			return "reachable"
-		}
-		return "unreachable"
-	}
 	// curl reports any connect failure as a non-zero exit, which is what
 	// "unreachable" means here -- the port is not answering, whatever the
 	// reason.
 	cmd := fmt.Sprintf("curl -sS -m 2 -o /dev/null http://%s >/dev/null 2>&1 && echo reachable || echo unreachable",
 		net.JoinHostPort(target.Status.PodIP, strconv.Itoa(port)))
 
-	t.Logf("Checking port %d of pod %q is %s from pod %q", port, podName, state(want), from.Name)
-	var last string
+	t.Logf("Checking port %d of pod %q is unreachable from pod %q, %d checks running", port, podName, from.Name, sustainedUnreachableChecks)
+	var (
+		last   string
+		streak int
+	)
 	require.Eventually(t, func() bool {
 		var stdout bytes.Buffer
 		if err := ctl.Exec(ctx, from, kube.ExecOptions{Command: []string{"sh", "-c", cmd}, Stdout: &stdout}); err != nil {
 			t.Logf("exec in pod %q failed: %v", from.Name, err)
+			last, streak = "exec failed", 0
 			return false
 		}
+
 		last = strings.TrimSpace(stdout.String())
-		return last == state(want)
-	}, 5*time.Minute, 5*time.Second, "%s", delayLog(func() string {
-		return fmt.Sprintf("port %d of pod %q never became %s from pod %q (last result: %q)", port, podName, state(want), from.Name, last)
+		if last != "unreachable" {
+			streak = 0
+			return false
+		}
+		streak++
+		return streak >= sustainedUnreachableChecks
+	}, 5*time.Minute, sustainedUnreachableGap, "%s", delayLog(func() string {
+		return fmt.Sprintf("port %d of pod %q was never unreachable from pod %q for %d checks running (reached %d, last result: %q)",
+			port, podName, from.Name, sustainedUnreachableChecks, streak, last)
 	}))
 }
 
@@ -349,11 +358,6 @@ func allTCPPortsExcept(port int32) []networkingv1.NetworkPolicyPort {
 		ports = append(ports, networkingv1.NetworkPolicyPort{Protocol: tcp, Port: ptr.To(intstr.FromInt32(port + 1)), EndPort: ptr.To(int32(65535))})
 	}
 	return ports
-}
-
-func iUnblockIngressToPod(ctx context.Context, t framework.TestingT, podName string) {
-	t.Logf("Unblocking ingress to pod %q", podName)
-	require.NoError(t, t.DeleteAllOf(ctx, &networkingv1.NetworkPolicy{}, client.InNamespace(t.Namespace()), client.MatchingLabels{blockedPodLabel: podName}))
 }
 
 // podShouldBeReady asserts the pod is Ready right now -- not eventually. It

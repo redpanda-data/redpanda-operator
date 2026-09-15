@@ -47,9 +47,20 @@ const (
 	// probeFailureThreshold is how many consecutive failed probes it takes
 	// to unpublish a broker's Schema Registry, mirroring kubelet's default
 	// readiness failureThreshold: a single slow answer under load must not
-	// flap a healthy registry out of rotation. A successful probe republishes
-	// immediately.
+	// flap a healthy registry out of rotation.
 	probeFailureThreshold = 3
+
+	// probeSuccessThreshold is how many consecutive successful probes it
+	// takes to publish it again. Kubelet's readiness equivalent is 1, but
+	// kubelet is deciding one pod's condition where this decides an
+	// EndpointSlice: a listener that comes and goes -- a restarting broker,
+	// a store that syncs and falls behind again -- would otherwise be
+	// written back in on every other probe, and each flip rewrites the
+	// slice for every consumer of the Service. Requiring two consecutive
+	// successes costs a recovered broker one resync, against a replay
+	// measured in minutes, and keeps a genuinely flapping listener out
+	// rather than oscillating.
+	probeSuccessThreshold = 2
 )
 
 // Checker is the portmapper membership decision for Redpanda broker pods. It
@@ -92,7 +103,7 @@ func NewChecker(resolver Resolver, clusterDomain string) *Checker {
 		clusters:      map[string]clusterEntry{},
 		now:           time.Now,
 	}
-	c.schemaRegistry = portmapper.Stable(portmapper.DeciderFunc(c.probeSchemaRegistry), 1, probeFailureThreshold)
+	c.schemaRegistry = portmapper.Stable(portmapper.DeciderFunc(c.probeSchemaRegistry), probeSuccessThreshold, probeFailureThreshold)
 	return c
 }
 

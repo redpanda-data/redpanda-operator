@@ -42,6 +42,12 @@
 // operator is its sole field manager. A selector co-owned by another manager
 // survives, both controllers then publish, and the port-mapper says so with
 // a warning Event on the Service.
+//
+// And one behavioral difference from the native controller: a pod that fails
+// a check is left out of the slice, where the native controller would
+// publish it with "ready: false". Traffic goes to the same places either
+// way, since kube-proxy and CoreDNS route on readiness, but a consumer
+// reading the slices sees an absence rather than an unready endpoint.
 package endpointsteering
 
 import (

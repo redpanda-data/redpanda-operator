@@ -367,10 +367,12 @@ func TestCheckerDecide(t *testing.T) {
 	}
 }
 
-// TestCheckerDampsSchemaRegistryFailures pins the kubelet-like damping: a
-// published Schema Registry stays published through fewer than
-// probeFailureThreshold consecutive failed probes, and one healthy answer
-// republishes it at once.
+// TestCheckerDampsSchemaRegistryFailures pins the damping in both
+// directions: a published Schema Registry survives fewer than
+// probeFailureThreshold consecutive failures, and an unpublished one needs
+// probeSuccessThreshold consecutive successes to come back -- so a listener
+// that blinks on and off neither drops out nor writes itself back in on
+// every other probe.
 func TestCheckerDampsSchemaRegistryFailures(t *testing.T) {
 	var code atomic.Int32
 	code.Store(http.StatusOK)
@@ -393,7 +395,19 @@ func TestCheckerDampsSchemaRegistryFailures(t *testing.T) {
 	require.Equal(t, portmapper.Exclude, decide(), "failure %d unpublishes", probeFailureThreshold)
 
 	code.Store(http.StatusOK)
-	require.Equal(t, portmapper.Include, decide(), "recovery republishes immediately")
+	for i := 1; i < probeSuccessThreshold; i++ {
+		require.Equal(t, portmapper.Exclude, decide(), "success %d of %d must not republish", i, probeSuccessThreshold)
+	}
+	require.Equal(t, portmapper.Include, decide(), "success %d republishes", probeSuccessThreshold)
+
+	// A listener alternating between answering and not stays where it is:
+	// neither run of agreement is long enough to flip it.
+	for range 3 {
+		code.Store(http.StatusServiceUnavailable)
+		require.Equal(t, portmapper.Include, decide())
+		code.Store(http.StatusOK)
+		require.Equal(t, portmapper.Include, decide())
+	}
 }
 
 func TestClassifyProbeError(t *testing.T) {
