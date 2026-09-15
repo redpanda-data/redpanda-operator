@@ -1,0 +1,10 @@
+project: operator
+kind: Added
+body: |-
+    Descriptions for the 30 Tiered Storage fields of `StretchTieredConfig`
+
+      Every field shipped blank in the CRD reference and in `kubectl explain`. The text
+      is the description already published in the object storage property reference for
+      the same cluster property, so the two references now agree. Affects the
+      StretchCluster and RedpandaBrokerPool CRDs, which share the type.
+time: 2026-09-07T13:00:03.000000-07:00

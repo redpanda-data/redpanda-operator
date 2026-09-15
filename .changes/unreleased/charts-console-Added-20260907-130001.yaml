@@ -1,0 +1,18 @@
+project: charts/console
+kind: Added
+body: |-
+    Descriptions for the 36 values that shipped blank in the Helm reference
+
+      Includes `replicaCount`, `podAnnotations`, `podLabels`, `podSecurityContext`,
+      `securityContext`, the `service`, `ingress`, `autoscaling` and `monitoring`
+      groups, `resources`, `nodeSelector`, `tolerations`, `affinity`,
+      `topologySpreadConstraints`, `readinessProbe`, `strategy`, `configmap.create` and
+      `deployment.create`.
+
+      Values that only apply when a sibling is enabled now say so, for example
+      `replicaCount` is ignored when `autoscaling.enabled` is `true`.
+
+      `tests.enabled` is deliberately left undocumented: it is declared in the values
+      schema but this chart has no test hook template, so the value currently has no
+      effect.
+time: 2026-09-07T13:00:01.000000-07:00
