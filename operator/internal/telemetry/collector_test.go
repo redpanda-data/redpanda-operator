@@ -11,11 +11,11 @@ package telemetry
 
 import (
 	"context"
-	"errors"
 	"runtime"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/license"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

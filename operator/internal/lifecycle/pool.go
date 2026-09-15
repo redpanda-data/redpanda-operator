@@ -495,6 +495,7 @@ func (p *PoolTracker) ToDelete() []*MulticlusterStatefulSet {
 				// 				sort.SliceStable(sets, func(i, j int) bool {
 				// 	return client.ObjectKeyFromObject(sets[i].StatefulSet).String() < client.ObjectKeyFromObject(sets[j].StatefulSet).String()
 				// })
+				//nolint:laconiccomments
 
 				mcset := p.existingPools[nn].set
 				sets = append(sets, newMulticlusterStatefulSet(mcset.DeepCopy(), mcset.clusterName, mcset.canonicalClusterName))

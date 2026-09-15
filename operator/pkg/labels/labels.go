@@ -51,6 +51,8 @@ type CommonLabels map[string]string
 
 // ForCluster returns a set of labels that is a union of cluster labels as well as recommended default labels
 // recommended by the kubernetes documentation https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+//
+//nolint:laconiccomments
 func ForCluster(cluster *vectorizedv1alpha1.Cluster) CommonLabels {
 	dl := defaultClusterLabels(cluster)
 	labels := union(cluster.Labels, dl)
@@ -80,6 +82,8 @@ func (cl CommonLabels) AsAPISelector() *metav1.LabelSelector {
 // return type is metav1.LabelSelector type which is used in resource definition
 // This selector selects all pods of a specific nodepool.
 // To select all pods for the cluster, across nodepools, use AsAPISelector.
+//
+//nolint:laconiccomments
 func (cl CommonLabels) AsAPISelectorForNodePool() *metav1.LabelSelector {
 	return metav1.SetAsLabelSelector(cl.nodePoolSelectorLabels())
 }

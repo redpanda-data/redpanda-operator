@@ -129,6 +129,8 @@ func brokerInMaintenance(b rpadmin.Broker) bool {
 // members) plus RPC port. Bare-IP addresses are skipped: Kubernetes reuses pod
 // IPs, so an unrelated pod could masquerade as a live successor; flat-network
 // ghosts are recovered by rule B, which is IP-reuse-safe.
+//
+//nolint:laconiccomments
 func ghostBrokersInMaintenance(brokers []rpadmin.Broker) []rpadmin.Broker {
 	var ghosts []rpadmin.Broker
 	for _, bucket := range ghostAddressBuckets(brokers, false) {

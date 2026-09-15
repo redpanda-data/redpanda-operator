@@ -366,6 +366,7 @@ func prepareCloudStorage(
 	// Only set cache_size (in bytes) if no percentage based cluster property is set.
 	// This avoids problems with multiple node pools: bytes-based is very different if disk size changes (move between different tiers in cloud, for example).
 	// Percentage based is kept stable mostly (even exactly the same most of the time, 15% typically), and will not cause immediate churn on the old nodePool if disk size is going down.
+	//nolint:laconiccomments
 	_, cloudStoragePercentageConfigured := pandaCluster.Spec.AdditionalConfiguration["redpanda.cloud_storage_cache_size_percent"]
 
 	if pandaCluster.Spec.CloudStorage.CacheStorage != nil && pandaCluster.Spec.CloudStorage.CacheStorage.Capacity.Value() > 0 && !cloudStoragePercentageConfigured {

@@ -11,7 +11,6 @@ package clusterconfiguration
 
 import (
 	"context"
-	stderrors "errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -103,7 +102,7 @@ func (t *Template[T]) Fixup(engine func(reflect.Value) (*cel.Env, error)) error 
 			continue
 		}
 	}
-	return stderrors.Join(errs...)
+	return errors.Join(errs...)
 }
 
 type fieldAssigner struct {

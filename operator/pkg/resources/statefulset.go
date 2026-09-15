@@ -730,6 +730,7 @@ func (r *StatefulSetResource) obj(
 
 	// Only multi-replica clusters should use maintenance mode. See: https://github.com/redpanda-data/redpanda/issues/4338
 	// Startup of a fresh cluster would let the first pod restart, until dynamic hooks are implemented. See: https://github.com/redpanda-data/redpanda/pull/4907
+	//nolint:laconiccomments
 	multiReplica := r.pandaCluster.CalculateCurrentReplicas() > 1
 
 	if r.pandaCluster.IsUsingMaintenanceModeHooks() && multiReplica {
@@ -1216,6 +1217,8 @@ func (r *StatefulSetResource) AdditionalListenersEnvVars() []corev1.EnvVar {
 // - pandaproxy.advertised_pandaproxy_api
 // - schema_registry.schema_registry_api
 // example: redpanda.kafka_api: "[{'name':'private-link','address':'0.0.0.0','port':39002}]"
+//
+//nolint:laconiccomments
 func (r *StatefulSetResource) GetPortsForListenersInAdditionalConfig() []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{}
 

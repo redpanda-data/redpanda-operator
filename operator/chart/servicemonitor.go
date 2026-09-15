@@ -43,7 +43,7 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 				},
 			},
 		},
-		BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+		BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token", //nolint:staticcheck
 	}
 
 	if values.Monitoring.ScrapeInterval != "" {

@@ -11,9 +11,9 @@ package acls
 
 import (
 	"context"
-	"errors"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/rpsr"
 	"github.com/stretchr/testify/require"
 )

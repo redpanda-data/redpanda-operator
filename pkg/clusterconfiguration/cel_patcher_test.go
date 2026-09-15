@@ -315,8 +315,10 @@ func TestCelPatching(t *testing.T) {
 			if tc.check != nil {
 				tc.check(t, tpl.Content)
 			}
+			// Join layers a stack trace over the joined errors; UnwrapAll stops
+			// at the multi-error beneath it.
 			var errs []error
-			if unw, ok := err.(unwrapper); ok {
+			if unw, ok := errors.UnwrapAll(err).(unwrapper); ok {
 				errs = unw.Unwrap()
 			}
 			assert.Len(t, errs, len(tc.errors), "number of errors reported")
