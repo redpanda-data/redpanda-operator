@@ -2162,18 +2162,13 @@ func TestPrepareForUnbind(t *testing.T) {
 	})
 }
 
-// TestReconcileReservedPV walks the reservation lifecycle through the
-// full pipeline: an unbind whose pinned node may yet return reserves
-// the PV for its recreated claim; while that holds the pod's
-// reconciles defer (the rebound reserved disk means the pod is waiting
-// for the node, and re-unbinding would churn the same claim every
-// Timeout); once no pinned node can ever host the pod — Node object
-// deleted, or a hard-anti-affinity occupant in place — the unbind
-// leaves the PV as a Released dead end so the recreated claim
-// provisions a fresh disk. It also covers the two states that must
-// override the deferral and the reserve: a crash-interrupted unbind
-// (resume, or Gate 0 wedges forever) and a stale dead-ended PV that
-// merely NAMES the claim (never write to it, or old data resurrects).
+// TestReconcileReservedPV covers the reservation lifecycle end to end:
+// an awaitable node reserves the PV, later reconciles defer instead of
+// re-unbinding, and a dead-end node (deleted, or occupied by a
+// hard-anti-affinity sibling) leaves the PV Released so the recreated
+// claim provisions fresh. Also covered: a crash-interrupted unbind
+// must resume rather than defer, and a stale PV that merely names the
+// claim must never be written to.
 func TestReconcileReservedPV(t *testing.T) {
 	ctx := context.Background()
 	s := newScheme(t, false, false, false)
