@@ -191,7 +191,7 @@ func (c *Factory) GetConfig(ctx context.Context, clusterName string) (*rest.Conf
 	return cluster.GetConfig(), nil
 }
 
-func (c *Factory) WithDialer(dialer redpanda.DialContextFunc) *Factory {
+func (c *Factory) WithDialer(dialer redpandaclient.DialContextFunc) *Factory {
 	dup := *c
 	dup.dialer = dialer
 	return &dup
