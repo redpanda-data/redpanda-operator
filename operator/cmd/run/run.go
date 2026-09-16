@@ -336,6 +336,24 @@ func Command() *cobra.Command {
 				return errors.Newf("--post-restart-caught-up-percent must be in [1,100], got %d", p)
 			}
 
+			// HeadlessServiceFQDN and ServiceFQDN append their own trailing
+			// dot, so a dotted value here lands an empty label in both the
+			// dialed FQDN and the certificate SANs. Accept either spelling:
+			// charts/redpanda defaults clusterDomain to "cluster.local."
+			// while this chart uses the bare form, so the dotted one arrives
+			// sooner or later.
+			options.clusterDomain = strings.TrimRight(options.clusterDomain, ".")
+
+			// An empty domain splits the operator in half: the V1 reconciler
+			// mints certificate SANs from it verbatim, producing a dangling
+			// ".." in the FQDN, while the client factory falls back to
+			// DefaultKubeClusterDomain and dials something else entirely. A
+			// Helm values template that renders an unset value is enough to
+			// get here, and so is a value of just ".".
+			if options.clusterDomain == "" {
+				return errors.New("--cluster-domain must not be empty")
+			}
+
 			var cloudExpander *pkgsecrets.CloudExpander
 			if options.cloudSecretsEnabled {
 				var err error
