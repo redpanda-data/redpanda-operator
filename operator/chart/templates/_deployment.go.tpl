@@ -174,6 +174,9 @@
 {{- $_is_returning := false -}}
 {{- $values := $dot.Values.AsMap -}}
 {{- $defaults := (dict "--health-probe-bind-address" ":8081" "--metrics-bind-address" ":8443" "--leader-elect" "" "--enable-console" "true" "--log-level" $values.logLevel "--webhook-enabled" (printf "%t" $values.webhook.enabled) "--configurator-tag" (get (fromJson (include "operator.containerTag" (dict "a" (list $dot)))) "r") "--configurator-base-image" $values.image.repository "--enable-vectorized-controllers" (printf "%t" $values.vectorizedControllers.enabled) "--enable-connect" (printf "%t" $values.connectController.enabled) "--connect-monitoring-enabled" (printf "%t" $values.connectController.monitoring.enabled)) -}}
+{{- if (ne $values.clusterDomain "") -}}
+{{- $_ := (set $defaults "--cluster-domain" $values.clusterDomain) -}}
+{{- end -}}
 {{- if (ne $values.connectController.monitoring.scrapeInterval "") -}}
 {{- $_ := (set $defaults "--connect-monitoring-scrape-interval" $values.connectController.monitoring.scrapeInterval) -}}
 {{- end -}}

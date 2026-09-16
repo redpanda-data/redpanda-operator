@@ -893,6 +893,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=my.repo.com/configurator
         - --configurator-image-pull-policy=IfNotPresent
         - --configurator-tag=XYZ
@@ -2536,6 +2537,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=HspgkxRn8B
         - --configurator-base-image=82
         - --configurator-tag=UkFHNyv
         - --connect-monitoring-enabled=false
@@ -4224,6 +4226,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=bV35iLfu
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -6061,6 +6064,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=i00h8
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -8046,6 +8050,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=1yL9z
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -9703,6 +9708,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=uKbH
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -11491,6 +11497,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=zN
         - --configurator-base-image=Fd0
         - --configurator-tag=cOgp6ac
         - --connect-monitoring-enabled=false
@@ -13371,6 +13378,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=vEH6mwk
         - --configurator-base-image=1F5
         - --configurator-tag=82lZfTf2
         - --connect-monitoring-enabled=false
@@ -15039,6 +15047,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=4SyGTkB
         - --configurator-base-image=Hol
         - --configurator-tag=8ePENyCLz
         - --connect-monitoring-enabled=false
@@ -16708,6 +16717,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=dUP1J
         - --configurator-base-image=j
         - --configurator-tag=efh5i
         - --connect-monitoring-enabled=false
@@ -18236,6 +18246,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=F
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -19929,6 +19940,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=tHYTA
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -21842,6 +21854,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=2GPX
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -23583,6 +23596,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=EGwb
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -25240,6 +25254,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=xrHSIe
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -27850,6 +27865,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=pcxaKyT7
         - --configurator-base-image=5ZJUE
         - --configurator-tag=25V2E90p
         - --connect-monitoring-enabled=false
@@ -29010,6 +29026,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=3JsNgaD
         - --configurator-base-image=hchsZ8
         - --configurator-tag=9lUTX
         - --connect-monitoring-enabled=false
@@ -30910,6 +30927,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=zu
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -32753,6 +32771,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=KIbvToa
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -33848,6 +33867,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=z5n
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -35114,6 +35134,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=iUJ8q
         - --configurator-base-image=T1Xvq
         - --configurator-tag=JedSySWkwU
         - --connect-monitoring-enabled=false
@@ -37054,6 +37075,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=grg1o
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -39069,6 +39091,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=UQC28ZzU
         - --configurator-base-image=cWng
         - --configurator-tag=afUH16iMvi
         - --connect-monitoring-enabled=false
@@ -40877,6 +40900,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=mjB8
         - --configurator-base-image=8ta
         - --configurator-tag=N5m1k
         - --connect-monitoring-enabled=false
@@ -42212,6 +42236,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=Hi5dD3N4J
         - --configurator-base-image=OLVAhRBe
         - --configurator-tag=iR9tH
         - --connect-monitoring-enabled=false
@@ -43236,6 +43261,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=Z
         - --configurator-base-image=Jy
         - --configurator-tag=QK8rajxXu7
         - --connect-monitoring-enabled=false
@@ -44500,6 +44526,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=NdxCCRiH
         - --configurator-base-image
         - --configurator-tag=yLRNE5
         - --connect-monitoring-enabled=false
@@ -45767,6 +45794,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=OBufbKkvei
         - --configurator-base-image=O
         - --configurator-tag=F0pU
         - --connect-monitoring-enabled=false
@@ -47646,6 +47674,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=jQ
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -49498,6 +49527,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=z
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -50896,6 +50926,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=oV64f
         - --configurator-base-image=h6rx
         - --configurator-tag=yXNMX
         - --connect-monitoring-enabled=false
@@ -52449,6 +52480,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=quz
         - --configurator-base-image
         - --configurator-tag=vO
         - --connect-monitoring-enabled=false
@@ -54267,6 +54299,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=GC2OJvjYw
         - --configurator-base-image=HJ
         - --configurator-tag=0ORIQruw
         - --connect-monitoring-enabled=false
@@ -56499,6 +56532,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=xgdfzWpPMBJ
         - --configurator-base-image=JoEOn0Quud0uJ
         - --configurator-tag=Jzj6fJDqK
         - --connect-monitoring-enabled=false
@@ -57837,6 +57871,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=xu
         - --configurator-base-image=bR
         - --configurator-tag=TxCthY7Ie
         - --connect-monitoring-enabled=false
@@ -58477,6 +58512,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=jVa
         - --configurator-base-image
         - --configurator-tag=9dFbDt
         - --connect-monitoring-enabled=false
@@ -60286,6 +60322,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=07YY
         - --configurator-base-image=HOES5h7c
         - --configurator-tag=blks9
         - --connect-monitoring-enabled=false
@@ -62029,6 +62066,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=daHTTJfKGd0YM5lZ
         - --configurator-base-image=cbG
         - --configurator-tag=0q7KunZ1RCP
         - --connect-monitoring-enabled=false
@@ -63420,6 +63458,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=hNMkQxvSO
         - --configurator-base-image=RF7Jmqe27
         - --configurator-tag=bC
         - --connect-monitoring-enabled=false
@@ -64776,6 +64815,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=4ED
         - --configurator-base-image=UqP
         - --configurator-tag=XrgP
         - --connect-monitoring-enabled=false
@@ -65607,6 +65647,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=dAjtNe5
         - --configurator-base-image=0HXtC
         - --configurator-tag=xSn6
         - --connect-monitoring-enabled=false
@@ -67330,6 +67371,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=tNN0XS
         - --configurator-base-image=95JHcsXy
         - --configurator-tag=YVZ
         - --connect-monitoring-enabled=false
@@ -69748,6 +69790,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=fCfUyg
         - --configurator-base-image=gkRs29P
         - --configurator-tag=kgK
         - --connect-monitoring-enabled=false
@@ -71176,6 +71219,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=ALfwZB
         - --configurator-base-image=UG
         - --configurator-tag=zsECOIlUnlWTDC
         - --connect-monitoring-enabled=false
@@ -72497,6 +72541,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=maeYKBw
         - --configurator-base-image=929tqf
         - --configurator-tag=VZB
         - --connect-monitoring-enabled=false
@@ -73782,6 +73827,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=AmNSaau
         - --configurator-base-image=FlBYj
         - --configurator-tag=fS
         - --connect-monitoring-enabled=false
@@ -75350,6 +75396,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=K2I4mdVA
         - --configurator-base-image=Iedc3BYXQ
         - --configurator-tag=UoBs
         - --connect-monitoring-enabled=false
@@ -77652,6 +77699,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=WJ
         - --configurator-base-image=zg2YXP
         - --configurator-tag=Cp
         - --connect-monitoring-enabled=false
@@ -80189,6 +80237,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=hHGojNO
         - --configurator-base-image=mLw
         - --configurator-tag=5QaeLH
         - --connect-monitoring-enabled=false
@@ -82593,6 +82642,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=vN5
         - --configurator-base-image=ZuVTlT
         - --configurator-tag=J
         - --connect-monitoring-enabled=false
@@ -84654,6 +84704,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --common-annotations=environment=production,owner=platform-team@example.com
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
@@ -86386,6 +86437,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -88207,6 +88259,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -90036,6 +90089,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=true
@@ -91769,6 +91823,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -93412,6 +93467,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -95188,6 +95244,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -96964,6 +97021,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -98605,6 +98663,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -100263,6 +100322,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -101904,6 +101964,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -103545,6 +103606,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -105186,6 +105248,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -106835,6 +106898,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -108484,6 +108548,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -111898,6 +111963,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -113576,6 +113642,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -115251,6 +115318,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -117052,6 +117120,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -118729,6 +118798,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -120406,6 +120476,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -131458,6 +131529,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -133209,6 +133281,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
@@ -134857,6 +134930,7 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
+        - --cluster-domain=cluster.local
         - --configurator-base-image=docker.redpanda.com/redpandadata/redpanda-operator
         - --configurator-tag=v26.2.1
         - --connect-monitoring-enabled=false
