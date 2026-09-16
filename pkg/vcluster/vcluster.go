@@ -39,6 +39,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	sigsyaml "sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
@@ -102,8 +103,9 @@ type Cluster struct {
 }
 
 type VclusterOptions struct {
-	name   string
-	values helm.RawYAML
+	name          string
+	values        helm.RawYAML
+	clusterDomain string
 }
 
 type Option interface {
@@ -136,6 +138,22 @@ func WithValues(values helm.RawYAML) Option {
 
 func WithDefaultValues() Option {
 	return WithValues(helm.RawYAML(DefaultValues))
+}
+
+type clusterDomainOption struct {
+	domain string
+}
+
+func (o *clusterDomainOption) Apply(opts *VclusterOptions) {
+	opts.clusterDomain = o.domain
+}
+
+// WithClusterDomain sets the Kubernetes cluster domain served by the
+// vcluster's CoreDNS (networking.advanced.clusterDomain) instead of the
+// default cluster.local. It is merged into whatever values are in effect, so
+// it composes with WithValues.
+func WithClusterDomain(domain string) Option {
+	return &clusterDomainOption{domain: domain}
 }
 
 func (c *Cluster) AsRESTClientGetter() genericclioptions.RESTClientGetter {
@@ -194,6 +212,13 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 
 	if vClusterOptions.values == nil {
 		WithDefaultValues().Apply(&vClusterOptions)
+	}
+	if vClusterOptions.clusterDomain != "" {
+		values, err := ValuesWithClusterDomain(vClusterOptions.values, vClusterOptions.clusterDomain)
+		if err != nil {
+			return nil, err
+		}
+		vClusterOptions.values = values
 	}
 
 	namespace := &corev1.Namespace{
@@ -339,6 +364,41 @@ func New(ctx context.Context, config *kube.RESTConfig, opts ...Option) (*Cluster
 		hostConfig: config,
 		namespace:  namespace,
 	}, nil
+}
+
+// ValuesWithClusterDomain sets networking.advanced.clusterDomain in values.
+// It merges into the document instead of appending a second top-level
+// networking: key, which YAML forbids and which callers that set their own
+// networking block would otherwise hit.
+func ValuesWithClusterDomain(values helm.RawYAML, domain string) (helm.RawYAML, error) {
+	var doc map[string]any
+	if err := sigsyaml.Unmarshal(values, &doc); err != nil {
+		return nil, errors.Wrap(err, "parsing vcluster values")
+	}
+	if doc == nil {
+		doc = map[string]any{}
+	}
+
+	networking, ok := doc["networking"].(map[string]any)
+	if !ok {
+		networking = map[string]any{}
+		doc["networking"] = networking
+	}
+
+	advanced, ok := networking["advanced"].(map[string]any)
+	if !ok {
+		advanced = map[string]any{}
+		networking["advanced"] = advanced
+	}
+
+	advanced["clusterDomain"] = domain
+
+	merged, err := sigsyaml.Marshal(doc)
+	if err != nil {
+		return nil, errors.Wrap(err, "serializing vcluster values")
+	}
+
+	return merged, nil
 }
 
 // dumpVClusterDiagnostics logs pod state and events from the host namespace

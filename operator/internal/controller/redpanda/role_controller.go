@@ -34,7 +34,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/roles"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandaroles,verbs=get;list;watch;update;patch
@@ -282,9 +281,7 @@ func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request Resource
 	return rolesClient, syncer, hasRole, nil
 }
 
-func SetupRoleController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
-	factory := internalclient.NewFactory(mgr, expander)
-
+func SetupRoleController(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.RedpandaRole{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Owns(&corev1.Secret{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))

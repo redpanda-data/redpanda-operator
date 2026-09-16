@@ -143,6 +143,10 @@ type ClientFactory interface {
 	RemoteClusterSettingsForCluster(ctx context.Context, object redpandav1alpha2.RemoteClusterReferencingObject, clusterName string) (shadow.RemoteClusterSettings, error)
 }
 
+// DefaultClusterDomain is the cluster domain assumed when none is configured
+// via WithClusterDomain. It matches the default of the --cluster-domain flag.
+const DefaultClusterDomain = "cluster.local"
+
 type Factory struct {
 	mgr multicluster.Manager
 	fs  afero.Fs
@@ -151,6 +155,9 @@ type Factory struct {
 	dialer             redpandaclient.DialContextFunc
 	userAuth           *UserAuth
 	secretExpander     *pkgsecrets.CloudExpander
+	// clusterDomain is the Kubernetes cluster domain used to build the FQDNs
+	// of V1 clusters. Empty means DefaultClusterDomain.
+	clusterDomain string
 }
 
 var _ ClientFactory = (*Factory)(nil)
@@ -185,43 +192,45 @@ func (c *Factory) GetConfig(ctx context.Context, clusterName string) (*rest.Conf
 }
 
 func (c *Factory) WithDialer(dialer redpandaclient.DialContextFunc) *Factory {
-	return &Factory{
-		mgr:                c.mgr,
-		userAuth:           c.userAuth,
-		fs:                 c.fs,
-		dialer:             dialer,
-		adminClientTimeout: c.adminClientTimeout,
-	}
+	dup := *c
+	dup.dialer = dialer
+	return &dup
 }
 
 func (c *Factory) WithAdminClientTimeout(timeout time.Duration) *Factory {
-	return &Factory{
-		mgr:                c.mgr,
-		userAuth:           c.userAuth,
-		fs:                 c.fs,
-		dialer:             c.dialer,
-		adminClientTimeout: timeout,
-	}
+	dup := *c
+	dup.adminClientTimeout = timeout
+	return &dup
+}
+
+// WithClusterDomain sets the Kubernetes cluster domain (Kubelet's
+// --cluster-domain) used to build the FQDNs of V1 clusters. The V1 controller
+// mints node certificate SANs from the same value, so the two must agree for
+// TLS clients to verify the brokers.
+func (c *Factory) WithClusterDomain(clusterDomain string) *Factory {
+	dup := *c
+	dup.clusterDomain = clusterDomain
+	return &dup
 }
 
 func (c *Factory) WithFS(fs afero.Fs) *Factory {
-	return &Factory{
-		mgr:                c.mgr,
-		userAuth:           c.userAuth,
-		dialer:             c.dialer,
-		fs:                 fs,
-		adminClientTimeout: c.adminClientTimeout,
-	}
+	dup := *c
+	dup.fs = fs
+	return &dup
 }
 
 func (c *Factory) WithUserAuth(userAuth *UserAuth) *Factory {
-	return &Factory{
-		mgr:                c.mgr,
-		dialer:             c.dialer,
-		fs:                 c.fs,
-		userAuth:           userAuth,
-		adminClientTimeout: c.adminClientTimeout,
+	dup := *c
+	dup.userAuth = userAuth
+	return &dup
+}
+
+// domain returns the configured cluster domain or DefaultClusterDomain.
+func (c *Factory) domain() string {
+	if c.clusterDomain == "" {
+		return DefaultClusterDomain
 	}
+	return c.clusterDomain
 }
 
 func (c *Factory) KafkaClientForCluster(ctx context.Context, obj any, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
@@ -518,7 +527,13 @@ func (c *Factory) RolesForCluster(ctx context.Context, obj redpandav1alpha2.Clus
 		return nil, err
 	}
 
-	return roles.NewClient(ctx, adminClient, opts...)
+	rolesClient, err := roles.NewClient(ctx, adminClient, opts...)
+	if err != nil {
+		adminClient.Close()
+		return nil, err
+	}
+
+	return rolesClient, nil
 }
 
 func (c *Factory) Roles(ctx context.Context, obj redpandav1alpha2.ClusterReferencingObject, opts ...roles.Option) (*roles.Client, error) {

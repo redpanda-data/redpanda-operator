@@ -13,6 +13,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,6 +24,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
@@ -47,6 +50,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -106,6 +110,44 @@ func (f *fakeObject) GetKafkaAPISpec() *redpandav1alpha2.KafkaAPISpec {
 
 func (f *fakeObject) DeepCopyObject() runtime.Object {
 	return f
+}
+
+func TestFactoryWithPreservesFields(t *testing.T) {
+	// Every With* must copy the whole Factory. Hand-built struct literals
+	// silently dropped secretExpander, which broke secret-backed auth once
+	// run.go started chaining WithClusterDomain onto NewFactory.
+	mgr := &stubManager{}
+	base := NewFactory(mgr, &pkgsecrets.CloudExpander{}).
+		WithDialer(func(context.Context, string, string) (net.Conn, error) { return nil, nil }).
+		WithFS(afero.NewMemMapFs()).
+		WithUserAuth(&UserAuth{Username: "u"}).
+		WithAdminClientTimeout(3 * time.Second).
+		WithClusterDomain("k8s.example")
+
+	// Every field is asserted below, so a field added to Factory without a
+	// matching assertion would be silently uncovered - the exact failure mode
+	// this test exists to catch. Bump the count and add the assertion together.
+	require.Equal(t, 7, reflect.TypeOf(Factory{}).NumField(), "Factory gained a field; assert it below")
+
+	for name, with := range map[string]func(*Factory) *Factory{
+		"WithDialer":             func(f *Factory) *Factory { return f.WithDialer(nil) },
+		"WithAdminClientTimeout": func(f *Factory) *Factory { return f.WithAdminClientTimeout(time.Minute) },
+		"WithClusterDomain":      func(f *Factory) *Factory { return f.WithClusterDomain("other.example") },
+		"WithFS":                 func(f *Factory) *Factory { return f.WithFS(afero.NewOsFs()) },
+		"WithUserAuth":           func(f *Factory) *Factory { return f.WithUserAuth(nil) },
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := with(base)
+			require.NotSame(t, base, got)
+			require.Same(t, mgr, got.mgr)
+			require.Same(t, base.secretExpander, got.secretExpander)
+			require.Equal(t, base.fs != nil, got.fs != nil)
+			require.Equal(t, base.dialer != nil, got.dialer != nil || name == "WithDialer")
+			require.True(t, got.userAuth == base.userAuth || name == "WithUserAuth")
+			require.True(t, got.adminClientTimeout == base.adminClientTimeout || name == "WithAdminClientTimeout")
+			require.True(t, got.clusterDomain == base.clusterDomain || name == "WithClusterDomain")
+		})
+	}
 }
 
 func TestIntegrationFactoryOperatorV1(t *testing.T) {

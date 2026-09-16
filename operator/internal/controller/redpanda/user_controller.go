@@ -38,7 +38,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/users"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=users,verbs=get;list;watch;update;patch
@@ -205,9 +204,7 @@ func (r *UserReconciler) userAndACLClients(ctx context.Context, request Resource
 
 const userPasswordSecretIndex = "__user_referencing_password_secret"
 
-func SetupUserController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
-	factory := internalclient.NewFactory(mgr, expander)
-
+func SetupUserController(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.User{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true)).
 		Owns(&corev1.Secret{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))

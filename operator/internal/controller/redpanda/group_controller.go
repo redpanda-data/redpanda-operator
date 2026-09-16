@@ -32,7 +32,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 //+kubebuilder:rbac:groups=cluster.redpanda.com,resources=groups,verbs=get;list;watch;update;patch
@@ -119,9 +118,7 @@ func (r *GroupReconciler) aclClient(ctx context.Context, request ResourceRequest
 	return request.factory.ACLsForCluster(ctx, request.object, request.clusterName, r.extraOptions...)
 }
 
-func SetupGroupController(ctx context.Context, mgr multicluster.Manager, expander *secrets.CloudExpander, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
-	factory := internalclient.NewFactory(mgr, expander)
-
+func SetupGroupController(ctx context.Context, mgr multicluster.Manager, factory internalclient.ClientFactory, includeV1, includeV2 bool, namespace string, syncInterval time.Duration) error {
 	builder := mcbuilder.ControllerManagedBy(mgr).
 		For(&redpandav1alpha2.Group{}, mcbuilder.WithEngageWithLocalCluster(true), mcbuilder.WithEngageWithProviderClusters(true))
 

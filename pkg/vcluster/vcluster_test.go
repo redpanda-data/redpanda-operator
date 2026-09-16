@@ -27,7 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	sigsyaml "sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
@@ -128,6 +130,47 @@ func TestIntegrationVCluster(t *testing.T) {
 		_, err = kubectl("get", "nodes")
 		require.Error(t, err)
 	})
+}
+
+func TestWithClusterDomain(t *testing.T) {
+	for name, tc := range map[string]struct {
+		values helm.RawYAML
+	}{
+		"empty values":              {values: nil},
+		"values without networking": {values: helm.RawYAML(vcluster.DefaultValues)},
+		"values with networking":    {values: helm.RawYAML("networking:\n  replicateServices:\n    toHost:\n      - from: a\n        to: b\n")},
+		"values with the key set":   {values: helm.RawYAML("networking:\n  advanced:\n    clusterDomain: old.example\n")},
+	} {
+		t.Run(name, func(t *testing.T) {
+			merged, err := vcluster.ValuesWithClusterDomain(tc.values, "k8s.example")
+			require.NoError(t, err)
+
+			// Duplicate top-level keys are invalid YAML, so a merge that
+			// appended a second networking: block would fail to parse here.
+			var doc map[string]any
+			require.NoError(t, sigsyaml.UnmarshalStrict(merged, &doc))
+
+			networking, ok := doc["networking"].(map[string]any)
+			require.True(t, ok, "networking: %#v", doc["networking"])
+			advanced, ok := networking["advanced"].(map[string]any)
+			require.True(t, ok, "advanced: %#v", networking["advanced"])
+			require.Equal(t, "k8s.example", advanced["clusterDomain"])
+		})
+	}
+}
+
+func TestWithClusterDomainPreservesOtherValues(t *testing.T) {
+	merged, err := vcluster.ValuesWithClusterDomain(helm.RawYAML(vcluster.DefaultValues), "k8s.example")
+	require.NoError(t, err)
+
+	var before, after map[string]any
+	require.NoError(t, sigsyaml.Unmarshal([]byte(vcluster.DefaultValues), &before))
+	require.NoError(t, sigsyaml.Unmarshal(merged, &after))
+
+	// The round-trip through YAML must not drop or rewrite anything but the
+	// networking block the merge owns.
+	delete(after, "networking")
+	require.Equal(t, before, after)
 }
 
 func TestDecodeManifest(t *testing.T) {

@@ -601,18 +601,7 @@ func clientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
-	mgr := setupTestManager(ctx, t.RestConfig(), t)
-
-	factory := client.NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
-
-	clients := &clusterClients{
-		resourceTarget: referencer,
-		cluster:        cluster,
-		factory:        factory,
-	}
-
-	t.Logf("Successfully created clients for cluster %q", cluster)
-	return clients
+	return newClusterClients(ctx, t, cluster, referencer)
 }
 
 func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
@@ -648,18 +637,26 @@ func v1ClientsForCluster(ctx context.Context, cluster string) *clusterClients {
 	t.Logf("Created fake user %q looking for cluster %q in namespace %q", referencer.Name, cluster, t.Namespace())
 	t.Logf("Fake v1 user cluster ref: name=%q", referencer.Spec.ClusterSource.ClusterRef.Name)
 
+	return newClusterClients(ctx, t, cluster, referencer)
+}
+
+// newClusterClients builds the test-side client set for a cluster. The Factory
+// dials the same FQDNs the operator does, so it has to agree with the cluster
+// domain the feature runs on.
+func newClusterClients(ctx context.Context, t framework.TestingT, cluster string, referencer *redpandav1alpha2.User) *clusterClients {
 	mgr := setupTestManager(ctx, t.RestConfig(), t)
 
-	factory := client.NewFactory(mgr, nil).WithDialer(kube.NewPodDialer(t.RestConfig()).DialContext)
+	factory := client.NewFactory(mgr, nil).
+		WithDialer(kube.NewPodDialer(t.RestConfig()).WithClusterDomain(t.ClusterDomain()).DialContext).
+		WithClusterDomain(t.ClusterDomain())
 
-	clients := &clusterClients{
+	t.Logf("Successfully created clients for cluster %q", cluster)
+
+	return &clusterClients{
 		resourceTarget: referencer,
 		cluster:        cluster,
 		factory:        factory,
 	}
-
-	t.Logf("Successfully created clients for cluster %q", cluster)
-	return clients
 }
 
 func usersFromACLTable(t framework.TestingT, version, cluster string, table *godog.Table) []*redpandav1alpha2.User {

@@ -53,7 +53,11 @@ type TestingT interface {
 	AddNode(ctx context.Context, name string)
 
 	IsolateNamespace(ctx context.Context) string
-	VCluster(ctx context.Context) string
+	// VCluster moves the test into a fresh vcluster. A non-empty clusterDomain
+	// makes the vcluster serve that Kubernetes cluster domain instead of
+	// cluster.local; ClusterDomain reports it for the rest of the feature.
+	VCluster(ctx context.Context, clusterDomain string) string
+	ClusterDomain() string
 	MarkVariant(variant string)
 	Variant() string
 
