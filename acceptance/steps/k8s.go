@@ -10,12 +10,12 @@
 package steps
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
-	"net"
+	"io"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
@@ -24,13 +24,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/jsonpath"
-	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
@@ -234,132 +231,6 @@ func execInPod(
 	}, 5*time.Minute, 5*time.Second)
 }
 
-// blockedPodLabel records which pod a NetworkPolicy created by
-// iBlockIngressToPortOfPod targets, so one is identifiable in diagnostics.
-const blockedPodLabel = "acceptance.redpanda.com/blocked-pod"
-
-// iBlockIngressToPortOfPod denies traffic to one port of a pod and nothing
-// else, through a NetworkPolicy that allows every other TCP port: a Schema
-// Registry nobody can reach on a broker that is otherwise healthy and Ready.
-func iBlockIngressToPortOfPod(ctx context.Context, t framework.TestingT, port int, podName string) {
-	policy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("block-%s-%d", podName, port),
-			Namespace: t.Namespace(),
-			Labels:    map[string]string{blockedPodLabel: podName},
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metav1.LabelSelector{MatchLabels: map[string]string{"statefulset.kubernetes.io/pod-name": podName}},
-			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{{
-				// No peers: any source, on every TCP port but the blocked one.
-				Ports: allTCPPortsExcept(int32(port)),
-			}},
-		},
-	}
-	t.Logf("Blocking ingress to port %d of pod %q", port, podName)
-	require.NoError(t, t.Create(ctx, policy))
-	t.Cleanup(func(ctx context.Context) {
-		_ = t.Delete(ctx, policy)
-	})
-}
-
-// sustainedUnreachableChecks is how many consecutive failed dials it takes to
-// believe a port is shut, and the gap between them. A Redpanda broker's
-// Schema Registry listener goes down and comes back on its own -- a restart,
-// or a V1 broker failing its whole-cluster readiness probe -- so one failed
-// dial does not distinguish "the NetworkPolicy is in force" from "the
-// listener blinked", and a precondition that accepts the blink hands the
-// assertion after it a port that is still open.
-const (
-	sustainedUnreachableChecks = 6
-	sustainedUnreachableGap    = 3 * time.Second
-)
-
-// podPortShouldBeUnreachable asserts from inside the cluster that a pod's
-// port cannot be connected to. Blocking a port with a NetworkPolicy is not
-// synchronous -- k3s's policy controller programs its rules on a sync loop
-// that has taken minutes under CI load -- so a test that blocks a port and
-// asserts straight away on the consequence is really asserting that the
-// block landed in time. This makes it a precondition of its own, with its
-// own failure message.
-func podPortShouldBeUnreachable(ctx context.Context, t framework.TestingT, port int, podName string) {
-	ctl, err := kube.FromRESTConfig(t.RestConfig())
-	require.NoError(t, err)
-
-	target, err := kube.Get[corev1.Pod](ctx, ctl, kube.ObjectKey{Namespace: t.Namespace(), Name: podName})
-	require.NoErrorf(t, err, "Pod with name %q not found", podName)
-	require.NotEmptyf(t, target.Status.PodIP, "Pod %q has no address to connect to", podName)
-
-	// Dial from a sibling pod: a pod reaches itself without leaving the node,
-	// which an ingress policy does not govern.
-	from := siblingPod(ctx, t, ctl, target)
-
-	// curl reports any connect failure as a non-zero exit, which is what
-	// "unreachable" means here -- the port is not answering, whatever the
-	// reason.
-	cmd := fmt.Sprintf("curl -sS -m 2 -o /dev/null http://%s >/dev/null 2>&1 && echo reachable || echo unreachable",
-		net.JoinHostPort(target.Status.PodIP, strconv.Itoa(port)))
-
-	t.Logf("Checking port %d of pod %q is unreachable from pod %q, %d checks running", port, podName, from.Name, sustainedUnreachableChecks)
-	var (
-		last   string
-		streak int
-	)
-	require.Eventually(t, func() bool {
-		var stdout bytes.Buffer
-		if err := ctl.Exec(ctx, from, kube.ExecOptions{Command: []string{"sh", "-c", cmd}, Stdout: &stdout}); err != nil {
-			t.Logf("exec in pod %q failed: %v", from.Name, err)
-			last, streak = "exec failed", 0
-			return false
-		}
-
-		last = strings.TrimSpace(stdout.String())
-		if last != "unreachable" {
-			streak = 0
-			return false
-		}
-		streak++
-		return streak >= sustainedUnreachableChecks
-	}, 5*time.Minute, sustainedUnreachableGap, "%s", delayLog(func() string {
-		return fmt.Sprintf("port %d of pod %q was never unreachable from pod %q for %d checks running (reached %d, last result: %q)",
-			port, podName, from.Name, sustainedUnreachableChecks, streak, last)
-	}))
-}
-
-// siblingPod returns another running pod of the same cluster as pod, to dial
-// from.
-func siblingPod(ctx context.Context, t framework.TestingT, ctl *kube.Ctl, pod *corev1.Pod) *corev1.Pod {
-	pods, err := kube.List[corev1.PodList](ctx, ctl, t.Namespace(), client.MatchingLabels{
-		"app.kubernetes.io/instance": pod.Labels["app.kubernetes.io/instance"],
-		"app.kubernetes.io/name":     pod.Labels["app.kubernetes.io/name"],
-	})
-	require.NoError(t, err)
-
-	for i := range pods.Items {
-		sibling := &pods.Items[i]
-		if sibling.Name != pod.Name && sibling.Status.Phase == corev1.PodRunning && sibling.DeletionTimestamp == nil {
-			return sibling
-		}
-	}
-	t.Fatalf("no running sibling of pod %q to dial from", pod.Name)
-	return nil
-}
-
-// allTCPPortsExcept is every TCP port but one, as the ranges a
-// NetworkPolicy ingress rule takes.
-func allTCPPortsExcept(port int32) []networkingv1.NetworkPolicyPort {
-	tcp := ptr.To(corev1.ProtocolTCP)
-	var ports []networkingv1.NetworkPolicyPort
-	if port > 1 {
-		ports = append(ports, networkingv1.NetworkPolicyPort{Protocol: tcp, Port: ptr.To(intstr.FromInt32(1)), EndPort: ptr.To(port - 1)})
-	}
-	if port < 65535 {
-		ports = append(ports, networkingv1.NetworkPolicyPort{Protocol: tcp, Port: ptr.To(intstr.FromInt32(port + 1)), EndPort: ptr.To(int32(65535))})
-	}
-	return ports
-}
-
 // podShouldBeReady asserts the pod is Ready right now -- not eventually. It
 // pins that steering a port never touched pod readiness.
 func podShouldBeReady(ctx context.Context, t framework.TestingT, podName string) {
@@ -372,4 +243,66 @@ func podShouldBeReady(ctx context.Context, t framework.TestingT, podName string)
 		}
 	}
 	t.Fatalf("pod %q reports no Ready condition", podName)
+}
+
+// operatorLogMatchLimit caps how many matching operator log lines are
+// reported, keeping the newest.
+const operatorLogMatchLimit = 300
+
+// dumpOperatorLogsMatching reports the shared operator's log lines that
+// mention needle. The per-feature diagnostics already dump the tail of that
+// log, but one busy reconciler can fill it in a second, so anything about a
+// specific resource has to be selected by name out of the whole log.
+func dumpOperatorLogsMatching(ctx context.Context, t framework.TestingT, needle string) {
+	var pods corev1.PodList
+	if err := t.List(ctx, &pods, client.InNamespace(OperatorNamespace)); err != nil {
+		t.Logf("[operator-logs] listing pods in %q: %v", OperatorNamespace, err)
+		return
+	}
+
+	clientset, err := kubernetes.NewForConfig(t.RestConfig())
+	if err != nil {
+		t.Logf("[operator-logs] building clientset: %v", err)
+		return
+	}
+
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		for _, container := range pod.Spec.Containers {
+			stream, err := clientset.CoreV1().Pods(OperatorNamespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container.Name,
+			}).Stream(ctx)
+			if err != nil {
+				t.Logf("[operator-logs] streaming %s/%s: %v", pod.Name, container.Name, err)
+				continue
+			}
+			matches := matchingLines(stream, needle)
+			_ = stream.Close()
+
+			if len(matches) == 0 {
+				t.Logf("[operator-logs] %s/%s said nothing about %q", pod.Name, container.Name, needle)
+				continue
+			}
+			t.Logf("[operator-logs] %s/%s on %q (%d lines):\n%s", pod.Name, container.Name, needle, len(matches), strings.Join(matches, "\n"))
+		}
+	}
+}
+
+// matchingLines returns the lines of r containing needle, at most
+// operatorLogMatchLimit of them, keeping the newest.
+func matchingLines(r io.Reader, needle string) []string {
+	var matches []string
+	scanner := bufio.NewScanner(r)
+	// Structured log lines carrying a stack trace run well past the default
+	// 64KiB.
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		if line := scanner.Text(); strings.Contains(line, needle) {
+			matches = append(matches, line)
+			if len(matches) > operatorLogMatchLimit {
+				matches = matches[1:]
+			}
+		}
+	}
+	return matches
 }
