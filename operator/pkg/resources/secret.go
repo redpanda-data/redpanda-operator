@@ -12,6 +12,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -226,7 +227,7 @@ func (r *PreStartStopScriptResource) composeCURLGetNodeIDCommand(
 			cmd += "--cacert /etc/tls/certs/admin/tls.crt "
 		}
 	}
-	cmd += fmt.Sprintf("%s://${POD_NAME}.%s.%s.svc.cluster.local:%d", proto, r.pandaCluster.Name, r.pandaCluster.Namespace, adminAPI.Port)
+	cmd += fmt.Sprintf("%s://${POD_NAME}.%s:%d", proto, r.adminAPIHost(), adminAPI.Port)
 	cmd += "/v1/node_config"
 	return cmd
 }
@@ -248,11 +249,21 @@ func (r *PreStartStopScriptResource) composeCURLMaintenanceCommand(
 			cmd += "--cacert /etc/tls/certs/admin/tls.crt "
 		}
 	}
-	cmd += fmt.Sprintf("%s://${POD_NAME}.%s.%s.svc.cluster.local:%d", proto, r.pandaCluster.Name, r.pandaCluster.Namespace, adminAPI.Port)
+	cmd += fmt.Sprintf("%s://${POD_NAME}.%s:%d", proto, r.adminAPIHost(), adminAPI.Port)
 	if urlOverwrite == nil {
 		cmd += "/v1/brokers/${NODE_ID}/maintenance"
 	} else {
 		cmd += *urlOverwrite
 	}
 	return cmd
+}
+
+// adminAPIHost is the headless service host the hooks curl. serviceFQDN
+// carries a trailing dot and the hardcoded URL these hooks emitted before
+// --cluster-domain was threaded through did not, so trim it to keep the
+// generated script byte-identical on the default cluster domain. The SANs
+// match either way: HeadlessServiceFQDN appends the same dot to the name
+// NewNodeCertificate signs.
+func (r *PreStartStopScriptResource) adminAPIHost() string {
+	return strings.TrimSuffix(r.serviceFQDN, ".")
 }
