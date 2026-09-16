@@ -71,7 +71,7 @@ var x string                    x, err := failableFunc()
 x, err = failableFunc()
 ```
 
-**Write comments for experts.** Assume the reader knows Go and this codebase. Comment the *why*: invariants, constraints, and why the obvious approach doesn't work. Everything else is superfluous — comments cost reading time on every future read and rot silently, so an unearned line is worse than no line.
+**Write comments for experts.** Assume the reader knows Go and this codebase. Comment the *why*: invariants, constraints, and why the obvious approach doesn't work. Everything else is superfluous — comments cost reading time on every future read and rot silently, so an unearned line is worse than no line. You are not allowed to add `//nolint:laconiccomments` to your code comments.
 
 Do not write:
 - Restatements of the code — `// increment the counter` above `count++`.
