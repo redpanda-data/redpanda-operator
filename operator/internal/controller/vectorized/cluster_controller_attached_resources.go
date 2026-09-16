@@ -165,7 +165,7 @@ func (a *attachedResources) clusterService() {
 	}
 	redpandaPorts := networking.NewRedpandaPorts(a.cluster)
 	clusterPorts := collectClusterPorts(redpandaPorts, a.cluster)
-	a.items[clusterService] = resources.NewClusterService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, clusterPorts, a.log)
+	a.items[clusterService] = resources.NewClusterService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, clusterPorts, a.log).WithEndpointSteering(a.reconciler.EndpointSteering)
 	a.order = append(a.order, clusterService)
 }
 

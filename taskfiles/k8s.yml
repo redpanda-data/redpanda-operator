@@ -92,6 +92,7 @@ tasks:
     - { task: generate:rbac:bundle, vars: { NAME: old-decommission, PACKAGE: ./internal/controller/olddecommission } }
     - { task: generate:rbac:bundle, vars: { NAME: pvcunbinder, PACKAGE: ./internal/controller/pvcunbinder } }
     - { task: generate:rbac:bundle, vars: { NAME: v2-manager, PACKAGE: ./internal/controller/redpanda } }
+    - { task: generate:rbac:bundle, vars: { NAME: endpoint-steering, PACKAGE: ./internal/controller/endpointsteering } }
     - { task: generate:rbac:bundle, vars: { NAME: console, PACKAGE: ./internal/controller/console } }
     - { task: generate:rbac:bundle, vars: { NAME: pipeline, PACKAGE: ./internal/controller/pipeline } }
     - { task: generate:rbac:bundle, vars: { NAME: v1-manager, PACKAGE: ./internal/controller/vectorized } }
@@ -161,6 +162,7 @@ tasks:
         ./config/rbac/itemized/pipeline.yaml \
         ./config/rbac/itemized/v1-manager.yaml \
         ./config/rbac/itemized/v2-manager.yaml \
+        ./config/rbac/itemized/endpoint-steering.yaml \
         ./config/rbac/itemized/console.yaml
 
   # Some integration tests use their RBAC declarations but generally
@@ -195,6 +197,7 @@ tasks:
     - ./cmd/run/*.go
     - ./cmd/multicluster/*.go
     - ./internal/controller/redpanda/*.go
+    - ./internal/controller/endpointsteering/*.go
     - ./internal/controller/rackawareness/*.go
     - ./internal/controller/rpkdebugbundle/*.go
     - ./internal/controller/olddecommission/*.go
@@ -206,6 +209,7 @@ tasks:
         paths=./cmd/run \
         paths=./cmd/multicluster \
         paths=./internal/controller/redpanda \
+        paths=./internal/controller/endpointsteering \
         paths=./internal/controller/rackawareness \
         paths=./internal/controller/rpkdebugbundle \
         paths=./internal/controller/olddecommission \

@@ -93,8 +93,13 @@ type ClusterReconciler struct {
 	// for the duration semantics (0=off, positive=seconds, negative=forever).
 	BrokerPodNodeUnavailableToleration time.Duration
 	BrokerCREnabled                    bool
-	Dialer                             redpandaclient.DialContextFunc
-	Timeout                            time.Duration
+	// EndpointSteering renders the cluster's internal Services for the
+	// operator's endpoint steering controller (see
+	// internal/controller/endpointsteering): selectorless and annotated, so
+	// that controller publishes their EndpointSlices per port.
+	EndpointSteering bool
+	Dialer           redpandaclient.DialContextFunc
+	Timeout          time.Duration
 	// this is provided if external cloud secret resolution is configured. It's
 	// used to expand external cloud secrets from config
 	CloudSecretsExpander *pkgsecrets.CloudExpander

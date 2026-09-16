@@ -152,6 +152,10 @@ func init() {
 	// General cluster scenario steps
 	framework.RegisterStep(`^service "([^"]*)" has named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)
 	framework.RegisterStep(`^service "([^"]*)" should have named port "([^"]*)" with value (\d+)$`, checkServiceWithPort)
+	framework.RegisterStep(`^service "([^"]*)" should have no selector$`, serviceShouldHaveNoSelector)
+	framework.RegisterStep(`^service "([^"]*)" should have a selector$`, serviceShouldHaveSelector)
+	framework.RegisterStep(`^the "([^"]*)" port of service "([^"]*)" should publish pods "([^"]*)"$`, servicePortShouldPublishPods)
+	framework.RegisterStep(`^pod "([^"]*)" should be ready$`, podShouldBeReady)
 	framework.RegisterStep(`^rpk is configured correctly in "([^"]*)" cluster$`, checkRPKCommands)
 	framework.RegisterStep("running `(.*)` will output:$", runScriptInClusterCheckOutput)
 

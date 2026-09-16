@@ -14,9 +14,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -136,4 +140,33 @@ func TestSchemaRegistryDisabledSentinel(t *testing.T) {
 	require.ErrorIs(t, err, NoSchemaRegistryAPI)
 	// SchemaRegistryACLClientForCluster maps this to (nil, nil).
 	require.True(t, isSchemaRegistryNotConfigured(err))
+}
+
+// TestSchemaRegistryBrokerHosts pins how the v2 rolling-restart gate finds
+// brokers: from the pods that exist, named under the internal Service, and
+// never from the post-install job that shares the release labels.
+func TestSchemaRegistryBrokerHosts(t *testing.T) {
+	values, err := redpandachart.Chart.LoadValues(map[string]any{})
+	require.NoError(t, err)
+	dot, err := redpandachart.Chart.Dot(nil, helmette.Release{Name: "rp", Namespace: "ns", Service: "Helm"}, values)
+	require.NoError(t, err)
+	state, err := redpandachart.RenderStateFromDot(dot)
+	require.NoError(t, err)
+
+	running := corev1.PodStatus{PodIP: "10.0.0.1"}
+	pods := []corev1.Pod{
+		{ObjectMeta: metav1.ObjectMeta{Name: "rp-1"}, Spec: corev1.PodSpec{Subdomain: "rp"}, Status: running},
+		{ObjectMeta: metav1.ObjectMeta{Name: "rp-post-install-abc12"}, Status: running},
+		{ObjectMeta: metav1.ObjectMeta{Name: "rp-0"}, Spec: corev1.PodSpec{Subdomain: "rp"}, Status: running},
+		// A pod with no address yet: probing it could only ever time out,
+		// and the gate fails closed.
+		{ObjectMeta: metav1.ObjectMeta{Name: "rp-3"}, Spec: corev1.PodSpec{Subdomain: "rp"}},
+	}
+	// The chart's cluster domain is absolute (trailing dot), like the SRV
+	// targets SchemaRegistryClient resolves.
+	require.Equal(t, []string{
+		"rp-0.rp.ns.svc.cluster.local.:8081",
+		"rp-1.rp.ns.svc.cluster.local.:8081",
+	}, schemaRegistryBrokerHosts(state, pods))
+	require.Empty(t, schemaRegistryBrokerHosts(state, nil))
 }
