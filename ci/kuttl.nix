@@ -10,6 +10,10 @@ let
       url = "https://github.com/kudobuilder/kuttl/releases/download/v${version}/kubectl-kuttl_${version}_darwin_arm64";
       hash = "sha256-OTEJUY2OhnrLf61lGPzEqbsA15Am992bCJfrtNOeDMg=";
     };
+    aarch64-linux = fetchurl {
+      url = "https://github.com/kudobuilder/kuttl/releases/download/v${version}/kubectl-kuttl_${version}_linux_arm64";
+      hash = "sha256-dXfdWK942bAmAsRKcT6E47QEK9NRRLe4/k/8zHe9dZk=";
+    };
     x86_64-linux = fetchurl {
       url = "https://github.com/kudobuilder/kuttl/releases/download/v${version}/kubectl-kuttl_${version}_linux_x86_64";
       hash = "sha256-N2Fi6tKhaBUFw6RJw/AvOy5sj2BJY8WnKc975TKxrik=";

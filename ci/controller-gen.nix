@@ -3,6 +3,27 @@
 buildGo125Module rec {
   pname = "controller-tools";
   version = "0.20.1";
+<<<<<<< HEAD
+=======
+  src = {
+    # Update hashes with: nix hash to-sri --type sha256 $(nix-prefetch-url $URL)
+    aarch64-darwin = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-darwin-arm64";
+      hash = "sha256-hJ1TRyvVyBQIXmiUKSCfQqjfwkKpG+KguQ2uxY7TYOA=";
+    };
+    aarch64-linux = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-linux-arm64";
+      hash = "sha256-tqVfGHmxvoIvQZ7+LBiV+Bf1nJJwPBU7SMyHz2ZFLT4=";
+    };
+    x86_64-linux = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-tools/releases/download/v${version}/controller-gen-linux-amd64";
+      hash = "sha256-VboKH3IFy1KbA8Ca8O4dN+D/MFRLE1acC/eHOXavbvM=";
+    };
+  }.${stdenv.system} or (throw "${pname}-${version}: ${stdenv.system} is unsupported.");
+in
+stdenv.mkDerivation {
+  inherit pname version src;
+>>>>>>> 3f781792 (nix: add support for linux-aarch64)
 
   src = fetchFromGitHub {
     owner = "kubernetes-sigs";
