@@ -120,27 +120,33 @@ tasks:
         rbac:roleName={{ .NAME }} \
         output:rbac:stdout > config/rbac/itemized/{{ .NAME }}.yaml
 
-  # Collect all permissions relevant for the redpanda chart and drop them into ./files, separated by kind.
-  # The chart embeds these permissions so they can't get out of sync with the operator.
+  # Collect all permissions relevant for the redpanda chart and drop them into
+  # ../charts/redpanda/testdata, separated by kind. The chart hand-writes these
+  # rules so they're reachable from transpiled template land; TestRoleRulesMatchGenerated
+  # holds the hand-written catalog to these fixtures.
   generate:rbac:embedded:
     internal: true
     dir: 'operator'
     sources:
     - ./config/rbac/itemized/*.yaml
+    - ./config/rbac/bases/auth_proxy/*.yaml
     generates:
-    - ../charts/redpanda/chart/files/*.yaml
+    - ../charts/redpanda/testdata/rbac/*.yaml
     - ./chart/files/rbac/*.yaml
     cmds:
-    - rm ../charts/redpanda/chart/files/*.yaml
+    - rm -rf ../charts/redpanda/testdata/rbac/
+    - mkdir -p ../charts/redpanda/testdata/rbac/
     - |
       yq e \
-        --split-exp '"../charts/redpanda/chart/files/\( .metadata.name ).\( .kind ).yaml"' \
+        --split-exp '"../charts/redpanda/testdata/rbac/\( .metadata.name ).\( .kind ).yaml"' \
         '.' \
         ./config/rbac/itemized/decommission.yaml \
         ./config/rbac/itemized/pvcunbinder.yaml \
         ./config/rbac/itemized/sidecar.yaml \
         ./config/rbac/itemized/rpk-debug-bundle.yaml \
-        ./config/rbac/itemized/rack-awareness.yaml
+        ./config/rbac/itemized/rack-awareness.yaml \
+        ./config/rbac/itemized/stretch-rack-awareness.yaml \
+        ./config/rbac/bases/auth_proxy/metrics_reader_role.yaml
 
     # And once more for the Operator's chart.
     - mkdir -p chart/files/rbac/ && (rm chart/files/rbac/*.yaml || true)
