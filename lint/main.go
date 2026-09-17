@@ -22,11 +22,45 @@ import (
 	"github.com/redpanda-data/redpanda-operator/lint/analyzers/todo"
 )
 
-// cfg is .golangci.yml, or nil for a process that must not need one; see load.
-var cfg *Config
+// A linter is one registry entry: the name .golangci.yml enables it by and
+// //nolint suppresses it by -- golangci-lint's name wherever one exists --
+// and a constructor for the analyzers that run under it. Construction is
+// deferred so a disabled linter is never built and never reads settings.
+type linter struct {
+	name      string
+	analyzers func(*Config) []*analysis.Analyzer
+}
+
+// registry is everything this binary can run. To add an off-the-shelf
+// analyzer: import it, add an entry, list the name under linters.enable in
+// .golangci.yml. One that needs settings gets a constructor that reads them
+// with settings(); newDepguard in tools.go is the shortest example. To write your own,
+// copy analyzers/todo. README.md walks through both.
+func registry() []linter {
+	return []linter{
+		{"govet", fixed(vetDefaults...)},
+		{"staticcheck", staticcheckAnalyzers},
+		{"unused", fixed(newUnused())},
+		{"gosec", one(newGosec)},
+		{"unparam", one(newUnparam)},
+		{"misspell", one(newMisspell)},
+		{"ineffassign", fixed(ineffassign.Analyzer)},
+		{"importas", one(newImportas)},
+		{"depguard", one(newDepguard)},
+		{"gofumpt", fixed(newGofumpt())},
+		{"gci", one(newGci)},
+		{laconiccomments.Name, one(newLaconiccomments)},
+
+		// House-written analyzers live under analyzers/. Registered here means
+		// available; .golangci.yml decides whether they run.
+		{todo.Analyzer.Name, fixed(todo.Analyzer)},
+	}
+}
 
 func main() {
-	cfg = load()
+	// nil for a process that must not need a config; see load. Everything
+	// downstream takes it as a parameter and tolerates nil.
+	cfg := load()
 
 	all := registry()
 	if cfg != nil {
@@ -40,44 +74,20 @@ func main() {
 			continue
 		}
 
-		for _, a := range l.analyzers {
-			analyzers = append(analyzers, watch(a, l.name))
+		for _, a := range l.analyzers(cfg) {
+			analyzers = append(analyzers, wrap(a, l.name, cfg))
 		}
 	}
 
 	multichecker.Main(analyzers...)
 }
 
-// A linter is one registry entry: the name .golangci.yml enables it by and
-// //nolint suppresses it by -- golangci-lint's name wherever one exists --
-// and the analyzers that run under it.
-type linter struct {
-	name      string
-	analyzers []*analysis.Analyzer
+// one adapts the common single-analyzer constructor shape.
+func one(ctor func(*Config) *analysis.Analyzer) func(*Config) []*analysis.Analyzer {
+	return func(cfg *Config) []*analysis.Analyzer { return []*analysis.Analyzer{ctor(cfg)} }
 }
 
-// registry is everything this binary can run. To add an off-the-shelf
-// analyzer: import it, add an entry, list the name under linters.enable in
-// .golangci.yml. One that needs settings gets a constructor that reads them
-// with settings(); newDepguard in tools.go is the shortest example. To write your own,
-// copy analyzers/todo. README.md walks through both.
-func registry() []linter {
-	return []linter{
-		{"govet", vetDefaults},
-		{"staticcheck", staticcheckAnalyzers()},
-		{"unused", []*analysis.Analyzer{newUnused()}},
-		{"gosec", []*analysis.Analyzer{newGosec()}},
-		{"unparam", []*analysis.Analyzer{newUnparam()}},
-		{"misspell", []*analysis.Analyzer{newMisspell()}},
-		{"ineffassign", []*analysis.Analyzer{ineffassign.Analyzer}},
-		{"importas", []*analysis.Analyzer{newImportas()}},
-		{"depguard", []*analysis.Analyzer{newDepguard()}},
-		{"gofumpt", []*analysis.Analyzer{newGofumpt()}},
-		{"gci", []*analysis.Analyzer{newGci()}},
-		{laconiccomments.Name, []*analysis.Analyzer{newLaconiccomments()}},
-
-		// House-written analyzers live under analyzers/. Registered here means
-		// available; .golangci.yml decides whether they run.
-		{todo.Analyzer.Name, []*analysis.Analyzer{todo.Analyzer}},
-	}
+// fixed registers analyzers whose construction needs no settings.
+func fixed(as ...*analysis.Analyzer) func(*Config) []*analysis.Analyzer {
+	return func(*Config) []*analysis.Analyzer { return as }
 }

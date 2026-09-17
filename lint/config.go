@@ -213,8 +213,8 @@ func fatalf(format string, args ...any) {
 }
 
 // settings decodes a tool's block into v or exits: a malformed block is a
-// configuration error, not a finding.
-func settings(name string, v any) {
+// configuration error, not a finding. A nil config leaves v as it was.
+func settings(cfg *Config, name string, v any) {
 	if err := cfg.Settings(name, v); err != nil {
 		fatalf("settings for %s: %v", name, err)
 	}

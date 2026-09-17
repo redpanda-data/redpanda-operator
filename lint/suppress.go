@@ -19,14 +19,14 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// watch wraps an analyzer so its diagnostics pass through what golangci-lint
+// wraps an analyzer so its diagnostics pass through what golangci-lint
 // applied after a linter reported, and which a bare analysis driver has none
 // of: nolint directives, the exclusions from .golangci.yml, and generated
 // files. The analyzer gets a copy of the pass whose Report is ours; that is
 // the one interception point in the go/analysis contract. It is also where a
 // finding gets the name that suppresses it: the text printer under go vet
 // writes only position and message.
-func watch(a *analysis.Analyzer, linter string) *analysis.Analyzer {
+func wrap(a *analysis.Analyzer, linter string, cfg *Config) *analysis.Analyzer {
 	run := a.Run
 
 	// govet and staticcheck bundle many analyzers under one nolint name; the
@@ -40,7 +40,7 @@ func watch(a *analysis.Analyzer, linter string) *analysis.Analyzer {
 		filtered := *pass
 		filtered.Report = func(d analysis.Diagnostic) {
 			// exclusions.rules.text match the message as the analyzer wrote it.
-			if suppressed(pass, linter, d) {
+			if suppressed(pass, linter, d, cfg) {
 				return
 			}
 
@@ -54,7 +54,7 @@ func watch(a *analysis.Analyzer, linter string) *analysis.Analyzer {
 	return a
 }
 
-func suppressed(pass *analysis.Pass, linter string, d analysis.Diagnostic) bool {
+func suppressed(pass *analysis.Pass, linter string, d analysis.Diagnostic, cfg *Config) bool {
 	f := fileFor(pass, d.Pos)
 	if f == nil || cfg == nil {
 		return false

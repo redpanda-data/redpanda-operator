@@ -43,7 +43,7 @@ func newGofumpt() *analysis.Analyzer {
 	}
 }
 
-func newGci() *analysis.Analyzer {
+func newGci(cfg *Config) *analysis.Analyzer {
 	// gci formats through a package-level logger that only its own command
 	// initialises; without this it dereferences nil on the first file.
 	gcilog.InitLogger()
@@ -54,7 +54,7 @@ func newGci() *analysis.Analyzer {
 		NoInlineComments bool     `json:"no-inline-comments"`
 		NoPrefixComments bool     `json:"no-prefix-comments"`
 	}
-	settings("gci", &s)
+	settings(cfg, "gci", &s)
 
 	// Parsed the way gci's own CLI does, so the section separators get their defaults.
 	conf, err := gciconfig.YamlConfig{

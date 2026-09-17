@@ -43,21 +43,31 @@ golangci-lint refuses to start on it, which is its documented behaviour for
 
 ## Run it
 
-`task lint:go` is one line -- `go vet -vettool=.build/houselint <packages>` --
-and `task fmt` is `houselint -fix -gofumpt -gci`. On their own:
+The devshell carries the binary: `flake.nix` builds this directory as
+`packages.houselint` (nix builds it once per change to `lint/` and CI pulls it
+from the nix cache instead of running `go build`). `task lint:go` is
+`go vet -vettool=$(command -v houselint) <packages>` and `task fmt` is
+`houselint -fix -gofumpt -gci`. On their own:
 
 ```sh
-task build:lint-tools                                    # -> .build/houselint
-go vet -vettool=$PWD/.build/houselint ./operator/...     # any package pattern
-.build/houselint -gofumpt -gci ./operator/...            # just the formatters
-.build/houselint -fix -gofumpt -gci ./operator/...       # apply them
+go vet -vettool=$(command -v houselint) ./operator/...   # any package pattern
+houselint -gofumpt -gci ./operator/...                   # just the formatters
+houselint -fix -gofumpt -gci ./operator/...              # apply them
 ```
 
+**Iterating on lint/ itself**: `task build:lint-tools` compiles the working
+tree into `.build/houselint`, which precedes the nix binary on the devshell's
+PATH and so shadows it everywhere, `task lint:go` included, until you
+`rm .build/houselint`. The nix package only sees committed-or-staged files (a
+dirty flake copies tracked files only), and its `vendorHash` in `flake.nix`
+must be recomputed whenever `lint/go.mod` changes -- set it to
+`pkgs.lib.fakeHash` and take the hash from the mismatch error.
+
 This directory is outside `go.work` on purpose, so it is not in the workspace
-package list and cannot be named from the repo root; `task lint:go` lints it
-with a second line, `GOWORK=off go vet -C lint -vettool=../.build/houselint
-./...`, using the same binary and the same `.golangci.yml`, found by walking
-up. `task fmt` formats it the same way.
+package list and cannot be named from the repo root. `task lint:go`
+deliberately does not vet it; `task fmt` does format it, with a second
+command run inside `lint/` under `GOWORK=off`, using the same binary and the
+same `.golangci.yml`, found by walking up.
 
 `go vet` runs the tool per package and keeps each result in the build cache, so
 a pass over unchanged packages is near-free (a first pass over the workspace is
@@ -74,14 +84,15 @@ the full suite.
 ## Adding a linter
 
 `registry()` in `main.go` is the one place to look. Every entry is a name --
-what `.golangci.yml` enables and `//nolint` suppresses -- and the analyzers that
-run under it.
+what `.golangci.yml` enables and `//nolint` suppresses -- and a constructor
+for the analyzers that run under it, called with the parsed `.golangci.yml`
+(nil when a process runs without one) only if the linter is enabled.
 
 **An off-the-shelf analyzer with no settings** is an import and one line:
 
 ```go
 // main.go, registry()
-{"ineffassign", []*analysis.Analyzer{ineffassign.Analyzer}},
+{"ineffassign", fixed(ineffassign.Analyzer)},
 ```
 
 then `- ineffassign` under `linters.enable` in `.golangci.yml`. `go get` the
@@ -96,14 +107,15 @@ type depguardSettings struct {
 	Rules map[string]struct{ /* ... */ } `json:"rules"`
 }
 
-func newDepguard() *analysis.Analyzer {
+func newDepguard(cfg *Config) *analysis.Analyzer {
 	var s depguardSettings
-	settings("depguard", &s)
+	settings(cfg, "depguard", &s)
 	// build and return the upstream analyzer from s
 }
 ```
 
-`settings(name, &s)` finds the block under `linters.settings`,
+registered as `{"depguard", one(newDepguard)}`. `settings(cfg, name, &s)`
+finds the block under `linters.settings`,
 `formatters.settings`, or `linters.settings.custom.<name>.settings`, and exits
 on a malformed one; nothing in `config.go` changes. A tool whose settings pick
 among many analyzers -- staticcheck's `checks:` -- does the selecting in its

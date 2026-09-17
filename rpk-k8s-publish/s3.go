@@ -12,6 +12,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors" //nolint:depguard
 	"fmt"
 	"net/url"
 
@@ -19,7 +20,6 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	smithy "github.com/aws/smithy-go"
-	"github.com/cockroachdb/errors"
 )
 
 // s3Store is the production objectStore backed by an AWS S3 bucket.

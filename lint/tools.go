@@ -117,25 +117,22 @@ var vetDefaults = []*analysis.Analyzer{
 	waitgroup.Analyzer,
 }
 
-// depguardSettings is linters.settings.depguard, in golangci-lint's keys.
-type depguardSettings struct {
-	Rules map[string]struct {
-		ListMode string   `json:"list-mode"`
-		Files    []string `json:"files"`
-		Allow    []string `json:"allow"`
-		Deny     []struct {
-			Pkg  string `json:"pkg"`
-			Desc string `json:"desc"`
-		} `json:"deny"`
-	} `json:"rules"`
-}
-
 // newDepguard is the shortest example of a tool with settings. Mind depguard's
 // syntax: deny keys are path prefixes, a trailing $ means exact, and a leading
 // ^ is a literal that never matches.
-func newDepguard() *analysis.Analyzer {
-	var s depguardSettings
-	settings("depguard", &s)
+func newDepguard(cfg *Config) *analysis.Analyzer {
+	var s struct {
+		Rules map[string]struct {
+			ListMode string   `json:"list-mode"`
+			Files    []string `json:"files"`
+			Allow    []string `json:"allow"`
+			Deny     []struct {
+				Pkg  string `json:"pkg"`
+				Desc string `json:"desc"`
+			} `json:"deny"`
+		} `json:"rules"`
+	}
+	settings(cfg, "depguard", &s)
 
 	lists := depguard.LinterSettings{}
 	for name, rule := range s.Rules {
@@ -155,20 +152,17 @@ func newDepguard() *analysis.Analyzer {
 	return a.Analyzer
 }
 
-// importasSettings is linters.settings.importas, in golangci-lint's keys.
-type importasSettings struct {
-	NoUnaliased    bool `json:"no-unaliased"`
-	NoExtraAliases bool `json:"no-extra-aliases"`
-	Alias          []struct {
-		Pkg   string `json:"pkg"`
-		Alias string `json:"alias"`
-	} `json:"alias"`
-}
-
 // newImportas configures upstream through its flags, as golangci-lint did.
-func newImportas() *analysis.Analyzer {
-	var s importasSettings
-	settings("importas", &s)
+func newImportas(cfg *Config) *analysis.Analyzer {
+	var s struct {
+		NoUnaliased    bool `json:"no-unaliased"`
+		NoExtraAliases bool `json:"no-extra-aliases"`
+		Alias          []struct {
+			Pkg   string `json:"pkg"`
+			Alias string `json:"alias"`
+		} `json:"alias"`
+	}
+	settings(cfg, "importas", &s)
 
 	a := importas.Analyzer
 	set := func(flag, value string) {
@@ -190,9 +184,9 @@ func newImportas() *analysis.Analyzer {
 // newLaconiccomments reads linters.settings.custom.laconiccomments.settings,
 // where golangci-lint keeps a module plugin's settings, so the file needs no
 // change if this linter ever runs under golangci-lint again.
-func newLaconiccomments() *analysis.Analyzer {
+func newLaconiccomments(cfg *Config) *analysis.Analyzer {
 	s := laconiccomments.DefaultSettings()
-	settings(laconiccomments.Name, &s)
+	settings(cfg, laconiccomments.Name, &s)
 
 	return laconiccomments.New(s)
 }
@@ -200,11 +194,11 @@ func newLaconiccomments() *analysis.Analyzer {
 // newUnparam runs unparam's checker one package at a time, as golangci-lint
 // did. Its own binary runs whole-program instead and reports 5 fewer closures
 // on this repo; per package is the setting CI enforced.
-func newUnparam() *analysis.Analyzer {
+func newUnparam(cfg *Config) *analysis.Analyzer {
 	var s struct {
 		CheckExported bool `json:"check-exported"`
 	}
-	settings("unparam", &s)
+	settings(cfg, "unparam", &s)
 
 	return &analysis.Analyzer{
 		Name:     "unparam",
@@ -233,11 +227,11 @@ func newUnparam() *analysis.Analyzer {
 // newMisspell checks every file's full text, which is golangci-lint's default
 // mode for this linter (its "restricted" mode would look at comments and
 // strings only).
-func newMisspell() *analysis.Analyzer {
+func newMisspell(cfg *Config) *analysis.Analyzer {
 	var s struct {
 		IgnoreRules []string `json:"ignore-rules"`
 	}
-	settings("misspell", &s)
+	settings(cfg, "misspell", &s)
 
 	replacer := misspell.New()
 	replacer.RemoveRule(s.IgnoreRules)
@@ -277,9 +271,9 @@ type gosecSettings struct {
 
 // newGosec runs gosec's rule engine and its SSA analyzers per package. The
 // _test.go exclusion from the old config is an exclusions.rules entry.
-func newGosec() *analysis.Analyzer {
+func newGosec(cfg *Config) *analysis.Analyzer {
 	var s gosecSettings
-	settings("gosec", &s)
+	settings(cfg, "gosec", &s)
 
 	conf := gosec.NewConfig()
 	for key, value := range s.Config {
@@ -334,7 +328,7 @@ func newGosec() *analysis.Analyzer {
 // staticcheckAnalyzers is honnef's four families, selected by
 // linters.settings.staticcheck.checks. golangci-lint's staticcheck is exactly
 // these four; unused (U1000) is its own linter, see newUnused.
-func staticcheckAnalyzers() []*analysis.Analyzer {
+func staticcheckAnalyzers(cfg *Config) []*analysis.Analyzer {
 	var all []*analysis.Analyzer
 
 	for _, family := range [][]*lint.Analyzer{staticcheck.Analyzers, simple.Analyzers, stylecheck.Analyzers, quickfix.Analyzers} {
@@ -346,7 +340,7 @@ func staticcheckAnalyzers() []*analysis.Analyzer {
 	var s struct {
 		Checks []string `json:"checks"`
 	}
-	settings("staticcheck", &s)
+	settings(cfg, "staticcheck", &s)
 
 	on := selected(all, s.Checks)
 

@@ -106,9 +106,14 @@ tasks:
         vars: { DIR: gotohelm, PACKAGE: ./cmd/gotohelm }
 
   lint-tools:
-    desc: "Build lint/ into .build/houselint"
+    desc: "Build lint/ into .build/houselint, shadowing the devshell's nix-built binary while iterating on lint/"
     aliases: [houselint]
     cmds:
+    # The devshell already carries houselint (flake.nix packages.houselint);
+    # this build exists so lint/ changes can be tried without a nix rebuild.
+    # .build precedes the nix store on PATH, so the result wins until it is
+    # deleted -- `rm .build/houselint` to fall back.
+    #
     # GOWORK=off because lint/ is deliberately not a workspace module: the
     # linters it pins must not move the versions the shipped modules build
     # against. See lint/README.md.

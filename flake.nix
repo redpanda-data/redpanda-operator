@@ -62,6 +62,28 @@
             '';
           };
 
+          # The go/analysis driver behind `task lint:go` and `task fmt` (see
+          # lint/README.md). Built here rather than by the taskfiles so CI
+          # pulls it from the nix cache instead of paying a cold `go build`;
+          # .build/ precedes it on PATH, so `task build:lint-tools` still
+          # shadows it while iterating on lint/.
+          packages.houselint = (pkgs.buildGoModule.override { go = pkgs.go_1_26_6; }) {
+            name = "houselint";
+
+            src = ./lint;
+            vendorHash = "sha256-9P6ou59u6bogc2ob94MfZ2DDzgD5khdnegIpxOs9c3s=";
+
+            # The module's tests run from the repo (`go test -C lint`); the
+            # sandbox lacks the analysistest fixtures' GOPATH layout.
+            doCheck = false;
+
+            # The main package's import path ends in "lint"; keep the name
+            # everything documents.
+            postInstall = ''
+              mv $out/bin/lint $out/bin/houselint
+            '';
+          };
+
 
           devshells.default = {
             env = [
@@ -97,6 +119,7 @@
             # update TestToolVersions.
             packages = [
               self'.packages.envtest-shim
+              self'.packages.houselint
               pkgs.actionlint # Github Workflow definition linter https://github.com/rhysd/actionlint
               pkgs.awscli2
               pkgs.backport
