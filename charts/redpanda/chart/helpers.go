@@ -22,25 +22,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-const (
-	//nolint:stylecheck
-	redpanda_22_2_0 = ">=22.2.0-0 || <0.0.1-0"
-	//nolint:stylecheck
-	redpanda_22_3_0 = ">=22.3.0-0 || <0.0.1-0"
-	//nolint:stylecheck
-	redpanda_23_1_1 = ">=23.1.1-0 || <0.0.1-0"
-	//nolint:stylecheck
-	redpanda_23_1_2 = ">=23.1.2-0 || <0.0.1-0"
-	//nolint:stylecheck
-	redpanda_22_3_atleast_22_3_13 = ">=22.3.13-0,<22.4"
-	//nolint:stylecheck
-	redpanda_22_2_atleast_22_2_10 = ">=22.2.10-0,<22.3"
-	//nolint:stylecheck
-	redpanda_23_2_1 = ">=23.2.1-0 || <0.0.1-0"
-	//nolint:stylecheck
-	redpanda_23_3_0 = ">=23.3.0-0 || <0.0.1-0"
-)
-
 // Create chart name and version as used by the chart label.
 func ChartLabel(state *RenderState) string {
 	return cleanForK8s(strings.ReplaceAll(fmt.Sprintf("%s-%s", state.Chart.Name, state.Chart.Version), "+", "_"))
@@ -227,56 +208,6 @@ func CommonVolumes(state *RenderState) []corev1.Volume {
 	}
 
 	return volumes
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_22_2_0(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_22_2_0)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_22_3_0(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_22_3_0)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_23_1_1(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_23_1_1)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_23_1_2(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_23_1_2)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_22_3_atleast_22_3_13(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_22_3_atleast_22_3_13)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_22_2_atleast_22_2_10(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_22_2_atleast_22_2_10)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_23_2_1(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_23_2_1)
-}
-
-//nolint:stylecheck
-func RedpandaAtLeast_23_3_0(state *RenderState) bool {
-	return redpandaAtLeast(state, redpanda_23_3_0)
-}
-
-func redpandaAtLeast(state *RenderState, constraint string) bool {
-	version := strings.TrimPrefix(Tag(state), "v")
-
-	result, err := helmette.SemverCompare(constraint, version)
-	if err != nil {
-		panic(err)
-	}
-	return result
 }
 
 func cleanForK8s(in string) string {

@@ -54,8 +54,6 @@ type ScriptParams struct {
 	// ExternalHTTPListeners are the external HTTP/pandaproxy listeners to advertise.
 	ExternalHTTPListeners []ExternalAdvertisedListener
 
-	// RedpandaAtLeast22_3 indicates whether the Redpanda image is >= v22.3.0.
-	RedpandaAtLeast22_3 bool
 	// RackAwarenessEnabled indicates whether rack awareness should be configured.
 	RackAwarenessEnabled bool
 	// RackAwarenessNodeAnnotation is the K8s node annotation key for rack detection.
@@ -108,7 +106,6 @@ func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 		InternalAdvertiseAddress:    scriptInternalAdvertiseAddress(state, pool),
 		KafkaPort:                   pool.Spec.KafkaPort(),
 		HTTPPort:                    pool.Spec.HTTPPort(),
-		RedpandaAtLeast22_3:         state.Spec().Image.AtLeast("22.3.0"),
 		RackAwarenessEnabled:        pool.Spec.RackAwareness.IsEnabled(),
 		RackAwarenessNodeAnnotation: pool.Spec.RackAwareness.GetNodeAnnotation(),
 		AdminHTTPProtocol:           pool.Spec.AdminInternalHTTPProtocol(),
@@ -348,18 +345,6 @@ func configuratorSh(p ScriptParams) string {
 		`cp /tmp/base-config/redpanda.yaml "${CONFIG}"`,
 	}
 
-	if !p.RedpandaAtLeast22_3 {
-		lines = append(lines,
-			``,
-			`# Configure bootstrap`,
-			`## Not used for Redpanda v22.3.0+`,
-			`rpk --config "${CONFIG}" redpanda config set redpanda.node_id "${POD_ORDINAL}"`,
-			`if [ "${POD_ORDINAL}" = "0" ]; then`,
-			`	rpk --config "${CONFIG}" redpanda config set redpanda.seed_servers '[]' --format yaml`,
-			`fi`,
-		)
-	}
-
 	// Kafka advertised listeners
 	lines = append(lines,
 		``,
@@ -409,7 +394,7 @@ func configuratorSh(p ScriptParams) string {
 	}
 
 	// Rack awareness
-	if p.RedpandaAtLeast22_3 && p.RackAwarenessEnabled {
+	if p.RackAwarenessEnabled {
 		lines = append(lines,
 			``,
 			`# Configure Rack Awareness`,
