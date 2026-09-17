@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"strings"
 
 	"github.com/redpanda-data/common-go/kube"
 	corev1 "k8s.io/api/core/v1"
@@ -21,10 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
-
-// maxNameLength is the Kubernetes name limit, which is also the DNS label
-// limit.
-const maxNameLength = 63
 
 // RoleSet is the RBAC generator for a Redpanda deployment.
 type RoleSet struct {
@@ -52,74 +47,41 @@ type Roles struct {
 }
 
 type ClusterRoles struct {
-	Decommission         bool
-	MetricsReader        bool
-	PVCUnbinder          bool
-	RackAwareness        bool
-	StretchRackAwareness bool
-}
-
-// roleToggles and clusterRoleToggles key the toggles by catalog name. This is
-// the only place those names are spelled outside the catalog itself, so
-// callers deal in fields; TestToggleFieldsCoverCatalog holds the two key sets
-// equal.
-func (r *RoleSet) roleToggles() map[string]bool {
-	return map[string]bool{
-		"decommission":     r.Roles.Decommission,
-		"pvcunbinder":      r.Roles.PVCUnbinder,
-		"rpk-debug-bundle": r.Roles.RPKDebugBundle,
-		"sidecar":          r.Roles.Sidecar,
-	}
-}
-
-func (r *RoleSet) clusterRoleToggles() map[string]bool {
-	return map[string]bool{
-		"decommission":           r.ClusterRoles.Decommission,
-		"metrics-reader":         r.ClusterRoles.MetricsReader,
-		"pvcunbinder":            r.ClusterRoles.PVCUnbinder,
-		"rack-awareness":         r.ClusterRoles.RackAwareness,
-		"stretch-rack-awareness": r.ClusterRoles.StretchRackAwareness,
-	}
-}
-
-// RoleName is the namespaced name of a catalog entry.
-func (r *RoleSet) RoleName(name string) string {
-	return fmt.Sprintf("%s-%s", r.Prefix, name)
-}
-
-// ClusterRoleName is the cluster-scoped name of a catalog entry. The namespace
-// is folded in so multiple releases with the same name can be installed into
-// one cluster.
-func (r *RoleSet) ClusterRoleName(name string) string {
-	return cleanForK8s(fmt.Sprintf("%s-%s-%s", r.Prefix, r.Namespace, name))
+	Decommission  bool
+	MetricsReader bool
+	PVCUnbinder   bool
+	RackAwareness bool
 }
 
 // Render returns the Roles, ClusterRoles, RoleBindings, and
-// ClusterRoleBindings required for a redpanda deployment.
-// each group in catalog-key order.
-func (r *RoleSet) Render() []kube.Object {
+// ClusterRoleBindings required for a redpanda deployment, each group in
+// catalog-key order.
+func (r RoleSet) Render() []kube.Object {
+	roles := r.renderRoles()
+	clusterRoles := r.renderClusterRoles()
+
 	var objs []kube.Object
 
-	for _, obj := range r.renderRoles() {
+	for _, obj := range roles {
 		objs = append(objs, obj)
 	}
 
-	for _, obj := range r.renderClusterRoles() {
+	for _, obj := range clusterRoles {
 		objs = append(objs, obj)
 	}
 
-	for _, obj := range r.renderRoleBindings() {
+	for _, obj := range r.renderRoleBindings(roles) {
 		objs = append(objs, obj)
 	}
 
-	for _, obj := range r.renderClusterRoleBindings() {
+	for _, obj := range r.renderClusterRoleBindings(clusterRoles) {
 		objs = append(objs, obj)
 	}
 
 	return objs
 }
 
-func (r *RoleSet) renderRoles() []*rbacv1.Role {
+func (r RoleSet) renderRoles() []*rbacv1.Role {
 	catalog := roleRules()
 	toggles := r.roleToggles()
 
@@ -137,8 +99,8 @@ func (r *RoleSet) renderRoles() []*rbacv1.Role {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        r.RoleName(name),
 				Namespace:   r.Namespace,
-				Labels:      r.Labels,
-				Annotations: r.Annotations,
+				Labels:      maps.Clone(r.Labels),
+				Annotations: maps.Clone(r.Annotations),
 			},
 			Rules: catalog[name],
 		})
@@ -147,7 +109,25 @@ func (r *RoleSet) renderRoles() []*rbacv1.Role {
 	return roles
 }
 
-func (r *RoleSet) renderClusterRoles() []*rbacv1.ClusterRole {
+// roleToggles and clusterRoleToggles key the toggles by catalog name. This is
+// the only place those names are spelled outside the catalog itself, so
+// callers deal in fields; TestToggleFieldsCoverCatalog holds the two key sets
+// equal.
+func (r RoleSet) roleToggles() map[string]bool {
+	return map[string]bool{
+		"decommission":     r.Roles.Decommission,
+		"pvcunbinder":      r.Roles.PVCUnbinder,
+		"rpk-debug-bundle": r.Roles.RPKDebugBundle,
+		"sidecar":          r.Roles.Sidecar,
+	}
+}
+
+// RoleName is the namespaced name of a catalog entry.
+func (r RoleSet) RoleName(name string) string {
+	return fmt.Sprintf("%s-%s", r.Prefix, name)
+}
+
+func (r RoleSet) renderClusterRoles() []*rbacv1.ClusterRole {
 	catalog := clusterRoleRules()
 	toggles := r.clusterRoleToggles()
 
@@ -164,8 +144,8 @@ func (r *RoleSet) renderClusterRoles() []*rbacv1.ClusterRole {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        r.ClusterRoleName(name),
-				Labels:      r.Labels,
-				Annotations: r.Annotations,
+				Labels:      maps.Clone(r.Labels),
+				Annotations: maps.Clone(r.Annotations),
 			},
 			Rules: catalog[name],
 		})
@@ -174,11 +154,28 @@ func (r *RoleSet) renderClusterRoles() []*rbacv1.ClusterRole {
 	return clusterRoles
 }
 
-// renderRoleBindings and renderClusterRoleBindings derive a binding per role
-// emitted, so there's no second enablement gate to keep in sync.
-func (r *RoleSet) renderRoleBindings() []*rbacv1.RoleBinding {
+func (r RoleSet) clusterRoleToggles() map[string]bool {
+	return map[string]bool{
+		"decommission":   r.ClusterRoles.Decommission,
+		"metrics-reader": r.ClusterRoles.MetricsReader,
+		"pvcunbinder":    r.ClusterRoles.PVCUnbinder,
+		"rack-awareness": r.ClusterRoles.RackAwareness,
+	}
+}
+
+// ClusterRoleName is the cluster-scoped name of a catalog entry. The namespace
+// is folded in so multiple releases with the same name can be installed into
+// one cluster.
+func (r RoleSet) ClusterRoleName(name string) string {
+	// NB: Not truncated to 63. ClusterRole names are path segments, not DNS
+	// labels, and a cut at 63 can drop the suffix, collapsing every
+	// ClusterRole onto one name.
+	return fmt.Sprintf("%s-%s-%s", r.Prefix, r.Namespace, name)
+}
+
+func (r RoleSet) renderRoleBindings(roles []*rbacv1.Role) []*rbacv1.RoleBinding {
 	var roleBindings []*rbacv1.RoleBinding
-	for _, role := range r.renderRoles() {
+	for _, role := range roles {
 		roleBindings = append(roleBindings, &rbacv1.RoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -187,8 +184,8 @@ func (r *RoleSet) renderRoleBindings() []*rbacv1.RoleBinding {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        role.ObjectMeta.Name,
 				Namespace:   r.Namespace,
-				Labels:      r.Labels,
-				Annotations: r.Annotations,
+				Labels:      maps.Clone(r.Labels),
+				Annotations: maps.Clone(r.Annotations),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
@@ -208,9 +205,9 @@ func (r *RoleSet) renderRoleBindings() []*rbacv1.RoleBinding {
 	return roleBindings
 }
 
-func (r *RoleSet) renderClusterRoleBindings() []*rbacv1.ClusterRoleBinding {
+func (r RoleSet) renderClusterRoleBindings(clusterRoles []*rbacv1.ClusterRole) []*rbacv1.ClusterRoleBinding {
 	var crbs []*rbacv1.ClusterRoleBinding
-	for _, clusterRole := range r.renderClusterRoles() {
+	for _, clusterRole := range clusterRoles {
 		crbs = append(crbs, &rbacv1.ClusterRoleBinding{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "rbac.authorization.k8s.io/v1",
@@ -218,8 +215,8 @@ func (r *RoleSet) renderClusterRoleBindings() []*rbacv1.ClusterRoleBinding {
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        clusterRole.ObjectMeta.Name,
-				Labels:      r.Labels,
-				Annotations: r.Annotations,
+				Labels:      maps.Clone(r.Labels),
+				Annotations: maps.Clone(r.Annotations),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
@@ -380,21 +377,5 @@ func clusterRoleRules() map[string][]rbacv1.PolicyRule {
 				Verbs:     []string{"get"},
 			},
 		},
-		"stretch-rack-awareness": {
-			{
-				APIGroups: []string{""},
-				Resources: []string{"nodes"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-		},
 	}
-}
-
-// cleanForK8s truncates to the Kubernetes name limit and trims the trailing
-// hyphen a cut can leave behind.
-func cleanForK8s(in string) string {
-	if len(in) > maxNameLength {
-		in = in[:maxNameLength]
-	}
-	return strings.TrimSuffix(in, "-")
 }

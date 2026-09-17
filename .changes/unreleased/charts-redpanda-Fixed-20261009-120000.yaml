@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    `ClusterRole` and `ClusterRoleBinding` names are no longer truncated to 63
+    characters. When `<fullname>-<namespace>` reached that limit, every
+    `ClusterRole` rendered under the same name, overwriting each other's rules.
+time: 2026-10-09T12:00:00.000000-04:00

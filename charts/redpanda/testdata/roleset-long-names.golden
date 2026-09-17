@@ -1,0 +1,44 @@
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: pppppppppppppppppppppppppppppppppppppppp-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: pppppppppppppppppppppppppppppppppppppppp-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn-rack-awareness
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: pppppppppppppppppppppppppppppppppppppppp-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: pppppppppppppppppppppppppppppppppppppppp-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: sa
+    namespace: nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: pppppppppppppppppppppppppppppppppppppppp-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn-rack-awareness
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: pppppppppppppppppppppppppppppppppppppppp-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn-rack-awareness
+  subjects:
+  - kind: ServiceAccount
+    name: sa
+    namespace: nnnnnnnnnnnnnnnnnnnnnnnnnnnnnn

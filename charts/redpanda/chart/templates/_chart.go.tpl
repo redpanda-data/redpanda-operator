@@ -53,7 +53,7 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $manifests = (concat (default (list) $manifests) (default (list) (get (fromJson (include "_redpanda.RoleSet.Render" (dict "a" (list (get (fromJson (include "redpanda.RoleSet" (dict "a" (list $state)))) "r"))))) "r"))) -}}
+{{- $manifests = (concat (default (list) $manifests) (default (list) (get (fromJson (include "_redpanda.RoleSet.Render" (dict "a" (list (deepCopy (get (fromJson (include "redpanda.RoleSet" (dict "a" (list $state)))) "r")))))) "r"))) -}}
 {{- range $_, $obj := (get (fromJson (include "redpanda.LoadBalancerServices" (dict "a" (list $state)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
 {{- end -}}

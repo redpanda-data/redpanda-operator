@@ -11,9 +11,8 @@ package multicluster
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -40,17 +39,10 @@ func serviceAccountForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 		return nil
 	}
 
-	return &corev1.ServiceAccount{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ServiceAccount",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        pool.Spec.GetServiceAccountName(state.poolFullname(pool)),
-			Namespace:   state.namespace,
-			Labels:      state.commonLabels(),
-			Annotations: sa.Annotations,
-		},
-		AutomountServiceAccountToken: ptr.To(false),
-	}
+	return redpanda.ServiceAccount(
+		pool.Spec.GetServiceAccountName(state.poolFullname(pool)),
+		state.namespace,
+		state.commonLabels(),
+		sa.Annotations,
+	)
 }
