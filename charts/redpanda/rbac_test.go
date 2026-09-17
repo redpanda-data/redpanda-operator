@@ -11,6 +11,7 @@ package redpanda
 
 import (
 	"embed"
+	"fmt"
 	"io/fs"
 	"maps"
 	"path"
@@ -81,24 +82,60 @@ func TestToggleFieldsCoverCatalog(t *testing.T) {
 // emission order in one artifact. Order is load-bearing: it's what both
 // callers' goldens are recorded against.
 func TestRoleSetRender(t *testing.T) {
-	rs := RoleSet{
-		Prefix:         "release",
-		Namespace:      "ns",
-		Labels:         map[string]string{"app.kubernetes.io/name": "redpanda"},
-		Annotations:    map[string]string{"eks.amazonaws.com/role-arn": "arn:aws:iam::1:role/rp"},
-		ServiceAccount: "release-sa",
-		Roles: Roles{
-			RPKDebugBundle: true,
-			Sidecar:        true,
+	cases := map[string]RoleSet{
+		"chart": {
+			Prefix:         "release",
+			Namespace:      "ns",
+			Labels:         map[string]string{"app.kubernetes.io/name": "redpanda"},
+			Annotations:    map[string]string{"eks.amazonaws.com/role-arn": "arn:aws:iam::1:role/rp"},
+			ServiceAccount: "release-sa",
+			Roles: Roles{
+				RPKDebugBundle: true,
+				Sidecar:        true,
+			},
+			ClusterRoles: ClusterRoles{
+				MetricsReader: true,
+				RackAwareness: true,
+			},
 		},
-		ClusterRoles: ClusterRoles{
-			MetricsReader: true,
-			RackAwareness: true,
+		"long-names": {
+			Prefix:         strings.Repeat("p", 40),
+			Namespace:      strings.Repeat("n", 30),
+			ServiceAccount: "sa",
+			ClusterRoles: ClusterRoles{
+				MetricsReader: true,
+				RackAwareness: true,
+			},
 		},
 	}
 
-	rendered, err := yaml.Marshal(rs.Render())
-	require.NoError(t, err)
+	for name, rs := range cases {
+		t.Run(name, func(t *testing.T) {
+			objs := rs.Render()
 
-	testutil.AssertGolden(t, testutil.YAML, "./testdata/roleset.golden", rendered)
+			names := map[string]bool{}
+			for _, obj := range objs {
+				key := fmt.Sprintf("%T/%s", obj, obj.GetName())
+				require.False(t, names[key], "duplicate object %s", key)
+				names[key] = true
+			}
+
+			rendered, err := yaml.Marshal(objs)
+			require.NoError(t, err)
+
+			testutil.AssertGolden(t, testutil.YAML, fmt.Sprintf("./testdata/roleset-%s.golden", name), rendered)
+
+			// Consumers, such as the syncer, mutate metadata maps in place.
+			for _, m := range []map[string]string{objs[0].GetLabels(), objs[0].GetAnnotations()} {
+				if m == nil {
+					continue
+				}
+				m["mutated"] = "true"
+				for _, obj := range objs[1:] {
+					require.NotContains(t, obj.GetLabels(), "mutated")
+					require.NotContains(t, obj.GetAnnotations(), "mutated")
+				}
+			}
+		})
+	}
 }
