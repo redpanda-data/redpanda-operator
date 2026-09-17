@@ -88,7 +88,6 @@ tasks:
     deps:
     - { task: generate:rbac:bundle, vars: { NAME: rpk-debug-bundle, PACKAGE: ./internal/controller/rpkdebugbundle } }
     - { task: generate:rbac:bundle, vars: { NAME: rack-awareness, PACKAGE: ./internal/controller/rackawareness } }
-    - { task: generate:rbac:bundle, vars: { NAME: stretch-rack-awareness, PACKAGE: ./internal/controller/stretchrackawareness } }
     - { task: generate:rbac:bundle, vars: { NAME: old-decommission, PACKAGE: ./internal/controller/olddecommission } }
     - { task: generate:rbac:bundle, vars: { NAME: pvcunbinder, PACKAGE: ./internal/controller/pvcunbinder } }
     - { task: generate:rbac:bundle, vars: { NAME: v2-manager, PACKAGE: ./internal/controller/redpanda } }
@@ -146,7 +145,6 @@ tasks:
         ./config/rbac/itemized/sidecar.yaml \
         ./config/rbac/itemized/rpk-debug-bundle.yaml \
         ./config/rbac/itemized/rack-awareness.yaml \
-        ./config/rbac/itemized/stretch-rack-awareness.yaml \
         ./config/rbac/bases/auth_proxy/metrics_reader_role.yaml
 
     # And once more for the Operator's chart.
@@ -160,7 +158,6 @@ tasks:
         ./config/rbac/itemized/old-decommission.yaml \
         ./config/rbac/itemized/pvcunbinder.yaml \
         ./config/rbac/itemized/rack-awareness.yaml \
-        ./config/rbac/itemized/stretch-rack-awareness.yaml \
         ./config/rbac/itemized/rpk-debug-bundle.yaml \
         ./config/rbac/itemized/sidecar.yaml \
         ./config/rbac/itemized/crd-installation.yaml \
