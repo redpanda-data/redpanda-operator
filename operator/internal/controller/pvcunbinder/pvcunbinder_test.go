@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -202,8 +203,11 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 		}),
 	}))
 
-	// Delete a node that's hosting at least one of our Pods.
-	require.NoError(t, cluster.DeleteNode(pods.Items[0].Spec.NodeName))
+	// Delete a node that's hosting at least one of our Pods. Only the
+	// k3d container dies; the Kubernetes Node object lingers NotReady,
+	// as it would on any cluster without node auto-repair.
+	deadNode := pods.Items[0].Spec.NodeName
+	require.NoError(t, cluster.DeleteNode(deadNode))
 
 	// We should now have at least one Pod stuck in Pending. There are no
 	// anti-affinities so multiple Pods could be on the same Node.
@@ -238,6 +242,37 @@ func TestIntegrationPVCUnbinder(t *testing.T) {
 	tgo(t, ctx, func(ctx context.Context) error {
 		return mgr.Start(log.IntoContext(ctx, logger))
 	})
+
+	// While the dead node's Node object lingers, the unbinder unbinds the
+	// stuck claims but RESERVES their PVs (ClaimRef UID cleared) and then
+	// holds: the disks may come back with the node, so the recreated
+	// claims re-bind to them and the pods wait, Pending, by design.
+	require.Eventually(t, func() bool {
+		var node corev1.Node
+		if err := c.Get(ctx, client.ObjectKey{Name: deadNode}, &node); apierrors.IsNotFound(err) {
+			// Some environments garbage-collect the Node object with the
+			// machine; the unbinder then dead-ends immediately and there
+			// is no reservation hold to observe.
+			return true
+		}
+		var pvs corev1.PersistentVolumeList
+		if err := c.List(ctx, &pvs); err != nil {
+			return false
+		}
+		for i := range pvs.Items {
+			if _, ok := pvs.Items[i].Annotations[pvcunbinder.ReservedPVAnnotation]; ok {
+				return true
+			}
+		}
+		return false
+	}, 3*time.Minute, time.Second)
+
+	// Deleting the Node object is the operator action that declares the
+	// node permanently gone: the next reconcile dead-ends the reserved
+	// PVs and the recreated claims provision fresh disks elsewhere.
+	if err := c.Delete(ctx, &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: deadNode}}); err != nil {
+		require.True(t, apierrors.IsNotFound(err), "deleting the dead Node object: %v", err)
+	}
 
 	// No more Pods stuck in pending!
 	require.Eventually(t, func() bool {

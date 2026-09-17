@@ -27,6 +27,12 @@ Feature: Redpanda Helm Chart
     ```
     When I stop the Node running Pod "bazquux-2"
     And Pod "bazquux-2" is eventually Pending
+    # The PVCUnbinder reserves the dead node's disk for its recreated claim
+    # and waits while the NotReady Node object lingers (the disk may come
+    # back with the node). Deleting the Node object is the operator action
+    # that declares the node permanently gone: the next unbind dead-ends the
+    # reserved volume and the claim provisions a fresh disk elsewhere.
+    And I prune kubernetes node that was removed in previous step
     Then Pod "bazquux-2" will eventually be Running
     # As of Redpanda 26.2 `rpk redpanda admin brokers list` renders the
     # sectioned `rpk cluster info` format: the BROKERS table is

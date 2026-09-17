@@ -71,8 +71,19 @@ const requeueDuringDisruption = 30 * time.Second
 //     yet. It is probably re-binding right now, so wait — unless the
 //     claim is exempt because its pod is provably deadlocked (see
 //     [Controller.stuckClaimNames]).
-//   - Gate 4 "freed-pv": a PV freed by --allow-pv-rebinding is still
-//     floating and could pair with the wrong claim. Wait.
+//   - Gate 4 "freed-pv": a PV freed to a nil ClaimRef by an older
+//     operator's --allow-pv-rebinding path is still floating and could
+//     pair with the wrong claim. Wait. (Legacy: current unbinds
+//     reserve the PV for its recreated claim instead, which cannot
+//     cross-bind.)
+//
+// A sixth deferral, "reserved-pv", runs after the gates, once the
+// pod's PVs are known: the pod's disks were already handed back to it
+// as reserved PVs and their pinned nodes may yet host it, so the only
+// useful action is waiting — unbinding again would churn the same
+// claims every Timeout. It yields when any PV's node fate is a dead
+// end or the pod's own unbind is still unfinished (see
+// [ReservedPVAnnotation]).
 //
 // These names are the label values on the
 // `..._pvc_unbinder_gate_deferred_total` metric and appear in the
@@ -83,6 +94,7 @@ const (
 	gateMultiNode    = "multi-node"
 	gatePVCRebinding = "pvc-rebinding"
 	gateFreedPV      = "freed-pv"
+	gateReservedPV   = "reserved-pv"
 )
 
 // The unbinder stores its progress as annotations on the PVs it works
@@ -107,17 +119,51 @@ const (
 	// the old one that is still being deleted.
 	InFlightClaimAnnotation = "operator.redpanda.com/pvc-unbinder-claim"
 
-	// FreedPVAnnotation marks a PV whose ClaimRef this controller
-	// cleared (the --allow-pv-rebinding path). The value is the
-	// cluster key.
+	// FreedPVAnnotation marks a PV whose ClaimRef an older operator
+	// version cleared to nil (the removed --allow-pv-rebinding
+	// behavior). The value is the cluster key. No longer written — a
+	// freed PV is now reserved for its recreated claim instead (see
+	// [ReservedPVAnnotation]), which cannot cross-bind — but still
+	// honored, because a nil-ClaimRef PV freed before an upgrade keeps
+	// floating after it.
 	//
 	// While such a PV is Available and its pinned node still exists,
-	// Gate 4 blocks further unbinds in the same cluster. Reason: an
-	// Available PV can bind to ANY new claim, so unbinding a second
-	// broker while the first broker's freed disk still floats can give
-	// the second broker the first broker's disk (the INC-2818
-	// cross-broker swap). Cleared once the PV is Bound again.
+	// Gate 4 blocks further unbinds in the same cluster. Reason: a PV
+	// with no ClaimRef at all can bind to ANY new claim, so unbinding
+	// a second broker while the first broker's freed disk still floats
+	// can give the second broker the first broker's disk (the
+	// INC-2818 cross-broker swap). Cleared once the PV is Bound again.
 	FreedPVAnnotation = "operator.redpanda.com/pvc-unbinder-freed"
+
+	// ReservedPVAnnotation marks a PV this controller reserved for its
+	// recreated claim by clearing the ClaimRef's UID (see
+	// [Controller.maybeReservePersistentVolume]). The value is the
+	// claim, as "namespace/name".
+	//
+	// It is the memory that damps the rebind loop: the PV controller
+	// binds a reserved PV back to the recreated claim immediately
+	// (prebinding bypasses WaitForFirstConsumer, and the PV-controller
+	// binding path checks no node affinity), so a pod whose node is
+	// merely down comes straight back Pending holding the same disk.
+	// Seeing this annotation on one of the pod's own PVs whose pinned
+	// node could still host it ([Controller.pvNodeFate] = awaitable),
+	// the reconcile defers ("reserved-pv") instead of unbinding the
+	// same claim every Timeout. Once the fate turns dead-end — the
+	// Node object deleted, or the node permanently blocked by the
+	// pod's own hard anti-affinity — the next unbind leaves the
+	// ClaimRef's UID in place (a Released dead end) and removes this
+	// annotation, letting the recreated claim provision a fresh disk
+	// elsewhere. Deleting the Node object is the operator action that
+	// releases a waiting disk.
+	//
+	// Unlike [FreedPVAnnotation], a reserved PV needs no cluster-wide
+	// gate: it can bind only to its own claim name, so it can never
+	// pair with another broker's claim no matter how many unbinds run.
+	// The reservation does trust the claim NAME within the namespace —
+	// any principal able to create a same-named PVC there can bind the
+	// reserved disk, the same trust every StatefulSet places in its
+	// claim names.
+	ReservedPVAnnotation = "operator.redpanda.com/pvc-unbinder-reserved"
 )
 
 // eventReasonGateDeferred is the Event reason written on the Pod when
@@ -160,8 +206,14 @@ const (
 //  1. finds the Pod's PVs and PVCs,
 //  2. sets a Retain policy on those PVs,
 //  3. deletes the PVCs (PVCs are immutable; delete is the only way),
-//  4. optionally clears the PVs' ClaimRef (--allow-pv-rebinding) so a
-//     returning node might reclaim its old volume,
+//  4. if a PV's pinned node could still host the pod someday, clears
+//     the UID from its ClaimRef, reserving the volume for the
+//     recreated claim of the same name — and no other claim — so the
+//     broker gets its own disk back; if no pinned node ever can (gone,
+//     or blocked by the pod's own hard anti-affinity), leaves the
+//     ClaimRef intact so the volume dead-ends as Released and the
+//     recreated claim provisions a fresh disk elsewhere (see
+//     [Controller.maybeReservePersistentVolume]),
 //  5. deletes the Pod, which makes the StatefulSet recreate Pod and
 //     PVCs and bind them somewhere schedulable.
 type Controller struct {
@@ -172,12 +224,14 @@ type Controller struct {
 	// Selector, if specified, will narrow the scope of Pods that this
 	// Reconciler will consider for remediation.
 	Selector labels.Selector
-	// AllowRebinding also clears the freed PV's ClaimRef so the disk
-	// can bind again if its node returns. Deprecated and risky: with
-	// HostPath volumes and node-name reuse it can produce permission
-	// errors or point at missing directories (LocalPathProvisioner's
-	// helper Pod does not run again for a volume it believes already
-	// exists), and it disables the Gate 3 exemption entirely.
+	// AllowRebinding is deprecated and no longer controls ClaimRef
+	// clearing: a freed PV is now reserved for its recreated claim
+	// (see [Controller.maybeReservePersistentVolume]) instead of the
+	// old full ClaimRef clear, which floated the disk as a binding
+	// candidate for ANY claim (the INC-2818 cross-broker swap). The
+	// flag's only remaining effect is disabling the Gate 3 stuck-claim
+	// exemption, kept because deployments running with it opted into
+	// the most conservative gating.
 	AllowRebinding bool
 	// DisableStuckClaimExemption turns off Gate 3's stuck-claim
 	// exemption and restores the old behavior: defer on every unbound
@@ -471,9 +525,11 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// broker's cache PV landed on a full node; the datadir claim then
 	// waits forever. Gate 0 still serializes the destructive work.
 	//
-	// Under --allow-pv-rebinding there is NO exemption: freed PVs
-	// float as binding candidates, and acting while any claim is
-	// unbound could pair it with the wrong disk (INC-2818).
+	// Under the deprecated --allow-pv-rebinding there is NO exemption:
+	// PVs freed to a nil ClaimRef by older operator versions under
+	// that flag float as any-claim binding candidates (INC-2818), and
+	// deployments still running with it opted into the most
+	// conservative gating.
 	clusterPVCsByName, err := r.listClusterPVCsByName(ctx, r.Client, &pod)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -489,6 +545,10 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// (map iteration order would flap the message every 30s, and the
 	// events API dedups by message content).
 	slices.Sort(unbound)
+	// exemptOverride collects the claims Gate 3 is actually overridden
+	// for; the paper trail for the override is emitted only once every
+	// later hold has passed (see below).
+	var exemptOverride []string
 	if len(unbound) > 0 {
 		// The exemption evidence runs lazily — only when some claim is
 		// actually unbound — so the common all-bound path costs no
@@ -597,25 +657,16 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.recordGateDeferred(&pod, gatePVCRebinding, fmt.Sprintf("unbound claims %s are exempted, but the reconciled Pod no longer holds its own mis-pin proof; deferring", claimListForEvent(liveExempted)))
 			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 		}
-		// A safety gate is being overridden. Leave the same paper
-		// trail a deferral gets: metric, Event, and log, naming the
-		// exempted claims. Recorded only when the reconcile really
-		// proceeds AND some claim is actually being overridden on the
-		// live server (liveExempted non-empty): if the cache showed
-		// unbound claims that have all since bound, the gate passes on
-		// its own and no override occurred. The freed-pv gate below is
-		// durable and can hold for days, and counting a "pass" every
-		// 30s during that hold would poison the metric. The Event is a
-		// Warning — it precedes destructive deletion, and Warning is
-		// what event pipelines filter for.
-		if len(liveExempted) > 0 && !pvGates.freedPVUnresolved {
-			logger.Info(fmt.Sprintf("unbound claims %v are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", liveExempted), "name", pod.Name)
-			observability.PVCUnbinderGateExempted.Inc()
-			if r.Recorder != nil {
-				msg := fmt.Sprintf("unbound claims %s are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", claimListForEvent(liveExempted))
-				r.Recorder.Eventf(&pod, nil, corev1.EventTypeWarning, eventReasonGateExempted, "Exempt", "%s", msg)
-			}
-		}
+		// A safety gate is being overridden. The paper trail a deferral
+		// gets — metric, Warning Event, and log naming the exempted
+		// claims — is emitted just before the destructive steps, and
+		// only if no later hold (freed-pv, reserved-pv) defers this
+		// reconcile: both holds are durable and can last for days, and
+		// counting a "pass" every 30s during a hold would poison the
+		// metric. liveExempted can also be empty here — the cache
+		// showed unbound claims that have all since bound — in which
+		// case the gate passed on its own and no override occurred.
+		exemptOverride = liveExempted
 	}
 
 	// Gate 4 "freed-pv": a PV we freed earlier (--allow-pv-rebinding)
@@ -676,7 +727,8 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 
 		// Skip over any PVs that aren't bound to one of our targeted PVCs
-		if _, ok := pvcByKey[key]; !ok {
+		pvc, ok := pvcByKey[key]
+		if !ok {
 			continue
 		}
 
@@ -687,7 +739,85 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			continue
 		}
 
+		// A name match alone is not a binding: a Released PV dead-ended
+		// by an earlier unbind still NAMES the claim it once served,
+		// and reserving it below would re-arm that stale disk as a
+		// prebound match for the next claim recreation — silent
+		// resurrection of months-old data. Require the live
+		// back-reference (the PV's ClaimRef UID matching the claim),
+		// falling back to this unbind's own in-flight stamp so a
+		// crash-interrupted unbind — claim already deleted, or the PV
+		// already reserved with its UID cleared — can still resume its
+		// own PV. The claim itself stays targeted either way; only the
+		// PV is excluded from the Retain/reserve writes.
+		if (pvc == nil || pv.Spec.ClaimRef.UID != pvc.UID) && !r.pvInFlightFor(pv, r.clusterKey(&pod), key) {
+			continue
+		}
+
 		pvs = append(pvs, pv)
+	}
+
+	// Classify, per candidate PV, whether its pinned node could still
+	// host the pod someday ([Controller.pvNodeFate]). The fate steers
+	// everything below: an awaitable node (usable, or down but its
+	// object still exists) means the disk is worth keeping — reserve
+	// it, or keep waiting on an existing reservation; a dead-end fate
+	// (every pinned node gone, or Ready but blocked by the pod's own
+	// hard anti-affinity) means waiting can never end, so the PV must
+	// be left Released for the recreated claim to provision fresh.
+	fates := make(map[string]pvNodeFate, len(pvs))
+	anyDeadEnd := false
+	awaitingReservation := false
+	for _, pv := range pvs {
+		fate, err := r.pvNodeFate(ctx, pv, &pod)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		fates[pv.Name] = fate
+		if fate == pvNodeFateDeadEnd {
+			anyDeadEnd = true
+		} else if pvReservedForClaimOf(&pod, pv) {
+			awaitingReservation = true
+		}
+	}
+
+	// A PV already reserved for one of this pod's claims makes the
+	// pod's Pending state expected, not remediable: the recreated
+	// claim was handed its old disk back (reserved prebinding binds
+	// immediately, with no node-affinity check), so the pod is simply
+	// waiting for the disk's node. Unbinding again would delete and
+	// recreate the same claim every Timeout without changing anything
+	// — defer instead, before any in-flight annotation is stamped (a
+	// stamped annotation would hold Gate 0 against siblings for a
+	// reconcile that acts on nothing). The hold yields only when this
+	// reconcile has real work left:
+	//
+	//   - some candidate PV's fate is a dead end (its node is gone or
+	//     permanently blocked) — the unbind must run to release that
+	//     claim for fresh provisioning; or
+	//   - the pod's own previous unbind never finished
+	//     (pvGates.ownUnbindInFlight) — the pipeline still owes the
+	//     pod its deletion, and deferring here would strand the
+	//     half-done unbind (and Gate 0's hold on siblings) forever.
+	if awaitingReservation && !anyDeadEnd && !pvGates.ownUnbindInFlight {
+		const msg = "the pod's disks were already handed back as reserved PVs and their pinned nodes may yet host it; waiting instead of re-unbinding (delete the Node object to release the disks for fresh provisioning)"
+		logger.Info(msg, "name", pod.Name)
+		r.recordGateDeferred(&pod, gateReservedPV, msg)
+		return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
+	}
+
+	// All holds have passed; if Gate 3 was overridden via the
+	// stuck-claim exemption, this reconcile really proceeds to
+	// destructive remediation — leave the override's paper trail now.
+	// The Event is a Warning: it precedes destructive deletion, and
+	// Warning is what event pipelines filter for.
+	if len(exemptOverride) > 0 {
+		logger.Info(fmt.Sprintf("unbound claims %v are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", exemptOverride), "name", pod.Name)
+		observability.PVCUnbinderGateExempted.Inc()
+		if r.Recorder != nil {
+			msg := fmt.Sprintf("unbound claims %s are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", claimListForEvent(exemptOverride))
+			r.Recorder.Eventf(&pod, nil, corev1.EventTypeWarning, eventReasonGateExempted, "Exempt", "%s", msg)
+		}
 	}
 
 	// 2. Prepare every PV for unbinding: force the Retain policy and
@@ -723,13 +853,15 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		pvcByKey[key] = nil
 	}
 
-	// 4. "Recycle" PVs that have been released. Technically optional, this
-	// allows disks to rebind if a Node happens to recover. Each recycled
-	// PV is annotated with the cluster key so Gate 4 holds further
-	// unbinds until the freed disk is re-bound (or its node is
-	// permanently gone).
+	// 4. Reserve the released PVs for their recreated claims — or,
+	// when the pinned node's fate is a dead end, leave them Released
+	// so the recreated claims provision fresh disks. The fate was
+	// classified before the destructive steps; a node deleted since
+	// then only means one extra reserve-then-dead-end cycle. See
+	// maybeReservePersistentVolume for the three ClaimRef states and
+	// why the node decides between them.
 	for _, pv := range pvs {
-		if err := r.maybeRecyclePersistentVolume(ctx, pv, r.clusterKey(&pod)); err != nil {
+		if err := r.maybeReservePersistentVolume(ctx, pv, fates[pv.Name]); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -795,29 +927,57 @@ func (r *Controller) prepareForUnbind(ctx context.Context, pv *corev1.Persistent
 	return nil
 }
 
-// maybeRecyclePersistentVolume "recycles" a released PV by clearing it's .ClaimRef
-// which makes it available for binding once again IF AllowRebinding is true.
-// This strategy is only valid for volumes that utilize .HostPath or .Local.
+// maybeReservePersistentVolume settles a freed PV's ClaimRef. The
+// ClaimRef has three states, not two:
 //
-// When clearing the ClaimRef, the PV is annotated (in the same patch)
-// with [FreedPVAnnotation] = clusterKey so that Gate 4 can refuse
-// further unbinds in the same cluster until this PV is observed Bound
-// again (or its node is permanently gone). See [FreedPVAnnotation].
-func (r *Controller) maybeRecyclePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume, clusterKey string) error {
+//   - nil: the PV binds to ANY satisfiable claim. This is what the
+//     deprecated --allow-pv-rebinding used to write, and it is the
+//     cross-broker disk swap (INC-2818).
+//   - {namespace, name, uid}: once the claim is deleted the PV is a
+//     Released dead end — the binder skips it entirely, so the disk
+//     keeps its data but the StatefulSet's recreated claim provisions
+//     a NEW, empty volume.
+//   - {namespace, name}, uid empty: reserved. The binder treats the
+//     PV as bindable by exactly that claim name (kube's
+//     IsVolumeBoundToClaim compares UIDs only when the PV's is
+//     non-empty), so the recreated claim — same name, new UID — gets
+//     its old disk back, and no other claim ever can.
+//
+// Which of the last two states the PV ends in is decided by its
+// pinned node's fate ([Controller.pvNodeFate]):
+//
+//   - awaitable (node usable, or down — cordoned, NotReady,
+//     partitioned — but its object still exists, so it may return):
+//     reserve, by clearing the ClaimRef's UID and ResourceVersion in
+//     place. Prebinding binds the recreated claim back to this PV
+//     immediately (it bypasses WaitForFirstConsumer, and the
+//     PV-controller binding path checks no node affinity), so the
+//     broker simply waits for its node — with its data. The PV is
+//     annotated ([ReservedPVAnnotation]) in the same patch so
+//     subsequent reconciles of the still-Pending pod defer instead of
+//     re-unbinding in a loop.
+//   - dead end (every pinned node gone, or Ready but blocked by the
+//     pod's own hard anti-affinity): leave the ClaimRef alone. The
+//     dead claim's UID makes the PV unbindable (Released), the
+//     recreated claim provisions a fresh disk on a live node, and the
+//     orphaned PV retains the data for manual recovery. A reservation
+//     annotation left over from an earlier cycle is removed.
+//
+// Reserving without the fate check would strand the pod forever: the
+// recreated claim would insta-bind back to a disk on a node that no
+// longer exists — or that a permanent sibling occupies — and no
+// amount of further unbinding could move it.
+//
+// This strategy is only valid for volumes that utilize .HostPath or
+// .Local.
+func (r *Controller) maybeReservePersistentVolume(ctx context.Context, pv *corev1.PersistentVolume, fate pvNodeFate) error {
 	// This case should never hit as we filter out such PVs earlier in the
 	// controller though it's likely we don't handle such cases well aside from
 	// not unbinding them.
 	// TODO(chrisseto): Remove this check and add better clarify the expected
 	// behavior of this controller if it encounters network backed disks.
 	if pv.Spec.HostPath == nil && pv.Spec.Local == nil {
-		return fmt.Errorf("%T must specify .Spec.HostPath or .Spec.Local for recycling: %q", pv, pv.Name)
-	}
-
-	// NB: We handle this flag here to ensure we get explicit the log messages
-	// for all PVs we would have cleared the ClaimRef of.
-	if !r.AllowRebinding {
-		log.FromContext(ctx).Info("Skipping .ClaimRef clearing of PersistentVolume", "name", pv.Name, "AllowRebinding", r.AllowRebinding)
-		return nil
+		return fmt.Errorf("%T must specify .Spec.HostPath or .Spec.Local for reserving: %q", pv, pv.Name)
 	}
 
 	// Skip over unbound PVs.
@@ -825,31 +985,137 @@ func (r *Controller) maybeRecyclePersistentVolume(ctx context.Context, pv *corev
 		return nil
 	}
 
-	log.FromContext(ctx).Info("Clearing .ClaimRef of PersistentVolume", "name", pv.Name, "AllowRebinding", r.AllowRebinding)
+	claimKey := pv.Spec.ClaimRef.Namespace + "/" + pv.Spec.ClaimRef.Name
+	patch := client.StrategicMergeFrom(pv.DeepCopy())
+	if fate == pvNodeFateAwaitable {
+		// Already reserved: a retried reconcile must stay write-free.
+		if pv.Spec.ClaimRef.UID == "" && pv.Spec.ClaimRef.ResourceVersion == "" && pv.Annotations[ReservedPVAnnotation] == claimKey {
+			return nil
+		}
+		log.FromContext(ctx).Info("Reserving PersistentVolume for its recreated claim (clearing the ClaimRef's UID)", "name", pv.Name, "claim", claimKey)
+		pv.Spec.ClaimRef.UID = ""
+		pv.Spec.ClaimRef.ResourceVersion = ""
+		if pv.Annotations == nil {
+			pv.Annotations = map[string]string{}
+		}
+		pv.Annotations[ReservedPVAnnotation] = claimKey
+	} else {
+		if _, ok := pv.Annotations[ReservedPVAnnotation]; !ok {
+			// The dead end is the no-write state: an intact ClaimRef
+			// with the deleted claim's UID already binds to nothing.
+			return nil
+		}
+		log.FromContext(ctx).Info("PersistentVolume's pinned node can never host its pod again; leaving it Released and dropping the reservation", "name", pv.Name, "claim", claimKey)
+		delete(pv.Annotations, ReservedPVAnnotation)
+	}
 
 	// NB: We explicitly don't use an optimistic lock here as the control plane
 	// will likely have updated this PV's Status to indicate that it's now
 	// Released.
-	patch := client.StrategicMergeFrom(pv.DeepCopy())
-	pv.Spec.ClaimRef = nil
-	if clusterKey != "" {
-		if pv.Annotations == nil {
-			pv.Annotations = map[string]string{}
+	return r.Client.Patch(ctx, pv, patch)
+}
+
+// pvReservedForClaimOf reports whether pv carries a
+// [ReservedPVAnnotation] naming one of pod's own StatefulSet claims —
+// the trigger for the "reserved-pv" deferral.
+func pvReservedForClaimOf(pod *corev1.Pod, pv *corev1.PersistentVolume) bool {
+	reserved := pv.Annotations[ReservedPVAnnotation]
+	if reserved == "" {
+		return false
+	}
+	return slices.ContainsFunc(StsPVCs(pod), func(key client.ObjectKey) bool {
+		return reserved == key.Namespace+"/"+key.Name
+	})
+}
+
+// pvNodeFate is the verdict of [Controller.pvNodeFate]: whether a PV's
+// pinned nodes could ever host its pod again.
+type pvNodeFate int
+
+const (
+	// pvNodeFateAwaitable: some pinned node could still host the pod —
+	// keep the disk (reserve, or keep an existing reservation waiting).
+	pvNodeFateAwaitable pvNodeFate = iota
+	// pvNodeFateDeadEnd: no pinned node ever can — leave the PV
+	// Released so the recreated claim provisions fresh.
+	pvNodeFateDeadEnd
+)
+
+// pvNodeFate classifies whether any node a PV's NodeAffinity accepts
+// could still host pod someday. Two fates:
+//
+//   - awaitable: some pinned node is usable, merely down (cordoned,
+//     NotReady, unreachable — judged through the pod's own toleration
+//     lens, like the mis-pin proof — its object exists, so it may
+//     return), or unresolvable. The disk is worth keeping: reserve it,
+//     or keep an existing reservation waiting.
+//   - dead end: every pinned node is either gone (object deleted) or
+//     Ready but blocked by one of the pod's own required anti-affinity
+//     terms. The occupied shape is the bootstrap mis-provisioning
+//     incident: the occupant is a permanent sibling broker, so waiting
+//     on it never ends — the PV must be left Released for the
+//     recreated claim to provision fresh.
+//
+// The answer steers destructive choices in both directions ("dead
+// end" abandons a data-bearing disk, "awaitable" holds remediation),
+// so nodes are resolved on an uncached read, by the
+// kubernetes.io/hostname label (never the Node object name — kubelet
+// --hostname-override makes them differ). Everything unresolvable — a
+// node set [pvPinnedHostnames] cannot enumerate, several nodes sharing
+// one hostname label, a Forbidden read (out-of-band RBAC lagging the
+// upgrade, mirroring [Controller.freedPVBlocking]) — counts as
+// awaitable: dead-ending is irreversible, while waiting stays
+// alertable through the reserved-pv deferral's metric and Event.
+func (r *Controller) pvNodeFate(ctx context.Context, pv *corev1.PersistentVolume, pod *corev1.Pod) (pvNodeFate, error) {
+	hostnames, ok := pvPinnedHostnames(pv)
+	if !ok {
+		return pvNodeFateAwaitable, nil
+	}
+	for _, hostname := range hostnames {
+		state, err := nodeAvailabilityForPod(ctx, r.reader(), hostname, pod)
+		if err != nil {
+			if apierrors.IsForbidden(err) {
+				log.FromContext(ctx).Info("node reads forbidden; treating the PV's pinned node as awaitable", "name", pv.Name, "reason", err.Error())
+				return pvNodeFateAwaitable, nil
+			}
+			return pvNodeFateAwaitable, err
 		}
-		pv.Annotations[FreedPVAnnotation] = clusterKey
+		switch state {
+		case nodeUsable, nodeDown, nodeAmbiguous:
+			return pvNodeFateAwaitable, nil
+		case nodeGone, nodeOccupied:
+			// Keep checking the remaining hostnames.
+		}
 	}
-	if err := r.Client.Patch(ctx, pv, patch); err != nil {
-		return err
+	return pvNodeFateDeadEnd, nil
+}
+
+// pvInFlightFor reports whether pv carries this cluster's in-flight
+// stamp recording claim `key` — the durable link between a PV and the
+// unbind that froze it. It re-attaches a crash-interrupted unbind to
+// its PV when the live ClaimRef back-reference is already gone (claim
+// deleted, or the ClaimRef's UID cleared by the reservation).
+func (r *Controller) pvInFlightFor(pv *corev1.PersistentVolume, clusterKey string, key client.ObjectKey) bool {
+	if clusterKey == "" || pv.Annotations[InFlightAnnotation] != clusterKey {
+		return false
 	}
-	return nil
+	parts := strings.SplitN(pv.Annotations[InFlightClaimAnnotation], "/", 3)
+	return len(parts) == 3 && parts[0] == key.Namespace && parts[1] == key.Name
 }
 
 // pvGateState is the result of one uncached scan over the cluster's
-// annotated PVs, feeding Gate 0 (unbindInFlight) and Gate 4
-// (freedPVUnresolved).
+// annotated PVs, feeding Gate 0 (unbindInFlight), Gate 4
+// (freedPVUnresolved), and the reserved-pv hold (ownUnbindInFlight).
 type pvGateState struct {
 	unbindInFlight    bool
 	freedPVUnresolved bool
+	// ownUnbindInFlight is set when the RECONCILED pod's own unbind
+	// has not settled — the state Gate 0 deliberately lets through so
+	// the pipeline can finish it. The reserved-pv hold must yield in
+	// that state: the pipeline still owes the pod its deletion, and
+	// deferring would strand the half-done unbind (and Gate 0's hold
+	// on siblings) forever.
+	ownUnbindInFlight bool
 }
 
 // checkPVGates evaluates Gates 0 and 4 in one uncached pass over the
@@ -918,6 +1184,7 @@ func (r *Controller) checkPVGates(ctx context.Context, clusterKey string, pod *c
 			case r.inFlightClaimOwnedBy(pv, ownClaims):
 				// This pod's own unfinished unbind — let the reconcile
 				// proceed so the idempotent pipeline can complete it.
+				state.ownUnbindInFlight = true
 			default:
 				state.unbindInFlight = true
 			}
@@ -1038,7 +1305,7 @@ func (r *Controller) freedPVBlocking(ctx context.Context, pv *corev1.PersistentV
 	// never the Node object name — kubelet --hostname-override makes
 	// them differ, and a name-based Get would report a live node as
 	// gone and OPEN this gate. Mirrors the exemption path
-	// ([Controller.nodeUnavailableForScheduling]).
+	// ([nodeAvailabilityForPod]).
 	var nodeList corev1.NodeList
 	if err := r.reader().List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
 		// Out-of-band RBAC can lag the upgrade that introduced this
@@ -1720,15 +1987,55 @@ const (
 // nodeUnavailableForScheduling reports whether the node behind
 // `hostname` (one of the hostnames a mis-pinned PV accepts) is truly
 // unable to host pod — the fact that turns "stuck" into "deadlocked".
+// It is a collapse of [nodeAvailabilityForPod]: gone, down, and
+// occupied all count as unavailable; usable and ambiguous (several
+// nodes sharing one hostname label — fail closed) count as available.
+// Shared between the unbinder's Gate 3 exemption chain (via
+// [claimMispinnedForPod]) and the Broker controller's PV-affinity
+// remediation ([MispinnedPVCs]).
+func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hostname string, pod *corev1.Pod) (bool, error) {
+	state, err := nodeAvailabilityForPod(ctx, reader, hostname, pod)
+	if err != nil {
+		return false, err
+	}
+	return state == nodeGone || state == nodeDown || state == nodeOccupied, nil
+}
+
+// nodeAvailability classifies a single pinned node's ability to host a
+// given pod. The mis-pin proof needs only available-or-not
+// ([nodeUnavailableForScheduling]); the PV fate classification
+// ([Controller.pvNodeFate]) also needs WHY a node is unavailable — a
+// down node may return (keep the disk), an occupied one never frees up
+// (dead-end it).
+type nodeAvailability int
+
+const (
+	// nodeGone: no Node carries the hostname label — deleted for good.
+	nodeGone nodeAvailability = iota
+	// nodeDown: the node object exists but cannot host pods right now
+	// (cordoned, or NotReady/unreachable through the pod's toleration
+	// lens). It may return.
+	nodeDown
+	// nodeOccupied: the node is up, but a live occupant matches one of
+	// the pod's own required anti-affinity terms.
+	nodeOccupied
+	// nodeUsable: nothing provably prevents the pod from landing here.
+	nodeUsable
+	// nodeAmbiguous: several nodes share the hostname label — a
+	// misconfiguration this package refuses to interpret.
+	nodeAmbiguous
+)
+
+// nodeAvailabilityForPod resolves the node behind `hostname` and
+// classifies it for pod.
 //
 // The node is found by LISTING Nodes with a matching
 // kubernetes.io/hostname label, not by name: NodeAffinity matches the
 // label, and the label does not have to equal the object name
 // (--hostname-override, manual relabels). Zero matches means the node
-// is gone → unavailable. More than one match is a misconfiguration
-// this function refuses to interpret → available (fail closed).
+// is gone. More than one match returns [nodeAmbiguous].
 //
-// A single matching node is unavailable when any of these holds:
+// A single matching node is down or occupied when any of these holds:
 //
 //   - it is cordoned (Spec.Unschedulable);
 //   - its Ready condition is False/Unknown, or it carries the
@@ -1757,29 +2064,28 @@ const (
 //
 // If none of these hold, the node looks schedulable, so the pod's
 // Pending state cannot be blamed on this claim (more likely CPU,
-// quota, or unrelated taints) and this returns false.
+// quota, or unrelated taints) and this returns [nodeUsable].
 //
 // Every read here is uncached — callers pass an uncached reader. This
-// evidence directly unlocks destructive deletion, and a stale occupant
-// or node view could manufacture proof of a conflict that no longer
-// exists. Gate 0 does not backstop that: it only tracks the unbinder's
-// OWN past actions. Shared between the unbinder's Gate 3 exemption
-// chain (via [claimMispinnedForPod]) and the Broker controller's
-// PV-affinity remediation ([MispinnedPVCs]).
-func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hostname string, pod *corev1.Pod) (bool, error) {
+// evidence directly steers destructive choices (unlocking deletion, or
+// dead-ending a data-bearing disk), and a stale occupant or node view
+// could manufacture proof of a conflict that no longer exists. Gate 0
+// does not backstop that: it only tracks the unbinder's OWN past
+// actions.
+func nodeAvailabilityForPod(ctx context.Context, reader client.Reader, hostname string, pod *corev1.Pod) (nodeAvailability, error) {
 	var nodeList corev1.NodeList
 	if err := reader.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
-		return false, err
+		return nodeUsable, err
 	}
 	if len(nodeList.Items) == 0 {
-		return true, nil
+		return nodeGone, nil
 	}
 	if len(nodeList.Items) > 1 {
-		return false, nil
+		return nodeAmbiguous, nil
 	}
 	node := nodeList.Items[0]
 	if node.Spec.Unschedulable {
-		return true, nil
+		return nodeDown, nil
 	}
 	for _, cond := range node.Status.Conditions {
 		if cond.Type != corev1.NodeReady || cond.Status == corev1.ConditionTrue {
@@ -1804,7 +2110,7 @@ func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hos
 			key = taintNodeUnreachable
 		}
 		if !podUnconditionallyTolerates(pod.Spec.Tolerations, &corev1.Taint{Key: key, Effect: corev1.TaintEffectNoExecute}) {
-			return true, nil
+			return nodeDown, nil
 		}
 	}
 	for i := range node.Spec.Taints {
@@ -1826,7 +2132,7 @@ func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hos
 		// decides for the pair; and an untolerated NoExecute-lens check
 		// still catches every pod the taints genuinely exclude.
 		if !podUnconditionallyTolerates(pod.Spec.Tolerations, &corev1.Taint{Key: taint.Key, Effect: corev1.TaintEffectNoExecute}) {
-			return true, nil
+			return nodeDown, nil
 		}
 	}
 	if pod.Spec.Affinity == nil || pod.Spec.Affinity.PodAntiAffinity == nil ||
@@ -1835,7 +2141,7 @@ func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hos
 		// podAntiAffinity.type, or a custom/overridden affinity with
 		// no required terms) — occupancy can't be evaluated as proof,
 		// so skip the Pod LIST entirely.
-		return false, nil
+		return nodeUsable, nil
 	}
 	// Candidates are ALL pods in the pod's namespace, not just
 	// same-instance ones. Interpretable terms are already restricted
@@ -1846,7 +2152,7 @@ func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hos
 	// custom terms that select beyond the release.
 	var podList corev1.PodList
 	if err := reader.List(ctx, &podList, &client.ListOptions{Namespace: pod.Namespace}); err != nil {
-		return false, err
+		return nodeUsable, err
 	}
 	for i := range podList.Items {
 		other := &podList.Items[i]
@@ -1863,10 +2169,10 @@ func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hos
 			continue
 		}
 		if podRequiredAntiAffinityMatches(pod, other) {
-			return true, nil
+			return nodeOccupied, nil
 		}
 	}
-	return false, nil
+	return nodeUsable, nil
 }
 
 // hostnameTopologyKey is the per-node topology key used by the
@@ -1931,8 +2237,8 @@ func podRequiredAntiAffinityMatches(pod, occupant *corev1.Pod) bool {
 // empty Key/Effect act as wildcards, Operator Exists ignores Value,
 // Operator Equal/"" requires it) AND carries no TolerationSeconds —
 // i.e. the Pod tolerates the taint indefinitely, not just for a grace
-// period before eviction. See [Controller.nodeUnavailableForScheduling]
-// for why the grace-period form doesn't count.
+// period before eviction. See [nodeAvailabilityForPod] for why the
+// grace-period form doesn't count.
 func podUnconditionallyTolerates(tolerations []corev1.Toleration, taint *corev1.Taint) bool {
 	for i := range tolerations {
 		t := &tolerations[i]
