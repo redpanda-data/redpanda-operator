@@ -85,7 +85,8 @@ func TestClientFetchBrokerBackedPools(t *testing.T) {
 		// Materialize the STS-backed pool.
 		require.NoError(t, instances.resourceClient.PatchPoolSet(ctx, cluster, stsBackedPool))
 
-		tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil, true)
+		instances.resourceClient.brokerCREnabled = true
+		tracker, err := instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil)
 		require.NoError(t, err)
 
 		existing := tracker.ExistingStatefulSets()
@@ -125,7 +126,8 @@ func TestClientFetchBrokerBackedPools(t *testing.T) {
 		require.False(t, tracker.CheckScale(ctx))
 
 		// Without broker mode the broker-backed pool is invisible.
-		tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil, false)
+		instances.resourceClient.brokerCREnabled = false
+		tracker, err = instances.resourceClient.FetchExistingAndDesiredPools(ctx, cluster, "version", nil)
 		require.NoError(t, err)
 		require.Len(t, tracker.ExistingStatefulSets(), 1)
 	})
