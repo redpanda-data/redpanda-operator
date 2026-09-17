@@ -11,7 +11,6 @@ package roles
 
 import (
 	"context"
-	stderrors "errors"
 	"net/http"
 
 	adminv2 "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
@@ -307,7 +306,7 @@ func (c *Client) updateRoleMembers(ctx context.Context, roleName string, toAdd, 
 // isNotFoundError checks if the error is a 404 Not Found HTTP error
 func isNotFoundError(err error) bool {
 	var httpErr *rpadmin.HTTPResponseError
-	if stderrors.As(err, &httpErr) {
+	if errors.As(err, &httpErr) {
 		return httpErr.Response.StatusCode == http.StatusNotFound
 	}
 	return false

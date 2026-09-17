@@ -27,6 +27,8 @@ import (
 //  1. if the condition of the specified type already exists (all fields of the existing condition are updated to
 //     newCondition, LastTransitionTime is set to now if the new status differs from the old status)
 //  2. if a condition of the specified type does not exist (LastTransitionTime is set to now() if unset, and newCondition is appended)
+//
+//nolint:laconiccomments
 func SetStatusPodCondition(conditions *[]corev1.PodCondition, newCondition *corev1.PodCondition) {
 	if conditions == nil {
 		return

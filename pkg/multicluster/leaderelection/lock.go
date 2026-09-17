@@ -12,13 +12,13 @@ package leaderelection
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"io"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"go.etcd.io/raft/v3"
 	"go.etcd.io/raft/v3/raftpb"
 
@@ -278,6 +278,8 @@ func asPeers(nodes []LockerNode) []raft.Peer {
 //     duration bounds how quickly a standby can replace a dead active
 //     replica. The total failover time is LeaseDuration (for the standby
 //     to acquire the lease) + the raft recovery time above.
+//
+//nolint:laconiccomments
 func Run(ctx context.Context, config LockConfiguration, callbacks *LeaderCallbacks) error {
 	return run(ctx, config, nil, callbacks)
 }

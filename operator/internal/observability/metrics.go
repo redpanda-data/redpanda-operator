@@ -96,6 +96,7 @@ var (
 	// of the mis-pinned-claim deadlock — when two victims' PVs land on
 	// two different occupied nodes, the unbinder defers there and
 	// manual PVC deletion is required.
+	//nolint:laconiccomments
 	PVCUnbinderGateDeferred = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricsNamespace,
 		Subsystem: metricsSubsystem,

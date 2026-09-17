@@ -79,6 +79,7 @@ type ClientFactory interface {
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.KafkaConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should always call Close on the returned *kgo.Client,
 	// or it will leak goroutines.
+	//nolint:laconiccomments
 	KafkaClient(ctx context.Context, object any, opts ...kgo.Opt) (*kgo.Client, error)
 	// KafkaClientForCluster is the same as KafkaClient but it takes a kubernetes cluster name.
 	KafkaClientForCluster(ctx context.Context, object any, clusterName string, opts ...kgo.Opt) (*kgo.Client, error)
@@ -87,6 +88,7 @@ type ClientFactory interface {
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
 	// to ensure any idle connections in the underlying transport are closed.
+	//nolint:laconiccomments
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 	// RedpandaAdminClientForCluster is the same as RedpandaAdminClient but it takes a kubernetes cluster name.
 	RedpandaAdminClientForCluster(ctx context.Context, object any, clusterName string) (*rpadmin.AdminAPI, error)
@@ -102,6 +104,7 @@ type ClientFactory interface {
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
+	//nolint:laconiccomments
 	SchemaRegistryClient(ctx context.Context, object any) (*sr.Client, error)
 	// SchemaRegistryBrokerClients returns one Schema Registry client per broker
 	// endpoint of the given cluster object, each scoped to a single broker URL
@@ -114,18 +117,21 @@ type ClientFactory interface {
 
 	// ACLs returns a high-level client for synchronizing ACLs. Callers should always call Close on the returned *acls.Syncer, or it will leak
 	// goroutines.
+	//nolint:laconiccomments
 	ACLs(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error)
 	// ACLsForCluster is the same as ACLs but it takes a kubernetes cluster name
 	ACLsForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*acls.Syncer, error)
 
 	// Users returns a high-level client for managing users. Callers should always call Close on the returned *users.Client, or it will leak
 	// goroutines.
+	//nolint:laconiccomments
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
 	// UsersForCluster is the same as Users but it takes a kubernetes cluster name
 	UsersForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*users.Client, error)
 
 	// Roles returns a high-level client for managing roles. Callers should always call Close on the returned *roles.Client, or it will leak
 	// goroutines. It transparently delegates to the v2 SecurityService API when available, use roles.WithV2Disabled() to force the v1 path.
+	//nolint:laconiccomments
 	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...roles.Option) (*roles.Client, error)
 	// RolesForCluster is the same as Roles but it takes a kubernetes cluster name
 	RolesForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...roles.Option) (*roles.Client, error)

@@ -146,6 +146,7 @@ func (r *PreStartStopScriptResource) getPostStartScript() string {
 	// TODO(joe): The command builder shouldn't add auth/tls flags, they should be added to an environment variable
 	// in the StatefulSet otherwise a race condition could occur where the mounted script could be updated before
 	// the new setting has been configured on the pod's redpanda node.
+	//nolint:laconiccomments
 	return fmt.Sprintf(`#!/usr/bin/env bash
 set -x
 

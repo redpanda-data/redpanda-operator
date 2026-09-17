@@ -13,10 +13,10 @@ package crd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 
+	"github.com/cockroachdb/errors"
 	"github.com/spf13/cobra"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"

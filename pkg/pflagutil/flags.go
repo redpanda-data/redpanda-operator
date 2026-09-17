@@ -25,7 +25,7 @@ type LabelSelectorValue struct {
 	Selector labels.Selector
 }
 
-var _ pflag.Value = ((*LabelSelectorValue)(nil))
+var _ pflag.Value = (*LabelSelectorValue)(nil)
 
 func (s *LabelSelectorValue) Set(value string) error {
 	if value == "" {

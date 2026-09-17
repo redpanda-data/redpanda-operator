@@ -12,13 +12,13 @@ package migration
 import (
 	"bytes"
 	"context"
-	"errors"
 	"log"
 	"os"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/kube/kubetest"
 	"github.com/stretchr/testify/require"

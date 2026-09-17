@@ -12,9 +12,9 @@ package redpanda
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/twmb/franz-go/pkg/kgo"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

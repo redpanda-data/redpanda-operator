@@ -50,6 +50,8 @@ type stringer interface {
 // any after test hooks or calls to t.Cleanup due to the error check already having happened in godog, instead
 // we need to bypass the godog stack and either fail the test directly or, in some other way, signal that
 // something bad/unexpected happened.
+//
+//nolint:laconiccomments
 func WrapWithPanicHandler[U any](needsLog bool, exitBehavior ExitBehavior, fn U) U {
 	fnValue := reflect.ValueOf(fn)
 	return reflect.MakeFunc(fnValue.Type(), func(args []reflect.Value) (results []reflect.Value) {

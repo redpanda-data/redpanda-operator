@@ -764,6 +764,7 @@ func TestReconcileGate3StuckClaimExemption(t *testing.T) {
 		// original production bug this whole exemption exists to fix
 		// (see stuckClaimNames's doc comment) — Kubernetes doesn't
 		// reliably surface that attribution.
+		//nolint:laconiccomments
 		pod := withPVC(withPVC(newPod("rp-1", "ns", "redpanda"), "datadir-rp-1"), "shadow-index-cache-rp-1")
 		pod.Status.Conditions = []corev1.PodCondition{{
 			Type:    corev1.PodScheduled,

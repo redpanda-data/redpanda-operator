@@ -11,12 +11,12 @@ package steps
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"

@@ -175,6 +175,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.managerOptions.LeaderElection, "leader-elect", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionID, "leader-election-id", "aa9fc693.vectorized.io", "Sets the ID used for the leader election process.")
 	// NB: The default behavior here is in the controller-runtime, pretty deep. It reads the namespace file that's created when mounting a service account token.
+	//nolint:laconiccomments
 	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionNamespace, "leader-election-namespace", "", "Sets the namespace that leader election resources will be created within. If not specified, defaults the value of --namespace or the namespace this Pod is running in.")
 	o.managerOptions.LeaseDuration = cmd.Flags().Duration("leader-election-lease-duration", 15*time.Second, "Duration that non-leader candidates wait before forcing acquisition of the leader election lease")
 	o.managerOptions.RenewDeadline = cmd.Flags().Duration("leader-election-renew-deadline", 10*time.Second, "Duration that the acting leader retries refreshing leadership before giving up")
@@ -948,6 +949,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 			// it has controller code that manages decommissioning. If something else decommissions the node, it can not deal with this under all circumstances because of various reasons, eg. bercause of a protection against stale status reads of status.currentReplicas
 			//   (http://github.com/redpanda-data/redpanda-operator/blob/main/operator/pkg/resources/statefulset_scale.go#L139)
 			// In addition to this situation where it can not (always) recover, it is just not desired that it interferes with graceful, "standard" decommissions (at least, in Operator v1 mode)
+			//nolint:laconiccomments
 			decommissioning.WithDecommisionOnTooHighOrdinal(false),
 		)
 

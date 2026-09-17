@@ -27,6 +27,8 @@ import (
 )
 
 // redpandaAdminForCluster returns a simple rpadmin.AdminAPI able to communicate with the given cluster specified via a Redpanda cluster.
+//
+//nolint:laconiccomments
 func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*rpadmin.AdminAPI, error) {
 	config, err := c.GetConfig(ctx, clusterName)
 	if err != nil {
@@ -57,7 +59,8 @@ func (c *Factory) redpandaAdminForCluster(ctx context.Context, cluster *redpanda
 	return client, nil
 }
 
-// redpandaAdminForV1Cluster returns a simple rpadmin.AdminAPI able to communicate with the given V1 cluster through its internal admin listener.
+// redpandaAdminForV1Cluster returns rpadmin.AdminAPI
+// to communicate with the given V1 cluster through its internal admin listener.
 func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*rpadmin.AdminAPI, error) {
 	k8sClient, err := c.GetClient(ctx, clusterName)
 	if err != nil {
@@ -96,6 +99,8 @@ func (c *Factory) redpandaAdminForV1Cluster(ctx context.Context, cluster *vector
 }
 
 // schemaRegistryForCluster returns a simple sr.Client able to communicate with the given cluster specified via a Redpanda cluster.
+//
+//nolint:laconiccomments
 func (c *Factory) schemaRegistryForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*sr.Client, error) {
 	// A disabled listener publishes no _schemaregistry._tcp SRV record, so
 	// endpoint resolution below can only NXDOMAIN. Return the sentinel that
@@ -160,6 +165,8 @@ func (c *Factory) schemaRegistryForV1Cluster(ctx context.Context, cluster *vecto
 }
 
 // kafkaForCluster returns a simple kgo.Client able to communicate with the given cluster specified via a Redpanda cluster.
+//
+//nolint:laconiccomments
 func (c *Factory) kafkaForCluster(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string, opts ...kgo.Opt) (*kgo.Client, error) {
 	config, err := c.GetConfig(ctx, clusterName)
 	if err != nil {

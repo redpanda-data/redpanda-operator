@@ -11,11 +11,11 @@ package lifecycle
 
 import (
 	"context"
-	"errors"
 	"io"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"

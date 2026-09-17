@@ -112,6 +112,8 @@ func (r *ConfigMapResource) update(
 
 // markConfigurationConditionChanged verifies and marks the cluster as needing synchronization (using the ClusterConfigured condition).
 // The condition is changed so that the configuration controller can later restore it back to normal after interacting with the cluster.
+//
+//nolint:laconiccomments
 func (r *ConfigMapResource) markConfigurationConditionChanged(
 	ctx context.Context, current *corev1.ConfigMap, modified *corev1.ConfigMap,
 ) error {
