@@ -1,0 +1,11 @@
+project: operator
+kind: Changed
+body: |-
+    StretchCluster's per-pool sidecar `Role` no longer grants read on `pods` or
+    `apps/statefulsets`.
+
+      The sidecar only ever ran the broker probe there, which talks to the Redpanda
+      Admin API rather than the Kubernetes one; the controllers that read those
+      resources are gated behind flags the StretchCluster renderer doesn't pass. The
+      operator owns the `Role`, so it narrows on upgrade with no action needed.
+time: 2026-09-16T15:30:00-04:00

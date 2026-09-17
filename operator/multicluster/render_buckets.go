@@ -55,9 +55,8 @@ func RenderClusterResources(state *RenderState) ([]kube.Object, error) {
 //   - serviceMonitorForPool — per-pool ServiceMonitor
 //   - nodePortServiceForPool — per-pool external NodePort
 //   - certificatesForPool — per-pool leaf certs (different DNS SANs per pool)
-//   - rolesForPool / roleBindingsForPool — per-pool RBAC
-//   - clusterRolesForPool / clusterRoleBindingsForPool — per-pool RBAC
-//     (cluster-scoped objects but per-pool driven)
+//   - rbacForPool — per-pool Roles, ClusterRoles, and both binding sets.
+//     The cluster-scoped halves are per-pool driven despite their scope.
 func RenderInClusterPoolResources(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]kube.Object, error) {
 	cm, err := redpandaConfigMap(state, pool)
 	if err != nil {
@@ -83,10 +82,8 @@ func RenderInClusterPoolResources(state *RenderState, pool *redpandav1alpha2.Red
 	manifests = appendIfNotNil(manifests, serviceMonitorForPool(state, pool))
 	manifests = appendIfNotNil(manifests, nodePortServiceForPool(state, pool))
 	manifests = appendIfNotNil(manifests, certs...)
-	manifests = appendIfNotNil(manifests, rolesForPool(state, pool)...)
-	manifests = appendIfNotNil(manifests, clusterRolesForPool(state, pool)...)
-	manifests = appendIfNotNil(manifests, roleBindingsForPool(state, pool)...)
-	manifests = appendIfNotNil(manifests, clusterRoleBindingsForPool(state, pool)...)
+	roleSet := rbacForPool(state, pool)
+	manifests = append(manifests, roleSet.Render()...)
 	return manifests, nil
 }
 

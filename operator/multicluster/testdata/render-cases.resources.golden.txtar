@@ -449,28 +449,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -1345,28 +1329,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -2235,28 +2203,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -3110,28 +3062,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -3984,28 +3920,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -4858,28 +4778,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -5732,28 +5636,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -6606,28 +6494,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -7480,28 +7352,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -8354,28 +8210,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -9228,28 +9068,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -10090,28 +9914,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -11038,28 +10846,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -12587,29 +12379,68 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
+    - patch
+    - update
     - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-full-featured-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
     verbs:
     - get
-    - list
-    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-sidecar
+    namespace: full-featured
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: full-featured-pool-cold-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-cold
+    namespace: full-featured
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: full-featured
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+      team: data-platform
+    name: full-featured-pool-cold-full-featured-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: full-featured-pool-cold-full-featured-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: full-featured-pool-cold
+    namespace: full-featured
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
@@ -12628,45 +12459,13 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
+    - patch
+    - update
     - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-full-featured-metrics-reader
-  rules:
-  - nonResourceURLs:
-    - /metrics
-    verbs:
-    - get
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
@@ -12693,26 +12492,6 @@
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
       team: data-platform
-    name: full-featured-pool-cold-sidecar
-    namespace: full-featured
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: full-featured-pool-cold-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-cold
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
     name: full-featured-pool-hot-sidecar
     namespace: full-featured
   roleRef:
@@ -12722,25 +12501,6 @@
   subjects:
   - kind: ServiceAccount
     name: full-featured-pool-hot
-    namespace: full-featured
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: full-featured
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-      team: data-platform
-    name: full-featured-pool-cold-full-featured-metrics-reader
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: full-featured-pool-cold-full-featured-metrics-reader
-  subjects:
-  - kind: ServiceAccount
-    name: full-featured-pool-cold
     namespace: full-featured
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -13953,28 +13713,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -14827,28 +14571,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -15753,28 +15481,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -16623,28 +16335,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -17536,28 +17232,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -18410,28 +18090,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -19312,28 +18976,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -20572,29 +20220,65 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
+    - patch
+    - update
     - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-a-multi-pool-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
     verbs:
     - get
-    - list
-    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-a-sidecar
+    namespace: multi-pool
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: multi-pool-pool-a-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-pool-a
+    namespace: multi-pool
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-pool-a-multi-pool-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: multi-pool-pool-a-multi-pool-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-pool-a
+    namespace: multi-pool
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
@@ -20612,44 +20296,13 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
+    - patch
+    - update
     - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRole
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-pool-a-multi-pool-metrics-reader
-  rules:
-  - nonResourceURLs:
-    - /metrics
-    verbs:
-    - get
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
@@ -20674,25 +20327,6 @@
       app.kubernetes.io/instance: multi-pool
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-pool-a-sidecar
-    namespace: multi-pool
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: multi-pool-pool-a-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: multi-pool-pool-a
-    namespace: multi-pool
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: multi-pool-pool-b-sidecar
     namespace: multi-pool
   roleRef:
@@ -20702,24 +20336,6 @@
   subjects:
   - kind: ServiceAccount
     name: multi-pool-pool-b
-    namespace: multi-pool
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-pool-a-multi-pool-metrics-reader
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: multi-pool-pool-a-multi-pool-metrics-reader
-  subjects:
-  - kind: ServiceAccount
-    name: multi-pool-pool-a
     namespace: multi-pool
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -22515,108 +22131,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-heterogeneous-ports-pool-b-sidecar
-    namespace: multi-pool-heterogeneous-ports
-  rules:
-  - apiGroups:
-    - coordination.k8s.io
-    resources:
-    - leases
-    verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
     - patch
-    - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
-    - watch
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-heterogeneous-ports-pool-c-sidecar
-    namespace: multi-pool-heterogeneous-ports
-  rules:
-  - apiGroups:
-    - coordination.k8s.io
-    resources:
-    - leases
-    verbs:
-    - get
-    - list
-    - watch
-    - create
     - update
-    - patch
-    - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -22634,6 +22154,67 @@
     verbs:
     - get
 - apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-a-sidecar
+    namespace: multi-pool-heterogeneous-ports
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: multi-pool-heterogeneous-ports-pool-a-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-heterogeneous-ports-pool-a
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-a-multi-pool-heterogeneous
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: multi-pool-heterogeneous-ports-pool-a-multi-pool-heterogeneous
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-heterogeneous-ports-pool-a
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-b-sidecar
+    namespace: multi-pool-heterogeneous-ports
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
     labels:
@@ -22648,6 +22229,67 @@
     - /metrics
     verbs:
     - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-b-sidecar
+    namespace: multi-pool-heterogeneous-ports
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: multi-pool-heterogeneous-ports-pool-b-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-heterogeneous-ports-pool-b
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-b-multi-pool-heterogeneous
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: multi-pool-heterogeneous-ports-pool-b-multi-pool-heterogeneous
+  subjects:
+  - kind: ServiceAccount
+    name: multi-pool-heterogeneous-ports-pool-b
+    namespace: multi-pool-heterogeneous-ports
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      app.kubernetes.io/cluster-name: test
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: redpanda
+    name: multi-pool-heterogeneous-ports-pool-c-sidecar
+    namespace: multi-pool-heterogeneous-ports
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
   metadata:
@@ -22672,44 +22314,6 @@
       app.kubernetes.io/instance: multi-pool-heterogeneous-ports
       app.kubernetes.io/managed-by: redpanda-operator
       app.kubernetes.io/name: redpanda
-    name: multi-pool-heterogeneous-ports-pool-a-sidecar
-    namespace: multi-pool-heterogeneous-ports
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: multi-pool-heterogeneous-ports-pool-a-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: multi-pool-heterogeneous-ports-pool-a
-    namespace: multi-pool-heterogeneous-ports
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-heterogeneous-ports-pool-b-sidecar
-    namespace: multi-pool-heterogeneous-ports
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: multi-pool-heterogeneous-ports-pool-b-sidecar
-  subjects:
-  - kind: ServiceAccount
-    name: multi-pool-heterogeneous-ports-pool-b
-    namespace: multi-pool-heterogeneous-ports
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
     name: multi-pool-heterogeneous-ports-pool-c-sidecar
     namespace: multi-pool-heterogeneous-ports
   roleRef:
@@ -22719,42 +22323,6 @@
   subjects:
   - kind: ServiceAccount
     name: multi-pool-heterogeneous-ports-pool-c
-    namespace: multi-pool-heterogeneous-ports
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-heterogeneous-ports-pool-a-multi-pool-heterogeneous
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: multi-pool-heterogeneous-ports-pool-a-multi-pool-heterogeneous
-  subjects:
-  - kind: ServiceAccount
-    name: multi-pool-heterogeneous-ports-pool-a
-    namespace: multi-pool-heterogeneous-ports
-- apiVersion: rbac.authorization.k8s.io/v1
-  kind: ClusterRoleBinding
-  metadata:
-    labels:
-      app.kubernetes.io/cluster-name: test
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: multi-pool-heterogeneous-ports
-      app.kubernetes.io/managed-by: redpanda-operator
-      app.kubernetes.io/name: redpanda
-    name: multi-pool-heterogeneous-ports-pool-b-multi-pool-heterogeneous
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: multi-pool-heterogeneous-ports-pool-b-multi-pool-heterogeneous
-  subjects:
-  - kind: ServiceAccount
-    name: multi-pool-heterogeneous-ports-pool-b
     namespace: multi-pool-heterogeneous-ports
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRoleBinding
@@ -23975,28 +23543,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -24739,28 +24291,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -25524,28 +25060,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -26398,28 +25918,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -27272,28 +26776,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -28150,28 +27638,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -29043,28 +28515,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -29908,28 +29364,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -30693,28 +30133,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -31567,28 +30991,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -32441,28 +31849,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -33315,28 +32707,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -34189,28 +33565,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -34881,28 +34241,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -35755,28 +35099,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -36629,28 +35957,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -37503,28 +36815,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
@@ -38377,28 +37673,12 @@
     resources:
     - leases
     verbs:
-    - get
-    - list
-    - watch
     - create
-    - update
-    - patch
     - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
     - get
     - list
-    - watch
-  - apiGroups:
-    - apps
-    resources:
-    - statefulsets
-    verbs:
-    - get
-    - list
+    - patch
+    - update
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
