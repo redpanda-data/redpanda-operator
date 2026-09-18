@@ -47,6 +47,8 @@ import (
 //     stay close to the production execution path.
 //   - timeout(1) is not on PATH — GNU coreutils utility; CI's nix
 //     devshell provides it.
+//
+//nolint:laconiccomments
 func TestWrapLifecycleHook_TimeoutSurfaced(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skipf("skipping: wrapper hardcodes /proc/1/fd/1; only meaningful on linux (got %s)", runtime.GOOS)

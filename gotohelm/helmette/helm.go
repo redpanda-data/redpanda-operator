@@ -29,6 +29,8 @@ import (
 // Dot is a representation of the "global" context or `.` in the execution
 // of a helm template.
 // See also: https://github.com/helm/helm/blob/3764b483b385a12e7d3765bff38eced840362049/pkg/chartutil/values.go#L137-L166
+//
+//nolint:laconiccomments
 type Dot struct {
 	Values       Values
 	Release      Release

@@ -165,20 +165,15 @@ type BrokerSet struct {
 	// Its value is copied to BrokerConfigChecksumAnnotation — one of the three
 	// rotation-identity keys.
 	ConfigChecksumKey string
+	// ClusterConfigVersion is the owner's persisted restart-requiring
+	// cluster-config version (V2: Redpanda.Status.ConfigVersion). When set,
+	// RenderBrokers stamps it into pod templates so pods are born current —
+	// MarkForRestart re-stamps unconditionally, and a pod born from an
+	// unstamped template would be rolled for no config change. Optional.
+	ClusterConfigVersion string
 
-	// IsClusterHealthy gates roll-grant issuance and the migration's
-	// destructive step. Return a *RequeueAfterError when unhealthy so the
-	// owning reconciler backs off instead of erroring. nil means
-	// always-healthy (tests only).
-	IsClusterHealthy func(ctx context.Context) error
-	// OnQuiesced runs when no rolls are outstanding and no grants are active
-	// (V1 clears Status.Restarting here). Optional.
-	OnQuiesced func(ctx context.Context) error
-	// MigrationBlockedReason contributes owner-specific quiescence checks to
-	// the migration preconditions (V1: cluster restarting, decommission
-	// recorded in status). Return a non-empty human-readable reason to block
-	// the migration this pass. Optional.
-	MigrationBlockedReason func(ctx context.Context) (string, error)
+	// Hooks supplies the owning CR's view of cluster state. Required.
+	Hooks OwnerHooks
 	// Reporter records migration progress. Optional.
 	Reporter MigrationReporter
 	// Arbitration shares this reconcile pass's in-memory disruptive-write
@@ -188,6 +183,24 @@ type BrokerSet struct {
 	Arbitration *Arbitration
 
 	Logger logr.Logger
+}
+
+// OwnerHooks supplies the owner-CR-specific behavior the engine cannot
+// derive itself: admin-level health, roll bookkeeping, and owner-side
+// quiescence checks. One implementation exists per owning CR (V1 Cluster:
+// resources.BrokerSetResource, V2 Redpanda: the reconciler's per-pass
+// hooks).
+type OwnerHooks interface {
+	// IsClusterHealthy reports the cluster's admin-API health, returning a
+	// *RequeueAfterError when it is not healthy.
+	IsClusterHealthy(ctx context.Context) error
+	// OnQuiesced clears any owner-side restart bookkeeping (V1:
+	// Status.Restarting). For Owners with none it's a no-op.
+	OnQuiesced(ctx context.Context) error
+	// MigrationBlockedReason returns a non-empty human-readable reason the
+	// owner is not migratable (V1: cluster restarting, decommission
+	// recorded in status), or "" if it is.
+	MigrationBlockedReason(ctx context.Context) string
 }
 
 // report is the nil-safe Reporter.Report.
@@ -545,6 +558,9 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
+		if s.ClusterConfigVersion != "" {
+			podAnnotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = s.ClusterConfigVersion
+		}
 
 		brokerLabels := maps.Clone(s.BrokerLabels)
 		brokerLabels[NetworkIndexLabelKey] = fmt.Sprintf("%d", i)
@@ -676,26 +692,45 @@ func (s *BrokerSet) createBroker(ctx context.Context, l logr.Logger, stsName str
 // UpdateBroker syncs the desired pod template (and propagated annotations)
 // onto an existing Broker CR, skipping no-op writes.
 func (s *BrokerSet) UpdateBroker(ctx context.Context, l logr.Logger, existing, desired *redpandav1alpha2.Broker) error {
-	// Preserve the restart marker: it is stamped by MarkForRestart, not by
-	// the renderer, and must survive PodTemplate syncs until the restart has
-	// rolled through.
+	// On a live CR, MarkForRestart is the only writer of the restart marker.
+	// The rendered value comes from the owner's persisted status, which
+	// trails a fresh stamp, so letting it overwrite would roll pods for no
+	// change.
 	restartKey := redpandav1alpha2.BrokerClusterConfigVersionAnnotation
 	if v, ok := existing.Spec.PodTemplate.Annotations[restartKey]; ok {
 		if desired.Spec.PodTemplate.Annotations == nil {
 			desired.Spec.PodTemplate.Annotations = map[string]string{}
 		}
-		if _, set := desired.Spec.PodTemplate.Annotations[restartKey]; !set {
-			desired.Spec.PodTemplate.Annotations[restartKey] = v
+		desired.Spec.PodTemplate.Annotations[restartKey] = v
+	}
+
+	// Labels are synced by merge — nothing is removed. The NodePool
+	// generation label rides here; labels frozen at creation would freeze
+	// NodePool.Status.DeployedGeneration.
+	labelsChanged := false
+	for k, v := range desired.Labels {
+		if existing.Labels[k] != v {
+			labelsChanged = true
+			break
 		}
 	}
 
-	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) {
+	if equality.Semantic.DeepEqual(existing.Spec.PodTemplate, desired.Spec.PodTemplate) &&
+		equality.Semantic.DeepEqual(existing.Spec.ClusterRef, desired.Spec.ClusterRef) &&
+		!labelsChanged {
 		return nil
 	}
 	// Spec.Decommission is deliberately not synced: decommission intent is
 	// never unset by the operator, not even when the index is desired again.
 	// Terminal brokers at desired indices are replaced by EnsureDesiredBroker.
+	existing.Spec.ClusterRef = desired.Spec.ClusterRef
 	existing.Spec.PodTemplate = desired.Spec.PodTemplate
+	if existing.Labels == nil && len(desired.Labels) > 0 {
+		existing.Labels = map[string]string{}
+	}
+	for k, v := range desired.Labels {
+		existing.Labels[k] = v
+	}
 
 	l.V(1).Info("updating Broker CR", "name", existing.Name, "index", *existing.Spec.NetworkIndex)
 	return s.Client.Update(ctx, existing)

@@ -25,8 +25,11 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	"github.com/twmb/franz-go/pkg/sr"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
@@ -76,6 +79,7 @@ type ClientFactory interface {
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.KafkaConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should always call Close on the returned *kgo.Client,
 	// or it will leak goroutines.
+	//nolint:laconiccomments
 	KafkaClient(ctx context.Context, object any, opts ...kgo.Opt) (*kgo.Client, error)
 	// KafkaClientForCluster is the same as KafkaClient but it takes a kubernetes cluster name.
 	KafkaClientForCluster(ctx context.Context, object any, clusterName string, opts ...kgo.Opt) (*kgo.Client, error)
@@ -84,6 +88,7 @@ type ClientFactory interface {
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.AdminConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize. Callers should call Close on the returned *rpadmin.AdminAPI
 	// to ensure any idle connections in the underlying transport are closed.
+	//nolint:laconiccomments
 	RedpandaAdminClient(ctx context.Context, object any) (*rpadmin.AdminAPI, error)
 	// RedpandaAdminClientForCluster is the same as RedpandaAdminClient but it takes a kubernetes cluster name.
 	RedpandaAdminClientForCluster(ctx context.Context, object any, clusterName string) (*rpadmin.AdminAPI, error)
@@ -99,6 +104,7 @@ type ClientFactory interface {
 	// SchemaRegistryClient initializes an sr.Client based on the spec of the passed in struct.
 	// The struct *must* either be an RPK profile, Redpanda CR, or implement either the v1alpha2.SchemaRegistryConnectedObject interface
 	// or the v1alpha2.ClusterReferencingObject interface to properly initialize.
+	//nolint:laconiccomments
 	SchemaRegistryClient(ctx context.Context, object any) (*sr.Client, error)
 	// SchemaRegistryBrokerClients returns one Schema Registry client per broker
 	// endpoint of the given cluster object, each scoped to a single broker URL
@@ -111,18 +117,21 @@ type ClientFactory interface {
 
 	// ACLs returns a high-level client for synchronizing ACLs. Callers should always call Close on the returned *acls.Syncer, or it will leak
 	// goroutines.
+	//nolint:laconiccomments
 	ACLs(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*acls.Syncer, error)
 	// ACLsForCluster is the same as ACLs but it takes a kubernetes cluster name
 	ACLsForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*acls.Syncer, error)
 
 	// Users returns a high-level client for managing users. Callers should always call Close on the returned *users.Client, or it will leak
 	// goroutines.
+	//nolint:laconiccomments
 	Users(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...kgo.Opt) (*users.Client, error)
 	// UsersForCluster is the same as Users but it takes a kubernetes cluster name
 	UsersForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...kgo.Opt) (*users.Client, error)
 
 	// Roles returns a high-level client for managing roles. Callers should always call Close on the returned *roles.Client, or it will leak
 	// goroutines. It transparently delegates to the v2 SecurityService API when available, use roles.WithV2Disabled() to force the v1 path.
+	//nolint:laconiccomments
 	Roles(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, opts ...roles.Option) (*roles.Client, error)
 	// RolesForCluster is the same as Roles but it takes a kubernetes cluster name
 	RolesForCluster(ctx context.Context, object redpandav1alpha2.ClusterReferencingObject, clusterName string, opts ...roles.Option) (*roles.Client, error)
@@ -697,33 +706,87 @@ func (c *Factory) getRemoteV1Cluster(ctx context.Context, obj client.Object, clu
 	return nil, nil
 }
 
+// Like its getV1Cluster/getRemoteV1Cluster/getStretchCluster siblings,
+// this is a probe: (nil, nil) means "obj does not reference a V2 cluster
+// this way" and the caller tries the next flavor.
 func (c *Factory) getV2Cluster(ctx context.Context, obj client.Object, clusterName string) (*redpandav1alpha2.Redpanda, error) {
 	o, ok := obj.(redpandav1alpha2.ClusterReferencingObject)
 	if !ok {
 		return nil, nil
 	}
 
-	if source := o.GetClusterSource(); source != nil { //nolint:nestif // ignore
-		if ref := source.GetClusterRef(); ref != nil && ref.IsV2() {
-			var cluster redpandav1alpha2.Redpanda
+	source := o.GetClusterSource()
+	if source == nil {
+		return nil, nil
+	}
+	ref := source.GetClusterRef()
+	if ref == nil {
+		return nil, nil
+	}
 
-			client, err := c.GetClient(ctx, clusterName)
-			if err != nil {
-				return nil, err
-			}
+	namespace := ref.GetNamespace(obj.GetNamespace())
 
-			if err := client.Get(ctx, types.NamespacedName{Namespace: ref.GetNamespace(obj.GetNamespace()), Name: ref.Name}, &cluster); err != nil {
-				if apierrors.IsNotFound(err) {
-					return nil, ErrInvalidClusterRef
-				}
-				return nil, err
-			}
-
-			return &cluster, nil
+	if ref.IsNodePool() {
+		var err error
+		ref, namespace, err = c.derefNodePool(ctx, obj, clusterName, ref, namespace)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	return nil, nil
+	if !ref.IsV2() {
+		return nil, nil
+	}
+
+	client, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	var cluster redpandav1alpha2.Redpanda
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &cluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, ErrInvalidClusterRef
+		}
+		return nil, err
+	}
+
+	return &cluster, nil
+}
+
+// derefNodePool resolves a NodePool clusterRef one hop to the NodePool's own
+// cluster ref. If the NodePool is gone (removed from the spec while its
+// Brokers still drain), it falls back to a ref synthesized from obj's
+// controller-owning Redpanda.
+func (c *Factory) derefNodePool(ctx context.Context, obj client.Object, clusterName string, ref *redpandav1alpha2.ClusterRef, namespace string) (*redpandav1alpha2.ClusterRef, string, error) {
+	k8sClient, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, "", err
+	}
+
+	var pool redpandav1alpha2.NodePool
+	err = k8sClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: ref.Name}, &pool)
+	if err == nil {
+		if !pool.Spec.ClusterRef.IsV2() {
+			return nil, "", ErrInvalidClusterRef
+		}
+		return &pool.Spec.ClusterRef, pool.Spec.ClusterRef.GetNamespace(pool.Namespace), nil
+	}
+	if !apierrors.IsNotFound(err) {
+		return nil, "", err
+	}
+
+	owner := metav1.GetControllerOf(obj)
+	if owner == nil || owner.Kind != redpandav1alpha2.RedpandaKind {
+		return nil, "", ErrInvalidClusterRef
+	}
+	if gv, err := schema.ParseGroupVersion(owner.APIVersion); err != nil || gv.Group != redpandav1alpha2.GroupVersion.Group {
+		return nil, "", ErrInvalidClusterRef
+	}
+	return &redpandav1alpha2.ClusterRef{
+		Kind: ptr.To(redpandav1alpha2.RedpandaKind),
+		Name: owner.Name,
+	}, obj.GetNamespace(), nil
 }
 
 // getStretchCluster resolves a StretchCluster CR referenced by obj's

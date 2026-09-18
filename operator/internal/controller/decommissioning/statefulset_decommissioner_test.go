@@ -117,6 +117,7 @@ func (s *StatefulSetDecommissionerSuite) TestDecommission() {
 	// TODO(chrisseto): Evictions fail in CI with `Cannot evict pod as it would violate the pod's disruption budget.` but not locally.
 	// For now use a forced delete as that mimics node failure equally well.
 	// s.Require().NoError(s.client.SubResource("eviction").Create(s.ctx, &firstBroker, &policyv1.Eviction{}))
+	//nolint:laconiccomments
 	s.Require().NoError(s.client.Delete(s.ctx, &firstBroker, client.GracePeriodSeconds(0)))
 
 	s.waitFor(func(ctx context.Context) (bool, error) {

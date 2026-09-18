@@ -79,11 +79,12 @@ func NewMulticlusterResourceClient[T any, U MultiCluster[T]](mgr multicluster.Ma
 		simpleResourceRenderer: simpleResourceRenderer,
 		traceLogging:           true,
 		useBrokerPoolCRD:       true,
+		brokerCREnabled:        false,
 	}
 }
 
 // NewResourceClient creates a new instance of a ResourceClient for managing resources.
-func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesFn ResourceManagerFactory[T, U]) *ResourceClient[T, U] {
+func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesFn ResourceManagerFactory[T, U], brokerCREnabled bool) *ResourceClient[T, U] {
 	ownershipResolver, statusUpdater, nodePoolRenderer, simpleResourceRenderer := resourcesFn(mgr.GetLocalManager())
 
 	return &ResourceClient[T, U]{
@@ -95,6 +96,7 @@ func NewResourceClient[T any, U Cluster[T]](mgr multicluster.Manager, resourcesF
 		simpleResourceRenderer: simpleResourceRenderer,
 		traceLogging:           true,
 		useBrokerPoolCRD:       false,
+		brokerCREnabled:        brokerCREnabled,
 	}
 }
 
@@ -105,6 +107,7 @@ type ResourceClient[T any, U Cluster[T]] struct {
 	logger                 logr.Logger
 	traceLogging           bool
 	useBrokerPoolCRD       bool
+	brokerCREnabled        bool
 	ownershipResolver      OwnershipResolver[T, U]
 	statusUpdater          ClusterStatusUpdater[T, U]
 	nodePoolRenderer       NodePoolRenderer[T, U]
@@ -573,10 +576,8 @@ func (r *ResourceClient[T, U]) isOwnerDeleting(ctx context.Context, owner U, clu
 	return !resolved.GetDeletionTimestamp().IsZero(), nil
 }
 
-// FetchExistingAndDesiredPools fetches the existing and desired node pools for a given cluster, returning
-// a tracker that can be used for determining necessary operations on the pools.
-// FetchExistingAndDesiredPools fetches the existing and desired node pools
-// for a given cluster, returning a tracker that can be used for determining
+// FetchExistingAndDesiredPools assembles the PoolTracker from the world's
+// existing pool state and the rendered desired state, for determining the
 // necessary operations on the pools.
 //
 // nodePoolsObserved is the observation set returned by
@@ -607,7 +608,7 @@ func (r *ResourceClient[T, U]) FetchExistingAndDesiredPools(ctx context.Context,
 			continue
 		}
 
-		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName)
+		existingPools, err := r.fetchExistingPools(ctx, cluster, clusterName, r.brokerCREnabled)
 		if err != nil {
 			return nil, fmt.Errorf("fetching existing pools: %w", err)
 		}
@@ -865,7 +866,11 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 			}
 		}
 
-		pools, err := r.fetchExistingPools(ctx, owner, clusterName)
+		// STS-only view (brokerCRs=false): broker-backed pools have no
+		// StatefulSet to delete here. Their Broker CRs are owner-referenced
+		// and cascade via GC once the owner's finalizer is removed; pod/PVC
+		// fate is the Broker controller's deletion-policy handling.
+		pools, err := r.fetchExistingPools(ctx, owner, clusterName, false)
 		if err != nil {
 			return false, err
 		}
@@ -893,7 +898,7 @@ func (r *ResourceClient[T, U]) DeleteAll(ctx context.Context, owner U) (bool, er
 // (nil, nil) so callers skip it — consistent with the documented behavior that
 // reconciliation is not blocked by an unreachable peer.
 // Errors on the local cluster are always propagated.
-func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string) ([]*poolWithOrdinals, error) {
+func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U, clusterName string, brokerCRs bool) ([]*poolWithOrdinals, error) {
 	logger := log.FromContext(ctx).WithName("fetchExistingPools")
 	canonical := CanonicalClusterName(clusterName, r.manager.GetLocalClusterName)
 	if clusterName != mcmanager.LocalCluster && !r.manager.IsClusterReachable(clusterName) {
@@ -1014,6 +1019,22 @@ func (r *ResourceClient[T, U]) fetchExistingPools(ctx context.Context, cluster U
 			revisions: sortRevisions(ownedRevisions),
 			pods:      withOrdinals,
 		})
+	}
+
+	if brokerCRs {
+		// Pools that migrated to Broker CRs no longer have a StatefulSet —
+		// synthesize their pool state from the Broker CRs and their pods.
+		// Pools that still have a live STS (pre- or mid-migration) keep the
+		// STS as the authoritative view.
+		stsBacked := map[string]bool{}
+		for _, pool := range existing {
+			stsBacked[pool.set.Name] = true
+		}
+		brokerPools, err := r.fetchBrokerBackedPools(ctx, ctl, cluster, clusterName, canonical, stsBacked)
+		if err != nil {
+			return nil, err
+		}
+		existing = append(existing, brokerPools...)
 	}
 
 	return existing, nil

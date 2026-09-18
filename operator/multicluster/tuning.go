@@ -10,7 +10,7 @@
 package multicluster
 
 import (
-	"errors"
+	"github.com/cockroachdb/errors"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )

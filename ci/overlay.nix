@@ -46,6 +46,10 @@ in
         url = "https://get.helm.sh/helm-v3.10.3-darwin-arm64.tar.gz";
         hash = "sha256-3W/piPZvkyrGOLCgghn7j9CgNxAVvWn1kwFb8Von9Ko=";
       };
+      aarch64-linux = pkgs.fetchzip {
+        url = "https://get.helm.sh/helm-v3.10.3-linux-arm64.tar.gz";
+        hash = "sha256-MGgI4iadlggT6nI22+D1xWH6q3E5x8gtJ5M6FhnCMgE=";
+      };
       x86_64-linux = pkgs.fetchzip {
         url = "https://get.helm.sh/helm-v3.10.3-linux-amd64.tar.gz";
         hash = "sha256-XAtiT7vaSBrfrj03gbcQUmUMQSZ9+5nymxfVSOnQ+sM=";
@@ -58,6 +62,10 @@ in
       aarch64-darwin = pkgs.fetchzip {
         url = "https://get.helm.sh/helm-v3.19.1-darwin-arm64.tar.gz";
         hash = "sha256-MrWws7eObrZUpP/xU1hElbSloa8GZFwI4rwENNP9ez8=";
+      };
+      aarch64-linux = pkgs.fetchzip {
+        url = "https://get.helm.sh/helm-v3.19.1-linux-arm64.tar.gz";
+        hash = "sha256-LZbXTcWJ/x6WvjGxyw2xM3esE6sDPcSf1j+TqGD7b6Y=";
       };
       x86_64-linux = pkgs.fetchzip {
         url = "https://get.helm.sh/helm-v3.19.1-linux-amd64.tar.gz";

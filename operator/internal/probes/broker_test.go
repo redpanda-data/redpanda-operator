@@ -74,13 +74,13 @@ func (s *ProberSuite) TestProbes() {
 	// we wrap the first check in a waitFor since there's no guarantee that
 	// the broker will be ready when the helm install completes
 	prober := chart.prober
-	s.waitFor(func(ctx context.Context) (bool, error) {
+	s.waitFor(func() bool {
 		healthy, err := prober.IsClusterBrokerHealthy(s.ctx, brokerURL)
 		if err != nil {
 			s.T().Logf("error checking broker health, retrying: %v", err)
-			return false, nil
+			return false
 		}
-		return healthy, nil
+		return healthy
 	})
 
 	ready, err := prober.IsClusterBrokerReady(s.ctx, brokerURL)
@@ -92,28 +92,28 @@ func (s *ProberSuite) TestProbes() {
 	kafkaAdminClient := kadm.NewClient(kafkaClient)
 	defer kafkaAdminClient.Close()
 
-	s.waitFor(func(ctx context.Context) (bool, error) {
+	s.waitFor(func() bool {
 		s.T().Log("attempting to create test-topic")
 		topicResponse, err := kafkaAdminClient.CreateTopic(s.ctx, 1, 3, nil, "test-topic")
 		if err != nil || topicResponse.Err != nil {
 			s.T().Logf("error creating test topic, retrying: %v", errors.Join(err, topicResponse.Err))
-			return false, nil
+			return false
 		}
-		return true, nil
+		return true
 	})
 
 	// decommission a broker to make a topic under-replicated
 	err = adminClient.DecommissionBroker(s.ctx, 1)
 	s.Require().NoError(err)
 
-	s.waitFor(func(ctx context.Context) (bool, error) {
+	s.waitFor(func() bool {
 		healthy, err := prober.IsClusterBrokerHealthy(s.ctx, brokerURL)
 		if err != nil {
 			s.T().Logf("error checking broker health, retrying: %v", err)
-			return false, nil
+			return false
 		}
 		s.T().Logf("checking that broker is no longer healthy due to under-replicated partitions, healthy: %v", healthy)
-		return healthy == false, nil
+		return healthy == false
 	})
 
 	// this should still be true since we don't care about under-replicated partitions here
@@ -122,24 +122,24 @@ func (s *ProberSuite) TestProbes() {
 	s.Require().True(ready)
 
 	// now decommission broker 0 to ensure it now fails readiness checks too
-	s.waitFor(func(ctx context.Context) (bool, error) {
+	s.waitFor(func() bool {
 		s.T().Log("attempting to decommission broker 0")
 		err = adminClient.DecommissionBroker(s.ctx, 0)
 		if err != nil {
 			s.T().Logf("error decommissioning broker, retrying: %v", err)
-			return false, nil
+			return false
 		}
-		return true, nil
+		return true
 	})
 
-	s.waitFor(func(ctx context.Context) (bool, error) {
+	s.waitFor(func() bool {
 		ready, err := prober.IsClusterBrokerReady(s.ctx, brokerURL)
 		if err != nil {
 			s.T().Logf("error checking broker readiness, retrying: %v", err)
-			return false, nil
+			return false
 		}
 		s.T().Logf("checking that broker is no longer ready after decommission, ready: %v", ready)
-		return ready == false, nil
+		return ready == false
 	})
 
 	s.cleanupChart(chart)
@@ -342,6 +342,8 @@ func (s *ProberSuite) setupRBAC() string {
 	return "user"
 }
 
-func (s *ProberSuite) waitFor(cond func(ctx context.Context) (bool, error)) {
-	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, cond))
+func (s *ProberSuite) waitFor(cond func() bool) {
+	s.NoError(wait.PollUntilContextTimeout(s.ctx, 5*time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+		return cond(), nil
+	}))
 }

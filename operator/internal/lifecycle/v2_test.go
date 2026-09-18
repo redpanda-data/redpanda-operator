@@ -99,7 +99,7 @@ func TestV2ResourceClient(t *testing.T) {
 		Tag:        "dev",
 	}
 
-	resourceClient := NewResourceClient(manager, V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets))
+	resourceClient := NewResourceClient(manager, V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets), false)
 
 	require.EqualValues(t, redpandachart.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())
 

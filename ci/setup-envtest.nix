@@ -11,6 +11,10 @@ let
       url = "https://github.com/kubernetes-sigs/controller-runtime/releases/download/v${version}/setup-envtest-darwin-arm64";
       hash = "sha256-BfdhR1wRvvC6Doq72lh4QeMhsQ2GaDQ1YJk33qeniSI=";
     };
+    aarch64-linux = fetchurl {
+      url = "https://github.com/kubernetes-sigs/controller-runtime/releases/download/v${version}/setup-envtest-linux-arm64";
+      hash = "sha256-DEZk+DSVCeFDYnScV2rXTlWVJq2YKzkTaursFrVPP6Q=";
+    };
     x86_64-linux = fetchurl {
       url = "https://github.com/kubernetes-sigs/controller-runtime/releases/download/v${version}/setup-envtest-linux-amd64";
       hash = "sha256-UN+bRzmuPqBqx+B9Vx1VvyxxgNgKwUsFw2g97y42/6s=";

@@ -4,6 +4,7 @@ go 1.26.6
 
 require (
 	github.com/cert-manager/cert-manager v1.19.3
+	github.com/cockroachdb/errors v1.12.0
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.67.5
 	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
@@ -83,7 +84,6 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cisco-open/k8s-objectmatcher v1.9.0 // indirect
 	github.com/cloudhut/common v0.11.0 // indirect
-	github.com/cockroachdb/errors v1.12.0 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20241215232642-bb51bb14a506 // indirect
 	github.com/cockroachdb/redact v1.1.6 // indirect
 	github.com/containerd/containerd v1.7.34 // indirect

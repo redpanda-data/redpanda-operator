@@ -128,6 +128,8 @@ type allListenersTemplateSpec struct {
 //	   "pandaproxy.pandaproxy_api_tls":[{"name":"pl-proxy-external","key_file":"/etc/tls/certs/schema-registry/tls.key","cert_file":"/etc/tls/certs/schema-registry/tls.crt"},{"name":"schema-registry-mtls","truststore_file":"/etc/tls/certs/schema-registry/ca.crt"],
 //	   "schema_registry.schema_registry_api_tls":[{"name":"schema-registry","key_file":"/etc/tls/certs/schema-registry/tls.key","cert_file":"/etc/tls/certs/schema-registry/tls.crt"},{"name":"schema-registry-mtls","truststore_file":"/etc/tls/certs/schema-registry/ca.crt"]
 //	}
+//
+//nolint:laconiccomments
 func (a *allListenersTemplateSpec) Encode() (string, error) {
 	s, err := json.Marshal(a)
 	if err != nil {
@@ -148,6 +150,8 @@ func (a *allListenersTemplateSpec) IsEmpty() bool {
 //	input = [{'name':'mtls-kafka','port':{{9094 | add .Index | add .HostIndexOffset}}}]
 //	current = [{"name":"sasl-kafka","port": 9092}]
 //	Final value = [{"name":"mtls-kafka","port":{{9094 | add .Index | add .HostIndexOffset}},{"name":"sasl-kafka","port": 9092}]
+//
+//nolint:laconiccomments
 func (a *allListenersTemplateSpec) Append(spec1 map[string]string) (string, error) {
 	inputSpec := &allListenersTemplateSpec{}
 	var err error

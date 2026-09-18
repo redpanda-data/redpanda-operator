@@ -365,6 +365,7 @@ func (e *Env) SetupManager(serviceAccount string, fn func(multicluster.Manager) 
 	// local machine which could prove to be difficult across all docker/docker
 	// in docker environments.
 	// See also https://k3d.io/v5.4.6/faq/faq/?h=host#how-to-access-services-like-a-database-running-on-my-docker-host-machine
+	//nolint:laconiccomments
 	cacheOpts := cache.Options{}
 	if !e.watchAllNamespaces {
 		// Limit this manager to only interacting with objects within our

@@ -391,6 +391,7 @@ func srvLookup(state *redpandachart.RenderState, dialer DialContextFunc, service
 				// another DNS query being kicked off through the system
 				// resolver to  initiate the portforward. Again, sketchy but
 				// technically OK.
+				//nolint:laconiccomments
 				return dialer(ctx, "tcp", fmt.Sprintf("%s.%s:53", pod.Name, pod.Namespace))
 			},
 		}

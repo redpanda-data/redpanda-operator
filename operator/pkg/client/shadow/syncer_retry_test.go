@@ -11,12 +11,12 @@ package shadow
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"buf.build/gen/go/redpandadata/core/connectrpc/go/redpanda/core/admin/v2/adminv2connect"
 	adminv2api "buf.build/gen/go/redpandadata/core/protocolbuffers/go/redpanda/core/admin/v2"
 	"connectrpc.com/connect"
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

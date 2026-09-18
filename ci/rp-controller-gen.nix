@@ -6,16 +6,16 @@
 
 buildGo126Module rec {
   pname = "rp-controller-gen";
-  version = "f56efc4bf824e209eba669c8f3607c04f7e25ce9";
+  version = "4f2e6f1536ddb6b168efa94f7a6b9a8014eeb561";
 
   src = fetchFromGitHub {
     owner = "redpanda-data";
     repo = "common-go";
     rev = "${version}";
-    hash = "sha256-gcSvonPNqEKUqT+s7/a/KG7xqLhW8s9bj951w2x09rk=";
+    hash = "sha256-oJbmlj01tlC42iS1hSvwDXlDDt0DW2lQ/I6KPSgrIbA=";
   };
 
-  vendorHash = "sha256-PIKAvpLy0tTYkkzxg1UvHhDMhQGysPQ06k1J+5llN84=";
+  vendorHash = "sha256-+JBlj0NCw3hVjJwor+VSLIoGT8YP8D7ph8xweIPzcno=";
 
   sourceRoot = "source/rp-controller-gen";
 

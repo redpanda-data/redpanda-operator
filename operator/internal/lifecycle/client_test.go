@@ -11,11 +11,11 @@ package lifecycle
 
 import (
 	"context"
-	"errors"
 	"io"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,6 +35,7 @@ import (
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -69,6 +70,7 @@ func (tt *clientTest) setupManager(ctx context.Context, t *testing.T) multiclust
 	require.NoError(t, scheme.AddToScheme(runtimeScheme))
 	require.NoError(t, apiextensionsv1.AddToScheme(runtimeScheme))
 	require.NoError(t, AddToScheme(runtimeScheme))
+	require.NoError(t, redpandav1alpha2.Install(runtimeScheme))
 
 	opts := []zap.Opts{
 		zap.UseDevMode(true), zap.Level(zapcore.DebugLevel),
@@ -144,7 +146,7 @@ func (tt *clientTest) setupClient(ctx context.Context, t *testing.T) (*clientTes
 	manager := tt.setupManager(ctx, t)
 
 	resolver, updater, nodeRenderer, resourceRenderer, factory := MockResourceManagersSetup()
-	resourceClient := NewResourceClient(manager, factory)
+	resourceClient := NewResourceClient(manager, factory, false)
 	resourceClient.traceLogging = false
 
 	return &clientTestInstances{

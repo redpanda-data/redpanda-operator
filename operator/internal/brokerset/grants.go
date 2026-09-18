@@ -94,7 +94,7 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 		// Roll completion additionally requires a VERIFIED registration
 		// (BrokerRegistered condition, recomputed by the Broker controller
 		// from a live admin-API observation each reconcile): the rotated pod
-		// must have rejoined under the same node_id (RFC rolling step 3).
+		// must have rejoined under the same node_id.
 		// The grant is keyed on the pod-template SPEC hash, so a desired-spec
 		// change mid-roll marks it stale (metadata changes sync in place and
 		// neither need nor invalidate a grant).
@@ -162,10 +162,7 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 		// restart-requiring config change was being rolled out, it has now
 		// reached every pod (V1 clears Restarting via OnQuiesced — the
 		// broker-mode counterpart of the StatefulSet rolling-update path).
-		if s.OnQuiesced != nil {
-			return s.OnQuiesced(ctx)
-		}
-		return nil
+		return s.Hooks.OnQuiesced(ctx)
 	}
 	if decommissionInFlight {
 		// Decommission progress is observed via Broker status updates, which
@@ -189,12 +186,10 @@ func (s *BrokerSet) EnsureRollGrants(ctx context.Context, l logr.Logger) error {
 		return ptr.Deref(candidates[i].Spec.NetworkIndex, 0) < ptr.Deref(candidates[j].Spec.NetworkIndex, 0)
 	})
 
-	// RFC step 1: confirm cluster health before granting. Returns a
+	// confirm cluster health before granting. Returns a
 	// RequeueAfterError when unhealthy.
-	if s.IsClusterHealthy != nil {
-		if err := s.IsClusterHealthy(ctx); err != nil {
-			return err
-		}
+	if err := s.Hooks.IsClusterHealthy(ctx); err != nil {
+		return err
 	}
 
 	granted := candidates[0]
