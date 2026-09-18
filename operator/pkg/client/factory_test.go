@@ -13,6 +13,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,6 +24,7 @@ import (
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/redpanda-data/common-go/rpadmin"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kadm"
 	corev1 "k8s.io/api/core/v1"
@@ -47,6 +50,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -106,6 +110,78 @@ func (f *fakeObject) GetKafkaAPISpec() *redpandav1alpha2.KafkaAPISpec {
 
 func (f *fakeObject) DeepCopyObject() runtime.Object {
 	return f
+}
+
+// Every With* must copy the whole Factory and set exactly its own field. A
+// field a With* forgets is silently zeroed, disabling whatever it carries:
+// secretExpander gates secret-backed auth, clusterDomain gates V1 FQDN
+// derivation.
+func TestFactoryWithCopiesEveryField(t *testing.T) {
+	mgr := &stubManager{}
+	base := NewFactory(mgr, &pkgsecrets.CloudExpander{}).
+		WithDialer(func(context.Context, string, string) (net.Conn, error) { return nil, nil }).
+		WithFS(afero.NewMemMapFs()).
+		WithUserAuth(&UserAuth{Username: "u"}).
+		WithAdminClientTimeout(3 * time.Second).
+		WithClusterDomain("k8s.example")
+
+	for name, tc := range map[string]struct {
+		// field is the one Factory field this With* owns; every other field
+		// has to survive untouched.
+		field  string
+		with   func(*Factory) *Factory
+		verify func(*testing.T, *Factory)
+	}{
+		"WithDialer": {
+			field:  "dialer",
+			with:   func(f *Factory) *Factory { return f.WithDialer(nil) },
+			verify: func(t *testing.T, f *Factory) { require.Nil(t, f.dialer) },
+		},
+		"WithAdminClientTimeout": {
+			field:  "adminClientTimeout",
+			with:   func(f *Factory) *Factory { return f.WithAdminClientTimeout(time.Minute) },
+			verify: func(t *testing.T, f *Factory) { require.Equal(t, time.Minute, f.adminClientTimeout) },
+		},
+		"WithClusterDomain": {
+			field:  "clusterDomain",
+			with:   func(f *Factory) *Factory { return f.WithClusterDomain("other.example") },
+			verify: func(t *testing.T, f *Factory) { require.Equal(t, "other.example", f.clusterDomain) },
+		},
+		"WithFS": {
+			field:  "fs",
+			with:   func(f *Factory) *Factory { return f.WithFS(afero.NewOsFs()) },
+			verify: func(t *testing.T, f *Factory) { require.IsType(t, afero.NewOsFs(), f.fs) },
+		},
+		"WithUserAuth": {
+			field:  "userAuth",
+			with:   func(f *Factory) *Factory { return f.WithUserAuth(&UserAuth{Username: "other"}) },
+			verify: func(t *testing.T, f *Factory) { require.Equal(t, "other", f.userAuth.Username) },
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			got := tc.with(base)
+			require.NotSame(t, base, got)
+			tc.verify(t, got)
+
+			// Walked reflectively so a field added to Factory is covered here
+			// without anyone remembering to extend this test.
+			before, after := reflect.ValueOf(*base), reflect.ValueOf(*got)
+			require.NotZero(t, before.NumField())
+			for i := range before.NumField() {
+				field := before.Type().Field(i)
+				if field.Name == tc.field {
+					continue
+				}
+				// Func values compare equal only when both are nil, so all
+				// the dialer can be held to is that it stayed set.
+				if field.Type.Kind() == reflect.Func {
+					require.Equal(t, before.Field(i).IsNil(), after.Field(i).IsNil(), field.Name)
+					continue
+				}
+				require.True(t, before.Field(i).Equal(after.Field(i)), field.Name)
+			}
+		})
+	}
 }
 
 func TestIntegrationFactoryOperatorV1(t *testing.T) {

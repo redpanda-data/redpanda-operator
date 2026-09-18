@@ -146,9 +146,11 @@ var setupSuite = sync.OnceValues(func() (*framework.Suite, error) {
 		OnDiagnostics(func(ctx context.Context, t framework.TestingT) {
 			// Only dump shared operator logs for features that use the
 			// shared operator. Features with @vcluster or @multicluster
-			// run their own operators inside vclusters.
+			// run their own operators inside vclusters. Tags carry their
+			// arguments (@vcluster:k8s.example), so match on the name only.
 			for _, tag := range t.FeatureTags() {
-				if tag == "vcluster" || tag == "multicluster" {
+				name, _, _ := strings.Cut(tag, ":")
+				if name == "vcluster" || name == "multicluster" {
 					return
 				}
 			}

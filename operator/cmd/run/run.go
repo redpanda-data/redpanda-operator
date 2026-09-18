@@ -205,7 +205,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.enableBrokerController, "enable-broker", false, "Specifies whether or not to enable the Broker controller")
 	cmd.Flags().BoolVar(&o.enableVectorizedControllers, "enable-vectorized-controllers", false, "Specifies whether or not to enabled the legacy controllers for resources in the Vectorized Group (Also known as V1 operator mode)")
 	cmd.Flags().BoolVar(&o.enableRedpandaControllers, "enable-redpanda-controllers", true, "Specifies whether or not to enabled the Redpanda cluster controllers")
-	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", "cluster.local", "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
+	cmd.Flags().StringVar(&o.clusterDomain, "cluster-domain", internalclient.DefaultKubeClusterDomain, "Set the Kubernetes local domain (Kubelet's --cluster-domain)")
 	cmd.Flags().StringVar(&o.configuratorBaseImage, "configurator-base-image", defaultConfiguratorContainerImage, "The repository of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
 	cmd.Flags().StringVar(&o.configuratorTag, "configurator-tag", version.Version, "The tag of the operator container image for use in self-referential deployments, such as the configurator and sidecar")
 	cmd.Flags().StringVar(&o.redpandaDefaultTag, "redpanda-tag", DefaultRedpandaImageTag, "The default docker image tag for redpanda containers")
@@ -334,6 +334,24 @@ func Command() *cobra.Command {
 			// footguns, so fail fast rather than clamp silently.
 			if p := options.postRestartCaughtUpPercent; p < 1 || p > 100 {
 				return errors.Newf("--post-restart-caught-up-percent must be in [1,100], got %d", p)
+			}
+
+			// HeadlessServiceFQDN and ServiceFQDN append their own trailing
+			// dot, so a dotted value here lands an empty label in both the
+			// dialed FQDN and the certificate SANs. Accept either spelling:
+			// charts/redpanda defaults clusterDomain to "cluster.local."
+			// while this chart uses the bare form, so the dotted one arrives
+			// sooner or later.
+			options.clusterDomain = strings.TrimRight(options.clusterDomain, ".")
+
+			// An empty domain splits the operator in half: the V1 reconciler
+			// mints certificate SANs from it verbatim, producing a dangling
+			// ".." in the FQDN, while the client factory falls back to
+			// DefaultKubeClusterDomain and dials something else entirely. A
+			// Helm values template that renders an unset value is enough to
+			// get here, and so is a value of just ".".
+			if options.clusterDomain == "" {
+				return errors.New("--cluster-domain must not be empty")
 			}
 
 			var cloudExpander *pkgsecrets.CloudExpander
@@ -494,7 +512,7 @@ func Run(
 
 	// Configure controllers that are always enabled (Redpanda, Topic, User, Schema).
 
-	factory := internalclient.NewFactory(mcmanager, cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout)
+	factory := internalclient.NewFactory(mcmanager, cloudExpander).WithAdminClientTimeout(opts.rpClientTimeout).WithClusterDomain(opts.clusterDomain)
 
 	cloudSecrets := lifecycle.CloudSecretsFlags{
 		CloudSecretsEnabled:          opts.cloudSecretsEnabled,
@@ -625,33 +643,33 @@ func Run(
 	// and for replicating from external sources such as Confluent.
 	if opts.enableShadowLinks {
 		setupLog.Info("starting ShadowLink controller")
-		if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
+		if err := redpandacontrollers.SetupShadowLinkController(ctx, mcmanager, factory, v1Controllers, v2Controllers, opts.namespace, opts.shadowLinkSyncInterval); err != nil {
 			setupLog.Error(err, "unable to create controller", "controller", "ShadowLink")
 			return err
 		}
 	}
 
-	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.topicSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupTopicController(ctx, mcmanager, factory, v1Controllers, v2Controllers, opts.namespace, opts.topicSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Topic")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.userSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupUserController(ctx, mcmanager, factory, v1Controllers, v2Controllers, opts.namespace, opts.userSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.roleSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupRoleController(ctx, mcmanager, factory, v1Controllers, v2Controllers, opts.namespace, opts.roleSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RedpandaRole")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.groupSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupGroupController(ctx, mcmanager, factory, v1Controllers, v2Controllers, opts.namespace, opts.groupSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Group")
 		return err
 	}
 
-	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, cloudExpander, v1Controllers, v2Controllers, opts.namespace, opts.schemaSyncInterval); err != nil {
+	if err := redpandacontrollers.SetupSchemaController(ctx, mcmanager, factory, v1Controllers, v2Controllers, opts.namespace, opts.schemaSyncInterval); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Schema")
 		return err
 	}

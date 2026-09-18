@@ -27,7 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	sigsyaml "sigs.k8s.io/yaml"
 
+	"github.com/redpanda-data/redpanda-operator/pkg/helm"
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/vcluster"
@@ -128,6 +130,70 @@ func TestIntegrationVCluster(t *testing.T) {
 		_, err = kubectl("get", "nodes")
 		require.Error(t, err)
 	})
+}
+
+func TestValuesWithClusterDomain(t *testing.T) {
+	for name, tc := range map[string]struct {
+		values helm.RawYAML
+	}{
+		"empty values":              {values: nil},
+		"values without networking": {values: helm.RawYAML(vcluster.DefaultValues)},
+		"values with networking":    {values: helm.RawYAML("networking:\n  replicateServices:\n    toHost:\n      - from: a\n        to: b\n")},
+		"values with the key set":   {values: helm.RawYAML("networking:\n  advanced:\n    clusterDomain: old.example\n")},
+	} {
+		t.Run(name, func(t *testing.T) {
+			merged, err := vcluster.ValuesWithClusterDomain(tc.values, "k8s.example")
+			require.NoError(t, err)
+
+			// Duplicate top-level keys are invalid YAML, so a merge that
+			// appended a second networking: block would fail to parse here.
+			var doc map[string]any
+			require.NoError(t, sigsyaml.UnmarshalStrict(merged, &doc))
+
+			networking, ok := doc["networking"].(map[string]any)
+			require.True(t, ok, "networking: %#v", doc["networking"])
+			advanced, ok := networking["advanced"].(map[string]any)
+			require.True(t, ok, "advanced: %#v", networking["advanced"])
+			require.Equal(t, "k8s.example", advanced["clusterDomain"])
+
+			// The round-trip must not drop or rewrite anything but the one
+			// key the merge owns. Strip just that key from both sides rather
+			// than the whole networking block, or the rows that bring their
+			// own networking keys cannot fail here.
+			before := map[string]any{}
+			require.NoError(t, sigsyaml.Unmarshal(tc.values, &before))
+			stripClusterDomain(before)
+			stripClusterDomain(doc)
+			require.Equal(t, before, doc)
+		})
+	}
+}
+
+// stripClusterDomain removes networking.advanced.clusterDomain, pruning the
+// maps it empties so a document that only ever held that key compares equal to
+// one that never had a networking block.
+func stripClusterDomain(doc map[string]any) {
+	networking, ok := doc["networking"].(map[string]any)
+	if !ok {
+		return
+	}
+	advanced, ok := networking["advanced"].(map[string]any)
+	if !ok {
+		return
+	}
+
+	delete(advanced, "clusterDomain")
+	if len(advanced) == 0 {
+		delete(networking, "advanced")
+	}
+	if len(networking) == 0 {
+		delete(doc, "networking")
+	}
+}
+
+func TestValuesWithClusterDomainRejectsMultipleDocuments(t *testing.T) {
+	_, err := vcluster.ValuesWithClusterDomain(helm.RawYAML("sync:\n  fromHost:\n    nodes:\n      enabled: true\n---\ncontrolPlane:\n  distro:\n    k8s:\n      image:\n        tag: v1.36.1\n"), "k8s.example")
+	require.ErrorContains(t, err, "single YAML document")
 }
 
 func TestDecodeManifest(t *testing.T) {

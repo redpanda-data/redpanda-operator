@@ -64,7 +64,7 @@ type sentinelState struct {
 // vclusterPodDialer returns a multicluster-aware DialContextFunc that resolves
 // service names to pod names via the Endpoints API across all vclusters, then
 // dials through the matching cluster's port-forwarded PodDialer.
-func vclusterPodDialer(nodes []*vclusterNode, pfCfgs map[string]*rest.Config) func(context.Context, string, string) (net.Conn, error) {
+func vclusterPodDialer(nodes []*vclusterNode, pfCfgs map[string]*rest.Config, clusterDomain string) func(context.Context, string, string) (net.Conn, error) {
 	return func(ctx context.Context, network, address string) (net.Conn, error) {
 		host, port, err := net.SplitHostPort(address)
 		if err != nil {
@@ -89,7 +89,7 @@ func vclusterPodDialer(nodes []*vclusterNode, pfCfgs map[string]*rest.Config) fu
 				for _, addr := range subset.Addresses {
 					if addr.TargetRef != nil && addr.TargetRef.Kind == "Pod" {
 						podAddr := net.JoinHostPort(addr.TargetRef.Name+"."+ns, port)
-						return kube.NewPodDialer(pfCfg).DialContext(ctx, network, podAddr)
+						return kube.NewPodDialer(pfCfg).WithClusterDomain(clusterDomain).DialContext(ctx, network, podAddr)
 					}
 				}
 			}
@@ -98,7 +98,7 @@ func vclusterPodDialer(nodes []*vclusterNode, pfCfgs map[string]*rest.Config) fu
 		// Fallback: try each cluster's PodDialer directly.
 		var lastErr error
 		for _, node := range nodes {
-			conn, err := kube.NewPodDialer(pfCfgs[node.Name()]).DialContext(ctx, network, address)
+			conn, err := kube.NewPodDialer(pfCfgs[node.Name()]).WithClusterDomain(clusterDomain).DialContext(ctx, network, address)
 			if err == nil {
 				return conn, nil
 			}
@@ -119,7 +119,7 @@ func getKafkaFactory(ctx context.Context, t framework.TestingT, clusterName stri
 	return nil
 }
 
-func initKafkaFactory(ctx context.Context, _ framework.TestingT, clusterName string) (context.Context, *kafkaFactoryState) {
+func initKafkaFactory(ctx context.Context, t framework.TestingT, clusterName string) (context.Context, *kafkaFactoryState) {
 	nodes := getNodes(ctx, clusterName)
 
 	// Pre-warm the RedpandaBrokerPool informer per cluster: stretchClusterKafkaClient's
@@ -128,8 +128,9 @@ func initKafkaFactory(ctx context.Context, _ framework.TestingT, clusterName str
 	// short per-call RemoteCallTimeout. Warming it here, under the generous engage
 	// budget, makes that later List a warm-cache hit.
 	mgr, pfCfgs := setupMulticlusterManager(ctx, nodes, &redpandav1alpha2.RedpandaBrokerPool{})
-	dialer := vclusterPodDialer(nodes, pfCfgs)
-	factory := internalclient.NewFactory(mgr, nil).WithDialer(dialer)
+	clusterDomain := t.ClusterDomain()
+	dialer := vclusterPodDialer(nodes, pfCfgs, clusterDomain)
+	factory := internalclient.NewFactory(mgr, nil).WithDialer(dialer).WithClusterDomain(clusterDomain)
 
 	state := &kafkaFactoryState{factory: factory, nodes: nodes}
 	return context.WithValue(ctx, kafkaFactoryStateKey{}, state), state

@@ -369,6 +369,16 @@ func operatorArguments(dot *helmette.Dot) []string {
 		"--connect-monitoring-enabled":    fmt.Sprintf("%t", values.ConnectController.Monitoring.Enabled),
 	}
 
+	// The same value the webhook certificate's SANs are built from. The
+	// operator derives V1 broker FQDNs and node certificate SANs from it, so
+	// leaving it unpassed had the chart issuing webhook certs for a custom
+	// domain while the operator still dialed cluster.local. Only set when
+	// non-empty: the flag takes an argument, and a bare --cluster-domain
+	// makes the operator refuse to start.
+	if values.ClusterDomain != "" {
+		defaults["--cluster-domain"] = values.ClusterDomain
+	}
+
 	if values.ConnectController.Monitoring.ScrapeInterval != "" {
 		defaults["--connect-monitoring-scrape-interval"] = values.ConnectController.Monitoring.ScrapeInterval
 	}
