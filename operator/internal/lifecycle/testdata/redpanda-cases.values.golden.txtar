@@ -24,6 +24,7 @@ values:
       secretRef: redpanda-users
       users: []
   clusterDomain: cluster.local.
+  commonAnnotations: {}
   commonLabels: {}
   config:
     cluster: {}
@@ -636,6 +637,7 @@ values:
       secretRef: redpanda-users
       users: []
   clusterDomain: cluster.local.
+  commonAnnotations: {}
   commonLabels: {}
   config:
     cluster: {}
@@ -1081,6 +1083,7 @@ values:
       secretRef: redpanda-users
       users: []
   clusterDomain: cluster.local.
+  commonAnnotations: {}
   commonLabels: {}
   config:
     cluster: {}
@@ -1627,6 +1630,7 @@ values:
       secretRef: redpanda-users
       users: []
   clusterDomain: cluster.local.
+  commonAnnotations: {}
   commonLabels: {}
   config:
     cluster: {}
