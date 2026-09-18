@@ -87,6 +87,15 @@ func FullLabels(state *RenderState) map[string]string {
 	return helmette.Merge(labels, defaults)
 }
 
+// FullAnnotations returns the chart-wide commonAnnotations, never nil so
+// rendered objects carry `annotations: {}` rather than `null`.
+func FullAnnotations(state *RenderState) map[string]string {
+	if state.Values.CommonAnnotations == nil {
+		return map[string]string{}
+	}
+	return state.Values.CommonAnnotations
+}
+
 // Use AppVersion if image.tag is not set
 func Tag(state *RenderState) string {
 	tag := string(state.Values.Image.Tag)

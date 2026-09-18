@@ -46,9 +46,10 @@ func PodDisruptionBudget(state *RenderState) *policyv1.PodDisruptionBudget {
 			Kind:       "PodDisruptionBudget",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      Fullname(state),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        Fullname(state),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			Selector: &metav1.LabelSelector{
