@@ -84173,8 +84173,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.2.1
-    helm.sh/chart: operator-26.2.1
+    app.kubernetes.io/version: v26.2.3
+    helm.sh/chart: operator-26.2.3
   name: operator-reconcile-health
   namespace: default
 spec:
@@ -84333,8 +84333,8 @@ metadata:
     app.kubernetes.io/instance: operator
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: operator
-    app.kubernetes.io/version: v26.2.1
-    helm.sh/chart: operator-26.2.1
+    app.kubernetes.io/version: v26.2.3
+    helm.sh/chart: operator-26.2.3
   name: operator-metrics-monitor
   namespace: default
 spec:
@@ -84355,8 +84355,8 @@ spec:
       app.kubernetes.io/instance: operator
       app.kubernetes.io/managed-by: Helm
       app.kubernetes.io/name: operator
-      app.kubernetes.io/version: v26.2.1
-      helm.sh/chart: operator-26.2.1
+      app.kubernetes.io/version: v26.2.3
+      helm.sh/chart: operator-26.2.3
 ---
 # Source: operator/templates/entry-point.yaml
 apiVersion: v1
