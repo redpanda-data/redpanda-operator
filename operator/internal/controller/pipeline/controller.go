@@ -64,9 +64,9 @@ type Controller struct {
 	// LicenseFilePath is the path to the operator-level enterprise license file,
 	// configured via enterprise.licenseSecretRef in the operator Helm chart values.
 	LicenseFilePath string
-	// CommonAnnotations are annotations from the operator Helm chart values
+	// ConnectAnnotations are annotations from the operator Helm chart values
 	// that are propagated to all resources managed by the operator.
-	CommonAnnotations map[string]string
+	ConnectAnnotations map[string]string
 	// DefaultImage is the operator-level Redpanda Connect image override. When
 	// set, it's used as the fallback for Pipeline CRs that don't pin their own
 	// .spec.image. Per-Pipeline .spec.image still wins. When empty, falls
@@ -453,7 +453,7 @@ func (c *Controller) rendererFor(pipeline *redpandav1alpha2.Pipeline, clusterCon
 	return &render{
 		pipeline:            pipeline,
 		labels:              Labels(pipeline),
-		commonAnnotations:   c.CommonAnnotations,
+		connectAnnotations:  c.ConnectAnnotations,
 		defaultImage:        c.DefaultImage,
 		monitoring:          c.Monitoring,
 		clusterConn:         clusterConn,

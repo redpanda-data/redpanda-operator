@@ -75,6 +75,19 @@ func SelectorLabels(dot *helmette.Dot) map[string]string {
 	}
 }
 
+// Annotations returns an object's annotations: the chart's `annotations` value
+// overlaid by the object's own (which win), never nil — a rendered
+// `annotations: null` differs from a live object's absent map and shows up as
+// permanent drift in ArgoCD (#1085).
+func Annotations(dot *helmette.Dot, overrides map[string]string) map[string]string {
+	values := helmette.Unwrap[Values](dot.Values)
+
+	return helmette.Merge(
+		helmette.Default(map[string]string{}, overrides),
+		helmette.Default(map[string]string{}, values.Annotations),
+	)
+}
+
 func cleanForK8s(s string) string {
 	return helmette.TrimSuffix("-", helmette.Trunc(63, s))
 }

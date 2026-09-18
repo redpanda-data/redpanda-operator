@@ -48,7 +48,7 @@ func ServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			Name:        ServiceAccountName(dot),
 			Labels:      Labels(dot),
 			Namespace:   dot.Release.Namespace,
-			Annotations: values.ServiceAccount.Annotations,
+			Annotations: Annotations(dot, values.ServiceAccount.Annotations),
 		},
 		AutomountServiceAccountToken: values.ServiceAccount.AutomountServiceAccountToken,
 	}
@@ -72,17 +72,14 @@ func CRDJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			Name:      CRDJobServiceAccountName(dot),
 			Labels:    Labels(dot),
 			Namespace: dot.Release.Namespace,
-			Annotations: helmette.Merge(
-				helmette.Default(
-					map[string]string{},
-					values.ServiceAccount.Annotations,
-				),
+			Annotations: Annotations(dot, helmette.Merge(
+				helmette.Default(map[string]string{}, values.ServiceAccount.Annotations),
 				map[string]string{
 					"helm.sh/hook":               "pre-install,pre-upgrade",
 					"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 					"helm.sh/hook-weight":        "-10",
 				},
-			),
+			)),
 		},
 		AutomountServiceAccountToken: ptr.To(false),
 	}
@@ -102,17 +99,14 @@ func MigrationJobServiceAccount(dot *helmette.Dot) *corev1.ServiceAccount {
 			Name:      MigrationJobServiceAccountName(dot),
 			Labels:    Labels(dot),
 			Namespace: dot.Release.Namespace,
-			Annotations: helmette.Merge(
-				helmette.Default(
-					map[string]string{},
-					values.ServiceAccount.Annotations,
-				),
+			Annotations: Annotations(dot, helmette.Merge(
+				helmette.Default(map[string]string{}, values.ServiceAccount.Annotations),
 				map[string]string{
 					"helm.sh/hook":               "post-upgrade",
 					"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 					"helm.sh/hook-weight":        "-10",
 				},
-			),
+			)),
 		},
 		AutomountServiceAccountToken: ptr.To(false),
 	}
