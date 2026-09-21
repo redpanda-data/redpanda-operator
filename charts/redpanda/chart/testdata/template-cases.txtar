@@ -1469,3 +1469,9 @@ tuning:
 config:
   rpk:
     tune_fstrim: false
+-- notes-cpu-below-minimum --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+resources:
+  cpu:
+    cores: 500m

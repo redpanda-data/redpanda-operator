@@ -115,7 +115,7 @@ func TestTemplate(t *testing.T) {
 			var values map[string]any
 			require.NoError(t, yaml.Unmarshal(tc.Data, &values), "input values are invalid YAML")
 
-			out, renderErr := client.Template(ctx, chartDir, helm.TemplateOptions{
+			out, notes, renderErr := client.TemplateWithNotes(ctx, chartDir, helm.TemplateOptions{
 				Name:   "redpanda",
 				Values: values,
 				Set: []string{
@@ -163,6 +163,7 @@ func TestTemplate(t *testing.T) {
 				case `ASSERT-GOLDEN`:
 					if renderErr == nil {
 						goldens.AssertGolden(t, testutil.YAML, fmt.Sprintf("testdata/%s.yaml.golden", t.Name()), out)
+						goldens.AssertGolden(t, testutil.Text, fmt.Sprintf("testdata/%s.notes.golden", t.Name()), []byte(notes))
 					} else {
 						// Trailing new lines are added by the txtar format if
 						// they're not already present. Add one here otherwise
