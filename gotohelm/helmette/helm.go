@@ -14,6 +14,7 @@ import (
 	"io/fs"
 	"maps"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
@@ -49,6 +50,11 @@ type Dot struct {
 	// special case to rehydrate it.
 	// WARNING: DO NOT USE OR REFERENCE IN HELM CHARTS. IT WILL NOT WORK.
 	Templates fs.FS `json:"-"`
+
+	// TemplateCache amortizes parsing Templates across the many [Tpl] calls a
+	// single render makes. Nil is valid; [Tpl] populates it on first use.
+	// WARNING: DO NOT USE OR REFERENCE IN HELM CHARTS. IT WILL NOT WORK.
+	TemplateCache *TemplateCache `json:"-"`
 }
 
 // Template is not technically a struct but it acts like one and is always
@@ -114,6 +120,19 @@ type Values = chartutil.Values
 
 // https://helm.sh/docs/howto/charts_tips_and_tricks/#using-the-tpl-function
 func Tpl(dot *Dot, tpl string, context any) string {
+	if dot.TemplateCache == nil {
+		// NB: Hand constructed [Dot]s (tests, the `go run` test runner) arrive
+		// without a cache. Populate it so they amortize across calls too.
+		dot.TemplateCache = NewTemplateCache(dot.Templates)
+	}
+
+	tmpl, err := dot.TemplateCache.parsed()
+	if err != nil {
+		panic(err)
+	}
+
+	tmpl = template.Must(tmpl.Parse(tpl))
+
 	// gotohelm's tpl implementation is intentionally more restrictive than
 	// helm's. Anything that accesses this function should be a short and
 	// simple user provided template.
@@ -126,44 +145,6 @@ func Tpl(dot *Dot, tpl string, context any) string {
 		}
 		return nil
 	}
-
-	fns := sprig.TxtFuncMap()
-	maps.Copy(fns, template.FuncMap{
-		"toYaml":   ToYaml,
-		"fromYaml": FromYaml[map[string]any],
-		"toJson":   ToJSON,
-		"fromJson": FromJSON,
-
-		// Any helm function needs to be stubbed out to ensure that parse works
-		// as function calls are checked at parse time and we have to parse the
-		// entire chart. Again, we're intentionally restrictive here.
-		"lookup":        func(...any) error { return errors.New("not implemented") },
-		"toToml":        func(...any) error { return errors.New("not implemented") },
-		"fromYamlArray": func(...any) error { return errors.New("not implemented") },
-		"fromJsonArray": func(...any) error { return errors.New("not implemented") },
-
-		// These need to be lazily bound as they refer to the template instance they're bound to.
-		"include": func(string, any) (string, error) { return "", errors.New("not implemented") },
-		"tpl":     func(string, any) (string, error) { return "", errors.New("not implemented") },
-	})
-
-	// [template.ParseFS] will return an error if any of the provided globs
-	// turn up zero results. As this is a possible and valid case for us, we
-	// loop over our patterns and filter out the error if encountered.
-	tmpl := template.New("").Funcs(fns)
-	patterns := []string{"*.tpl", "*.yaml"}
-	for _, pattern := range patterns {
-		t, err := tmpl.ParseFS(dot.Templates, pattern)
-		if err != nil {
-			if strings.HasPrefix(err.Error(), "template: pattern matches no files:") {
-				continue
-			}
-			panic(err)
-		}
-		tmpl = t
-	}
-
-	tmpl = template.Must(tmpl.Parse(tpl))
 
 	tmpl.Funcs(template.FuncMap{
 		"include": func(name string, data any) (string, error) {
@@ -205,6 +186,66 @@ func Tpl(dot *Dot, tpl string, context any) string {
 		panic(err)
 	}
 	return b.String()
+}
+
+// TemplateCache holds a chart's templates, parsed once. Parsing a full
+// template set costs milliseconds and [Tpl] is called many times per render.
+type TemplateCache struct {
+	parse func() (*template.Template, error)
+}
+
+func NewTemplateCache(templates fs.FS) *TemplateCache {
+	return &TemplateCache{parse: sync.OnceValues(func() (*template.Template, error) {
+		fns := sprig.TxtFuncMap()
+		maps.Copy(fns, template.FuncMap{
+			"toYaml":   ToYaml,
+			"fromYaml": FromYaml[map[string]any],
+			"toJson":   ToJSON,
+			"fromJson": FromJSON,
+
+			// Any helm function needs to be stubbed out to ensure that parse works
+			// as function calls are checked at parse time and we have to parse the
+			// entire chart. Again, we're intentionally restrictive here.
+			"lookup":        func(...any) error { return errors.New("not implemented") },
+			"toToml":        func(...any) error { return errors.New("not implemented") },
+			"fromYamlArray": func(...any) error { return errors.New("not implemented") },
+			"fromJsonArray": func(...any) error { return errors.New("not implemented") },
+
+			// These need to be lazily bound as they refer to the template instance
+			// they're bound to. [Tpl] rebinds them on its clone.
+			"include": func(string, any) (string, error) { return "", errors.New("not implemented") },
+			"tpl":     func(string, any) (string, error) { return "", errors.New("not implemented") },
+		})
+
+		// [template.ParseFS] will return an error if any of the provided globs
+		// turn up zero results. As this is a possible and valid case for us, we
+		// loop over our patterns and filter out the error if encountered.
+		tmpl := template.New("").Funcs(fns)
+		patterns := []string{"*.tpl", "*.yaml"}
+		for _, pattern := range patterns {
+			t, err := tmpl.ParseFS(templates, pattern)
+			if err != nil {
+				if strings.HasPrefix(err.Error(), "template: pattern matches no files:") {
+					continue
+				}
+				return nil, err
+			}
+			tmpl = t
+		}
+
+		return tmpl, nil
+	})}
+}
+
+// parsed returns a private copy of the chart's templates. Parse, Funcs, and
+// Execute all mutate text/template's shared, unsynchronized common struct, so
+// the cached template is never handed out directly.
+func (c *TemplateCache) parsed() (*template.Template, error) {
+	base, err := c.parse()
+	if err != nil {
+		return nil, err
+	}
+	return base.Clone()
 }
 
 // Lookup is a wrapper around helm's builtin lookup function that instead
