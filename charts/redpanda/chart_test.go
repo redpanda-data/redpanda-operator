@@ -1169,6 +1169,8 @@ func TestGoHelmEquivalence(t *testing.T) {
 
 	for _, tc := range CIGoldenTestCases(t) {
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
 			var values redpanda.PartialValues
 			require.NoError(t, yaml.Unmarshal(tc.Data, &values), "input values are invalid YAML")
 
@@ -1224,7 +1226,7 @@ func TestGoHelmEquivalence(t *testing.T) {
 			}, values)
 			require.NoError(t, err)
 
-			rendered, err := client.Template(context.Background(), chartDir, helm.TemplateOptions{
+			rendered, err := client.Template(t.Context(), chartDir, helm.TemplateOptions{
 				Name:        "gotohelm",
 				Namespace:   "mynamespace",
 				Values:      values,
