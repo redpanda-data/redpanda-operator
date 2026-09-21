@@ -167,10 +167,13 @@ func notes(state *RenderState) []string {
 			``,
 			`Set the credentials in the environment:`,
 			``,
-			fmt.Sprintf(`  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s`,
+			// In bash, `read` at the end of a pipeline runs in a subshell and
+			// its variables vanish; process substitution keeps them in the
+			// user's shell.
+			fmt.Sprintf(`  IFS=: read -r %s < <(kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")`,
+				rpkSASLEnvironmentVariables,
 				state.Release.Namespace,
 				state.Values.Auth.SASL.SecretRef,
-				rpkSASLEnvironmentVariables,
 			),
 			fmt.Sprintf(`  export %s`,
 				rpkSASLEnvironmentVariables,

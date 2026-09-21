@@ -85,7 +85,7 @@
 {{- end -}}
 {{- $out = (concat (default (list) $out) (list (printf `  rpk profile create --from-profile <(kubectl get configmap -n %s %s-rpk -o go-template='{{ .data.profile }}') %s` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $profileName) `` `Set up dns to look up the pods on their Kubernetes Nodes. You can use this query to get the list of short-names to IP addresses. Add your external domain to the hostnames and you could test by adding these to your /etc/hosts:` `` (printf `  kubectl get pod -n %s -o custom-columns=node:.status.hostIP,name:.metadata.name --no-headers -l app.kubernetes.io/name=redpanda,app.kubernetes.io/component=redpanda-statefulset` $state.Release.Namespace))) -}}
 {{- if $anySASL -}}
-{{- $out = (concat (default (list) $out) (list `` `Set the credentials in the environment:` `` (printf `  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s` $state.Release.Namespace $state.Values.auth.sasl.secretRef "RPK_USER RPK_PASS RPK_SASL_MECHANISM") (printf `  export %s` "RPK_USER RPK_PASS RPK_SASL_MECHANISM"))) -}}
+{{- $out = (concat (default (list) $out) (list `` `Set the credentials in the environment:` `` (printf `  IFS=: read -r %s < <(kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")` "RPK_USER RPK_PASS RPK_SASL_MECHANISM" $state.Release.Namespace $state.Values.auth.sasl.secretRef) (printf `  export %s` "RPK_USER RPK_PASS RPK_SASL_MECHANISM"))) -}}
 {{- end -}}
 {{- $out = (concat (default (list) $out) (list `` `Try some sample commands:`)) -}}
 {{- if $anySASL -}}
