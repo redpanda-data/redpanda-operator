@@ -1386,6 +1386,13 @@ type SASLAuth struct {
 	BootstrapUser BootstrapUser `json:"bootstrapUser"`
 }
 
+func (s *SASLAuth) GetMechanism() SASLMechanism {
+	if s.Mechanism == "" {
+		return DefaultSASLMechanism
+	}
+	return s.Mechanism
+}
+
 type TrustStore struct {
 	ConfigMapKeyRef *corev1.ConfigMapKeySelector `json:"configMapKeyRef"`
 	SecretKeyRef    *corev1.SecretKeySelector    `json:"secretKeyRef"`

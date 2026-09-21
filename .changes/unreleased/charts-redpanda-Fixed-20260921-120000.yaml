@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    `helm install` prints the post-install notes again
+time: 2026-09-21T12:00:00.000000-07:00
