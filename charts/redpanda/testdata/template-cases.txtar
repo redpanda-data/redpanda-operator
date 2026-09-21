@@ -1248,3 +1248,9 @@ statefulset:
 config:
   cluster:
     cloud_storage_enable_remote_read: false
+-- notes-cpu-below-minimum --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+resources:
+  cpu:
+    cores: 500m
