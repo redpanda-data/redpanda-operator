@@ -35,6 +35,8 @@ type GoChart struct {
 	renderFunc    RenderFunc
 	dependencies  []Dependency
 	fs            fs.FS
+	templates     fs.FS
+	templateCache *helmette.TemplateCache
 }
 
 // MustLoad delegates to [Load] but panics upon any errors.
@@ -115,12 +117,19 @@ func Load(f fs.FS, render RenderFunc, subcharts ...*GoChart) (*GoChart, error) {
 		}
 	}
 
+	templates, err := fs.Sub(f, "templates")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return &GoChart{
 		metadata:      meta,
 		defaultValues: defaultValuesYAML,
 		renderFunc:    render,
 		dependencies:  deps,
 		fs:            f,
+		templates:     templates,
+		templateCache: helmette.NewTemplateCache(templates),
 	}, nil
 }
 
@@ -274,18 +283,14 @@ func (c *GoChart) Dot(cfg *kube.RESTConfig, release helmette.Release, values any
 		}
 	}
 
-	templates, err := fs.Sub(c.fs, "templates")
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	return &helmette.Dot{
-		KubeConfig: cfg,
-		Release:    release,
-		Subcharts:  subcharts,
-		Values:     parentValues,
-		Templates:  templates,
-		Files:      helmette.NewFiles(c.fs),
+		KubeConfig:    cfg,
+		Release:       release,
+		Subcharts:     subcharts,
+		Values:        parentValues,
+		Templates:     c.templates,
+		TemplateCache: c.templateCache,
+		Files:         helmette.NewFiles(c.fs),
 		Chart: helmette.Chart{
 			Name:       c.metadata.Name,
 			Version:    c.metadata.Version,
