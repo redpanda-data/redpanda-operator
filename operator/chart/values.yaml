@@ -152,7 +152,9 @@ monitoring:
 # Sets the name of the Secret in which to store the self-signed TLS certificate for the Webhooks when `webhook.enabled` is `true`.
 webhookSecretName: webhook-server-cert
 
-# -- Sets almost all fields of operator Deployment PodTemplate
+# -- Sets almost all fields of the PodTemplate of every workload this chart
+# renders: the operator Deployment, the CRD installation Job, and the migration
+# Job. `deployment` and `jobs` layer per-workload overrides on top of this.
 # For details,
 # see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec).
 podTemplate:
@@ -172,10 +174,26 @@ podTemplate:
         # securityContext: {}
         # env: []
 
-# -- Sets operator container security context
-# For details,
-# see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#security-context-1).
-# operatorSecurityContext:
+# -- Overrides scoped to the operator Deployment.
+deployment:
+  # -- A PodTemplateSpec strategically merged on top of `podTemplate`.
+  # For example, to enable a readonly FS on the operator container:
+  # `{spec: {containers: [{name: manager, securityContext: {readOnlyRootFilesystem: true}}]}}`
+  podTemplate:
+
+# -- Overrides scoped to this chart's hook Jobs.
+jobs:
+  crd:
+    # -- A PodTemplateSpec strategically merged on top of `podTemplate`.
+    # For example, to drop all capabilities from the CRD installation
+    # container:
+    # `{spec: {containers: [{name: crd-installation, securityContext: {capabilities: {drop: [ALL]}}}]}}`
+    podTemplate:
+  migration:
+    # -- A PodTemplateSpec strategically merged on top of `podTemplate`.
+    # For example, to drop all capabilities from the migration container:
+    # `{spec: {containers: [{name: migration, securityContext: {capabilities: {drop: [ALL]}}}]}}`
+    podTemplate:
 
 # -- Sets operator container liveness probe various durations
 # For details,
