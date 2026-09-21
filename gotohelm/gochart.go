@@ -50,6 +50,8 @@ type GoChart struct {
 	renderFunc    RenderFunc
 	dependencies  []Dependency
 	fs            fs.FS
+	templates     fs.FS
+	templateCache *helmette.TemplateCache
 
 	capCache *capabilitiesCache
 }
@@ -132,12 +134,19 @@ func Load(f fs.FS, render RenderFunc, subcharts ...*GoChart) (*GoChart, error) {
 		}
 	}
 
+	templates, err := fs.Sub(f, "templates")
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
 	return &GoChart{
 		metadata:      meta,
 		defaultValues: defaultValuesYAML,
 		renderFunc:    render,
 		dependencies:  deps,
 		fs:            f,
+		templates:     templates,
+		templateCache: helmette.NewTemplateCache(templates),
 		capCache:      &capabilitiesCache{},
 	}, nil
 }
@@ -305,15 +314,9 @@ func (c *GoChart) helmChart() (*chart.Chart, error) {
 // WithSyntheticKubeVersion allows a caller to override the KubeVersion passed
 // off to the underlying go-rendered chart.
 func (c *GoChart) WithSyntheticKubeVersion(version *helmette.KubeVersion) *GoChart {
-	return &GoChart{
-		kubeversion:   version,
-		metadata:      c.metadata,
-		defaultValues: c.defaultValues,
-		renderFunc:    c.renderFunc,
-		dependencies:  c.dependencies,
-		fs:            c.fs,
-		capCache:      c.capCache,
-	}
+	cp := *c
+	cp.kubeversion = version
+	return &cp
 }
 
 // resolveCapabilities returns cached capabilities if available, otherwise
@@ -421,11 +424,6 @@ func (c *GoChart) dot(cfg *kube.RESTConfig, release helmette.Release, hc *chart.
 		subcharts[subchart.Name()] = subchartDot
 	}
 
-	templates, err := fs.Sub(c.fs, "templates")
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	capabilities, err := c.resolveCapabilities(cfg)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -435,13 +433,14 @@ func (c *GoChart) dot(cfg *kube.RESTConfig, release helmette.Release, hc *chart.
 	}
 
 	return &helmette.Dot{
-		KubeConfig:   cfg,
-		Release:      release,
-		Subcharts:    subcharts,
-		Values:       values,
-		Templates:    templates,
-		Files:        helmette.NewFiles(c.fs),
-		Capabilities: capabilities,
+		KubeConfig:    cfg,
+		Release:       release,
+		Subcharts:     subcharts,
+		Values:        values,
+		Templates:     c.templates,
+		TemplateCache: c.templateCache,
+		Files:         helmette.NewFiles(c.fs),
+		Capabilities:  capabilities,
 		Chart: helmette.Chart{
 			// NB: hc.Metadata, not c.metadata. helm renames aliased subcharts
 			// to their alias.
