@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -113,6 +114,11 @@ type Client struct {
 	env        []string
 	configHome string
 	config     *action.Configuration
+
+	mu struct {
+		sync.Mutex
+		env map[string]string
+	}
 }
 
 type Options struct {
@@ -531,7 +537,17 @@ func (c *Client) DependencyBuild(ctx context.Context, chartDir string) error {
 
 // Env returns the parsed output of `helm env`. Useful for debugging or
 // acquiring helm's computed settings.
+//
+// The result is memoized; helm computes it from the process environment, which
+// this Client fixes at construction.
 func (c *Client) Env(ctx context.Context) (map[string]string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.mu.env != nil {
+		return c.mu.env, nil
+	}
+
 	stdout, _, err := c.runHelm(ctx, "env")
 	if err != nil {
 		return nil, err
@@ -551,6 +567,9 @@ func (c *Client) Env(ctx context.Context) (map[string]string, error) {
 		// val will have a trailing ", the leading " is removed by the split.
 		env[string(key)] = string(val[:len(val)-1])
 	}
+
+	c.mu.env = env
+
 	return env, nil
 }
 
