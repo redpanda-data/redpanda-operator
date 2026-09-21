@@ -67,7 +67,7 @@ Run `task generate:third-party-licenses-list`.
 | github.com/cockroachdb/errors | [Apache-2.0](https://github.com/cockroachdb/errors/blob/v1.12.0/LICENSE) |
 | github.com/cockroachdb/logtags | [Apache-2.0](https://github.com/cockroachdb/logtags/blob/bb51bb14a506/LICENSE) |
 | github.com/cockroachdb/redact | [Apache-2.0](https://github.com/cockroachdb/redact/blob/v1.1.6/LICENSE) |
-| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.34/LICENSE) |
+| github.com/containerd/containerd | [Apache-2.0](https://github.com/containerd/containerd/blob/v1.7.35/LICENSE) |
 | github.com/containerd/errdefs | [Apache-2.0](https://github.com/containerd/errdefs/blob/v1.0.0/LICENSE) |
 | github.com/containerd/log | [Apache-2.0](https://github.com/containerd/log/blob/v0.1.0/LICENSE) |
 | github.com/containerd/platforms | [Apache-2.0](https://github.com/containerd/platforms/blob/v0.2.1/LICENSE) |
@@ -318,7 +318,7 @@ Run `task generate:third-party-licenses-list`.
 | k8s.io/kubectl/pkg | [Apache-2.0](https://github.com/kubernetes/kubectl/blob/v0.35.1/LICENSE) |
 | k8s.io/utils | [Apache-2.0](https://github.com/kubernetes/utils/blob/b8788abfbbc2/LICENSE) |
 | k8s.io/utils/internal/third_party/forked/golang | [BSD-3-Clause](https://github.com/kubernetes/utils/blob/b8788abfbbc2/internal/third_party/forked/golang/LICENSE) |
-| oras.land/oras-go/v2 | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v2.6.0/LICENSE) |
+| oras.land/oras-go/v2 | [Apache-2.0](https://github.com/oras-project/oras-go/blob/v2.6.2/LICENSE) |
 | pgregory.net/rapid | [MPL-2.0](https://github.com/chrisseto/rapid/blob/cdeef406c65c/LICENSE) |
 | sigs.k8s.io/apiserver-network-proxy/konnectivity-client | [Apache-2.0](https://github.com/kubernetes-sigs/apiserver-network-proxy/blob/konnectivity-client/v0.34.0/konnectivity-client/LICENSE) |
 | sigs.k8s.io/controller-runtime | [Apache-2.0](https://github.com/kubernetes-sigs/controller-runtime/blob/v0.23.1/LICENSE) |
