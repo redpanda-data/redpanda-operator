@@ -110,9 +110,9 @@ type Release struct {
 // hermetic but shares a global cache to keep network chatter to a minimum. See
 // `helm env` for more details.
 type Client struct {
-	env        []string
-	configHome string
-	config     *action.Configuration
+	env            []string
+	configHome     string
+	registryClient *registry.Client
 
 	mu struct {
 		sync.Mutex
@@ -169,16 +169,9 @@ func New(opts Options) (*Client, error) {
 	}
 
 	return &Client{
-		config: &action.Configuration{
-			// NB: Currently, only `helm template` is "in process" as opposed
-			// to sub processing everything. If anything else is migrated to
-			// use this configuration, we'll probably want to use the secret
-			// storage engine for compatibilities with the `helm` CLI.
-			Releases:       storage.Init(driver.NewMemory()),
-			RegistryClient: registryClient,
-		},
-		configHome: opts.ConfigHome,
-		env:        append(os.Environ(), env...),
+		configHome:     opts.ConfigHome,
+		registryClient: registryClient,
+		env:            append(os.Environ(), env...),
 	}, nil
 }
 
@@ -323,7 +316,12 @@ func (c *Client) TemplateWithNotes(ctx context.Context, chart string, opts Templ
 	// Template.
 	// TODO: Support IsUpgrade and the like and find a nice way to inject a
 	// fake KubeClient.
-	client := action.NewInstall(c.config)
+	// NB: ClientOnly writes Capabilities, KubeClient, and Releases onto the
+	// Configuration. Each call needs its own instance.
+	client := action.NewInstall(&action.Configuration{
+		Releases:       storage.Init(driver.NewMemory()),
+		RegistryClient: c.registryClient,
+	})
 
 	client.ChartPathOptions.Version = opts.Version
 
