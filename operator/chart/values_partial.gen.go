@@ -45,6 +45,8 @@ type PartialValues struct {
 	Monitoring            *PartialMonitoringConfig      "json:\"monitoring,omitempty\""
 	WebhookSecretName     *string                       "json:\"webhookSecretName,omitempty\""
 	PodTemplate           *PartialPodTemplateSpec       "json:\"podTemplate,omitempty\""
+	Deployment            *PartialDeploymentConfig      "json:\"deployment,omitempty\""
+	Jobs                  *PartialJobs                  "json:\"jobs,omitempty\""
 	LivenessProbe         *corev1.Probe                 "json:\"livenessProbe,omitempty\""
 	ReadinessProbe        *corev1.Probe                 "json:\"readinessProbe,omitempty\""
 	CRDs                  *PartialCRDs                  "json:\"crds,omitempty\""
@@ -89,6 +91,15 @@ type PartialMonitoringConfig struct {
 	ScrapeInterval *string           "json:\"scrapeInterval,omitempty\""
 }
 
+type PartialDeploymentConfig struct {
+	PodTemplate *PartialPodTemplateSpec "json:\"podTemplate,omitempty\""
+}
+
+type PartialJobs struct {
+	CRD       *PartialJobConfig "json:\"crd,omitempty\""
+	Migration *PartialJobConfig "json:\"migration,omitempty\""
+}
+
 type PartialCRDs struct {
 	Enabled      *bool "json:\"enabled,omitempty\""
 	Experimental *bool "json:\"experimental,omitempty\""
@@ -130,6 +141,10 @@ type PartialWebhookConfig struct {
 type PartialLeaderElectionConfig struct {
 	LeaderElect  *bool   "json:\"leaderElect,omitempty\""
 	ResourceName *string "json:\"resourceName,omitempty\""
+}
+
+type PartialJobConfig struct {
+	PodTemplate *PartialPodTemplateSpec "json:\"podTemplate,omitempty\""
 }
 
 type PartialMetadata struct {

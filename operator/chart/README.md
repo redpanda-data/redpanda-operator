@@ -144,6 +144,18 @@ Specifies whether to install experimental CRDs. If this is true both experimenta
 
 **Default:** `false`
 
+### [deployment](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=deployment)
+
+Overrides scoped to the operator Deployment.
+
+**Default:** `{"podTemplate":null}`
+
+### [deployment.podTemplate](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=deployment.podTemplate)
+
+A PodTemplateSpec strategically merged on top of `podTemplate`. For example, to enable a readonly FS on the operator container: `{spec: {containers: [{name: manager, securityContext: {readOnlyRootFilesystem: true}}]}}`
+
+**Default:** `nil`
+
 ### [enterprise](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=enterprise)
 
 Enterprise (optional) For details, see the [License documentation](https://docs.redpanda.com/docs/get-started/licenses/?platform=kubernetes#redpanda-enterprise-edition).
@@ -197,6 +209,28 @@ Sets the repository from which to pull the `redpanda-operator` image.
 Pull secrets may be used to provide credentials to image repositories See the [Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
 
 **Default:** `[]`
+
+### [jobs](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=jobs)
+
+Overrides scoped to this chart's hook Jobs.
+
+**Default:**
+
+```
+{"crd":{"podTemplate":null},"migration":{"podTemplate":null}}
+```
+
+### [jobs.crd.podTemplate](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=jobs.crd.podTemplate)
+
+A PodTemplateSpec strategically merged on top of `podTemplate`. For example, to drop all capabilities from the CRD installation container: `{spec: {containers: [{name: crd-installation, securityContext: {capabilities: {drop: [ALL]}}}]}}`
+
+**Default:** `nil`
+
+### [jobs.migration.podTemplate](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=jobs.migration.podTemplate)
+
+A PodTemplateSpec strategically merged on top of `podTemplate`. For example, to drop all capabilities from the migration container: `{spec: {containers: [{name: migration, securityContext: {capabilities: {drop: [ALL]}}}]}}`
+
+**Default:** `nil`
 
 ### [logLevel](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=logLevel)
 
@@ -254,7 +288,7 @@ Node selection constraints for scheduling Pods on specific nodes. For details, s
 
 ### [podTemplate](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=podTemplate)
 
-Sets almost all fields of operator Deployment PodTemplate For details, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec).
+Sets almost all fields of the PodTemplate of every workload this chart renders: the operator Deployment, the CRD installation Job, and the migration Job. `deployment` and `jobs` layer per-workload overrides on top of this. For details, see the [Kubernetes documentation](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-template-v1/#PodTemplateSpec).
 
 **Default:**
 

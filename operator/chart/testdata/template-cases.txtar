@@ -147,3 +147,46 @@ monitoring:
 -- fix-additional-flags --
 additionalCmdFlags:
   - --enable-console=false
+
+-- per-workload-pod-templates --
+crds:
+  enabled: true
+
+podTemplate:
+  spec:
+    securityContext:
+      runAsNonRoot: true
+
+deployment:
+  podTemplate:
+    spec:
+      containers:
+      - name: manager
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+
+jobs:
+  crd:
+    podTemplate:
+      metadata:
+        annotations:
+          example.com/scoped-to: crd-job
+      spec:
+        containers:
+        - name: crd-installation
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+              - ALL
+  migration:
+    podTemplate:
+      spec:
+        containers:
+        - name: migration
+          securityContext:
+            capabilities:
+              drop:
+              - ALL

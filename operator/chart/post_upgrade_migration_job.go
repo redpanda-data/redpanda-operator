@@ -44,23 +44,28 @@ func PostUpgradeMigrationJob(dot *helmette.Dot) *batchv1.Job {
 			},
 		},
 		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: values.PodAnnotations,
-					Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
-				},
-				Spec: corev1.PodSpec{
-					RestartPolicy:                 corev1.RestartPolicyOnFailure,
-					AutomountServiceAccountToken:  ptr.To(false),
-					TerminationGracePeriodSeconds: ptr.To(int64(10)),
-					ImagePullSecrets:              values.ImagePullSecrets,
-					ServiceAccountName:            MigrationJobServiceAccountName(dot),
-					NodeSelector:                  values.NodeSelector,
-					Tolerations:                   values.Tolerations,
-					Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
-					Containers:                    migrationJobContainers(dot),
-				},
-			},
+			Template: StrategicMergePatch(
+				values.Jobs.Migration.PodTemplate.asPodTemplateSpec(),
+				StrategicMergePatch(
+					values.PodTemplate.asPodTemplateSpec(),
+					corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: values.PodAnnotations,
+							Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
+						},
+						Spec: corev1.PodSpec{
+							RestartPolicy:                 corev1.RestartPolicyOnFailure,
+							AutomountServiceAccountToken:  ptr.To(false),
+							TerminationGracePeriodSeconds: ptr.To(int64(10)),
+							ImagePullSecrets:              values.ImagePullSecrets,
+							ServiceAccountName:            MigrationJobServiceAccountName(dot),
+							NodeSelector:                  values.NodeSelector,
+							Tolerations:                   values.Tolerations,
+							Volumes:                       []corev1.Volume{serviceAccountTokenVolume()},
+							Containers:                    migrationJobContainers(dot),
+						},
+					}),
+			),
 		},
 	}
 }

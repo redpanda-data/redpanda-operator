@@ -13,8 +13,12 @@ package operator
 import (
 	_ "embed"
 
+	"github.com/invopop/jsonschema"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
 var (
@@ -71,6 +75,8 @@ type Values struct {
 	Monitoring            MonitoringConfig              `json:"monitoring"`
 	WebhookSecretName     string                        `json:"webhookSecretName"`
 	PodTemplate           *PodTemplateSpec              `json:"podTemplate,omitempty"`
+	Deployment            DeploymentConfig              `json:"deployment"`
+	Jobs                  Jobs                          `json:"jobs"`
 	LivenessProbe         *corev1.Probe                 `json:"livenessProbe,omitempty"`
 	ReadinessProbe        *corev1.Probe                 `json:"readinessProbe,omitempty"`
 	CRDs                  CRDs                          `json:"crds"`
@@ -92,9 +98,48 @@ type PodTemplateSpec struct {
 	Spec     corev1.PodSpec `json:"spec,omitempty" jsonschema:"required"`
 }
 
+// +gotohelm:ignore=true
+func (PodTemplateSpec) JSONSchemaExtend(schema *jsonschema.Schema) {
+	// Permit nil values to allow documenting without providing a default.
+	object := *schema
+	*schema = jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			&object,
+			{Type: "null"},
+		},
+	}
+}
+
+func (p *PodTemplateSpec) asPodTemplateSpec() *corev1.PodTemplateSpec {
+	if p == nil {
+		return &corev1.PodTemplateSpec{}
+	}
+
+	return &corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:      helmette.Default(Metadata{}, p.Metadata).Labels,
+			Annotations: helmette.Default(Metadata{}, p.Metadata).Annotations,
+		},
+		Spec: helmette.Default(corev1.PodSpec{}, p.Spec),
+	}
+}
+
 type Metadata struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
+}
+
+type DeploymentConfig struct {
+	PodTemplate *PodTemplateSpec `json:"podTemplate"`
+}
+
+type Jobs struct {
+	CRD       JobConfig `json:"crd"`
+	Migration JobConfig `json:"migration"`
+}
+
+type JobConfig struct {
+	PodTemplate *PodTemplateSpec `json:"podTemplate"`
 }
 
 type Image struct {
