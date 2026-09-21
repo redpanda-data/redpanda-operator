@@ -15,6 +15,7 @@ require (
 	github.com/go-logr/logr v1.4.3
 	github.com/google/gofuzz v1.2.0
 	github.com/imdario/mergo v0.3.16
+	github.com/invopop/jsonschema v0.12.0
 	github.com/json-iterator/go v1.1.12
 	github.com/moby/moby v24.0.7+incompatible
 	github.com/moby/sys/mountinfo v0.7.2
@@ -185,7 +186,6 @@ require (
 	github.com/homeport/dyff v1.7.1 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/invopop/jsonschema v0.12.0 // indirect
 	github.com/itchyny/gojq v0.12.17 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
