@@ -273,10 +273,7 @@ func SecretSASLUsers(state *RenderState) *corev1.Secret {
 		}
 		usersTxt := []string{}
 
-		defaultMechanism := DefaultSASLMechanism
-		if state.Values.Auth.SASL.Mechanism != "" {
-			defaultMechanism = state.Values.Auth.SASL.Mechanism
-		}
+		defaultMechanism := state.Values.Auth.SASL.GetMechanism()
 
 		// Working around lack of support for += or strings.Join at the moment
 		for _, user := range state.Values.Auth.SASL.Users {
