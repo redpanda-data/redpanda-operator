@@ -1,0 +1,9 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    with more than one external kafka, admin, or schema-registry listener,
+    the `rpk` profile ConfigMap and the advertised ports now pick the
+    alphabetically-first listener deterministically when rendered via
+    `helm template`/`helm install`, instead of depending on map iteration
+    order
+time: 2026-09-21T13:00:03.000000-07:00

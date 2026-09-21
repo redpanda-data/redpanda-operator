@@ -287,7 +287,7 @@ func advertisedKafkaPort(state *RenderState, i int32) int {
 func advertisedAdminPort(state *RenderState, i int32) int {
 	keys := helmette.Keys(state.Values.Listeners.Admin.External)
 
-	helmette.SortAlpha(keys)
+	keys = helmette.SortAlpha(keys)
 
 	externalAdminListenerName := helmette.First(keys)
 
@@ -311,7 +311,7 @@ func advertisedAdminPort(state *RenderState, i int32) int {
 func advertisedSchemaPort(state *RenderState, i int32) int {
 	keys := helmette.Keys(state.Values.Listeners.SchemaRegistry.External)
 
-	helmette.SortAlpha(keys)
+	keys = helmette.SortAlpha(keys)
 
 	externalSchemaListenerName := helmette.First(keys)
 
@@ -358,7 +358,10 @@ func advertisedHost(state *RenderState, i int32) string {
 func getFirstExternalKafkaListener(state *RenderState) string {
 	keys := helmette.Keys(state.Values.Listeners.Kafka.External)
 
-	helmette.SortAlpha(keys)
+	// The result must be assigned: sprig's sortAlpha is non-mutating, so the
+	// discard form sorts only in the Go path and the transpiled template
+	// would pick a map-random key.
+	keys = helmette.SortAlpha(keys)
 
 	return helmette.First(keys).(string)
 }
