@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    the LoadBalancer address remediation command in the post-install notes
+    targets the installed release name instead of the chart name, and only
+    reads this release's LoadBalancer services
+time: 2026-09-21T13:00:01.000000-07:00
