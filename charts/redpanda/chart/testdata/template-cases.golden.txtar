@@ -4424,7 +4424,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
@@ -5793,7 +5793,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
@@ -14125,7 +14125,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret some-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret some-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
@@ -65904,7 +65904,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
@@ -74194,7 +74194,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret redpanda-superusers -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret redpanda-superusers -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
@@ -80743,7 +80743,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret redpanda-users -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
@@ -143486,7 +143486,7 @@ Set up dns to look up the pods on their Kubernetes Nodes. You can use this query
 
 Set the credentials in the environment:
 
-  kubectl -n default get secret kafka-credentials -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM
+  IFS=: read -r RPK_USER RPK_PASS RPK_SASL_MECHANISM < <(kubectl -n default get secret kafka-credentials -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")
   export RPK_USER RPK_PASS RPK_SASL_MECHANISM
 
 Try some sample commands:
