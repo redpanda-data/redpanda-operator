@@ -77,11 +77,14 @@ func notes(state *RenderState) []string {
 			``,
 			`If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:`,
 			``,
-			// Yes, this really is a jsonpath string to be exposed to the user
-			fmt.Sprintf(`  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')`,
-				Name(state),
+			// Yes, this really is a jsonpath string to be exposed to the user.
+			fmt.Sprintf(`  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -l app.kubernetes.io/instance=%s,%s=%s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')`,
+				state.Release.Name,
 				state.Release.Namespace,
 				state.Release.Namespace,
+				state.Release.Name,
+				loadBalancerTypeLabelKey,
+				loadBalancerTypeLabelValue,
 			),
 		)
 	}

@@ -20,6 +20,14 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+// The label marking the chart's LoadBalancer Services; NOTES.txt selects on
+// it. The key's typo is intentionally preserved for backwards compat
+// https://github.com/redpanda-data/helm-charts/blob/2baa77b99a71a993e639a7138deaf4543727c8a1/charts/redpanda/templates/service.loadbalancer.yaml#L33
+const (
+	loadBalancerTypeLabelKey   = "repdanda.com/type"
+	loadBalancerTypeLabelValue = "loadbalancer"
+)
+
 func LoadBalancerServices(state *RenderState) []*corev1.Service {
 	// This is technically a divergence from previous behavior but this matches
 	// the NodePort's check and is more reasonable.
@@ -35,9 +43,7 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 
 	labels := FullLabels(state)
 
-	// This typo is intentionally being preserved for backwards compat
-	// https://github.com/redpanda-data/helm-charts/blob/2baa77b99a71a993e639a7138deaf4543727c8a1/charts/redpanda/templates/service.loadbalancer.yaml#L33
-	labels["repdanda.com/type"] = "loadbalancer"
+	labels[loadBalancerTypeLabelKey] = loadBalancerTypeLabelValue
 
 	selector := ClusterPodLabelsSelector(state)
 
