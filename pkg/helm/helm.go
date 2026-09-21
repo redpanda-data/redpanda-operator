@@ -303,6 +303,14 @@ type TemplateOptions struct {
 }
 
 func (c *Client) Template(ctx context.Context, chart string, opts TemplateOptions) ([]byte, error) {
+	manifest, _, err := c.TemplateWithNotes(ctx, chart, opts)
+	return manifest, err
+}
+
+// TemplateWithNotes is [Client.Template] that additionally returns the
+// rendered NOTES.txt. Notes are not part of a release manifest, so both
+// `helm template` and [Client.Template] omit them.
+func (c *Client) TemplateWithNotes(ctx context.Context, chart string, opts TemplateOptions) ([]byte, string, error) {
 	// NOTE: Unlike other methods, Template calls into helm directly. This is
 	// to minimize any potential overhead from go/helm/cobra's start up time
 	// and allow us to be much more aggressive with writing tests through
@@ -338,14 +346,14 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 	if opts.KubeVersion != "" {
 		kubeVersion, err := chartutil.ParseKubeVersion(opts.KubeVersion)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, "", errors.WithStack(err)
 		}
 		client.KubeVersion = kubeVersion
 	}
 
 	releaseName, chart, err := client.NameAndChart([]string{opts.Name, chart})
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, "", errors.WithStack(err)
 	}
 
 	// Strange but helm does exactly this. The `client` handles figuring out if
@@ -360,7 +368,7 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 	// use them directly for our "deeper" integrations with helm.
 	env, err := c.Env(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	chart, err = client.ChartPathOptions.LocateChart(chart, &cli.EnvSettings{
@@ -370,16 +378,16 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 		RepositoryCache:  env["HELM_REPOSITORY_CACHE"],
 	})
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, "", errors.WithStack(err)
 	}
 
 	loadedChart, err := loader.Load(chart)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, "", errors.WithStack(err)
 	}
 
 	if err := action.CheckDependencies(loadedChart, loadedChart.Metadata.Dependencies); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, "", errors.WithStack(err)
 	}
 
 	vOpts := values.Options{Values: opts.Set}
@@ -387,7 +395,7 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 	if opts.Values != nil {
 		valuesFile, err := c.writeValues(opts.Values)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, "", errors.WithStack(err)
 		}
 
 		vOpts.ValueFiles = append(vOpts.ValueFiles, valuesFile)
@@ -399,12 +407,12 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 
 	values, err := vOpts.MergeValues(nil /* getter.Providers that's not used unless a URL is provided. */)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, "", errors.WithStack(err)
 	}
 
 	rel, err := client.RunWithContext(ctx, loadedChart, values)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	manifest := bytes.NewBuffer([]byte(rel.Manifest))
@@ -419,7 +427,7 @@ func (c *Client) Template(ctx context.Context, chart string, opts TemplateOption
 		fmt.Fprintf(manifest, "---\n# Source: %s\n%s\n", hook.Path, hook.Manifest)
 	}
 
-	return manifest.Bytes(), nil
+	return manifest.Bytes(), rel.Info.Notes, nil
 }
 
 func (c *Client) DownloadFile(ctx context.Context, url, filename string) error {

@@ -75,10 +75,7 @@
 {{- if (and (and (ne $state.Values.auth.sasl.secretRef "") $state.Values.auth.sasl.enabled) (gt ((get (fromJson (include "_shims.len" (dict "a" (list $state.Values.auth.sasl.users)))) "r") | int) (0 | int))) -}}
 {{- $secret := (mustMergeOverwrite (dict "metadata" (dict)) (mustMergeOverwrite (dict) (dict "apiVersion" "v1" "kind" "Secret")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" $state.Values.auth.sasl.secretRef "namespace" $state.Release.Namespace "labels" (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") "annotations" (get (fromJson (include "redpanda.FullAnnotations" (dict "a" (list $state)))) "r"))) "type" "Opaque" "stringData" (dict))) -}}
 {{- $usersTxt := (list) -}}
-{{- $defaultMechanism := "SCRAM-SHA-512" -}}
-{{- if (ne $state.Values.auth.sasl.mechanism "") -}}
-{{- $defaultMechanism = $state.Values.auth.sasl.mechanism -}}
-{{- end -}}
+{{- $defaultMechanism := (get (fromJson (include "redpanda.SASLAuth.GetMechanism" (dict "a" (list $state.Values.auth.sasl)))) "r") -}}
 {{- range $_, $user := $state.Values.auth.sasl.users -}}
 {{- $mechanism := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $user.mechanism $defaultMechanism)))) "r") -}}
 {{- $usersTxt = (concat (default (list) $usersTxt) (list (printf "%s:%s:%s" $user.name $user.password $mechanism))) -}}

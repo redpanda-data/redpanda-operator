@@ -19,12 +19,28 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func Warnings(state *RenderState) []string {
-	var warnings []string
-	if w := cpuWarning(state); w != "" {
-		warnings = append(warnings, fmt.Sprintf(`**Warning**: %s`, w))
+// Notes is the entrypoint for NOTES.txt, which is rendered outside of
+// [render] and therefore has no [RenderState] of its own.
+func Notes(dot *helmette.Dot) []string {
+	// NB: Constructed inline for the same reason as in [render]; returning a
+	// *RenderState would jsonify it.
+	state := &RenderState{
+		Release: &dot.Release,
+		Files:   &dot.Files,
+		Chart:   &dot.Chart,
+		Values:  helmette.Unwrap[Values](dot.Values),
+		Dot:     dot,
 	}
-	return warnings
+
+	return append(warnings(state), notes(state)...)
+}
+
+func warnings(state *RenderState) []string {
+	var out []string
+	if w := cpuWarning(state); w != "" {
+		out = append(out, fmt.Sprintf(`**Warning**: %s`, w))
+	}
+	return out
 }
 
 func cpuWarning(state *RenderState) string {
@@ -35,10 +51,10 @@ func cpuWarning(state *RenderState) string {
 	return ""
 }
 
-func Notes(state *RenderState) []string {
+func notes(state *RenderState) []string {
 	anySASL := state.Values.Auth.IsSASLEnabled()
-	var notes []string
-	notes = append(notes,
+	var out []string
+	out = append(out,
 		``, ``, ``, ``,
 		fmt.Sprintf(`Congratulations on installing %s!`, state.Chart.Name),
 		``,
@@ -50,7 +66,7 @@ func Notes(state *RenderState) []string {
 		),
 	)
 	if state.Values.External.Enabled && state.Values.External.Type == corev1.ServiceTypeLoadBalancer {
-		notes = append(notes,
+		out = append(out,
 			``,
 			`If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:`,
 			``,
@@ -63,9 +79,9 @@ func Notes(state *RenderState) []string {
 		)
 	}
 	profiles := maps.Keys(state.Values.Listeners.Kafka.External)
-	helmette.SortAlpha(profiles)
+	profiles = helmette.SortAlpha(profiles)
 	profileName := profiles[0]
-	notes = append(notes,
+	out = append(out,
 		``,
 		`Set up rpk for access to your external listeners:`,
 	)
@@ -77,7 +93,7 @@ func Notes(state *RenderState) []string {
 		} else {
 			external = state.Values.Listeners.Kafka.TLS.Cert
 		}
-		notes = append(notes,
+		out = append(out,
 			fmt.Sprintf(`  kubectl get secret -n %s %s-%s-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt`,
 				state.Release.Namespace,
 				Fullname(state),
@@ -85,7 +101,7 @@ func Notes(state *RenderState) []string {
 			),
 		)
 		if state.Values.Listeners.Kafka.TLS.RequireClientAuth || state.Values.Listeners.Admin.TLS.RequireClientAuth {
-			notes = append(notes,
+			out = append(out,
 				fmt.Sprintf(`  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt`,
 					state.Release.Namespace,
 					Fullname(state),
@@ -97,7 +113,7 @@ func Notes(state *RenderState) []string {
 			)
 		}
 	}
-	notes = append(notes,
+	out = append(out,
 		fmt.Sprintf(`  rpk profile create --from-profile <(kubectl get configmap -n %s %s-rpk -o go-template='{{ .data.profile }}') %s`,
 			state.Release.Namespace,
 			Fullname(state),
@@ -111,96 +127,62 @@ func Notes(state *RenderState) []string {
 		),
 	)
 	if anySASL {
-		notes = append(notes,
+		out = append(out,
 			``,
 			`Set the credentials in the environment:`,
 			``,
 			fmt.Sprintf(`  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s`,
 				state.Release.Namespace,
 				state.Values.Auth.SASL.SecretRef,
-				RpkSASLEnvironmentVariables(state),
+				rpkSASLEnvironmentVariables(state),
 			),
 			fmt.Sprintf(`  export %s`,
-				RpkSASLEnvironmentVariables(state),
+				rpkSASLEnvironmentVariables(state),
 			),
 		)
 	}
-	notes = append(notes,
+	out = append(out,
 		``,
 		`Try some sample commands:`,
 	)
 	if anySASL {
-		notes = append(notes,
+		out = append(out,
 			`Create a user:`,
 			``,
-			fmt.Sprintf(`  %s`, RpkACLUserCreate(state)),
+			fmt.Sprintf(`  rpk acl user create myuser --new-password changeme --mechanism %s`, state.Values.Auth.SASL.GetMechanism()),
 			``,
 			`Give the user permissions:`,
 			``,
-			fmt.Sprintf(`  %s`, RpkACLCreate(state)),
+			`  rpk acl create --allow-principal 'myuser' --allow-host '*' --operation all --topic 'test-topic'`,
 		)
 	}
-	notes = append(notes,
+	out = append(out,
 		``,
 		`Get the api status:`,
 		``,
-		fmt.Sprintf(`  %s`, RpkClusterInfo(state)),
+		`  rpk cluster info`,
 		``,
 		`Create a topic`,
 		``,
-		fmt.Sprintf(`  %s`, RpkTopicCreate(state)),
+		fmt.Sprintf(`  rpk topic create test-topic -p 3 -r %d`, helmette.Min(3, int64(state.Values.Statefulset.Replicas))),
 		``,
 		`Describe the topic:`,
 		``,
-		fmt.Sprintf(`  %s`, RpkTopicDescribe(state)),
+		`  rpk topic describe test-topic`,
 		``,
 		`Delete the topic:`,
 		``,
-		fmt.Sprintf(`  %s`, RpkTopicDelete(state)),
+		`  rpk topic delete test-topic`,
 	)
 
-	return notes
-}
-
-// Any rpk command that's given to the user in in this file must be defined in _example-commands.tpl and tested in a test.
-// These are all tested in `tests/test-kafka-sasl-status.yaml`
-
-func RpkACLUserCreate(state *RenderState) string {
-	return fmt.Sprintf(`rpk acl user create myuser --new-password changeme --mechanism %s`, GetSASLMechanism(state))
-}
-
-func GetSASLMechanism(state *RenderState) SASLMechanism {
-	if state.Values.Auth.SASL != nil {
-		return state.Values.Auth.SASL.Mechanism
-	}
-	return "SCRAM-SHA-512"
-}
-
-func RpkACLCreate(*RenderState) string {
-	return `rpk acl create --allow-principal 'myuser' --allow-host '*' --operation all --topic 'test-topic'`
-}
-
-func RpkClusterInfo(*RenderState) string {
-	return `rpk cluster info`
-}
-
-func RpkTopicCreate(state *RenderState) string {
-	return fmt.Sprintf(`rpk topic create test-topic -p 3 -r %d`, helmette.Min(3, int64(state.Values.Statefulset.Replicas)))
-}
-
-func RpkTopicDescribe(*RenderState) string {
-	return `rpk topic describe test-topic`
-}
-
-func RpkTopicDelete(state *RenderState) string {
-	return `rpk topic delete test-topic`
+	return out
 }
 
 // was:   rpk sasl environment variables
 //
 // This will return a string with the correct environment variables to use for SASL based on the
 // version of the redpanda container being used
-func RpkSASLEnvironmentVariables(state *RenderState) string {
+func rpkSASLEnvironmentVariables(state *RenderState) string {
 	if RedpandaAtLeast_23_2_1(state) {
 		return `RPK_USER RPK_PASS RPK_SASL_MECHANISM`
 	} else {
