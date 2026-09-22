@@ -31,6 +31,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -100,32 +101,59 @@ func TestSteersSchemaRegistryPort(t *testing.T) {
 		applyV2Cluster(t, ctl, namespace.Name, "rp-v2", address),
 	}
 
-	kubetest.RunManager(t, ctl, kubetest.WithRegisterFn(func(mgr ctrl.Manager) error {
-		// A V2 cluster's shape comes from a chart render, which needs the
-		// cluster's own REST config, so the factory needs a manager; nothing
-		// reads through its cache here, so it is never started.
-		manager, err := multicluster.NewSingleClusterManager(ctl.RestConfig(), ctrl.Options{
-			Scheme:                 controller.UnifiedScheme,
-			Metrics:                metricsserver.Options{BindAddress: "0"},
-			HealthProbeBindAddress: "0",
-		})
-		if err != nil {
-			return err
-		}
-		factory := internalclient.NewFactory(manager, nil)
+	// Both managers bind ephemeral ports. kubetest.RunManager would do for
+	// this, but it leaves controller-runtime's default :8080 metrics address
+	// in place, and a second test process holding that port -- routine in a
+	// parallel package run -- stops the manager before it starts a single
+	// controller, which surfaces here as every port publishing nothing.
+	mgr, err := ctrl.NewManager(ctl.RestConfig(), ctrl.Options{
+		Scheme:                 ctl.Scheme(),
+		Metrics:                metricsserver.Options{BindAddress: "0"},
+		HealthProbeBindAddress: "0",
+		// The port-mapper names its controller after Config.ManagedBy and
+		// offers no override, so a second Setup in this process -- another
+		// such test, or this one under -count -- would be rejected as a
+		// duplicate. The validation guards against two controllers reporting
+		// one metric, which is no concern here.
+		Controller: config.Controller{SkipNameValidation: ptr.To(true)},
+	})
+	require.NoError(t, err)
 
-		// Both resolvers, in the order the run command registers them, so a
-		// Service naming either kind of cluster is served.
-		// Resync fast: the assertions below wait out the damping thresholds.
-		return endpointsteering.Setup(mgr, endpointsteering.Options{
-			Resolver: endpointsteering.Resolvers{
-				endpointsteering.V2Resolver(mgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)),
-				endpointsteering.V1Resolver(mgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)),
-			},
-			ResyncPeriod:  250 * time.Millisecond,
-			ClusterDomain: "cluster.local",
-		})
+	// A V2 cluster's shape comes from a chart render, which needs the
+	// cluster's own REST config, so the factory needs a manager of its own;
+	// nothing reads through its cache here, so it is never started.
+	factoryManager, err := multicluster.NewSingleClusterManager(ctl.RestConfig(), ctrl.Options{
+		Scheme:                 controller.UnifiedScheme,
+		Metrics:                metricsserver.Options{BindAddress: "0"},
+		HealthProbeBindAddress: "0",
+	})
+	require.NoError(t, err)
+	factory := internalclient.NewFactory(factoryManager, nil)
+
+	// Both resolvers, in the order the run command registers them, so a
+	// Service naming either kind of cluster is served.
+	// Resync fast: the assertions below wait out the damping thresholds.
+	require.NoError(t, endpointsteering.Setup(mgr, endpointsteering.Options{
+		Resolver: endpointsteering.Resolvers{
+			endpointsteering.V2Resolver(mgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)),
+			endpointsteering.V1Resolver(mgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)),
+		},
+		ResyncPeriod:  250 * time.Millisecond,
+		ClusterDomain: "cluster.local",
 	}))
+
+	// Start reports why it stopped, which is the difference between "the
+	// controller decided to publish nothing" and "the controller never ran".
+	// t.Context() is cancelled before cleanups, so Start has returned by then
+	// and a graceful stop reports nil.
+	stopped := make(chan error, 1)
+	go func() { stopped <- mgr.Start(t.Context()) }()
+	t.Cleanup(func() {
+		if err := <-stopped; err != nil {
+			t.Errorf("manager stopped with an error: %v", err)
+		}
+	})
+	require.True(t, mgr.GetCache().WaitForCacheSync(t.Context()), "manager cache never synced")
 
 	requirePublished := func(port string, want func(steeredCluster) []string) {
 		t.Helper()
