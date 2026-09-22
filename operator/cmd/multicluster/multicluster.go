@@ -484,7 +484,7 @@ func Run(
 	// pods it publishes.
 	localMgr := manager.GetLocalManager()
 	if err := endpointsteering.Setup(localMgr, endpointsteering.Options{
-		Resolver: endpointsteering.StretchResolver(localMgr.GetClient(), factory),
+		Resolver: endpointsteering.StretchResolver(localMgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)),
 	}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "EndpointSteering")
 		return err

@@ -21,6 +21,7 @@ import (
 
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/networking"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/nodepools"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
@@ -165,7 +166,7 @@ func (a *attachedResources) clusterService() {
 	}
 	redpandaPorts := networking.NewRedpandaPorts(a.cluster)
 	clusterPorts := collectClusterPorts(redpandaPorts, a.cluster)
-	a.items[clusterService] = resources.NewClusterService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, clusterPorts, a.log).WithEndpointSteering(a.reconciler.EndpointSteering)
+	a.items[clusterService] = resources.NewClusterService(a.reconciler.Client, a.cluster, a.reconciler.Scheme, clusterPorts, a.log).WithEndpointSteering(feature.EndpointSteering.Get(a.ctx, a.cluster))
 	a.order = append(a.order, clusterService)
 }
 

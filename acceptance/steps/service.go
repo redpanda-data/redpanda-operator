@@ -26,6 +26,8 @@ import (
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	framework "github.com/redpanda-data/redpanda-operator/harpoon"
+	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
 func checkServiceWithPort(ctx context.Context, t framework.TestingT, serviceName, portName string, port int32) {
@@ -109,6 +111,54 @@ func servicePortShouldPublishPods(ctx context.Context, t framework.TestingT, por
 	t.Logf("Port %q of service %q publishes pods %v!", portName, serviceName, want)
 }
 
+// serviceOfClusterShouldHaveNoSelector asserts the cluster's own steered
+// Service has shed its selector.
+func serviceOfClusterShouldHaveNoSelector(ctx context.Context, t framework.TestingT, clusterName string) {
+	service, _ := steeredServiceOf(t, clusterName)
+	serviceShouldHaveNoSelector(ctx, t, service)
+}
+
+// unsteeredServicesOfClusterShouldHaveSelectors asserts the cluster's other
+// Services stay with the native EndpointSlice controller: on V1 the headless
+// Service, which carries broker discovery alone. A V2 cluster serves every
+// listener on the one steered Service, so it has none.
+func unsteeredServicesOfClusterShouldHaveSelectors(ctx context.Context, t framework.TestingT, clusterName string) {
+	if getVersion(t, "") != "vectorized" {
+		t.Logf("Cluster %q serves every listener on its steered Service; no other service to check", clusterName)
+		return
+	}
+	serviceShouldHaveSelector(ctx, t, clusterName)
+}
+
+// clusterListenerShouldPublishPods is servicePortShouldPublishPods against
+// the cluster's own steered Service, naming a listener rather than a port so
+// that one scenario reads the same for both cluster APIs.
+func clusterListenerShouldPublishPods(ctx context.Context, t framework.TestingT, listener, clusterName, podList string) {
+	service, ports := steeredServiceOf(t, clusterName)
+	port, ok := ports[listener]
+	require.Truef(t, ok, "no port known for the %q listener", listener)
+	servicePortShouldPublishPods(ctx, t, port, service, podList)
+}
+
+// steeredServiceOf is the Service carrying a cluster's Schema Registry
+// listener -- the one the operator is asked to steer -- and the names its
+// ports go by, which the two cluster APIs spell differently.
+func steeredServiceOf(t framework.TestingT, clusterName string) (string, map[string]string) {
+	if getVersion(t, "") == "vectorized" {
+		// A V1 cluster serves Schema Registry on its ClusterIP Service; the
+		// headless one carries broker discovery alone and is left to the
+		// native EndpointSlice controller.
+		return clusterName + "-cluster", map[string]string{
+			"kafka":           vectorizedv1alpha1.InternalListenerName,
+			"schema registry": resources.SchemaRegistryPortName,
+		}
+	}
+	return clusterName, map[string]string{
+		"kafka":           redpandachart.InternalKafkaPortName,
+		"schema registry": redpandachart.InternalSchemaRegistryPortName,
+	}
+}
+
 // dumpSteeringDiagnostics reports everything that decides a steered
 // Service's endpoints: the Service itself, every slice published for it
 // whoever owns it, any NetworkPolicy that could be shaping the probes, and
@@ -182,7 +232,9 @@ func operatorManagedSlices(ctx context.Context, t framework.TestingT, serviceNam
 	var list discoveryv1.EndpointSliceList
 	err := t.List(ctx, &list, runtimeclient.InNamespace(t.Namespace()), runtimeclient.MatchingLabels{
 		discoveryv1.LabelServiceName: serviceName,
-		discoveryv1.LabelManagedBy:   redpandachart.EndpointSteeringManagedBy,
+		// endpointsteering.ManagedBy, spelled out: this module cannot import
+		// operator/internal.
+		discoveryv1.LabelManagedBy: "redpanda-operator",
 	})
 	return list.Items, err
 }

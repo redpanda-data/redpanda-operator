@@ -25,15 +25,6 @@ const (
 	InternalKafkaPortName          = "kafka"
 	InternalSchemaRegistryPortName = "schemaregistry"
 	InternalPandaProxyPortName     = "http"
-
-	// EndpointSteeringAnnotation marks a Service whose EndpointSlices the
-	// operator publishes itself, per port (its endpointsteering controller).
-	// The value names the cluster whose brokers back the Service. A Service
-	// carrying it must define no selector; SteerEndpoints renders both.
-	EndpointSteeringAnnotation = "cluster.redpanda.com/endpoints-for"
-	// EndpointSteeringManagedBy is the endpointslice.kubernetes.io/managed-by
-	// label value of the EndpointSlices that controller publishes.
-	EndpointSteeringManagedBy = "redpanda-operator"
 )
 
 func MonitoringEnabledLabel(state *RenderState) map[string]string {

@@ -96,10 +96,6 @@ type Multicluster struct {
 	Peers                        []Peer              `json:"peers"`
 }
 
-type EndpointSteering struct {
-	Enabled bool `json:"enabled"`
-}
-
 type Telemetry struct {
 	Enabled bool `json:"enabled"`
 }
@@ -143,7 +139,6 @@ type Values struct {
 	ConnectController     ConnectController             `json:"connectController"`
 	Controllers           Controllers                   `json:"controllers"`
 	Multicluster          Multicluster                  `json:"multicluster"`
-	EndpointSteering      EndpointSteering              `json:"endpointSteering"`
 	Telemetry             Telemetry                     `json:"telemetry"`
 }
 

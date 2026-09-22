@@ -53,7 +53,6 @@ type PartialValues struct {
 	ConnectController     *PartialConnectController     "json:\"connectController,omitempty\""
 	Controllers           *PartialControllers           "json:\"controllers,omitempty\""
 	Multicluster          *PartialMulticluster          "json:\"multicluster,omitempty\""
-	EndpointSteering      *PartialEndpointSteering      "json:\"endpointSteering,omitempty\""
 	Telemetry             *PartialTelemetry             "json:\"telemetry,omitempty\""
 }
 
@@ -126,10 +125,6 @@ type PartialMulticluster struct {
 	Name                         *string                     "json:\"name,omitempty\""
 	KubernetesAPIExternalAddress *string                     "json:\"apiServerExternalAddress,omitempty\""
 	Peers                        []PartialPeer               "json:\"peers,omitempty\""
-}
-
-type PartialEndpointSteering struct {
-	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialTelemetry struct {

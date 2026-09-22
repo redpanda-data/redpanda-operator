@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 )
 
@@ -63,22 +62,23 @@ const (
 	probeSuccessThreshold = 2
 )
 
-// Checker is the portmapper membership decision for Redpanda broker pods. It
+// checker is the portmapper membership decision for Redpanda broker pods. It
 // publishes a pod for a Service port when the pod is one of the named
 // cluster's brokers, the pod would be published by the native controller
 // (Ready, or the Service publishes not-ready addresses), and -- for the
 // cluster's Schema Registry port only -- the broker's Schema Registry answers
 // GET /status/ready.
-type Checker struct {
+type checker struct {
 	resolver      Resolver
 	clusterDomain string
 	probeTimeout  time.Duration
-	// publishable is the native controller's inclusion rule, which every
-	// port is still held to.
-	publishable portmapper.Checker
+	// podReady is the native controller's inclusion rule, which every port
+	// is still held to. It reads only the pod's conditions, so the Service's
+	// publishNotReadyAddresses is applied around it.
+	podReady portmapper.Checker
 	// schemaRegistry damps probeSchemaRegistry's answers so a single slow
 	// or dropped probe doesn't flap a healthy registry.
-	schemaRegistry portmapper.Checker
+	schemaRegistry portmapper.Decider
 
 	mu       sync.Mutex
 	clusters map[string]clusterEntry
@@ -88,34 +88,32 @@ type Checker struct {
 
 // clusterEntry is one cached resolution, successful or not.
 type clusterEntry struct {
-	brokers *internalclient.ClusterBrokers
+	brokers Cluster
 	err     error
 	expires time.Time
 }
 
-// NewChecker returns a Checker resolving clusters through resolver.
-func NewChecker(resolver Resolver, clusterDomain string) *Checker {
-	c := &Checker{
+// newChecker returns a checker resolving clusters through resolver.
+func newChecker(resolver Resolver, clusterDomain string) *checker {
+	c := &checker{
 		resolver:      resolver,
 		clusterDomain: clusterDomain,
 		probeTimeout:  schemaregistry.ProbeTimeout,
-		publishable:   publishable(),
+		podReady:      portmapper.PodReady(),
 		clusters:      map[string]clusterEntry{},
 		now:           time.Now,
 	}
-	c.schemaRegistry = portmapper.Stable(portmapper.DeciderFunc(c.probeSchemaRegistry), probeSuccessThreshold, probeFailureThreshold)
+	// Stable's checker is always a Decider (that is how it damps an
+	// [portmapper.Abstain] without resetting a streak); asserting it here is
+	// what lets Decide consult it directly.
+	c.schemaRegistry = portmapper.Stable(portmapper.DeciderFunc(c.probeSchemaRegistry), probeSuccessThreshold, probeFailureThreshold).(portmapper.Decider)
 	return c
 }
 
-var _ portmapper.Decider = (*Checker)(nil)
-
-// Check implements [portmapper.Checker].
-func (c *Checker) Check(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) bool {
-	return c.Decide(ctx, svc, pod, port) == portmapper.Include
-}
-
-// Decide implements [portmapper.Decider].
-func (c *Checker) Decide(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
+// Decide implements [portmapper.Decider]. The mapper's membership is typed
+// [portmapper.Checker], so it is handed a [portmapper.DeciderFunc] over this;
+// see mapperConfig.
+func (c *checker) Decide(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
 	logger := log.FromContext(ctx).WithValues("pod", client.ObjectKeyFromObject(pod), "port", port.Name, "targetPort", port.Port)
 
 	brokers, err := c.brokers(ctx, pod.Namespace, groupOf(svc, pod))
@@ -134,66 +132,55 @@ func (c *Checker) Decide(ctx context.Context, svc *corev1.Service, pod *corev1.P
 		return portmapper.Exclude
 	}
 
-	// Ports other than Schema Registry are published exactly as the native
-	// controller would, so enabling steering changes nothing about them.
-	if decision := portmapper.DecisionFor(ctx, c.publishable, svc, pod, port); decision != portmapper.Include {
-		return decision
+	// Every port is still held to the native controller's inclusion rule: a
+	// pod backs a Service once it is Ready, or as soon as it has an address
+	// when the Service publishes not-ready addresses -- which a broker
+	// discovery Service must, since Raft needs members to resolve each other
+	// before they are ready.
+	if !svc.Spec.PublishNotReadyAddresses && !c.podReady.Check(ctx, svc, pod, port) {
+		return portmapper.Exclude
 	}
+	// Ports other than Schema Registry are then published exactly as the
+	// native controller would, so enabling steering changes nothing about
+	// them.
 	if !isSchemaRegistryPort(port, brokers) {
 		return portmapper.Include
 	}
-	return portmapper.DecisionFor(ctx, c.schemaRegistry, svc, pod, port)
-}
-
-// publishable mirrors the native controller's inclusion rule: a pod backs a
-// Service once it is Ready, or as soon as it has an address when the Service
-// publishes not-ready addresses -- which a broker discovery Service must,
-// since Raft needs members to resolve each other before they are ready.
-func publishable() portmapper.Checker {
-	ready := portmapper.PodReady()
-	return portmapper.CheckerFunc(func(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) bool {
-		if svc != nil && svc.Spec.PublishNotReadyAddresses {
-			return true
-		}
-		return ready.Check(ctx, svc, pod, port)
-	})
+	return c.schemaRegistry.Decide(ctx, svc, pod, port)
 }
 
 // groupOf is the pod group a membership check is about: the Service's
 // annotation, which alignment guarantees equals the pod's label.
 func groupOf(svc *corev1.Service, pod *corev1.Pod) string {
-	if svc != nil {
-		if group := svc.Annotations[ServiceAnnotation]; group != "" {
-			return group
-		}
+	if group := svc.Annotations[ServiceAnnotation]; group != "" {
+		return group
 	}
 	return pod.Labels[PodGroupLabel]
 }
 
-// isBroker reports whether pod is one of brokers' pods: it carries the
-// cluster's pod labels, and it lives under the cluster's internal Service,
-// which is what makes it a broker the cluster itself addresses rather than
-// any pod a user happened to label the same way.
-func isBroker(pod *corev1.Pod, brokers *internalclient.ClusterBrokers) bool {
-	return labels.SelectorFromSet(brokers.PodSelector).Matches(labels.Set(pod.Labels)) &&
-		pod.Spec.Subdomain == brokers.InternalService
+// isBroker reports whether pod is one of brokers' pods, by the selector the
+// cluster's own Services use: nothing the operator renders matches it but
+// brokers.
+func isBroker(pod *corev1.Pod, brokers Cluster) bool {
+	return labels.SelectorFromSet(brokers.PodSelector()).Matches(labels.Set(pod.Labels))
 }
 
-func isSchemaRegistryPort(port portmapper.Port, brokers *internalclient.ClusterBrokers) bool {
-	return brokers.SchemaRegistry != nil &&
+func isSchemaRegistryPort(port portmapper.Port, brokers Cluster) bool {
+	listener := brokers.SchemaRegistry()
+	return listener != nil &&
 		port.Protocol == corev1.ProtocolTCP &&
-		port.Port == brokers.SchemaRegistry.Port
+		port.Port == listener.Port
 }
 
 // probeSchemaRegistry asks the broker's Schema Registry whether its store has
 // caught up, through a client scoped to this pod's address.
 // /status/ready is auth-exempt and blocks until _schemas is replayed, so a
 // timeout is the "still replaying" answer rather than a transport failure.
-func (c *Checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
+func (c *checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
 	logger := log.FromContext(ctx).WithValues("checker", "SchemaRegistryReady", "pod", client.ObjectKeyFromObject(pod), "port", port.Name, "targetPort", port.Port)
 
 	brokers, err := c.brokers(ctx, pod.Namespace, groupOf(svc, pod))
-	if err != nil || brokers.SchemaRegistry == nil {
+	if err != nil || brokers.SchemaRegistry() == nil {
 		// Decide already ruled on both cases; being here means the cache
 		// turned over between the two lookups.
 		return portmapper.Abstain
@@ -203,7 +190,7 @@ func (c *Checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, 
 	if address == "" {
 		address = pod.Status.PodIP
 	}
-	broker, err := brokers.SchemaRegistry.BrokerAt(ctx, address, c.podDNSName(pod, brokers))
+	broker, err := brokers.SchemaRegistry().BrokerAt(ctx, address, c.podDNSName(pod, brokers))
 	if err != nil {
 		logger.V(1).Info("abstaining: building the schema registry probe failed", "error", err.Error())
 		return portmapper.Abstain
@@ -251,13 +238,18 @@ func classifyProbeError(err error) portmapper.Decision {
 
 // podDNSName is the pod's stable DNS name under its cluster's internal
 // Service, which every implementation's broker certificates cover with a
-// wildcard SAN.
-func (c *Checker) podDNSName(pod *corev1.Pod, brokers *internalclient.ClusterBrokers) string {
+// wildcard SAN. Empty for a pod that names no subdomain and so has no such
+// record; the probe then verifies a TLS listener against the pod's address,
+// which broker certificates never carry, and abstains.
+func (c *checker) podDNSName(pod *corev1.Pod, brokers Cluster) string {
+	if pod.Spec.Subdomain == "" {
+		return ""
+	}
 	hostname := pod.Spec.Hostname
 	if hostname == "" {
 		hostname = pod.Name
 	}
-	domain := brokers.ClusterDomain
+	domain := brokers.ClusterDomain()
 	if domain == "" {
 		domain = c.clusterDomain
 	}
@@ -268,7 +260,7 @@ func (c *Checker) podDNSName(pod *corev1.Pod, brokers *internalclient.ClusterBro
 // briefly -- so that a cluster is read once per TTL however many pods and
 // ports are checked against it. Concurrent misses for one cluster share a
 // single resolution.
-func (c *Checker) brokers(ctx context.Context, namespace, group string) (*internalclient.ClusterBrokers, error) {
+func (c *checker) brokers(ctx context.Context, namespace, group string) (Cluster, error) {
 	key := namespace + "/" + group
 
 	c.mu.Lock()
@@ -281,9 +273,19 @@ func (c *Checker) brokers(ctx context.Context, namespace, group string) (*intern
 
 	result, err, _ := c.inflight.Do(key, func() (any, error) {
 		brokers, err := c.resolver.Resolve(ctx, namespace, group)
+		// A resolver answering with neither a cluster nor an error breaks
+		// [Resolver]'s contract. Turn it into a failed lookup here, the one
+		// place a Cluster enters the decision path: every consumer below is
+		// then free to use it without a nil check, and the checker abstains
+		// instead of panicking a port-mapper goroutine -- which would take
+		// the manager down rather than fail one reconcile.
+		if err == nil && brokers == nil {
+			err = errors.Newf("resolver returned no cluster for %q and no error", key)
+		}
 		ttl := clusterCacheTTL
 		if err != nil {
 			ttl = clusterFailureTTL
+			brokers = nil
 		}
 		c.mu.Lock()
 		c.clusters[key] = clusterEntry{brokers: brokers, err: err, expires: c.now().Add(ttl)}
@@ -296,5 +298,5 @@ func (c *Checker) brokers(ctx context.Context, namespace, group string) (*intern
 	if err != nil {
 		return nil, err
 	}
-	return result.(*internalclient.ClusterBrokers), nil
+	return result.(Cluster), nil
 }

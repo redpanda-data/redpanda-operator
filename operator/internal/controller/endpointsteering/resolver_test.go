@@ -22,23 +22,22 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 func TestResolvers(t *testing.T) {
-	brokers := &internalclient.ClusterBrokers{InternalService: testCluster}
+	brokers := &fakeCluster{podSelector: map[string]string{"app.kubernetes.io/instance": testCluster}}
 	boom := errors.New("boom")
 
-	unknown := ResolverFunc(func(context.Context, string, string) (*internalclient.ClusterBrokers, error) {
+	unknown := ResolverFunc(func(context.Context, string, string) (Cluster, error) {
 		return nil, ErrUnknownCluster
 	})
-	knows := ResolverFunc(func(context.Context, string, string) (*internalclient.ClusterBrokers, error) {
+	knows := ResolverFunc(func(context.Context, string, string) (Cluster, error) {
 		return brokers, nil
 	})
-	failing := ResolverFunc(func(context.Context, string, string) (*internalclient.ClusterBrokers, error) {
+	failing := ResolverFunc(func(context.Context, string, string) (Cluster, error) {
 		return nil, boom
 	})
-	unreachable := ResolverFunc(func(context.Context, string, string) (*internalclient.ClusterBrokers, error) {
+	unreachable := ResolverFunc(func(context.Context, string, string) (Cluster, error) {
 		t.Fatal("a resolver after a definitive answer must not be consulted")
 		return nil, nil
 	})
@@ -46,7 +45,7 @@ func TestResolvers(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		resolvers Resolvers
-		want      *internalclient.ClusterBrokers
+		want      Cluster
 		wantErr   error
 	}{
 		{name: "no resolvers", wantErr: ErrUnknownCluster},
@@ -66,14 +65,16 @@ func TestResolvers(t *testing.T) {
 	}
 }
 
-// recordingFactory stands in for internalclient.Factory, recording the
-// cluster object it was asked about.
+// recordingFactory stands in for client.Factory, recording the cluster
+// object it was asked about. Its ClusterBrokers is shaped like the real
+// one's -- a concrete type, adapted by [BrokersOf] -- so the adapter is
+// exercised too.
 type recordingFactory struct {
 	seen    []any
-	brokers *internalclient.ClusterBrokers
+	brokers *fakeCluster
 }
 
-func (f *recordingFactory) ClusterBrokers(_ context.Context, obj any, _ string) (*internalclient.ClusterBrokers, error) {
+func (f *recordingFactory) ClusterBrokers(_ context.Context, obj any, _ string) (*fakeCluster, error) {
 	f.seen = append(f.seen, obj)
 	return f.brokers, nil
 }
@@ -91,7 +92,7 @@ func TestTypedResolvers(t *testing.T) {
 
 	for _, tc := range []struct {
 		name     string
-		resolver func(client.Reader, clusterBrokers) Resolver
+		resolver func(client.Reader, BrokersFunc) Resolver
 		group    string
 		wantKind any
 	}{
@@ -100,8 +101,8 @@ func TestTypedResolvers(t *testing.T) {
 		{name: "stretch", resolver: StretchResolver, group: "stretch", wantKind: &redpandav1alpha2.StretchCluster{}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			factory := &recordingFactory{brokers: &internalclient.ClusterBrokers{InternalService: tc.group}}
-			resolver := tc.resolver(reader, factory)
+			factory := &recordingFactory{brokers: &fakeCluster{podSelector: map[string]string{"app.kubernetes.io/instance": tc.group}}}
+			resolver := tc.resolver(reader, BrokersOf(factory.ClusterBrokers))
 
 			got, err := resolver.Resolve(t.Context(), testNamespace, tc.group)
 			require.NoError(t, err)

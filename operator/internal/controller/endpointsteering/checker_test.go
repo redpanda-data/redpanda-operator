@@ -35,7 +35,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 )
 
@@ -45,13 +44,26 @@ const (
 	kafkaPort     = 9093
 )
 
+// fakeCluster is the [Cluster] the in-package tests resolve to; the real
+// implementation is client.ClusterBrokers, which this package deliberately
+// does not import.
+type fakeCluster struct {
+	podSelector    map[string]string
+	clusterDomain  string
+	schemaRegistry *schemaregistry.Listener
+}
+
+func (f *fakeCluster) PodSelector() map[string]string           { return f.podSelector }
+func (f *fakeCluster) ClusterDomain() string                    { return f.clusterDomain }
+func (f *fakeCluster) SchemaRegistry() *schemaregistry.Listener { return f.schemaRegistry }
+
 type fakeResolver struct {
 	calls   atomic.Int32
-	brokers *internalclient.ClusterBrokers
+	brokers Cluster
 	err     error
 }
 
-func (f *fakeResolver) Resolve(context.Context, string, string) (*internalclient.ClusterBrokers, error) {
+func (f *fakeResolver) Resolve(context.Context, string, string) (Cluster, error) {
 	f.calls.Add(1)
 	if f.err != nil {
 		return nil, f.err
@@ -59,12 +71,11 @@ func (f *fakeResolver) Resolve(context.Context, string, string) (*internalclient
 	return f.brokers, nil
 }
 
-func testBrokers(schemaRegistry *schemaregistry.Listener) *internalclient.ClusterBrokers {
-	return &internalclient.ClusterBrokers{
-		PodSelector:     map[string]string{"app.kubernetes.io/instance": testCluster, "app.kubernetes.io/name": "redpanda"},
-		InternalService: testCluster,
-		ClusterDomain:   "cluster.local",
-		SchemaRegistry:  schemaRegistry,
+func testBrokers(schemaRegistry *schemaregistry.Listener) Cluster {
+	return &fakeCluster{
+		podSelector:    map[string]string{"app.kubernetes.io/instance": testCluster, "app.kubernetes.io/name": "redpanda"},
+		clusterDomain:  "cluster.local",
+		schemaRegistry: schemaRegistry,
 	}
 }
 
@@ -104,8 +115,8 @@ func tcpPort(name string, port int32) portmapper.Port {
 	return portmapper.Port{Name: name, Port: port, Protocol: corev1.ProtocolTCP, Address: "127.0.0.1"}
 }
 
-func newTestChecker(resolver Resolver) *Checker {
-	c := NewChecker(resolver, "cluster.local")
+func newTestChecker(resolver Resolver) *checker {
+	c := newChecker(resolver, "cluster.local")
 	// Hanging probes are part of the test matrix; don't wait the production
 	// 5s for them.
 	c.probeTimeout = 300 * time.Millisecond
@@ -197,8 +208,6 @@ func TestCheckerDecide(t *testing.T) {
 
 	consolePod := brokerPod(true)
 	consolePod.Labels["app.kubernetes.io/name"] = "console"
-	jobPod := brokerPod(true)
-	jobPod.Spec.Subdomain = ""
 
 	for _, tc := range []struct {
 		name       string
@@ -226,18 +235,20 @@ func TestCheckerDecide(t *testing.T) {
 			want:     portmapper.Abstain,
 		},
 		{
+			// A resolver breaking its contract must not panic a port-mapper
+			// goroutine; it reads as a failed lookup.
+			name:     "neither cluster nor error abstains",
+			resolver: &fakeResolver{},
+			svc:      testService(true),
+			pod:      brokerPod(true),
+			port:     tcpPort("kafka", kafkaPort),
+			want:     portmapper.Abstain,
+		},
+		{
 			name:     "release-labelled non-broker excludes",
 			resolver: &fakeResolver{brokers: testBrokers(nil)},
 			svc:      testService(true),
 			pod:      consolePod,
-			port:     tcpPort("kafka", kafkaPort),
-			want:     portmapper.Exclude,
-		},
-		{
-			name:     "pod outside the internal service excludes",
-			resolver: &fakeResolver{brokers: testBrokers(nil)},
-			svc:      testService(true),
-			pod:      jobPod,
 			port:     tcpPort("kafka", kafkaPort),
 			want:     portmapper.Exclude,
 		},
@@ -361,8 +372,6 @@ func TestCheckerDecide(t *testing.T) {
 			checker := newTestChecker(tc.resolver)
 			require.Equal(t, tc.want, checker.Decide(t.Context(), tc.svc, tc.pod, tc.port))
 			require.Equal(t, tc.wantProbes, hits.Load(), "unexpected number of probes")
-			// Check is the boolean view of the same decision.
-			require.Equal(t, tc.want == portmapper.Include, checker.Check(t.Context(), tc.svc, tc.pod, tc.port))
 		})
 	}
 }

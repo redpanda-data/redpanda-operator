@@ -231,9 +231,9 @@ func execInPod(
 	}, 5*time.Minute, 5*time.Second)
 }
 
-// podShouldBeReady asserts the pod is Ready right now -- not eventually. It
-// pins that steering a port never touched pod readiness.
-func podShouldBeReady(ctx context.Context, t framework.TestingT, podName string) {
+// podIsReady asserts the pod is Ready right now -- not eventually. It pins
+// that steering a port never touched pod readiness.
+func podIsReady(ctx context.Context, t framework.TestingT, podName string) {
 	var pod corev1.Pod
 	require.NoError(t, t.Get(ctx, t.ResourceKey(podName), &pod))
 	for _, condition := range pod.Status.Conditions {

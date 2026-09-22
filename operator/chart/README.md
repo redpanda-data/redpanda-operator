@@ -218,10 +218,6 @@ Specifies whether to install experimental CRDs. If this is true both experimenta
 
 **Default:** `false`
 
-### [endpointSteering.enabled](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=endpointSteering.enabled)
-
-**Default:** `false`
-
 ### [enterprise](https://artifacthub.io/packages/helm/redpanda-data/operator?modal=values&path=enterprise)
 
 Enterprise (optional) For details, see the [License documentation](https://docs.redpanda.com/docs/get-started/licenses/?platform=kubernetes#redpanda-enterprise-edition).

@@ -257,12 +257,6 @@ func installSharedOperator(ctx context.Context, restConfig *rest.Config) error {
 		ConnectController: &operatorchart.PartialConnectController{
 			Enabled: ptr.To(true),
 		},
-		// Every feature's clusters get operator-published endpoints,
-		// so the suite as a whole covers steering's effect on internal
-		// Services; endpoint-steering.feature covers the steering itself.
-		EndpointSteering: &operatorchart.PartialEndpointSteering{
-			Enabled: ptr.To(true),
-		},
 		AdditionalCmdFlags: operatorCmdFlags(),
 	}
 

@@ -23,21 +23,21 @@ import (
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 )
 
 // V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
 type V2SimpleResourceRenderer struct {
 	kubeConfig *kube.RESTConfig
-	options    renderOptions
 }
 
 var _ SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools] = (*V2SimpleResourceRenderer)(nil)
 
 // NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
-func NewV2SimpleResourceRenderer(mgr ctrl.Manager, opts ...RenderOption) *V2SimpleResourceRenderer {
+func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 	return &V2SimpleResourceRenderer{
 		kubeConfig: mgr.GetConfig(),
-		options:    applyRenderOptions(opts),
 	}
 }
 
@@ -72,7 +72,7 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		return nil, err
 	}
 
-	if m.options.endpointSteering {
+	if feature.EndpointSteering.Get(ctx, cluster.Redpanda) {
 		steerInternalService(resources, redpandachart.ServiceName(state), cluster.Name)
 	}
 
@@ -96,7 +96,7 @@ func steerInternalService(resources []client.Object, serviceName, cluster string
 	for _, resource := range resources {
 		svc, ok := resource.(*corev1.Service)
 		if ok && svc.Name == serviceName {
-			redpandachart.SteerEndpoints(svc, cluster)
+			endpointsteering.Steer(svc, cluster)
 			return
 		}
 	}

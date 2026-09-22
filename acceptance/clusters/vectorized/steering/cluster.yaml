@@ -1,0 +1,44 @@
+---
+apiVersion: redpanda.vectorized.io/v1alpha1
+kind: Cluster
+metadata:
+  name: steering
+  annotations:
+    # The per-cluster opt-in: the renderer hands this cluster's -cluster
+    # Service, the one carrying the Schema Registry listener, to the
+    # operator's endpoint steering controller.
+    operator.redpanda.com/enable-endpoint-steering: "true"
+spec:
+  image: ${DEFAULT_REDPANDA_REPO}
+  version: ${DEFAULT_REDPANDA_TAG}
+  # Three brokers, so a port publishing a subset of them is visible as a
+  # subset rather than as all-or-nothing.
+  replicas: 3
+  # 512Mi is required for v26.1+ brokers which OOM during startup with 256Mi,
+  # even in developer mode.
+  resources:
+    requests:
+      cpu: "100m"
+      memory: 512Mi
+    limits:
+      cpu: "100m"
+      memory: 512Mi
+  configuration:
+    rpcServer:
+      port: 33145
+    kafkaApi:
+      # Matches the V2 chart's internal Kafka port, so one Service manifest
+      # fits both variants.
+      - port: 9093
+    adminApi:
+      - port: 9644
+    # Deliberately the legacy single-listener field rather than the
+    # schemaRegistryApi list the basic fixture uses: collectClusterPorts
+    # reads only this one, so the -cluster Service gets no schema-registry
+    # port at all if this is written the newer way.
+    schemaRegistry:
+      port: 8081
+    developerMode: true
+    additionalCommandlineArguments:
+      dump-memory-diagnostics-on-alloc-failure-kind: all
+      abort-on-seastar-bad-alloc: ''

@@ -18,8 +18,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
@@ -42,13 +42,13 @@ func TestClusterServiceEndpointSteering(t *testing.T) {
 
 		if !steering {
 			require.Equal(t, labels.ForCluster(cluster).AsAPISelector().MatchLabels, svc.Spec.Selector)
-			require.NotContains(t, svc.Annotations, redpandachart.EndpointSteeringAnnotation)
+			require.NotContains(t, svc.Annotations, endpointsteering.ServiceAnnotation)
 			continue
 		}
 		// Steered: no selector, so the native EndpointSlice controller
 		// leaves the Service alone, and the annotation names the cluster.
 		require.Nil(t, svc.Spec.Selector)
-		require.Equal(t, "rp", svc.Annotations[redpandachart.EndpointSteeringAnnotation])
+		require.Equal(t, "rp", svc.Annotations[endpointsteering.ServiceAnnotation])
 	}
 }
 
@@ -68,6 +68,6 @@ func TestHeadlessServiceIsNotSteered(t *testing.T) {
 
 	svc := obj.(*corev1.Service)
 	require.Equal(t, labels.ForCluster(cluster).AsAPISelector().MatchLabels, svc.Spec.Selector)
-	require.NotContains(t, svc.Annotations, redpandachart.EndpointSteeringAnnotation)
+	require.NotContains(t, svc.Annotations, endpointsteering.ServiceAnnotation)
 	require.True(t, svc.Spec.PublishNotReadyAddresses)
 }

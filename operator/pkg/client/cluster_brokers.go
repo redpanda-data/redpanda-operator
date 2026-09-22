@@ -30,26 +30,37 @@ import (
 // Registry listener they serve. It is what a controller needs to decide, pod
 // by pod, whether a pod is one of the cluster's brokers and whether that
 // broker's Schema Registry is up.
+//
+// It is read through accessors rather than fields, which is what lets its
+// consumer -- the endpoint steering controller -- name the shape it needs as
+// an interface instead of importing this package, and so stay below the
+// renderers that import its steering contract. One value is also shared
+// across concurrent membership checks, so it is read-only once built.
 type ClusterBrokers struct {
-	// PodSelector is carried by every broker pod of the cluster, across node
-	// pools. It is the cluster's own Service selector, so nothing the
-	// operator renders matches it but brokers; anything else a user labels
-	// this way is told apart by InternalService.
-	PodSelector map[string]string
-	// InternalService is the name of the cluster's internal headless
-	// Service. Broker pods name it in spec.subdomain, which is what gives
-	// them their <pod>.<service> DNS records -- so a pod under it is one the
-	// cluster itself addresses as a broker, not merely one labelled like a
-	// broker.
-	InternalService string
-	// ClusterDomain is the Kubernetes cluster domain the cluster was
-	// configured with, completing <pod>.<InternalService>.<ns>.svc.<domain>.
-	// Empty when the cluster kind doesn't record one (v1), in which case the
-	// operator's own --cluster-domain applies.
-	ClusterDomain string
-	// SchemaRegistry is nil when the cluster's Schema Registry listener is
-	// disabled. Its TLS configuration is resolved lazily, per probe.
-	SchemaRegistry *schemaregistry.Listener
+	podSelector    map[string]string
+	clusterDomain  string
+	schemaRegistry *schemaregistry.Listener
+}
+
+// PodSelector is carried by every broker pod of the cluster, across node
+// pools. It is the cluster's own Service selector, so nothing the operator
+// renders matches it but brokers.
+func (c *ClusterBrokers) PodSelector() map[string]string {
+	return c.podSelector
+}
+
+// ClusterDomain is the Kubernetes cluster domain the cluster was configured
+// with, completing a broker pod's <pod>.<subdomain>.<ns>.svc.<domain> record.
+// Empty when the cluster kind doesn't record one (v1), in which case the
+// operator's own --cluster-domain applies.
+func (c *ClusterBrokers) ClusterDomain() string {
+	return c.clusterDomain
+}
+
+// SchemaRegistry is nil when the cluster's Schema Registry listener is
+// disabled. Its TLS configuration is resolved lazily, per probe.
+func (c *ClusterBrokers) SchemaRegistry() *schemaregistry.Listener {
+	return c.schemaRegistry
 }
 
 // ClusterBrokers returns the ClusterBrokers of a v1 Cluster, v2 Redpanda, or
@@ -76,18 +87,17 @@ func (c *Factory) redpandaClusterBrokers(ctx context.Context, cluster *redpandav
 	}
 
 	brokers := &ClusterBrokers{
-		PodSelector:     redpandachart.ClusterPodLabelsSelector(state),
-		InternalService: redpandachart.ServiceName(state),
-		ClusterDomain:   strings.TrimSuffix(state.Values.ClusterDomain, "."),
+		podSelector:   redpandachart.ClusterPodLabelsSelector(state),
+		clusterDomain: strings.TrimSuffix(state.Values.ClusterDomain, "."),
 	}
 
 	listener := state.Values.Listeners.SchemaRegistry
 	if !listener.Enabled {
 		return brokers, nil
 	}
-	brokers.SchemaRegistry = &schemaregistry.Listener{Port: listener.Port}
+	brokers.schemaRegistry = &schemaregistry.Listener{Port: listener.Port}
 	if listener.TLS.IsEnabled(&state.Values.TLS) {
-		brokers.SchemaRegistry.TLSConfig = memoizeTLS(func(context.Context) (*tls.Config, error) {
+		brokers.schemaRegistry.TLSConfig = memoizeTLS(func(context.Context) (*tls.Config, error) {
 			return state.TLSConfig(listener.TLS)
 		})
 	}
@@ -136,22 +146,19 @@ func (c *Factory) redpandaRenderState(ctx context.Context, cluster *redpandav1al
 // and no context -- is needed until a probe asks for the listener's TLS.
 func (c *Factory) v1ClusterBrokers(_ context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*ClusterBrokers, error) {
 	brokers := &ClusterBrokers{
-		PodSelector: labels.ForCluster(cluster).AsAPISelector().MatchLabels,
-		// The v1 headless Service shares the Cluster's name; see
-		// resources.HeadlessServiceResource.Key.
-		InternalService: cluster.Name,
+		podSelector: labels.ForCluster(cluster).AsAPISelector().MatchLabels,
 	}
 
 	listener := cluster.SchemaRegistryInternalListener()
 	if listener == nil {
 		return brokers, nil
 	}
-	brokers.SchemaRegistry = &schemaregistry.Listener{Port: int32(listener.Port)}
+	brokers.schemaRegistry = &schemaregistry.Listener{Port: int32(listener.Port)}
 	if listener.TLS == nil || !listener.TLS.Enabled {
 		return brokers, nil
 	}
 
-	brokers.SchemaRegistry.TLSConfig = memoizeTLS(func(ctx context.Context) (*tls.Config, error) {
+	brokers.schemaRegistry.TLSConfig = memoizeTLS(func(ctx context.Context) (*tls.Config, error) {
 		k8sClient, err := c.GetClient(ctx, clusterName)
 		if err != nil {
 			return nil, err
@@ -181,16 +188,15 @@ func (c *Factory) stretchClusterBrokers(ctx context.Context, sc *redpandav1alpha
 	poolSpec := defaultedPoolSpec(pool)
 
 	brokers := &ClusterBrokers{
-		PodSelector:     rendermulticluster.BrokerPodSelector(sc.Name),
-		InternalService: rendermulticluster.ClusterServiceName(sc.Name),
-		ClusterDomain:   strings.TrimSuffix(poolSpec.GetClusterDomain(), "."),
+		podSelector:   rendermulticluster.BrokerPodSelector(sc.Name),
+		clusterDomain: strings.TrimSuffix(poolSpec.GetClusterDomain(), "."),
 	}
 
 	listener := poolSpec.Listeners.SchemaRegistry
 	if !listener.IsEnabled() {
 		return brokers, nil
 	}
-	brokers.SchemaRegistry = &schemaregistry.Listener{
+	brokers.schemaRegistry = &schemaregistry.Listener{
 		Port: poolSpec.SchemaRegistryPort(),
 		TLSConfig: memoizeTLS(func(ctx context.Context) (*tls.Config, error) {
 			return c.stretchClusterListenerTLSConfig(ctx, sc, poolFullnameFor(sc, pool), poolSpec, listener, k8sClient)

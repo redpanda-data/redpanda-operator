@@ -342,8 +342,5 @@ multicluster:
     # exclusive with mesh.
     mcs: false
 
-endpointSteering:
-  enabled: false
-
 telemetry:
   enabled: true

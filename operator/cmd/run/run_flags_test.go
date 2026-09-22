@@ -89,12 +89,3 @@ func TestLeaderElectionTimingFlags(t *testing.T) {
 			"client-go requires renewDeadline > JitterFactor * retryPeriod")
 	})
 }
-
-// TestEndpointSteeringFlagDefaultsOff pins that endpoint steering is opt-in:
-// enabling it makes the operator the publisher of every cluster's internal
-// Service endpoints, so an unset flag must change nothing.
-func TestEndpointSteeringFlagDefaultsOff(t *testing.T) {
-	f := Command().Flags().Lookup("enable-endpoint-steering")
-	require.NotNil(t, f, "run command must define --enable-endpoint-steering")
-	require.Equal(t, "false", f.DefValue)
-}

@@ -26,16 +26,17 @@
 // [ServiceAnnotation] naming the cluster whose brokers back it and by
 // defining no selector; the cluster's broker pods are found through the
 // app.kubernetes.io/instance label every one of them already carries, so no
-// pod template changes and nothing restarts. The operator's
-// --enable-endpoint-steering flag decides whether the clusters' own internal
-// Services are rendered that way; a Service the operator does not render --
-// a load balancer Service managed alongside it, say -- opts in by carrying
-// the annotation itself, whatever the flag says.
+// pod template changes and nothing restarts.
 //
-// Because the annotation is the opt-in, this controller runs whether or not
-// the flag is set: a Service that loses the annotation (the flag turned back
-// off) needs it running to delete the slices it published and let the native
-// controller take the Service back.
+// A cluster opts its own internal Services in with the
+// feature.EndpointSteering annotation, which is what the v1 and v2
+// renderers read before handing a Service to [Steer]. A Service the operator
+// does not render -- a load balancer Service managed alongside it, say --
+// opts in by carrying [ServiceAnnotation] itself.
+//
+// The controller therefore always runs: a Service that loses the annotation
+// (a cluster whose flag was turned back off) needs it running to delete the
+// slices it published and let the native controller take the Service back.
 //
 // One caveat on taking a Service over: the renderers drop spec.selector by
 // omitting it from their server-side apply, which removes it only where the
@@ -55,9 +56,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/portmapper"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
@@ -67,7 +68,7 @@ const (
 	// StretchCluster name, which is also the value of the brokers'
 	// app.kubernetes.io/instance label. The Service must define no selector,
 	// or the native controller publishes alongside this one.
-	ServiceAnnotation = redpandachart.EndpointSteeringAnnotation
+	ServiceAnnotation = "cluster.redpanda.com/endpoints-for"
 
 	// PodGroupLabel aligns pods with opted-in Services: a pod is a candidate
 	// for a Service when this label equals the Service's annotation value.
@@ -76,13 +77,31 @@ const (
 
 	// ManagedBy is written to the endpointslice.kubernetes.io/managed-by
 	// label of every published slice.
-	ManagedBy = redpandachart.EndpointSteeringManagedBy
+	ManagedBy = "redpanda-operator"
 
 	// DefaultResyncPeriod bounds how long a broker whose Schema Registry has
 	// come up (or gone down) stays unpublished (or published), since neither
 	// changes anything the API server would report.
 	DefaultResyncPeriod = 10 * time.Second
 )
+
+// Steer hands svc's EndpointSlices to this controller, which publishes them
+// per port for the brokers of the named cluster. The selector goes, or the
+// native EndpointSlice controller publishes every broker on every port
+// alongside; the annotation names the cluster, and overrides any value a
+// user set for the same key, since the controller relies on it.
+//
+// The v1 and v2 renderers apply it to whichever Service carries the
+// cluster's Schema Registry listener, for a cluster that asked for it. A
+// Helm release has nothing to publish its endpoints, so this is deliberately
+// not part of the chart.
+func Steer(svc *corev1.Service, cluster string) {
+	svc.Spec.Selector = nil
+	if svc.Annotations == nil {
+		svc.Annotations = map[string]string{}
+	}
+	svc.Annotations[ServiceAnnotation] = cluster
+}
 
 // Options configures Setup.
 type Options struct {
@@ -139,7 +158,7 @@ func mapperConfig(opts Options) (portmapper.Config, error) {
 		ManagedBy:    ManagedBy,
 		ServiceKey:   portmapper.AnnotationKey(ServiceAnnotation),
 		PodKey:       portmapper.LabelKey(PodGroupLabel),
-		Membership:   NewChecker(opts.Resolver, opts.ClusterDomain),
+		Membership:   portmapper.DeciderFunc(newChecker(opts.Resolver, opts.ClusterDomain).Decide),
 		ResyncPeriod: resync,
 		// Membership checks are network probes; with a single worker one
 		// cluster full of replaying brokers would hold up every other

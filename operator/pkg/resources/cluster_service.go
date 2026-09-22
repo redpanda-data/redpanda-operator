@@ -22,8 +22,8 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
 
@@ -60,11 +60,13 @@ func NewClusterService(
 }
 
 // WithEndpointSteering hands this Service's EndpointSlices to the operator's
-// endpoint steering controller, which publishes them per port. This is the
-// Service a v1 cluster serves its Schema Registry on; the headless Service
-// is deliberately left to the native controller, since it carries broker
-// discovery and no Schema Registry port, so steering it would make seed and
-// admin DNS depend on the operator being up for nothing in return.
+// endpoint steering controller, which publishes them per port. Whether the
+// cluster asked for that is the caller's to read (feature.EndpointSteering).
+// This is the Service a v1 cluster serves its Schema Registry on; the
+// headless Service is deliberately left to the native controller, since it
+// carries broker discovery and no Schema Registry port, so steering it would
+// make seed and admin DNS depend on the operator being up for nothing in
+// return.
 func (r *ClusterServiceResource) WithEndpointSteering(enabled bool) *ClusterServiceResource {
 	r.endpointSteering = enabled
 	return r
@@ -126,7 +128,7 @@ func (r *ClusterServiceResource) obj() (k8sclient.Object, error) {
 		},
 	}
 	if r.endpointSteering {
-		redpandachart.SteerEndpoints(svc, r.pandaCluster.Name)
+		endpointsteering.Steer(svc, r.pandaCluster.Name)
 	}
 
 	err := controllerutil.SetControllerReference(r.pandaCluster, svc, r.scheme)

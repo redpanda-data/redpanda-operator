@@ -198,9 +198,6 @@
 {{- if $values.crds.enabled -}}
 {{- $_ := (set $defaults "--enable-shadowlinks" "true") -}}
 {{- end -}}
-{{- if $values.endpointSteering.enabled -}}
-{{- $_ := (set $defaults "--enable-endpoint-steering" "true") -}}
-{{- end -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $values.commonAnnotations)))) "r") | int) (0 | int)) -}}
 {{- $annotationArg := "" -}}
 {{- range $key, $value := $values.commonAnnotations -}}
