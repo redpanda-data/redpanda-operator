@@ -2,7 +2,7 @@
 Feature: Stretch Cluster Operator Upgrade
 
   Upgrade a stretch-cluster's multicluster operator one vcluster at a time,
-  starting from the published v26.2.1-beta.2 chart on https://charts.redpanda.com
+  starting from the published v26.2.1 chart on https://charts.redpanda.com
   and ending on the local dev chart (../operator/chart) with
   localhost/redpanda-operator:dev. The Redpanda data plane stays up throughout,
   and after each per-vcluster helm upgrade the operator raft quorum recovers
@@ -11,7 +11,12 @@ Feature: Stretch Cluster Operator Upgrade
 
   @skip:gke @skip:aks @skip:eks
   Scenario: Per-vcluster operator upgrade preserves raft quorum and sentinel data
-    Given I create a multicluster operator named "op-upgrade" with 3 nodes using helm chart "redpanda/operator" version "v26.2.1-beta.2"
+    # The starting version must be >= v26.2.1: it is the oldest published
+    # chart that defers stretch rendering until the broker-pool view is
+    # complete (#1683, K8S-891). Earlier operators race peer registration at
+    # startup and can bake a partial seed_servers list into a broker's node
+    # config, crash-looping it on a bootstrap seed mismatch.
+    Given I create a multicluster operator named "op-upgrade" with 3 nodes using helm chart "redpanda/operator" version "v26.2.1"
     And I apply a multicluster Kubernetes manifest to "op-upgrade":
     """
     ---
