@@ -68,9 +68,10 @@ const requeueDuringDisruption = 30 * time.Second
 //     nodes, which looks like a cluster-wide event, not a single node
 //     failure. Wait.
 //   - Gate 3 "pvc-rebinding": some claim in the cluster is not bound
-//     yet. It is probably re-binding right now, so wait — unless the
-//     claim is exempt because its pod is provably deadlocked (see
-//     [Controller.stuckClaimNames]).
+//     yet. It is probably re-binding right now, so wait — except for
+//     claims that can never bind while this gate waits: their Pod
+//     cannot schedule until the unbinder acts, and they cannot bind
+//     until their Pod schedules ([Controller.stuckClaimNames]).
 //   - Gate 4 "freed-pv": a PV freed by --allow-pv-rebinding is still
 //     floating and could pair with the wrong claim. Wait.
 //
@@ -88,13 +89,12 @@ const (
 // The unbinder stores its progress as annotations on the PVs it works
 // on, not in memory. PVs survive operator restarts and the deletions
 // that make up an unbind, so the gates that read these annotations
-// are crash-safe. All reads go through the uncached Reader, because
-// the annotations are written moments before they are read — exactly
-// when the informer cache lags.
+// are crash-safe.
 const (
 	// InFlightAnnotation marks a PV whose bound PVC this controller is
-	// about to delete. It is written together with the Retain policy,
-	// before the delete. The value is the cluster key.
+	// about to delete. It is written in one patch with the Retain
+	// policy and [InFlightClaimAnnotation], before the delete. The
+	// value is the cluster key.
 	//
 	// While any PV in a cluster carries this annotation, Gate 0 defers
 	// all further unbinds there. It is cleared once the deleted claim
@@ -108,11 +108,11 @@ const (
 	InFlightClaimAnnotation = "operator.redpanda.com/pvc-unbinder-claim"
 
 	// FreedPVAnnotation marks a PV whose ClaimRef this controller
-	// cleared (the --allow-pv-rebinding path). The value is the
+	// cleared (when --allow-pv-rebinding flag is used). The value is the
 	// cluster key.
 	//
 	// While such a PV is Available and its pinned node still exists,
-	// Gate 4 blocks further unbinds in the same cluster. Reason: an
+	// Gate 4 "freed-pv" blocks further unbinds in the same cluster. Reason: an
 	// Available PV can bind to ANY new claim, so unbinding a second
 	// broker while the first broker's freed disk still floats can give
 	// the second broker the first broker's disk (the INC-2818
@@ -131,7 +131,7 @@ const eventReasonGateDeferred = "PVCUnbinderDeferred"
 // Event, log) so incidents stay easy to attribute.
 const eventReasonGateExempted = "PVCUnbinderGateExempted"
 
-// Gate 2 finds Redpanda broker pods with two label queries, because
+// Gate 2 (multi-node outage) finds Redpanda broker pods with two label queries, because
 // no single pod label covers all cluster types:
 //
 //   - v1 Cluster pods carry app.kubernetes.io/managed-by=redpanda-operator.
@@ -160,8 +160,8 @@ const (
 //  1. finds the Pod's PVs and PVCs,
 //  2. sets a Retain policy on those PVs,
 //  3. deletes the PVCs (PVCs are immutable; delete is the only way),
-//  4. optionally clears the PVs' ClaimRef (--allow-pv-rebinding) so a
-//     returning node might reclaim its old volume,
+//  4. optionally clears the PVs' ClaimRef UID so a returning node might
+//     reclaim its old volume,
 //  5. deletes the Pod, which makes the StatefulSet recreate Pod and
 //     PVCs and bind them somewhere schedulable.
 type Controller struct {
