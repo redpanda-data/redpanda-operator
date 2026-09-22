@@ -131,6 +131,14 @@ type Payload struct {
 		// Broker lingers as its node_id's decommission record while the
 		// replacement reuses the pod name.
 		Count int `json:"count"`
+		// Clusters counts the clusters running in broker mode, which Count
+		// cannot: 12 Brokers is one 12-broker cluster or twelve 1-broker
+		// clusters, and adoption is decided per cluster.
+		Clusters BrokerClusterStats `json:"clusters"`
+		// Migration counts clusters by the state of their in-place
+		// StatefulSet→Broker migration, read from the cluster-scoped
+		// BrokerMigration condition.
+		Migration BrokerMigrationStats `json:"migration"`
 	} `json:"broker"`
 
 	Storage struct {
@@ -168,6 +176,42 @@ type Payload struct {
 
 	// Connect aggregates the Redpanda Connect pipelines managed by the operator.
 	Connect ConnectStats `json:"connect"`
+}
+
+// BrokerClusterStats counts the clusters in broker mode. A cluster is a
+// distinct controller owner across the Broker CRs, not a distinct
+// spec.clusterRef: a NodePool's Brokers name the pool in clusterRef but are
+// owned by the Redpanda, so clusterRef would count a pooled cluster once per
+// pool. A Broker without a controller owner is in broker.count but in no
+// cluster.
+type BrokerClusterStats struct {
+	Total int `json:"total"`
+	// Vectorized and Redpanda split Total by the owner's kind — the deprecated
+	// V1 Cluster reconciler vs the go-forward V2 Redpanda one — to show which
+	// path adoption is on. An owner of any other kind is in Total only.
+	Vectorized int `json:"vectorized"`
+	Redpanda   int `json:"redpanda"`
+}
+
+// BrokerMigrationStats counts clusters by the reason of their BrokerMigration
+// condition (the brokerset.MigrationReason* vocabulary). Blocked and
+// InProgress are the pre-GA health signal: a cluster that stays in either is a
+// migration that does not converge in a real install, which support tickets do
+// not reliably surface. Clusters born in broker mode never get the condition
+// and appear nowhere here; a rolled-back cluster has no Broker CRs left, so it
+// is in RolledBack but not in BrokerClusterStats.
+type BrokerMigrationStats struct {
+	// Blocked is a migration the operator refuses to advance: a precondition
+	// (cluster health, pending rollout, owner-specific gates) keeps failing.
+	Blocked int `json:"blocked"`
+	// InProgress is a migration or rollback the operator is advancing but the
+	// world is not converging on: a shadow Broker stuck terminating, pods not
+	// re-adopted. A healthy transition spans a few reconcile passes while
+	// reports are a day apart by default, so a sampled InProgress is almost
+	// always a stall.
+	InProgress int `json:"inProgress"`
+	Complete   int `json:"complete"`
+	RolledBack int `json:"rolledBack"`
 }
 
 // ConnectStats summarizes the Redpanda Connect (Pipeline) controller's fleet.

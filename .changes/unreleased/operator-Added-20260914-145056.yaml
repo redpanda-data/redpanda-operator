@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: 'Anonymous operator telemetry gains three signals for the experimental Broker CR mode, all under the existing `broker` section: `clusters` reports the clusters running in broker mode (`total`, split into `vectorized` for the V1 Cluster reconciler and `redpanda` for the V2 Redpanda one), counted as distinct controller owners of the Broker CRs so a cluster with several NodePools is counted once; `migration` counts clusters by the reason of their cluster-scoped `BrokerMigration` condition (`blocked`, `inProgress`, `complete`, `rolledBack`), so stalled StatefulSet-to-Broker migrations are visible in the fleet rather than only through support tickets. Both are derived from resources the collector already lists, so no new RBAC is required'
+time: 2026-09-14T14:50:56.141012825+02:00
