@@ -11,12 +11,12 @@ package leaderelection
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 
 	transportv1 "github.com/redpanda-data/redpanda-operator/pkg/multicluster/leaderelection/proto/gen/transport/v1"

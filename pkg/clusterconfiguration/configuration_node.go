@@ -78,6 +78,8 @@ func builtInType(value string) bool {
 // It returns whether to skip node specific configuration in handling additional configuration.
 // Node specific configuration contains variable like {{ .Index }}
 // e.g. "[{'name':'private-link','address':'{{ .Index }}-f415bda0-{{ .HostIP | sha256sum | substr 0 }}.redpanda.com','port': 'port': {{30092 | add .Index}}}]"
+//
+//nolint:laconiccomments
 func skipNodeSpecificConfiguration(cfg string) bool {
 	return strings.Contains(cfg, ".Index")
 }

@@ -86,6 +86,8 @@ func TestFollowerRejoinsAfterRestart(t *testing.T) {
 // giving the leader time to discover the follower is lagging and send MsgSnap.
 // Once the snapshot is applied, heartbeats no longer exceed lastIndex and
 // processing continues normally.
+//
+//nolint:laconiccomments
 func TestFreshNodeJoinsRunningCluster(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 

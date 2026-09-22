@@ -236,7 +236,7 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 		log.Error(err, "fetching StatefulSet")
 
 		// avoid the internal controller runtime stacktrace
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: defaultRequeueTimeout / 10}, nil
 	}
 
 	// skip objects already being deleted
@@ -264,7 +264,7 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 	if err != nil {
 		// we already logged any error, just requeue directly, delegating to the
 		// exponential backoff behavior
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: defaultRequeueTimeout / 10}, nil
 	}
 
 	if requeue {
@@ -276,6 +276,7 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 	// If a schedule is configured, just requeue with this period.
 	// Sometimes, the node disappears and no event about sts/pod is fired, or fired before we can actually decommission the ghost broker.
 	// Running the reconciler regularly ensures we're not missing any ghost brokers.
+	//nolint:laconiccomments
 	return ctrl.Result{RequeueAfter: s.syncPeriod}, nil
 }
 
@@ -319,6 +320,8 @@ func (s *StatefulSetDecomissioner) Reconcile(ctx context.Context, req ctrl.Reque
 // because we've given the client-side cache enough time to fill. We also add this guard for PVCs. In every loop through
 // reconciliation we expunge the broker and/or PVC entries that no longer meet the decommission criteria, so if a broker
 // or PVC should no longer be decommissioned, we reset our count.
+//
+//nolint:laconiccomments
 func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1.StatefulSet) (bool, error) {
 	// note that this is best-effort, the decommissioning code needs to be idempotent and deterministic
 
@@ -689,6 +692,8 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 // logic in an extra caching layer in the main reconciliation loop that only deletes a volume after it has been seen
 // as unbound n times with m amount of time between checks. This gives the pod and PVC time to both enter cache
 // so that the PVC will not be decommissioned while still being legitimately bound to a pod.
+//
+//nolint:laconiccomments
 func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, set *appsv1.StatefulSet) ([]*corev1.PersistentVolumeClaim, error) {
 	// The API server rejects a nil selector, but LabelSelectorAsSelector would
 	// turn one into labels.Nothing() and report every claim as unbound.
@@ -713,6 +718,7 @@ func (s *StatefulSetDecomissioner) findUnboundVolumeClaims(ctx context.Context, 
 	// The original does some oddities around overwriting the component label with a `-statefulset` suffix. This comes from the fact
 	// that the original code failed to merge in the MatchLabels, which in the helm chart we explicitly set to have a `-statefulset`
 	// suffix. Here we just add the MatchLabels merging code found in the statefulset controller, so we should be good.
+	//nolint:laconiccomments
 	dataVolumeLabels := client.MatchingLabels{}
 	for _, template := range set.Spec.VolumeClaimTemplates {
 		if template.Name == datadirVolume {

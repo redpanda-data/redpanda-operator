@@ -11,10 +11,10 @@ package multicluster
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cluster"

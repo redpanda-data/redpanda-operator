@@ -84,33 +84,34 @@ type Values struct {
 	// Global is an untyped map of values that are "global" to this chart and
 	// all its sub-charts.
 	// See also: https://helm.sh/docs/chart_template_guide/subcharts_and_globals/#global-chart-values
-	Global           map[string]any             `json:"global,omitempty"`
-	NameOverride     string                     `json:"nameOverride"`
-	FullnameOverride string                     `json:"fullnameOverride"`
-	ClusterDomain    string                     `json:"clusterDomain"`
-	CommonLabels     map[string]string          `json:"commonLabels"`
-	Image            Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
-	Service          *Service                   `json:"service"`
-	LicenseKey       string                     `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
-	AuditLogging     AuditLogging               `json:"auditLogging"`
-	Enterprise       Enterprise                 `json:"enterprise"`
-	RackAwareness    RackAwareness              `json:"rackAwareness"`
-	Console          consolechart.PartialValues `json:"console,omitempty"`
-	Auth             Auth                       `json:"auth"`
-	TLS              TLS                        `json:"tls"`
-	External         ExternalConfig             `json:"external"`
-	Logging          Logging                    `json:"logging"`
-	Monitoring       Monitoring                 `json:"monitoring"`
-	Resources        RedpandaResources          `json:"resources"`
-	Storage          Storage                    `json:"storage"`
-	PostInstallJob   PostInstallJob             `json:"post_install_job"`
-	Statefulset      Statefulset                `json:"statefulset"`
-	ServiceAccount   ServiceAccountCfg          `json:"serviceAccount"`
-	RBAC             RBAC                       `json:"rbac"`
-	Tuning           Tuning                     `json:"tuning"`
-	Listeners        Listeners                  `json:"listeners"`
-	Config           Config                     `json:"config"`
-	Tests            *struct {
+	Global            map[string]any             `json:"global,omitempty"`
+	NameOverride      string                     `json:"nameOverride"`
+	FullnameOverride  string                     `json:"fullnameOverride"`
+	ClusterDomain     string                     `json:"clusterDomain"`
+	CommonLabels      map[string]string          `json:"commonLabels"`
+	CommonAnnotations map[string]string          `json:"commonAnnotations"`
+	Image             Image                      `json:"image" jsonschema:"required,description=Values used to define the container image to be used for Redpanda"`
+	Service           *Service                   `json:"service"`
+	LicenseKey        string                     `json:"license_key" jsonschema:"deprecated,pattern=^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?\\.(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$|^$"`
+	AuditLogging      AuditLogging               `json:"auditLogging"`
+	Enterprise        Enterprise                 `json:"enterprise"`
+	RackAwareness     RackAwareness              `json:"rackAwareness"`
+	Console           consolechart.PartialValues `json:"console,omitempty"`
+	Auth              Auth                       `json:"auth"`
+	TLS               TLS                        `json:"tls"`
+	External          ExternalConfig             `json:"external"`
+	Logging           Logging                    `json:"logging"`
+	Monitoring        Monitoring                 `json:"monitoring"`
+	Resources         RedpandaResources          `json:"resources"`
+	Storage           Storage                    `json:"storage"`
+	PostInstallJob    PostInstallJob             `json:"post_install_job"`
+	Statefulset       Statefulset                `json:"statefulset"`
+	ServiceAccount    ServiceAccountCfg          `json:"serviceAccount"`
+	RBAC              RBAC                       `json:"rbac"`
+	Tuning            Tuning                     `json:"tuning"`
+	Listeners         Listeners                  `json:"listeners"`
+	Config            Config                     `json:"config"`
+	Tests             *struct {
 		Enabled bool `json:"enabled"`
 	} `json:"tests"`
 	Force       bool        `json:"force"`
@@ -377,6 +378,8 @@ type Monitoring struct {
 // Explicit mode offers better control and aligns with Kubernetes best
 // practices. Legacy mode is a fallback for users who have not defined `Limits`
 // and `Requests`.
+//
+//nolint:laconiccomments
 type RedpandaResources struct {
 	Limits   *corev1.ResourceList `json:"limits,omitempty"`
 	Requests *corev1.ResourceList `json:"requests,omitempty"`
@@ -388,6 +391,7 @@ type RedpandaResources struct {
 	// Memory resources
 	// For details,
 	// see the [Pod resources documentation](https://docs.redpanda.com/docs/manage/kubernetes/manage-resources/#configure-memory-resources).
+	//nolint:laconiccomments
 	Memory struct {
 		// Enables memory locking.
 		// For production, set to `true`.
@@ -951,6 +955,7 @@ type Tuning struct {
 	// This setting must NOT be combined with running multiple Redpanda
 	// pods per node — concurrent tuners will race on the same kernel
 	// parameters. Use a pod anti-affinity rule that disallows co-location.
+	//nolint:laconiccomments
 	ApplyHostTuners bool `json:"apply_host_tuners,omitempty"`
 }
 
@@ -1575,6 +1580,13 @@ type SASLAuth struct {
 	SecretRef     string        `json:"secretRef"`
 	Users         []SASLUser    `json:"users"`
 	BootstrapUser BootstrapUser `json:"bootstrapUser"`
+}
+
+func (s *SASLAuth) GetMechanism() SASLMechanism {
+	if s.Mechanism == "" {
+		return DefaultSASLMechanism
+	}
+	return s.Mechanism
 }
 
 type TrustStore struct {

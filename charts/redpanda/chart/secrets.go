@@ -63,9 +63,10 @@ func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-sts-lifecycle", Fullname(state)),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%s-sts-lifecycle", Fullname(state)),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -262,19 +263,17 @@ func SecretSASLUsers(state *RenderState) *corev1.Secret {
 				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      state.Values.Auth.SASL.SecretRef,
-				Namespace: state.Release.Namespace,
-				Labels:    FullLabels(state),
+				Name:        state.Values.Auth.SASL.SecretRef,
+				Namespace:   state.Release.Namespace,
+				Labels:      FullLabels(state),
+				Annotations: FullAnnotations(state),
 			},
 			Type:       corev1.SecretTypeOpaque,
 			StringData: map[string]string{},
 		}
 		usersTxt := []string{}
 
-		defaultMechanism := DefaultSASLMechanism
-		if state.Values.Auth.SASL.Mechanism != "" {
-			defaultMechanism = state.Values.Auth.SASL.Mechanism
-		}
+		defaultMechanism := state.Values.Auth.SASL.GetMechanism()
 
 		// Working around lack of support for += or strings.Join at the moment
 		for _, user := range state.Values.Auth.SASL.Users {
@@ -315,9 +314,10 @@ func SecretBootstrapUser(state *RenderState) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        secretName,
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Immutable: ptr.To(true),
 		Type:      corev1.SecretTypeOpaque,
@@ -338,9 +338,10 @@ func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.49s-fs-validator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%.49s-fs-validator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
@@ -394,9 +395,10 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%.51s-configurator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
-			Namespace: state.Release.Namespace,
-			Labels:    FullLabels(state),
+			Name:        fmt.Sprintf("%.51s-configurator", fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())),
+			Namespace:   state.Release.Namespace,
+			Labels:      FullLabels(state),
+			Annotations: FullAnnotations(state),
 		},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},

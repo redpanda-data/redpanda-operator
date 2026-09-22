@@ -41,11 +41,11 @@ func PreInstallCRDJob(dot *helmette.Dot) *batchv1.Job {
 			Labels: helmette.Merge(
 				Labels(dot),
 			),
-			Annotations: map[string]string{
+			Annotations: Annotations(dot, map[string]string{
 				"helm.sh/hook":               "pre-install,pre-upgrade",
 				"helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded,hook-failed",
 				"helm.sh/hook-weight":        "-5",
-			},
+			}),
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{

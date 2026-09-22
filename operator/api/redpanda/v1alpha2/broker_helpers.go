@@ -135,3 +135,14 @@ func (b *Broker) ClaimNames() []string {
 	}
 	return claimNames
 }
+
+// PodNameBase returns the name of the pod without the ordinal suffix.
+// Broker pods are named either: `<cluster>-<ordinal>` for the default node pool
+// or `<cluster>-<pool>-<ordinal>` for other pools.
+// This returns then either `<cluster>` or `<cluster-pool>`.
+func (b *Broker) PodNameBase() string {
+	if b.Spec.NetworkIndex == nil {
+		return ""
+	}
+	return strings.TrimSuffix(b.PodName(), fmt.Sprintf("-%d", *b.Spec.NetworkIndex))
+}

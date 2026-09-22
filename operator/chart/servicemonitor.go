@@ -43,7 +43,7 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 				},
 			},
 		},
-		BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token",
+		BearerTokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token", //nolint:staticcheck
 	}
 
 	if values.Monitoring.ScrapeInterval != "" {
@@ -96,7 +96,7 @@ func ServiceMonitor(dot *helmette.Dot) *monitoringv1.ServiceMonitor {
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "metrics-monitor"),
 			Labels:      helmette.Merge(Labels(dot), values.Monitoring.Labels),
 			Namespace:   dot.Release.Namespace,
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: monitoringv1.ServiceMonitorSpec{
 			Endpoints: []monitoringv1.Endpoint{endpoint},

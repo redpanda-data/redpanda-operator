@@ -24,6 +24,8 @@ import (
 
 // TemplateBootstrapYaml expands the bootstrap file
 // This takes an input template, resolves any remaining external references, then writes out the resulting bootstrap file
+//
+//nolint:laconiccomments
 func TemplateBootstrapYaml(ctx context.Context, cloudExpander *pkgsecrets.CloudExpander, inFile, outFile, fixups string) error {
 	var bootstrap map[string]string
 	buf, err := os.ReadFile(inFile)

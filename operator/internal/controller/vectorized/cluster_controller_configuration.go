@@ -108,6 +108,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 
 	// Checking if the feature is active because in the initial stages of cluster creation, it takes time for the feature to be activated
 	// and the API returns the same error (400) that is returned in case of malformed input, which causes a stop of the reconciliation
+	//nolint:laconiccomments
 	var centralConfigActive bool
 	if centralConfigActive, err = adminutils.IsFeatureActive(ctx, adminAPI, adminutils.CentralConfigFeatureName); err != nil {
 		return 0, errorWithContext(err, "could not determine if central config is active in the cluster")
@@ -122,6 +123,7 @@ func (r *ClusterReconciler) reconcileConfiguration(
 	patchSuccess, err := r.applyPatchIfNeeded(ctx, redpandaCluster, adminAPI, config, schema, log)
 	if err != nil || !patchSuccess {
 		// patchSuccess=false indicates an error set on the condition that should not be propagated (but we terminate reconciliation anyway)
+		//nolint:laconiccomments
 		return 0, err
 	}
 

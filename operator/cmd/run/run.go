@@ -163,7 +163,7 @@ type RunOptions struct {
 	licenseFilePath           string
 
 	// Connect (Pipeline CRD) controller configuration.
-	commonAnnotations               map[string]string
+	connectAnnotations              map[string]string
 	connectMonitoringEnabled        bool
 	connectMonitoringScrapeInterval string
 	connectMonitoringLabels         map[string]string
@@ -176,6 +176,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.managerOptions.LeaderElection, "leader-elect", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionID, "leader-election-id", "aa9fc693.vectorized.io", "Sets the ID used for the leader election process.")
 	// NB: The default behavior here is in the controller-runtime, pretty deep. It reads the namespace file that's created when mounting a service account token.
+	//nolint:laconiccomments
 	cmd.Flags().StringVar(&o.managerOptions.LeaderElectionNamespace, "leader-election-namespace", "", "Sets the namespace that leader election resources will be created within. If not specified, defaults the value of --namespace or the namespace this Pod is running in.")
 	o.managerOptions.LeaseDuration = cmd.Flags().Duration("leader-election-lease-duration", 15*time.Second, "Duration that non-leader candidates wait before forcing acquisition of the leader election lease")
 	o.managerOptions.RenewDeadline = cmd.Flags().Duration("leader-election-renew-deadline", 10*time.Second, "Duration that the acting leader retries refreshing leadership before giving up")
@@ -196,7 +197,7 @@ func (o *RunOptions) BindFlags(cmd *cobra.Command) {
 	// Controller flags.
 	cmd.Flags().BoolVar(&o.enableConsoleController, "enable-console", true, "Specifies whether or not to enabled the redpanda Console controller")
 	cmd.Flags().BoolVar(&o.enableConnectController, "enable-connect", false, "Specifies whether or not to enable the Redpanda Connect controller (requires enterprise license)")
-	cmd.Flags().StringToStringVar(&o.commonAnnotations, "common-annotations", nil, "Annotations to propagate to all operator-managed resources (key=value pairs)")
+	cmd.Flags().StringToStringVar(&o.connectAnnotations, "connect-annotations", nil, "Annotations the operator adds to the Redpanda Connect pipeline resources it creates (key=value pairs)")
 	cmd.Flags().BoolVar(&o.connectMonitoringEnabled, "connect-monitoring-enabled", false, "Enable PodMonitor creation for Connect pipelines")
 	cmd.Flags().StringVar(&o.connectMonitoringScrapeInterval, "connect-monitoring-scrape-interval", "", "Prometheus scrape interval for Connect pipeline PodMonitors (e.g. 30s)")
 	cmd.Flags().StringToStringVar(&o.connectMonitoringLabels, "connect-monitoring-labels", nil, "Additional labels for Connect pipeline PodMonitors (key=value pairs)")
@@ -519,10 +520,11 @@ func Run(
 		// Redpanda Reconciler
 		if err := (&redpandacontrollers.RedpandaReconciler{
 			Manager:                        mcmanager,
-			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets)).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
+			LifecycleClient:                lifecycle.NewResourceClient(mcmanager, lifecycle.V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets), opts.enableBrokerController).WithBrokerPodNodeUnavailableToleration(opts.brokerPodNodeUnavailableToleration),
 			ClientFactory:                  factory,
 			CloudSecretsExpander:           cloudExpander,
 			UseNodePools:                   opts.enableV2NodepoolController,
+			BrokerCREnabled:                opts.enableBrokerController,
 			PostRestartCaughtUpPercent:     opts.postRestartCaughtUpPercent,
 			WaitForSchemaRegistrySync:      opts.waitForSchemaRegistrySync,
 			MaintenanceModeClearThreshold:  opts.clearMaintenanceModeAfter,
@@ -539,7 +541,8 @@ func Run(
 		if opts.enableV2NodepoolController {
 			setupLog.Info("starting NodePool controller")
 			if err := (&redpandacontrollers.NodePoolReconciler{
-				Manager: mcmanager,
+				Manager:         mcmanager,
+				BrokerCREnabled: opts.enableBrokerController,
 			}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "NodePool")
 				return err
@@ -600,10 +603,10 @@ func Run(
 			setupLog.Info("starting Connect controller")
 
 			if err := (&pipelinecontroller.Controller{
-				Ctl:               pipelineCtl,
-				LicenseFilePath:   opts.licenseFilePath,
-				CommonAnnotations: opts.commonAnnotations,
-				DefaultImage:      opts.connectDefaultImage,
+				Ctl:                pipelineCtl,
+				LicenseFilePath:    opts.licenseFilePath,
+				ConnectAnnotations: opts.connectAnnotations,
+				DefaultImage:       opts.connectDefaultImage,
 				Monitoring: pipelinecontroller.MonitoringConfig{
 					Enabled:        opts.connectMonitoringEnabled,
 					ScrapeInterval: opts.connectMonitoringScrapeInterval,
@@ -973,6 +976,7 @@ func setupVectorizedControllers(ctx context.Context, mgr ctrl.Manager, factory i
 			// it has controller code that manages decommissioning. If something else decommissions the node, it can not deal with this under all circumstances because of various reasons, eg. bercause of a protection against stale status reads of status.currentReplicas
 			//   (http://github.com/redpanda-data/redpanda-operator/blob/main/operator/pkg/resources/statefulset_scale.go#L139)
 			// In addition to this situation where it can not (always) recover, it is just not desired that it interferes with graceful, "standard" decommissions (at least, in Operator v1 mode)
+			//nolint:laconiccomments
 			decommissioning.WithDecommisionOnTooHighOrdinal(false),
 		)
 

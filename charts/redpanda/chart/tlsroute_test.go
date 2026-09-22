@@ -141,6 +141,7 @@ func TestTLSRoutesForHTTPListenerAllowsBootstrapOnlyHost(t *testing.T) {
 		"redpanda",
 		"default",
 		map[string]string{"app": "redpanda"},
+		map[string]string{"my.co/team": "platform"},
 		[]gatewayv1.ParentReference{{Name: "shared-gateway"}},
 		[]string{"redpanda-0", "redpanda-1"},
 		"proxy.example.com",

@@ -512,6 +512,7 @@ func TestConfigMapResource_replicas(t *testing.T) { //nolint:funlen // test tabl
 
 			require.Equal(t, tt.wantArgs.SeedServers, redpandaYaml.Redpanda.SeedServers)
 			// Assert that the PandaproxyClient and SchemaRegistryClient configurations remain stable regardless of changes to replicas.
+			//nolint:laconiccomments
 			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, redpandaYaml.PandaproxyClient.Brokers)
 			require.Equal(t, []config.SocketAddress{{Address: tt.clusterFQDN, Port: 123}}, redpandaYaml.SchemaRegistryClient.Brokers)
 		})

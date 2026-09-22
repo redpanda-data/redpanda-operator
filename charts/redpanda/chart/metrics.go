@@ -71,6 +71,7 @@ func MetricsEnvironmentVariables(state *RenderState, pool Pool) []corev1.EnvVar 
 	}}
 
 	// UID of the kube-system namespace to fingerprint the cluster: https://opentelemetry.io/docs/specs/semconv/resource/k8s/#cluster
+	//nolint:laconiccomments
 	namespace, ok := helmette.Lookup[corev1.Namespace](state.Dot, "", "kube-system")
 	if ok {
 		envvars = append(envvars, corev1.EnvVar{

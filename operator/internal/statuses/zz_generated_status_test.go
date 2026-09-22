@@ -1,6 +1,6 @@
-package statuses
+// Code generated from ./statuses.yaml. DO NOT EDIT.
 
-// GENERATED from ./statuses.yaml, DO NOT EDIT DIRECTLY
+package statuses
 
 import (
 	"testing"

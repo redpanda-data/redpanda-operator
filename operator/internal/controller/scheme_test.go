@@ -67,6 +67,8 @@ func TestUnifiedSchemeRecognizesTelemetryTypes(t *testing.T) {
 //
 // If this assertion ever fails because the type was registered, delete the test
 // — but check first that it was registered for a reason beyond telemetry.
+//
+//nolint:laconiccomments
 func TestMulticlusterSchemeOmitsVectorizedByDesign(t *testing.T) {
 	_, _, err := MulticlusterScheme.ObjectKinds(&vectorizedv1alpha1.ClusterList{})
 	require.Error(t, err, "multicluster scheme unexpectedly recognizes the legacy vectorized Cluster API")

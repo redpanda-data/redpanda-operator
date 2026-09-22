@@ -10,10 +10,11 @@
 package internal
 
 import (
-	"errors"
 	"go/scanner"
 	"strconv"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 )
 
 func ContextualizeFormatErrors(data []byte, err error) string {

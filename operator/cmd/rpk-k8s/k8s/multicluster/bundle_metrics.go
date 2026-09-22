@@ -225,6 +225,8 @@ func truncate(b []byte, n int) string {
 // progress, when non-nil, is called once per sample with a stderr-style
 // "[<context>] sample i/N" message. Run wires this to the --verbose
 // progress logger.
+//
+//nolint:laconiccomments
 func collectClusterMetrics(
 	ctx context.Context,
 	bw *bundleWriter,

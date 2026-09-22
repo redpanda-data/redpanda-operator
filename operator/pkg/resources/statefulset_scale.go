@@ -69,7 +69,7 @@ const (
 // The strategy implemented here (to initialize the cluster at 1 replica, then upscaling to the desired number, without hacks on the seed server list),
 // should fix this problem, since the list of seeds servers will be the same in all nodes once the cluster is created.
 //
-//nolint:nestif // for clarity
+//nolint:nestif,laconiccomments // for clarity
 func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	log := r.logger.WithName("handleScaling").WithValues("nodepool", r.nodePool.Name)
 
@@ -96,6 +96,7 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 	// if a decommission is already in progress, handle it first. If it's not finished, it will return an error
 	// which will requeue the reconciliation. We can't (and don't want to) do any further scaling until it's finished.
 	// handleDecommissionInProgress is supposed to exit with error if a decom is already in progress, so we don't start another decom.
+	//nolint:laconiccomments
 	if err := r.handleDecommissionInProgress(ctx, log); err != nil {
 		return err
 	}
@@ -137,6 +138,7 @@ func (r *StatefulSetResource) handleScaling(ctx context.Context) error {
 
 	// Make sure the broker we want to decommission actually exists in redpanda itself.
 	// If not, error out, it is not a supported condition, and could be result of a stale read of status.nodePools[*].currentReplicas.
+	//nolint:laconiccomments
 	adminClient, err := r.getAdminAPIClient(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create admin API client: %w", err)
@@ -207,6 +209,7 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 	}
 
 	// Decom Pod is from another NodePool. Super important to early exit here, as it's not our business (in this StatefulSet handler).
+	//nolint:laconiccomments
 	if brokerPod == nil {
 		log.Info("decom on other NodePool in progress. asking for requeue so this nodepool can get reconciled afterwards.")
 		return &RequeueAfterError{
@@ -263,6 +266,8 @@ func (r *StatefulSetResource) handleDecommissionInProgress(ctx context.Context, 
 //
 // Before completing the process, it double-checks if the node is still not registered, for handling cases where the node was
 // about to start when the decommissioning process started. If the broker is found, the process is restarted.
+//
+//nolint:laconiccomments
 func (r *StatefulSetResource) handleDecommission(ctx context.Context, l logr.Logger) error {
 	brokerID := r.pandaCluster.GetDecommissionBrokerID()
 	if brokerID == nil {
@@ -353,6 +358,8 @@ func (e *RecommissionFatalError) Error() string {
 //
 // The handler ensures that the broker is running and also calls the admin API to recommission it.
 // The process finishes when the broker is registered with redpanda and the StatefulSet is correctly scaled.
+//
+//nolint:laconiccomments
 func (r *StatefulSetResource) handleRecommission(ctx context.Context) error {
 	brokerID := r.pandaCluster.GetDecommissionBrokerID()
 	if brokerID == nil {
@@ -411,6 +418,8 @@ func (r *StatefulSetResource) getAdminAPIClient(
 // preventing other pods clean shutdown.
 //
 // See: https://github.com/redpanda-data/redpanda/issues/4999
+//
+//nolint:laconiccomments
 func (r *StatefulSetResource) disableMaintenanceModeOnDecommissionedNodes(
 	ctx context.Context,
 ) error {
@@ -454,6 +463,8 @@ func (r *StatefulSetResource) disableMaintenanceModeOnDecommissionedNodes(
 }
 
 // verifyRunningCount checks if the statefulset is configured to run the given amount of replicas and that also pods match the expectations
+//
+//nolint:laconiccomments
 func (r *StatefulSetResource) verifyRunningCount(
 	ctx context.Context, replicas int32,
 ) (bool, error) {

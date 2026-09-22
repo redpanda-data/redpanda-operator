@@ -27,6 +27,8 @@ import (
 
 // this roughly implements https://github.com/redpanda-data/redpanda/blob/f5a7a13f7fca3f69a4380f0bbfa8fbc3e7f899d6/src/go/rpk/pkg/adminapi/admin.go#L46
 // but without the OIDC support, that said, it seems real odd that we delegate to the KafkaAPI stanza for an admin API connection.
+//
+//nolint:laconiccomments
 func getAdminAuth(p *rpkconfig.RpkProfile) rpadmin.Auth {
 	if p.HasSASLCredentials() {
 		return &rpadmin.BasicAuth{Username: p.KafkaAPI.SASL.User, Password: p.KafkaAPI.SASL.Password}
@@ -37,6 +39,8 @@ func getAdminAuth(p *rpkconfig.RpkProfile) rpadmin.Auth {
 }
 
 // redpandaAdminForRPKProfile returns a simple rpadmin.AdminAPI able to communicate with a cluster based on the given RPK profile.
+//
+//nolint:laconiccomments
 func (c *Factory) redpandaAdminForRPKProfile(profile *rpkconfig.RpkProfile) (*rpadmin.AdminAPI, error) {
 	tls, err := profile.AdminAPI.TLS.Config(c.fs)
 	if err != nil {
@@ -85,6 +89,8 @@ func normalizeSchemaRegistryURLs(profile *rpkconfig.RpkProfile) ([]string, error
 }
 
 // schemaRegistryForRPKProfile returns a simple sr.Client able to communicate with a cluster based on the given RPK profile.
+//
+//nolint:laconiccomments
 func (c *Factory) schemaRegistryForRPKProfile(profile *rpkconfig.RpkProfile) (*sr.Client, error) {
 	urls, err := normalizeSchemaRegistryURLs(profile)
 	if err != nil {

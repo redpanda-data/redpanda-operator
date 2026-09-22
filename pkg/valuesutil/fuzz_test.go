@@ -181,6 +181,7 @@ var metaSchema = &jsonschema.Schema{
 				// 		{Ref: "#/$defs/scalar"},
 				// 	},
 				// },
+				//nolint:laconiccomments
 			}),
 		},
 	},

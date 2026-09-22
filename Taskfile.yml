@@ -50,11 +50,33 @@ tasks:
         sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
       PKG: '{{ .PKG | default ._PKG }}'
     cmds:
-      - golangci-lint run --timeout 28m {{.PKG}} {{.CLI_ARGS}}
+      - task: lint:go
       - task: charts:download-dependencies
         vars: { CHART: redpanda/chart }
       - helm lint --strict ./charts/console/chart ./charts/connectors ./charts/redpanda/chart ./operator/chart/
       - actionlint
+
+  lint:go:
+    desc: "Run every go linter (replaces golangci-lint)"
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
+      HOUSELINT:
+        sh: command -v houselint || true
+    preconditions:
+    - sh: command -v houselint
+      msg: "houselint not on PATH: run inside `nix develop`, or `task build:lint-tools`"
+    cmds:
+    # lint/ is outside go.work on purpose (see lint/README.md), so it is not in
+    # PKG and is deliberately not vetted here; `task fmt` still formats it.
+    - go vet -vettool={{.HOUSELINT}} {{.PKG}}
+
+  lint-fix:
+    desc: "format in place, then lint"
+    cmds:
+      - task: fmt
+      - task: lint
 
   mod:tidy:
     desc: "Runs go mod tidy on all go modules in this repo"
@@ -87,9 +109,24 @@ tasks:
     - go work sync
 
   fmt:
-    desc: "gofumpt all go code"
+    desc: "gofumpt and gci all go code"
+    vars:
+      _PKG:
+        sh: go work edit -json | jq -j '.Use.[].DiskPath + "/... "'
+      PKG: '{{ .PKG | default ._PKG }}'
+      HOUSELINT:
+        sh: command -v houselint || true
+    preconditions:
+    - sh: command -v houselint
+      msg: "houselint not on PATH: run inside `nix develop`, or `task build:lint-tools`"
     cmds:
-      - gofumpt -w ./
+    # The formatters are analyzers whose fix is the formatted file, so -fix
+    # applies them. Only these two are selected: the other analyzers' fixes
+    # (staticcheck's quickfixes, for one) are not formatting. Never run the
+    # binary standalone without selecting analyzers -- the whole suite in one
+    # process holds SSA for every package at once and was OOM-killed at 23GB.
+    - '{{.HOUSELINT}} -fix -gofumpt -gci {{.PKG}} || true'
+    - 'cd lint && GOWORK=off {{.HOUSELINT}} -fix -gofumpt -gci ./... || true'
 
   fmt:fix:
     desc: "Apply the golangci-lint formatters (gci, gofumpt) to all go code"
@@ -118,7 +155,7 @@ tasks:
       # charts:generate embeds the itemized RBAC that k8s:generate writes into
       # charts/redpanda/chart/files, so it has to follow it.
       - task: charts:generate
-      - task: fmt:fix # Format any newly generated files.
+      - task: fmt # Format any newly generated files.
       - nix fmt . # Ensure flake.nix has been formatted.
 
   # Stages that share no inputs or outputs, fanned out.

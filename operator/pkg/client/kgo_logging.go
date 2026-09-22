@@ -10,8 +10,7 @@
 package client
 
 import (
-	"errors"
-
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/twmb/franz-go/pkg/kgo"

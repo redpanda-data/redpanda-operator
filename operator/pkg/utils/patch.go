@@ -21,6 +21,8 @@ import (
 
 // IgnoreAnnotation is a banzaicloud k8s-objectmatcher plugin that allows ignoring a specific annotation when computing a patch
 // between two objects.
+//
+//nolint:laconiccomments
 func IgnoreAnnotation(name string) patch.CalculateOption {
 	return func(current, modified []byte) ([]byte, []byte, error) {
 		var currentResource map[string]interface{}

@@ -12,7 +12,6 @@ package multicluster
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"hash/fnv"
 	"net/http"
@@ -22,6 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

@@ -1,17 +1,17 @@
-package statuses
+// Code generated from ./statuses.yaml. DO NOT EDIT.
 
-// GENERATED from ./statuses.yaml, DO NOT EDIT DIRECTLY
+package statuses
 
 import (
 	"strings"
 	"time"
 
-	"github.com/redpanda-data/common-go/rp-controller-utils/status"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/redpanda-data/common-go/rp-controller-utils/status"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 

@@ -12,7 +12,7 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
+	"errors" //nolint:depguard
 	"fmt"
 	"net/url"
 

@@ -11,9 +11,9 @@ package providers
 
 import (
 	"context"
-	"errors"
 	"os"
 
+	"github.com/cockroachdb/errors"
 	"github.com/redpanda-data/common-go/kube"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/k3d"

@@ -75,6 +75,8 @@ import (
 // RequeueAfter. Saturation is measured as the exact share of items above the
 // histogram's real 10-second bucket rather than the sampled busy-worker gauge
 // or an interpolated threshold between buckets. See K8S-927.
+//
+//nolint:laconiccomments
 func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 	values := helmette.Unwrap[Values](dot.Values)
 
@@ -96,7 +98,7 @@ func PrometheusRule(dot *helmette.Dot) *monitoringv1.PrometheusRule {
 			Name:        cleanForK8sWithSuffix(Fullname(dot), "reconcile-health"),
 			Labels:      Labels(dot),
 			Namespace:   dot.Release.Namespace,
-			Annotations: values.Annotations,
+			Annotations: Annotations(dot, nil),
 		},
 		Spec: monitoringv1.PrometheusRuleSpec{
 			Groups: []monitoringv1.RuleGroup{
