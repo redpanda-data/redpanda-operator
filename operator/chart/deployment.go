@@ -75,30 +75,28 @@ func SingleClusterDeployment(dot *helmette.Dot) *appsv1.Deployment {
 				MatchLabels: SelectorLabels(dot),
 			},
 			Strategy: values.Strategy,
-			Template: StrategicMergePatch(&corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels:      values.PodTemplate.Metadata.Labels,
-					Annotations: values.PodTemplate.Metadata.Annotations,
-				},
-				Spec: values.PodTemplate.Spec,
-			},
-				corev1.PodTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Annotations: values.PodAnnotations,
-						Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
-					},
-					Spec: corev1.PodSpec{
-						AutomountServiceAccountToken:  ptr.To(false),
-						TerminationGracePeriodSeconds: ptr.To(int64(10)),
-						ImagePullSecrets:              values.ImagePullSecrets,
-						ServiceAccountName:            ServiceAccountName(dot),
-						NodeSelector:                  values.NodeSelector,
-						Tolerations:                   values.Tolerations,
-						PriorityClassName:             values.PriorityClassName,
-						Volumes:                       operatorPodVolumes(dot),
-						Containers:                    operatorContainers(dot, nil),
-					},
-				}),
+			Template: StrategicMergePatch(
+				values.Deployment.PodTemplate.asPodTemplateSpec(),
+				StrategicMergePatch(
+					values.PodTemplate.asPodTemplateSpec(),
+					corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: values.PodAnnotations,
+							Labels:      helmette.Merge(SelectorLabels(dot), values.PodLabels),
+						},
+						Spec: corev1.PodSpec{
+							AutomountServiceAccountToken:  ptr.To(false),
+							TerminationGracePeriodSeconds: ptr.To(int64(10)),
+							ImagePullSecrets:              values.ImagePullSecrets,
+							ServiceAccountName:            ServiceAccountName(dot),
+							NodeSelector:                  values.NodeSelector,
+							Tolerations:                   values.Tolerations,
+							PriorityClassName:             values.PriorityClassName,
+							Volumes:                       operatorPodVolumes(dot),
+							Containers:                    operatorContainers(dot, nil),
+						},
+					}),
+			),
 		},
 	}
 
