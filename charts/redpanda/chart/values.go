@@ -160,10 +160,6 @@ func (AuditLogging) JSONSchemaExtend(schema *jsonschema.Schema) {
 func (a *AuditLogging) Translate(state *RenderState, isSASLEnabled bool) map[string]any {
 	result := map[string]any{}
 
-	if !RedpandaAtLeast_23_3_0(state) {
-		return result
-	}
-
 	enabled := a.Enabled && isSASLEnabled
 	result["audit_enabled"] = enabled
 	if !enabled {

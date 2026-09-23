@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Removed
+body: |-
+    The chart no longer checks `image.tag` for compatibility. Deploying a Redpanda version older than the chart supports now fails at runtime rather than being caught up front by a render-time error, and the `force` value no longer has any effect.
+time: 2026-09-02T10:47:55.000000-04:00
