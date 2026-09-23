@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Changed
+body: |-
+    LoadBalancer Services now also carry a correctly spelled
+    `redpanda.com/type: loadbalancer` label, and the post-install notes
+    select on it. The typo'd `repdanda.com/type` label is still set for
+    existing selectors and will be removed in the next major release
+time: 2026-09-21T13:00:04.000000-07:00
