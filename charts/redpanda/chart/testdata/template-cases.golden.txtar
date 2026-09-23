@@ -17349,7 +17349,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default external-tls-secret -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -18104,6 +18104,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-0
   namespace: default
@@ -18150,6 +18151,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-1
   namespace: default
@@ -18196,6 +18198,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-2
   namespace: default
@@ -117997,7 +118000,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default redpanda-external-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -118753,6 +118756,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-0
   namespace: default
@@ -118800,6 +118804,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-1
   namespace: default
@@ -118847,6 +118852,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-2
   namespace: default
@@ -119699,7 +119705,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default redpanda-external-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -120455,6 +120461,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-0
   namespace: default
@@ -120502,6 +120509,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-1
   namespace: default
@@ -120549,6 +120557,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-2
   namespace: default
@@ -121401,7 +121410,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default redpanda-default-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -130419,7 +130428,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default redpanda-kafka-tls-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -131195,6 +131204,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-0
   namespace: default
@@ -131242,6 +131252,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-1
   namespace: default
@@ -131289,6 +131300,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-2
   namespace: default
@@ -143474,7 +143486,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default redpanda-external-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -144241,6 +144253,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-0
   namespace: default
@@ -144273,6 +144286,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-1
   namespace: default
@@ -144305,6 +144319,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-2
   namespace: default
@@ -156653,7 +156668,7 @@ The pods will rollout in a few seconds. To check the status:
 
 If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
 
-  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,repdanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
 
 Set up rpk for access to your external listeners:
   kubectl get secret -n default redpanda-tls-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
@@ -157433,6 +157448,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-0
   namespace: default
@@ -157480,6 +157496,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-1
   namespace: default
@@ -157527,6 +157544,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
     repdanda.com/type: loadbalancer
   name: lb-redpanda-2
   namespace: default

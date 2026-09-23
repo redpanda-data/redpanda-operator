@@ -17,6 +17,7 @@
 {{- end -}}
 {{- $externalDNS := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.externalDns (mustMergeOverwrite (dict "enabled" false) (dict)))))) "r") -}}
 {{- $labels := (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r") -}}
+{{- $_ := (set $labels "redpanda.com/type" "loadbalancer") -}}
 {{- $_ := (set $labels "repdanda.com/type" "loadbalancer") -}}
 {{- $selector := (get (fromJson (include "redpanda.ClusterPodLabelsSelector" (dict "a" (list $state)))) "r") -}}
 {{- $lbPorts := (coalesce nil) -}}
