@@ -488,9 +488,8 @@ func (c *Cluster) RESTConfig() *kube.RESTConfig {
 
 func (c *Cluster) ImportImage(images ...string) error {
 	// Use a file-based lock to coordinate image imports across parallel
-	// test processes. k3d creates a temporary container named
-	// "k3d-<cluster>-tools" for imports which will conflict if multiple
-	// processes import concurrently.
+	// test processes: concurrent imports into the same nodes race each
+	// other, and the import markers below are read-then-written.
 	unlock, err := lockFile(c.Name + "-import")
 	if err != nil {
 		return errors.Wrap(err, "acquiring cluster lock for image import")
@@ -503,29 +502,45 @@ func (c *Cluster) ImportImage(images ...string) error {
 // nodeFingerprint returns a stable hash of the cluster's current node names.
 // Import markers are scoped to it (see imageMarkerPath).
 func (c *Cluster) nodeFingerprint() (string, error) {
-	out, err := exec.Command("k3d", "node", "list", "-o", "json").Output()
+	nodes, err := c.listNodes()
 	if err != nil {
-		return "", errors.Wrap(err, "listing k3d nodes")
-	}
-	var nodes []struct {
-		Name          string            `json:"name"`
-		RuntimeLabels map[string]string `json:"runtimeLabels"`
-	}
-	if err := json.Unmarshal(out, &nodes); err != nil {
-		return "", errors.Wrap(err, "parsing k3d node list")
+		return "", err
 	}
 	var names []string
 	for _, n := range nodes {
-		// Match by the k3d.cluster runtime label, NOT a name prefix: nodes
-		// added via `k3d node create` get their given name re-prefixed
-		// (e.g. k3d-k3d-<cluster>-agent-0-0) and would escape a prefix match.
-		if n.RuntimeLabels["k3d.cluster"] == c.Name {
-			names = append(names, n.Name)
-		}
+		names = append(names, n.Name)
 	}
 	slices.Sort(names)
 	sum := sha256.Sum256([]byte(strings.Join(names, ",")))
 	return hex.EncodeToString(sum[:8]), nil
+}
+
+type k3dNode struct {
+	Name          string            `json:"name"`
+	Role          string            `json:"role"`
+	RuntimeLabels map[string]string `json:"runtimeLabels"`
+}
+
+// listNodes returns this cluster's nodes. Matched by the k3d.cluster runtime
+// label, NOT a name prefix: nodes added via `k3d node create` get their given
+// name re-prefixed and suffixed (e.g. k3d-<given-name>-0) and could escape a
+// prefix match.
+func (c *Cluster) listNodes() ([]k3dNode, error) {
+	out, err := exec.Command("k3d", "node", "list", "-o", "json").Output()
+	if err != nil {
+		return nil, errors.Wrap(err, "listing k3d nodes")
+	}
+	var nodes []k3dNode
+	if err := json.Unmarshal(out, &nodes); err != nil {
+		return nil, errors.Wrap(err, "parsing k3d node list")
+	}
+	var clusterNodes []k3dNode
+	for _, n := range nodes {
+		if n.RuntimeLabels["k3d.cluster"] == c.Name {
+			clusterNodes = append(clusterNodes, n)
+		}
+	}
+	return clusterNodes, nil
 }
 
 // importImages is the lock-free implementation of ImportImage, for use by
@@ -551,9 +566,58 @@ func (c *Cluster) importImages(images ...string) error {
 		return nil
 	}
 
-	args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, needed...)
-	if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
-		return fmt.Errorf("%w: %s", err, out)
+	// k3d's tools-node import logs and swallows per-node `ctr image import`
+	// failures — the CLI exits 0 even when a node received nothing
+	// (https://github.com/k3d-io/k3d/blob/v5.9.0/pkg/client/tools.go), so a
+	// clean exit does not prove every node has the images. Only localhost/
+	// refs are held to a hard guarantee: they exist solely via this import
+	// (nothing can pull them), so one silently missed node leaves a retained
+	// cluster in permanent Init:ImagePullBackOff. Registry-hosted images are
+	// best-effort warm-up — kubelet pulls them on demand — and cannot be
+	// required: on daemons using Docker's containerd image store, ImageSave
+	// emits multi-arch indexes whose foreign-platform blobs aren't in the
+	// tar, so the per-node `ctr image import --all-platforms` fails for
+	// every registry-pulled image (https://github.com/k3d-io/k3d/issues/1538).
+	//
+	// The two sets must be imported in SEPARATE invocations: k3d saves one
+	// invocation's images into a single tarball, and ctr's failure on a
+	// registry image's missing foreign-platform digest also discards the
+	// complete localhost/ images sharing that tarball. Solo, a locally-built
+	// image's tar is complete and imports fine on the same daemon.
+	// (--mode=direct would propagate per-node errors, but its multiplexed
+	// stream itself truncates on one node per run on macOS docker VMs.)
+	var unpullable, pullable []string
+	for _, img := range needed {
+		if strings.HasPrefix(normalizeImageRef(img), "localhost/") {
+			unpullable = append(unpullable, img)
+		} else {
+			pullable = append(pullable, img)
+		}
+	}
+
+	const importAttempts = 3
+	for attempt := 1; len(unpullable) > 0; attempt++ {
+		args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, unpullable...)
+		if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
+			return fmt.Errorf("%w: %s", err, out)
+		}
+		missing, err := c.imagesMissingFromNodes(unpullable)
+		if err != nil {
+			return err
+		}
+		if len(missing) == 0 {
+			break
+		}
+		if attempt == importAttempts {
+			return fmt.Errorf("unpullable images still missing from nodes after %d import attempts: %s", importAttempts, strings.Join(missing, ", "))
+		}
+	}
+
+	if len(pullable) > 0 {
+		args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, pullable...)
+		if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
+			return fmt.Errorf("%w: %s", err, out)
+		}
 	}
 
 	// Mark all images as imported.
@@ -561,6 +625,62 @@ func (c *Cluster) importImages(images ...string) error {
 		markImageImported(c.Name, fingerprint, img)
 	}
 	return nil
+}
+
+// imagesMissingFromNodes returns a "node: image" entry for every server or
+// agent node whose containerd store lacks one of the given images.
+func (c *Cluster) imagesMissingFromNodes(images []string) ([]string, error) {
+	if len(images) == 0 {
+		return nil, nil
+	}
+	nodes, err := c.listNodes()
+	if err != nil {
+		return nil, err
+	}
+	var missing []string
+	for _, node := range nodes {
+		if node.Role != "server" && node.Role != "agent" {
+			continue
+		}
+		out, err := exec.Command("docker", "exec", node.Name, "ctr", "-n", "k8s.io", "image", "ls", "-q").Output()
+		if err != nil {
+			// DeleteNode doesn't take the import lock, so a node listed
+			// above may already be gone — and a vanished node needs no
+			// image. Only fail if the node still exists.
+			if current, lerr := c.listNodes(); lerr == nil && !slices.ContainsFunc(current, func(n k3dNode) bool { return n.Name == node.Name }) {
+				continue
+			}
+			return nil, errors.Wrapf(err, "listing images on node %s", node.Name)
+		}
+		present := make(map[string]bool)
+		for _, ref := range strings.Fields(string(out)) {
+			present[ref] = true
+		}
+		for _, img := range images {
+			if !present[normalizeImageRef(img)] {
+				missing = append(missing, node.Name+": "+img)
+			}
+		}
+	}
+	return missing, nil
+}
+
+// normalizeImageRef mirrors containerd's docker-reference normalization so
+// image names match `ctr image ls -q` output: bare names gain
+// docker.io/library/, hub-style names gain docker.io/, and refs without a
+// tag get :latest. localhost/ and dotted-registry refs stay as given.
+func normalizeImageRef(image string) string {
+	if strings.LastIndex(image, ":") < strings.LastIndex(image, "/") || !strings.Contains(image, ":") {
+		image += ":latest"
+	}
+	first, _, found := strings.Cut(image, "/")
+	switch {
+	case !found:
+		return "docker.io/library/" + image
+	case first != "localhost" && !strings.ContainsAny(first, ".:"):
+		return "docker.io/" + image
+	}
+	return image
 }
 
 func (c *Cluster) DeleteNode(name string) error {
@@ -587,6 +707,11 @@ func (c *Cluster) CreateNode() error {
 }
 
 func (c *Cluster) CreateNodeWithName(name string) error {
+	// `k3d node create` re-prefixes the given name with "k3d-" (and appends a
+	// replica suffix). Callers recreating a deleted node pass the Kubernetes
+	// node name, which already carries the prefix — without stripping it the
+	// replacement would be named "k3d-k3d-<cluster>-agent-N-0".
+	name = strings.TrimPrefix(name, "k3d-")
 	if out, err := exec.Command(
 		"k3d",
 		"node",
