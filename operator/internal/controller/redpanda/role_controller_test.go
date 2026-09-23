@@ -17,6 +17,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kgo"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -907,32 +908,8 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 func TestRoleRename(t *testing.T) {
 	// Tests role rename happy path: K8s name → internal name → different internal name
 	// Verifies old roles are deleted and new roles created without orphaning.
-	//
-	// Unhappy path scenarios (documented for future implementation with mocks):
-	//
-	// Scenario 1: New role creation fails
-	//   - Rename detected, hasRole=false
-	//   - Create() returns error
-	//   - createPatch returns error
-	//   - Status NOT updated (keeps previousEffectiveName)
-	//   - Next reconciliation retries from beginning
-	//
-	// Scenario 2: Old role deletion fails
-	//   - Rename detected, hasRole=false
-	//   - Create() succeeds, new role exists
-	//   - DeleteByName() returns error
-	//   - createPatch returns error
-	//   - Status NOT updated (keeps previousEffectiveName)
-	//   - Next reconciliation: hasRole=true (skip create), retry delete
-	//
-	// Scenario 3: Retry after deletion failure
-	//   - Rename still detected (status has old name)
-	//   - hasRole=true (new role exists from previous attempt)
-	//   - Logs "New role already exists, skipping creation"
-	//   - DeleteByName() succeeds this time
-	//   - createPatch(nil) updates status to currentEffectiveName
-	//   - Rename complete, no orphaned roles
-	//nolint:laconiccomments
+	// The interrupted-rename path (status must keep the previous effective
+	// name until cleanup completes) is covered by TestRoleRenameInterrupted.
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
@@ -1055,4 +1032,106 @@ func TestRoleRename(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 	})
+}
+
+func TestRoleRenameInterrupted(t *testing.T) {
+	// A rename interrupted by a transient failure must not advance
+	// status.EffectiveRoleName: the caller applies the status patch even when
+	// SyncResource errors, and once status records the new name isRoleRename
+	// can never re-trigger, permanently orphaning the old role in Redpanda.
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	// The role must carry ACLs: the rename path only touches the
+	// SASL-authenticated Kafka client through the ACL syncer (the dev
+	// container's admin API is unauthenticated), and the interruption below
+	// works by breaking those credentials.
+	role := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceDefault,
+			Name:      "interrupted-role",
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Principals:    []string{"User:user1"},
+			Authorization: &redpandav1alpha2.RoleAuthorizationSpec{
+				ACLs: []redpandav1alpha2.ACLRule{{
+					Type: redpandav1alpha2.ACLTypeAllow,
+					Resource: redpandav1alpha2.ACLResourceSpec{
+						Type: redpandav1alpha2.ResourceTypeGroup,
+						Name: "group",
+					},
+					Operations: []redpandav1alpha2.ACLOperation{
+						redpandav1alpha2.ACLOperationDescribe,
+					},
+				}},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(role)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Create(ctx, role))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "interrupted-role", role.Status.EffectiveRoleName)
+
+	// Interrupt the rename: flip the internal flag while the SASL password
+	// secret referenced by the (immutable) ClusterSource is corrupted, so
+	// reconciliation fails before any cleanup runs. Terminal client errors
+	// surface as a condition, not a returned error, so the reconcile result
+	// is ignored here.
+	var secret corev1.Secret
+	secretKey := client.ObjectKey{Namespace: metav1.NamespaceDefault, Name: "superuser"}
+	require.NoError(t, k8sClient.Get(ctx, secretKey, &secret))
+	secret.Data["password"] = []byte("wrong")
+	require.NoError(t, k8sClient.Update(ctx, &secret))
+
+	role.Spec.Internal = true
+	require.NoError(t, k8sClient.Update(ctx, role))
+	_, _ = environment.Reconciler.Reconcile(ctx, req)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "interrupted-role", role.Status.EffectiveRoleName,
+		"an interrupted rename must keep reporting the previous effective name")
+
+	// Restore the credentials: the pending rename must resume, create the
+	// new role, delete the old one, and only then advance the status name.
+	secret.Data["password"] = []byte("password")
+	require.NoError(t, k8sClient.Update(ctx, &secret))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "__interrupted-role", role.Status.EffectiveRoleName)
+
+	rolesClient, err := environment.Factory.Roles(ctx, role)
+	require.NoError(t, err)
+	defer rolesClient.Close()
+
+	hasNewRole, err := rolesClient.Has(ctx, role)
+	require.NoError(t, err)
+	require.True(t, hasNewRole, "renamed role should exist")
+
+	oldRole := role.DeepCopy()
+	oldRole.Spec.Internal = false
+	hasOldRole, err := rolesClient.Has(ctx, oldRole)
+	require.NoError(t, err)
+	require.False(t, hasOldRole, "old role must be deleted once the rename resumes")
+
+	require.NoError(t, k8sClient.Delete(ctx, role))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 }

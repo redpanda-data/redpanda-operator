@@ -1,0 +1,9 @@
+project: operator
+kind: Fixed
+body: |-
+    A `RedpandaRole` rename interrupted by a transient failure no longer
+    permanently orphans the old role in Redpanda. The status now keeps
+    reporting the previous effective role name until the rename's cleanup
+    completes, so the next reconciliation retries the rename instead of
+    considering it finished.
+time: 2026-09-23T11:30:00.000000+01:00

@@ -75,6 +75,18 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	currentEffectiveName := role.GetEffectiveRoleName()
 	previousEffectiveName := role.Status.EffectiveRoleName
 
+	// Status must keep reporting the previous effective name until the rename
+	// fully completes: the caller applies createPatch's status patch even when
+	// SyncResource returns an error, and once status records the new name
+	// isRoleRename can never trigger again — so a rename interrupted by any
+	// transient failure (including client construction) would permanently
+	// orphan the old role in Redpanda.
+	renameInProgress := isRoleRename(previousEffectiveName, currentEffectiveName, hasManagedRole)
+	statusEffectiveName := currentEffectiveName
+	if renameInProgress {
+		statusEffectiveName = previousEffectiveName
+	}
+
 	var srSyncWarning error
 
 	createPatch := func(err error) (client.Patch, error) {
@@ -94,7 +106,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithManagedRole(hasManagedRole).
 			WithManagedACLs(hasManagedACLs).
 			WithManagedPrincipals(hasManagedPrincipals).
-			WithEffectiveRoleName(currentEffectiveName).
+			WithEffectiveRoleName(statusEffectiveName).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -108,7 +120,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer syncer.Close()
 
 	// Handle role rename if effective name changed
-	if isRoleRename(previousEffectiveName, currentEffectiveName, hasManagedRole) {
+	if renameInProgress {
 		request.logger.V(1).Info("Role rename", "from", previousEffectiveName, "to", currentEffectiveName)
 
 		// Create new role
@@ -148,6 +160,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 		hasManagedRole = true
 		hasManagedPrincipals = shouldManagePrincipals
 		hasManagedACLs = shouldManageACLs
+		statusEffectiveName = currentEffectiveName
 		return createPatch(nil)
 	}
 
