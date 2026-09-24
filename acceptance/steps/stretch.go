@@ -1381,6 +1381,14 @@ func waitForStatefulSetReadyInTheNode(ctx context.Context, node *vclusterNode) e
 	if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{redpandaLabel: redpandaLabelValue}); err != nil {
 		return fmt.Errorf("error listing statefulsets in %s: %v", node.Name(), err)
 	}
+	// Callers use this to serialize bootstrap: the first pool's broker must
+	// form a cluster before further pools are created, or brokers can bake
+	// diverging seed_servers lists and fail bootstrap with "seed server list
+	// mismatch". Before the operator renders the StatefulSet the list is
+	// empty — that must count as not ready, not as vacuously ready.
+	if len(stsList.Items) == 0 {
+		return fmt.Errorf("no redpanda statefulset rendered in %s yet", node.Name())
+	}
 	for _, sts := range stsList.Items {
 		if sts.Spec.Replicas != nil && sts.Status.ReadyReplicas == *sts.Spec.Replicas && *sts.Spec.Replicas > 0 {
 			continue
