@@ -310,29 +310,39 @@ func (g *TxTarGolden) update(path string) error {
 	return os.WriteFile(path, txtar.Format(g.archive), 0o644)
 }
 
-func (g *TxTarGolden) getFile(path string) *txtar.File {
+// NB: Data, not a *txtar.File. Callers may run in parallel and an append
+// from another goroutine can move the backing array, which would silently
+// drop writes through an escaped element pointer.
+func (g *TxTarGolden) getFile(path string) []byte {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	for _, file := range g.archive.Files {
+		if file.Name == path {
+			return file.Data
+		}
+	}
+	return nil
+}
+
+func (g *TxTarGolden) setFile(path string, data []byte) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
 	for i, file := range g.archive.Files {
 		if file.Name == path {
-			return &g.archive.Files[i]
+			g.archive.Files[i].Data = data
+			return
 		}
 	}
-	g.archive.Files = append(g.archive.Files, txtar.File{
-		Name: path,
-		Data: []byte{},
-	})
-	return &g.archive.Files[len(g.archive.Files)-1]
+	g.archive.Files = append(g.archive.Files, txtar.File{Name: path, Data: data})
 }
 
 func (g *TxTarGolden) AssertGolden(t *testing.T, assertionType GoldenAssertion, path string, actual []byte) {
 	t.Helper()
 
-	file := g.getFile(path)
-
-	assertGolden(t, assertionType, path, file.Data, actual, func(s string, b []byte) error {
-		file.Data = b
+	assertGolden(t, assertionType, path, g.getFile(path), actual, func(s string, b []byte) error {
+		g.setFile(path, b)
 		return nil
 	})
 }
