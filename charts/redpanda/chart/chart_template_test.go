@@ -89,13 +89,6 @@ func TestTemplate(t *testing.T) {
 	client, err := helm.New(helm.Options{ConfigHome: tmp})
 	require.NoError(t, err)
 
-	// The sequential helm invocations below take ~70s on an idle 16-core
-	// machine, and this package runs alongside the rest of test:unit. The
-	// budget is a guard rail against a hung `helm template`, not a
-	// performance assertion, so keep some headroom.
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
-	defer cancel()
-
 	archive, err := txtar.ParseFile("testdata/template-cases.txtar")
 	require.NoError(t, err)
 
@@ -108,6 +101,13 @@ func TestTemplate(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
+			// A guard rail against a hung `helm template`, not a performance
+			// assertion; this package runs alongside the rest of test:unit.
+			ctx, cancel := context.WithTimeout(ctx, time.Minute)
+			defer cancel()
+
 			// To make it easy to add tests and assertions on various sets of
 			// data, we add markers in YAML comments in the form of:
 			// # ASSERT-<NAME> ["OPTIONAL", "PARAMS", "AS", "JSON"]
