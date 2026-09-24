@@ -1,5 +1,0 @@
-project: operator
-kind: Changed
-body: |-
-    Breaking change for Redpanda Connect pipelines, which are still in beta: the operator chart's `commonAnnotations` value is renamed to `connectAnnotations`, and the operator's `--common-annotations` flag to `--connect-annotations`. The value only ever annotated the resources the Connect Pipeline controller creates, never the operator chart's own objects, so the old name read as a chart-wide knob it never was. Rename it before upgrading: the chart's values schema rejects unknown keys, so the old name fails `helm upgrade` rather than being silently ignored.
-time: 2026-09-12T09:00:00.000000-07:00
