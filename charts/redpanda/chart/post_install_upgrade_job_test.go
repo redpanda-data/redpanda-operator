@@ -126,8 +126,9 @@ func TestAnnotationsOverwrite(t *testing.T) {
 	require.NoError(t, err)
 
 	state := &RenderState{Values: helmette.Unwrap[Values](dot.Values), Files: &dot.Files, Release: &dot.Release, Chart: &dot.Chart}
+	pki := resolvePKI(state)
 
-	job := PostInstallUpgradeJob(state)
+	job := PostInstallUpgradeJob(state, &pki)
 	require.Equal(t, job.Annotations["helm.sh/hook-delete-policy"], "before-hook-creation,hook-succeeded")
 	require.Equal(t, job.Labels["app.kubernetes.io/name"], "overwrite-name")
 	require.Equal(t, job.Spec.Template.Annotations["some-annotation"], "some-annotation-value")
