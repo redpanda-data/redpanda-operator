@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: A StretchCluster listener setting `tls.enabled: true` while its pool disables TLS globally no longer emits a `*_tls` config entry. Certificate issuance is gated on the pool's `tls.enabled`, so the broker was told to read certificate files that nothing mounted and crashlooped.
+time: 2026-09-16T17:15:00.000000-04:00

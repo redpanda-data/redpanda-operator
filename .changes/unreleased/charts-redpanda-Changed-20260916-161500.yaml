@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: The internal Service's `http`, `kafka`, `rpc` and `schemaregistry` ports now render an explicit `appProtocol: null`, and honour `listeners.<api>.appProtocol` when set. Previously only `admin` did. Inert for Kubernetes; the external ports have always rendered the key.
+time: 2026-09-16T16:15:00.000000-04:00

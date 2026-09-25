@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Removed
+body: '`redpanda.yaml` no longer carries `admin_api_tls`, `kafka_api_tls`, `pandaproxy_api_tls` and `schema_registry_api_tls` as explicit nulls when no listener on that API serves TLS. The keys are now omitted, as `rpc_server_tls` always has been.'
+time: 2026-09-21T20:15:00.000000-04:00

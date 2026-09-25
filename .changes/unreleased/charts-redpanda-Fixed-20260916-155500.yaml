@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: The RPC listener's `trustStore` is now projected into the `truststores` volume. `rpc_server_tls.truststore_file` named a path that nothing mounted, so a broker configured with `listeners.rpc.tls.trustStore` failed to start.
+time: 2026-09-16T15:55:00.000000-04:00

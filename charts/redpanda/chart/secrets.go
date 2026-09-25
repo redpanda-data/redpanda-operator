@@ -24,9 +24,9 @@ import (
 
 const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
 
-func Secrets(state *RenderState) []*corev1.Secret {
+func Secrets(state *RenderState, listeners *redpanda.Listeners) []*corev1.Secret {
 	var secrets []*corev1.Secret
-	secrets = append(secrets, SecretSTSLifecycle(state))
+	secrets = append(secrets, SecretSTSLifecycle(state, listeners))
 	if saslUsers := SecretSASLUsers(state); saslUsers != nil {
 		secrets = append(secrets, saslUsers)
 	}
@@ -34,13 +34,13 @@ func Secrets(state *RenderState) []*corev1.Secret {
 	// the same main-then-pools order as [gatewayPodNames]. The configurator
 	// renders advertised addresses with a pool-local ordinal, so it needs this
 	// offset to recover the global ordinal that Gateway TLSRoutes/services use.
-	secrets = append(secrets, SecretConfigurator(state, Pool{Statefulset: state.Values.Statefulset}, 0))
+	secrets = append(secrets, SecretConfigurator(state, listeners, Pool{Statefulset: state.Values.Statefulset}, 0))
 	if fsValidator := SecretFSValidator(state, Pool{Statefulset: state.Values.Statefulset}); fsValidator != nil {
 		secrets = append(secrets, fsValidator)
 	}
 	ordinalOffset := int(state.Values.Statefulset.Replicas)
 	for _, set := range state.Pools {
-		secrets = append(secrets, SecretConfigurator(state, set, ordinalOffset))
+		secrets = append(secrets, SecretConfigurator(state, listeners, set, ordinalOffset))
 		if fsValidator := SecretFSValidator(state, set); fsValidator != nil {
 			secrets = append(secrets, fsValidator)
 		}
@@ -52,13 +52,13 @@ func Secrets(state *RenderState) []*corev1.Secret {
 	return secrets
 }
 
-func SecretSTSLifecycle(state *RenderState) *corev1.Secret {
+func SecretSTSLifecycle(state *RenderState, listeners *redpanda.Listeners) *corev1.Secret {
 	replicas := state.Values.Statefulset.Replicas
 	for _, set := range state.Pools {
 		replicas = replicas + set.Statefulset.Replicas
 	}
 
-	adminCurlFlags := adminTLSCurlFlags(state)
+	adminCurlFlags := listeners.Admin().CurlFlags()
 	drain := replicas > 2 && !helmette.Dig(state.Values.Config.Node, false, "recovery_mode_enabled").(bool)
 
 	secret := &corev1.Secret{
@@ -183,13 +183,13 @@ func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
 	return secret
 }
 
-func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev1.Secret {
+func SecretConfigurator(state *RenderState, listeners *redpanda.Listeners, pool Pool, ordinalOffset int) *corev1.Secret {
 	configuratorSh := redpanda.ConfiguratorPrologueSh()
 
-	kafkaSnippet := secretConfiguratorKafkaConfig(state, pool.Statefulset, ordinalOffset)
+	kafkaSnippet := secretConfiguratorAdvertisedConfig(state, listeners.Kafka(), pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, kafkaSnippet...)
 
-	httpSnippet := secretConfiguratorHTTPConfig(state, pool.Statefulset, ordinalOffset)
+	httpSnippet := secretConfiguratorAdvertisedConfig(state, listeners.HTTP(), pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, httpSnippet...)
 
 	if state.Values.RackAwareness.Enabled {
@@ -214,194 +214,85 @@ func SecretConfigurator(state *RenderState, pool Pool, ordinalOffset int) *corev
 	}
 }
 
-func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalOffset int) []string {
+// secretConfiguratorAdvertisedConfig emits the configurator snippet setting one
+// API's advertised addresses: the internal one at index 0, then a per-replica
+// bash array per external listener, indexed by $POD_ORDINAL.
+func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, sts Statefulset, ordinalOffset int) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
+
+	inCluster := api.InCluster()
 
 	var snippet []string
 
-	// Handle kafka listener
-	listenerName := "kafka"
-	listenerAdvertisedName := listenerName
-	redpandaConfigPart := "redpanda"
 	snippet = append(snippet,
 		``,
 		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
-			"name":    "internal",
+			"name":    redpanda.InternalListenerName,
 			"address": internalAdvertiseAddress,
-			"port":    state.Values.Listeners.Kafka.Port,
+			"port":    inCluster.Port,
 		}))),
-		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"`,
-			redpandaConfigPart,
-			listenerAdvertisedName,
+		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.%s[0] "$LISTENER"`,
+			api.Kind.AdvertisedConfigSection(),
+			api.Kind.AdvertisedConfigKey(),
 		),
 	)
-	if len(state.Values.Listeners.Kafka.External) > 0 {
-		externalCounter := 0
-		for externalName, externalVals := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-			externalCounter = externalCounter + 1
-			snippet = append(snippet,
-				``,
-				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
-			)
-			// TODO: this looks quite broken just based on the fact that if replicas > addresses
-			for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
-				// advertised-port for kafka
-				port := externalVals.Port // This is always defined for kafka
-				if len(externalVals.AdvertisedPorts) > 0 {
-					if len(externalVals.AdvertisedPorts) == 1 {
-						port = externalVals.AdvertisedPorts[0]
-					} else {
-						port = externalVals.AdvertisedPorts[replicaIndex]
-					}
-				}
 
-				host := advertisedHostJSON(
-					state,
-					externalName,
-					port,
-					replicaIndex,
-					ordinalOffset+replicaIndex,
-					ptr.Deref(externalVals.Host, ""),
-					ptr.Deref(externalVals.HostTemplate, ""),
-					externalVals.IsGatewayListener(),
-				)
-				// XXX: the original code used the stringified `host` value as a template
-				// for re-expansion; however it was impossible to make this work usefully,
-				/// even with the original yaml template.
-				address := helmette.ToJSON(host)
-				prefixTemplate := ptr.Deref(externalVals.PrefixTemplate, "")
-				if prefixTemplate == "" {
-					// Required because the values might not specify this, it'll ensur we see "" if it's missing.
-					prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
-				}
-				snippet = append(snippet,
-					``,
-					fmt.Sprintf(`PREFIX_TEMPLATE=%s`, helmette.Quote(prefixTemplate)),
-					fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%s)`,
-						helmette.Upper(listenerName),
-						helmette.Quote(address),
-					),
-				)
+	arrayName := helmette.Upper(string(api.Kind))
+
+	// NB: ungated on exposure. A listener with no Service is still advertised;
+	// values.yaml says the user may create that Service themselves.
+	externalCounter := 0
+	for _, listener := range api.External() {
+		externalCounter = externalCounter + 1
+
+		snippet = append(snippet,
+			``,
+			fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, arrayName),
+		)
+
+		// TODO: this looks quite broken just based on the fact that if replicas > addresses
+		for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
+			host := advertisedHostJSON(
+				state,
+				listener.Name,
+				listener.AdvertisedPort(int32(replicaIndex)),
+				replicaIndex,
+				ordinalOffset+replicaIndex,
+				listener.Gateway,
+			)
+			// XXX: the original code used the stringified `host` value as a template
+			// for re-expansion; however it was impossible to make this work usefully,
+			/// even with the original yaml template.
+			address := helmette.ToJSON(host)
+
+			prefixTemplate := listener.PrefixTemplate
+			if prefixTemplate == "" {
+				// Required because the values might not specify this, it'll ensur we see "" if it's missing.
+				prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
 			}
 
 			snippet = append(snippet,
 				``,
-				fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[%d] "${ADVERTISED_%s_ADDRESSES[$POD_ORDINAL]}"`,
-					redpandaConfigPart,
-					listenerAdvertisedName,
-					externalCounter,
-					helmette.Upper(listenerName),
-				),
+				fmt.Sprintf(`PREFIX_TEMPLATE=%s`, helmette.Quote(prefixTemplate)),
+				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%s)`, arrayName, helmette.Quote(address)),
 			)
 		}
-	}
 
-	return snippet
-}
-
-func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset, ordinalOffset int) []string {
-	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
-
-	var snippet []string
-
-	// Handle kafka listener
-	listenerName := "http"
-	listenerAdvertisedName := "pandaproxy"
-	redpandaConfigPart := "pandaproxy"
-	snippet = append(snippet,
-		``,
-		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
-			"name":    "internal",
-			"address": internalAdvertiseAddress,
-			"port":    state.Values.Listeners.HTTP.Port,
-		}))),
-		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[0] "$LISTENER"`,
-			redpandaConfigPart,
-			listenerAdvertisedName,
-		),
-	)
-	if len(state.Values.Listeners.HTTP.External) > 0 {
-		externalCounter := 0
-		for externalName, externalVals := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-			externalCounter = externalCounter + 1
-			snippet = append(snippet,
-				``,
-				fmt.Sprintf(`ADVERTISED_%s_ADDRESSES=()`, helmette.Upper(listenerName)),
-			)
-			// TODO: this looks quite broken just based on the fact that if replicas > addresses
-			for _, replicaIndex := range helmette.Until(int(sts.Replicas)) {
-				// advertised-port for kafka
-				port := externalVals.Port // This is always defined for kafka
-				if len(externalVals.AdvertisedPorts) > 0 {
-					if len(externalVals.AdvertisedPorts) == 1 {
-						port = externalVals.AdvertisedPorts[0]
-					} else {
-						port = externalVals.AdvertisedPorts[replicaIndex]
-					}
-				}
-
-				host := advertisedHostJSON(
-					state,
-					externalName,
-					port,
-					replicaIndex,
-					ordinalOffset+replicaIndex,
-					ptr.Deref(externalVals.Host, ""),
-					ptr.Deref(externalVals.HostTemplate, ""),
-					externalVals.IsGatewayListener(),
-				)
-				// XXX: the original code used the stringified `host` value as a template
-				// for re-expansion; however it was impossible to make this work usefully,
-				/// even with the original yaml template.
-				address := helmette.ToJSON(host)
-
-				prefixTemplate := ptr.Deref(externalVals.PrefixTemplate, "")
-				if prefixTemplate == "" {
-					// Required because the values might not specify this, it'll ensur we see "" if it's missing.
-					prefixTemplate = helmette.Default("", state.Values.External.PrefixTemplate)
-				}
-				snippet = append(snippet,
-					``,
-					fmt.Sprintf(`PREFIX_TEMPLATE=%s`, helmette.Quote(prefixTemplate)),
-					fmt.Sprintf(`ADVERTISED_%s_ADDRESSES+=(%s)`,
-						helmette.Upper(listenerName),
-						helmette.Quote(address),
-					),
-				)
-			}
-
-			snippet = append(snippet,
-				``,
-				fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.advertised_%s_api[%d] "${ADVERTISED_%s_ADDRESSES[$POD_ORDINAL]}"`,
-					redpandaConfigPart,
-					listenerAdvertisedName,
-					externalCounter,
-					helmette.Upper(listenerName),
-				),
-			)
-		}
+		snippet = append(snippet,
+			``,
+			fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.%s[%d] "${ADVERTISED_%s_ADDRESSES[$POD_ORDINAL]}"`,
+				api.Kind.AdvertisedConfigSection(),
+				api.Kind.AdvertisedConfigKey(),
+				externalCounter,
+				arrayName,
+			),
+		)
 	}
 
 	return snippet
 }
 
 // The following from _helpers.tpm
-
-func adminTLSCurlFlags(state *RenderState) string {
-	if !state.Values.Listeners.Admin.TLS.IsEnabled(&state.Values.TLS) {
-		return ""
-	}
-
-	pki := PKI(state)
-
-	if kp := state.Values.Listeners.Admin.TLS.ClientKeypair(&pki); kp != nil {
-		path := kp.MountPath()
-		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
-	}
-
-	path := state.Values.Listeners.Admin.TLS.ServerCAPath(&pki)
-	return fmt.Sprintf("--cacert %s", path)
-}
 
 func externalAdvertiseAddress(state *RenderState) string {
 	eaa := "${SERVICE_NAME}"
@@ -414,7 +305,7 @@ func externalAdvertiseAddress(state *RenderState) string {
 }
 
 // was advertised-host
-func advertisedHostJSON(state *RenderState, name string, port int32, replicaIndex int, globalOrdinal int, host string, hostTemplate string, isGateway bool) map[string]any {
+func advertisedHostJSON(state *RenderState, name string, port int32, replicaIndex int, globalOrdinal int, gateway *redpanda.GatewayRoute) map[string]any {
 	// Gateway API mode: advertise the TLSRoute SNI hostname and the
 	// gateway's advertised port (default 443) rather than a NodePort/LB address.
 	// Only applies to listeners that opted into gateway mode.
@@ -423,8 +314,8 @@ func advertisedHostJSON(state *RenderState, name string, port int32, replicaInde
 	// The configurator renders per node pool with a StatefulSet-local ordinal,
 	// but TLSRoutes/services are named/hosted by the global pod-list index, so a
 	// pool broker must advertise the host at its global ordinal to match them.
-	if state.Values.External.IsGatewayEnabled() && isGateway {
-		return advertisedHostJSONGateway(state, name, globalOrdinal, host, hostTemplate)
+	if state.Values.External.IsGatewayEnabled() && gateway != nil {
+		return advertisedHostJSONGateway(state, name, globalOrdinal, gateway)
 	}
 
 	hostMap := map[string]any{
@@ -462,23 +353,16 @@ func advertisedHostJSON(state *RenderState, name string, port int32, replicaInde
 // broker's index into [gatewayPodNames] (the same index used to name/host its
 // TLSRoute and per-broker service), so the advertised address matches the route
 // that carries it.
-func advertisedHostJSONGateway(state *RenderState, name string, globalOrdinal int, host string, hostTemplate string) map[string]any {
+func advertisedHostJSONGateway(state *RenderState, name string, globalOrdinal int, gateway *redpanda.GatewayRoute) map[string]any {
 	gw := state.Values.External.Gateway
 	port := gw.GatewayAdvertisedPort()
 
-	if hostTemplate == "" {
-		// Fallback: use the bootstrap host if no template is set.
-		hostTemplate = host
+	// NB: empty when the listener set no hostTemplate, leaving the bootstrap
+	// host as every broker's address.
+	address := gateway.Host
+	if globalOrdinal < len(gateway.BrokerHosts) {
+		address = gateway.BrokerHosts[globalOrdinal]
 	}
-
-	pods := gatewayPodNames(state)
-
-	podName := ""
-	if globalOrdinal < len(pods) {
-		podName = pods[globalOrdinal]
-	}
-
-	address := renderBrokerHost(hostTemplate, globalOrdinal, podName)
 
 	return map[string]any{
 		"name":    name,

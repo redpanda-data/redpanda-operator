@@ -28,6 +28,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
@@ -103,9 +104,12 @@ func render(dot *helmette.Dot) []kube.Object {
 	state.FetchBootstrapUser()
 	state.FetchStatefulSetPodSelector()
 
-	manifests := renderResources(state)
+	pki := resolvePKI(state)
+	listeners := resolveListeners(state, &pki)
 
-	for _, obj := range StatefulSets(state) {
+	manifests := renderResources(state, &pki, &listeners)
+
+	for _, obj := range StatefulSets(state, &pki, &listeners) {
 		manifests = append(manifests, obj)
 	}
 
@@ -115,17 +119,17 @@ func render(dot *helmette.Dot) []kube.Object {
 	return manifests
 }
 
-func renderResources(state *RenderState) []kube.Object {
+func renderResources(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners) []kube.Object {
 	state.Values.External.ValidateGateway()
 	validateGatewayListeners(state)
 
 	manifests := []kube.Object{
-		NodePortService(state),
+		NodePortService(state, listeners),
 		PodDisruptionBudget(state),
 		ServiceAccount(state),
-		ServiceInternal(state),
+		ServiceInternal(state, listeners),
 		ServiceMonitor(state),
-		PostInstallUpgradeJob(state),
+		PostInstallUpgradeJob(state, pki),
 	}
 
 	// NB: gotohelm doesn't currently have a way to handle casting from
@@ -134,7 +138,7 @@ func renderResources(state *RenderState) []kube.Object {
 	// Instead, it's easiest (though painful to read and write) to iterate over
 	// all functions that return slices and append them one at a time.
 
-	for _, obj := range ConfigMaps(state) {
+	for _, obj := range ConfigMaps(state, listeners) {
 		manifests = append(manifests, obj)
 	}
 
@@ -146,7 +150,6 @@ func renderResources(state *RenderState) []kube.Object {
 		manifests = append(manifests, obj)
 	}
 
-	pki := PKI(state)
 	for _, obj := range pki.Render() {
 		manifests = append(manifests, obj)
 	}
@@ -154,19 +157,19 @@ func renderResources(state *RenderState) []kube.Object {
 	rbac := RoleSet(state)
 	manifests = append(manifests, rbac.Render()...)
 
-	for _, obj := range LoadBalancerServices(state) {
+	for _, obj := range LoadBalancerServices(state, listeners) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range GatewayServices(state) {
+	for _, obj := range GatewayServices(state, listeners) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range TLSRoutes(state) {
+	for _, obj := range TLSRoutes(state, listeners) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Secrets(state) {
+	for _, obj := range Secrets(state, listeners) {
 		manifests = append(manifests, obj)
 	}
 

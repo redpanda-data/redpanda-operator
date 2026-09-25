@@ -23,17 +23,17 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
-func ConfigMaps(state *RenderState) []*corev1.ConfigMap {
-	cms := []*corev1.ConfigMap{RedpandaConfigMap(state, Pool{Statefulset: state.Values.Statefulset})}
+func ConfigMaps(state *RenderState, listeners *redpanda.Listeners) []*corev1.ConfigMap {
+	cms := []*corev1.ConfigMap{RedpandaConfigMap(state, listeners, Pool{Statefulset: state.Values.Statefulset})}
 
 	for _, set := range state.Pools {
-		cms = append(cms, RedpandaConfigMap(state, set))
+		cms = append(cms, RedpandaConfigMap(state, listeners, set))
 	}
 
-	return append(cms, RPKProfile(state))
+	return append(cms, RPKProfile(state, listeners))
 }
 
-func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
+func RedpandaConfigMap(state *RenderState, listeners *redpanda.Listeners, pool Pool) *corev1.ConfigMap {
 	bootstrap, fixups := BootstrapFile(state, pool)
 	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -49,7 +49,7 @@ func RedpandaConfigMap(state *RenderState, pool Pool) *corev1.ConfigMap {
 		Data: map[string]string{
 			clusterconfiguration.BootstrapTemplateFile:    bootstrap,
 			clusterconfiguration.BootstrapFixupFile:       fixups,
-			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, true /* includeSeedServer */, pool),
+			clusterconfiguration.RedpandaYamlTemplateFile: RedpandaConfigFile(state, listeners, true /* includeSeedServer */, pool),
 		},
 	}
 }
@@ -131,38 +131,49 @@ func BootstrapContents(state *RenderState, pool Pool) (map[string]string, []clus
 	return template, fixups
 }
 
-func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool Pool) string {
-	redpanda := map[string]any{
+func RedpandaConfigFile(state *RenderState, listeners *redpanda.Listeners, includeNonHashableItems bool, pool Pool) string {
+	redpandaConfig := map[string]any{
 		"empty_seed_starts_cluster": false,
 	}
 
 	if includeNonHashableItems {
-		servers := state.Values.Listeners.CreateSeedServers(state.Values.Statefulset.Replicas, Fullname(state), InternalDomain(state))
+		// NB: BrokerList returns fully qualified hosts, already ordered.
+		rpcPort := listeners.RPC().InCluster().Port
 
-		for _, set := range state.Pools {
-			servers = append(servers, state.Values.Listeners.CreateSeedServers(set.Statefulset.Replicas, fmt.Sprintf("%s%s", Fullname(state), set.Suffix()), InternalDomain(state))...)
+		var seeds []map[string]any
+		for _, host := range BrokerList(state, -1) {
+			seeds = append(seeds, map[string]any{
+				"host": map[string]any{
+					"address": host,
+					"port":    rpcPort,
+				},
+			})
 		}
 
-		redpanda["seed_servers"] = servers
+		redpandaConfig["seed_servers"] = seeds
 	}
 
-	redpanda = helmette.Merge(redpanda, state.Values.Config.Node.Translate())
+	redpandaConfig = helmette.Merge(redpandaConfig, state.Values.Config.Node.Translate())
 
-	configureListeners(redpanda, state)
+	sections := listeners.ConfigSections()
+
+	for _, key := range helmette.SortedKeys(sections["redpanda"]) {
+		redpandaConfig[key] = sections["redpanda"][key]
+	}
 
 	redpandaYaml := map[string]any{
-		"redpanda":        redpanda,
-		"schema_registry": schemaRegistry(state),
-		"pandaproxy":      pandaProxyListener(state),
+		"redpanda":        redpandaConfig,
+		"schema_registry": sections["schema_registry"],
+		"pandaproxy":      sections["pandaproxy"],
 		"config_file":     "/etc/redpanda/redpanda.yaml",
 	}
 
 	if includeNonHashableItems {
-		redpandaYaml["rpk"] = rpkNodeConfig(state, pool)
-		redpandaYaml["pandaproxy_client"] = kafkaClient(state, "pandaproxy")
-		redpandaYaml["schema_registry_client"] = kafkaClient(state, "schema_registry")
+		redpandaYaml["rpk"] = rpkNodeConfig(state, listeners, pool)
+		redpandaYaml["pandaproxy_client"] = kafkaClient(state, listeners, "pandaproxy")
+		redpandaYaml["schema_registry_client"] = kafkaClient(state, listeners, "schema_registry")
 		if state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
-			redpandaYaml["audit_log_client"] = kafkaClient(state, "audit_log")
+			redpandaYaml["audit_log_client"] = kafkaClient(state, listeners, "audit_log")
 		}
 	}
 
@@ -173,7 +184,7 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 // the external listeners of their redpanda cluster.
 // It is meant for external consumption via NOTES.txt and is not used within
 // this chart.
-func RPKProfile(state *RenderState) *corev1.ConfigMap {
+func RPKProfile(state *RenderState, listeners *redpanda.Listeners) *corev1.ConfigMap {
 	if !state.Values.External.Enabled {
 		return nil
 	}
@@ -190,41 +201,41 @@ func RPKProfile(state *RenderState) *corev1.ConfigMap {
 			Annotations: FullAnnotations(state),
 		},
 		Data: map[string]string{
-			"profile": helmette.ToYaml(rpkProfile(state)),
+			"profile": helmette.ToYaml(rpkProfile(state, listeners)),
 		},
 	}
 }
 
 // rpkProfile generates an RPK Profile for connecting to external listeners.
 // It is intended to be used by the end user via a prompt in NOTES.txt.
-func rpkProfile(state *RenderState) map[string]any {
+func rpkProfile(state *RenderState, listeners *redpanda.Listeners) map[string]any {
+	// NB: explicit empty slices. A zero-replica cluster renders these, where
+	// `brokers: null` would be a user-visible change from `brokers: []`.
 	brokerList := []string{}
-	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
-		brokerList = append(brokerList, fmt.Sprintf("%s:%d", advertisedHost(state, i), int(advertisedKafkaPort(state, i))))
-	}
-
 	adminAdvertisedList := []string{}
-	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
-		adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(state, i), int(advertisedAdminPort(state, i))))
-	}
-
 	schemaAdvertisedList := []string{}
+
 	for i := int32(0); i < state.Values.Statefulset.Replicas; i++ {
-		schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", advertisedHost(state, i), int(advertisedSchemaPort(state, i))))
+		host := advertisedHost(state, i)
+		brokerList = append(brokerList, fmt.Sprintf("%s:%d", host, int(listeners.Kafka().ProfileAdvertisedPort(i))))
+		adminAdvertisedList = append(adminAdvertisedList, fmt.Sprintf("%s:%d", host, int(listeners.Admin().ProfileAdvertisedPort(i))))
+		schemaAdvertisedList = append(schemaAdvertisedList, fmt.Sprintf("%s:%d", host, int(listeners.SchemaRegistry().ProfileAdvertisedPort(i))))
 	}
 
-	kafkaTLS := rpkKafkaClientTLSConfiguration(state)
-	if _, ok := kafkaTLS["ca_file"]; ok {
+	// NB: the profile ships alongside the CA rather than referencing the
+	// broker's mount, so every ca_file collapses to a bare filename.
+	kafkaTLS := listeners.Kafka().RPKClientTLS()
+	if len(kafkaTLS) > 0 {
 		kafkaTLS["ca_file"] = "ca.crt"
 	}
 
-	adminTLS := rpkAdminAPIClientTLSConfiguration(state)
-	if _, ok := adminTLS["ca_file"]; ok {
+	adminTLS := listeners.Admin().RPKClientTLS()
+	if len(adminTLS) > 0 {
 		adminTLS["ca_file"] = "ca.crt"
 	}
 
-	schemaTLS := rpkSchemaRegistryClientTLSConfiguration(state)
-	if _, ok := schemaTLS["ca_file"]; ok {
+	schemaTLS := listeners.SchemaRegistry().RPKClientTLS()
+	if len(schemaTLS) > 0 {
 		schemaTLS["ca_file"] = "ca.crt"
 	}
 
@@ -255,82 +266,24 @@ func rpkProfile(state *RenderState) map[string]any {
 		sa["tls"] = schemaTLS
 	}
 
+	// NB: the profile's name reads values, not [resolveAPIListeners], which drops
+	// listeners Redpanda does not bind. A profile is still rendered when every
+	// external listener is disabled, and `rpk profile create --from-profile`
+	// rejects an empty name.
+	var profileName string
+	for name := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
+		profileName = name
+		break
+	}
+
 	result := map[string]any{
-		"name":            getFirstExternalKafkaListener(state),
+		"name":            profileName,
 		"kafka_api":       ka,
 		"admin_api":       aa,
 		"schema_registry": sa,
 	}
 
 	return result
-}
-
-func advertisedKafkaPort(state *RenderState, i int32) int {
-	externalKafkaListenerName := getFirstExternalKafkaListener(state)
-
-	listener := state.Values.Listeners.Kafka.External[externalKafkaListenerName]
-
-	port := int(state.Values.Listeners.Kafka.Port)
-
-	if int(listener.Port) > int(1) {
-		port = int(listener.Port)
-	}
-
-	if len(listener.AdvertisedPorts) > 1 {
-		port = int(listener.AdvertisedPorts[i])
-	} else if len(listener.AdvertisedPorts) == 1 {
-		port = int(listener.AdvertisedPorts[0])
-	}
-
-	return port
-}
-
-func advertisedAdminPort(state *RenderState, i int32) int {
-	keys := helmette.Keys(state.Values.Listeners.Admin.External)
-
-	helmette.SortAlpha(keys)
-
-	externalAdminListenerName := helmette.First(keys)
-
-	listener := state.Values.Listeners.Admin.External[externalAdminListenerName.(string)]
-
-	port := int(state.Values.Listeners.Admin.Port)
-
-	if int(listener.Port) > 1 {
-		port = int(listener.Port)
-	}
-
-	if len(listener.AdvertisedPorts) > 1 {
-		port = int(listener.AdvertisedPorts[i])
-	} else if len(listener.AdvertisedPorts) == 1 {
-		port = int(listener.AdvertisedPorts[0])
-	}
-
-	return port
-}
-
-func advertisedSchemaPort(state *RenderState, i int32) int {
-	keys := helmette.Keys(state.Values.Listeners.SchemaRegistry.External)
-
-	helmette.SortAlpha(keys)
-
-	externalSchemaListenerName := helmette.First(keys)
-
-	listener := state.Values.Listeners.SchemaRegistry.External[externalSchemaListenerName.(string)]
-
-	port := int(state.Values.Listeners.SchemaRegistry.Port)
-
-	if int(listener.Port) > 1 {
-		port = int(listener.Port)
-	}
-
-	if len(listener.AdvertisedPorts) > 1 {
-		port = int(listener.AdvertisedPorts[i])
-	} else if len(listener.AdvertisedPorts) == 1 {
-		port = int(listener.AdvertisedPorts[0])
-	}
-
-	return port
 }
 
 func advertisedHost(state *RenderState, i int32) string {
@@ -354,14 +307,6 @@ func advertisedHost(state *RenderState, i int32) string {
 	}
 
 	return address
-}
-
-func getFirstExternalKafkaListener(state *RenderState) string {
-	keys := helmette.Keys(state.Values.Listeners.Kafka.External)
-
-	helmette.SortAlpha(keys)
-
-	return helmette.First(keys).(string)
 }
 
 // BrokerList returns the list of brokers referenced in every node pool in the RenderState.
@@ -389,23 +334,13 @@ func brokersFor(state *RenderState, pool Pool, port int32) []string {
 }
 
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L143
-func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
-	brokerList := BrokerList(state, state.Values.Listeners.Kafka.Port)
+func rpkNodeConfig(state *RenderState, listeners *redpanda.Listeners, pool Pool) map[string]any {
+	kafka := listeners.Kafka().InCluster()
+	brokerList := BrokerList(state, kafka.Port)
 
-	var adminTLS map[string]any
-	if tls := rpkAdminAPIClientTLSConfiguration(state); len(tls) > 0 {
-		adminTLS = tls
-	}
-
-	var brokerTLS map[string]any
-	if tls := rpkKafkaClientTLSConfiguration(state); len(tls) > 0 {
-		brokerTLS = tls
-	}
-
-	var schemaRegistryTLS map[string]any
-	if tls := rpkSchemaRegistryClientTLSConfiguration(state); len(tls) > 0 {
-		schemaRegistryTLS = tls
-	}
+	adminTLS := listeners.Admin().RPKClientTLS()
+	brokerTLS := listeners.Kafka().RPKClientTLS()
+	schemaRegistryTLS := listeners.SchemaRegistry().RPKClientTLS()
 
 	lockMemory, overprovisioned, flags := RedpandaAdditionalStartFlags(&state.Values, pool)
 
@@ -442,82 +377,10 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	return result
 }
 
-// rpkKafkaClientTLSConfiguration returns a value suitable for use as RPK's
-// "TLS" type.
-// https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L178
-func rpkKafkaClientTLSConfiguration(state *RenderState) map[string]any {
-	tls := state.Values.Listeners.Kafka.TLS
-
-	if !tls.IsEnabled(&state.Values.TLS) {
-		return map[string]any{}
-	}
-
-	pki := PKI(state)
-
-	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&pki),
-	}
-
-	if kp := tls.ClientKeypair(&pki); kp != nil {
-		result["cert_file"] = kp.CertFile()
-		result["key_file"] = kp.KeyFile()
-	}
-
-	return result
-}
-
-// rpkAdminAPIClientTLSConfiguration returns a value suitable for use as RPK's
-// "TLS" type.
-// https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L184
-func rpkAdminAPIClientTLSConfiguration(state *RenderState) map[string]any {
-	tls := state.Values.Listeners.Admin.TLS
-
-	if !tls.IsEnabled(&state.Values.TLS) {
-		return map[string]any{}
-	}
-
-	pki := PKI(state)
-
-	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&pki),
-	}
-
-	if kp := tls.ClientKeypair(&pki); kp != nil {
-		result["cert_file"] = kp.CertFile()
-		result["key_file"] = kp.KeyFile()
-	}
-
-	return result
-}
-
-// rpkSchemaRegistryClientTLSConfiguration returns a value suitable for use as RPK's
-// "TLS" type.
-// https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L184
-func rpkSchemaRegistryClientTLSConfiguration(state *RenderState) map[string]any {
-	tls := state.Values.Listeners.SchemaRegistry.TLS
-
-	if !tls.IsEnabled(&state.Values.TLS) {
-		return map[string]any{}
-	}
-
-	pki := PKI(state)
-
-	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&pki),
-	}
-
-	if kp := tls.ClientKeypair(&pki); kp != nil {
-		result["cert_file"] = kp.CertFile()
-		result["key_file"] = kp.KeyFile()
-	}
-
-	return result
-}
-
 // kafkaClient returns the configuration for internal components of redpanda to
 // connect to its own Kafka API. This is distinct from RPK's configuration for
 // Kafka API interactions.
-func kafkaClient(state *RenderState, clientType string) map[string]any {
+func kafkaClient(state *RenderState, listeners *redpanda.Listeners, clientType string) map[string]any {
 	brokerList := []map[string]any{}
 
 	useLocalhostKey := fmt.Sprintf("%s_client.use_localhost", clientType)
@@ -547,26 +410,7 @@ func kafkaClient(state *RenderState, clientType string) map[string]any {
 		}
 	}
 
-	kafkaTLS := state.Values.Listeners.Kafka.TLS
-	pki := PKI(state)
-
-	var brokerTLS map[string]any
-	if state.Values.Listeners.Kafka.TLS.IsEnabled(&state.Values.TLS) {
-		brokerTLS = map[string]any{
-			"enabled":             true,
-			"require_client_auth": kafkaTLS.RequireClientAuth,
-			// NB: truststore_file here is synonymous with ca_file in the RPK
-			// configuration. The difference being that redpanda does NOT read
-			// the ca_file key.
-			"truststore_file": kafkaTLS.ServerCAPath(&pki),
-		}
-
-		if kp := kafkaTLS.ClientKeypair(&pki); kp != nil {
-			brokerTLS["cert_file"] = kp.CertFile()
-			brokerTLS["key_file"] = kp.KeyFile()
-		}
-
-	}
+	brokerTLS := listeners.Kafka().BrokerClientTLS()
 
 	cfg := map[string]any{
 		"brokers": brokerList,
@@ -576,110 +420,6 @@ func kafkaClient(state *RenderState, clientType string) map[string]any {
 	}
 
 	return cfg
-}
-
-func configureListeners(redpanda map[string]any, state *RenderState) {
-	var defaultKafkaAuth *KafkaAuthenticationMethod
-	if state.Values.Auth.SASL.Enabled {
-		defaultKafkaAuth = ptr.To(SASLKafkaAuthenticationMethod)
-	}
-
-	pki := PKI(state)
-
-	redpanda["admin"] = state.Values.Listeners.Admin.Listeners(nil /* No auth on admin API */)
-	redpanda["kafka_api"] = state.Values.Listeners.Kafka.Listeners(defaultKafkaAuth)
-	redpanda["rpc_server"] = rpcListeners(state)
-
-	// Backwards compatibility layer, if any of the *_tls keys are an empty
-	// slice, they should instead be nil.
-
-	redpanda["admin_api_tls"] = nil
-	if tls := state.Values.Listeners.Admin.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
-		redpanda["admin_api_tls"] = tls
-	}
-
-	redpanda["kafka_api_tls"] = nil
-	if tls := state.Values.Listeners.Kafka.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
-		redpanda["kafka_api_tls"] = tls
-	}
-
-	// With the exception of rpc_server_tls, it should just not be specified.
-	if tls := rpcListenersTLS(state); len(tls) > 0 {
-		redpanda["rpc_server_tls"] = tls
-	}
-}
-
-func pandaProxyListener(state *RenderState) map[string]any {
-	pandaProxy := map[string]any{}
-
-	var pandaProxyAuth *HTTPAuthenticationMethod
-	if state.Values.Auth.IsSASLEnabled() {
-		pandaProxyAuth = ptr.To(BasicHTTPAuthenticationMethod)
-	}
-
-	pki := PKI(state)
-
-	pandaProxy["pandaproxy_api"] = state.Values.Listeners.HTTP.Listeners(pandaProxyAuth)
-	pandaProxy["pandaproxy_api_tls"] = nil
-	if tls := state.Values.Listeners.HTTP.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
-		pandaProxy["pandaproxy_api_tls"] = tls
-	}
-	return pandaProxy
-}
-
-func schemaRegistry(state *RenderState) map[string]any {
-	schemaReg := map[string]any{}
-	pki := PKI(state)
-	schemaReg["schema_registry_api"] = state.Values.Listeners.SchemaRegistry.Listeners(nil /* No auth on admin API */)
-	schemaReg["schema_registry_api_tls"] = nil
-	if tls := state.Values.Listeners.SchemaRegistry.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
-		schemaReg["schema_registry_api_tls"] = tls
-	}
-	return schemaReg
-}
-
-func rpcListenersTLS(state *RenderState) map[string]any {
-	r := state.Values.Listeners.RPC
-
-	if !r.TLS.IsEnabled(&state.Values.TLS) {
-		return map[string]any{}
-	}
-
-	pki := PKI(state)
-	kp := pki.ServerKeypair(r.TLS.Cert)
-
-	return map[string]any{
-		"enabled":             true,
-		"cert_file":           kp.CertFile(),
-		"key_file":            kp.KeyFile(),
-		"require_client_auth": r.TLS.RequireClientAuth,
-		"truststore_file":     r.TLS.TrustStoreFilePath(&pki),
-	}
-}
-
-func rpcListeners(state *RenderState) map[string]any {
-	return map[string]any{
-		"address": ptr.Deref(state.Values.Listeners.RPC.Address, "0.0.0.0"),
-		"port":    state.Values.Listeners.RPC.Port,
-	}
-}
-
-// First parameter defaultTLSEnabled must come from `state.Values.tls.enabled`.
-func createInternalListenerTLSCfg(pki *redpanda.PKI, tls *TLS, internal InternalTLS) map[string]any {
-	if !internal.IsEnabled(tls) {
-		return map[string]any{}
-	}
-
-	kp := pki.ServerKeypair(internal.Cert)
-
-	return map[string]any{
-		"name":                "internal",
-		"enabled":             true,
-		"cert_file":           kp.CertFile(),
-		"key_file":            kp.KeyFile(),
-		"require_client_auth": internal.RequireClientAuth,
-		"truststore_file":     internal.TrustStoreFilePath(pki),
-	}
 }
 
 // RedpandaAdditionalStartFlags returns a string slice of flags suitable for use
