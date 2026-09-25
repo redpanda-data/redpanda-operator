@@ -1195,7 +1195,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -1258,7 +1258,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -2662,7 +2662,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -2717,7 +2717,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -4008,7 +4008,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -4071,7 +4071,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -5572,7 +5572,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -5630,7 +5630,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -7046,7 +7046,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -7112,7 +7112,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -8711,7 +8711,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: kube-api-access
           readOnly: true
@@ -8777,7 +8777,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -10413,7 +10413,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -10480,7 +10480,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -12118,7 +12118,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -12181,7 +12181,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -13716,7 +13716,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -13779,7 +13779,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -15433,7 +15433,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -15499,7 +15499,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -17051,7 +17051,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -17114,7 +17114,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -18653,7 +18653,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -18716,7 +18716,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -20052,7 +20052,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -20107,7 +20107,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -21463,7 +21463,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -21526,7 +21526,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -23092,7 +23092,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -23155,7 +23155,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -24693,7 +24693,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -24756,7 +24756,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -26291,7 +26291,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -26354,7 +26354,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -27960,7 +27960,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -28023,7 +28023,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -29628,7 +29628,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -29691,7 +29691,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -31296,7 +31296,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -31359,7 +31359,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -32916,7 +32916,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -32979,7 +32979,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -34586,7 +34586,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -34649,7 +34649,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -36272,7 +36272,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -36335,7 +36335,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -37958,7 +37958,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -38021,7 +38021,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -39597,7 +39597,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -39660,7 +39660,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -41282,7 +41282,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -41345,7 +41345,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -42968,7 +42968,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -43031,7 +43031,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -44654,7 +44654,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -44717,7 +44717,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -46293,7 +46293,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -46356,7 +46356,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -47907,7 +47907,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -47970,7 +47970,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -49506,7 +49506,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -49569,7 +49569,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -51104,7 +51104,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -51167,7 +51167,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -52789,7 +52789,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -52852,7 +52852,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -54393,7 +54393,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -54456,7 +54456,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -56040,7 +56040,7 @@ spec:
         - mountPath: /etc/tls/certs/external
           name: redpanda-external-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
       - command:
@@ -56083,7 +56083,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -56146,11 +56146,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -57685,7 +57685,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -57748,7 +57748,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -59290,7 +59290,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -59353,7 +59353,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -60927,7 +60927,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -60997,7 +60997,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -62553,7 +62553,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -62616,7 +62616,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -63964,7 +63964,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -64035,7 +64035,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -65705,7 +65705,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -65768,7 +65768,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -67333,7 +67333,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -67399,7 +67399,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -69002,7 +69002,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -69065,7 +69065,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -70607,7 +70607,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -70670,7 +70670,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -72237,7 +72237,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -72300,7 +72300,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -73863,7 +73863,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -73926,7 +73926,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -75370,7 +75370,7 @@ spec:
         - mountPath: /etc/tls/certs/selfsigned
           name: redpanda-selfsigned-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
       - command:
@@ -75433,7 +75433,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -75508,11 +75508,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -77020,7 +77020,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -77083,7 +77083,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -78729,7 +78729,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: kube-api-access
           readOnly: true
@@ -78795,7 +78795,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -80420,7 +80420,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -80483,7 +80483,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -82132,7 +82132,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -82198,7 +82198,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -113120,7 +113120,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -113183,7 +113183,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -114524,7 +114524,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -114587,7 +114587,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -115929,7 +115929,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -116014,7 +116014,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -117628,7 +117628,7 @@ spec:
         - mountPath: /etc/tls/certs/external
           name: redpanda-external-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
         - mountPath: /fake/fsValidator
@@ -117673,7 +117673,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /fake/configurator
           name: test-extra-volume
       - command:
@@ -117747,11 +117747,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -119392,7 +119392,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -119455,7 +119455,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -121096,7 +121096,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -121159,7 +121159,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -122814,7 +122814,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -122877,7 +122877,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -124711,7 +124711,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -124774,7 +124774,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -126511,7 +126511,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -126574,7 +126574,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -128312,7 +128312,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -128375,7 +128375,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -129985,7 +129985,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -130056,7 +130056,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -131726,7 +131726,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: also-not-redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -131789,7 +131789,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: also-not-redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: also-not-redpanda-configurator
@@ -133324,7 +133324,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -133387,7 +133387,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -134923,7 +134923,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -134986,7 +134986,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -136519,7 +136519,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -136582,7 +136582,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -138117,7 +138117,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -138180,7 +138180,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -139742,7 +139742,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -139805,7 +139805,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -141353,7 +141353,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -141416,7 +141416,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -143129,7 +143129,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -143195,7 +143195,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -154534,7 +154534,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -154597,7 +154597,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -156296,7 +156296,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -156359,7 +156359,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -157708,7 +157708,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -157771,7 +157771,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -159376,7 +159376,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -159439,7 +159439,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -161092,7 +161092,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -161155,7 +161155,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
