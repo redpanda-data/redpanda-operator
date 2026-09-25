@@ -20,7 +20,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -361,39 +360,6 @@ func TestStretchListenerTLS(t *testing.T) {
 			})
 		}
 	})
-
-	t.Run("ServerCAPath", func(t *testing.T) {
-		pki := &redpanda.PKI{Certificates: map[string]redpanda.Certificate{
-			"default": {Server: redpanda.Keypair{Name: "default", CA: ptr.To("ca.crt")}},
-		}}
-
-		t.Run("nil listener returns empty", func(t *testing.T) {
-			assert.Equal(t, "", (*redpandav1alpha2.StretchListenerTLS)(nil).ServerCAPath(pki))
-		})
-
-		t.Run("no truststore falls back to cert-based path", func(t *testing.T) {
-			lt := &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("default")}
-			assert.Equal(t, "/etc/tls/certs/default/ca.crt", lt.ServerCAPath(pki))
-		})
-
-		t.Run("truststore takes precedence", func(t *testing.T) {
-			lt := &redpandav1alpha2.StretchListenerTLS{
-				Cert: ptr.To("default"),
-				TrustStore: &redpandav1alpha2.TrustStore{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: "custom-ca"},
-						Key:                  "ca.crt",
-					},
-				},
-			}
-			assert.Equal(t, "/etc/truststores/secrets/custom-ca-ca.crt", lt.ServerCAPath(pki))
-		})
-
-		t.Run("no cert name returns empty", func(t *testing.T) {
-			lt := &redpandav1alpha2.StretchListenerTLS{}
-			assert.Equal(t, "", lt.ServerCAPath(pki))
-		})
-	})
 }
 
 func TestCertificate(t *testing.T) {
@@ -605,29 +571,6 @@ func TestRedpandaImage(t *testing.T) {
 }
 
 func TestStretchListeners(t *testing.T) {
-	t.Run("CertRequiresClientAuth", func(t *testing.T) {
-		assert.False(t, (*redpandav1alpha2.StretchListeners)(nil).CertRequiresClientAuth("default"))
-
-		l := &redpandav1alpha2.StretchListeners{
-			Admin: &redpandav1alpha2.StretchAPIListener{
-				StretchListener: redpandav1alpha2.StretchListener{
-					TLS: &redpandav1alpha2.StretchListenerTLS{
-						Cert:              ptr.To("admin-cert"),
-						RequireClientAuth: ptr.To(true),
-					},
-				},
-			},
-			Kafka: &redpandav1alpha2.StretchAPIListener{
-				StretchListener: redpandav1alpha2.StretchListener{
-					TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("kafka-cert")},
-				},
-			},
-		}
-		assert.True(t, l.CertRequiresClientAuth("admin-cert"))
-		assert.False(t, l.CertRequiresClientAuth("kafka-cert"))
-		assert.False(t, l.CertRequiresClientAuth("unknown"))
-	})
-
 	t.Run("CollectCerts", func(t *testing.T) {
 		assert.Nil(t, (*redpandav1alpha2.StretchListeners)(nil).CollectCerts(func(*redpandav1alpha2.StretchListenerTLS) bool { return true }))
 
@@ -653,152 +596,9 @@ func TestStretchListeners(t *testing.T) {
 		mtls := l.CollectCerts(func(tls *redpandav1alpha2.StretchListenerTLS) bool { return tls.RequiresClientAuth() })
 		assert.Equal(t, []string{"shared-cert"}, mtls)
 	})
-
-	t.Run("TrustStores", func(t *testing.T) {
-		tls := &redpandav1alpha2.TLS{Enabled: ptr.To(true)}
-
-		t.Run("nil listeners", func(t *testing.T) {
-			assert.Nil(t, (*redpandav1alpha2.StretchListeners)(nil).TrustStores(tls))
-		})
-
-		t.Run("no truststores configured", func(t *testing.T) {
-			l := &redpandav1alpha2.StretchListeners{
-				Admin: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("default")}},
-				},
-			}
-			assert.Nil(t, l.TrustStores(tls))
-		})
-
-		t.Run("with truststores on internal and external listeners", func(t *testing.T) {
-			cmTS := &redpandav1alpha2.TrustStore{
-				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: "cm1"},
-					Key:                  "ca.crt",
-				},
-			}
-			secretTS := &redpandav1alpha2.TrustStore{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: "secret1"},
-					Key:                  "ca.crt",
-				},
-			}
-			l := &redpandav1alpha2.StretchListeners{
-				Admin: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("default"), TrustStore: cmTS}},
-				},
-				Kafka: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("default")}},
-					External: map[string]*redpandav1alpha2.StretchExternalListener{
-						"ext": {
-							StretchListener: redpandav1alpha2.StretchListener{
-								TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("external"), TrustStore: secretTS},
-							},
-						},
-					},
-				},
-			}
-			stores := l.TrustStores(tls)
-			assert.Len(t, stores, 2)
-			assert.Equal(t, cmTS, stores[0])
-			assert.Equal(t, secretTS, stores[1])
-		})
-	})
-
-	t.Run("TrustStoreVolume", func(t *testing.T) {
-		tls := &redpandav1alpha2.TLS{Enabled: ptr.To(true)}
-
-		t.Run("no truststores returns nil", func(t *testing.T) {
-			l := &redpandav1alpha2.StretchListeners{
-				Admin: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("default")}},
-				},
-			}
-			assert.Nil(t, l.TrustStoreVolume(tls))
-		})
-
-		t.Run("single secret truststore", func(t *testing.T) {
-			l := &redpandav1alpha2.StretchListeners{
-				Admin: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{
-						Cert: ptr.To("default"),
-						TrustStore: &redpandav1alpha2.TrustStore{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "my-secret"},
-								Key:                  "ca.crt",
-							},
-						},
-					}},
-				},
-			}
-			vol := l.TrustStoreVolume(tls)
-			require.NotNil(t, vol)
-			assert.Equal(t, "truststores", vol.Name)
-			require.NotNil(t, vol.Projected)
-			require.Len(t, vol.Projected.Sources, 1)
-			require.NotNil(t, vol.Projected.Sources[0].Secret)
-			assert.Equal(t, "my-secret", vol.Projected.Sources[0].Secret.Name)
-		})
-
-		t.Run("mixed ConfigMap and Secret truststores", func(t *testing.T) {
-			l := &redpandav1alpha2.StretchListeners{
-				Admin: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{
-						Cert: ptr.To("default"),
-						TrustStore: &redpandav1alpha2.TrustStore{
-							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "cm1"},
-								Key:                  "ca.crt",
-							},
-						},
-					}},
-				},
-				Kafka: &redpandav1alpha2.StretchAPIListener{
-					StretchListener: redpandav1alpha2.StretchListener{TLS: &redpandav1alpha2.StretchListenerTLS{
-						Cert: ptr.To("default"),
-						TrustStore: &redpandav1alpha2.TrustStore{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: "secret1"},
-								Key:                  "ca.crt",
-							},
-						},
-					}},
-				},
-			}
-			vol := l.TrustStoreVolume(tls)
-			require.NotNil(t, vol)
-			require.Len(t, vol.Projected.Sources, 2)
-			require.NotNil(t, vol.Projected.Sources[0].ConfigMap)
-			assert.Equal(t, "cm1", vol.Projected.Sources[0].ConfigMap.Name)
-			require.NotNil(t, vol.Projected.Sources[1].Secret)
-			assert.Equal(t, "secret1", vol.Projected.Sources[1].Secret.Name)
-		})
-	})
 }
 
 func TestTrustStore(t *testing.T) {
-	t.Run("TrustStoreFilePath", func(t *testing.T) {
-		t.Run("ConfigMap ref", func(t *testing.T) {
-			ts := &redpandav1alpha2.TrustStore{
-				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: "my-cm"},
-					Key:                  "ca.crt",
-				},
-			}
-			assert.Equal(t, "/etc/truststores/configmaps/my-cm-ca.crt", ts.TrustStoreFilePath())
-		})
-
-		t.Run("Secret ref", func(t *testing.T) {
-			ts := &redpandav1alpha2.TrustStore{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{Name: "my-secret"},
-					Key:                  "tls.crt",
-				},
-			}
-			assert.Equal(t, "/etc/truststores/secrets/my-secret-tls.crt", ts.TrustStoreFilePath())
-		})
-	})
-
 	t.Run("VolumeProjection", func(t *testing.T) {
 		t.Run("ConfigMap ref", func(t *testing.T) {
 			ts := &redpandav1alpha2.TrustStore{
@@ -1477,18 +1277,14 @@ func TestBrokerPoolSpecHelpers(t *testing.T) {
 	})
 
 	t.Run("InUseCerts", func(t *testing.T) {
-		t.Run("no TLS", func(t *testing.T) {
-			assert.Nil(t, brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}).InUseServerCerts())
-			assert.Nil(t, brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}).InUseClientCerts())
-		})
-
-		t.Run("with listeners", func(t *testing.T) {
-			spec := brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
-				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(true)},
+		spec := func(poolTLS bool, adminTLS, kafkaTLS *bool) *redpandav1alpha2.BrokerPoolSpec {
+			return brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{
+				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(poolTLS)},
 				Listeners: &redpandav1alpha2.StretchListeners{
 					Admin: &redpandav1alpha2.StretchAPIListener{
 						StretchListener: redpandav1alpha2.StretchListener{
 							TLS: &redpandav1alpha2.StretchListenerTLS{
+								Enabled:           adminTLS,
 								Cert:              ptr.To("admin-cert"),
 								RequireClientAuth: ptr.To(true),
 							},
@@ -1496,14 +1292,41 @@ func TestBrokerPoolSpecHelpers(t *testing.T) {
 					},
 					Kafka: &redpandav1alpha2.StretchAPIListener{
 						StretchListener: redpandav1alpha2.StretchListener{
-							TLS: &redpandav1alpha2.StretchListenerTLS{Cert: ptr.To("kafka-cert")},
+							TLS: &redpandav1alpha2.StretchListenerTLS{Enabled: kafkaTLS, Cert: ptr.To("kafka-cert")},
 						},
 					},
 				},
 			})
-			assert.Equal(t, []string{"admin-cert", "kafka-cert"}, spec.InUseServerCerts())
-			assert.Equal(t, []string{"admin-cert"}, spec.InUseClientCerts())
-		})
+		}
+
+		tests := []struct {
+			name              string
+			input             *redpandav1alpha2.BrokerPoolSpec
+			server            []string
+			client            []string
+			requireClientAuth []string
+		}{
+			{"nil receiver", nil, nil, nil, nil},
+			{"no TLS", brokerPoolSpec(redpandav1alpha2.EmbeddedBrokerPoolSpec{}), nil, nil, nil},
+			{"pool TLS", spec(true, nil, nil), []string{"admin-cert", "kafka-cert"}, []string{"admin-cert"}, []string{"admin-cert"}},
+			{"pool TLS, admin TLS disabled", spec(true, ptr.To(false), nil), []string{"admin-cert", "kafka-cert"}, []string{"admin-cert"}, []string{"admin-cert"}},
+			{"no pool TLS, kafka TLS enabled", spec(false, nil, ptr.To(true)), []string{"kafka-cert"}, nil, nil},
+			{"no pool TLS, admin TLS enabled", spec(false, ptr.To(true), nil), []string{"admin-cert"}, []string{"admin-cert"}, []string{"admin-cert"}},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				assert.Equal(t, tt.server, tt.input.InUseServerCerts())
+				assert.Equal(t, tt.client, tt.input.InUseClientCerts())
+
+				var requireClientAuth []string
+				for _, name := range []string{"admin-cert", "kafka-cert", "unknown"} {
+					if tt.input.CertRequiresClientAuth(name) {
+						requireClientAuth = append(requireClientAuth, name)
+					}
+				}
+				assert.Equal(t, tt.requireClientAuth, requireClientAuth)
+			})
+		}
 	})
 
 	t.Run("AdminInternalHTTPProtocol", func(t *testing.T) {
@@ -1965,6 +1788,25 @@ func TestListener(t *testing.T) {
 				assert.Equal(t, tt.expected, tt.input.GetPort(9999))
 			})
 		}
+	})
+
+	t.Run("APIListener", func(t *testing.T) {
+		t.Run("IsEnabled", func(t *testing.T) {
+			tests := []struct {
+				name     string
+				input    *redpandav1alpha2.StretchAPIListener
+				expected bool
+			}{
+				{"nil receiver", nil, false},
+				{"zero value defaults to true", &redpandav1alpha2.StretchAPIListener{}, true},
+				{"explicitly disabled", &redpandav1alpha2.StretchAPIListener{StretchListener: redpandav1alpha2.StretchListener{Enabled: ptr.To(false)}}, false},
+			}
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					assert.Equal(t, tt.expected, tt.input.IsEnabled())
+				})
+			}
+		})
 	})
 
 	t.Run("ExternalListener", func(t *testing.T) {
