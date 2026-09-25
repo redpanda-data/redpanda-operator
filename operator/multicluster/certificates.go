@@ -19,12 +19,8 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-// poolPKI resolves a pool's certificates and their keypairs.
-//
-// Issuance requests are layered on by [certificatesForPool], which needs
-// template expansion and validation and so can fail. Everything here is
-// infallible, which is what lets the volume, mount, and config paths -- none
-// of which return errors -- share one constructor.
+// poolPKI resolves the certificates and keypairs of a pool. It cannot fail.
+// [certificatesForPool] makes the issuance requests, which can fail.
 func poolPKI(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) redpanda.PKI {
 	return redpanda.PKI{
 		Namespace:    state.namespace,
@@ -33,13 +29,13 @@ func poolPKI(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) redp
 	}
 }
 
-// poolCertificates resolves a pool's in-use certificates into the shared
-// package's [redpanda.Certificate] set, which never sees a broker pool.
-//
-// The server certs in sorted order, with Client populated for those a listener
-// requires mTLS on -- replacing two independent walks of InUseServerCerts and
-// InUseClientCerts.
+// poolCertificates returns the certificates that the pool uses. Client is set
+// for each certificate that a listener uses with mTLS.
 func poolCertificates(spec *redpandav1alpha2.BrokerPoolSpec, poolFullname string) map[string]redpanda.Certificate {
+	// NB: Read the spec, not the resolved listeners. The listeners need a
+	// [redpanda.PKI], thus they cannot be the source of one. A listener with
+	// tls.enabled false can thus have a mounted certificate that it does not
+	// use.
 	clientCerts := map[string]bool{}
 	for _, name := range spec.InUseClientCerts() {
 		clientCerts[name] = true
@@ -56,8 +52,6 @@ func poolCertificates(spec *redpandav1alpha2.BrokerPoolSpec, poolFullname string
 // certificateFor resolves one of the pool's certificates. Secret names are
 // keyed on poolFullname so two pools using cert name "default" don't collide.
 func certificateFor(spec *redpandav1alpha2.BrokerPoolSpec, poolFullname, name string, withClient bool) redpanda.Certificate {
-	// NB: nil-tolerant on spec; the TLS helpers below are nil-safe on their
-	// own receiver.
 	var tls *redpandav1alpha2.TLS
 	if spec != nil {
 		tls = spec.TLS
