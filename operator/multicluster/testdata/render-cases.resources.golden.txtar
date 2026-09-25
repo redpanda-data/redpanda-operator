@@ -555,7 +555,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="audit-logging-pool-a-${POD_ORDINAL}.audit-logging"
@@ -718,6 +718,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -1458,7 +1459,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="common-labels-pool-a-${POD_ORDINAL}.common-labels"
@@ -1623,6 +1624,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -2339,7 +2341,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="custom-cluster-domain-pool-a-${POD_ORDINAL}.custom-cluster-domain"
@@ -2502,6 +2504,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -3213,7 +3216,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="custom-config-pool-a-${POD_ORDINAL}.custom-config"
@@ -3376,6 +3379,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -4086,7 +4090,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="custom-image-pool-a-${POD_ORDINAL}.custom-image"
@@ -4249,6 +4253,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -4959,7 +4964,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="custom-resources-pool-a-${POD_ORDINAL}.custom-resources"
@@ -5122,6 +5127,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -5832,7 +5838,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="custom-resources-explicit-pool-a-${POD_ORDINAL}.custom-resources-explicit"
@@ -5995,6 +6001,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -6705,7 +6712,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="enterprise-pool-a-${POD_ORDINAL}.enterprise"
@@ -6868,6 +6875,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -7578,7 +7586,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="external-loadbalancer-pool-a-${POD_ORDINAL}.external-loadbalancer"
@@ -7741,6 +7749,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -8451,7 +8460,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="external-nodeport-pool-a-${POD_ORDINAL}.external-nodeport"
@@ -8614,6 +8623,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -9324,7 +9334,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="external-tls-pool-a-${POD_ORDINAL}.external-tls"
@@ -9487,6 +9497,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -10185,7 +10196,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="flat-network-pool-a-${POD_ORDINAL}.flat-network"
@@ -10349,6 +10360,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -11132,7 +11144,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="flat-network-tls-pool-a-${POD_ORDINAL}.flat-network-tls"
@@ -11295,6 +11307,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -12780,7 +12793,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="full-featured-pool-cold-${POD_ORDINAL}.full-featured"
@@ -12944,6 +12957,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -12994,7 +13008,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="full-featured-pool-hot-${POD_ORDINAL}.full-featured"
@@ -13158,6 +13172,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -14044,7 +14059,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="host-tuners-pool-a-${POD_ORDINAL}.host-tuners"
@@ -14207,6 +14222,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -14917,7 +14933,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="init-containers-pool-a-${POD_ORDINAL}.init-containers"
@@ -15080,6 +15096,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -15842,7 +15859,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="${SERVICE_NAME}.mcs-network.svc.clusterset.local"
@@ -16006,6 +16023,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -16711,7 +16729,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="${SERVICE_NAME}.mcs-network-tls.svc.clusterset.local"
@@ -16874,6 +16892,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -17623,7 +17642,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="memory-locking-pool-a-${POD_ORDINAL}.memory-locking"
@@ -17786,6 +17805,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -18496,7 +18516,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="minimal-pool-a-${POD_ORDINAL}.minimal"
@@ -18659,6 +18679,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -19397,7 +19418,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="monitoring-pool-a-${POD_ORDINAL}.monitoring"
@@ -19560,6 +19581,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -20748,7 +20770,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="multi-pool-pool-a-${POD_ORDINAL}.multi-pool"
@@ -20911,6 +20933,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -20960,7 +20983,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="multi-pool-pool-b-${POD_ORDINAL}.multi-pool"
@@ -21123,6 +21146,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -22781,7 +22805,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="multi-pool-heterogeneous-ports-pool-a-${POD_ORDINAL}.multi-pool-heterogeneous-ports"
@@ -22944,6 +22968,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -22993,7 +23018,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="multi-pool-heterogeneous-ports-pool-b-${POD_ORDINAL}.multi-pool-heterogeneous-ports"
@@ -23156,6 +23181,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -23205,7 +23231,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="multi-pool-heterogeneous-ports-pool-c-${POD_ORDINAL}.multi-pool-heterogeneous-ports"
@@ -23368,6 +23394,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -24054,7 +24081,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="per-pod-service-overrides-pool-a-${POD_ORDINAL}.per-pod-service-overrides"
@@ -24218,6 +24245,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -24817,7 +24845,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="per-pod-service-remote-disabled-pool-a-${POD_ORDINAL}.per-pod-service-remote-disabled"
@@ -24981,6 +25009,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -25601,7 +25630,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="pool-overrides-cluster-pool-a-${POD_ORDINAL}.pool-overrides-cluster"
@@ -25764,6 +25793,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -26474,7 +26504,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="pvc-retention-policy-pool-a-${POD_ORDINAL}.pvc-retention-policy"
@@ -26637,6 +26667,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -27347,7 +27378,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="rack-awareness-pool-a-${POD_ORDINAL}.rack-awareness"
@@ -27510,6 +27541,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -28224,7 +28256,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="sasl-scram256-pool-a-${POD_ORDINAL}.sasl-scram256"
@@ -28387,6 +28419,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -29116,7 +29149,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="sasl-scram512-with-tls-pool-a-${POD_ORDINAL}.sasl-scram512-with-tls"
@@ -29279,6 +29312,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -29980,7 +30014,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="single-replica-pool-a-${POD_ORDINAL}.single-replica"
@@ -30144,6 +30178,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -30764,7 +30799,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="storage-hostpath-pool-a-${POD_ORDINAL}.storage-hostpath"
@@ -30927,6 +30962,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -31637,7 +31673,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="storage-pv-custom-pool-a-${POD_ORDINAL}.storage-pv-custom"
@@ -31800,6 +31836,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -32510,7 +32547,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tiered-storage-emptydir-pool-a-${POD_ORDINAL}.tiered-storage-emptydir"
@@ -32673,6 +32710,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -33383,7 +33421,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tiered-storage-hostpath-pool-a-${POD_ORDINAL}.tiered-storage-hostpath"
@@ -33546,6 +33584,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -34256,7 +34295,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tiered-storage-pv-pool-a-${POD_ORDINAL}.tiered-storage-pv"
@@ -34419,6 +34458,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -34947,7 +34987,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tls-disabled-pool-a-${POD_ORDINAL}.tls-disabled"
@@ -35110,6 +35150,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -35820,7 +35861,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tls-issuer-ref-pool-a-${POD_ORDINAL}.tls-issuer-ref"
@@ -35983,6 +36024,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -36693,7 +36735,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tls-issuer-ref-mtls-pool-a-${POD_ORDINAL}.tls-issuer-ref-mtls"
@@ -36856,6 +36898,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -37566,7 +37609,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tls-mtls-pool-a-${POD_ORDINAL}.tls-mtls"
@@ -37729,6 +37772,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -38439,7 +38483,7 @@
       CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
-      # i.e. the internal_rpc_address its broker registers under; must stay
+      # i.e. the internal_rpc_address its broker registers under
       # character-identical to the statefulset's --advertise-rpc-addr host
       POD_ORDINAL=${SERVICE_NAME##*-}
       POD_FQDN="tls-self-signed-pool-a-${POD_ORDINAL}.tls-self-signed"
@@ -38602,6 +38646,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
