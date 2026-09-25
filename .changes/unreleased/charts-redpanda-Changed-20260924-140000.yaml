@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Changed
+body: Every Service port the chart renders now carries `appProtocol` and an explicit `targetPort`. The NodePort and gateway Services previously emitted `targetPort: 0`, which the API server defaults to `port`, and omitted `appProtocol` entirely. Inert to Kubernetes; applying it rewrites the Services.
+time: 2026-09-24T14:00:00.000000-04:00

@@ -17,6 +17,8 @@ tls:
 -- internal-trust-stores --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
+# The RPC listener writes rpc_server_tls.truststore_file, so its truststore has to project like any other listener's.
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.redpanda.rpc_server_tls.truststore_file}", "/etc/truststores/secrets/rpc-secret-rpc.crt"]
 # ASSERT-TRUST-STORES ["admin",           {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/configmaps/admin-cm-other.crt", "my-admin": "/etc/truststores/configmaps/admin-cm-my-admin.crt"}]
 # ASSERT-TRUST-STORES ["http",            {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/configmaps/http-cm-ca.crt", "my-http": "/etc/truststores/configmaps/http-cm-my-http.crt"}]
 # ASSERT-TRUST-STORES ["kafka",           {"default": "/etc/tls/certs/external/ca.crt", "internal": "/etc/truststores/configmaps/my-ca-bundle-ca.crt", "my-kafka": "/etc/truststores/secrets/kafka-secret-my-kafka.crt"}]
@@ -68,7 +70,12 @@ listeners:
         configMapKeyRef:
           key: ca.crt
           name: my-ca-bundle
-  rpc: {}
+  rpc:
+    tls:
+      trustStore:
+        secretKeyRef:
+          key: rpc.crt
+          name: rpc-secret
   schemaRegistry:
     external:
       my-sr:

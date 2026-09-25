@@ -46,7 +46,7 @@ func postInstallJobPodLabels(state *RenderState) map[string]string {
 	}
 }
 
-func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
+func PostInstallUpgradeJob(state *RenderState, pki *redpanda.PKI) *batchv1.Job {
 	if !state.Values.PostInstallJob.Enabled {
 		return nil
 	}
@@ -128,14 +128,14 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 										"--bootstrap-yaml", "/tmp/config/.bootstrap.yaml",
 									},
 									VolumeMounts: append(
-										CommonMounts(state),
+										CommonMounts(state, pki),
 										corev1.VolumeMount{Name: "config", MountPath: "/tmp/config"},
 										corev1.VolumeMount{Name: "base-config", MountPath: "/tmp/base-config"},
 									),
 								},
 							},
 							Volumes: append(
-								CommonVolumes(state),
+								CommonVolumes(state, pki),
 								corev1.Volume{
 									Name: "base-config",
 									VolumeSource: corev1.VolumeSource{

@@ -726,26 +726,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -775,19 +779,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -1932,7 +1940,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 8083
-      pandaproxy_api_tls: null
     pandaproxy_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -1945,7 +1952,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9645
-      admin_api_tls: null
       crash_loop_limit: 5
       empty_seed_starts_cluster: false
       kafka_api:
@@ -1955,7 +1961,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9094
-      kafka_api_tls: null
       rpc_server:
         address: 0.0.0.0
         port: 33145
@@ -1992,7 +1997,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 8084
-      schema_registry_api_tls: null
     schema_registry_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -2216,26 +2220,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -2266,19 +2274,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -2411,7 +2423,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: a5e839fc6ec7eb3a8f7c12fec77109c4c220cc6f6b510ecfd0b8fd13be47ee4a
+        config.redpanda.com/checksum: 67fde5e34061dbbdc117c18c14bd4e64ac947a95a1bd8cbfdc75a89e0d8c7fda
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -3539,26 +3551,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -3588,19 +3604,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -4790,7 +4810,6 @@ data:
         authentication_method: http_basic
         name: default
         port: 8083
-      pandaproxy_api_tls: null
     pandaproxy_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -4803,7 +4822,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9645
-      admin_api_tls: null
       crash_loop_limit: 5
       empty_seed_starts_cluster: false
       kafka_api:
@@ -4815,7 +4833,6 @@ data:
         authentication_method: sasl
         name: default
         port: 9094
-      kafka_api_tls: null
       rpc_server:
         address: 0.0.0.0
         port: 33145
@@ -4852,7 +4869,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 8084
-      schema_registry_api_tls: null
     schema_registry_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -5076,26 +5092,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -5125,19 +5145,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -5279,7 +5303,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: a6ec85bcefb3813f60e9d824c8e5c953ca405c1e96c072af9563429ec5072e58
+        config.redpanda.com/checksum: 642d30bac8bc810ad25232fab8a9b5e11f12ffe681d208fe214d672ac64bb2af
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -6524,26 +6548,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -6573,19 +6601,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -8242,26 +8274,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -8291,19 +8327,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -9894,56 +9934,66 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: kafka-ext2
+    targetPort: 9094
+  - appProtocol: null
+    name: kafka-ext2
     nodePort: 31292
     port: 19094
     protocol: TCP
-    targetPort: 0
-  - name: kafka-ext3
+    targetPort: 19094
+  - appProtocol: null
+    name: kafka-ext3
     nodePort: 31392
     port: 29094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 29094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: http-ext2
+    targetPort: 8083
+  - appProtocol: null
+    name: http-ext2
     nodePort: 30183
     port: 18083
     protocol: TCP
-    targetPort: 0
-  - name: http-ext3
+    targetPort: 18083
+  - appProtocol: null
+    name: http-ext3
     nodePort: 30283
     port: 28083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 28083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
-  - name: schema-ext2
+    targetPort: 8084
+  - appProtocol: null
+    name: schema-ext2
     nodePort: 30181
     port: 18081
     protocol: TCP
-    targetPort: 0
-  - name: schema-ext3
+    targetPort: 18081
+  - appProtocol: null
+    name: schema-ext3
     nodePort: 30281
     port: 28081
     protocol: TCP
-    targetPort: 0
+    targetPort: 28081
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -9973,19 +10023,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -11649,26 +11703,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -11698,19 +11756,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -13247,26 +13309,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -13296,19 +13362,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -14911,26 +14981,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -14960,19 +15034,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -16582,26 +16660,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 30090
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30070
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30080
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -16631,19 +16713,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -18095,19 +18181,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -19302,7 +19392,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 8083
-      pandaproxy_api_tls: null
     pandaproxy_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -19319,7 +19408,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9645
-      admin_api_tls: null
       crash_loop_limit: 5
       empty_seed_starts_cluster: false
       kafka_api:
@@ -19329,7 +19417,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9094
-      kafka_api_tls: null
       rpc_server:
         address: 0.0.0.0
         port: 33145
@@ -19378,7 +19465,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 8084
-      schema_registry_api_tls: null
     schema_registry_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -19609,26 +19695,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -19658,19 +19748,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -19802,7 +19896,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: a5e839fc6ec7eb3a8f7c12fec77109c4c220cc6f6b510ecfd0b8fd13be47ee4a
+        config.redpanda.com/checksum: 67fde5e34061dbbdc117c18c14bd4e64ac947a95a1bd8cbfdc75a89e0d8c7fda
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -20994,26 +21088,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -21043,19 +21141,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -22623,26 +22725,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -22672,19 +22778,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -24221,26 +24331,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -24270,19 +24384,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -25822,26 +25940,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -25871,19 +25993,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -27457,26 +27583,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -27506,19 +27636,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -29125,26 +29259,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -29174,19 +29312,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -30793,26 +30935,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -30842,19 +30988,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -32429,26 +32579,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -32478,19 +32632,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -34079,26 +34237,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -34128,19 +34290,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -35765,26 +35931,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -35814,19 +35984,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -37451,26 +37625,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -37500,19 +37678,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -39106,26 +39288,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -39155,19 +39341,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -40775,26 +40965,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -40824,19 +41018,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -42461,26 +42659,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -42510,19 +42712,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -44147,26 +44353,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -44196,19 +44406,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -45802,26 +46016,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -45851,19 +46069,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -47438,26 +47660,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -47487,19 +47713,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -49036,26 +49266,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -49085,19 +49319,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -50635,26 +50873,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -50684,19 +50926,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -51924,7 +52170,6 @@ data:
       - address: 0.0.0.0
         name: ext5
         port: 55559
-      pandaproxy_api_tls: null
     pandaproxy_client:
       brokers:
       - address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -51971,7 +52216,6 @@ data:
       - address: 0.0.0.0
         name: ext3
         port: 33339
-      kafka_api_tls: null
       rpc_server:
         address: 0.0.0.0
         port: 33145
@@ -52292,46 +52536,54 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: kafka-ext2
+    targetPort: 9094
+  - appProtocol: null
+    name: kafka-ext2
     nodePort: 22220
     port: 22229
     protocol: TCP
-    targetPort: 0
-  - name: kafka-ext3
+    targetPort: 22229
+  - appProtocol: null
+    name: kafka-ext3
     nodePort: 33330
     port: 33339
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 33339
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: http-ext4
+    targetPort: 8083
+  - appProtocol: null
+    name: http-ext4
     nodePort: 44440
     port: 44449
     protocol: TCP
-    targetPort: 0
-  - name: http-ext5
+    targetPort: 44449
+  - appProtocol: null
+    name: http-ext5
     nodePort: 55550
     port: 55559
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 55559
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -52361,19 +52613,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -52515,7 +52771,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: f31c4a82a9ff2ee9ba32abe957e533c595a696081c9c65eb8799ab546f1133c2
+        config.redpanda.com/checksum: 4e2c14328478c21081174c93223d87b3366719a3734dbc018c0b27fd88a90469
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -53918,26 +54174,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -53967,19 +54227,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -55577,26 +55841,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -55626,19 +55894,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -57216,26 +57488,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -57265,19 +57541,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -58818,26 +59098,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -58868,19 +59152,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -60449,26 +60737,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -60498,19 +60790,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -62082,26 +62378,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -62131,19 +62431,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -63288,7 +63592,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 8083
-      pandaproxy_api_tls: null
     pandaproxy_client:
       broker_tls:
         cert_file: /etc/tls/certs/kafka-internal-0-client/tls.crt
@@ -63311,7 +63614,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9645
-      admin_api_tls: null
       crash_loop_limit: 5
       empty_seed_starts_cluster: false
       kafka_api:
@@ -63590,26 +63892,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -63639,19 +63945,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9092
     protocol: TCP
     targetPort: 9092
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -63689,7 +63999,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: 4bb6f77e5a14e0732de3ef7c389c2b89dd3de6810cd9b9303ef1c687879321c5
+        config.redpanda.com/checksum: f0f1484ba3d051bf2f9f509ba8557b973a81c877c9103833ec3b1ccb5bff2726
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -65236,26 +65546,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -65285,19 +65599,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -66795,26 +67113,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -66844,19 +67166,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -68517,26 +68843,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -68566,19 +68896,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -70133,26 +70467,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -70182,19 +70520,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -71741,26 +72083,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -71790,19 +72136,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -73394,26 +73744,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: http
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -73443,19 +73797,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -75045,19 +75403,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9092
     protocol: TCP
     targetPort: 9092
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -76551,26 +76913,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -76600,19 +76966,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -78149,26 +78519,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -78198,19 +78572,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -79815,26 +80193,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -79864,19 +80246,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -109938,26 +110324,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -109987,19 +110377,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -111342,26 +111736,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -111391,19 +111789,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -112754,26 +113156,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -112803,19 +113209,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -114333,26 +114743,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -114382,19 +114796,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -116030,26 +116448,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -116079,19 +116501,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -117704,19 +118130,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -119408,19 +119838,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -121112,19 +121546,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -121149,22 +121587,26 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -121187,22 +121629,26 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -121226,22 +121672,26 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -121265,22 +121715,26 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -123006,26 +123460,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 30092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -123055,19 +123513,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -123092,10 +123554,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-gw-listener
+  - appProtocol: null
+    name: kafka-gw-listener
     port: 9095
     protocol: TCP
-    targetPort: 0
+    targetPort: 9095
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -123118,10 +123581,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-gw-listener
+  - appProtocol: null
+    name: kafka-gw-listener
     port: 9095
     protocol: TCP
-    targetPort: 0
+    targetPort: 9095
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -123145,10 +123609,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-gw-listener
+  - appProtocol: null
+    name: kafka-gw-listener
     port: 9095
     protocol: TCP
-    targetPort: 0
+    targetPort: 9095
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -123172,10 +123637,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-gw-listener
+  - appProtocol: null
+    name: kafka-gw-listener
     port: 9095
     protocol: TCP
-    targetPort: 0
+    targetPort: 9095
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -124813,21 +125279,24 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9645
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -124857,19 +125326,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -124894,10 +125367,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-default
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
+    targetPort: 9094
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -124920,10 +125394,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-default
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
+    targetPort: 9094
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -124947,10 +125422,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-default
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
+    targetPort: 9094
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -124974,10 +125450,11 @@ metadata:
   namespace: default
 spec:
   ports:
-  - name: kafka-default
+  - appProtocol: null
+    name: kafka-default
     port: 9094
     protocol: TCP
-    targetPort: 0
+    targetPort: 9094
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -126358,7 +126835,7 @@ data:
         enabled: true
         key_file: /etc/tls/certs/default/tls.key
         require_client_auth: false
-        truststore_file: /etc/tls/certs/default/ca.crt
+        truststore_file: /etc/truststores/secrets/rpc-secret-rpc.crt
       seed_servers:
       - host:
           address: redpanda-0.redpanda.default.svc.cluster.local.
@@ -126675,46 +127152,54 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: admin-my-admin
+    targetPort: 9645
+  - appProtocol: null
+    name: admin-my-admin
     nodePort: 1234
     port: 1234
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 1234
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: kafka-my-kafka
+    targetPort: 9094
+  - appProtocol: null
+    name: kafka-my-kafka
     nodePort: 1234
     port: 1234
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 1234
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: http-my-http
+    targetPort: 8083
+  - appProtocol: null
+    name: http-my-http
     nodePort: 1234
     port: 1234
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 1234
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
-  - name: schema-my-sr
+    targetPort: 8084
+  - appProtocol: null
+    name: schema-my-sr
     nodePort: 1234
     port: 1234
     protocol: TCP
-    targetPort: 0
+    targetPort: 1234
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -126744,19 +127229,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -126908,7 +127397,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: e23dc8a8198a893f3efad390290d5e009b51c0e4d87a5c33ea9203b73ca44c37
+        config.redpanda.com/checksum: 378952e94803948371de89aa740fc3d0ddff28aa270fe74c2afb3fdfffb90a7a
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -127279,6 +127768,11 @@ spec:
               - key: my-kafka.crt
                 path: secrets/kafka-secret-my-kafka.crt
               name: kafka-secret
+          - secret:
+              items:
+              - key: rpc.crt
+                path: secrets/rpc-secret-rpc.crt
+              name: rpc-secret
           - secret:
               items:
               - key: ca.crt
@@ -128361,26 +128855,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -128410,19 +128908,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -130130,26 +130632,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -130179,19 +130685,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -131728,26 +132238,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -131777,19 +132291,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -133326,26 +133844,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -133375,19 +133897,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -134922,26 +135448,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -134971,19 +135501,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -136547,26 +137081,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -136596,19 +137134,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -137824,7 +138366,6 @@ data:
       - address: 0.0.0.0
         name: default
         port: 9645
-      admin_api_tls: null
       crash_loop_limit: 5
       empty_seed_starts_cluster: false
       kafka_api:
@@ -138158,26 +138699,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -138207,19 +138752,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -138361,7 +138910,7 @@ spec:
   template:
     metadata:
       annotations:
-        config.redpanda.com/checksum: 8578e4868613e9a7e5cf76c684d16cfc4d2b4fa09e697ccb118ebb19103360c5
+        config.redpanda.com/checksum: 2b8d519f8af94fba81d6474aa4816e4853330a76ca74e96f3434ae2922600cba
       labels:
         app.kubernetes.io/component: redpanda-statefulset
         app.kubernetes.io/instance: redpanda
@@ -139384,19 +139933,6 @@ stringData:
 
     LISTENER="{\"address\":\"${SERVICE_NAME}.redpanda.default.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
     rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
-
-    ADVERTISED_HTTP_ADDRESSES=()
-
-    PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":30082}")
-
-    PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":30082}")
-
-    PREFIX_TEMPLATE=""
-    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":30082}")
-
-    rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
 type: Opaque
 ---
 # Source: redpanda/templates/entry-point.yaml
@@ -139570,9 +140106,9 @@ data:
   profile: |-
     admin_api:
       addresses:
-      - redpanda-0.redpanda.dev.somecustomer.net:31644
-      - redpanda-1.redpanda.dev.somecustomer.net:31644
-      - redpanda-2.redpanda.dev.somecustomer.net:31644
+      - redpanda-0.redpanda.dev.somecustomer.net:9644
+      - redpanda-1.redpanda.dev.somecustomer.net:9644
+      - redpanda-2.redpanda.dev.somecustomer.net:9644
       tls:
         ca_file: ca.crt
     kafka_api:
@@ -139585,9 +140121,9 @@ data:
     name: default
     schema_registry:
       addresses:
-      - redpanda-0.redpanda.dev.somecustomer.net:30081
-      - redpanda-1.redpanda.dev.somecustomer.net:30081
-      - redpanda-2.redpanda.dev.somecustomer.net:30081
+      - redpanda-0.redpanda.dev.somecustomer.net:8081
+      - redpanda-1.redpanda.dev.somecustomer.net:8081
+      - redpanda-2.redpanda.dev.somecustomer.net:8081
       tls:
         ca_file: ca.crt
 kind: ConfigMap
@@ -139803,19 +140339,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -151026,26 +151566,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -151075,19 +151619,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -152693,19 +153241,23 @@ spec:
     port: 9643
     protocol: TCP
     targetPort: 9643
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -154207,26 +154759,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -154256,19 +154812,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -155812,26 +156372,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -155861,19 +156425,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081
@@ -157528,26 +158096,30 @@ metadata:
 spec:
   externalTrafficPolicy: Local
   ports:
-  - name: admin-default
+  - appProtocol: null
+    name: admin-default
     nodePort: 31644
     port: 9645
     protocol: TCP
-    targetPort: 0
-  - name: kafka-default
+    targetPort: 9645
+  - appProtocol: null
+    name: kafka-default
     nodePort: 31092
     port: 9094
     protocol: TCP
-    targetPort: 0
-  - name: http-default
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
     nodePort: 30082
     port: 8083
     protocol: TCP
-    targetPort: 0
-  - name: schema-default
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
     nodePort: 30081
     port: 8084
     protocol: TCP
-    targetPort: 0
+    targetPort: 8084
   publishNotReadyAddresses: true
   selector:
     app.kubernetes.io/instance: redpanda
@@ -157577,19 +158149,23 @@ spec:
     port: 9644
     protocol: TCP
     targetPort: 9644
-  - name: http
+  - appProtocol: null
+    name: http
     port: 8082
     protocol: TCP
     targetPort: 8082
-  - name: kafka
+  - appProtocol: null
+    name: kafka
     port: 9093
     protocol: TCP
     targetPort: 9093
-  - name: rpc
+  - appProtocol: null
+    name: rpc
     port: 33145
     protocol: TCP
     targetPort: 33145
-  - name: schemaregistry
+  - appProtocol: null
+    name: schemaregistry
     port: 8081
     protocol: TCP
     targetPort: 8081

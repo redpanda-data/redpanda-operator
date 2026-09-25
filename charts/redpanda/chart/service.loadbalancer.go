@@ -17,10 +17,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func LoadBalancerServices(state *RenderState) []*corev1.Service {
+func LoadBalancerServices(state *RenderState, listeners *redpanda.Listeners) []*corev1.Service {
 	// This is technically a divergence from previous behavior but this matches
 	// the NodePort's check and is more reasonable.
 	if !state.Values.External.Enabled || !state.Values.External.Service.Enabled {
@@ -45,14 +46,9 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 	// no external listener ports at all), there is nothing to publish. Emitting
 	// a LoadBalancer Service with an empty port list is rejected by the API
 	// server (`spec.ports: Required value`), so mirror the NodePort path and
-	// render no LoadBalancer Services in that case. The per-broker loop below
-	// recomputes the same (non-empty) port set.
-	var lbPorts []corev1.ServicePort
-	lbPorts = append(lbPorts, state.Values.Listeners.Admin.ServicePorts("admin", &state.Values.External)...)
-	lbPorts = append(lbPorts, state.Values.Listeners.Kafka.ServicePorts("kafka", &state.Values.External)...)
-	lbPorts = append(lbPorts, state.Values.Listeners.HTTP.ServicePorts("http", &state.Values.External)...)
-	lbPorts = append(lbPorts, state.Values.Listeners.SchemaRegistry.ServicePorts("schema", &state.Values.External)...)
-	if len(lbPorts) == 0 {
+	// render no LoadBalancer Services in that case.
+	ports := listeners.LoadBalancerServicePorts()
+	if len(ports) == 0 {
 		return nil
 	}
 
@@ -95,15 +91,6 @@ func LoadBalancerServices(state *RenderState) []*corev1.Service {
 		}
 
 		podSelector["statefulset.kubernetes.io/pod-name"] = podname
-
-		// Divergences pop up here due to iterating over a map. This isn't okay
-		// in helm. TODO setup a linter that barks about this? Also a helper
-		// for getting the sorted keys of a map?
-		var ports []corev1.ServicePort
-		ports = append(ports, state.Values.Listeners.Admin.ServicePorts("admin", &state.Values.External)...)
-		ports = append(ports, state.Values.Listeners.Kafka.ServicePorts("kafka", &state.Values.External)...)
-		ports = append(ports, state.Values.Listeners.HTTP.ServicePorts("http", &state.Values.External)...)
-		ports = append(ports, state.Values.Listeners.SchemaRegistry.ServicePorts("schema", &state.Values.External)...)
 
 		svc := &corev1.Service{
 			TypeMeta: metav1.TypeMeta{

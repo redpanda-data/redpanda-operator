@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
@@ -52,13 +51,18 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 		redpanda[k] = v
 	}
 
-	// Configure listeners.
-	configureListeners(redpanda, state, pool)
+	listeners := poolListeners(state, pool)
+
+	sections := listeners.ConfigSections()
+
+	for _, key := range sortedMapKeys(sections["redpanda"]) {
+		redpanda[key] = sections["redpanda"][key]
+	}
 
 	redpandaYaml := map[string]any{
 		"redpanda":        redpanda,
-		"schema_registry": schemaRegistryConfig(state, pool),
-		"pandaproxy":      pandaProxyConfig(state, pool),
+		"schema_registry": sections["schema_registry"],
+		"pandaproxy":      sections["pandaproxy"],
 		"config_file":     redpandaConfigMountPath + "/redpanda.yaml",
 	}
 
@@ -86,111 +90,4 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 	}
 
 	return tplutil.ToYaml(redpandaYaml), nil
-}
-
-// configureListeners populates the listener entries in the redpanda config
-// section using the pool's listener and TLS configuration.
-func configureListeners(cfg map[string]any, state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) {
-	l := pool.Spec.Listeners
-	pki := poolPKI(state, pool)
-
-	var admin, kafka *redpandav1alpha2.StretchAPIListener
-	if l != nil {
-		admin = l.Admin
-		kafka = l.Kafka
-	}
-
-	// Admin listener.
-	configureAPIListener(cfg, &pki, pool, admin, "admin", "admin_api_tls", pool.Spec.AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "")
-
-	// Kafka listener.
-	authMethod := ""
-	if state.Spec().Auth.IsSASLEnabled() {
-		authMethod = "sasl"
-	}
-	configureAPIListener(cfg, &pki, pool, kafka, "kafka_api", "kafka_api_tls", pool.Spec.KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, authMethod)
-
-	// RPC listener.
-	cfg["rpc_server"] = map[string]any{
-		"address": "0.0.0.0",
-		"port":    pool.Spec.RPCPort(),
-	}
-	if l != nil && l.RPC.IsTLSEnabled(pool.Spec.TLS) && l.RPC.TLS != nil && l.RPC.TLS.GetCert() != "" {
-		kp := pki.ServerKeypair(l.RPC.TLS.GetCert())
-		cfg["rpc_server_tls"] = map[string]any{
-			"enabled":             true,
-			"cert_file":           kp.CertFile(),
-			"key_file":            kp.KeyFile(),
-			"require_client_auth": l.RPC.TLS.RequiresClientAuth(),
-			"truststore_file":     l.RPC.TLS.ServerCAPath(&pki),
-		}
-	}
-}
-
-// configureAPIListener handles the common pattern for Admin, Kafka, HTTP, and SchemaRegistry
-// listeners: creates the internal listener entry, adds TLS if enabled, iterates external
-// listeners, and sets the results on the redpanda config map.
-func configureAPIListener(
-	cfg map[string]any,
-	pki *redpanda.PKI,
-	pool *redpandav1alpha2.RedpandaBrokerPool,
-	listener *redpandav1alpha2.StretchAPIListener,
-	listenerKey, tlsKey string,
-	internalPort, defaultExtPort int32,
-	authMethod string,
-) {
-	internal := map[string]any{
-		"name": internalListenerName, "address": "0.0.0.0", "port": internalPort,
-	}
-	if authMethod != "" {
-		internal["authentication_method"] = authMethod
-	}
-
-	listeners := []map[string]any{internal}
-	var tlsEntries []map[string]any
-
-	if listener != nil {
-		if listener.IsTLSEnabled(pool.Spec.TLS) && listener.TLS.GetCert() != "" {
-			tlsEntries = append(tlsEntries, listenerTLSEntry(pki, pool, internalListenerName, listener.TLS))
-		}
-		forEachEnabledExternal(listener.External, func(name string, ext *redpandav1alpha2.StretchExternalListener) {
-			entry := map[string]any{
-				"name": name, "address": "0.0.0.0", "port": ext.GetPort(defaultExtPort),
-			}
-			if authMethod != "" {
-				entry["authentication_method"] = authMethod
-			}
-			listeners = append(listeners, entry)
-			// Mirror the internal-listener guard above: without the
-			// IsTLSEnabled check, the defaulted external listeners (which
-			// always carry cert name "external") emit *_api_tls entries
-			// even when the pool disables TLS — and because the
-			// certificate/volume side IS pool-TLS-gated
-			// (InUseServerCerts), the broker then crashloops reading
-			// /etc/tls/certs/external/* files that nothing mounts.
-			if ext.TLS.IsTLSEnabled(pool.Spec.TLS) && ext.TLS.GetCert() != "" {
-				tlsEntries = append(tlsEntries, listenerTLSEntry(pki, pool, name, ext.TLS))
-			}
-		})
-	}
-
-	cfg[listenerKey] = listeners
-	if len(tlsEntries) > 0 {
-		cfg[tlsKey] = tlsEntries
-	}
-}
-
-// listenerTLSEntry returns the TLS config map for a named listener using the
-// pool's TLS configuration.
-func listenerTLSEntry(pki *redpanda.PKI, pool *redpandav1alpha2.RedpandaBrokerPool, name string, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
-	certName := tls.GetCert()
-	kp := pki.ServerKeypair(certName)
-	return map[string]any{
-		"name":                name,
-		"enabled":             true,
-		"cert_file":           kp.CertFile(),
-		"key_file":            kp.KeyFile(),
-		"require_client_auth": pool.Spec.Listeners.CertRequiresClientAuth(certName),
-		"truststore_file":     tls.ServerCAPath(pki),
-	}
 }
