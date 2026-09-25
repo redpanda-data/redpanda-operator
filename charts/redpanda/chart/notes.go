@@ -100,24 +100,50 @@ func notes(state *RenderState) []string {
 		} else {
 			external = state.Values.Listeners.Kafka.TLS.Cert
 		}
+		serverCert := state.Values.TLS.Certs.MustGet(external)
 		out = append(out,
-			fmt.Sprintf(`  kubectl get secret -n %s %s-%s-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt`,
+			fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt`,
 				state.Release.Namespace,
-				Fullname(state),
-				external,
+				serverCert.ServerSecretName(state, external),
 			),
 		)
-		if state.Values.Listeners.Kafka.TLS.RequireClientAuth || state.Values.Listeners.Admin.TLS.RequireClientAuth {
+		// One fetch per listener requiring client auth: rpk presents the
+		// kafka listener's client cert on the kafka API and the admin
+		// listener's on the admin API (see rpk*ClientTLSConfiguration).
+		var kafkaClientSecret string
+		if state.Values.Listeners.Kafka.TLS.RequireClientAuth {
+			certName := state.Values.Listeners.Kafka.TLS.Cert
+			cert := state.Values.TLS.Certs.MustGet(certName)
+			kafkaClientSecret = cert.ClientSecretName(state, certName)
 			out = append(out,
-				fmt.Sprintf(`  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt`,
+				fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt`,
 					state.Release.Namespace,
-					Fullname(state),
+					kafkaClientSecret,
 				),
-				fmt.Sprintf(`  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key`,
+				fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key`,
 					state.Release.Namespace,
-					Fullname(state),
+					kafkaClientSecret,
 				),
 			)
+		}
+		if state.Values.Listeners.Admin.TLS.RequireClientAuth {
+			certName := state.Values.Listeners.Admin.TLS.Cert
+			cert := state.Values.TLS.Certs.MustGet(certName)
+			clientSecretName := cert.ClientSecretName(state, certName)
+			// Both APIs commonly share one client cert; the kafka fetch
+			// above already wrote it.
+			if clientSecretName != kafkaClientSecret {
+				out = append(out,
+					fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.crt" | base64decode }}' > admin-tls.crt`,
+						state.Release.Namespace,
+						clientSecretName,
+					),
+					fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.key" | base64decode }}' > admin-tls.key`,
+						state.Release.Namespace,
+						clientSecretName,
+					),
+				)
+			}
 		}
 	}
 	out = append(out,
