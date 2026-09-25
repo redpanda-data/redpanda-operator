@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/chartutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
@@ -434,7 +435,7 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	// keeps that opt-out. Not Merge: it drops the false and lets the default
 	// true win (#1936).
 	if state.Values.Tuning.ApplyHostTuners {
-		for key, value := range HostTunerDefaults() {
+		for key, value := range redpanda.HostTunerDefaults() {
 			if _, ok := result[key]; !ok {
 				result[key] = value
 			}
