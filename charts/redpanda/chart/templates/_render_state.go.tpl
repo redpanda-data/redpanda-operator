@@ -52,7 +52,7 @@
 {{- $_is_returning := false -}}
 {{- $username := (get (fromJson (include "redpanda.BootstrapUser.Username" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r") -}}
 {{- $passwordRef := (get (fromJson (include "redpanda.BootstrapUser.SecretKeySelector" (dict "a" (list $r.Values.auth.sasl.bootstrapUser (get (fromJson (include "redpanda.Fullname" (dict "a" (list $r)))) "r"))))) "r") -}}
-{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $r)))) "r") -}}
+{{- $pki := (get (fromJson (include "redpanda.resolvePKI" (dict "a" (list $r)))) "r") -}}
 {{- $kafkaSpec := (mustMergeOverwrite (dict "brokers" (coalesce nil)) (dict "brokers" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $r ($r.Values.listeners.kafka.port | int))))) "r"))) -}}
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $r.Values.listeners.kafka.tls $r.Values.tls)))) "r") -}}
 {{- $_ := (set $kafkaSpec "tls" (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.kafka.tls $r $pki)))) "r")) -}}

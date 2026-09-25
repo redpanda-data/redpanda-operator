@@ -15,8 +15,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
@@ -34,48 +34,11 @@ func MonitoringEnabledLabel(state *RenderState) map[string]string {
 	}
 }
 
-func ServiceInternal(state *RenderState) *corev1.Service {
+func ServiceInternal(state *RenderState, listeners *redpanda.Listeners) *corev1.Service {
 	// This service is only used to create the DNS enteries for each pod in
 	// the stateful set and allow the serviceMonitor to target the pods.
 	// This service should not be used by any client application.
-	ports := []corev1.ServicePort{}
-
-	ports = append(ports, corev1.ServicePort{
-		Name:        InternalAdminAPIPortName,
-		Protocol:    "TCP",
-		AppProtocol: state.Values.Listeners.Admin.AppProtocol,
-		Port:        state.Values.Listeners.Admin.Port,
-		TargetPort:  intstr.FromInt32(state.Values.Listeners.Admin.Port),
-	})
-
-	if state.Values.Listeners.HTTP.Enabled {
-		ports = append(ports, corev1.ServicePort{
-			Name:       InternalPandaProxyPortName,
-			Protocol:   "TCP",
-			Port:       state.Values.Listeners.HTTP.Port,
-			TargetPort: intstr.FromInt32(state.Values.Listeners.HTTP.Port),
-		})
-	}
-	ports = append(ports, corev1.ServicePort{
-		Name:       InternalKafkaPortName,
-		Protocol:   "TCP",
-		Port:       state.Values.Listeners.Kafka.Port,
-		TargetPort: intstr.FromInt32(state.Values.Listeners.Kafka.Port),
-	})
-	ports = append(ports, corev1.ServicePort{
-		Name:       "rpc",
-		Protocol:   "TCP",
-		Port:       state.Values.Listeners.RPC.Port,
-		TargetPort: intstr.FromInt32(state.Values.Listeners.RPC.Port),
-	})
-	if state.Values.Listeners.SchemaRegistry.Enabled {
-		ports = append(ports, corev1.ServicePort{
-			Name:       InternalSchemaRegistryPortName,
-			Protocol:   "TCP",
-			Port:       state.Values.Listeners.SchemaRegistry.Port,
-			TargetPort: intstr.FromInt32(state.Values.Listeners.SchemaRegistry.Port),
-		})
-	}
+	ports := listeners.InternalServicePorts()
 
 	annotations := map[string]string{}
 	if state.Values.Service != nil {

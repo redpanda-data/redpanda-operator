@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: An external listener with `enabled: false` is no longer advertised. The configurator wrote an `advertised_*_api` entry, and the rpk profile an external port, for a listener Redpanda was never told to bind.
+time: 2026-09-21T20:16:00.000000-04:00

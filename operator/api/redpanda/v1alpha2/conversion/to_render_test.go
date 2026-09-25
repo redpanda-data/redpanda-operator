@@ -317,7 +317,8 @@ func TestDuplicateBrokerContainerOverridesSurviveRender(t *testing.T) {
 	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{}, cluster, nil)
 	require.NoError(t, err)
 
-	sets := redpandachart.StatefulSets(state)
+	sets, err := redpandachart.RenderNodePools(state)
+	require.NoError(t, err)
 	require.NotEmpty(t, sets)
 
 	var broker *corev1.Container
@@ -383,7 +384,8 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{}, cluster, nil)
 	require.NoError(t, err)
 
-	sets := redpandachart.StatefulSets(state)
+	sets, err := redpandachart.RenderNodePools(state)
+	require.NoError(t, err)
 	require.NotEmpty(t, sets)
 
 	var configurator *corev1.Container
