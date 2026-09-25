@@ -17570,7 +17570,7 @@
               command:
               - /bin/sh
               - -c
-              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/internal-client/ca.crt
+              - curl --silent --fail -k -m 5 --cacert /etc/tls/certs/internal/ca.crt
                 --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key
                 "https://${SERVICE_NAME}.tls-multi-cert-listener-order.tls-multi-cert-listener-order.svc.cluster.local.:9644/v1/status/ready"
             failureThreshold: 3
@@ -17607,7 +17607,7 @@
               - -c
               - |
                 set -e
-                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key "https://${SERVICE_NAME}.tls-multi-cert-listener-order.tls-multi-cert-listener-order.svc.cluster.local.:9644/v1/status/ready")
+                RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key "https://${SERVICE_NAME}.tls-multi-cert-listener-order.tls-multi-cert-listener-order.svc.cluster.local.:9644/v1/status/ready")
                 echo $RESULT
                 echo $RESULT | grep ready
             failureThreshold: 120

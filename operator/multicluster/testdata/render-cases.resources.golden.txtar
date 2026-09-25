@@ -37864,14 +37864,14 @@
       # commands used throughout. Every curl carries --max-time so a single
       # hung admin connection can never freeze a lifecycle hook until the
       # termination grace period expires; the callers retry as needed.
-      CURL_NODE_ID_CMD="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/node_config"
+      CURL_NODE_ID_CMD="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/node_config"
 
       CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent --max-time 5 -o /dev/null -w "%{http_code}"'
       CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent --max-time 5 -o /dev/null -w "%{http_code}"'
-      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --max-time 5 --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/maintenance"
+      CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --max-time 5 --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/maintenance"
 
       # run bare to list all brokers, or append /<node id> for a single broker
-      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers"
+      CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers"
 
       # the address this pod's broker advertises to the rest of the cluster,
       # i.e. the internal_rpc_address its broker registers under; must stay
@@ -37896,7 +37896,7 @@
         done
 
         echo "Clearing maintenance mode on node ${NODE_ID}"
-        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
         # a 400 here would mean not in maintenance mode
         until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
             status=$(${CURL_MAINTENANCE_DELETE_CMD})
@@ -37935,7 +37935,7 @@
                 # cluster reports it dead
                 if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
                 echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
-                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+                CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
                 GHOST_STATUS=""
                 # a 400 means not in maintenance mode, a 404 means already removed
                 until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
@@ -37983,7 +37983,7 @@
         fi
 
         echo "Setting maintenance mode on node ${NODE_ID}"
-        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/internal-client/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+        CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/internal/ca.crt --cert /etc/tls/certs/internal-client/tls.crt --key /etc/tls/certs/internal-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
         # A 404 means this broker's node id is no longer a cluster member -- e.g.
         # a bad_rejoin broker whose id was decommissioned while its pod was down
         # (the redpanda#31057 recovery path): there is nothing to drain, and the

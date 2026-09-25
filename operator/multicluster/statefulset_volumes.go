@@ -147,7 +147,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	}
 
 	// Truststore volume (projected from ConfigMaps/Secrets).
-	if vol := pool.Spec.Listeners.TrustStoreVolume(pool.Spec.TLS); vol != nil {
+	if vol := poolListeners(state, pool).TrustStoreVolume(); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
@@ -199,12 +199,8 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 	)
 
 	// Truststore mount.
-	if len(pool.Spec.Listeners.TrustStores(pool.Spec.TLS)) > 0 {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      "truststores",
-			MountPath: redpandav1alpha2.TrustStoreMountPath,
-			ReadOnly:  true,
-		})
+	if mount := poolListeners(state, pool).TrustStoreMount(); mount != nil {
+		mounts = append(mounts, *mount)
 	}
 
 	// Tiered storage cache directory mount.
