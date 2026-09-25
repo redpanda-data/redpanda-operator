@@ -55,8 +55,6 @@ func newScheme(t *testing.T, withV2, withStretch, withV1 bool) *runtime.Scheme {
 func newController(t *testing.T, s *runtime.Scheme, objs ...client.Object) *Controller {
 	t.Helper()
 	c := fake.NewClientBuilder().WithScheme(s).WithObjects(objs...).Build()
-	// Reader is left nil — the Controller falls back to Client, so the
-	// fake client serves both the cached and "uncached" roles in tests.
 	return &Controller{
 		Client: c,
 	}
@@ -150,8 +148,8 @@ func newNode(name string) *corev1.Node {
 	}}
 }
 
-// TestCheckPVGates exercises the durable, uncached PV-annotation gates
-// that replaced the in-memory tracker. Gate 0 (unbindInFlight) holds
+// TestCheckPVGates exercises the durable PV-annotation gates that
+// replaced the in-memory tracker. Gate 0 (unbindInFlight) holds
 // while a PV's recorded claim hasn't been observed recreated (new UID)
 // and bound; Gate 4 (freedPVUnresolved) holds while a freed PV is a
 // live rebinding candidate. Both must survive "restarts" by
@@ -1141,138 +1139,6 @@ func TestReconcileGate3StuckClaimExemption(t *testing.T) {
 		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC), "the healthy bound claim must not be deleted")
 	})
 
-	t.Run("Node lookup uses the uncached Reader, not the cached Client", func(t *testing.T) {
-		// nodeUnavailableForScheduling must read the candidate PV's
-		// pinned Node through the uncached Reader (matching
-		// freedPVBlocking): this controller's RBAC grants Node get and
-		// list — not watch — so a cache-backed Get here would force
-		// (and fail without) a cluster-wide Node watch on a real,
-		// RBAC-restricted install. The cached Client
-		// below has NO Node object at all, standing in for that
-		// permission gap; a healthy, existing, uncordoned "node-a" is
-		// only reachable through Reader. If the code ever regresses to
-		// reading Nodes off Client, it would see NotFound and wrongly
-		// treat "node-a" as unavailable, exempting a claim that (per
-		// the real Node state, visible only via Reader) isn't actually
-		// mis-pinned.
-		pod := withPVC(withPVC(newPod("rp-1", "ns", "redpanda"), "datadir-rp-1"), "shadow-index-cache-rp-1")
-		pod.Status.Conditions = []corev1.PodCondition{{
-			Type:    corev1.PodScheduled,
-			Status:  corev1.ConditionFalse,
-			Reason:  "Unschedulable",
-			Message: "0/3 nodes are available: 3 Insufficient cpu.",
-		}}
-		datadir := newPVC("datadir-rp-1", "ns", "redpanda", "")
-		datadir.Spec.StorageClassName = ptr.To("standard")
-		healthy := newPVC("shadow-index-cache-rp-1", "ns", "redpanda", "pv-healthy-rp-1")
-		healthyPV := boundHostPathPV("pv-healthy-rp-1", "shadow-index-cache-rp-1", "node-a")
-		r := newController(t, s, wffc, pod, datadir, healthy, healthyPV) // no Node in the cached Client
-		// The Reader (standing in for fresh API-server state) carries
-		// the stuck Pod, the PVC evidence, and the healthy Node; the
-		// Node is the only object whose visibility differs between the
-		// two clients.
-		r.Reader = fake.NewClientBuilder().WithScheme(s).WithObjects(pod, newNode("node-a"), datadir, healthy).Build()
-
-		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
-		require.NoError(t, err)
-		require.Equal(t, requeueDuringDisruption, res.RequeueAfter, "the healthy Node seen via Reader must not be exempted; Gate 3 must keep deferring")
-
-		var gotPVC corev1.PersistentVolumeClaim
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC), "the healthy bound claim must not be deleted")
-	})
-
-	t.Run("occupant Pod lookup uses the uncached Reader, not a stale cached Client", func(t *testing.T) {
-		// The occupancy check must read sibling Pods through the
-		// uncached Reader, exactly like the Node lookup above: if
-		// occupant rp-0 was ALREADY deleted or rescheduled elsewhere by
-		// the time this Reconcile runs, but the informer cache hasn't
-		// caught up yet, trusting the stale cached copy would
-		// manufacture an anti-affinity conflict that no longer exists —
-		// on a Node that may by now be perfectly schedulable — and
-		// destructively delete rp-1's healthy bound claim for nothing.
-		// Here the cached Client still has rp-0 sitting on "node-a"
-		// (stale, no DeletionTimestamp, old Spec.NodeName); the
-		// uncached Reader — standing in for current API-server state —
-		// has no such Pod at all.
-		pod := withPVC(withPVC(newPod("rp-1", "ns", "redpanda"), "datadir-rp-1"), "shadow-index-cache-rp-1")
-		pod.Status.Conditions = []corev1.PodCondition{{
-			Type:    corev1.PodScheduled,
-			Status:  corev1.ConditionFalse,
-			Reason:  "Unschedulable",
-			Message: "0/3 nodes are available: 3 Insufficient cpu.",
-		}}
-		pod.Spec.Affinity = hardAntiAffinity(map[string]string{operatorlabels.InstanceKey: "redpanda"})
-		datadir := newPVC("datadir-rp-1", "ns", "redpanda", "")
-		datadir.Spec.StorageClassName = ptr.To("standard")
-		healthy := newPVC("shadow-index-cache-rp-1", "ns", "redpanda", "pv-healthy-rp-1")
-		healthyPV := boundHostPathPV("pv-healthy-rp-1", "shadow-index-cache-rp-1", "node-a")
-		staleOccupant := newPod("rp-0", "ns", "redpanda")
-		staleOccupant.Spec.NodeName = "node-a"
-		// The cached Client still has the stale occupant on "node-a"...
-		r := newController(t, s, wffc, newNode("node-a"), pod, datadir, healthy, healthyPV, staleOccupant)
-		// ...but the uncached Reader (fresher API-server state) does
-		// not — it carries the stuck Pod, the PVC evidence, and the
-		// healthy Node, just no occupant.
-		r.Reader = fake.NewClientBuilder().WithScheme(s).WithObjects(pod, newNode("node-a"), datadir, healthy).Build()
-
-		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
-		require.NoError(t, err)
-		require.Equal(t, requeueDuringDisruption, res.RequeueAfter, "a stale cached occupant must not be treated as proof of unavailability; Gate 3 must keep deferring")
-
-		var gotPVC corev1.PersistentVolumeClaim
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC), "the healthy bound claim must not be deleted")
-	})
-
-	t.Run("sibling discovery uses the uncached Reader, not a stale cached Client", func(t *testing.T) {
-		// The sibling scan feeds ShouldRemediate's Timeout freshness
-		// check, which is only as fresh as the read behind it: sibling
-		// rp-0 was genuinely stuck, then got resolved out-of-band (its
-		// recreated Pod scheduled onto node-b and is Running), leaving
-		// its datadir claim genuinely mid-settling — exactly what Gate 3
-		// must now defer on. The cached Client still serves the OLD
-		// stuck rp-0 (Pending, volume-affinity failure, mis-pinned bound
-		// claim — evidence that would fully re-manufacture the
-		// exemption); the uncached Reader — standing in for current
-		// API-server state — serves the fresh Running rp-0, which fails
-		// pvcUnbinderPredicate and earns no exemption. Gate 3 must
-		// defer on rp-0's unbound claim instead of letting rp-1's unbind
-		// proceed concurrently with rp-0's in-flight recovery.
-		pod := withPVC(podWithVolumeAffinityFailure("rp-1", "ns", "redpanda"), "datadir-rp-1")
-		mispinned := newPVC("datadir-rp-1", "ns", "redpanda", "pv-data-1")
-		pv := boundHostPathPV("pv-data-1", "datadir-rp-1", "node-a")
-
-		staleSibling := withPVC(withPVC(podWithVolumeAffinityFailure("rp-0", "ns", "redpanda"), "datadir-rp-0"), "shadow-index-cache-rp-0")
-		freshSibling := newPod("rp-0", "ns", "redpanda")
-		freshSibling.Status.Phase = corev1.PodRunning
-		freshSibling.Spec.NodeName = "node-b"
-
-		siblingDatadir := newPVC("datadir-rp-0", "ns", "redpanda", "")
-		siblingDatadir.Spec.StorageClassName = ptr.To("standard")
-		siblingShadow := newPVC("shadow-index-cache-rp-0", "ns", "redpanda", "pv-shadow-rp-0")
-		siblingShadowPV := boundHostPathPV("pv-shadow-rp-0", "shadow-index-cache-rp-0", "node-a")
-
-		cordoned := newNode("node-a")
-		cordoned.Spec.Unschedulable = true
-
-		// The cached Client still holds the stale stuck rp-0 with its
-		// full (stale-consistent) exemption evidence...
-		r := newController(t, s, wffc, pod, mispinned, pv, staleSibling, siblingDatadir, siblingShadow, siblingShadowPV)
-		// ...while the Reader holds the fresh Running rp-0 plus the
-		// live PVC/Node evidence.
-		r.Reader = fake.NewClientBuilder().WithScheme(s).WithObjects(
-			pod, freshSibling, cordoned, mispinned, siblingDatadir, siblingShadow,
-		).Build()
-
-		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(pod)})
-		require.NoError(t, err)
-		require.Equal(t, requeueDuringDisruption, res.RequeueAfter, "a stale cached sibling must not re-manufacture the exemption; Gate 3 must defer on the fresh state")
-
-		var gotPVC corev1.PersistentVolumeClaim
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-rp-1"}, &gotPVC), "rp-1's bound claim must not be deleted")
-		var gotPod corev1.Pod
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod))
-	})
-
 	t.Run("generic scheduling failure with a NotReady/unreachable pinned node is still exempted", func(t *testing.T) {
 		// A real, common node-loss shape distinct from cordoning: the
 		// Node object still exists but its kubelet crashed or it's
@@ -1537,40 +1403,6 @@ func TestReconcileGate3StuckClaimExemption(t *testing.T) {
 		var gotPVC corev1.PersistentVolumeClaim
 		err = r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "datadir-rp-1"}, &gotPVC)
 		require.True(t, apierrors.IsNotFound(err), "the mis-pinned bound claim must be deleted despite the broken nodes LIST")
-	})
-
-	t.Run("reconciled Pod is re-qualified on the uncached Reader before evidence or destruction", func(t *testing.T) {
-		// The initial cached Get is only a pre-filter: if the informer
-		// still serves an OLD rp-1 (stuck past the Timeout, mis-pinned
-		// claims and all) while the API server already has rp-1
-		// resolved (here: Running on node-b after a recreate), the
-		// stale copy must not supply the exemption evidence and reach
-		// the PVC deletes — the claim preconditions guard the claims,
-		// not the Pod evidence that justified deleting them. The
-		// cached Client below holds the fully-armed stale rp-1; the
-		// uncached Reader holds the fresh Running rp-1 plus everything
-		// the stale path would need to succeed, so a regression to
-		// cached-only qualification destroys the claim and fails this
-		// test.
-		stalePod, datadir, shadow, pv := stuckBroker("rp-1")
-		freshPod := newPod("rp-1", "ns", "redpanda")
-		freshPod.Status.Phase = corev1.PodRunning
-		freshPod.Spec.NodeName = "node-b"
-		cordoned := newNode("node-a")
-		cordoned.Spec.Unschedulable = true
-		r := newController(t, s, wffc, stalePod, datadir, shadow, pv)
-		r.Reader = fake.NewClientBuilder().WithScheme(s).WithObjects(
-			freshPod, datadir, shadow, cordoned, wffc,
-		).Build()
-
-		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(stalePod)})
-		require.NoError(t, err)
-		require.Zero(t, res.RequeueAfter, "a Pod that no longer qualifies on fresh state is simply skipped")
-
-		var gotPVC corev1.PersistentVolumeClaim
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "shadow-index-cache-rp-1"}, &gotPVC), "no claim may be deleted on stale Pod evidence")
-		var gotPod corev1.Pod
-		require.NoError(t, r.Client.Get(ctx, client.ObjectKey{Namespace: "ns", Name: "rp-1"}, &gotPod), "the Pod must not be deleted on stale evidence")
 	})
 
 	t.Run("a sibling's deadlock proof does not authorize destroying a Pod without its own mis-pin proof", func(t *testing.T) {
@@ -2914,7 +2746,7 @@ func TestListClusterPVCsByName(t *testing.T) {
 	t.Run("no PVCs returns empty map", func(t *testing.T) {
 		pod := newPod("rp-0", "ns", "redpanda")
 		r := newController(t, s)
-		got, err := r.listClusterPVCsByName(ctx, r.Client, pod)
+		got, err := r.listClusterPVCsByName(ctx, pod)
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		require.Empty(t, got)
@@ -2926,7 +2758,7 @@ func TestListClusterPVCsByName(t *testing.T) {
 		want1 := newPVC("datadir-rp-1", "ns", "redpanda-a", "pv-1")
 		other := newPVC("datadir-rpb-0", "ns", "redpanda-b", "pv-2")
 		r := newController(t, s, want0, want1, other)
-		got, err := r.listClusterPVCsByName(ctx, r.Client, pod)
+		got, err := r.listClusterPVCsByName(ctx, pod)
 		require.NoError(t, err)
 		require.Len(t, got, 2)
 		require.Contains(t, got, "datadir-rp-0")
@@ -2939,7 +2771,7 @@ func TestListClusterPVCsByName(t *testing.T) {
 		bound := newPVC("datadir-rp-0", "ns", "redpanda", "pv-0")
 		unbound := newPVC("datadir-rp-1", "ns", "redpanda", "")
 		r := newController(t, s, bound, unbound)
-		got, err := r.listClusterPVCsByName(ctx, r.Client, pod)
+		got, err := r.listClusterPVCsByName(ctx, pod)
 		require.NoError(t, err)
 		require.Equal(t, "pv-0", got["datadir-rp-0"].Spec.VolumeName)
 		require.Equal(t, "", got["datadir-rp-1"].Spec.VolumeName)
@@ -2949,7 +2781,7 @@ func TestListClusterPVCsByName(t *testing.T) {
 		pod := newPod("rp-0", "ns-a", "redpanda")
 		other := newPVC("datadir-rp-0", "ns-b", "redpanda", "pv-0")
 		r := newController(t, s, other)
-		got, err := r.listClusterPVCsByName(ctx, r.Client, pod)
+		got, err := r.listClusterPVCsByName(ctx, pod)
 		require.NoError(t, err)
 		require.Empty(t, got)
 	})
@@ -2958,7 +2790,7 @@ func TestListClusterPVCsByName(t *testing.T) {
 		pod := newPod("orphan-0", "ns", "")
 		other := newPVC("datadir-other-0", "ns", "redpanda", "pv-0")
 		r := newController(t, s, other)
-		got, err := r.listClusterPVCsByName(ctx, r.Client, pod)
+		got, err := r.listClusterPVCsByName(ctx, pod)
 		require.NoError(t, err)
 		require.NotNil(t, got)
 		require.Empty(t, got)

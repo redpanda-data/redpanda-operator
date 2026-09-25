@@ -69,9 +69,10 @@ const requeueDuringDisruption = 30 * time.Second
 //     nodes, which looks like a cluster-wide event, not a single node
 //     failure. Wait.
 //   - Gate 3 "pvc-rebinding": some claim in the cluster is not bound
-//     yet. It is probably re-binding right now, so wait — unless the
-//     claim is exempt because its pod is provably deadlocked (see
-//     [Controller.stuckClaimNames]).
+//     yet. It is probably re-binding right now, so wait — except for
+//     claims that can never bind while this gate waits: their Pod
+//     cannot schedule until the unbinder acts, and they cannot bind
+//     until their Pod schedules ([Controller.stuckClaimNames]).
 //   - Gate 4 "freed-pv": a PV freed by --allow-pv-rebinding is still
 //     floating and could pair with the wrong claim. Wait.
 //
@@ -89,13 +90,12 @@ const (
 // The unbinder stores its progress as annotations on the PVs it works
 // on, not in memory. PVs survive operator restarts and the deletions
 // that make up an unbind, so the gates that read these annotations
-// are crash-safe. All reads go through the uncached Reader, because
-// the annotations are written moments before they are read — exactly
-// when the informer cache lags.
+// are crash-safe.
 const (
 	// InFlightAnnotation marks a PV whose bound PVC this controller is
-	// about to delete. It is written together with the Retain policy,
-	// before the delete. The value is the cluster key.
+	// about to delete. It is written in one patch with the Retain
+	// policy and [InFlightClaimAnnotation], before the delete. The
+	// value is the cluster key.
 	//
 	// While any PV in a cluster carries this annotation, Gate 0 defers
 	// all further unbinds there. It is cleared once the deleted claim
@@ -109,11 +109,11 @@ const (
 	InFlightClaimAnnotation = "operator.redpanda.com/pvc-unbinder-claim"
 
 	// FreedPVAnnotation marks a PV whose ClaimRef this controller
-	// cleared (the --allow-pv-rebinding path). The value is the
+	// cleared (when --allow-pv-rebinding flag is used). The value is the
 	// cluster key.
 	//
 	// While such a PV is Available and its pinned node still exists,
-	// Gate 4 blocks further unbinds in the same cluster. Reason: an
+	// Gate 4 "freed-pv" blocks further unbinds in the same cluster. Reason: an
 	// Available PV can bind to ANY new claim, so unbinding a second
 	// broker while the first broker's freed disk still floats can give
 	// the second broker the first broker's disk (the INC-2818
@@ -132,7 +132,7 @@ const eventReasonGateDeferred = "PVCUnbinderDeferred"
 // Event, log) so incidents stay easy to attribute.
 const eventReasonGateExempted = "PVCUnbinderGateExempted"
 
-// Gate 2 finds Redpanda broker pods with two label queries, because
+// Gate 2 (multi-node outage) finds Redpanda broker pods with two label queries, because
 // no single pod label covers all cluster types:
 //
 //   - v1 Cluster pods carry app.kubernetes.io/managed-by=redpanda-operator.
@@ -161,8 +161,8 @@ const (
 //  1. finds the Pod's PVs and PVCs,
 //  2. sets a Retain policy on those PVs,
 //  3. deletes the PVCs (PVCs are immutable; delete is the only way),
-//  4. optionally clears the PVs' ClaimRef (--allow-pv-rebinding) so a
-//     returning node might reclaim its old volume,
+//  4. optionally clears the PVs' ClaimRef UID so a returning node might
+//     reclaim its old volume,
 //  5. deletes the Pod, which makes the StatefulSet recreate Pod and
 //     PVCs and bind them somewhere schedulable.
 type Controller struct {
@@ -196,29 +196,6 @@ type Controller struct {
 	// only the metrics are incremented. Uses the new k8s.io/client-go/tools/events
 	// API rather than the deprecated tools/record API.
 	Recorder events.EventRecorder
-	// Reader is an uncached client.Reader (the manager's APIReader).
-	// It is used wherever a stale cache would defeat the check:
-	//
-	//   - Gate 0/4 annotation scans, which read back state this
-	//     controller wrote moments earlier;
-	//   - Node lookups, so the cache does not have to watch every
-	//     Node for checks that only run during incidents;
-	//   - all Gate 3 exemption evidence (pod re-check, sibling and
-	//     occupant pod lists, PVC and StorageClass reads), because a
-	//     stale read there could wrongly unlock deletion.
-	//
-	// Falls back to Client when nil (tests).
-	Reader client.Reader
-}
-
-// reader returns the uncached Reader if configured, otherwise the
-// (cached) Client. Test code typically leaves Reader nil and relies on
-// the fake client serving both roles.
-func (r *Controller) reader() client.Reader {
-	if r.Reader != nil {
-		return r.Reader
-	}
-	return r.Client
 }
 
 // MulticlusterController is a multicluster-aware version of Controller that
@@ -310,14 +287,13 @@ func (r *MulticlusterController) Reconcile(ctx context.Context, req mcreconcile.
 		DisableStuckClaimExemption: r.DisableStuckClaimExemption,
 		ClusterName:                req.ClusterName,
 		Recorder:                   k8sCluster.GetEventRecorder("pvc-unbinder"),
-		Reader:                     k8sCluster.GetAPIReader(),
 	}
 	return c.Reconcile(ctx, req.Request)
 }
 
 // +kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;patch
-// +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list
-// +kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=get
+// +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list;watch
+// +kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=stretchclusters,verbs=get;list;watch
 // +kubebuilder:rbac:groups=redpanda.vectorized.io,resources=clusters,verbs=get;list;watch
@@ -341,9 +317,6 @@ func (r *MulticlusterController) Reconcile(ctx context.Context, req mcreconcile.
 func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorder("pvc-unbinder")
-	}
-	if r.Reader == nil {
-		r.Reader = mgr.GetAPIReader()
 	}
 	selectorPredicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
 		if r.Selector == nil {
@@ -395,36 +368,9 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return ctrl.Result{RequeueAfter: requeueAfter, Requeue: ok}, nil //nolint:staticcheck
 	}
 
-	// The cached read above is only a cheap pre-filter. Everything
-	// after this point must be justified by true API-server state. A
-	// stale cache copy of a Pod that was already recreated or
-	// scheduled could still look stuck, grant its own exemption, and
-	// reach the PVC deletes — and the delete preconditions guard the
-	// claims, not the Pod evidence. So: re-read the Pod uncached,
-	// qualify it again, and let the fresh object drive the rest.
-	//
-	// The re-read decodes into a FRESH object. Decoding into the
-	// cache-populated one would merge (JSON decode semantics): fields
-	// the fresh response omits — say, a just-recreated pod's still
-	// empty status.conditions — would keep their stale cached values
-	// and defeat the re-qualification below.
-	var freshPod corev1.Pod
-	if err := r.reader().Get(ctx, req.NamespacedName, &freshPod); err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
-	}
-	pod = freshPod
-	if ok, requeueAfter := r.ShouldRemediate(ctx, &pod); !ok || requeueAfter > 0 {
-		logger.Info("Pod no longer qualifies on the uncached re-read; skipping", "name", pod.Name, "ok", ok, "requeue-after", requeueAfter)
-		return ctrl.Result{RequeueAfter: requeueAfter, Requeue: ok}, nil //nolint:staticcheck
-	}
-
-	// Gates 0 and 4 share one uncached scan over the cluster's
-	// annotated PVs. Uncached, because the annotations are written
-	// moments before they are read; durable, so the gates survive
-	// restarts and leader handoffs mid-unbind.
+	// Gates 0 and 4 share one scan over the cluster's annotated PVs.
+	// The annotations are durable, so the gates survive restarts and
+	// leader handoffs mid-unbind.
 	pvGates, err := r.checkPVGates(ctx, r.clusterKey(&pod), &pod)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -490,7 +436,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Under --allow-pv-rebinding there is NO exemption: freed PVs
 	// float as binding candidates, and acting while any claim is
 	// unbound could pair it with the wrong disk (INC-2818).
-	clusterPVCsByName, err := r.listClusterPVCsByName(ctx, r.Client, &pod)
+	clusterPVCsByName, err := r.listClusterPVCsByName(ctx, &pod)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -508,7 +454,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if len(unbound) > 0 {
 		// The exemption evidence runs lazily — only when some claim is
 		// actually unbound — so the common all-bound path costs no
-		// extra live reads. If the evidence reads fail (for example a
+		// extra reads. If the evidence reads fail (for example a
 		// 403 when RBAC lags an image upgrade), the error downgrades
 		// to the conservative deferral instead of error-looping the
 		// reconcile. That direction is fail-safe: it disables a
@@ -549,86 +495,19 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.recordGateDeferred(&pod, gatePVCRebinding, fmt.Sprintf("unbound claims %s are exempted, but the reconciled Pod lacks its own mis-pin proof; deferring", claimListForEvent(exempted)))
 			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
 		}
-		// The cached list above can be stale in BOTH directions.
-		// Extra cached-only unbound claims merely cost a 30s
-		// deferral, but a LIVE unbound claim the cache has not seen
-		// yet must not slip past the gate on the exemptions' back.
-		// Passing the gate is an exemption-granting decision, so it
-		// is confirmed against an uncached re-list: any live unbound
-		// claim outside the exempted set defers as usual, and a
-		// failed re-list defers conservatively (same fail-safe
-		// direction as the evidence chain).
-		livePVCsByName, err := r.listClusterPVCsByName(ctx, r.reader(), &pod)
-		if err != nil {
-			if ctxErr := ctx.Err(); ctxErr != nil {
-				return ctrl.Result{}, ctxErr
-			}
-			logger.Error(err, "failed to confirm the exempted claims against the live API server; keeping the conservative deferral", "name", pod.Name)
-			r.recordGateDeferred(&pod, gatePVCRebinding, "uncached PVC re-list failed; deferring")
-			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
-		}
-		liveUnbound := make([]string, 0, len(livePVCsByName))
-		for name, pvc := range livePVCsByName {
-			if pvc.Spec.VolumeName == "" {
-				liveUnbound = append(liveUnbound, name)
-			}
-		}
-		slices.Sort(liveUnbound)
-		// liveExempted is the set of claims the gate is ACTUALLY being
-		// overridden for, per the live API server — not the cached
-		// `exempted` snapshot from above, which can name claims that
-		// have since bound. The Event and log below report this set so
-		// the paper trail matches what really happened.
-		var liveExempted []string
-		for _, name := range liveUnbound {
-			if _, stuck := exemptClaims[name]; !stuck {
-				msg := fmt.Sprintf("PVC %q has no volumeName on the live API server; deferring", name)
-				logger.Info(msg, "name", pod.Name, "pvc", name)
-				r.recordGateDeferred(&pod, gatePVCRebinding, msg)
-				return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
-			}
-			liveExempted = append(liveExempted, name)
-		}
-		// Re-confirm the reconciled Pod's own mis-pin proof against live
-		// state at THIS instant, immediately before overriding the gate.
-		// The proof in podMispinned was computed earlier in this same
-		// reconcile (by stuckClaimNames, before the uncached re-list
-		// above); a node that recovered since then — uncordoned, Ready
-		// again, or the conflicting occupant gone — must not still
-		// authorize destruction. A re-confirmation read failure defers
-		// conservatively, the same fail-safe direction as the evidence
-		// chain (context cancellation still surfaces as an error).
-		if podMispinned {
-			if podMispinned, err = r.podHasMispinnedBoundClaim(ctx, &pod); err != nil {
-				if ctxErr := ctx.Err(); ctxErr != nil {
-					return ctrl.Result{}, ctxErr
-				}
-				logger.Error(err, "failed to re-confirm the reconciled Pod's mis-pin proof; keeping the conservative deferral", "name", pod.Name)
-				r.recordGateDeferred(&pod, gatePVCRebinding, "mis-pin proof re-confirmation failed; deferring")
-				return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
-			}
-		}
-		if !podMispinned {
-			logger.Info(fmt.Sprintf("unbound claims %v are exempted, but the reconciled Pod no longer holds its own mis-pin proof; deferring", liveExempted), "name", pod.Name)
-			r.recordGateDeferred(&pod, gatePVCRebinding, fmt.Sprintf("unbound claims %s are exempted, but the reconciled Pod no longer holds its own mis-pin proof; deferring", claimListForEvent(liveExempted)))
-			return ctrl.Result{RequeueAfter: requeueDuringDisruption}, nil
-		}
 		// A safety gate is being overridden. Leave the same paper
 		// trail a deferral gets: metric, Event, and log, naming the
 		// exempted claims. Recorded only when the reconcile really
-		// proceeds AND some claim is actually being overridden on the
-		// live server (liveExempted non-empty): if the cache showed
-		// unbound claims that have all since bound, the gate passes on
-		// its own and no override occurred. The freed-pv gate below is
-		// durable and can hold for days, and counting a "pass" every
-		// 30s during that hold would poison the metric. The Event is a
-		// Warning — it precedes destructive deletion, and Warning is
-		// what event pipelines filter for.
-		if len(liveExempted) > 0 && !pvGates.freedPVUnresolved {
-			logger.Info(fmt.Sprintf("unbound claims %v are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", liveExempted), "name", pod.Name)
+		// proceeds: the freed-pv gate below is durable and can hold
+		// for days, and counting a "pass" every 30s during that hold
+		// would poison the metric. The Event is a Warning — it
+		// precedes destructive deletion, and Warning is what event
+		// pipelines filter for.
+		if !pvGates.freedPVUnresolved {
+			logger.Info(fmt.Sprintf("unbound claims %v are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", exempted), "name", pod.Name)
 			observability.PVCUnbinderGateExempted.Inc()
 			if r.Recorder != nil {
-				msg := fmt.Sprintf("unbound claims %s are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", claimListForEvent(liveExempted))
+				msg := fmt.Sprintf("unbound claims %s are exempted as stuck-Pod claims and the reconciled Pod holds its own mis-pin proof; proceeding past the pvc-rebinding gate", claimListForEvent(exempted))
 				r.Recorder.Eventf(&pod, nil, corev1.EventTypeWarning, eventReasonGateExempted, "Exempt", "%s", msg)
 			}
 		}
@@ -711,8 +590,7 @@ func (r *Controller) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// namespace/name/uid) in a single patch. This happens BEFORE any
 	// destructive action, so a crash, restart, or partial failure at
 	// any later point leaves durable evidence that an unbind started —
-	// Gate 0 reads it back (uncached) on the next reconcile, from any
-	// process.
+	// Gate 0 reads it back on the next reconcile, from any process.
 	for _, pv := range pvs {
 		if err := r.prepareForUnbind(ctx, pv, r.clusterKey(&pod)); err != nil {
 			return ctrl.Result{}, err
@@ -860,16 +738,14 @@ func (r *Controller) maybeRecyclePersistentVolume(ctx context.Context, pv *corev
 	return nil
 }
 
-// pvGateState is the result of one uncached scan over the cluster's
-// annotated PVs, feeding Gate 0 (unbindInFlight) and Gate 4
-// (freedPVUnresolved).
+// pvGateState is the result of one scan over the cluster's annotated
+// PVs, feeding Gate 0 (unbindInFlight) and Gate 4 (freedPVUnresolved).
 type pvGateState struct {
 	unbindInFlight    bool
 	freedPVUnresolved bool
 }
 
-// checkPVGates evaluates Gates 0 and 4 in one uncached pass over the
-// PV list.
+// checkPVGates evaluates Gates 0 and 4 in one pass over the PV list.
 //
 // Gate 0: for each PV with [InFlightAnnotation] == clusterKey, fetch
 // its recorded claim. The unbind has settled — and the annotations
@@ -911,7 +787,7 @@ func (r *Controller) checkPVGates(ctx context.Context, clusterKey string, pod *c
 	}
 
 	var pvList corev1.PersistentVolumeList
-	if err := r.reader().List(ctx, &pvList); err != nil {
+	if err := r.Client.List(ctx, &pvList); err != nil {
 		return state, err
 	}
 
@@ -973,8 +849,8 @@ func (r *Controller) inFlightClaimOwnedBy(pv *corev1.PersistentVolume, ownClaims
 }
 
 // inFlightClaimSettled reports whether the claim recorded in a PV's
-// [InFlightClaimAnnotation] is done unbinding (uncached read). Two
-// states count as settled:
+// [InFlightClaimAnnotation] is done unbinding. Two states count as
+// settled:
 //
 //   - the claim was recreated (new UID) and is bound — the unbind
 //     completed; or
@@ -995,7 +871,7 @@ func (r *Controller) inFlightClaimSettled(ctx context.Context, pv *corev1.Persis
 	namespace, name, oldUID := parts[0], parts[1], types.UID(parts[2])
 
 	var pvc corev1.PersistentVolumeClaim
-	err := r.reader().Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &pvc)
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, &pvc)
 	switch {
 	case apierrors.IsNotFound(err):
 		// Deleted but not yet recreated.
@@ -1058,7 +934,7 @@ func (r *Controller) freedPVBlocking(ctx context.Context, pv *corev1.PersistentV
 	// gone and OPEN this gate. Mirrors the exemption path
 	// ([Controller.nodeUnavailableForScheduling]).
 	var nodeList corev1.NodeList
-	if err := r.reader().List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
+	if err := r.Client.List(ctx, &nodeList, client.MatchingLabels{corev1.LabelHostname: hostname}); err != nil {
 		// Out-of-band RBAC can lag the upgrade that introduced this
 		// LIST (the lookup it replaced needed only `get`). Degrade
 		// Forbidden to the conservative answer — a live candidate, so
@@ -1387,19 +1263,17 @@ func LostDiskClaims(ctx context.Context, reader client.Reader, pod *corev1.Pod) 
 // listClusterPVCsByName returns a name→PVC snapshot for the PVCs that
 // belong to the same Redpanda/Cluster as `pod` (matched by the
 // app.kubernetes.io/instance label). Gate 3 inspects spec.volumeName
-// on each entry to detect a PVC that's not yet bound to a PV. The
-// caller picks the reader: cached for the deferral fast path, the
-// uncached APIReader when the answer helps grant passage.
+// on each entry to detect a PVC that's not yet bound to a PV.
 //
 // Returns an empty (non-nil) map when the Pod has no instance label.
-func (r *Controller) listClusterPVCsByName(ctx context.Context, reader client.Reader, pod *corev1.Pod) (map[string]corev1.PersistentVolumeClaim, error) {
+func (r *Controller) listClusterPVCsByName(ctx context.Context, pod *corev1.Pod) (map[string]corev1.PersistentVolumeClaim, error) {
 	out := map[string]corev1.PersistentVolumeClaim{}
 	instance := pod.Labels[operatorlabels.InstanceKey]
 	if instance == "" {
 		return out, nil
 	}
 	var pvcList corev1.PersistentVolumeClaimList
-	if err := reader.List(ctx, &pvcList, &client.ListOptions{
+	if err := r.Client.List(ctx, &pvcList, &client.ListOptions{
 		Namespace: pod.Namespace,
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			operatorlabels.InstanceKey: instance,
@@ -1437,11 +1311,6 @@ func (r *Controller) listClusterPVCsByName(ctx context.Context, reader client.Re
 // its own, and Gate 0 has no annotation yet to backstop acting early
 // on its behalf.
 //
-// All reads here are uncached. A lagging informer could keep showing
-// a sibling as stuck after it was actually recreated or scheduled,
-// and that stale view must not re-create an exemption for a claim
-// that is now genuinely settling.
-//
 // Threat note: any principal with pods/create in this namespace can
 // forge a "stuck sibling" (ownerReferences, volumes, affinity, and an
 // impossible resource request are all under its control). The mis-pin
@@ -1461,9 +1330,9 @@ func (r *Controller) listClusterPVCsByName(ctx context.Context, reader client.Re
 func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbound []string) (map[string]struct{}, bool, error) {
 	// StorageClass binding modes are memoized for the whole exemption
 	// run (reconciled Pod + every sibling): a cluster's claims almost
-	// all share one StorageClass, so an unmemoized uncached Get per
-	// claim would re-read the same object many times every 30s during
-	// an incident. Scoped to this run (a local, not a Controller field)
+	// all share one StorageClass, so an unmemoized Get per claim would
+	// re-read the same object many times every 30s during an incident.
+	// Scoped to this run (a local, not a Controller field)
 	// because binding mode can change via delete-and-recreate, which
 	// the memo must not outlive.
 	scWFFC := map[string]bool{}
@@ -1480,7 +1349,7 @@ func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbou
 		return out, podMispinned, nil
 	}
 	var podList corev1.PodList
-	if err := r.reader().List(ctx, &podList, &client.ListOptions{
+	if err := r.Client.List(ctx, &podList, &client.ListOptions{
 		Namespace: pod.Namespace,
 		LabelSelector: labels.SelectorFromSet(labels.Set{
 			operatorlabels.InstanceKey: instance,
@@ -1541,8 +1410,6 @@ func (r *Controller) stuckClaimNames(ctx context.Context, pod *corev1.Pod, unbou
 // ([Controller.stuckClaimNames]) can surface the reconciled Pod's
 // proof without re-running the evidence chain.
 //
-// PVC reads are uncached: this evidence opens a gate in front of
-// destructive deletion, so it must reflect true API-server state.
 // scWFFC memoizes StorageClass binding-mode reads across the caller's
 // run; it may be nil.
 //
@@ -1573,14 +1440,13 @@ func (r *Controller) exemptClaimNames(ctx context.Context, pod *corev1.Pod, scWF
 // unboundWFFCClaimNames returns the names of pod's own StatefulSet
 // claims that are unbound AND use a WaitForFirstConsumer StorageClass.
 // It is the claim-collection half of [Controller.exemptClaimNames];
-// callers must establish the mis-pin proof first. PVC reads are
-// uncached (they feed an exemption decision). scWFFC memoizes
+// callers must establish the mis-pin proof first. scWFFC memoizes
 // StorageClass binding-mode reads across the run; it may be nil.
 func (r *Controller) unboundWFFCClaimNames(ctx context.Context, pod *corev1.Pod, scWFFC map[string]bool) (map[string]struct{}, error) {
 	out := map[string]struct{}{}
 	for _, key := range StsPVCs(pod) {
 		var pvc corev1.PersistentVolumeClaim
-		if err := r.reader().Get(ctx, key, &pvc); err != nil {
+		if err := r.Client.Get(ctx, key, &pvc); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -1616,16 +1482,11 @@ func (r *Controller) unboundWFFCClaimNames(ctx context.Context, pod *corev1.Pod,
 // name, and UID all matching the claim), never by the claim's
 // volumeName alone — that field is user-settable at creation.
 //
-// The PVC read is uncached: a stale volumeName pointing at an old PV
-// would fabricate the evidence. The PV read stays cached because the
-// fields used (NodeAffinity, HostPath/Local, ClaimRef UID) never
-// change on a live Bound PV.
-//
 //nolint:laconiccomments
 func (r *Controller) podHasMispinnedBoundClaim(ctx context.Context, pod *corev1.Pod) (bool, error) {
 	for _, key := range StsPVCs(pod) {
 		var pvc corev1.PersistentVolumeClaim
-		if err := r.reader().Get(ctx, key, &pvc); err != nil {
+		if err := r.Client.Get(ctx, key, &pvc); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -1634,7 +1495,7 @@ func (r *Controller) podHasMispinnedBoundClaim(ctx context.Context, pod *corev1.
 		if pvc.Spec.VolumeName == "" {
 			continue
 		}
-		_, mispinned, err := claimMispinnedForPod(ctx, r.Client, r.reader(), &pvc, pod)
+		_, mispinned, err := claimMispinnedForPod(ctx, r.Client, &pvc, pod)
 		if err != nil {
 			return false, err
 		}
@@ -1655,17 +1516,12 @@ func (r *Controller) podHasMispinnedBoundClaim(ctx context.Context, pod *corev1.
 // own it proves nothing: a claim pre-pointed at an arbitrary local PV must
 // not mint mis-pin evidence. Only the binder completes the back-reference
 // with the claim's UID.
-//
-// pvReader may be cached (the fields used — NodeAffinity, HostPath/Local,
-// ClaimRef UID — never change on a live Bound PV); nodeReader should be
-// uncached, as node/occupant evidence directly unlocks destructive
-// deletion.
-func claimMispinnedForPod(ctx context.Context, pvReader, nodeReader client.Reader, pvc *corev1.PersistentVolumeClaim, pod *corev1.Pod) (*corev1.PersistentVolume, bool, error) {
+func claimMispinnedForPod(ctx context.Context, reader client.Reader, pvc *corev1.PersistentVolumeClaim, pod *corev1.Pod) (*corev1.PersistentVolume, bool, error) {
 	if pvc.Spec.VolumeName == "" {
 		return nil, false, nil
 	}
 	var pv corev1.PersistentVolume
-	if err := pvReader.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
+	if err := reader.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, false, nil
 		}
@@ -1685,7 +1541,7 @@ func claimMispinnedForPod(ctx context.Context, pvReader, nodeReader client.Reade
 		return nil, false, nil
 	}
 	for _, hostname := range hostnames {
-		unavailable, err := nodeUnavailableForScheduling(ctx, nodeReader, hostname, pod)
+		unavailable, err := nodeUnavailableForScheduling(ctx, reader, hostname, pod)
 		if err != nil {
 			return nil, false, err
 		}
@@ -1782,14 +1638,6 @@ const (
 // If none of these hold, the node looks schedulable, so the pod's
 // Pending state cannot be blamed on this claim (more likely CPU,
 // quota, or unrelated taints) and this returns false.
-//
-// Every read here is uncached — callers pass an uncached reader. This
-// evidence directly unlocks destructive deletion, and a stale occupant
-// or node view could manufacture proof of a conflict that no longer
-// exists. Gate 0 does not backstop that: it only tracks the unbinder's
-// OWN past actions. Shared between the unbinder's Gate 3 exemption
-// chain (via [claimMispinnedForPod]) and the Broker controller's
-// PV-affinity remediation ([MispinnedPVCs]).
 //
 //nolint:laconiccomments
 func nodeUnavailableForScheduling(ctx context.Context, reader client.Reader, hostname string, pod *corev1.Pod) (bool, error) {
@@ -2007,17 +1855,12 @@ func podUnconditionallyTolerates(tolerations []corev1.Toleration, taint *corev1.
 // so "no class" resolves to false. A named class that does not exist
 // also resolves to false (unknown defers).
 //
-// The read is uncached: VolumeBindingMode only "changes" through
-// delete-and-recreate under the same name, which is exactly what a
-// lagging informer would hide. An uncached Get also keeps the RBAC
-// grant at bare `get`.
-//
 // scWFFC, if non-nil, memoizes the name→isWFFC answer for the duration
 // of one exemption run so the same StorageClass (which typically backs
 // every claim in a cluster) is read once rather than per claim. It is
 // a per-run parameter rather than a Controller field precisely because
-// the uncached read must not be cached ACROSS runs — a delete-recreate
-// of the class between reconciles must be observed.
+// the answer must not be memoized ACROSS runs — a delete-recreate of
+// the class between reconciles must be observed.
 //
 //nolint:laconiccomments
 func (r *Controller) claimUsesWaitForFirstConsumer(ctx context.Context, pvc *corev1.PersistentVolumeClaim, scWFFC map[string]bool) (bool, error) {
@@ -2038,7 +1881,7 @@ func (r *Controller) claimUsesWaitForFirstConsumer(ctx context.Context, pvc *cor
 		}
 	}
 	var sc storagev1.StorageClass
-	if err := r.reader().Get(ctx, client.ObjectKey{Name: name}, &sc); err != nil {
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: name}, &sc); err != nil {
 		if apierrors.IsNotFound(err) {
 			// Unknown class resolves to false (defer). Memoize the
 			// negative too, so a missing class isn't re-Got per claim.
