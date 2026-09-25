@@ -28,8 +28,7 @@ import (
 func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) map[string]any {
 	flags := redpandaAdditionalStartFlags(state, pool)
 
-	l := pool.Spec.Listeners
-	pki := poolPKI(state, pool)
+	listeners := poolListeners(state, pool)
 
 	result := map[string]any{
 		"additional_start_flags": flags,
@@ -37,15 +36,15 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool
 		"enable_memory_locking":  pool.Spec.GetEnableMemoryLocking(),
 		"kafka_api": map[string]any{
 			"brokers": state.kafkaApiBrokerList(),
-			"tls":     rpkListenerTLS(&pki, pool, l.Kafka),
+			"tls":     listeners.Kafka().RPKClientTLS(),
 		},
 		"admin_api": map[string]any{
 			"addresses": state.adminApiBrokerList(),
-			"tls":       rpkListenerTLS(&pki, pool, l.Admin),
+			"tls":       listeners.Admin().RPKClientTLS(),
 		},
 		"schema_registry": map[string]any{
 			"addresses": state.schemaRegistryBrokerList(),
-			"tls":       rpkListenerTLS(&pki, pool, l.SchemaRegistry),
+			"tls":       listeners.SchemaRegistry().RPKClientTLS(),
 		},
 	}
 
@@ -73,31 +72,10 @@ func rpkNodeConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool
 	return result
 }
 
-// rpkListenerTLS returns the rpk client TLS config for a listener, or nil if
-// TLS is not enabled or no cert is configured.
-func rpkListenerTLS(pki *redpanda.PKI, pool *redpandav1alpha2.RedpandaBrokerPool, listener *redpandav1alpha2.StretchAPIListener) map[string]any {
-	if listener == nil || !listener.IsTLSEnabled(pool.Spec.TLS) || listener.TLS.GetCert() == "" {
-		return nil
-	}
-	return rpkClientTLSConfig(pki, listener.TLS)
-}
-
-// rpkClientTLSConfig returns the TLS config map for rpk client connections.
-func rpkClientTLSConfig(pki *redpanda.PKI, tls *redpandav1alpha2.StretchListenerTLS) map[string]any {
-	result := map[string]any{
-		"ca_file": tls.ServerCAPath(pki),
-	}
-	if kp := pki.ClientKeypair(tls.GetCert()); kp != nil {
-		result["cert_file"] = kp.CertFile()
-		result["key_file"] = kp.KeyFile()
-	}
-	return result
-}
-
 // kafkaClientConfig generates the pandaproxy_client / schema_registry_client / audit_log_client
 // section of the redpanda.yaml template. clientType is "pandaproxy", "schema_registry", or "audit_log".
 func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, clientType string) map[string]any {
-	pki := poolPKI(state, pool)
+	listeners := poolListeners(state, pool)
 	var brokerList []map[string]any
 
 	// Check if use_localhost is set in node config.
@@ -124,19 +102,7 @@ func kafkaClientConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBroker
 	}
 
 	// Kafka broker TLS for internal client connections (pandaproxy_client, etc.).
-	l := pool.Spec.Listeners
-	if kafka := l.Kafka; kafka != nil && kafka.IsTLSEnabled(pool.Spec.TLS) && kafka.TLS.GetCert() != "" {
-		tls := kafka.TLS
-		certName := tls.GetCert()
-		brokerTLS := map[string]any{
-			"enabled":             true,
-			"require_client_auth": pool.Spec.Listeners.CertRequiresClientAuth(certName),
-			"truststore_file":     tls.ServerCAPath(&pki),
-		}
-		if kp := pki.ClientKeypair(certName); kp != nil {
-			brokerTLS["cert_file"] = kp.CertFile()
-			brokerTLS["key_file"] = kp.KeyFile()
-		}
+	if brokerTLS := listeners.Kafka().BrokerClientTLS(); len(brokerTLS) > 0 {
 		cfg["broker_tls"] = brokerTLS
 	}
 

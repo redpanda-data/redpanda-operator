@@ -25,11 +25,6 @@ import (
 )
 
 const (
-	// TrustStoreMountPath is the absolute path at which the
-	// [corev1.VolumeProjection] of truststores will be mounted to the redpanda
-	// container. (Without a trailing slash)
-	TrustStoreMountPath = "/etc/truststores"
-
 	NodePoolLabelName       = "cluster.redpanda.com/nodepool-name"
 	NodePoolLabelGeneration = "cluster.redpanda.com/nodepool-generation"
 )
@@ -127,10 +122,10 @@ func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 }
 
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
-func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
+func StatefulSetVolumes(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners, pool Pool) []corev1.Volume {
 	fullname := Fullname(state)
 	poolFullname := fmt.Sprintf("%s%s", Fullname(state), pool.Suffix())
-	volumes := CommonVolumes(state)
+	volumes := CommonVolumes(state, pki)
 
 	// NOTE and tiered-storage-dir are NOT in this
 	// function. TODO: Migrate them into this function.
@@ -181,7 +176,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 		})
 	}
 
-	if vol := state.Values.Listeners.TrustStoreVolume(&state.Values.TLS); vol != nil {
+	if vol := listeners.TrustStoreVolume(); vol != nil {
 		volumes = append(volumes, *vol)
 	}
 
@@ -256,8 +251,8 @@ func statefulSetVolumeTieredStorageDir(state *RenderState) *corev1.Volume {
 
 // StatefulSetRedpandaMounts returns the VolumeMounts for the Redpanda
 // Container of the Redpanda StatefulSet.
-func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
-	mounts := CommonMounts(state)
+func StatefulSetVolumeMounts(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners) []corev1.VolumeMount {
+	mounts := CommonMounts(state, pki)
 
 	mounts = append(mounts, []corev1.VolumeMount{
 		{Name: "config", MountPath: "/etc/redpanda"},
@@ -267,11 +262,8 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 		{Name: redpanda.ServiceAccountVolumeName, MountPath: redpanda.DefaultAPITokenMountPath, ReadOnly: true},
 	}...)
 
-	if len(state.Values.Listeners.TrustStores(&state.Values.TLS)) > 0 {
-		mounts = append(
-			mounts,
-			corev1.VolumeMount{Name: "truststores", MountPath: TrustStoreMountPath, ReadOnly: true},
-		)
+	if mount := listeners.TrustStoreMount(); mount != nil {
+		mounts = append(mounts, *mount)
 	}
 
 	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
@@ -284,12 +276,12 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 // StatefulSetInitContainers resolves this chart's values into the init
 // container renderer shared with the operator's multicluster renderer, which
 // never sees chart values or a Pool itself.
-func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container {
+func StatefulSetInitContainers(state *RenderState, pki *redpanda.PKI, pool Pool) []corev1.Container {
 	renderer := redpanda.InitContainerRenderer{
 		Image:        fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
 		InitImage:    fmt.Sprintf(`%s:%s`, pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
 		SidecarImage: fmt.Sprintf(`%s:%s`, pool.Statefulset.SideCars.Image.Repository, pool.Statefulset.SideCars.Image.Tag),
-		CommonMounts: CommonMounts(state),
+		CommonMounts: CommonMounts(state, pki),
 		Configurator: &redpanda.ConfiguratorInitContainer{
 			MountAPIToken: state.Values.RackAwareness.Enabled,
 			AdditionalEnv: rpkEnvVars(state, nil),
@@ -393,10 +385,10 @@ func giduidFromPodTemplate(tpl *PodTemplate, containerName string) (*int64, *int
 	return gid, uid
 }
 
-func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
+func StatefulSetContainers(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners, pool Pool) []corev1.Container {
 	var containers []corev1.Container
-	containers = append(containers, statefulSetContainerRedpanda(state, pool))
-	if c := statefulSetContainerSidecar(state, pool); c != nil {
+	containers = append(containers, statefulSetContainerRedpanda(state, pki, listeners, pool))
+	if c := statefulSetContainerSidecar(state, pki, pool); c != nil {
 		containers = append(containers, *c)
 	}
 	return containers
@@ -429,7 +421,7 @@ func WrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string
 	return []string{"bash", "-c", script}
 }
 
-func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Container {
+func statefulSetContainerRedpanda(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners, pool Pool) corev1.Container {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(state))
 
 	container := corev1.Container{
@@ -468,7 +460,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 						helmette.Join("\n", []string{
 							`set -e`,
 							fmt.Sprintf(`RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")`,
-								adminTLSCurlFlags(state),
+								listeners.Admin().CurlFlags(),
 								adminInternalHTTPProtocol(state),
 								adminApiURLs(state),
 							),
@@ -503,7 +495,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 				state.Values.Listeners.RPC.Port,
 			),
 		},
-		VolumeMounts: StatefulSetVolumeMounts(state),
+		VolumeMounts: StatefulSetVolumeMounts(state, pki, listeners),
 		Resources:    state.Values.Resources.GetResourceRequirements(),
 		SecurityContext: &corev1.SecurityContext{
 			RunAsNonRoot:             ptr.To(true),
@@ -511,65 +503,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 		},
 	}
 
-	// admin http kafka schemaRegistry rpc
-	container.Ports = append(container.Ports, corev1.ContainerPort{
-		Name:          "admin",
-		ContainerPort: state.Values.Listeners.Admin.Port,
-	})
-	for externalName, external := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if external.IsEnabled() {
-			// The original template used
-			// $external.port > 0 &&
-			// [ $external.enabled ||
-			//   (state.Values.External.Enabled && (dig "enabled" true $external)
-			// ]
-			// ... which is equivalent to the above check
-			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("admin-%.8s", helmette.Lower(externalName)),
-				ContainerPort: external.Port,
-			})
-		}
-	}
-	container.Ports = append(container.Ports, corev1.ContainerPort{
-		Name:          "http",
-		ContainerPort: state.Values.Listeners.HTTP.Port,
-	})
-	for externalName, external := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if external.IsEnabled() {
-			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("http-%.8s", helmette.Lower(externalName)),
-				ContainerPort: external.Port,
-			})
-		}
-	}
-	container.Ports = append(container.Ports, corev1.ContainerPort{
-		Name:          "kafka",
-		ContainerPort: state.Values.Listeners.Kafka.Port,
-	})
-	for externalName, external := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if external.IsEnabled() {
-			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("kafka-%.8s", helmette.Lower(externalName)),
-				ContainerPort: external.Port,
-			})
-		}
-	}
-	container.Ports = append(container.Ports, corev1.ContainerPort{
-		Name:          "rpc",
-		ContainerPort: state.Values.Listeners.RPC.Port,
-	})
-	container.Ports = append(container.Ports, corev1.ContainerPort{
-		Name:          "schemaregistry",
-		ContainerPort: state.Values.Listeners.SchemaRegistry.Port,
-	})
-	for externalName, external := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if external.IsEnabled() {
-			container.Ports = append(container.Ports, corev1.ContainerPort{
-				Name:          fmt.Sprintf("schema-%.8s", helmette.Lower(externalName)),
-				ContainerPort: external.Port,
-			})
-		}
-	}
+	container.Ports = append(container.Ports, listeners.ContainerPorts()...)
 
 	if state.Values.Storage.IsTieredStorageEnabled() && state.Values.Storage.TieredMountType() != "none" {
 		name := "tiered-storage-dir"
@@ -605,7 +539,7 @@ func adminURLsCLI(state *RenderState) string {
 	)
 }
 
-func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Container {
+func statefulSetContainerSidecar(state *RenderState, pki *redpanda.PKI, pool Pool) *corev1.Container {
 	args := []string{
 		`/redpanda-operator`,
 		`sidecar`,
@@ -672,7 +606,7 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 	args = append(args, pool.Statefulset.SideCars.Args...)
 
 	volumeMounts := append(
-		CommonMounts(state),
+		CommonMounts(state, pki),
 		corev1.VolumeMount{
 			Name:      "config",
 			MountPath: "/etc/redpanda",
@@ -749,16 +683,16 @@ func bootstrapEnvVars(state *RenderState, envVars []corev1.EnvVar) []corev1.EnvV
 	return envVars
 }
 
-func StatefulSets(state *RenderState) []*appsv1.StatefulSet {
+func StatefulSets(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners) []*appsv1.StatefulSet {
 	// default statefulset
-	sets := []*appsv1.StatefulSet{StatefulSet(state, Pool{Statefulset: state.Values.Statefulset})}
+	sets := []*appsv1.StatefulSet{StatefulSet(state, pki, listeners, Pool{Statefulset: state.Values.Statefulset})}
 	for _, set := range state.Pools {
-		sets = append(sets, StatefulSet(state, set))
+		sets = append(sets, StatefulSet(state, pki, listeners, set))
 	}
 	return sets
 }
 
-func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
+func StatefulSet(state *RenderState, pki *redpanda.PKI, listeners *redpanda.Listeners, pool Pool) *appsv1.StatefulSet {
 	poolLabels := map[string]string{}
 	if pool.Name != "" {
 		poolLabels[NodePoolLabelName] = pool.Name
@@ -797,15 +731,15 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 						ObjectMeta: metav1.ObjectMeta{
 							Labels: StatefulSetPodLabels(state, pool),
 							Annotations: map[string]string{
-								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(state, pool),
+								"config.redpanda.com/checksum": statefulSetChecksumAnnotation(state, listeners, pool),
 							},
 						},
 						Spec: corev1.PodSpec{
 							AutomountServiceAccountToken: ptr.To(false),
 							ServiceAccountName:           ServiceAccountName(state),
-							InitContainers:               StatefulSetInitContainers(state, pool),
-							Containers:                   StatefulSetContainers(state, pool),
-							Volumes:                      StatefulSetVolumes(state, pool),
+							InitContainers:               StatefulSetInitContainers(state, pki, pool),
+							Containers:                   StatefulSetContainers(state, pki, listeners, pool),
+							Volumes:                      StatefulSetVolumes(state, pki, listeners, pool),
 						},
 					},
 				),
@@ -834,11 +768,11 @@ func StatefulSet(state *RenderState, pool Pool) *appsv1.StatefulSet {
 //
 // Append any additional dependencies that require the pods to restart
 // to the $dependencies list.
-func statefulSetChecksumAnnotation(state *RenderState, pool Pool) string {
+func statefulSetChecksumAnnotation(state *RenderState, listeners *redpanda.Listeners, pool Pool) string {
 	var dependencies []any
 	// NB: Seed servers is excluded to avoid a rolling restart when only
 	// replicas is changed.
-	dependencies = append(dependencies, RedpandaConfigFile(state, false, pool))
+	dependencies = append(dependencies, RedpandaConfigFile(state, listeners, false, pool))
 	if state.Values.External.Enabled {
 		dependencies = append(dependencies, ptr.Deref(state.Values.External.Domain, ""))
 		if helmette.Empty(state.Values.External.Addresses) {

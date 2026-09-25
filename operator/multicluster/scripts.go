@@ -233,20 +233,7 @@ func livenessProbeScript(p ScriptParams) string {
 // poolAdminTLSCurlFlags returns curl flags for the pool's admin listener TLS.
 // Reads TLS and Listeners from the pool's spec.
 func poolAdminTLSCurlFlags(pki *redpanda.PKI, pool *redpandav1alpha2.RedpandaBrokerPool) string {
-	if !pool.Spec.IsAdminTLSEnabled() {
-		return ""
-	}
+	listeners := listenersForPool(&pool.Spec, false, pki)
 
-	certName := pool.Spec.Listeners.AdminCertName()
-	if certName == "" {
-		return ""
-	}
-
-	if kp := pki.ClientKeypair(certName); kp != nil {
-		path := kp.MountPath()
-		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
-	}
-
-	kp := pki.ServerKeypair(certName)
-	return fmt.Sprintf("--cacert %s", kp.CAOrCertFile())
+	return listeners.Admin().CurlFlags()
 }

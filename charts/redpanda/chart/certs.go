@@ -28,7 +28,7 @@ const defaultCertDuration = "43800h"
 
 // PKI resolves this chart's values into an authoritative certificate set. When
 // possible, use the PKI rather than going through Values.
-func PKI(state *RenderState) redpanda.PKI {
+func resolvePKI(state *RenderState) redpanda.PKI {
 	fullname := Fullname(state)
 	service := ServiceName(state)
 	ns := state.Release.Namespace
@@ -156,47 +156,53 @@ func gatewayServerCertDNSNames(state *RenderState, certName string) []string {
 		return nil
 	}
 
-	pods := gatewayPodNames(state)
 	var names []string
 
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.Kafka.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.HTTP.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.Admin.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.SchemaRegistry.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
+	// NB: reads values, not [resolveListeners]. This feeds a certificate
+	// request and a resolved listener carries its keypair, so going through the
+	// IR would need the PKI this is helping to build. The predicates below
+	// mirror resolveAPIListeners and have to stay in step with it.
+	for _, entry := range gatewayListenerConfigs(state) {
+		listener := entry.Listeners
+
+		for _, external := range helmette.SortedMap(listener.External) {
+			if !external.IsEnabled() || !ptr.Deref(external.Enabled, state.Values.External.Enabled) {
+				continue
+			}
+
+			if !external.TLS.IsEnabled(&listener.TLS, &state.Values.TLS) || external.TLS.GetCertName(&listener.TLS) != certName {
+				continue
+			}
+
+			gateway := resolveGateway(state, external)
+			if gateway == nil {
+				continue
+			}
+
+			if gateway.Host != "" {
+				names = append(names, gateway.Host)
+			}
+			names = append(names, gateway.BrokerHosts...)
+		}
 	}
 
 	return names
 }
 
-// appendGatewayCertHosts appends a gateway listener's SNI hostnames to names
-// when the listener is enabled, in gateway mode, TLS-enabled, and resolves to
-// certName. extTLS.IsEnabled is nil-safe, and GetCertName is only reached when
-// it returns true (so extTLS is non-nil there).
-func appendGatewayCertHosts(state *RenderState, names []string, certName string, enabled bool, isGateway bool, extTLS *ExternalTLS, listenerTLS *InternalTLS, host string, hostTemplate string, pods []string) []string {
-	if !enabled || !isGateway {
-		return names
-	}
-	if !extTLS.IsEnabled(listenerTLS, &state.Values.TLS) {
-		return names
-	}
-	if extTLS.GetCertName(listenerTLS) != certName {
-		return names
-	}
+// gatewayAPI pairs an API's kind with its values, for the paths that read
+// values rather than [resolveListeners].
+type gatewayAPI struct {
+	Kind      redpanda.APIKind
+	Listeners ListenerConfig[string]
+}
 
-	if host != "" {
-		names = append(names, host)
+// gatewayListenerConfigs is the values' four client facing APIs in
+// [redpanda.Listeners.Gateways] order, which a certificate's dnsNames pin.
+func gatewayListenerConfigs(state *RenderState) []gatewayAPI {
+	return []gatewayAPI{
+		{Kind: redpanda.KafkaAPI, Listeners: state.Values.Listeners.Kafka.AsString()},
+		{Kind: redpanda.HTTPAPI, Listeners: state.Values.Listeners.HTTP.AsString()},
+		{Kind: redpanda.AdminAPI, Listeners: state.Values.Listeners.Admin.AsString()},
+		{Kind: redpanda.SchemaRegistryAPI, Listeners: state.Values.Listeners.SchemaRegistry.AsString()},
 	}
-	if hostTemplate != "" {
-		for i, podname := range pods {
-			names = append(names, renderBrokerHost(hostTemplate, i, podname))
-		}
-	}
-	return names
 }
