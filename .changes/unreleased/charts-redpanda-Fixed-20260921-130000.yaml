@@ -1,0 +1,9 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    the mTLS instructions in the post-install notes reference the secrets
+    the chart actually creates or the configured `secretRef`/
+    `clientSecretRef`: the CA fetch honors `secretRef` and one client-cert
+    fetch is printed per listener requiring client auth, instead of the
+    no-longer-generated `<fullname>-client`
+time: 2026-09-21T13:00:00.000000-07:00
