@@ -1044,7 +1044,7 @@ tls:
       secretRef:
         name: redpanda-tls-cert
       clientSecretRef:
-        name: redpanda-admin-cert
+        name: redpanda-client-cert
 
 listeners:
   admin:
@@ -1475,3 +1475,73 @@ config:
 resources:
   cpu:
     cores: 500m
+-- mtls-distinct-client-certs --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# Like trust-store-reference, but kafka and admin use different certs with
+# distinct user-provided client secrets: the notes must print the CA fetch
+# from each cert's secretRef and one client-cert fetch pair per listener.
+auth:
+  sasl:
+    enabled: false
+
+external:
+  enabled: true
+  type: LoadBalancer
+  domain: <our domain>
+  addresses:
+    - redpanda-0
+    - redpanda-1
+    - redpanda-2
+  externalDns:
+    enabled: true
+  service:
+    enabled: true
+
+tls:
+  enabled: true
+  certs:
+    kafka:
+      caEnabled: true
+      secretRef:
+        name: redpanda-kafka-tls-cert
+      clientSecretRef:
+        name: redpanda-kafka-client-cert
+    admin:
+      caEnabled: true
+      secretRef:
+        name: redpanda-admin-tls-cert
+      clientSecretRef:
+        name: redpanda-admin-client-cert
+
+listeners:
+  admin:
+    port: 9643
+    tls:
+      enabled: true
+      cert: admin
+      requireClientAuth: true
+    external:
+      default:
+        port: 9644
+        tls:
+          enabled: true
+          cert: admin
+          requireClientAuth: true
+        advertisedPorts:
+          - 9644
+  kafka:
+    port: 9093
+    tls:
+      enabled: true
+      cert: kafka
+      requireClientAuth: true
+    external:
+      default:
+        port: 9094
+        tls:
+          enabled: true
+          cert: kafka
+          requireClientAuth: true
+        advertisedPorts:
+          - 9094

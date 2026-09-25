@@ -51,7 +51,7 @@
 {{- $out := (coalesce nil) -}}
 {{- $out = (concat (default (list) $out) (list `` `` `` `` (printf `Congratulations on installing %s!` $state.Chart.Name) `` `The pods will rollout in a few seconds. To check the status:` `` (printf `  kubectl -n %s rollout status statefulset %s --watch` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")))) -}}
 {{- if (and $state.Values.external.enabled (eq $state.Values.external.type "LoadBalancer")) -}}
-{{- $out = (concat (default (list) $out) (list `` `If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:` `` (printf `  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')` (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Release.Namespace $state.Release.Namespace))) -}}
+{{- $out = (concat (default (list) $out) (list `` `If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:` `` (printf `  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -l app.kubernetes.io/instance=%s,%s=%s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')` $state.Release.Name $state.Release.Namespace $state.Release.Namespace $state.Release.Name "redpanda.com/type" "loadbalancer"))) -}}
 {{- end -}}
 {{- $profiles := (keys $state.Values.listeners.kafka.external) -}}
 {{- $profiles = (sortAlpha $profiles) -}}
@@ -65,14 +65,27 @@
 {{- else -}}
 {{- $external = $state.Values.listeners.kafka.tls.cert -}}
 {{- end -}}
-{{- $out = (concat (default (list) $out) (list (printf `  kubectl get secret -n %s %s-%s-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $external))) -}}
-{{- if (or $state.Values.listeners.kafka.tls.requireClientAuth $state.Values.listeners.admin.tls.requireClientAuth) -}}
-{{- $out = (concat (default (list) $out) (list (printf `  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")) (printf `  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r")))) -}}
+{{- $serverCert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $external)))) "r") -}}
+{{- $out = (concat (default (list) $out) (list (printf `  kubectl get secret -n %s %s -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt` $state.Release.Namespace (get (fromJson (include "redpanda.TLSCert.ServerSecretName" (dict "a" (list $serverCert $state $external)))) "r")))) -}}
+{{- $kafkaClientSecret := "" -}}
+{{- if $state.Values.listeners.kafka.tls.requireClientAuth -}}
+{{- $certName := $state.Values.listeners.kafka.tls.cert -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $certName)))) "r") -}}
+{{- $kafkaClientSecret = (get (fromJson (include "redpanda.TLSCert.ClientSecretName" (dict "a" (list $cert $state $certName)))) "r") -}}
+{{- $out = (concat (default (list) $out) (list (printf `  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt` $state.Release.Namespace $kafkaClientSecret) (printf `  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key` $state.Release.Namespace $kafkaClientSecret))) -}}
+{{- end -}}
+{{- if $state.Values.listeners.admin.tls.requireClientAuth -}}
+{{- $certName := $state.Values.listeners.admin.tls.cert -}}
+{{- $cert := (get (fromJson (include "redpanda.TLSCertMap.MustGet" (dict "a" (list (deepCopy $state.Values.tls.certs) $certName)))) "r") -}}
+{{- $clientSecretName := (get (fromJson (include "redpanda.TLSCert.ClientSecretName" (dict "a" (list $cert $state $certName)))) "r") -}}
+{{- if (ne $clientSecretName $kafkaClientSecret) -}}
+{{- $out = (concat (default (list) $out) (list (printf `  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.crt" | base64decode }}' > admin-tls.crt` $state.Release.Namespace $clientSecretName) (printf `  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.key" | base64decode }}' > admin-tls.key` $state.Release.Namespace $clientSecretName))) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- $out = (concat (default (list) $out) (list (printf `  rpk profile create --from-profile <(kubectl get configmap -n %s %s-rpk -o go-template='{{ .data.profile }}') %s` $state.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") $profileName) `` `Set up dns to look up the pods on their Kubernetes Nodes. You can use this query to get the list of short-names to IP addresses. Add your external domain to the hostnames and you could test by adding these to your /etc/hosts:` `` (printf `  kubectl get pod -n %s -o custom-columns=node:.status.hostIP,name:.metadata.name --no-headers -l app.kubernetes.io/name=redpanda,app.kubernetes.io/component=redpanda-statefulset` $state.Release.Namespace))) -}}
 {{- if $anySASL -}}
-{{- $out = (concat (default (list) $out) (list `` `Set the credentials in the environment:` `` (printf `  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s` $state.Release.Namespace $state.Values.auth.sasl.secretRef "RPK_USER RPK_PASS RPK_SASL_MECHANISM") (printf `  export %s` "RPK_USER RPK_PASS RPK_SASL_MECHANISM"))) -}}
+{{- $out = (concat (default (list) $out) (list `` `Set the credentials in the environment:` `` (printf `  IFS=: read -r %s < <(kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")` "RPK_USER RPK_PASS RPK_SASL_MECHANISM" $state.Release.Namespace $state.Values.auth.sasl.secretRef) (printf `  export %s` "RPK_USER RPK_PASS RPK_SASL_MECHANISM"))) -}}
 {{- end -}}
 {{- $out = (concat (default (list) $out) (list `` `Try some sample commands:`)) -}}
 {{- if $anySASL -}}

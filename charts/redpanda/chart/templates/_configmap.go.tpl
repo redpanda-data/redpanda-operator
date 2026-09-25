@@ -251,7 +251,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $keys := (keys $state.Values.listeners.admin.external) -}}
-{{- $_ := (sortAlpha $keys) -}}
+{{- $keys = (sortAlpha $keys) -}}
 {{- $externalAdminListenerName := (first $keys) -}}
 {{- $listener := (ternary (index $state.Values.listeners.admin.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalAdminListenerName)))) "r")) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $state.Values.listeners.admin.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalAdminListenerName)))) "r"))) -}}
 {{- $port := (($state.Values.listeners.admin.port | int) | int) -}}
@@ -276,7 +276,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $keys := (keys $state.Values.listeners.schemaRegistry.external) -}}
-{{- $_ := (sortAlpha $keys) -}}
+{{- $keys = (sortAlpha $keys) -}}
 {{- $externalSchemaListenerName := (first $keys) -}}
 {{- $listener := (ternary (index $state.Values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName)))) "r")) (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (hasKey $state.Values.listeners.schemaRegistry.external (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" $externalSchemaListenerName)))) "r"))) -}}
 {{- $port := (($state.Values.listeners.schemaRegistry.port | int) | int) -}}
@@ -328,7 +328,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $keys := (keys $state.Values.listeners.kafka.external) -}}
-{{- $_ := (sortAlpha $keys) -}}
+{{- $keys = (sortAlpha $keys) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (get (fromJson (include "_shims.typeassertion" (dict "a" (list "string" (first $keys))))) "r")) | toJson -}}
 {{- break -}}
@@ -397,10 +397,10 @@
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_9)))) "r") | int) (0 | int)) -}}
 {{- $schemaRegistryTLS = $tls_9 -}}
 {{- end -}}
-{{- $_418_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $state.Values $pool)))) "r") -}}
-{{- $lockMemory := (index $_418_lockMemory_overprovisioned_flags 0) -}}
-{{- $overprovisioned := (index $_418_lockMemory_overprovisioned_flags 1) -}}
-{{- $flags := (index $_418_lockMemory_overprovisioned_flags 2) -}}
+{{- $_421_lockMemory_overprovisioned_flags := (get (fromJson (include "redpanda.RedpandaAdditionalStartFlags" (dict "a" (list $state.Values $pool)))) "r") -}}
+{{- $lockMemory := (index $_421_lockMemory_overprovisioned_flags 0) -}}
+{{- $overprovisioned := (index $_421_lockMemory_overprovisioned_flags 1) -}}
+{{- $flags := (index $_421_lockMemory_overprovisioned_flags 2) -}}
 {{- $result := (dict "additional_start_flags" $flags "enable_memory_locking" $lockMemory "overprovisioned" $overprovisioned "kafka_api" (dict "brokers" $brokerList "tls" $brokerTLS) "admin_api" (dict "addresses" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.admin.port | int))))) "r") "tls" $adminTLS) "schema_registry" (dict "addresses" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($state.Values.listeners.schemaRegistry.port | int))))) "r") "tls" $schemaRegistryTLS)) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Tuning.Translate" (dict "a" (list $state.Values.tuning)))) "r")) -}}
 {{- $result = (merge (dict) $result (get (fromJson (include "redpanda.Config.CreateRPKConfiguration" (dict "a" (list $state.Values.config)))) "r")) -}}
@@ -484,9 +484,9 @@
 {{- $brokerList := (list) -}}
 {{- $useLocalhostKey := (printf "%s_client.use_localhost" $clientType) -}}
 {{- $useLocalhost := false -}}
-{{- $_528_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
-{{- $val := (index $_528_val_ok 0) -}}
-{{- $ok := (index $_528_val_ok 1) -}}
+{{- $_531_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
+{{- $val := (index $_531_val_ok 0) -}}
+{{- $ok := (index $_531_val_ok 1) -}}
 {{- if $ok -}}
 {{- if (kindIs "bool" $val) -}}
 {{- $useLocalhost = (eq $val true) -}}
@@ -652,17 +652,17 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_708_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_15 := (index $_708_value_15_ok_16 0) -}}
-{{- $ok_16 := (index $_708_value_15_ok_16 1) -}}
+{{- $_711_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_15 := (index $_711_value_15_ok_16 0) -}}
+{{- $ok_16 := (index $_711_value_15_ok_16 1) -}}
 {{- if $ok_16 -}}
 {{- $lockMemory = (ternary (index $enabledOptions $value_15) false (hasKey $enabledOptions $value_15)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_715_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_17 := (index $_715_value_17_ok_18 0) -}}
-{{- $ok_18 := (index $_715_value_17_ok_18 1) -}}
+{{- $_718_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_17 := (index $_718_value_17_ok_18 0) -}}
+{{- $ok_18 := (index $_718_value_17_ok_18 1) -}}
 {{- if $ok_18 -}}
 {{- $overprovisioned = (ternary (index $enabledOptions $value_17) false (hasKey $enabledOptions $value_17)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}
