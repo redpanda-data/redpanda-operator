@@ -554,6 +554,34 @@ Override `redpanda.name` template.
 
 **Default:** `""`
 
+### [networkPolicy](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=networkPolicy)
+
+Opt-in NetworkPolicy for the broker Pods. Requires a CNI that enforces NetworkPolicy. The RPC port admits only the brokers. The Admin API port admits this release's Pods (brokers, Console, chart Jobs), the operator and `adminPeers`. Client and external listener ports stay open unless `clientPeers` is set.
+
+**Default:**
+
+```
+{"adminPeers":[],"clientPeers":[],"enabled":false}
+```
+
+### [networkPolicy.adminPeers](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=networkPolicy.adminPeers)
+
+Additional peers for the Admin API port, such as a Prometheus scraper for `/public_metrics`. Pair with `config.cluster.admin_api_require_auth: true` so they reach only the unauthenticated endpoints.
+
+**Default:** `[]`
+
+### [networkPolicy.clientPeers](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=networkPolicy.clientPeers)
+
+Peers for the Kafka, HTTP Proxy, Schema Registry and external listener ports, in addition to this release's Pods and the operator. Empty admits every source.
+
+**Default:** `[]`
+
+### [networkPolicy.enabled](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=networkPolicy.enabled)
+
+Render the NetworkPolicy.
+
+**Default:** `false`
+
 ### [podTemplate.annotations](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=podTemplate.annotations)
 
 Annotations to apply (or overwrite the default) to all Pods of this Chart.

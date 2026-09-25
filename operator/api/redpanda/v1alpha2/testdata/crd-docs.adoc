@@ -2299,6 +2299,34 @@ XValidation rules enforce this. + |  |
 |===
 
 
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-networkpolicy"]
+==== NetworkPolicy
+
+
+
+NetworkPolicy configures the chart's opt-in NetworkPolicy for the broker Pods.
+The RPC port admits only the brokers; the Admin API port admits the cluster's
+own Pods, the operator and `adminPeers`; client and external listener ports
+admit every source unless `clientPeers` is set. Requires a CNI that enforces
+NetworkPolicy.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaclusterspec[$$RedpandaClusterSpec$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Specifies whether to render the NetworkPolicy. + |  | 
+| *`operatorPeer`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#networkpolicypeer-v1-networking[$$NetworkPolicyPeer$$]__ | Selects the operator's Pods. When unset, the operator admits its own namespace. + |  | 
+| *`adminPeers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#networkpolicypeer-v1-networking[$$NetworkPolicyPeer$$] array__ | Additional peers for the Admin API port, such as a Prometheus scraper for `/public_metrics`. + |  | 
+| *`clientPeers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#networkpolicypeer-v1-networking[$$NetworkPolicyPeer$$] array__ | Peers for the Kafka, HTTP Proxy, Schema Registry and external listener ports. Empty admits every source. + |  | 
+|===
+
+
 [id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-networking"]
 ==== Networking
 
@@ -3345,6 +3373,7 @@ Deprecated: Use the dedicated Console CRD. + |  |
 | *`rbac`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rbac[$$RBAC$$]__ | Defines Role Based Access Control (RBAC) settings. + |  | 
 | *`serviceAccount`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-serviceaccount[$$ServiceAccount$$]__ | Defines Service account settings. + |  | 
 | *`monitoring`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-monitoring[$$Monitoring$$]__ | Defines settings for monitoring Redpanda. + |  | 
+| *`networkPolicy`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-networkpolicy[$$NetworkPolicy$$]__ | Defines an opt-in NetworkPolicy restricting ingress to the broker Pods. + |  | 
 | *`force`* __boolean__ | Adds the `--force` flag in `helm upgrade` commands. Used for allowing a change of TLS configuration for the RPC listener. +
 Setting `force` to `true` will result in a short period of downtime. + |  | 
 | *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#affinity-v1-core[$$Affinity$$]__ | Affinity constraints for scheduling Pods, can override this for +

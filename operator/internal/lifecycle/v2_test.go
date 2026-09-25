@@ -99,6 +99,9 @@ func TestV2ResourceClient(t *testing.T) {
 		Tag:        "dev",
 	}
 
+	// Read by the simple-resource renderer; only the network-policy case uses it.
+	t.Setenv("POD_NAMESPACE", "redpanda-system")
+
 	resourceClient := NewResourceClient(manager, V2ResourceManagers(redpandaImage, sidecarImage, cloudSecrets), false)
 
 	require.EqualValues(t, redpandachart.Types(), resourceClient.simpleResourceRenderer.WatchedResourceTypes())

@@ -1273,6 +1273,9 @@ func pluralize(kind string) string {
 	case 's':
 		return strings.ToLower(kind) + "es"
 
+	case 'y':
+		return strings.ToLower(kind[:len(kind)-1]) + "ies"
+
 	default:
 		return strings.ToLower(kind) + "s"
 	}
