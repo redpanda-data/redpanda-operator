@@ -19,6 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
+
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 )
 
 // NOTE: this file contains helper methods for the StretchClusterSpec and related types.
@@ -683,16 +685,6 @@ func (l *StretchListeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
 	}
 }
 
-// sortedKeys returns sorted keys of a map.
-func sortedKeys[V any](m map[string]V) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
 // dedupKeyToPaths deduplicates KeyToPath entries by key.
 func dedupKeyToPaths(items []corev1.KeyToPath) []corev1.KeyToPath {
 	seen := map[string]bool{}
@@ -707,21 +699,34 @@ func dedupKeyToPaths(items []corev1.KeyToPath) []corev1.KeyToPath {
 	return deduped
 }
 
+// sortedKeys returns sorted keys of a map.
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 // --- ListenerTLS truststore helpers ---
 
 // ServerCAPath returns the path to the CA/truststore file for this listener.
 // If a TrustStore is configured, its path takes precedence.
-// Otherwise falls back to the cert-based path from TLS.CertServerCAPath.
+// Otherwise falls back to the certificate's CA, else its serving certificate.
 // Safe to call on nil receiver.
-func (l *StretchListenerTLS) ServerCAPath(tls *TLS) string {
+func (l *StretchListenerTLS) ServerCAPath(pki *redpanda.PKI) string {
 	if l != nil && l.TrustStore != nil {
 		return l.TrustStore.TrustStoreFilePath()
 	}
+
 	certName := l.GetCert()
 	if certName == "" {
 		return ""
 	}
-	return tls.CertServerCAPath(certName)
+
+	kp := pki.ServerKeypair(certName)
+	return kp.CAOrCertFile()
 }
 
 // --- TLS (parameterized helpers) ---
@@ -750,20 +755,6 @@ func (t *TLS) CertClientSecretName(fullname, certName string) string {
 		}
 	}
 	return fmt.Sprintf("%s-%s-client-cert", fullname, certName)
-}
-
-// CertServerCAPath returns the CA path for the given cert's server mount.
-// Safe to call on nil receiver.
-func (t *TLS) CertServerCAPath(certName string) string {
-	mountPoint := fmt.Sprintf("/etc/tls/certs/%s", certName)
-	if t != nil {
-		if cert, ok := t.Certs[certName]; ok {
-			if cert.IsCAEnabled() {
-				return fmt.Sprintf("%s/ca.crt", mountPoint)
-			}
-		}
-	}
-	return fmt.Sprintf("%s/tls.crt", mountPoint)
 }
 
 // CertificatesFor returns the server cert secret name, cert key, and client cert secret name

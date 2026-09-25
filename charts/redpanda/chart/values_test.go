@@ -519,8 +519,7 @@ func TestListeners_TrustStoreVolumes(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
-			vol := tc.Listeners.TrustStoreVolume(&tls)
-			require.Equal(t, tc.Out, vol)
+			require.Equal(t, tc.Out, tc.Listeners.TrustStoreVolume(&tls))
 		})
 	}
 }

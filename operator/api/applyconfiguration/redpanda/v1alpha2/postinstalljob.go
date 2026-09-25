@@ -12,18 +12,18 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // PostInstallJobApplyConfiguration represents a declarative configuration of the PostInstallJob type for use
 // with apply.
 type PostInstallJobApplyConfiguration struct {
-	Resources       *v1.ResourceRequirements       `json:"resources,omitempty"`
+	Resources       *corev1.ResourceRequirements   `json:"resources,omitempty"`
 	Annotations     map[string]string              `json:"annotations,omitempty"`
 	Enabled         *bool                          `json:"enabled,omitempty"`
 	Labels          map[string]string              `json:"labels,omitempty"`
-	Affinity        *v1.Affinity                   `json:"affinity,omitempty"`
-	SecurityContext *v1.SecurityContext            `json:"securityContext,omitempty"`
+	Affinity        *corev1.Affinity               `json:"affinity,omitempty"`
+	SecurityContext *corev1.SecurityContext        `json:"securityContext,omitempty"`
 	PodTemplate     *PodTemplateApplyConfiguration `json:"podTemplate,omitempty"`
 }
 
@@ -36,7 +36,7 @@ func PostInstallJob() *PostInstallJobApplyConfiguration {
 // WithResources sets the Resources field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Resources field is set to the value of the last call.
-func (b *PostInstallJobApplyConfiguration) WithResources(value v1.ResourceRequirements) *PostInstallJobApplyConfiguration {
+func (b *PostInstallJobApplyConfiguration) WithResources(value corev1.ResourceRequirements) *PostInstallJobApplyConfiguration {
 	b.Resources = &value
 	return b
 }
@@ -80,7 +80,7 @@ func (b *PostInstallJobApplyConfiguration) WithLabels(entries map[string]string)
 // WithAffinity sets the Affinity field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Affinity field is set to the value of the last call.
-func (b *PostInstallJobApplyConfiguration) WithAffinity(value v1.Affinity) *PostInstallJobApplyConfiguration {
+func (b *PostInstallJobApplyConfiguration) WithAffinity(value corev1.Affinity) *PostInstallJobApplyConfiguration {
 	b.Affinity = &value
 	return b
 }
@@ -88,7 +88,7 @@ func (b *PostInstallJobApplyConfiguration) WithAffinity(value v1.Affinity) *Post
 // WithSecurityContext sets the SecurityContext field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SecurityContext field is set to the value of the last call.
-func (b *PostInstallJobApplyConfiguration) WithSecurityContext(value v1.SecurityContext) *PostInstallJobApplyConfiguration {
+func (b *PostInstallJobApplyConfiguration) WithSecurityContext(value corev1.SecurityContext) *PostInstallJobApplyConfiguration {
 	b.SecurityContext = &value
 	return b
 }
