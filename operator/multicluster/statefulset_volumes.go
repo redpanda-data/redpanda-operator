@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -158,7 +158,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	// Host tuner volumes (chroot-based tuning init container plus the
 	// broker's read-only tuner-state file). Shared with the Helm chart.
 	if state.Spec().Tuning.IsTuneAioEventsEnabled() && state.Spec().Tuning.IsApplyHostTunersEnabled() {
-		volumes = append(volumes, redpandachart.HostTunerVolumes()...)
+		volumes = append(volumes, redpanda.HostTunerVolumes()...)
 	}
 
 	// Truststore volume (projected from ConfigMaps/Secrets).
@@ -167,56 +167,9 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 	}
 
 	// Kube API access token volume.
-	volumes = append(volumes, kubeTokenAPIVolume(serviceAccountVolumeName))
+	volumes = append(volumes, redpanda.KubeTokenAPIVolume(serviceAccountVolumeName))
 
 	return volumes
-}
-
-// kubeTokenAPIVolume builds a projected volume that provides the three pieces
-// needed for in-pod Kubernetes API access without automounting the default SA token:
-//   - ServiceAccountToken: a short-lived, auto-rotated JWT (audience-bound)
-//   - ConfigMap "kube-root-ca.crt": the cluster CA for TLS verification
-//   - DownwardAPI namespace: the pod's namespace for building API URLs
-func kubeTokenAPIVolume(name string) corev1.Volume {
-	return corev1.Volume{
-		Name: name,
-		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				DefaultMode: ptr.To(corev1.ProjectedVolumeSourceDefaultMode),
-				Sources: []corev1.VolumeProjection{
-					{
-						ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
-							Path:              "token",
-							ExpirationSeconds: ptr.To(int64(tokenExpirationSeconds)),
-						},
-					},
-					{
-						ConfigMap: &corev1.ConfigMapProjection{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "kube-root-ca.crt",
-							},
-							Items: []corev1.KeyToPath{
-								{Key: "ca.crt", Path: "ca.crt"},
-							},
-						},
-					},
-					{
-						DownwardAPI: &corev1.DownwardAPIProjection{
-							Items: []corev1.DownwardAPIVolumeFile{
-								{
-									Path: "namespace",
-									FieldRef: &corev1.ObjectFieldSelector{
-										APIVersion: "v1",
-										FieldPath:  "metadata.namespace",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
 }
 
 func statefulSetVolumeDataDir(pool *redpandav1alpha2.RedpandaBrokerPool) corev1.Volume {
@@ -282,7 +235,7 @@ func statefulSetVolumeMounts(state *RenderState, pool *redpandav1alpha2.Redpanda
 	// path, so `rpk redpanda start` picks up the net tuner's cpuset. See
 	// HostTunerStateVolumeMount in charts/redpanda for the full rationale.
 	if state.Spec().Tuning.IsTuneAioEventsEnabled() && state.Spec().Tuning.IsApplyHostTunersEnabled() {
-		mounts = append(mounts, redpandachart.HostTunerStateVolumeMount())
+		mounts = append(mounts, redpanda.HostTunerStateVolumeMount())
 	}
 
 	return mounts
