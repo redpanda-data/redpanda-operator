@@ -1,7 +1,7 @@
 {{- /* GENERATED FILE DO NOT EDIT */ -}}
 {{- /* Transpiled by gotohelm from "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart/certs.go" */ -}}
 
-{{- define "redpanda.PKI" -}}
+{{- define "redpanda.resolvePKI" -}}
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -96,28 +96,28 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $names := (coalesce nil) -}}
-{{- range $_, $listener := $state.Values.listeners.kafka.external -}}
-{{- $names = (get (fromJson (include "redpanda.appendGatewayCertHosts" (dict "a" (list $state $names $certName (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r") $listener.tls $state.Values.listeners.kafka.tls (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $pods)))) "r") -}}
+{{- range $_, $entry := (get (fromJson (include "redpanda.gatewayListenerConfigs" (dict "a" (list $state)))) "r") -}}
+{{- $listener := $entry.Listeners -}}
+{{- range $_, $external := $listener.external -}}
+{{- if (or (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r")) (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.enabled $state.Values.external.enabled)))) "r"))) -}}
+{{- continue -}}
+{{- end -}}
+{{- if (or (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $external.tls $listener.tls $state.Values.tls)))) "r")) (ne (get (fromJson (include "redpanda.ExternalTLS.GetCertName" (dict "a" (list $external.tls $listener.tls)))) "r") $certName)) -}}
+{{- continue -}}
+{{- end -}}
+{{- $gateway := (get (fromJson (include "redpanda.resolveGateway" (dict "a" (list $state $external)))) "r") -}}
+{{- if (eq (toJson $gateway) "null") -}}
+{{- continue -}}
+{{- end -}}
+{{- if (ne $gateway.Host "") -}}
+{{- $names = (concat (default (list) $names) (list $gateway.Host)) -}}
+{{- end -}}
+{{- $names = (concat (default (list) $names) (default (list) $gateway.BrokerHosts)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $_, $listener := $state.Values.listeners.http.external -}}
-{{- $names = (get (fromJson (include "redpanda.appendGatewayCertHosts" (dict "a" (list $state $names $certName (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r") $listener.tls $state.Values.listeners.http.tls (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $pods)))) "r") -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $_, $listener := $state.Values.listeners.admin.external -}}
-{{- $names = (get (fromJson (include "redpanda.appendGatewayCertHosts" (dict "a" (list $state $names $certName (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r") $listener.tls $state.Values.listeners.admin.tls (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $pods)))) "r") -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $_, $listener := $state.Values.listeners.schemaRegistry.external -}}
-{{- $names = (get (fromJson (include "redpanda.appendGatewayCertHosts" (dict "a" (list $state $names $certName (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $listener)))) "r") $listener.tls $state.Values.listeners.schemaRegistry.tls (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $pods)))) "r") -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -128,47 +128,12 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "redpanda.appendGatewayCertHosts" -}}
+{{- define "redpanda.gatewayListenerConfigs" -}}
 {{- $state := (index .a 0) -}}
-{{- $names := (index .a 1) -}}
-{{- $certName := (index .a 2) -}}
-{{- $enabled := (index .a 3) -}}
-{{- $isGateway := (index .a 4) -}}
-{{- $extTLS := (index .a 5) -}}
-{{- $listenerTLS := (index .a 6) -}}
-{{- $host := (index .a 7) -}}
-{{- $hostTemplate := (index .a 8) -}}
-{{- $pods := (index .a 9) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (or (not $enabled) (not $isGateway)) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $names) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- if (not (get (fromJson (include "redpanda.ExternalTLS.IsEnabled" (dict "a" (list $extTLS $listenerTLS $state.Values.tls)))) "r")) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $names) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- if (ne (get (fromJson (include "redpanda.ExternalTLS.GetCertName" (dict "a" (list $extTLS $listenerTLS)))) "r") $certName) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $names) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- if (ne $host "") -}}
-{{- $names = (concat (default (list) $names) (list $host)) -}}
-{{- end -}}
-{{- if (ne $hostTemplate "") -}}
-{{- range $i, $podname := $pods -}}
-{{- $names = (concat (default (list) $names) (list (get (fromJson (include "redpanda.renderBrokerHost" (dict "a" (list $hostTemplate $i $podname)))) "r"))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $names) | toJson -}}
+{{- (dict "r" (list (mustMergeOverwrite (dict "Kind" "" "Listeners" (dict "enabled" false "external" (coalesce nil) "port" 0 "tls" (dict "enabled" (coalesce nil) "cert" "" "requireClientAuth" false "trustStore" (coalesce nil)))) (dict "Kind" "kafka" "Listeners" (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $state.Values.listeners.kafka)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (dict "enabled" false "external" (coalesce nil) "port" 0 "tls" (dict "enabled" (coalesce nil) "cert" "" "requireClientAuth" false "trustStore" (coalesce nil)))) (dict "Kind" "http" "Listeners" (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $state.Values.listeners.http)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (dict "enabled" false "external" (coalesce nil) "port" 0 "tls" (dict "enabled" (coalesce nil) "cert" "" "requireClientAuth" false "trustStore" (coalesce nil)))) (dict "Kind" "admin" "Listeners" (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $state.Values.listeners.admin)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (dict "enabled" false "external" (coalesce nil) "port" 0 "tls" (dict "enabled" (coalesce nil) "cert" "" "requireClientAuth" false "trustStore" (coalesce nil)))) (dict "Kind" "schema" "Listeners" (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $state.Values.listeners.schemaRegistry)))) "r"))))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

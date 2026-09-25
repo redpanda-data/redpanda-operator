@@ -18,6 +18,7 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
@@ -112,17 +113,17 @@ func InternalDomain(state *RenderState) string {
 }
 
 // mounts that are common to most containers
-func DefaultMounts(state *RenderState) []corev1.VolumeMount {
+func DefaultMounts(state *RenderState, pki *redpanda.PKI) []corev1.VolumeMount {
 	return append([]corev1.VolumeMount{
 		{
 			Name:      "base-config",
 			MountPath: "/etc/redpanda",
 		},
-	}, CommonMounts(state)...)
+	}, CommonMounts(state, pki)...)
 }
 
 // mounts that are common to all containers
-func CommonMounts(state *RenderState) []corev1.VolumeMount {
+func CommonMounts(state *RenderState, pki *redpanda.PKI) []corev1.VolumeMount {
 	mounts := []corev1.VolumeMount{}
 
 	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
@@ -134,13 +135,12 @@ func CommonMounts(state *RenderState) []corev1.VolumeMount {
 	}
 
 	// Server certs, then the client certs of any listener requiring mTLS.
-	pki := PKI(state)
 	mounts = append(mounts, pki.Mounts()...)
 
 	return mounts
 }
 
-func DefaultVolumes(state *RenderState) []corev1.Volume {
+func DefaultVolumes(state *RenderState, pki *redpanda.PKI) []corev1.Volume {
 	return append([]corev1.Volume{
 		{
 			Name: "base-config",
@@ -152,15 +152,14 @@ func DefaultVolumes(state *RenderState) []corev1.Volume {
 				},
 			},
 		},
-	}, CommonVolumes(state)...)
+	}, CommonVolumes(state, pki)...)
 }
 
 // volumes that are common to all pods
-func CommonVolumes(state *RenderState) []corev1.Volume {
+func CommonVolumes(state *RenderState, pki *redpanda.PKI) []corev1.Volume {
 	volumes := []corev1.Volume{}
 
 	// Volume names are intentionally static to make overrides easier.
-	pki := PKI(state)
 	volumes = append(volumes, pki.Volumes()...)
 
 	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {

@@ -16,6 +16,7 @@ import (
 	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
@@ -46,9 +47,10 @@ func TestAdvertisedHostJSONGatewayUsesCurrentListenerConfig(t *testing.T) {
 		8082,
 		1, // pool-local replica index
 		1, // global ordinal (single pool → equal to replica index)
-		"http.example.com",
-		"http-$POD_ORDINAL.example.com",
-		true,
+		&redpanda.GatewayRoute{
+			Host:        "http.example.com",
+			BrokerHosts: []string{"http-0.example.com", "http-1.example.com"},
+		},
 	)
 
 	require.Equal(t, "default", host["name"])
@@ -95,19 +97,32 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 		Pools: []Pool{{Name: "np", Statefulset: Statefulset{Replicas: 1}}},
 	}
 
+	pki := resolvePKI(state)
+	listeners := resolveListeners(state, &pki)
+
 	// Global pod order: main STS (2) then the pool (1).
 	require.Equal(t, []string{"redpanda-0", "redpanda-1", "redpanda-np-0"}, gatewayPodNames(state))
 
+	// The resolver expands hostTemplate once, at global ordinals, and everything
+	// downstream indexes that list rather than re-expanding the template.
+	gateway := listeners.Kafka().External()[0].Gateway
+	require.NotNil(t, gateway)
+	require.Equal(t, []string{
+		"redpanda-0.example.com",
+		"redpanda-1.example.com",
+		"redpanda-2.example.com",
+	}, gateway.BrokerHosts)
+
 	// The pool's local ordinal 0 is global ordinal 2 (offset = main replicas).
 	const poolGlobalOrdinal = 2
-	advertised := advertisedHostJSONGateway(state, "default", poolGlobalOrdinal, "redpanda.example.com", "redpanda-$POD_ORDINAL.example.com")
+	advertised := advertisedHostJSONGateway(state, "default", poolGlobalOrdinal, gateway)
 	require.Equal(t, "redpanda-2.example.com", advertised["address"],
 		"pool broker must advertise its global-ordinal host, not the local-ordinal (redpanda-0) host")
 
 	// And that advertised host must equal the hostname of the per-broker TLSRoute
 	// rendered for the same global ordinal.
 	var poolRouteHost string
-	for _, r := range TLSRoutes(state) {
+	for _, r := range TLSRoutes(state, &listeners) {
 		if r.ObjectMeta.Name == "redpanda-kafka-default-2" {
 			poolRouteHost = string(r.Spec.Hostnames[0])
 		}

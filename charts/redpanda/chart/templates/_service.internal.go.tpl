@@ -13,18 +13,10 @@
 
 {{- define "redpanda.ServiceInternal" -}}
 {{- $state := (index .a 0) -}}
+{{- $listeners := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $ports := (list) -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "admin" "protocol" "TCP" "appProtocol" $state.Values.listeners.admin.appProtocol "port" ($state.Values.listeners.admin.port | int) "targetPort" ($state.Values.listeners.admin.port | int))))) -}}
-{{- if $state.Values.listeners.http.enabled -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "http" "protocol" "TCP" "port" ($state.Values.listeners.http.port | int) "targetPort" ($state.Values.listeners.http.port | int))))) -}}
-{{- end -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "kafka" "protocol" "TCP" "port" ($state.Values.listeners.kafka.port | int) "targetPort" ($state.Values.listeners.kafka.port | int))))) -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "rpc" "protocol" "TCP" "port" ($state.Values.listeners.rpc.port | int) "targetPort" ($state.Values.listeners.rpc.port | int))))) -}}
-{{- if $state.Values.listeners.schemaRegistry.enabled -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "schemaregistry" "protocol" "TCP" "port" ($state.Values.listeners.schemaRegistry.port | int) "targetPort" ($state.Values.listeners.schemaRegistry.port | int))))) -}}
-{{- end -}}
+{{- $ports := (get (fromJson (include "_redpanda.Listeners.InternalServicePorts" (dict "a" (list $listeners)))) "r") -}}
 {{- $annotations := (dict) -}}
 {{- if (ne (toJson $state.Values.service) "null") -}}
 {{- $annotations = $state.Values.service.internal.annotations -}}

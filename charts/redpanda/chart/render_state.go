@@ -119,7 +119,7 @@ func (r *RenderState) FetchStatefulSetPodSelector() {
 func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 	username := r.Values.Auth.SASL.BootstrapUser.Username()
 	passwordRef := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
-	pki := PKI(r)
+	pki := resolvePKI(r)
 
 	// Kafka API configuration
 	kafkaSpec := &ir.KafkaAPISpec{
