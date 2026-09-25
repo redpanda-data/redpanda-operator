@@ -272,6 +272,9 @@
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -282,7 +285,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-basic-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -342,7 +345,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: compat-test-basic-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: compat-test-basic-a-configurator
@@ -657,6 +660,9 @@
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -667,7 +673,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-basic-b-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -727,7 +733,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: compat-test-basic-b-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: compat-test-basic-b-configurator
@@ -1043,6 +1049,9 @@
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1053,7 +1062,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: flat-network-test-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1113,7 +1122,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: flat-network-test-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: flat-network-test-pool-a-configurator
@@ -1429,6 +1438,9 @@
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1439,7 +1451,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: mcs-network-test-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1499,7 +1511,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: mcs-network-test-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: mcs-network-test-pool-a-configurator
@@ -1815,6 +1827,9 @@
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1825,7 +1840,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-basic-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1885,7 +1900,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-basic-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-basic-a-configurator
@@ -2200,6 +2215,9 @@
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2210,7 +2228,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-basic-b-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2270,7 +2288,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-basic-b-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-basic-b-configurator

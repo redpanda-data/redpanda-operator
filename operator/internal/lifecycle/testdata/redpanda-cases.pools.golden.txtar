@@ -291,7 +291,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: basic-test-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -350,7 +350,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: basic-test-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: basic-test-configurator
@@ -666,7 +666,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -725,7 +725,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: compat-test-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: compat-test-configurator
@@ -1070,7 +1070,7 @@
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
           - mountPath: /etc/secrets/fs-validator/scripts/
-            name: compat-test-fs-validator
+            name: fs-validator
           - mountPath: /var/lib/redpanda/data
             name: datadir
         - command:
@@ -1110,7 +1110,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: compat-test-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1193,11 +1193,11 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: compat-test-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: compat-test-pool-configurator
-        - name: compat-test-fs-validator
+        - name: fs-validator
           secret:
             defaultMode: 509
             secretName: compat-test-pool-fs-validator
@@ -1539,7 +1539,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: console-disabled-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1598,7 +1598,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: console-disabled-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: console-disabled-configurator
@@ -1935,7 +1935,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1994,7 +1994,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-configurator
@@ -2331,7 +2331,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2390,7 +2390,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-basic-a-configurator
@@ -2727,7 +2727,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: nodepool-basic-test-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2786,7 +2786,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: nodepool-basic-test-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: nodepool-basic-test-basic-b-configurator
