@@ -1614,6 +1614,54 @@
       ],
       "type": "object"
     },
+    "github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.NetworkPolicyConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "adminPeers": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/k8s.io.api.networking.v1.NetworkPolicyPeer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "clientPeers": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/k8s.io.api.networking.v1.NetworkPolicyPeer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "operatorPeer": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/k8s.io.api.networking.v1.NetworkPolicyPeer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "type": "object"
+    },
     "github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.NodeConfig": {
       "type": "object"
     },
@@ -4900,6 +4948,28 @@
       },
       "type": "object"
     },
+    "k8s.io.api.networking.v1.IPBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "cidr": {
+          "type": "string"
+        },
+        "except": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
     "k8s.io.api.networking.v1.IngressTLS": {
       "additionalProperties": false,
       "properties": {
@@ -4918,6 +4988,21 @@
         },
         "secretName": {
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "k8s.io.api.networking.v1.NetworkPolicyPeer": {
+      "additionalProperties": false,
+      "properties": {
+        "ipBlock": {
+          "$ref": "#/$defs/k8s.io.api.networking.v1.IPBlock"
+        },
+        "namespaceSelector": {
+          "$ref": "#/$defs/k8s.io.apimachinery.pkg.apis.meta.v1.LabelSelector"
+        },
+        "podSelector": {
+          "$ref": "#/$defs/k8s.io.apimachinery.pkg.apis.meta.v1.LabelSelector"
         }
       },
       "type": "object"
@@ -8145,6 +8230,9 @@
     },
     "nameOverride": {
       "type": "string"
+    },
+    "networkPolicy": {
+      "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.NetworkPolicyConfig"
     },
     "podTemplate": {
       "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.PodTemplate"

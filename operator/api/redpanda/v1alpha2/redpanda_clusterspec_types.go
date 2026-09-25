@@ -16,6 +16,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -130,6 +131,9 @@ type RedpandaClusterSpec struct {
 	// Defines settings for monitoring Redpanda.
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
+	// Defines an opt-in NetworkPolicy restricting ingress to the broker Pods.
+	NetworkPolicy *NetworkPolicy `json:"networkPolicy,omitempty"`
+
 	// Adds the `--force` flag in `helm upgrade` commands. Used for allowing a change of TLS configuration for the RPC listener.
 	// Setting `force` to `true` will result in a short period of downtime.
 	Force *bool `json:"force,omitempty"`
@@ -193,6 +197,22 @@ type RackAwareness struct {
 	Enabled *bool `json:"enabled,omitempty"`
 	// Specifies the key in Node labels or annotations to use to denote failure zones.
 	NodeAnnotation *string `json:"nodeAnnotation,omitempty"`
+}
+
+// NetworkPolicy configures the chart's opt-in NetworkPolicy for the broker Pods.
+// The RPC port admits only the brokers; the Admin API port admits the cluster's
+// own Pods, the operator and `adminPeers`; client and external listener ports
+// admit every source unless `clientPeers` is set. Requires a CNI that enforces
+// NetworkPolicy.
+type NetworkPolicy struct {
+	// Specifies whether to render the NetworkPolicy.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Selects the operator's Pods. When unset, the operator admits its own namespace.
+	OperatorPeer *networkingv1.NetworkPolicyPeer `json:"operatorPeer,omitempty"`
+	// Additional peers for the Admin API port, such as a Prometheus scraper for `/public_metrics`.
+	AdminPeers []networkingv1.NetworkPolicyPeer `json:"adminPeers,omitempty"`
+	// Peers for the Kafka, HTTP Proxy, Schema Registry and external listener ports. Empty admits every source.
+	ClientPeers []networkingv1.NetworkPolicyPeer `json:"clientPeers,omitempty"`
 }
 
 // RedpandaConsole is the union of console.PartialValues (earlier or equal to

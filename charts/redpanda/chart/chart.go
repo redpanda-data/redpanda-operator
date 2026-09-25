@@ -60,6 +60,7 @@ func Types() []kube.Object {
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
 		&networkingv1.Ingress{},
+		&networkingv1.NetworkPolicy{},
 		&policyv1.PodDisruptionBudget{},
 		&rbacv1.ClusterRoleBinding{},
 		&rbacv1.ClusterRole{},
@@ -121,6 +122,7 @@ func renderResources(state *RenderState) []kube.Object {
 
 	manifests := []kube.Object{
 		NodePortService(state),
+		NetworkPolicy(state),
 		PodDisruptionBudget(state),
 		ServiceAccount(state),
 		ServiceInternal(state),
