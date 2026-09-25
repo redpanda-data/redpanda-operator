@@ -14,6 +14,7 @@ import (
 	"fmt"
 
 	"github.com/redpanda-data/common-go/kube"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,6 +23,8 @@ import (
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/feature"
 )
 
 // V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
@@ -69,6 +72,10 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 		return nil, err
 	}
 
+	if feature.EndpointSteering.Get(ctx, cluster.Redpanda) {
+		steerInternalService(resources, redpandachart.ServiceName(state), cluster.Name)
+	}
+
 	console, err := m.consoleIntegration(cluster, spec.Console)
 	if err != nil {
 		return nil, err
@@ -79,6 +86,20 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 	}
 
 	return resources, err
+}
+
+// steerInternalService hands the cluster's internal Service to the endpoint
+// steering controller. It is the one Service a v2 cluster publishes its
+// Schema Registry on, and also the one carrying broker discovery, so the
+// operator becomes the publisher of both.
+func steerInternalService(resources []client.Object, serviceName, cluster string) {
+	for _, resource := range resources {
+		svc, ok := resource.(*corev1.Service)
+		if ok && svc.Name == serviceName {
+			endpointsteering.Steer(svc, cluster)
+			return
+		}
+	}
 }
 
 func (m *V2SimpleResourceRenderer) consoleIntegration(

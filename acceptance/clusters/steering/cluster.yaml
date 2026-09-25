@@ -1,0 +1,28 @@
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: steering
+  annotations:
+    # The per-cluster opt-in: the renderer hands this cluster's internal
+    # Service to the operator's endpoint steering controller.
+    operator.redpanda.com/enable-endpoint-steering: "true"
+spec:
+  clusterSpec:
+    image:
+      repository: ${DEFAULT_REDPANDA_REPO}
+      tag: ${DEFAULT_REDPANDA_TAG}
+    external:
+      enabled: false
+    statefulset:
+      # Three brokers, so a port publishing a subset of them is visible as a
+      # subset rather than as all-or-nothing.
+      replicas: 3
+      sideCars:
+        image:
+          tag: dev
+          repository: localhost/redpanda-operator
+        controllers:
+          image:
+            tag: dev
+            repository: localhost/redpanda-operator

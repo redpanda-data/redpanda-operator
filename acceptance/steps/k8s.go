@@ -10,9 +10,11 @@
 package steps
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"time"
@@ -24,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -226,4 +229,80 @@ func execInPod(
 
 		assert.Equal(collect, strings.TrimSpace(expected.Content), strings.TrimSpace(stdout.String()))
 	}, 5*time.Minute, 5*time.Second)
+}
+
+// podIsReady asserts the pod is Ready right now -- not eventually. It pins
+// that steering a port never touched pod readiness.
+func podIsReady(ctx context.Context, t framework.TestingT, podName string) {
+	var pod corev1.Pod
+	require.NoError(t, t.Get(ctx, t.ResourceKey(podName), &pod))
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReady {
+			require.Equal(t, corev1.ConditionTrue, condition.Status, "pod %q is not ready", podName)
+			return
+		}
+	}
+	t.Fatalf("pod %q reports no Ready condition", podName)
+}
+
+// operatorLogMatchLimit caps how many matching operator log lines are
+// reported, keeping the newest.
+const operatorLogMatchLimit = 300
+
+// dumpOperatorLogsMatching reports the shared operator's log lines that
+// mention needle. The per-feature diagnostics already dump the tail of that
+// log, but one busy reconciler can fill it in a second, so anything about a
+// specific resource has to be selected by name out of the whole log.
+func dumpOperatorLogsMatching(ctx context.Context, t framework.TestingT, needle string) {
+	var pods corev1.PodList
+	if err := t.List(ctx, &pods, client.InNamespace(OperatorNamespace)); err != nil {
+		t.Logf("[operator-logs] listing pods in %q: %v", OperatorNamespace, err)
+		return
+	}
+
+	clientset, err := kubernetes.NewForConfig(t.RestConfig())
+	if err != nil {
+		t.Logf("[operator-logs] building clientset: %v", err)
+		return
+	}
+
+	for i := range pods.Items {
+		pod := &pods.Items[i]
+		for _, container := range pod.Spec.Containers {
+			stream, err := clientset.CoreV1().Pods(OperatorNamespace).GetLogs(pod.Name, &corev1.PodLogOptions{
+				Container: container.Name,
+			}).Stream(ctx)
+			if err != nil {
+				t.Logf("[operator-logs] streaming %s/%s: %v", pod.Name, container.Name, err)
+				continue
+			}
+			matches := matchingLines(stream, needle)
+			_ = stream.Close()
+
+			if len(matches) == 0 {
+				t.Logf("[operator-logs] %s/%s said nothing about %q", pod.Name, container.Name, needle)
+				continue
+			}
+			t.Logf("[operator-logs] %s/%s on %q (%d lines):\n%s", pod.Name, container.Name, needle, len(matches), strings.Join(matches, "\n"))
+		}
+	}
+}
+
+// matchingLines returns the lines of r containing needle, at most
+// operatorLogMatchLimit of them, keeping the newest.
+func matchingLines(r io.Reader, needle string) []string {
+	var matches []string
+	scanner := bufio.NewScanner(r)
+	// Structured log lines carrying a stack trace run well past the default
+	// 64KiB.
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		if line := scanner.Text(); strings.Contains(line, needle) {
+			matches = append(matches, line)
+			if len(matches) > operatorLogMatchLimit {
+				matches = matches[1:]
+			}
+		}
+	}
+	return matches
 }

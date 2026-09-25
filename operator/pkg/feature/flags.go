@@ -43,6 +43,26 @@ var V2UseBrokerCR = &AnnotationFeatureFlag[bool]{
 	},
 }
 
+// EndpointSteering controls whether the operator publishes the cluster's
+// internal Service EndpointSlices itself, per port, instead of leaving them
+// to the native EndpointSlice controller -- which is what lets a broker whose
+// Schema Registry is still replaying _schemas be unpublished from the Schema
+// Registry port while it keeps serving Kafka. See
+// internal/controller/endpointsteering.
+//
+// One annotation for both cluster kinds, applied to Clusters and Redpandas
+// alike. Deliberately NOT registered in either bundle: SetDefaults would
+// stamp "false" onto every cluster, and removing the annotation is how a
+// user hands the Service back to the native controller.
+// Valid Value(s): true
+var EndpointSteering = &AnnotationFeatureFlag[bool]{
+	Key:     "operator.redpanda.com/enable-endpoint-steering",
+	Default: "false",
+	Parse: func(s string) (bool, error) {
+		return s == "true", nil
+	},
+}
+
 // V1Managed controls whether a Cluster resource is
 // reconciled or by the cluster controller(s) or not.
 // Valid Value(s): false

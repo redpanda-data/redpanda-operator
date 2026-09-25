@@ -137,6 +137,36 @@ func AdminClientConnectionInfo(state *redpandachart.RenderState, dialer DialCont
 // SchemaRegistryClient creates a client to talk to a Redpanda cluster admin API based on its helm
 // configuration over its internal listeners.
 func SchemaRegistryClient(state *redpandachart.RenderState, dialer DialContextFunc, opts ...sr.ClientOpt) (*sr.Client, error) {
+	return schemaRegistryClient(state, dialer, func() ([]string, error) {
+		records, err := srvLookup(state, dialer, redpandachart.InternalSchemaRegistryPortName)
+		if err != nil {
+			return nil, err
+		}
+
+		hosts := make([]string, len(records))
+		for i, record := range records {
+			hosts[i] = fmt.Sprintf("%s:%d", record.Target, record.Port)
+		}
+		return hosts, nil
+	}, opts...)
+}
+
+// SchemaRegistryClientForHosts is SchemaRegistryClient with the brokers'
+// "host:port" addresses supplied by the caller instead of discovered through
+// the internal Service's SRV record. That record lists only brokers whose
+// Schema Registry port is currently published, which is the wrong set for a
+// caller that must reach every broker: the rolling-restart gate probes for
+// stores that are still replaying, exactly the brokers endpoint steering
+// unpublishes.
+func SchemaRegistryClientForHosts(state *redpandachart.RenderState, dialer DialContextFunc, hosts []string, opts ...sr.ClientOpt) (*sr.Client, error) {
+	return schemaRegistryClient(state, dialer, func() ([]string, error) { return hosts, nil }, opts...)
+}
+
+// schemaRegistryClient builds the client, resolving the broker addresses
+// only once the listener's transport and TLS are settled -- so a
+// misconfigured certificate is reported as such rather than behind a DNS
+// timeout.
+func schemaRegistryClient(state *redpandachart.RenderState, dialer DialContextFunc, resolveHosts func() ([]string, error), opts ...sr.ClientOpt) (*sr.Client, error) {
 	prefix := "http://"
 
 	// These transport values come from the TLS client options found here:
@@ -183,17 +213,17 @@ func SchemaRegistryClient(state *redpandachart.RenderState, dialer DialContextFu
 		copts = append(copts, sr.BasicAuth(username, password))
 	}
 
-	records, err := srvLookup(state, dialer, redpandachart.InternalSchemaRegistryPortName)
+	hosts, err := resolveHosts()
 	if err != nil {
 		return nil, err
 	}
 
-	hosts := make([]string, len(records))
-	for i, record := range records {
-		hosts[i] = fmt.Sprintf("%s%s:%d", prefix, record.Target, record.Port)
+	urls := make([]string, len(hosts))
+	for i, host := range hosts {
+		urls[i] = prefix + host
 	}
 
-	copts = append(copts, sr.URLs(hosts...))
+	copts = append(copts, sr.URLs(urls...))
 
 	// finally, override any calculated client opts with whatever was
 	// passed in
