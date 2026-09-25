@@ -121,7 +121,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -1719,7 +1721,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -2971,7 +2975,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -4537,7 +4543,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -5906,7 +5914,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -7580,7 +7590,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -9225,7 +9237,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -11030,7 +11044,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -12626,7 +12642,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -14238,7 +14256,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -15957,7 +15977,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -17462,7 +17484,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -19060,7 +19084,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -20366,7 +20392,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -21993,7 +22021,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -23589,7 +23619,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -25188,7 +25220,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -26788,7 +26822,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -28454,7 +28490,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -30120,7 +30158,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -31787,7 +31827,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -33402,7 +33444,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -35086,7 +35130,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -36770,7 +36816,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -38456,7 +38504,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -40090,7 +40140,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -41774,7 +41826,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -43458,7 +43512,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -45144,7 +45200,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -46778,7 +46836,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -48374,7 +48434,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -49971,7 +50033,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -51566,7 +51630,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -53250,7 +53316,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -54852,7 +54920,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -56544,7 +56614,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -58144,7 +58216,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.change-name.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -59773,7 +59847,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -61404,7 +61480,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -62991,7 +63069,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -64554,7 +64634,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -66020,7 +66102,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -67798,7 +67882,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -69445,7 +69531,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -71051,7 +71139,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -72702,7 +72792,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -74296,7 +74388,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/selfsigned/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local"
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -75855,7 +75949,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -77454,7 +77550,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -79244,7 +79342,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -80859,7 +80959,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -111947,7 +112049,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -113349,7 +113453,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/for-internal/tls.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -114751,7 +114857,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -116392,7 +116500,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -118113,7 +118223,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -119818,7 +119930,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -121523,7 +121637,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -123399,7 +123515,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -125226,7 +125344,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -127024,7 +127144,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/truststores/configmaps/admin-cm-other.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -128759,7 +128881,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -130545,7 +130669,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -132358,7 +132484,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.also-not-redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -133954,7 +134082,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -135551,7 +135681,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -137147,7 +137279,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -138741,7 +138875,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -140364,7 +140500,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -141990,7 +142128,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -143611,7 +143751,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -155146,7 +155288,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -156783,7 +156927,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -158326,7 +158472,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -159922,7 +160070,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -161636,7 +161786,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
