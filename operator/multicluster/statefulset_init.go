@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -87,7 +87,7 @@ func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerP
 	return corev1.Container{
 		Name:    redpandaTuningContainerName,
 		Image:   pool.RedpandaImage(),
-		Command: []string{`/bin/bash`, `-c`, redpandachart.HostTunerScript()},
+		Command: []string{`/bin/bash`, `-c`, redpanda.HostTunerScript()},
 		SecurityContext: &corev1.SecurityContext{
 			// privileged: true already grants every capability;
 			// explicit Add entries would be redundant noise.
@@ -96,7 +96,7 @@ func statefulSetInitContainerTuningOnHost(pool *redpandav1alpha2.RedpandaBrokerP
 			RunAsUser:    ptr.To(int64(0)),
 			RunAsGroup:   ptr.To(int64(0)),
 		},
-		VolumeMounts: redpandachart.HostTunerVolumeMounts(),
+		VolumeMounts: redpanda.HostTunerVolumeMounts(),
 	}
 }
 
@@ -149,8 +149,8 @@ func statefulSetInitContainerConfigurator(state *RenderState, pool *redpandav1al
 
 	if pool.Spec.RackAwareness.IsEnabled() {
 		volMounts = append(volMounts, corev1.VolumeMount{
-			Name:      serviceAccountVolumeName,
-			MountPath: defaultAPITokenMountPath,
+			Name:      redpanda.ServiceAccountVolumeName,
+			MountPath: redpanda.DefaultAPITokenMountPath,
 			ReadOnly:  true,
 		})
 	}
