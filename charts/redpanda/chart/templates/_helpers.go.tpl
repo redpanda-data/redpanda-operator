@@ -120,16 +120,18 @@
 
 {{- define "redpanda.DefaultMounts" -}}
 {{- $state := (index .a 0) -}}
+{{- $pki := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda")))) (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")))) | toJson -}}
+{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "base-config" "mountPath" "/etc/redpanda")))) (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state $pki)))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "redpanda.CommonMounts" -}}
 {{- $state := (index .a 0) -}}
+{{- $pki := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $mounts := (list) -}}
@@ -137,7 +139,6 @@
 {{- if (and $sasl_3.enabled (ne $sasl_3.secretRef "")) -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "users" "mountPath" "/etc/secrets/users" "readOnly" true)))) -}}
 {{- end -}}
-{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (default (list) (get (fromJson (include "_redpanda.PKI.Mounts" (dict "a" (list $pki)))) "r"))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $mounts) | toJson -}}
@@ -147,20 +148,21 @@
 
 {{- define "redpanda.DefaultVolumes" -}}
 {{- $state := (index .a 0) -}}
+{{- $pki := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) (dict)))) (dict "name" "base-config")))) (default (list) (get (fromJson (include "redpanda.CommonVolumes" (dict "a" (list $state)))) "r")))) | toJson -}}
+{{- (dict "r" (concat (default (list) (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict) (dict "configMap" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "name" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r"))) (dict)))) (dict "name" "base-config")))) (default (list) (get (fromJson (include "redpanda.CommonVolumes" (dict "a" (list $state $pki)))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "redpanda.CommonVolumes" -}}
 {{- $state := (index .a 0) -}}
+{{- $pki := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $volumes := (list) -}}
-{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
 {{- $volumes = (concat (default (list) $volumes) (default (list) (get (fromJson (include "_redpanda.PKI.Volumes" (dict "a" (list $pki)))) "r"))) -}}
 {{- $sasl_4 := $state.Values.auth.sasl -}}
 {{- if (and $sasl_4.enabled (ne $sasl_4.secretRef "")) -}}
@@ -283,9 +285,9 @@
 {{- $originalKeys := (dict) -}}
 {{- $overrideByKey := (dict) -}}
 {{- range $_, $el := $override -}}
-{{- $_312_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_312_key_ok 0) -}}
-{{- $ok := (index $_312_key_ok 1) -}}
+{{- $_311_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_311_key_ok 0) -}}
+{{- $ok := (index $_311_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
@@ -296,13 +298,13 @@
 {{- end -}}
 {{- $merged := (coalesce nil) -}}
 {{- range $_, $el := $original -}}
-{{- $_324_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_324_key__ 0) -}}
-{{- $_ := (index $_324_key__ 1) -}}
+{{- $_323_key__ := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_323_key__ 0) -}}
+{{- $_ := (index $_323_key__ 1) -}}
 {{- $_ := (set $originalKeys $key true) -}}
-{{- $_326_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
-{{- $elOverride_5 := (index $_326_elOverride_5_ok_6 0) -}}
-{{- $ok_6 := (index $_326_elOverride_5_ok_6 1) -}}
+{{- $_325_elOverride_5_ok_6 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $overrideByKey $key (coalesce nil))))) "r") -}}
+{{- $elOverride_5 := (index $_325_elOverride_5_ok_6 0) -}}
+{{- $ok_6 := (index $_325_elOverride_5_ok_6 1) -}}
 {{- if $ok_6 -}}
 {{- $merged = (concat (default (list) $merged) (list (get (fromJson (include (first $mergeFunc) (dict "a" (concat (rest $mergeFunc) (list $el $elOverride_5))))) "r"))) -}}
 {{- else -}}
@@ -313,15 +315,15 @@
 {{- break -}}
 {{- end -}}
 {{- range $_, $el := $override -}}
-{{- $_336_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
-{{- $key := (index $_336_key_ok 0) -}}
-{{- $ok := (index $_336_key_ok 1) -}}
+{{- $_335_key_ok := (get (fromJson (include "_shims.get" (dict "a" (list $el $mergeKey)))) "r") -}}
+{{- $key := (index $_335_key_ok 0) -}}
+{{- $ok := (index $_335_key_ok 1) -}}
 {{- if (not $ok) -}}
 {{- continue -}}
 {{- end -}}
-{{- $_341___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
-{{- $_ := (index $_341___ok_7 0) -}}
-{{- $ok_7 := (index $_341___ok_7 1) -}}
+{{- $_340___ok_7 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $originalKeys $key false)))) "r") -}}
+{{- $_ := (index $_340___ok_7 0) -}}
+{{- $ok_7 := (index $_340___ok_7 1) -}}
 {{- if $ok_7 -}}
 {{- continue -}}
 {{- end -}}
