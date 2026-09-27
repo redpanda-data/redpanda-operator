@@ -1089,6 +1089,19 @@
         "nodePort": {
           "type": "integer"
         },
+        "parentRefs": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/sigs.k8s.io.gateway-api.apis.v1.ParentReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "port": {
           "type": "integer"
         },
@@ -1171,6 +1184,19 @@
         "nodePort": {
           "type": "integer"
         },
+        "parentRefs": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/sigs.k8s.io.gateway-api.apis.v1.ParentReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "port": {
           "type": "integer"
         },
@@ -1247,6 +1273,19 @@
         },
         "nodePort": {
           "type": "integer"
+        },
+        "parentRefs": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/sigs.k8s.io.gateway-api.apis.v1.ParentReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "port": {
           "type": "integer"

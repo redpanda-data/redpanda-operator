@@ -15,7 +15,7 @@
 {{- $routes := (coalesce nil) -}}
 {{- range $name, $l := $state.Values.listeners.kafka.external -}}
 {{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) -}}
-{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state $gw.parentRefs $pods "kafka" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
+{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $gw.parentRefs)))) "r") $pods "kafka" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -23,7 +23,7 @@
 {{- end -}}
 {{- range $name, $l := $state.Values.listeners.http.external -}}
 {{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) -}}
-{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state $gw.parentRefs $pods "http" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
+{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $gw.parentRefs)))) "r") $pods "http" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -31,7 +31,7 @@
 {{- end -}}
 {{- range $name, $l := $state.Values.listeners.admin.external -}}
 {{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) -}}
-{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state $gw.parentRefs $pods "admin" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
+{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $gw.parentRefs)))) "r") $pods "admin" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -39,7 +39,7 @@
 {{- end -}}
 {{- range $name, $l := $state.Values.listeners.schemaRegistry.external -}}
 {{- if (and (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) -}}
-{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state $gw.parentRefs $pods "schema" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
+{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tcpRoutesForListener" (dict "a" (list $state (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $gw.parentRefs)))) "r") $pods "schema" $name ($l.port | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int))))) "r"))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}

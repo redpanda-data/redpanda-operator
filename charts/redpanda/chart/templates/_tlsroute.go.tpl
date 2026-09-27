@@ -20,7 +20,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsTLSRouteListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "kafka" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $listener $gw.parentRefs)))) "r") $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "kafka" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -30,7 +30,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsTLSRouteListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "http" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $listener $gw.parentRefs)))) "r") $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "http" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -40,7 +40,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsTLSRouteListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "admin" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $listener $gw.parentRefs)))) "r") $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "admin" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -50,7 +50,7 @@
 {{- if (or (not (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.enabled $state.Values.external.enabled)))) "r")) (not (get (fromJson (include "redpanda.ExternalListener.IsTLSRouteListener" (dict "a" (list $listener)))) "r"))) -}}
 {{- continue -}}
 {{- end -}}
-{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "schema" ($listener.port | int))))) "r") -}}
+{{- $rs := (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $listener $gw.parentRefs)))) "r") $pods (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.hostTemplate "")))) "r") $name "schema" ($listener.port | int))))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) $rs)) -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -152,11 +152,15 @@
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $replicas := ((get (fromJson (include "_shims.len" (dict "a" (list $pods)))) "r") | int) -}}
 {{- $gatewayConfigured := (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") -}}
+{{- $defaultRefs := (coalesce nil) -}}
+{{- if (ne (toJson $state.Values.external.gateway) "null") -}}
+{{- $defaultRefs = $state.Values.external.gateway.parentRefs -}}
+{{- end -}}
 {{- $claimed := (dict) -}}
 {{- range $name, $l := $state.Values.listeners.kafka.external -}}
 {{- $enabled := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") -}}
 {{- $_ := (get (fromJson (include "redpanda.validateGatewayListener" (dict "a" (list "kafka" $name (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.type "")))) "r") $enabled $gatewayConfigured (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.hostTemplate "")))) "r") $replicas true)))) "r") -}}
-{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed "kafka" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas true)))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $defaultRefs)))) "r") $state.Release.Namespace "kafka" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas true)))) "r") -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -164,7 +168,7 @@
 {{- range $name, $l := $state.Values.listeners.http.external -}}
 {{- $enabled := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") -}}
 {{- $_ := (get (fromJson (include "redpanda.validateGatewayListener" (dict "a" (list "http" $name (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.type "")))) "r") $enabled $gatewayConfigured (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.hostTemplate "")))) "r") $replicas false)))) "r") -}}
-{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed "http" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas false)))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $defaultRefs)))) "r") $state.Release.Namespace "http" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas false)))) "r") -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -172,7 +176,7 @@
 {{- range $name, $l := $state.Values.listeners.admin.external -}}
 {{- $enabled := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") -}}
 {{- $_ := (get (fromJson (include "redpanda.validateGatewayListener" (dict "a" (list "admin" $name (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.type "")))) "r") $enabled $gatewayConfigured (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.hostTemplate "")))) "r") $replicas false)))) "r") -}}
-{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed "admin" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas false)))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $defaultRefs)))) "r") $state.Release.Namespace "admin" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas false)))) "r") -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -180,7 +184,7 @@
 {{- range $name, $l := $state.Values.listeners.schemaRegistry.external -}}
 {{- $enabled := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.enabled $state.Values.external.enabled)))) "r") -}}
 {{- $_ := (get (fromJson (include "redpanda.validateGatewayListener" (dict "a" (list "schema" $name (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.type "")))) "r") $enabled $gatewayConfigured (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.hostTemplate "")))) "r") $replicas false)))) "r") -}}
-{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed "schema" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas false)))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.validateTCPRouteListener" (dict "a" (list $claimed (get (fromJson (include "redpanda.ExternalListener.GatewayParentRefs" (dict "a" (list $l $defaultRefs)))) "r") $state.Release.Namespace "schema" $name (and $enabled (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $l)))) "r")) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.networkPort (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $l.brokerNetworkPortBase (0 | int))))) "r") | int) $replicas false)))) "r") -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -227,13 +231,15 @@
 
 {{- define "redpanda.validateTCPRouteListener" -}}
 {{- $claimed := (index .a 0) -}}
-{{- $tag := (index .a 1) -}}
-{{- $name := (index .a 2) -}}
-{{- $active := (index .a 3) -}}
-{{- $networkPort := (index .a 4) -}}
-{{- $base := (index .a 5) -}}
-{{- $replicas := (index .a 6) -}}
-{{- $requirePerBroker := (index .a 7) -}}
+{{- $parentRefs := (index .a 1) -}}
+{{- $namespace := (index .a 2) -}}
+{{- $tag := (index .a 3) -}}
+{{- $name := (index .a 4) -}}
+{{- $active := (index .a 5) -}}
+{{- $networkPort := (index .a 6) -}}
+{{- $base := (index .a 7) -}}
+{{- $replicas := (index .a 8) -}}
+{{- $requirePerBroker := (index .a 9) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (not $active) -}}
@@ -247,14 +253,18 @@
 {{- if (and (and $requirePerBroker (gt $replicas (1 | int))) (eq $base (0 | int))) -}}
 {{- $_ := (fail (printf "external gateway listener %s/%s requires `brokerNetworkPortBase` when replicas > 1: TCPRoutes carry no hostname, so each broker needs its own Gateway port" $tag $name)) -}}
 {{- end -}}
-{{- $_ := (get (fromJson (include "redpanda.claimNetworkPort" (dict "a" (list $claimed $tag $name "bootstrap" $networkPort)))) "r") -}}
+{{- range $_, $ref := $parentRefs -}}
+{{- $gw := (printf "%s %s/%s" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $ref.kind (toString "Gateway"))))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $ref.namespace (toString $namespace))))) "r") $ref.name) -}}
+{{- $_ := (get (fromJson (include "redpanda.claimNetworkPort" (dict "a" (list $claimed $gw $tag $name "bootstrap" $networkPort)))) "r") -}}
 {{- if (eq $base (0 | int)) -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (list)) | toJson -}}
-{{- break -}}
+{{- continue -}}
 {{- end -}}
 {{- range $_, $i := (until $replicas) -}}
-{{- $_ := (get (fromJson (include "redpanda.claimNetworkPort" (dict "a" (list $claimed $tag $name (printf "broker %d" $i) ((add $base ($i | int)) | int))))) "r") -}}
+{{- $_ := (get (fromJson (include "redpanda.claimNetworkPort" (dict "a" (list $claimed $gw $tag $name (printf "broker %d" $i) ((add $base ($i | int)) | int))))) "r") -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -264,20 +274,28 @@
 
 {{- define "redpanda.claimNetworkPort" -}}
 {{- $claimed := (index .a 0) -}}
-{{- $tag := (index .a 1) -}}
-{{- $name := (index .a 2) -}}
-{{- $what := (index .a 3) -}}
-{{- $port := (index .a 4) -}}
+{{- $gw := (index .a 1) -}}
+{{- $tag := (index .a 2) -}}
+{{- $name := (index .a 3) -}}
+{{- $what := (index .a 4) -}}
+{{- $port := (index .a 5) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (or (lt $port (1 | int)) (gt $port (65535 | int))) -}}
 {{- $_ := (fail (printf "external gateway listener %s/%s: %s network port %d is outside 1-65535" $tag $name $what $port)) -}}
 {{- end -}}
-{{- $key := (printf "%d" $port) -}}
-{{- if (hasKey $claimed $key) -}}
-{{- $_ := (fail (printf "external gateway listener %s/%s: %s network port %d is already used by %s; every TCPRoute needs its own Gateway listener port" $tag $name $what $port (ternary (index $claimed $key) "" (hasKey $claimed $key)))) -}}
+{{- if (not (hasKey $claimed $gw)) -}}
+{{- $_ := (set $claimed $gw (dict)) -}}
 {{- end -}}
-{{- $_ := (set $claimed $key (printf "%s/%s %s" $tag $name $what)) -}}
+{{- $ports := (index $claimed $gw) -}}
+{{- $key := (printf "%d" $port) -}}
+{{- if (hasKey $ports $key) -}}
+{{- $_ := (fail (printf "external gateway listener %s/%s: %s network port %d is already used by %s; every TCPRoute needs its own Gateway listener port" $tag $name $what $port (ternary (index $ports $key) "" (hasKey $ports $key)))) -}}
+{{- end -}}
+{{- $_ := (set $ports $key (printf "%s/%s %s" $tag $name $what)) -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $ports)))) "r") | int) (64 | int)) -}}
+{{- $_ := (fail (printf "external gateway listener %s/%s: %s needs more than %d TCPRoute ports on %s, the Gateway API listener limit; move listeners to another Gateway with per-listener parentRefs" $tag $name $what (64 | int) $gw)) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

@@ -2012,6 +2012,9 @@ type ExternalListener[T ~string] struct {
 	// global ordinal 0; broker i attaches to and advertises base+i
 	// (type: tcproute; advertisedPorts is ignored).
 	BrokerNetworkPortBase *int32 `json:"brokerNetworkPortBase,omitempty"`
+	// ParentRefs overrides external.gateway.parentRefs for this listener's
+	// routes, e.g. to put TLS and plaintext listeners on separate Gateways.
+	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 }
 
 // ExternalListenerTypeTLSRoute is the per-listener `type` value that routes a
@@ -2044,6 +2047,7 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		HostTemplate:          l.HostTemplate,
 		NetworkPort:           l.NetworkPort,
 		BrokerNetworkPortBase: l.BrokerNetworkPortBase,
+		ParentRefs:            l.ParentRefs,
 	}
 }
 
@@ -2068,6 +2072,15 @@ func (l *ExternalListener[T]) IsTLSRouteListener() bool {
 
 func (l *ExternalListener[T]) IsTCPRouteListener() bool {
 	return ptr.Deref(l.Type, "") == ExternalListenerTypeTCPRoute
+}
+
+// GatewayParentRefs returns the listener's own parentRefs, falling back to
+// external.gateway.parentRefs.
+func (l *ExternalListener[T]) GatewayParentRefs(defaults []gatewayv1.ParentReference) []gatewayv1.ParentReference {
+	if len(l.ParentRefs) > 0 {
+		return l.ParentRefs
+	}
+	return defaults
 }
 
 type TunableConfig map[string]any

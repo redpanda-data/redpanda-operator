@@ -1299,6 +1299,8 @@ Minimum: 1 +
 | *`brokerNetworkPortBase`* __integer__ | BrokerNetworkPortBase is the Gateway listener port of the broker with global ordinal 0; broker i attaches to and advertises base+i (type tcproute; advertisedPorts is ignored). + |  | Maximum: 65535 +
 Minimum: 1 +
 
+| *`parentRefs`* __ParentReference array__ | ParentRefs overrides `external.gateway.parentRefs` for this listener's routes, for example to put TLS and plaintext listeners on separate Gateways (and so separate load balancers). + |  | MaxItems: 32 +
+
 |===
 
 

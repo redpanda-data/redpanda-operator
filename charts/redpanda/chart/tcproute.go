@@ -35,22 +35,22 @@ func TCPRoutes(state *RenderState) []*gatewayv1.TCPRoute {
 
 	for name, l := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
 		if ptr.Deref(l.Enabled, state.Values.External.Enabled) && l.IsTCPRouteListener() {
-			routes = append(routes, tcpRoutesForListener(state, gw.ParentRefs, pods, "kafka", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
+			routes = append(routes, tcpRoutesForListener(state, l.GatewayParentRefs(gw.ParentRefs), pods, "kafka", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
 		}
 	}
 	for name, l := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
 		if ptr.Deref(l.Enabled, state.Values.External.Enabled) && l.IsTCPRouteListener() {
-			routes = append(routes, tcpRoutesForListener(state, gw.ParentRefs, pods, "http", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
+			routes = append(routes, tcpRoutesForListener(state, l.GatewayParentRefs(gw.ParentRefs), pods, "http", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
 		}
 	}
 	for name, l := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
 		if ptr.Deref(l.Enabled, state.Values.External.Enabled) && l.IsTCPRouteListener() {
-			routes = append(routes, tcpRoutesForListener(state, gw.ParentRefs, pods, "admin", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
+			routes = append(routes, tcpRoutesForListener(state, l.GatewayParentRefs(gw.ParentRefs), pods, "admin", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
 		}
 	}
 	for name, l := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
 		if ptr.Deref(l.Enabled, state.Values.External.Enabled) && l.IsTCPRouteListener() {
-			routes = append(routes, tcpRoutesForListener(state, gw.ParentRefs, pods, "schema", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
+			routes = append(routes, tcpRoutesForListener(state, l.GatewayParentRefs(gw.ParentRefs), pods, "schema", name, l.Port, ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0))...)
 		}
 	}
 

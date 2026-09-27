@@ -1053,6 +1053,9 @@ type ExternalListener struct {
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=65535
 	BrokerNetworkPortBase *int32 `json:"brokerNetworkPortBase,omitempty"`
+	// ParentRefs overrides `external.gateway.parentRefs` for this listener's routes, for example to put TLS and plaintext listeners on separate Gateways (and so separate load balancers).
+	// +kubebuilder:validation:MaxItems=32
+	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 }
 
 // Admin configures settings for the Admin API listeners.

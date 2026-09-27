@@ -103,8 +103,20 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- $seen := (dict) -}}
+{{- $unique := (coalesce nil) -}}
+{{- range $_, $n := $names -}}
+{{- if (hasKey $seen $n) -}}
+{{- continue -}}
+{{- end -}}
+{{- $_ := (set $seen $n true) -}}
+{{- $unique = (concat (default (list) $unique) (list $n)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $names) | toJson -}}
+{{- (dict "r" $unique) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

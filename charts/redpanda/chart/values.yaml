@@ -968,6 +968,13 @@ listeners:
         # to and advertises base+i (type: tcproute). Pre-provision headroom on the Gateway
         # so scale-up needs no Gateway change.
         # brokerNetworkPortBase: 9200
+        # -- Overrides external.gateway.parentRefs for this listener's routes (type: tlsroute
+        # or tcproute). Put listeners on separate Gateways, and so separate load balancers,
+        # when one Gateway runs out of ports (an AWS NLB allows 50 listeners). Ports only
+        # need to be unique per Gateway.
+        # parentRefs:
+        #   - name: redpanda-tcp-plain
+        #     namespace: infra
   # -- RPC listener (this is never externally accessible).
   rpc:
     # -- (string) The address to bind this listener to.

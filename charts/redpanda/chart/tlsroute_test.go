@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -148,29 +149,47 @@ func TestValidateGatewayListener(t *testing.T) {
 	})
 
 	// TCPRoute ports: bootstrap and (multi-broker Kafka) per-broker ports are
-	// required, in range, and unique across every tcproute listener.
+	// required, in range, and unique per Gateway across every tcproute listener.
+	gwA := []gatewayv1.ParentReference{{Name: "gw-a", Namespace: ptr.To(gatewayv1.Namespace("infra"))}}
+	gwB := []gatewayv1.ParentReference{{Name: "gw-b"}}
+	fresh := func() map[string]map[string]string { return map[string]map[string]string{} }
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp requires `networkPort` (the Gateway listener port of the bootstrap TCPRoute) when type: tcproute",
-		func() { validateTCPRouteListener(map[string]string{}, "kafka", "tcp", true, 0, 9200, 3, true) },
+		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 0, 9200, 3, true) },
 	)
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp requires `brokerNetworkPortBase` when replicas > 1: TCPRoutes carry no hostname, so each broker needs its own Gateway port",
-		func() { validateTCPRouteListener(map[string]string{}, "kafka", "tcp", true, 9199, 0, 3, true) },
+		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 3, true) },
 	)
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp: broker 1 network port 65536 is outside 1-65535",
-		func() { validateTCPRouteListener(map[string]string{}, "kafka", "tcp", true, 9199, 65535, 2, true) },
+		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 65535, 2, true) },
 	)
-	claimed := map[string]string{}
-	validateTCPRouteListener(claimed, "http", "tcp", true, 9201, 0, 3, false) // bootstrap-only HTTP
+	claimed := fresh()
+	validateTCPRouteListener(claimed, gwA, "redpanda", "http", "tcp", true, 9201, 0, 3, false) // bootstrap-only HTTP
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp: broker 1 network port 9201 is already used by http/tcp bootstrap; every TCPRoute needs its own Gateway listener port",
-		func() { validateTCPRouteListener(claimed, "kafka", "tcp", true, 9199, 9200, 3, true) },
+		func() { validateTCPRouteListener(claimed, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 3, true) },
+	)
+	// Another Gateway (another load balancer) can reuse the same port numbers,
+	// e.g. TLS and plaintext Kafka listeners on separate Gateways.
+	claimed = fresh()
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(claimed, gwA, "redpanda", "kafka", "tls", true, 9199, 9200, 3, true)
+		validateTCPRouteListener(claimed, gwB, "redpanda", "kafka", "plain", true, 9199, 9200, 3, true)
+	})
+	// 64 ports per Gateway (the Gateway API listener cap): 1 bootstrap + 63
+	// brokers fit, a 64th broker doesn't.
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 63, true)
+	})
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp: broker 63 needs more than 64 TCPRoute ports on Gateway infra/gw-a, the Gateway API listener limit; move listeners to another Gateway with per-listener parentRefs",
+		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 64, true) },
 	)
 	require.NotPanics(t, func() {
-		validateTCPRouteListener(map[string]string{}, "kafka", "tcp", true, 9199, 9200, 3, true)
-		validateTCPRouteListener(map[string]string{}, "kafka", "tcp", true, 9199, 0, 1, true) // single broker
-		validateTCPRouteListener(map[string]string{}, "kafka", "tcp", false, 0, 0, 3, true)   // not tcproute
+		validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 1, true) // single broker
+		validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", false, 0, 0, 3, true)   // not tcproute
 	})
 }
 

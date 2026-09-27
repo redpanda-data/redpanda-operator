@@ -1516,6 +1516,63 @@ listeners:
         tls:
           cert: default
 
+-- gateway-api-tcproute-split-gateways --
+# TLS and plaintext Kafka listeners on separate Gateways via per-listener
+# parentRefs, so each gets a load balancer's full port budget. The plaintext
+# listener reuses the TLS listener's port numbers on its own Gateway.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: redpanda-tcp-tls
+      namespace: infra
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+auth:
+  sasl:
+    enabled: true
+    users:
+    - name: admin
+      password: change-me
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: tls.gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          cert: default
+      plain:
+        port: 9095
+        type: tcproute
+        host: plain.gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        authenticationMethod: sasl
+        parentRefs:
+        - name: redpanda-tcp-plain
+          namespace: infra
+        tls:
+          enabled: false
+  http:
+    external:
+      default:
+        port: 8083
+        type: tcproute
+        host: tls.gw.example.com
+        networkPort: 9299
+        tls:
+          cert: default
+
 -- gateway-api-tcproute-port-collision --
 # The HTTP Proxy bootstrap port lands inside the Kafka broker range
 # (9200-9202). Two TCPRoutes on one Gateway listener means only the oldest gets
