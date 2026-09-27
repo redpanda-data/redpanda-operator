@@ -6791,6 +6791,15 @@
       },
       "type": "object"
     },
+    "k8s.io.client-go.applyconfigurations.core.v1.PodSchedulingGroupApplyConfiguration": {
+      "additionalProperties": false,
+      "properties": {
+        "podGroupName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "k8s.io.client-go.applyconfigurations.core.v1.PodSecurityContextApplyConfiguration": {
       "additionalProperties": false,
       "properties": {
@@ -7039,6 +7048,9 @@
             }
           ]
         },
+        "schedulingGroup": {
+          "$ref": "#/$defs/k8s.io.client-go.applyconfigurations.core.v1.PodSchedulingGroupApplyConfiguration"
+        },
         "securityContext": {
           "$ref": "#/$defs/k8s.io.client-go.applyconfigurations.core.v1.PodSecurityContextApplyConfiguration"
         },
@@ -7098,9 +7110,6 @@
               "type": "null"
             }
           ]
-        },
-        "workloadRef": {
-          "$ref": "#/$defs/k8s.io.client-go.applyconfigurations.core.v1.WorkloadReferenceApplyConfiguration"
         }
       },
       "type": "object"
@@ -7889,21 +7898,6 @@
           "type": "boolean"
         },
         "runAsUserName": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "k8s.io.client-go.applyconfigurations.core.v1.WorkloadReferenceApplyConfiguration": {
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "podGroup": {
-          "type": "string"
-        },
-        "podGroupReplicaKey": {
           "type": "string"
         }
       },

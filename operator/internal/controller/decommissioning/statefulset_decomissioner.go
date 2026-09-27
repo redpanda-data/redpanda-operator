@@ -382,7 +382,7 @@ func (s *StatefulSetDecomissioner) Decommission(ctx context.Context, set *appsv1
 				)
 
 				log.V(traceLevel).Info(message)
-				s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, message)
+				s.recorder.Eventf(set, corev1.EventTypeNormal, eventReasonUnboundPersistentVolumeClaims, "%s", message)
 
 				return nil
 			})
