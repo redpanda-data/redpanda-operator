@@ -1,6 +1,7 @@
 ---
 name: doc-strings
 description: Writing standards for user-facing doc strings in this repo — Go doc comments on CRD fields (operator/api/redpanda/v1alpha2/) and helm-docs comments in chart values.yaml files. Apply when adding or editing those comments, or reviewing a diff that touches them. They are published documentation, generated verbatim into the CRD reference, kubectl explain output, Helm chart docs, and docs.redpanda.com.
+user-invocable: true
 ---
 
 # Doc strings
@@ -26,7 +27,9 @@ copy). The rules below are the local summary.
   `+kubebuilder:validation:Enum` marker exists: the marker validates, the
   prose is what users read in `kubectl explain`.
 - State defaults ("Defaults to ...") and what happens when the field is
-  absent. `+kubebuilder:default` markers are stripped, not rendered.
+  absent. The CRD reference has no Default column and `+kubebuilder:default`
+  markers are stripped from the text, so the prose is the only place a
+  reader sees the default.
 - Every user-facing struct and field gets a comment. An undocumented
   struct ships as an empty reference table. `operator/crd-ref-docs-config.yaml`
   (`hidefromdoc`, ignoreTypes) defines what is user-facing.
@@ -37,7 +40,9 @@ copy). The rules below are the local summary.
 
 - Document a key with `# -- description` immediately above it;
   continuation lines keep `#` without `--`.
-- `# @default -- <text>` when the YAML default is empty or computed;
+- Do not restate a concrete default: helm-docs renders a Default row from
+  the YAML value. Use `# @default -- <text>` when the YAML default is empty
+  or computed, and explain what an empty or sentinel value does.
   `# @raw` for verbatim blocks; `# @ignored` to exclude.
 - Never leave `# --` markers inside commented-out example blocks:
   helm-docs cannot attach them and the text silently disappears.
@@ -47,9 +52,17 @@ copy). The rules below are the local summary.
 ## Quality bar (both surfaces)
 
 State the effect and when to change the setting; never restate the name;
-give defaults and units; no internal jargon; describe current behavior,
-not roadmap. After editing, run `task generate` so the generated docs
+state units in prose and spell them out; no internal jargon; describe
+current behavior, not roadmap. A changed default, unit, or behavior that
+the comment describes updates the comment in the same diff. After editing, run `task generate` so the generated docs
 (README.md, CRD YAML) stay in sync — CI diffs them.
+
+## Tools
+
+When the redpanda-doc-tools-assistant MCP server is available, use
+`lint_doc_strings` (deterministic rule check over a repo or diff) and
+`preview_doc_string` (renders one declaration as it will ship). Without MCP:
+`npx --yes --package=@redpanda-data/docs-extensions-and-macros doc-tools lint-strings --repo . --surface crd,helm --diff origin/main`.
 
 ## Check published content
 
@@ -64,6 +77,19 @@ team's Jira intake (comments on the existing DOC ticket or files one).
 
 ## What NOT to flag in review
 
-Subjective wording on a comment that already states effect, default, and
-legal values; internal code comments; anything outside the two surfaces
-above.
+- Subjective wording or polish on a comment that already states effect,
+  default, and legal values. Never bikeshed phrasing.
+- Internal code comments, log messages, or test strings.
+- Anything outside the two surfaces above.
+
+## Severity (for reviews)
+
+- **high**: changed default, unit, or behavior with the comment left
+  stating the old one (published docs become wrong on merge).
+- **medium** (default): new user-facing field or key with an empty,
+  missing, or name-echo description.
+- **low**: present and accurate but incomplete (no units, legal values not
+  listed, or an empty/sentinel default left unexplained).
+
+Zero findings on a diff that adds user-facing surfaces is a claim: state
+which surfaces you checked.
