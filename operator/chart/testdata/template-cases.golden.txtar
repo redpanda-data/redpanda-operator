@@ -534,6 +534,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -1470,6 +1471,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -2181,6 +2183,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -3144,6 +3147,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -3875,6 +3879,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -4824,6 +4829,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -5717,6 +5723,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -6888,6 +6895,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -7709,6 +7717,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -8659,6 +8668,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -9374,6 +9384,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -10363,6 +10374,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -11171,6 +11183,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -12206,6 +12219,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -13049,6 +13063,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -14018,6 +14033,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -14738,6 +14754,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -15693,6 +15710,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -16413,6 +16431,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -17400,6 +17419,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -18163,6 +18183,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -18953,6 +18974,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -19688,6 +19710,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -20651,6 +20674,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -21564,6 +21588,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -22751,6 +22776,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -23478,6 +23504,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -24312,6 +24339,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -25018,6 +25046,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -25983,6 +26012,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -26710,6 +26740,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -27666,6 +27697,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -28866,6 +28898,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -30039,6 +30072,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -30822,6 +30856,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -31817,6 +31852,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -32711,6 +32747,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -33841,6 +33878,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -34951,6 +34989,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -36065,6 +36104,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -36964,6 +37004,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -38336,6 +38377,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -39161,6 +39203,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -40129,6 +40172,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -41043,6 +41087,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -42337,6 +42382,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -43583,6 +43629,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -44747,6 +44794,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -46299,6 +46347,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -47483,6 +47532,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -48340,6 +48390,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -49511,6 +49562,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -50577,6 +50629,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -51787,6 +51840,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -53481,6 +53535,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -54839,6 +54894,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -55999,6 +56055,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -56983,6 +57040,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -58182,6 +58240,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -59613,6 +59672,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -62763,6 +62823,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -64308,6 +64369,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -67263,6 +67325,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -68518,6 +68581,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -72229,6 +72293,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -73730,6 +73795,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -75015,6 +75081,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -76553,6 +76620,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -79007,6 +79075,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -80262,6 +80331,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -82819,6 +82889,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -84324,6 +84395,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -85621,6 +85693,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -86933,6 +87006,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -88675,6 +88749,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -90245,6 +90320,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -91816,6 +91892,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -93275,6 +93352,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -94931,6 +95009,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -96060,6 +96139,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -96861,6 +96941,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -97886,6 +97967,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -98687,6 +98769,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -99720,6 +99803,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -100521,6 +100605,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -101548,6 +101633,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -102259,6 +102345,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -103196,6 +103283,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -103907,6 +103995,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -104886,6 +104975,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -105693,6 +105783,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -106673,6 +106764,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -107479,6 +107571,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -108414,6 +108507,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -109125,6 +109219,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -110077,6 +110172,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -110806,6 +110902,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -111741,6 +111838,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -112452,6 +112550,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -113387,6 +113486,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -114098,6 +114198,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -115033,6 +115134,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -115744,6 +115846,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -116687,6 +116790,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -117398,6 +117502,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -118341,6 +118446,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -119052,6 +119158,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -120024,6 +120131,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -120751,6 +120859,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -121765,6 +121874,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -122476,6 +122586,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -123448,6 +123559,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -124159,6 +124271,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -125128,6 +125241,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -125839,6 +125953,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -126934,6 +127049,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -127645,6 +127761,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -128616,6 +128733,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -129327,6 +129445,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -130298,6 +130417,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -131009,6 +131129,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -131979,6 +132100,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -132706,6 +132828,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -133752,6 +133875,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -134575,6 +134699,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -135676,6 +135801,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -136499,6 +136625,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -137594,6 +137721,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -138417,6 +138545,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -139445,6 +139574,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -140268,6 +140398,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -141288,6 +141419,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -142095,6 +142227,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -143161,6 +143294,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -143872,6 +144006,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -144814,6 +144949,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -145531,6 +145667,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -146515,6 +146652,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -147331,6 +147469,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create
@@ -148267,6 +148406,7 @@ rules:
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
+  - tcproutes
   - tlsroutes
   verbs:
   - create

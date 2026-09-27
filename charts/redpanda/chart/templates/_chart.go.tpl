@@ -94,6 +94,12 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
+{{- range $_, $obj := (get (fromJson (include "redpanda.TCPRoutes" (dict "a" (list $state)))) "r") -}}
+{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
 {{- range $_, $obj := (get (fromJson (include "redpanda.Secrets" (dict "a" (list $state)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
 {{- end -}}

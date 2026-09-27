@@ -1071,6 +1071,9 @@
             }
           ]
         },
+        "brokerNetworkPortBase": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -1079,6 +1082,9 @@
         },
         "hostTemplate": {
           "type": "string"
+        },
+        "networkPort": {
+          "type": "integer"
         },
         "nodePort": {
           "type": "integer"
@@ -1094,7 +1100,8 @@
         },
         "type": {
           "enum": [
-            "tlsroute"
+            "tlsroute",
+            "tcproute"
           ],
           "type": "string"
         }
@@ -1146,6 +1153,9 @@
             }
           ]
         },
+        "brokerNetworkPortBase": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -1154,6 +1164,9 @@
         },
         "hostTemplate": {
           "type": "string"
+        },
+        "networkPort": {
+          "type": "integer"
         },
         "nodePort": {
           "type": "integer"
@@ -1169,7 +1182,8 @@
         },
         "type": {
           "enum": [
-            "tlsroute"
+            "tlsroute",
+            "tcproute"
           ],
           "type": "string"
         }
@@ -1216,6 +1230,9 @@
             }
           ]
         },
+        "brokerNetworkPortBase": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -1224,6 +1241,9 @@
         },
         "hostTemplate": {
           "type": "string"
+        },
+        "networkPort": {
+          "type": "integer"
         },
         "nodePort": {
           "type": "integer"
@@ -1239,7 +1259,8 @@
         },
         "type": {
           "enum": [
-            "tlsroute"
+            "tlsroute",
+            "tcproute"
           ],
           "type": "string"
         }

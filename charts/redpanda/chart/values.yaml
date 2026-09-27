@@ -311,7 +311,7 @@ external:
   # @doc external.prefixTemplate -- Optional Go template for the prefix of each broker's advertised address. The result is prepended to `external.domain` during initContainer execution. Only used when `external.addresses` contains a single entry that serves all brokers.
   # @default -- `""`
   # prefixTemplate: ""
-  # -- Gateway API TLSRoute-based external access (alternative to NodePort/LoadBalancer).
+  # -- Gateway API TLSRoute- or TCPRoute-based external access (alternative to NodePort/LoadBalancer).
   # The chart creates a bootstrap TLSRoute plus one per-broker TLSRoute, routed by SNI
   # through a Gateway you manage. Opt individual listeners in by setting their type:
   # `listeners.<service>.external.<name>.type: tlsroute` (see listeners.kafka.external below).
@@ -955,6 +955,19 @@ listeners:
         # Variables: $POD_ORDINAL, $POD_NAME. The broker advertises this same hostname,
         # so the SNI the client reconnects on matches what the Gateway routes by.
         # hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
+        # With type: tcproute the chart creates a bootstrap + per-broker TCPRoute instead,
+        # telling brokers apart by Gateway port rather than SNI: one load balancer, one
+        # DNS name and one certificate SAN, and TLS (if enabled) passes through to the
+        # broker. `host` is the advertised host every broker shares. The Gateway must
+        # have a TCP listener on every port below; the chart pins each route to one.
+        # type: tcproute
+        # host: kafka.example.com
+        # -- Gateway listener port the bootstrap TCPRoute attaches to (type: tcproute).
+        # networkPort: 9199
+        # -- Gateway listener port of the broker with global ordinal 0; broker i attaches
+        # to and advertises base+i (type: tcproute). Pre-provision headroom on the Gateway
+        # so scale-up needs no Gateway change.
+        # brokerNetworkPortBase: 9200
   # -- RPC listener (this is never externally accessible).
   rpc:
     # -- (string) The address to bind this listener to.

@@ -37,7 +37,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 	var routes []*gatewayv1.TLSRoute
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsTLSRouteListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "kafka", listener.Port)
@@ -45,7 +45,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsTLSRouteListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "http", listener.Port)
@@ -53,7 +53,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsTLSRouteListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "admin", listener.Port)
@@ -61,7 +61,7 @@ func TLSRoutes(state *RenderState) []*gatewayv1.TLSRoute {
 	}
 
 	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsGatewayListener() {
+		if !ptr.Deref(listener.Enabled, state.Values.External.Enabled) || !listener.IsTLSRouteListener() {
 			continue
 		}
 		rs := tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), name, "schema", listener.Port)
@@ -220,32 +220,51 @@ func validateGatewayListeners(state *RenderState) {
 	// Service — silently unreachable, or worse if the skip were ever relaxed.
 	// We therefore fail render whenever an enabled gateway listener is present
 	// but the global gateway config can't actually back it.
-	replicas := len(gatewayPodNames(state))
+	pods := gatewayPodNames(state)
+	replicas := len(pods)
 	gatewayConfigured := state.Values.External.IsGatewayEnabled()
+	// Gateway listener ports claimed by tcproute listeners; every TCPRoute
+	// needs its own (see validateTCPRouteListener).
+	claimed := map[string]string{}
 
 	for name, l := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		validateGatewayListener("kafka", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, true)
+		enabled := ptr.Deref(l.Enabled, state.Values.External.Enabled)
+		validateGatewayListener("kafka", name, ptr.Deref(l.Type, ""), enabled, gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, true)
+		validateTCPRouteListener(claimed, "kafka", name, enabled && l.IsTCPRouteListener(), ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0), replicas, true)
 	}
 	for name, l := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		validateGatewayListener("http", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+		enabled := ptr.Deref(l.Enabled, state.Values.External.Enabled)
+		validateGatewayListener("http", name, ptr.Deref(l.Type, ""), enabled, gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+		validateTCPRouteListener(claimed, "http", name, enabled && l.IsTCPRouteListener(), ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0), replicas, false)
 	}
 	for name, l := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		validateGatewayListener("admin", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+		enabled := ptr.Deref(l.Enabled, state.Values.External.Enabled)
+		validateGatewayListener("admin", name, ptr.Deref(l.Type, ""), enabled, gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+		validateTCPRouteListener(claimed, "admin", name, enabled && l.IsTCPRouteListener(), ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0), replicas, false)
 	}
 	for name, l := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		validateGatewayListener("schema", name, l.IsGatewayListener(), ptr.Deref(l.Enabled, state.Values.External.Enabled), gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+		enabled := ptr.Deref(l.Enabled, state.Values.External.Enabled)
+		validateGatewayListener("schema", name, ptr.Deref(l.Type, ""), enabled, gatewayConfigured, ptr.Deref(l.Host, ""), ptr.Deref(l.HostTemplate, ""), replicas, false)
+		validateTCPRouteListener(claimed, "schema", name, enabled && l.IsTCPRouteListener(), ptr.Deref(l.NetworkPort, 0), ptr.Deref(l.BrokerNetworkPortBase, 0), replicas, false)
 	}
 }
 
-func validateGatewayListener(tag string, name string, isGateway bool, enabled bool, gatewayConfigured bool, host string, hostTemplate string, replicas int, requirePerBroker bool) {
-	if !enabled || !isGateway {
+func validateGatewayListener(tag string, name string, listenerType string, enabled bool, gatewayConfigured bool, host string, hostTemplate string, replicas int, requirePerBroker bool) {
+	if !enabled || (listenerType != ExternalListenerTypeTLSRoute && listenerType != ExternalListenerTypeTCPRoute) {
 		return
 	}
 	// A listener opted into gateway mode but the global gateway can't back it
 	// (external.gateway missing/disabled, or no parentRefs). Fail closed rather
 	// than silently dropping the listener or letting it leak onto a Service.
 	if !gatewayConfigured {
-		panic(fmt.Sprintf("external listener %s/%s sets type: tlsroute but external.gateway is not enabled with at least one parentRef; refusing to fall back to a NodePort/LoadBalancer Service. Set external.gateway.enabled: true and external.gateway.parentRefs", tag, name))
+		panic(fmt.Sprintf("external listener %s/%s sets type: %s but external.gateway is not enabled with at least one parentRef; refusing to fall back to a NodePort/LoadBalancer Service. Set external.gateway.enabled: true and external.gateway.parentRefs", tag, name, listenerType))
+	}
+	if listenerType == ExternalListenerTypeTCPRoute {
+		// TCPRoutes carry no hostname; host is only what the brokers advertise.
+		if host == "" {
+			panic(fmt.Sprintf("external gateway listener %s/%s requires `host` (the advertised host every broker shares) when type: tcproute", tag, name))
+		}
+		return
 	}
 	if host == "" {
 		panic(fmt.Sprintf("external gateway listener %s/%s requires `host` (the bootstrap SNI hostname) when type: tlsroute", tag, name))
@@ -253,4 +272,38 @@ func validateGatewayListener(tag string, name string, isGateway bool, enabled bo
 	if requirePerBroker && replicas > 1 && hostTemplate == "" {
 		panic(fmt.Sprintf("external gateway listener %s/%s requires `hostTemplate` when replicas > 1: Kafka clients reconnect to individual brokers by SNI, so each broker needs its own per-broker hostname", tag, name))
 	}
+}
+
+// validateTCPRouteListener checks the Gateway ports of a tcproute listener. A
+// TCPRoute has nothing to match on but its port, and when several routes share
+// a Gateway listener only the oldest receives traffic, so every route (bootstrap
+// and per broker, across all tcproute listeners) must claim a distinct port.
+func validateTCPRouteListener(claimed map[string]string, tag string, name string, active bool, networkPort int32, base int32, replicas int, requirePerBroker bool) {
+	if !active {
+		return
+	}
+	if networkPort == 0 {
+		panic(fmt.Sprintf("external gateway listener %s/%s requires `networkPort` (the Gateway listener port of the bootstrap TCPRoute) when type: tcproute", tag, name))
+	}
+	if requirePerBroker && replicas > 1 && base == 0 {
+		panic(fmt.Sprintf("external gateway listener %s/%s requires `brokerNetworkPortBase` when replicas > 1: TCPRoutes carry no hostname, so each broker needs its own Gateway port", tag, name))
+	}
+	claimNetworkPort(claimed, tag, name, "bootstrap", networkPort)
+	if base == 0 {
+		return
+	}
+	for _, i := range helmette.Until(replicas) {
+		claimNetworkPort(claimed, tag, name, fmt.Sprintf("broker %d", i), base+int32(i))
+	}
+}
+
+func claimNetworkPort(claimed map[string]string, tag string, name string, what string, port int32) {
+	if port < 1 || port > 65535 {
+		panic(fmt.Sprintf("external gateway listener %s/%s: %s network port %d is outside 1-65535", tag, name, what, port))
+	}
+	key := fmt.Sprintf("%d", port)
+	if helmette.HasKey(claimed, key) {
+		panic(fmt.Sprintf("external gateway listener %s/%s: %s network port %d is already used by %s; every TCPRoute needs its own Gateway listener port", tag, name, what, port, claimed[key]))
+	}
+	claimed[key] = fmt.Sprintf("%s/%s %s", tag, name, what)
 }

@@ -2189,19 +2189,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -2304,13 +2323,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -2450,19 +2471,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -2565,13 +2605,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -2716,19 +2758,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -2831,13 +2892,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -3069,19 +3132,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -3184,13 +3266,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -36345,19 +36429,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -36460,13 +36563,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -36606,19 +36711,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -36721,13 +36845,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -36872,19 +36998,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -36987,13 +37132,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -37225,19 +37372,38 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
@@ -37340,13 +37506,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.

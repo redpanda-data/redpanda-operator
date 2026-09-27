@@ -49,6 +49,7 @@ func TestAdvertisedHostJSONGatewayUsesCurrentListenerConfig(t *testing.T) {
 		"http.example.com",
 		"http-$POD_ORDINAL.example.com",
 		true,
+		0, // not type: tcproute
 	)
 
 	require.Equal(t, "default", host["name"])
@@ -100,9 +101,20 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 
 	// The pool's local ordinal 0 is global ordinal 2 (offset = main replicas).
 	const poolGlobalOrdinal = 2
-	advertised := advertisedHostJSONGateway(state, "default", poolGlobalOrdinal, "redpanda.example.com", "redpanda-$POD_ORDINAL.example.com")
+	advertised := advertisedHostJSONGateway(state, "default", poolGlobalOrdinal, "redpanda.example.com", "redpanda-$POD_ORDINAL.example.com", 0)
 	require.Equal(t, "redpanda-2.example.com", advertised["address"],
 		"pool broker must advertise its global-ordinal host, not the local-ordinal (redpanda-0) host")
+
+	// type: tcproute keys the Gateway port off the same global ordinal, so the
+	// pool broker advertises the shared host on base+2, matching its TCPRoute.
+	tcpPort := tcpRouteAdvertisedPort(9200, 9199, poolGlobalOrdinal, true)
+	require.EqualValues(t, 9202, tcpPort)
+	tcpAdvertised := advertisedHostJSONGateway(state, "default", poolGlobalOrdinal, "gw.example.com", "", tcpPort)
+	require.Equal(t, "gw.example.com", tcpAdvertised["address"])
+	require.EqualValues(t, 9202, tcpAdvertised["port"])
+	// A bootstrap-only listener advertises its bootstrap port; other types 0.
+	require.EqualValues(t, 9199, tcpRouteAdvertisedPort(0, 9199, poolGlobalOrdinal, true))
+	require.EqualValues(t, 0, tcpRouteAdvertisedPort(9200, 9199, poolGlobalOrdinal, false))
 
 	// And that advertised host must equal the hostname of the per-broker TLSRoute
 	// rendered for the same global ordinal.

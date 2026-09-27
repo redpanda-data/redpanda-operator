@@ -1038,13 +1038,21 @@ type ExternalListener struct {
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
 	NodePort        *int32  `json:"nodePort,omitempty"`
-	// Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" to route this listener via Gateway API: a TLSRoute is created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service.
-	// +kubebuilder:validation:Enum=tlsroute
+	// Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" (SNI hostnames) or "tcproute" (one Gateway port per broker) to route this listener via Gateway API: routes are created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service.
+	// +kubebuilder:validation:Enum=tlsroute;tcproute
 	Type *string `json:"type,omitempty"`
-	// Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access.
+	// Host is the SNI hostname for the bootstrap TLSRoute, or the advertised host every broker shares for type tcproute.
 	Host *string `json:"host,omitempty"`
-	// HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables.
+	// HostTemplate is a Go template for per-broker TLSRoute SNI hostnames, or an optional per-broker advertised host for type tcproute. Supports $POD_ORDINAL and $POD_NAME variables.
 	HostTemplate *string `json:"hostTemplate,omitempty"`
+	// NetworkPort is the Gateway listener port the bootstrap TCPRoute attaches to (type tcproute).
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	NetworkPort *int32 `json:"networkPort,omitempty"`
+	// BrokerNetworkPortBase is the Gateway listener port of the broker with global ordinal 0; broker i attaches to and advertises base+i (type tcproute; advertisedPorts is ignored).
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	BrokerNetworkPortBase *int32 `json:"brokerNetworkPortBase,omitempty"`
 }
 
 // Admin configures settings for the Admin API listeners.

@@ -228,7 +228,7 @@ echo "passed"`) -}}
 {{- $port = (index $externalVals.advertisedPorts $replicaIndex) -}}
 {{- end -}}
 {{- end -}}
-{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.hostTemplate "")))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $externalVals)))) "r"))))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.hostTemplate "")))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $externalVals)))) "r") ((get (fromJson (include "redpanda.tcpRouteAdvertisedPort" (dict "a" (list ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.brokerNetworkPortBase (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.networkPort (0 | int))))) "r") | int) ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $externalVals)))) "r"))))) "r") | int))))) "r") -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.prefixTemplate "")))) "r") -}}
 {{- if (eq $prefixTemplate "") -}}
@@ -277,7 +277,7 @@ echo "passed"`) -}}
 {{- $port = (index $externalVals.advertisedPorts $replicaIndex) -}}
 {{- end -}}
 {{- end -}}
-{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.hostTemplate "")))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $externalVals)))) "r"))))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $externalName $port $replicaIndex ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.host "")))) "r") (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.hostTemplate "")))) "r") (get (fromJson (include "redpanda.ExternalListener.IsGatewayListener" (dict "a" (list $externalVals)))) "r") ((get (fromJson (include "redpanda.tcpRouteAdvertisedPort" (dict "a" (list ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.brokerNetworkPortBase (0 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.networkPort (0 | int))))) "r") | int) ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "redpanda.ExternalListener.IsTCPRouteListener" (dict "a" (list $externalVals)))) "r"))))) "r") | int))))) "r") -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $externalVals.prefixTemplate "")))) "r") -}}
 {{- if (eq $prefixTemplate "") -}}
@@ -347,11 +347,12 @@ echo "passed"`) -}}
 {{- $host := (index .a 5) -}}
 {{- $hostTemplate := (index .a 6) -}}
 {{- $isGateway := (index .a 7) -}}
+{{- $gatewayPort := (index .a 8) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (and (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r") $isGateway) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "redpanda.advertisedHostJSONGateway" (dict "a" (list $state $name $globalOrdinal $host $hostTemplate)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.advertisedHostJSONGateway" (dict "a" (list $state $name $globalOrdinal $host $hostTemplate $gatewayPort)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $hostMap := (dict "name" $name "address" (get (fromJson (include "redpanda.externalAdvertiseAddress" (dict "a" (list $state)))) "r") "port" $port) -}}
@@ -381,10 +382,14 @@ echo "passed"`) -}}
 {{- $globalOrdinal := (index .a 2) -}}
 {{- $host := (index .a 3) -}}
 {{- $hostTemplate := (index .a 4) -}}
+{{- $gatewayPort := (index .a 5) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $gw := $state.Values.external.gateway -}}
 {{- $port := ((get (fromJson (include "redpanda.GatewayConfig.GatewayAdvertisedPort" (dict "a" (list $gw)))) "r") | int) -}}
+{{- if (gt $gatewayPort (0 | int)) -}}
+{{- $port = $gatewayPort -}}
+{{- end -}}
 {{- if (eq $hostTemplate "") -}}
 {{- $hostTemplate = $host -}}
 {{- end -}}
@@ -396,6 +401,29 @@ echo "passed"`) -}}
 {{- $address := (get (fromJson (include "redpanda.renderBrokerHost" (dict "a" (list $hostTemplate $globalOrdinal $podName)))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (dict "name" $name "address" $address "port" $port)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.tcpRouteAdvertisedPort" -}}
+{{- $base := (index .a 0) -}}
+{{- $networkPort := (index .a 1) -}}
+{{- $globalOrdinal := (index .a 2) -}}
+{{- $isTCPRoute := (index .a 3) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (not $isTCPRoute) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (0 | int)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- if (eq $base (0 | int)) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $networkPort) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" ((add $base ($globalOrdinal | int)) | int)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}

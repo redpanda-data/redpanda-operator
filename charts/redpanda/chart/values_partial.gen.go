@@ -421,17 +421,19 @@ type PartialSASLUser struct {
 }
 
 type PartialExternalListener[T ~string] struct {
-	Enabled              *bool               "json:\"enabled,omitempty\""
-	AdvertisedPorts      []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-	NodePort             *int32              "json:\"nodePort,omitempty\""
-	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
-	Address              *string             "json:\"address,omitempty\""
-	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
-	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
-	Type                 *string             "json:\"type,omitempty\" jsonschema:\"enum=tlsroute\""
-	Host                 *string             "json:\"host,omitempty\""
-	HostTemplate         *string             "json:\"hostTemplate,omitempty\""
+	Enabled               *bool               "json:\"enabled,omitempty\""
+	AdvertisedPorts       []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
+	Port                  *int32              "json:\"port,omitempty\" jsonschema:\"required\""
+	NodePort              *int32              "json:\"nodePort,omitempty\""
+	TLS                   *PartialExternalTLS "json:\"tls,omitempty\""
+	Address               *string             "json:\"address,omitempty\""
+	AuthenticationMethod  *T                  "json:\"authenticationMethod,omitempty\""
+	PrefixTemplate        *string             "json:\"prefixTemplate,omitempty\""
+	Type                  *string             "json:\"type,omitempty\" jsonschema:\"enum=tlsroute,enum=tcproute\""
+	Host                  *string             "json:\"host,omitempty\""
+	HostTemplate          *string             "json:\"hostTemplate,omitempty\""
+	NetworkPort           *int32              "json:\"networkPort,omitempty\""
+	BrokerNetworkPortBase *int32              "json:\"brokerNetworkPortBase,omitempty\""
 }
 
 type PartialTrustStore struct {
