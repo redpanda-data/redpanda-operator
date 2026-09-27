@@ -91,6 +91,8 @@ ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 
 The one piece of history worth keeping is a link: for an upstream bug or API quirk, cite the issue rather than describing the symptom.
 
+**User-facing doc strings are not comments.** Doc comments on CRD types and fields in `operator/api/redpanda/` and `# --` helm-docs comments in chart `values.yaml` files are published verbatim to the CRD reference, `kubectl explain`, the chart READMEs, and docs.redpanda.com. The rules above do not apply to them (`.golangci.yml` already exempts `operator/api/` from laconiccomments); the `doc-strings` skill governs them.
+
 ## Reconciliation: Idempotency & Quiescence
 
 **Read this before changing controller watch triggers or requeue/rate-limit intervals.**
