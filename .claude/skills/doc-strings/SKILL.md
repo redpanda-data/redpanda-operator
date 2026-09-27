@@ -23,6 +23,10 @@ copy). The rules below are the local summary.
 - Describe the YAML key the user types (the `json:` tag), never the Go
   field name. "ClusterSource is a reference to..." documents the wrong
   identifier; the user writes `cluster:`.
+- Open with a verb that says what the field does ("Specifies the ...",
+  "Enables ...", "Defines ..."), the convention across this API. Don't
+  open with the Go field name, which publishes the Go identifier, or with
+  the lowercase YAML key, which reads as a broken Go doc comment.
 - Enumerate legal values in prose even when a
   `+kubebuilder:validation:Enum` marker exists: the marker validates, the
   prose is what users read in `kubectl explain`.
