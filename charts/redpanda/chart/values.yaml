@@ -882,7 +882,7 @@ listeners:
     # @default -- "0.0.0.0"
     address: null
     # -- The port for both internal and external connections to the Admin API.
-    port: 9644
+    port: 9650
     # -- Optional instrumentation hint - https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol
     # appProtocol:
     # -- Optional external access settings.
