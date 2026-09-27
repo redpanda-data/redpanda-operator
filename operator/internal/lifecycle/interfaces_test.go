@@ -25,7 +25,6 @@ import (
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
 	mchandler "sigs.k8s.io/multicluster-runtime/pkg/handler"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
@@ -40,13 +39,13 @@ const (
 
 var (
 	groupVersion  = schema.GroupVersion{Group: testGroup, Version: testVersion}
-	schemeBuilder = &scheme.Builder{GroupVersion: groupVersion}
-	AddToScheme   = schemeBuilder.AddToScheme
+	schemeBuilder = runtime.NewSchemeBuilder(func(s *runtime.Scheme) error {
+		s.AddKnownTypes(groupVersion, &MockCluster{}, &MockClusterList{})
+		metav1.AddToGroupVersion(s, groupVersion)
+		return nil
+	})
+	AddToScheme = schemeBuilder.AddToScheme
 )
-
-func init() {
-	schemeBuilder.Register(&MockCluster{}, &MockClusterList{})
-}
 
 type MockBuilder struct {
 	*mcbuilder.Builder

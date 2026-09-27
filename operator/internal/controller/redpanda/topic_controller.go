@@ -670,7 +670,7 @@ func (r *TopicReconciler) recordErrorEvent(err error, recorder record.EventRecor
 		eventArgs = append(eventArgs, err.Error())
 		recorder.AnnotatedEventf(topic,
 			map[string]string{v2.GroupVersion.Group + revisionPath: topic.ResourceVersion},
-			corev1.EventTypeWarning, eventType, fmt.Sprintf(message+": %s", eventArgs))
+			corev1.EventTypeWarning, eventType, "%s", fmt.Sprintf(message+": %s", eventArgs))
 	}
 	args = append(args, err)
 	return fmt.Errorf(message+": %w", args...) // nolint:goerr113 // That is not dynamic error

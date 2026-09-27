@@ -5048,22 +5048,12 @@ func DeepCopyPodSpecApplyConfiguration(in *corev1ac.PodSpecApplyConfiguration) *
 		out.HostnameOverride = new(string)
 		*out.HostnameOverride = *in.HostnameOverride
 	}
-	if in.WorkloadRef != nil {
-		out.WorkloadRef = new(corev1ac.WorkloadReferenceApplyConfiguration)
+	if in.SchedulingGroup != nil {
+		out.SchedulingGroup = new(corev1ac.PodSchedulingGroupApplyConfiguration)
 
-		if (*in.WorkloadRef).Name != nil {
-			(*out.WorkloadRef).Name = new(string)
-			*(*out.WorkloadRef).Name = *(*in.WorkloadRef).Name
-		}
-
-		if (*in.WorkloadRef).PodGroup != nil {
-			(*out.WorkloadRef).PodGroup = new(string)
-			*(*out.WorkloadRef).PodGroup = *(*in.WorkloadRef).PodGroup
-		}
-
-		if (*in.WorkloadRef).PodGroupReplicaKey != nil {
-			(*out.WorkloadRef).PodGroupReplicaKey = new(string)
-			*(*out.WorkloadRef).PodGroupReplicaKey = *(*in.WorkloadRef).PodGroupReplicaKey
+		if (*in.SchedulingGroup).PodGroupName != nil {
+			(*out.SchedulingGroup).PodGroupName = new(string)
+			*(*out.SchedulingGroup).PodGroupName = *(*in.SchedulingGroup).PodGroupName
 		}
 	}
 	return out

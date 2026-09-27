@@ -2152,6 +2152,15 @@
       },
       "type": "object"
     },
+    "k8s.io.api.core.v1.PodSchedulingGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "podGroupName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "k8s.io.api.core.v1.PodSecurityContext": {
       "additionalProperties": false,
       "properties": {
@@ -2400,6 +2409,9 @@
             }
           ]
         },
+        "schedulingGroup": {
+          "$ref": "#/$defs/k8s.io.api.core.v1.PodSchedulingGroup"
+        },
         "securityContext": {
           "$ref": "#/$defs/k8s.io.api.core.v1.PodSecurityContext"
         },
@@ -2459,9 +2471,6 @@
               "type": "null"
             }
           ]
-        },
-        "workloadRef": {
-          "$ref": "#/$defs/k8s.io.api.core.v1.WorkloadReference"
         }
       },
       "type": "object"
@@ -3264,21 +3273,6 @@
           "type": "boolean"
         },
         "runAsUserName": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "k8s.io.api.core.v1.WorkloadReference": {
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "podGroup": {
-          "type": "string"
-        },
-        "podGroupReplicaKey": {
           "type": "string"
         }
       },
