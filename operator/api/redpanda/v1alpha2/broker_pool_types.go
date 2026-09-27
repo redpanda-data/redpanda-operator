@@ -197,3 +197,10 @@ type EmbeddedBrokerPoolStatus struct {
 	// state.
 	RunningReplicas int32 `json:"runningReplicas,omitempty"`
 }
+
+// SmokeTestSpec is a SmokeTestSpec.
+type SmokeTestSpec struct {
+	// RetentionTime is the retention time.
+	RetentionTime int `json:"retentionTime"`
+	MaxBytes int `json:"maxBytes"`
+}

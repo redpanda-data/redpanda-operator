@@ -1189,3 +1189,7 @@ config:
 
 tests:
   enabled: true
+
+# -- smoke test key
+smokeTestTimeout: 30
+smokeTestUndocumented: true
