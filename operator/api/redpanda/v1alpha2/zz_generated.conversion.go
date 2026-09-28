@@ -1743,6 +1743,14 @@ func v1WeightedPodAffinityTermToV1WeightedPodAffinityTerm(source v1.WeightedPodA
 }
 func v1alpha2GatewayParentReferenceToConsolePartialGatewayParentReference(source GatewayParentReference) v3.PartialGatewayParentReference {
 	var consolePartialGatewayParentReference v3.PartialGatewayParentReference
+	if source.Group != nil {
+		v1Group := v14.Group(*source.Group)
+		consolePartialGatewayParentReference.Group = &v1Group
+	}
+	if source.Kind != nil {
+		v1Kind := v14.Kind(*source.Kind)
+		consolePartialGatewayParentReference.Kind = &v1Kind
+	}
 	pString := source.Name
 	consolePartialGatewayParentReference.Name = &pString
 	if source.Namespace != nil {

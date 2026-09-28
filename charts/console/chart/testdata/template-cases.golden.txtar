@@ -22417,7 +22417,9 @@ spec:
   hostnames:
   - '"console.example.local"'
   parentRefs:
-  - name: '"public-gateway"'
+  - group: null
+    kind: null
+    name: '"public-gateway"'
     namespace: '"networking"'
     sectionName: '"http"'
   rules:

@@ -186,6 +186,8 @@ type PartialIngressHost struct {
 }
 
 type PartialGatewayParentReference struct {
+	Group       *gatewayv1.Group       "json:\"group,omitempty\""
+	Kind        *gatewayv1.Kind        "json:\"kind,omitempty\""
 	Name        *string                "json:\"name,omitempty\""
 	Namespace   *string                "json:\"namespace,omitempty\""
 	SectionName *gatewayv1.SectionName "json:\"sectionName,omitempty\""
