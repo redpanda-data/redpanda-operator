@@ -155,41 +155,58 @@ func TestValidateGatewayListener(t *testing.T) {
 	fresh := func() map[string]map[string]string { return map[string]map[string]string{} }
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp requires `networkPort` (the Gateway listener port of the bootstrap TCPRoute) when type: tcproute",
-		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 0, 9200, 3, true) },
+		func() { validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 0, 9200, 3, true) },
 	)
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp requires `brokerNetworkPortBase` when replicas > 1: TCPRoutes carry no hostname, so each broker needs its own Gateway port",
-		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 3, true) },
+		func() { validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 3, true) },
 	)
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp: broker 1 network port 65536 is outside 1-65535",
-		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 65535, 2, true) },
+		func() {
+			validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 65535, 2, true)
+		},
 	)
 	claimed := fresh()
-	validateTCPRouteListener(claimed, gwA, "redpanda", "http", "tcp", true, 9201, 0, 3, false) // bootstrap-only HTTP
+	validateTCPRouteListener(claimed, 64, gwA, "redpanda", "http", "tcp", true, 9201, 0, 3, false) // bootstrap-only HTTP
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/tcp: broker 1 network port 9201 is already used by http/tcp bootstrap; every TCPRoute needs its own Gateway listener port",
-		func() { validateTCPRouteListener(claimed, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 3, true) },
+		func() {
+			validateTCPRouteListener(claimed, 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 3, true)
+		},
 	)
 	// Another Gateway (another load balancer) can reuse the same port numbers,
 	// e.g. TLS and plaintext Kafka listeners on separate Gateways.
 	claimed = fresh()
 	require.NotPanics(t, func() {
-		validateTCPRouteListener(claimed, gwA, "redpanda", "kafka", "tls", true, 9199, 9200, 3, true)
-		validateTCPRouteListener(claimed, gwB, "redpanda", "kafka", "plain", true, 9199, 9200, 3, true)
+		validateTCPRouteListener(claimed, 64, gwA, "redpanda", "kafka", "tls", true, 9199, 9200, 3, true)
+		validateTCPRouteListener(claimed, 64, gwB, "redpanda", "kafka", "plain", true, 9199, 9200, 3, true)
 	})
 	// 64 ports per Gateway (the Gateway API listener cap): 1 bootstrap + 63
 	// brokers fit, a 64th broker doesn't.
 	require.NotPanics(t, func() {
-		validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 63, true)
+		validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 63, true)
 	})
 	require.PanicsWithValue(t,
-		"external gateway listener kafka/tcp: broker 63 needs more than 64 TCPRoute ports on Gateway infra/gw-a, the Gateway API listener limit; move listeners to another Gateway with per-listener parentRefs",
-		func() { validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 64, true) },
+		"external gateway listener kafka/tcp: broker 63 needs more than 64 TCPRoute ports on Gateway infra/gw-a (external.gateway.maxPorts); move listeners to another Gateway with per-listener parentRefs",
+		func() {
+			validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 64, true)
+		},
+	)
+	// A lower budget for the load balancer behind the Gateway, e.g. an AWS
+	// NLB's 50: 1 bootstrap + 49 brokers fit, a 50th broker doesn't.
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(fresh(), 50, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 49, true)
+	})
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp: broker 49 needs more than 50 TCPRoute ports on Gateway infra/gw-a (external.gateway.maxPorts); move listeners to another Gateway with per-listener parentRefs",
+		func() {
+			validateTCPRouteListener(fresh(), 50, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 50, true)
+		},
 	)
 	require.NotPanics(t, func() {
-		validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 1, true) // single broker
-		validateTCPRouteListener(fresh(), gwA, "redpanda", "kafka", "tcp", false, 0, 0, 3, true)   // not tcproute
+		validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 1, true) // single broker
+		validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", false, 0, 0, 3, true)   // not tcproute
 	})
 }
 

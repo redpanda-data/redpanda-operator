@@ -1573,6 +1573,103 @@ listeners:
         tls:
           cert: default
 
+-- gateway-api-tcproute-listenerset --
+# listenerSet mode: every tcproute listener type shares one Gateway (one load
+# balancer), and the chart renders the Gateway listeners as a ListenerSet the
+# routes attach to by sectionName, so scaling needs no Gateway edit.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+    maxPorts: 50
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+auth:
+  sasl:
+    enabled: true
+    users:
+    - name: admin
+      password: change-me
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          cert: default
+      plain:
+        port: 9095
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9399
+        brokerNetworkPortBase: 9400
+        authenticationMethod: sasl
+        tls:
+          enabled: false
+      mtls:
+        port: 9097
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9599
+        brokerNetworkPortBase: 9600
+        authenticationMethod: mtls_identity
+        tls:
+          cert: default
+          requireClientAuth: true
+  http:
+    external:
+      default:
+        port: 8083
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9299
+        tls:
+          cert: default
+
+-- gateway-api-tcproute-max-ports --
+# Two Kafka listeners of 3 brokers on one Gateway need 8 ports; a budget of 7
+# (for example what is left on a shared load balancer) must fail render.
+# ASSERT-ERROR-CONTAINS ["needs more than 7 TCPRoute ports on Gateway infra/redpanda-shared (external.gateway.maxPorts)"]
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    maxPorts: 7
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+      plain:
+        port: 9095
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9399
+        brokerNetworkPortBase: 9400
+        tls:
+          enabled: false
+
 -- gateway-api-tcproute-port-collision --
 # The HTTP Proxy bootstrap port lands inside the Kafka broker range
 # (9200-9202). Two TCPRoutes on one Gateway listener means only the oldest gets

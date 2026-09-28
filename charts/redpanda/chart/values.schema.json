@@ -1348,6 +1348,12 @@
         "enabled": {
           "type": "boolean"
         },
+        "listenerSet": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.GatewayListenerSet"
+        },
+        "maxPorts": {
+          "type": "integer"
+        },
         "parentRefs": {
           "oneOf": [
             {
@@ -1360,6 +1366,15 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.GatewayListenerSet": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
         }
       },
       "type": "object"

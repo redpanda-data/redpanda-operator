@@ -339,6 +339,8 @@ type PartialGatewayConfig struct {
 	Enabled        *bool                       "json:\"enabled,omitempty\""
 	ParentRefs     []gatewayv1.ParentReference "json:\"parentRefs,omitempty\""
 	AdvertisedPort *int32                      "json:\"advertisedPort,omitempty\""
+	ListenerSet    *PartialGatewayListenerSet  "json:\"listenerSet,omitempty\""
+	MaxPorts       *int32                      "json:\"maxPorts,omitempty\""
 }
 
 type PartialListenerConfig[T ~string] struct {
@@ -418,6 +420,10 @@ type PartialSASLUser struct {
 	Name      *string        "json:\"name,omitempty\""
 	Password  *string        "json:\"password,omitempty\""
 	Mechanism *SASLMechanism "json:\"mechanism,omitempty\""
+}
+
+type PartialGatewayListenerSet struct {
+	Enabled *bool "json:\"enabled,omitempty\""
 }
 
 type PartialExternalListener[T ~string] struct {

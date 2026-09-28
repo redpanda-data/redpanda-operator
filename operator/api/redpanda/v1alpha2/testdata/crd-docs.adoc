@@ -1434,6 +1434,31 @@ GatewayExternalConfig holds configuration for Gateway API-based external access 
 | *`parentRefs`* __ParentReference array__ | Defines which Gateway(s) handle the TLSRoutes. At least one parent reference must be provided. + |  | MinItems: 1 +
 
 | *`advertisedPort`* __integer__ | The port advertised to clients. Defaults to 443. + |  | 
+| *`listenerSet`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewaylistenerset[$$GatewayListenerSet$$]__ | Renders the Gateway listeners that `type: tcproute` routes need as a ListenerSet per parent Gateway, so the Gateway owner only allows ListenerSets (`spec.allowedListeners`) instead of maintaining listeners. Requires Gateway API ListenerSet support. + |  | 
+| *`maxPorts`* __integer__ | Caps this release's `type: tcproute` ports on each Gateway, for example 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit. + |  | Maximum: 64 +
+Minimum: 1 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewaylistenerset"]
+==== GatewayListenerSet
+
+
+
+GatewayListenerSet configures rendering `type: tcproute` Gateway listeners as a ListenerSet.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayexternalconfig[$$GatewayExternalConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enables a ListenerSet per parent Gateway for `type: tcproute` listeners. + |  | 
 |===
 
 

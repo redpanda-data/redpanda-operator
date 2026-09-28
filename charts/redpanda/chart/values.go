@@ -280,6 +280,33 @@ type GatewayConfig struct {
 	// because the actual listening port is configured on the Gateway, not
 	// on the TLSRoute.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+	// ListenerSet renders the Gateway listeners that type: tcproute routes
+	// need as one ListenerSet per parent Gateway, so the Gateway owner only
+	// allows ListenerSets instead of maintaining listeners.
+	ListenerSet *GatewayListenerSet `json:"listenerSet,omitempty"`
+	// MaxPorts caps this release's type: tcproute ports on each Gateway, e.g.
+	// 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit.
+	MaxPorts *int32 `json:"maxPorts,omitempty"`
+}
+
+// GatewayListenerSet configures rendering tcproute Gateway listeners as a
+// ListenerSet.
+type GatewayListenerSet struct {
+	Enabled bool `json:"enabled"`
+}
+
+// IsListenerSetEnabled reports whether tcproute listeners are rendered as a
+// ListenerSet per parent Gateway.
+func (g *GatewayConfig) IsListenerSetEnabled() bool {
+	return g.ListenerSet != nil && g.ListenerSet.Enabled
+}
+
+// GatewayMaxPorts returns the per-Gateway cap on tcproute ports.
+func (g *GatewayConfig) GatewayMaxPorts() int32 {
+	if g.MaxPorts != nil {
+		return *g.MaxPorts
+	}
+	return 64
 }
 
 // IsGatewayRequested returns true when the user asked for Gateway API

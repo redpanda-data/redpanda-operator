@@ -559,6 +559,18 @@ type GatewayExternalConfig struct {
 	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 	// The port advertised to clients. Defaults to 443.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+	// Renders the Gateway listeners that `type: tcproute` routes need as a ListenerSet per parent Gateway, so the Gateway owner only allows ListenerSets (`spec.allowedListeners`) instead of maintaining listeners. Requires Gateway API ListenerSet support.
+	ListenerSet *GatewayListenerSet `json:"listenerSet,omitempty"`
+	// Caps this release's `type: tcproute` ports on each Gateway, for example 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=64
+	MaxPorts *int32 `json:"maxPorts,omitempty"`
+}
+
+// GatewayListenerSet configures rendering `type: tcproute` Gateway listeners as a ListenerSet.
+type GatewayListenerSet struct {
+	// Enables a ListenerSet per parent Gateway for `type: tcproute` listeners.
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.

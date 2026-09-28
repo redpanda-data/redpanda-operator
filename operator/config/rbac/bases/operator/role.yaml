@@ -249,6 +249,7 @@ rules:
   - gateway.networking.k8s.io
   resources:
   - httproutes
+  - listenersets
   - tcproutes
   - tlsroutes
   verbs:

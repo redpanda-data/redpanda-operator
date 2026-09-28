@@ -330,6 +330,15 @@ external:
   #   # Port advertised to clients in broker metadata. Defaults to 443. The actual
   #   # listening port is configured on the Gateway, not on the TLSRoute.
   #   advertisedPort: 9094
+  #   # type: tcproute only. Render the Gateway listeners the TCPRoutes need as a
+  #   # ListenerSet per parent Gateway, so they follow the broker count. The Gateway
+  #   # owner allows ListenerSets from this namespace (spec.allowedListeners) and
+  #   # keeps at least one listener of its own.
+  #   listenerSet:
+  #     enabled: true
+  #   # Caps this release's tcproute ports per Gateway, e.g. 50 behind an AWS NLB.
+  #   # Defaults to 64.
+  #   maxPorts: 50
 
 # -- Log-level settings.
 logging:
