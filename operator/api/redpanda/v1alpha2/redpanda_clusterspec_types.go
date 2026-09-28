@@ -571,6 +571,8 @@ type GatewayExternalConfig struct {
 type GatewayListenerSet struct {
 	// Enables a ListenerSet per parent Gateway for `type: tcproute` listeners.
 	Enabled *bool `json:"enabled,omitempty"`
+	// Also attaches every route to the Gateway listener on the same port (default true), so moving an existing install to a ListenerSet drops no connections: the Gateway's own listeners keep serving until they are removed, then the ListenerSet's take over. Set false once they are gone.
+	AttachToGateway *bool `json:"attachToGateway,omitempty"`
 }
 
 // Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.

@@ -81,14 +81,19 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $listenerSet := (get (fromJson (include "redpanda.GatewayConfig.IsListenerSetEnabled" (dict "a" (list $state.Values.external.gateway)))) "r") -}}
+{{- $gw := $state.Values.external.gateway -}}
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $routes := (coalesce nil) -}}
 {{- range $_, $l := (get (fromJson (include "redpanda.tcpRouteListeners" (dict "a" (list $state)))) "r") -}}
 {{- range $_, $p := (get (fromJson (include "redpanda.tcpRoutePorts" (dict "a" (list $state $pods $l)))) "r") -}}
 {{- $parentRefs := (get (fromJson (include "redpanda.tcpParentRefs" (dict "a" (list $l.ParentRefs ($p.NetworkPort | int))))) "r") -}}
-{{- if $listenerSet -}}
-{{- $parentRefs = (get (fromJson (include "redpanda.listenerSetParentRefs" (dict "a" (list $state $l.ParentRefs $p.Section)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.GatewayConfig.IsListenerSetEnabled" (dict "a" (list $gw)))) "r") -}}
+{{- $lsRefs := (get (fromJson (include "redpanda.listenerSetParentRefs" (dict "a" (list $state $l.ParentRefs $p.Section)))) "r") -}}
+{{- if (get (fromJson (include "redpanda.GatewayConfig.AttachesRoutesToGateway" (dict "a" (list $gw)))) "r") -}}
+{{- $parentRefs = (concat (default (list) $parentRefs) (default (list) $lsRefs)) -}}
+{{- else -}}
+{{- $parentRefs = $lsRefs -}}
+{{- end -}}
 {{- end -}}
 {{- $routes = (concat (default (list) $routes) (list (get (fromJson (include "redpanda.tcpRoute" (dict "a" (list $state $p.Name $parentRefs $p.Backend ($l.Port | int))))) "r"))) -}}
 {{- end -}}

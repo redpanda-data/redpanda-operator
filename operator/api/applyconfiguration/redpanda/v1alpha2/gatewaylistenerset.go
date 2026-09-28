@@ -14,7 +14,8 @@ package v1alpha2
 // GatewayListenerSetApplyConfiguration represents a declarative configuration of the GatewayListenerSet type for use
 // with apply.
 type GatewayListenerSetApplyConfiguration struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	Enabled         *bool `json:"enabled,omitempty"`
+	AttachToGateway *bool `json:"attachToGateway,omitempty"`
 }
 
 // GatewayListenerSetApplyConfiguration constructs a declarative configuration of the GatewayListenerSet type for use with
@@ -28,5 +29,13 @@ func GatewayListenerSet() *GatewayListenerSetApplyConfiguration {
 // If called multiple times, the Enabled field is set to the value of the last call.
 func (b *GatewayListenerSetApplyConfiguration) WithEnabled(value bool) *GatewayListenerSetApplyConfiguration {
 	b.Enabled = &value
+	return b
+}
+
+// WithAttachToGateway sets the AttachToGateway field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the AttachToGateway field is set to the value of the last call.
+func (b *GatewayListenerSetApplyConfiguration) WithAttachToGateway(value bool) *GatewayListenerSetApplyConfiguration {
+	b.AttachToGateway = &value
 	return b
 }

@@ -336,6 +336,10 @@ external:
   #   # keeps at least one listener of its own.
   #   listenerSet:
   #     enabled: true
+  #     # Also attach every route to the Gateway listener on the same port, so moving
+  #     # an existing install to a ListenerSet drops no connections. Set false once the
+  #     # Gateway's own tcproute listeners are removed.
+  #     attachToGateway: true
   #   # Caps this release's tcproute ports per Gateway, e.g. 50 behind an AWS NLB.
   #   # Defaults to 64.
   #   maxPorts: 50

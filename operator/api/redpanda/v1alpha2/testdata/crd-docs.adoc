@@ -1459,6 +1459,7 @@ GatewayListenerSet configures rendering `type: tcproute` Gateway listeners as a 
 |===
 | Field | Description | Default | Validation
 | *`enabled`* __boolean__ | Enables a ListenerSet per parent Gateway for `type: tcproute` listeners. + |  | 
+| *`attachToGateway`* __boolean__ | Also attaches every route to the Gateway listener on the same port (default true), so moving an existing install to a ListenerSet drops no connections: the Gateway's own listeners keep serving until they are removed, then the ListenerSet's take over. Set false once they are gone. + |  | 
 |===
 
 

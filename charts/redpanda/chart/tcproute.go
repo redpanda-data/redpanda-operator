@@ -94,15 +94,23 @@ func TCPRoutes(state *RenderState) []*gatewayv1.TCPRoute {
 		return nil
 	}
 
-	listenerSet := state.Values.External.Gateway.IsListenerSetEnabled()
+	gw := state.Values.External.Gateway
 	pods := gatewayPodNames(state)
 
 	var routes []*gatewayv1.TCPRoute
 	for _, l := range tcpRouteListeners(state) {
 		for _, p := range tcpRoutePorts(state, pods, l) {
 			parentRefs := tcpParentRefs(l.ParentRefs, p.NetworkPort)
-			if listenerSet {
-				parentRefs = listenerSetParentRefs(state, l.ParentRefs, p.Section)
+			if gw.IsListenerSetEnabled() {
+				// Attaching to both makes the move to a ListenerSet graceful:
+				// whichever of the Gateway's listener and the ListenerSet's
+				// entry owns the port serves the route.
+				lsRefs := listenerSetParentRefs(state, l.ParentRefs, p.Section)
+				if gw.AttachesRoutesToGateway() {
+					parentRefs = append(parentRefs, lsRefs...)
+				} else {
+					parentRefs = lsRefs
+				}
 			}
 			routes = append(routes, tcpRoute(state, p.Name, parentRefs, p.Backend, l.Port))
 		}

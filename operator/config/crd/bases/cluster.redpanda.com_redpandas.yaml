@@ -1910,6 +1910,14 @@ spec:
                               instead of maintaining listeners. Requires Gateway API
                               ListenerSet support.'
                             properties:
+                              attachToGateway:
+                                description: 'Also attaches every route to the Gateway
+                                  listener on the same port (default true), so moving
+                                  an existing install to a ListenerSet drops no connections:
+                                  the Gateway''s own listeners keep serving until
+                                  they are removed, then the ListenerSet''s take over.
+                                  Set false once they are gone.'
+                                type: boolean
                               enabled:
                                 description: 'Enables a ListenerSet per parent Gateway
                                   for `type: tcproute` listeners.'
@@ -36786,6 +36794,14 @@ spec:
                               instead of maintaining listeners. Requires Gateway API
                               ListenerSet support.'
                             properties:
+                              attachToGateway:
+                                description: 'Also attaches every route to the Gateway
+                                  listener on the same port (default true), so moving
+                                  an existing install to a ListenerSet drops no connections:
+                                  the Gateway''s own listeners keep serving until
+                                  they are removed, then the ListenerSet''s take over.
+                                  Set false once they are gone.'
+                                type: boolean
                               enabled:
                                 description: 'Enables a ListenerSet per parent Gateway
                                   for `type: tcproute` listeners.'

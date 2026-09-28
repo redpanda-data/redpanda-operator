@@ -1576,7 +1576,8 @@ listeners:
 -- gateway-api-tcproute-listenerset --
 # listenerSet mode: every tcproute listener type shares one Gateway (one load
 # balancer), and the chart renders the Gateway listeners as a ListenerSet the
-# routes attach to by sectionName, so scaling needs no Gateway edit.
+# routes attach to by sectionName, so scaling needs no Gateway edit. By default
+# routes also keep their port-pinned Gateway parentRef (attachToGateway).
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
 external:
@@ -1639,6 +1640,33 @@ listeners:
         networkPort: 9299
         tls:
           cert: default
+
+-- gateway-api-tcproute-listenerset-only --
+# attachToGateway: false: routes attach to the ListenerSet alone, the end state
+# once the Gateway's own tcproute listeners are gone.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+      attachToGateway: false
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          enabled: false
 
 -- gateway-api-tcproute-max-ports --
 # Two Kafka listeners of 3 brokers on one Gateway need 8 ports; a budget of 7

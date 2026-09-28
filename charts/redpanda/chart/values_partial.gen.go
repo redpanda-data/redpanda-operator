@@ -423,7 +423,8 @@ type PartialSASLUser struct {
 }
 
 type PartialGatewayListenerSet struct {
-	Enabled *bool "json:\"enabled,omitempty\""
+	Enabled         *bool "json:\"enabled,omitempty\""
+	AttachToGateway *bool "json:\"attachToGateway,omitempty\""
 }
 
 type PartialExternalListener[T ~string] struct {

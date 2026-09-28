@@ -293,12 +293,23 @@ type GatewayConfig struct {
 // ListenerSet.
 type GatewayListenerSet struct {
 	Enabled bool `json:"enabled"`
+	// AttachToGateway also attaches every route to the Gateway listener on the
+	// same port (default true). Moving an existing install to a ListenerSet then
+	// drops nothing: the Gateway's own listeners keep serving until removed, and
+	// the ListenerSet's take over. Set false once they are gone.
+	AttachToGateway *bool `json:"attachToGateway,omitempty"`
 }
 
 // IsListenerSetEnabled reports whether tcproute listeners are rendered as a
 // ListenerSet per parent Gateway.
 func (g *GatewayConfig) IsListenerSetEnabled() bool {
 	return g.ListenerSet != nil && g.ListenerSet.Enabled
+}
+
+// AttachesRoutesToGateway reports whether ListenerSet-mode routes keep their
+// Gateway parentRef too.
+func (g *GatewayConfig) AttachesRoutesToGateway() bool {
+	return g.ListenerSet == nil || g.ListenerSet.AttachToGateway == nil || *g.ListenerSet.AttachToGateway
 }
 
 // GatewayMaxPorts returns the per-Gateway cap on tcproute ports.
