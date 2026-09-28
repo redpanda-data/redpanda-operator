@@ -460,6 +460,8 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		// we sync all our non pool resources first so that they're in-place
 		// prior to us scaling up our node pools
 		r.reconcileResources,
+		// report whether the Gateway API routes just synced are accepted
+		r.reconcileExternalRoutes,
 		// next we sync up all of our pools themselves
 		r.reconcilePools,
 		// now we memoize the admin client onto the state

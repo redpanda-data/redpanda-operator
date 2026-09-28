@@ -174,6 +174,46 @@ func TestCluster(t *testing.T) {
 				status.SetConfigurationApplied(ClusterConfigurationAppliedReasonTerminalError, "reason")
 			},
 		},
+		"ExternalRoutesAccepted/Accepted": {
+			condition: ClusterExternalRoutesAccepted,
+			reason:    string(ClusterExternalRoutesAcceptedReasonAccepted),
+			expected:  metav1.ConditionTrue,
+			setFn: func(status *ClusterStatus) {
+				status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+			},
+		},
+		"ExternalRoutesAccepted/NotAccepted": {
+			condition: ClusterExternalRoutesAccepted,
+			reason:    string(ClusterExternalRoutesAcceptedReasonNotAccepted),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonNotAccepted, "reason")
+			},
+		},
+		"ExternalRoutesAccepted/APIMissing": {
+			condition: ClusterExternalRoutesAccepted,
+			reason:    string(ClusterExternalRoutesAcceptedReasonAPIMissing),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAPIMissing, "reason")
+			},
+		},
+		"ExternalRoutesAccepted/Error": {
+			condition: ClusterExternalRoutesAccepted,
+			reason:    string(ClusterExternalRoutesAcceptedReasonError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonError, "reason")
+			},
+		},
+		"ExternalRoutesAccepted/TerminalError": {
+			condition: ClusterExternalRoutesAccepted,
+			reason:    string(ClusterExternalRoutesAcceptedReasonTerminalError),
+			expected:  metav1.ConditionFalse,
+			setFn: func(status *ClusterStatus) {
+				status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonTerminalError, "reason")
+			},
+		},
 	} {
 		tt := tt
 		t.Run(name, func(t *testing.T) {
@@ -221,6 +261,9 @@ func TestCluster(t *testing.T) {
 			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
 
 			status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionFalse, conditionReason.falseReason, status.getConditions(0))
+
+			status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
 			assertConditionStatusReason(t, conditionReason.condition, metav1.ConditionTrue, conditionReason.trueReason, status.getConditions(0))
 		})
 	}
@@ -239,6 +282,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
 				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+				},
 			},
 		},
 		"Transient Error: Error, Condition: Healthy": {
@@ -249,6 +295,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
 				},
 			},
 		},
@@ -261,6 +310,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
 				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+				},
 			},
 		},
 		"Transient Error: Error, Condition: ResourcesSynced": {
@@ -271,6 +323,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
 				},
 			},
 		},
@@ -283,6 +338,23 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
 				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
 				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+				},
+			},
+		},
+		"Transient Error: Error, Condition: ExternalRoutesAccepted": {
+			setTransientErrFn: func(status *ClusterStatus) {
+				status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonError, "reason")
+			},
+			setConditionReasons: []setClusterFunc{
+				func(status *ClusterStatus) { status.SetReady(ClusterReadyReasonReady, "reason") },
+				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
+				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
+				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
 			},
 		},
 	} {
@@ -313,6 +385,9 @@ func TestCluster(t *testing.T) {
 		},
 		"Terminal Error: TerminalError, Condition: ConfigurationApplied": func(status *ClusterStatus) {
 			status.SetConfigurationApplied(ClusterConfigurationAppliedReasonTerminalError, "reason")
+		},
+		"Terminal Error: TerminalError, Condition: ExternalRoutesAccepted": func(status *ClusterStatus) {
+			status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonTerminalError, "reason")
 		},
 	} {
 		setFn := setFn
@@ -349,6 +424,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
 				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+				},
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: Ready": {
@@ -362,6 +440,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
+				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
 				},
 			},
 		},
@@ -379,6 +460,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) {
 					status.SetConfigurationApplied(ClusterConfigurationAppliedReasonApplied, "reason")
 				},
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+				},
 			},
 		},
 		"Rollup Conditions: Stable, False Condition: ConfigurationApplied": {
@@ -393,6 +477,9 @@ func TestCluster(t *testing.T) {
 				func(status *ClusterStatus) { status.SetHealthy(ClusterHealthyReasonHealthy, "reason") },
 				func(status *ClusterStatus) { status.SetLicenseValid(ClusterLicenseValidReasonValid, "reason") },
 				func(status *ClusterStatus) { status.SetResourcesSynced(ClusterResourcesSyncedReasonSynced, "reason") },
+				func(status *ClusterStatus) {
+					status.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedReasonAccepted, "reason")
+				},
 			},
 		},
 	} {
