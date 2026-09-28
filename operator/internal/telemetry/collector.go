@@ -28,7 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -283,6 +285,43 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 		c.aggregateConsoles(payload, consoles.Items)
 	}
 
+	// Gateway API routes the operator rendered, by what they attach to.
+	var tcpRoutes gatewayv1.TCPRouteList
+	if ok, err := c.list(ctx, &tcpRoutes); err != nil {
+		return nil, err
+	} else if ok {
+		for i := range tcpRoutes.Items {
+			aggregateRoute(&payload.GatewayRoutes.TCPRoute, &tcpRoutes.Items[i], tcpRoutes.Items[i].Spec.ParentRefs)
+		}
+	}
+	var tlsRoutes gatewayv1.TLSRouteList
+	if ok, err := c.list(ctx, &tlsRoutes); err != nil {
+		return nil, err
+	} else if ok {
+		for i := range tlsRoutes.Items {
+			aggregateRoute(&payload.GatewayRoutes.TLSRoute, &tlsRoutes.Items[i], tlsRoutes.Items[i].Spec.ParentRefs)
+		}
+	}
+	var httpRoutes gatewayv1.HTTPRouteList
+	if ok, err := c.list(ctx, &httpRoutes); err != nil {
+		return nil, err
+	} else if ok {
+		for i := range httpRoutes.Items {
+			aggregateRoute(&payload.GatewayRoutes.HTTPRoute, &httpRoutes.Items[i], httpRoutes.Items[i].Spec.ParentRefs)
+		}
+	}
+	var listenerSets metav1.PartialObjectMetadataList
+	listenerSets.SetGroupVersionKind(schema.GroupVersionKind{Group: gatewayv1.GroupName, Version: "v1", Kind: "ListenerSetList"})
+	if ok, err := c.list(ctx, &listenerSets); err != nil {
+		return nil, err
+	} else if ok {
+		for i := range listenerSets.Items {
+			if ownedByOperator(&listenerSets.Items[i]) {
+				payload.GatewayRoutes.ListenerSets++
+			}
+		}
+	}
+
 	// CSI drivers come from a PVC *annotation*, so a metadata-only list
 	// suffices — no need to load every Redpanda PVC's spec/status.
 	var pvcs metav1.PartialObjectMetadataList
@@ -516,6 +555,40 @@ func (c *Collector) aggregateConsoles(payload *Payload, items []redpandav1alpha2
 			payload.Console.Ingress++
 		}
 	}
+}
+
+// aggregateRoute counts an operator-rendered route by the kinds of its
+// parentRefs; routes the operator doesn't control are skipped.
+func aggregateRoute(into *RouteAttachments, route metav1.Object, refs []gatewayv1.ParentReference) {
+	if !ownedByOperator(route) {
+		return
+	}
+	var gateway, listenerSet bool
+	for _, ref := range refs {
+		switch ptr.Deref(ref.Kind, "Gateway") {
+		case "Gateway":
+			gateway = true
+		case "ListenerSet":
+			listenerSet = true
+		}
+	}
+	into.Total++
+	if gateway {
+		into.Gateway++
+	}
+	if listenerSet {
+		into.ListenerSet++
+	}
+	if gateway && listenerSet {
+		into.Both++
+	}
+}
+
+// ownedByOperator reports whether obj is controlled by a cluster.redpanda.com
+// resource (Redpanda, Console), as everything the operator renders is.
+func ownedByOperator(obj metav1.Object) bool {
+	ref := metav1.GetControllerOfNoCopy(obj)
+	return ref != nil && schema.FromAPIVersionAndKind(ref.APIVersion, ref.Kind).Group == redpandav1alpha2.SchemeGroupVersion.Group
 }
 
 // aggregateBrokers folds the Broker CR fleet into the payload: the CR count,

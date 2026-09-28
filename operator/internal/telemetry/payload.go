@@ -168,6 +168,18 @@ type Payload struct {
 		Ingress int `json:"ingressEnabled"`
 	} `json:"console"`
 
+	// GatewayRoutes counts the Gateway API routes the operator rendered
+	// (Redpanda TCPRoutes/TLSRoutes, Console HTTPRoutes) by what they attach
+	// to, to track ListenerSet adoption. A route attached to both, the
+	// migration path, counts in Gateway, ListenerSet and Both.
+	GatewayRoutes struct {
+		TCPRoute  RouteAttachments `json:"tcpRoute"`
+		TLSRoute  RouteAttachments `json:"tlsRoute"`
+		HTTPRoute RouteAttachments `json:"httpRoute"`
+		// ListenerSets counts the ListenerSets the operator rendered.
+		ListenerSets int `json:"listenerSets"`
+	} `json:"gatewayRoutes"`
+
 	CRDCount int `json:"crdCount"`
 	// Features reports enabled operator-shape flags (controllers, webhook, leader
 	// election, cloud-secrets provider, PVC Unbinder, etc.). PVC Unbinder usage
@@ -243,4 +255,13 @@ type ConnectStats struct {
 	// digest) is reported — never the repository, which can carry internal
 	// registry hostnames or team names. Anonymous.
 	Versions []string `json:"versions,omitempty"`
+}
+
+// RouteAttachments counts one kind of operator-rendered route by the kinds of
+// its parentRefs.
+type RouteAttachments struct {
+	Total       int `json:"total"`
+	Gateway     int `json:"gateway"`
+	ListenerSet int `json:"listenerSet"`
+	Both        int `json:"both"`
 }

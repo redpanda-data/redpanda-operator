@@ -301,6 +301,42 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, map[string]bool{"pvcUnbinder": true}, payload.Features)
 }
 
+// TestCollect_GatewayRouteAttachments counts only operator-owned routes, by
+// whether they attach to a Gateway, a ListenerSet, or both (the migration path).
+func TestCollect_GatewayRouteAttachments(t *testing.T) {
+	scheme := testScheme(t)
+	require.NoError(t, gatewayv1.Install(scheme))
+
+	rp := ownedBy(redpandaGVK, "rp", "rp-uid")
+	console := ownedBy(redpandav1alpha2.SchemeGroupVersion.WithKind("Console"), "console", "console-uid")
+	gw := gatewayv1.ParentReference{Name: "gw", Port: ptr.To(gatewayv1.PortNumber(9200))}
+	ls := gatewayv1.ParentReference{Kind: ptr.To(gatewayv1.Kind("ListenerSet")), Name: "rp-infra-gw", SectionName: ptr.To(gatewayv1.SectionName("kafka-default-0"))}
+	meta := func(name string, owners []metav1.OwnerReference) metav1.ObjectMeta {
+		return metav1.ObjectMeta{Name: name, Namespace: "redpanda", OwnerReferences: owners}
+	}
+	tcp := func(name string, owners []metav1.OwnerReference, refs ...gatewayv1.ParentReference) *gatewayv1.TCPRoute {
+		return &gatewayv1.TCPRoute{ObjectMeta: meta(name, owners), Spec: gatewayv1.TCPRouteSpec{CommonRouteSpec: gatewayv1.CommonRouteSpec{ParentRefs: refs}}}
+	}
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		tcp("gateway-only", rp, gw),
+		tcp("listenerset-only", rp, ls),
+		tcp("both", rp, gw, ls),
+		tcp("not-ours", nil, gw), // someone else's route
+		&gatewayv1.TLSRoute{ObjectMeta: meta("tls", rp), Spec: gatewayv1.TLSRouteSpec{CommonRouteSpec: gatewayv1.CommonRouteSpec{ParentRefs: []gatewayv1.ParentReference{{Name: "gw"}}}}},
+		&gatewayv1.HTTPRoute{ObjectMeta: meta("console", console), Spec: gatewayv1.HTTPRouteSpec{CommonRouteSpec: gatewayv1.CommonRouteSpec{ParentRefs: []gatewayv1.ParentReference{ls}}}},
+		&gatewayv1.ListenerSet{ObjectMeta: meta("rp-infra-gw", rp)},
+		&gatewayv1.ListenerSet{ObjectMeta: meta("not-ours", nil)},
+	).Build()
+
+	payload, err := (&Collector{Reader: c}).Collect(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, RouteAttachments{Total: 3, Gateway: 2, ListenerSet: 2, Both: 1}, payload.GatewayRoutes.TCPRoute)
+	require.Equal(t, RouteAttachments{Total: 1, Gateway: 1}, payload.GatewayRoutes.TLSRoute)
+	require.Equal(t, RouteAttachments{Total: 1, ListenerSet: 1}, payload.GatewayRoutes.HTTPRoute)
+	require.Equal(t, 1, payload.GatewayRoutes.ListenerSets)
+}
+
 func TestCollect_KubeVersionBestEffort(t *testing.T) {
 	scheme := testScheme(t)
 	c := fake.NewClientBuilder().WithScheme(scheme).Build()
