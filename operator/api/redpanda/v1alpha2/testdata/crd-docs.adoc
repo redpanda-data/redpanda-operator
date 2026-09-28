@@ -1289,10 +1289,18 @@ internal and external listeners. However, it is ignored when specified +
 on internal listeners. + |  | 
 | *`advertisedPorts`* __integer array__ | Specifies the network port that the external Service listens on. + |  | 
 | *`nodePort`* __integer__ |  |  | 
-| *`type`* __string__ | Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" to route this listener via Gateway API: a TLSRoute is created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service. + |  | Enum: [tlsroute] +
+| *`type`* __string__ | Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" (SNI hostnames) or "tcproute" (one Gateway port per broker) to route this listener via Gateway API: routes are created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service. + |  | Enum: [tlsroute tcproute] +
 
-| *`host`* __string__ | Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access. + |  | 
-| *`hostTemplate`* __string__ | HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables. + |  | 
+| *`host`* __string__ | Host is the SNI hostname for the bootstrap TLSRoute, or the advertised host every broker shares for type tcproute. + |  | 
+| *`hostTemplate`* __string__ | HostTemplate is a Go template for per-broker TLSRoute SNI hostnames, or an optional per-broker advertised host for type tcproute. Supports $POD_ORDINAL and $POD_NAME variables. + |  | 
+| *`networkPort`* __integer__ | NetworkPort is the Gateway listener port the bootstrap TCPRoute attaches to (type tcproute). + |  | Maximum: 65535 +
+Minimum: 1 +
+
+| *`brokerNetworkPortBase`* __integer__ | BrokerNetworkPortBase is the Gateway listener port of the broker with global ordinal 0; broker i attaches to and advertises base+i (type tcproute; advertisedPorts is ignored). + |  | Maximum: 65535 +
+Minimum: 1 +
+
+| *`parentRefs`* __ParentReference array__ | ParentRefs overrides `external.gateway.parentRefs` for this listener's routes, for example to put TLS and plaintext listeners on separate Gateways (and so separate load balancers). + |  | MaxItems: 32 +
+
 |===
 
 
@@ -1426,6 +1434,32 @@ GatewayExternalConfig holds configuration for Gateway API-based external access 
 | *`parentRefs`* __ParentReference array__ | Defines which Gateway(s) handle the TLSRoutes. At least one parent reference must be provided. + |  | MinItems: 1 +
 
 | *`advertisedPort`* __integer__ | The port advertised to clients. Defaults to 443. + |  | 
+| *`listenerSet`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewaylistenerset[$$GatewayListenerSet$$]__ | Renders the Gateway listeners that `type: tcproute` routes need as a ListenerSet per parent Gateway, so the Gateway owner only allows ListenerSets (`spec.allowedListeners`) instead of maintaining listeners. Requires Gateway API ListenerSet support. + |  | 
+| *`maxPorts`* __integer__ | Caps this release's `type: tcproute` ports on each Gateway, for example 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit. + |  | Maximum: 64 +
+Minimum: 1 +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewaylistenerset"]
+==== GatewayListenerSet
+
+
+
+GatewayListenerSet configures rendering `type: tcproute` Gateway listeners as a ListenerSet.
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-gatewayexternalconfig[$$GatewayExternalConfig$$]
+****
+
+[cols="20a,50a,15a,15a", options="header"]
+|===
+| Field | Description | Default | Validation
+| *`enabled`* __boolean__ | Enables a ListenerSet per parent Gateway for `type: tcproute` listeners. + |  | 
+| *`attachToGateway`* __boolean__ | Also attaches every route to the Gateway listener on the same port (default true), so moving an existing install to a ListenerSet drops no connections: the Gateway's own listeners keep serving until they are removed, then the ListenerSet's take over. Set false once they are gone. + |  | 
 |===
 
 

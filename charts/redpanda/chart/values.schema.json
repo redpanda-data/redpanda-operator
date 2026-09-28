@@ -1071,6 +1071,9 @@
             }
           ]
         },
+        "brokerNetworkPortBase": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -1080,8 +1083,24 @@
         "hostTemplate": {
           "type": "string"
         },
+        "networkPort": {
+          "type": "integer"
+        },
         "nodePort": {
           "type": "integer"
+        },
+        "parentRefs": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/sigs.k8s.io.gateway-api.apis.v1.ParentReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "port": {
           "type": "integer"
@@ -1094,7 +1113,8 @@
         },
         "type": {
           "enum": [
-            "tlsroute"
+            "tlsroute",
+            "tcproute"
           ],
           "type": "string"
         }
@@ -1146,6 +1166,9 @@
             }
           ]
         },
+        "brokerNetworkPortBase": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -1155,8 +1178,24 @@
         "hostTemplate": {
           "type": "string"
         },
+        "networkPort": {
+          "type": "integer"
+        },
         "nodePort": {
           "type": "integer"
+        },
+        "parentRefs": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/sigs.k8s.io.gateway-api.apis.v1.ParentReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "port": {
           "type": "integer"
@@ -1169,7 +1208,8 @@
         },
         "type": {
           "enum": [
-            "tlsroute"
+            "tlsroute",
+            "tcproute"
           ],
           "type": "string"
         }
@@ -1216,6 +1256,9 @@
             }
           ]
         },
+        "brokerNetworkPortBase": {
+          "type": "integer"
+        },
         "enabled": {
           "type": "boolean"
         },
@@ -1225,8 +1268,24 @@
         "hostTemplate": {
           "type": "string"
         },
+        "networkPort": {
+          "type": "integer"
+        },
         "nodePort": {
           "type": "integer"
+        },
+        "parentRefs": {
+          "oneOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/sigs.k8s.io.gateway-api.apis.v1.ParentReference"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "port": {
           "type": "integer"
@@ -1239,7 +1298,8 @@
         },
         "type": {
           "enum": [
-            "tlsroute"
+            "tlsroute",
+            "tcproute"
           ],
           "type": "string"
         }
@@ -1288,6 +1348,12 @@
         "enabled": {
           "type": "boolean"
         },
+        "listenerSet": {
+          "$ref": "#/$defs/github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.GatewayListenerSet"
+        },
+        "maxPorts": {
+          "type": "integer"
+        },
         "parentRefs": {
           "oneOf": [
             {
@@ -1300,6 +1366,18 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "type": "object"
+    },
+    "github.com.redpanda-data.redpanda-operator.charts.redpanda.v25.chart.GatewayListenerSet": {
+      "additionalProperties": false,
+      "properties": {
+        "attachToGateway": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
         }
       },
       "type": "object"

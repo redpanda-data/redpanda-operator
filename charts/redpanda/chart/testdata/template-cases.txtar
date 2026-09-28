@@ -1545,3 +1545,272 @@ listeners:
           requireClientAuth: true
         advertisedPorts:
           - 9094
+-- gateway-api-tcproute --
+# Gateway API TCPRoute-based external access: brokers share one advertised host
+# and are told apart by Gateway port. Each route pins its parentRef to its own
+# port (the configured sectionName is dropped), brokers advertise
+# gw.example.com:9200+i, and the HTTP Proxy listener is bootstrap-only.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: redpanda-tcp
+      namespace: infra
+      sectionName: ignored-by-tcproute
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          cert: default
+  http:
+    external:
+      default:
+        port: 8083
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9299
+        tls:
+          cert: default
+
+-- gateway-api-tcproute-split-gateways --
+# TLS and plaintext Kafka listeners on separate Gateways via per-listener
+# parentRefs, so each gets a load balancer's full port budget. The plaintext
+# listener reuses the TLS listener's port numbers on its own Gateway.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: redpanda-tcp-tls
+      namespace: infra
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+auth:
+  sasl:
+    enabled: true
+    users:
+    - name: admin
+      password: change-me
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: tls.gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          cert: default
+      plain:
+        port: 9095
+        type: tcproute
+        host: plain.gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        authenticationMethod: sasl
+        parentRefs:
+        - name: redpanda-tcp-plain
+          namespace: infra
+        tls:
+          enabled: false
+  http:
+    external:
+      default:
+        port: 8083
+        type: tcproute
+        host: tls.gw.example.com
+        networkPort: 9299
+        tls:
+          cert: default
+
+-- gateway-api-tcproute-listenerset --
+# listenerSet mode: every tcproute listener type shares one Gateway (one load
+# balancer), and the chart renders the Gateway listeners as a ListenerSet the
+# routes attach to by sectionName, so scaling needs no Gateway edit. By default
+# routes also keep their port-pinned Gateway parentRef (attachToGateway).
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+    maxPorts: 50
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+auth:
+  sasl:
+    enabled: true
+    users:
+    - name: admin
+      password: change-me
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          cert: default
+      plain:
+        port: 9095
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9399
+        brokerNetworkPortBase: 9400
+        authenticationMethod: sasl
+        tls:
+          enabled: false
+      mtls:
+        port: 9097
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9599
+        brokerNetworkPortBase: 9600
+        authenticationMethod: mtls_identity
+        tls:
+          cert: default
+          requireClientAuth: true
+  http:
+    external:
+      default:
+        port: 8083
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9299
+        tls:
+          cert: default
+
+-- gateway-api-tcproute-listenerset-only --
+# attachToGateway: false: routes attach to the ListenerSet alone, the end state
+# once the Gateway's own tcproute listeners are gone.
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+      attachToGateway: false
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          enabled: false
+
+-- gateway-api-tcproute-max-ports --
+# Two Kafka listeners of 3 brokers on one Gateway need 8 ports; a budget of 7
+# (for example what is left on a shared load balancer) must fail render.
+# ASSERT-ERROR-CONTAINS ["needs more than 7 TCPRoute ports on Gateway infra/redpanda-shared (external.gateway.maxPorts)"]
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    maxPorts: 7
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+      plain:
+        port: 9095
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9399
+        brokerNetworkPortBase: 9400
+        tls:
+          enabled: false
+
+-- gateway-api-tcproute-port-collision --
+# The HTTP Proxy bootstrap port lands inside the Kafka broker range
+# (9200-9202). Two TCPRoutes on one Gateway listener means only the oldest gets
+# traffic, so render must fail.
+# ASSERT-ERROR-CONTAINS ["network port 9201 is already used by kafka/default broker 1"]
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: redpanda-tcp
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+  http:
+    external:
+      default:
+        port: 8083
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9201
+
+-- gateway-api-tcproute-missing-network-port --
+# type: tcproute without networkPort has no Gateway listener to attach the
+# bootstrap route to; render must fail.
+# ASSERT-ERROR-CONTAINS ["requires `networkPort`"]
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    parentRefs:
+    - name: redpanda-tcp
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tcproute
+        host: gw.example.com
+        brokerNetworkPortBase: 9200

@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
@@ -95,7 +96,7 @@ func TestValidateGatewayListener(t *testing.T) {
 		require.PanicsWithValue(t,
 			"external gateway listener "+tag+"/default requires `host` (the bootstrap SNI hostname) when type: tlsroute",
 			func() {
-				validateGatewayListener(tag, "default", true /*isGateway*/, true /*enabled*/, true /*gatewayConfigured*/, "" /*host*/, "", 1, tag == "kafka")
+				validateGatewayListener(tag, "default", "tlsroute" /*listenerType*/, true /*enabled*/, true /*gatewayConfigured*/, "" /*host*/, "", 1, tag == "kafka")
 			},
 			"%s: missing host must fail", tag,
 		)
@@ -107,7 +108,7 @@ func TestValidateGatewayListener(t *testing.T) {
 	require.PanicsWithValue(t,
 		"external listener kafka/default sets type: tlsroute but external.gateway is not enabled with at least one parentRef; refusing to fall back to a NodePort/LoadBalancer Service. Set external.gateway.enabled: true and external.gateway.parentRefs",
 		func() {
-			validateGatewayListener("kafka", "default", true /*isGateway*/, true /*enabled*/, false /*gatewayConfigured*/, "redpanda.example.com", "", 1, true)
+			validateGatewayListener("kafka", "default", "tlsroute" /*listenerType*/, true /*enabled*/, false /*gatewayConfigured*/, "redpanda.example.com", "", 1, true)
 		},
 	)
 
@@ -116,23 +117,96 @@ func TestValidateGatewayListener(t *testing.T) {
 	require.PanicsWithValue(t,
 		"external gateway listener kafka/default requires `hostTemplate` when replicas > 1: Kafka clients reconnect to individual brokers by SNI, so each broker needs its own per-broker hostname",
 		func() {
-			validateGatewayListener("kafka", "default", true, true, true, "redpanda.example.com", "", 3 /*replicas*/, true)
+			validateGatewayListener("kafka", "default", "tlsroute", true, true, "redpanda.example.com", "", 3 /*replicas*/, true)
 		},
 	)
 
 	// These must NOT panic:
 	require.NotPanics(t, func() {
 		// Kafka, single broker, no hostTemplate — bootstrap-only is fine.
-		validateGatewayListener("kafka", "default", true, true, true, "redpanda.example.com", "", 1, true)
+		validateGatewayListener("kafka", "default", "tlsroute", true, true, "redpanda.example.com", "", 1, true)
 		// HTTP/Admin/Schema, multi-broker, no hostTemplate — load-balanceable,
 		// bootstrap-only is a valid configuration.
-		validateGatewayListener("http", "default", true, true, true, "proxy.example.com", "", 3, false)
-		validateGatewayListener("admin", "default", true, true, true, "admin.example.com", "", 3, false)
-		validateGatewayListener("schema", "default", true, true, true, "sr.example.com", "", 3, false)
+		validateGatewayListener("http", "default", "tlsroute", true, true, "proxy.example.com", "", 3, false)
+		validateGatewayListener("admin", "default", "tlsroute", true, true, "admin.example.com", "", 3, false)
+		validateGatewayListener("schema", "default", "tlsroute", true, true, "sr.example.com", "", 3, false)
 		// Not a gateway listener / disabled — skipped entirely (global gateway
 		// state is irrelevant when the listener isn't a gateway listener).
-		validateGatewayListener("kafka", "default", false, true, false, "", "", 3, true)
-		validateGatewayListener("kafka", "default", true, false, false, "", "", 3, true)
+		validateGatewayListener("kafka", "default", "", true, false, "", "", 3, true)
+		validateGatewayListener("kafka", "default", "tlsroute", false, false, "", "", 3, true)
+	})
+
+	// type: tcproute: host is the shared advertised host; per-broker SNI hosts
+	// don't apply, so a multi-broker Kafka listener needs no hostTemplate.
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp requires `host` (the advertised host every broker shares) when type: tcproute",
+		func() {
+			validateGatewayListener("kafka", "tcp", "tcproute", true, true, "", "", 3, true)
+		},
+	)
+	require.NotPanics(t, func() {
+		validateGatewayListener("kafka", "tcp", "tcproute", true, true, "gw.example.com", "", 3, true)
+	})
+
+	// TCPRoute ports: bootstrap and (multi-broker Kafka) per-broker ports are
+	// required, in range, and unique per Gateway across every tcproute listener.
+	gwA := []gatewayv1.ParentReference{{Name: "gw-a", Namespace: ptr.To(gatewayv1.Namespace("infra"))}}
+	gwB := []gatewayv1.ParentReference{{Name: "gw-b"}}
+	fresh := func() map[string]map[string]string { return map[string]map[string]string{} }
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp requires `networkPort` (the Gateway listener port of the bootstrap TCPRoute) when type: tcproute",
+		func() { validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 0, 9200, 3, true) },
+	)
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp requires `brokerNetworkPortBase` when replicas > 1: TCPRoutes carry no hostname, so each broker needs its own Gateway port",
+		func() { validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 3, true) },
+	)
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp: broker 1 network port 65536 is outside 1-65535",
+		func() {
+			validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 65535, 2, true)
+		},
+	)
+	claimed := fresh()
+	validateTCPRouteListener(claimed, 64, gwA, "redpanda", "http", "tcp", true, 9201, 0, 3, false) // bootstrap-only HTTP
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp: broker 1 network port 9201 is already used by http/tcp bootstrap; every TCPRoute needs its own Gateway listener port",
+		func() {
+			validateTCPRouteListener(claimed, 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 3, true)
+		},
+	)
+	// Another Gateway (another load balancer) can reuse the same port numbers,
+	// e.g. TLS and plaintext Kafka listeners on separate Gateways.
+	claimed = fresh()
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(claimed, 64, gwA, "redpanda", "kafka", "tls", true, 9199, 9200, 3, true)
+		validateTCPRouteListener(claimed, 64, gwB, "redpanda", "kafka", "plain", true, 9199, 9200, 3, true)
+	})
+	// 64 ports per Gateway (the Gateway API listener cap): 1 bootstrap + 63
+	// brokers fit, a 64th broker doesn't.
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 63, true)
+	})
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp: broker 63 needs more than 64 TCPRoute ports on Gateway infra/gw-a (external.gateway.maxPorts); move listeners to another Gateway with per-listener parentRefs",
+		func() {
+			validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 64, true)
+		},
+	)
+	// A lower budget for the load balancer behind the Gateway, e.g. an AWS
+	// NLB's 50: 1 bootstrap + 49 brokers fit, a 50th broker doesn't.
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(fresh(), 50, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 49, true)
+	})
+	require.PanicsWithValue(t,
+		"external gateway listener kafka/tcp: broker 49 needs more than 50 TCPRoute ports on Gateway infra/gw-a (external.gateway.maxPorts); move listeners to another Gateway with per-listener parentRefs",
+		func() {
+			validateTCPRouteListener(fresh(), 50, gwA, "redpanda", "kafka", "tcp", true, 9199, 9200, 50, true)
+		},
+	)
+	require.NotPanics(t, func() {
+		validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", true, 9199, 0, 1, true) // single broker
+		validateTCPRouteListener(fresh(), 64, gwA, "redpanda", "kafka", "tcp", false, 0, 0, 3, true)   // not tcproute
 	})
 }
 

@@ -489,6 +489,7 @@ func secretConfiguratorKafkaConfig(state *RenderState, sts Statefulset, ordinalO
 					ptr.Deref(externalVals.Host, ""),
 					ptr.Deref(externalVals.HostTemplate, ""),
 					externalVals.IsGatewayListener(),
+					tcpRouteAdvertisedPort(ptr.Deref(externalVals.BrokerNetworkPortBase, 0), ptr.Deref(externalVals.NetworkPort, 0), ordinalOffset+replicaIndex, externalVals.IsTCPRouteListener()),
 				)
 				// XXX: the original code used the stringified `host` value as a template
 				// for re-expansion; however it was impossible to make this work usefully,
@@ -574,6 +575,7 @@ func secretConfiguratorHTTPConfig(state *RenderState, sts Statefulset, ordinalOf
 					ptr.Deref(externalVals.Host, ""),
 					ptr.Deref(externalVals.HostTemplate, ""),
 					externalVals.IsGatewayListener(),
+					tcpRouteAdvertisedPort(ptr.Deref(externalVals.BrokerNetworkPortBase, 0), ptr.Deref(externalVals.NetworkPort, 0), ordinalOffset+replicaIndex, externalVals.IsTCPRouteListener()),
 				)
 				// XXX: the original code used the stringified `host` value as a template
 				// for re-expansion; however it was impossible to make this work usefully,
@@ -637,7 +639,7 @@ func externalAdvertiseAddress(state *RenderState) string {
 }
 
 // was advertised-host
-func advertisedHostJSON(state *RenderState, name string, port int32, replicaIndex int, globalOrdinal int, host string, hostTemplate string, isGateway bool) map[string]any {
+func advertisedHostJSON(state *RenderState, name string, port int32, replicaIndex int, globalOrdinal int, host string, hostTemplate string, isGateway bool, gatewayPort int32) map[string]any {
 	// Gateway API mode: advertise the TLSRoute SNI hostname and the
 	// gateway's advertised port (default 443) rather than a NodePort/LB address.
 	// Only applies to listeners that opted into gateway mode.
@@ -647,7 +649,7 @@ func advertisedHostJSON(state *RenderState, name string, port int32, replicaInde
 	// but TLSRoutes/services are named/hosted by the global pod-list index, so a
 	// pool broker must advertise the host at its global ordinal to match them.
 	if state.Values.External.IsGatewayEnabled() && isGateway {
-		return advertisedHostJSONGateway(state, name, globalOrdinal, host, hostTemplate)
+		return advertisedHostJSONGateway(state, name, globalOrdinal, host, hostTemplate, gatewayPort)
 	}
 
 	hostMap := map[string]any{
@@ -685,9 +687,13 @@ func advertisedHostJSON(state *RenderState, name string, port int32, replicaInde
 // broker's index into [gatewayPodNames] (the same index used to name/host its
 // TLSRoute and per-broker service), so the advertised address matches the route
 // that carries it.
-func advertisedHostJSONGateway(state *RenderState, name string, globalOrdinal int, host string, hostTemplate string) map[string]any {
+func advertisedHostJSONGateway(state *RenderState, name string, globalOrdinal int, host string, hostTemplate string, gatewayPort int32) map[string]any {
 	gw := state.Values.External.Gateway
 	port := gw.GatewayAdvertisedPort()
+	// type: tcproute brokers each advertise their own Gateway port.
+	if gatewayPort > 0 {
+		port = gatewayPort
+	}
 
 	if hostTemplate == "" {
 		// Fallback: use the bootstrap host if no template is set.
@@ -708,6 +714,21 @@ func advertisedHostJSONGateway(state *RenderState, name string, globalOrdinal in
 		"address": address,
 		"port":    port,
 	}
+}
+
+// tcpRouteAdvertisedPort is the port a type: tcproute broker advertises: its
+// own Gateway port (base + global ordinal), or the bootstrap networkPort for a
+// bootstrap-only listener. advertisedPorts is ignored, as for type: tlsroute:
+// the chart defaults it for NodePort, so it can't signal an override. 0 for
+// other types.
+func tcpRouteAdvertisedPort(base int32, networkPort int32, globalOrdinal int, isTCPRoute bool) int32 {
+	if !isTCPRoute {
+		return 0
+	}
+	if base == 0 {
+		return networkPort
+	}
+	return base + int32(globalOrdinal)
 }
 
 // adminInternalHTTPProtocol was admin-http-protocol

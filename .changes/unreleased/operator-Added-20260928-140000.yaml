@@ -1,0 +1,7 @@
+project: operator
+kind: Added
+body: |-
+    Redpanda CRs support `type: tcproute` external listeners, per-listener `parentRefs`, and `external.gateway.listenerSet`/`maxPorts`.
+
+    With a ListenerSet, the operator renders the Gateway listeners that TCPRoutes and TLSRoutes need. Routes stay attached to the Gateway as well (`attachToGateway`, default true), so moving an install onto a ListenerSet drops no connections. Requires Gateway API v1.6 CRDs for TCPRoute.
+time: 2026-09-28T14:00:00.000000000-07:00

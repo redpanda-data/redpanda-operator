@@ -209,6 +209,8 @@ rules:
   - apiGroups:
       - gateway.networking.k8s.io
     resources:
+      - listenersets
+      - tcproutes
       - tlsroutes
     verbs:
       - create

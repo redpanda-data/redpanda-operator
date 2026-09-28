@@ -339,6 +339,8 @@ type PartialGatewayConfig struct {
 	Enabled        *bool                       "json:\"enabled,omitempty\""
 	ParentRefs     []gatewayv1.ParentReference "json:\"parentRefs,omitempty\""
 	AdvertisedPort *int32                      "json:\"advertisedPort,omitempty\""
+	ListenerSet    *PartialGatewayListenerSet  "json:\"listenerSet,omitempty\""
+	MaxPorts       *int32                      "json:\"maxPorts,omitempty\""
 }
 
 type PartialListenerConfig[T ~string] struct {
@@ -420,18 +422,26 @@ type PartialSASLUser struct {
 	Mechanism *SASLMechanism "json:\"mechanism,omitempty\""
 }
 
+type PartialGatewayListenerSet struct {
+	Enabled         *bool "json:\"enabled,omitempty\""
+	AttachToGateway *bool "json:\"attachToGateway,omitempty\""
+}
+
 type PartialExternalListener[T ~string] struct {
-	Enabled              *bool               "json:\"enabled,omitempty\""
-	AdvertisedPorts      []int32             "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
-	Port                 *int32              "json:\"port,omitempty\" jsonschema:\"required\""
-	NodePort             *int32              "json:\"nodePort,omitempty\""
-	TLS                  *PartialExternalTLS "json:\"tls,omitempty\""
-	Address              *string             "json:\"address,omitempty\""
-	AuthenticationMethod *T                  "json:\"authenticationMethod,omitempty\""
-	PrefixTemplate       *string             "json:\"prefixTemplate,omitempty\""
-	Type                 *string             "json:\"type,omitempty\" jsonschema:\"enum=tlsroute\""
-	Host                 *string             "json:\"host,omitempty\""
-	HostTemplate         *string             "json:\"hostTemplate,omitempty\""
+	Enabled               *bool                       "json:\"enabled,omitempty\""
+	AdvertisedPorts       []int32                     "json:\"advertisedPorts,omitempty\" jsonschema:\"minItems=1\""
+	Port                  *int32                      "json:\"port,omitempty\" jsonschema:\"required\""
+	NodePort              *int32                      "json:\"nodePort,omitempty\""
+	TLS                   *PartialExternalTLS         "json:\"tls,omitempty\""
+	Address               *string                     "json:\"address,omitempty\""
+	AuthenticationMethod  *T                          "json:\"authenticationMethod,omitempty\""
+	PrefixTemplate        *string                     "json:\"prefixTemplate,omitempty\""
+	Type                  *string                     "json:\"type,omitempty\" jsonschema:\"enum=tlsroute,enum=tcproute\""
+	Host                  *string                     "json:\"host,omitempty\""
+	HostTemplate          *string                     "json:\"hostTemplate,omitempty\""
+	NetworkPort           *int32                      "json:\"networkPort,omitempty\""
+	BrokerNetworkPortBase *int32                      "json:\"brokerNetworkPortBase,omitempty\""
+	ParentRefs            []gatewayv1.ParentReference "json:\"parentRefs,omitempty\""
 }
 
 type PartialTrustStore struct {

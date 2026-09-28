@@ -180,7 +180,17 @@ func gatewayServerCertDNSNames(state *RenderState, certName string) []string {
 		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.SchemaRegistry.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
 	}
 
-	return names
+	// tcproute listeners usually share one host across APIs; list each SAN once.
+	seen := map[string]bool{}
+	var unique []string
+	for _, n := range names {
+		if helmette.HasKey(seen, n) {
+			continue
+		}
+		seen[n] = true
+		unique = append(unique, n)
+	}
+	return unique
 }
 
 // appendGatewayCertHosts appends a gateway listener's SNI hostnames to names
