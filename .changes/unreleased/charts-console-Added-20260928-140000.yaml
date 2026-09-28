@@ -1,0 +1,4 @@
+project: charts/console
+kind: Added
+body: '`gateway.parentRefs` accept `group` and `kind`, so the HTTPRoute can attach to a Gateway API ListenerSet entry, or to a Gateway and a ListenerSet at once while migrating.'
+time: 2026-09-28T14:00:00.000000000-07:00

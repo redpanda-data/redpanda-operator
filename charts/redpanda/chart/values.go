@@ -280,9 +280,9 @@ type GatewayConfig struct {
 	// because the actual listening port is configured on the Gateway, not
 	// on the TLSRoute.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
-	// ListenerSet renders the Gateway listeners that type: tcproute routes
-	// need as one ListenerSet per parent Gateway, so the Gateway owner only
-	// allows ListenerSets instead of maintaining listeners.
+	// ListenerSet renders the Gateway listeners that type: tcproute and
+	// type: tlsroute routes need as one ListenerSet per parent Gateway, so the
+	// Gateway owner only allows ListenerSets instead of maintaining listeners.
 	ListenerSet *GatewayListenerSet `json:"listenerSet,omitempty"`
 	// MaxPorts caps this release's type: tcproute ports on each Gateway, e.g.
 	// 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit.

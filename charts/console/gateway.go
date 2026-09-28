@@ -25,6 +25,12 @@ func HTTPRoute(state *RenderState) *gatewayv1.HTTPRoute {
 		ref := gatewayv1.ParentReference{
 			Name: gatewayv1.ObjectName(state.Template(parentRef.Name)),
 		}
+		if parentRef.Group != nil {
+			ref.Group = parentRef.Group
+		}
+		if parentRef.Kind != nil {
+			ref.Kind = parentRef.Kind
+		}
 		if parentRef.Namespace != nil {
 			namespace := state.Template(*parentRef.Namespace)
 			ref.Namespace = ptr.To(gatewayv1.Namespace(namespace))
