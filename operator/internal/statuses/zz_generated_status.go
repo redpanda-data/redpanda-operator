@@ -59,6 +59,15 @@ type ClusterResourcesSyncedCondition string
 // be set by a controller when it subsequently reconciles a cluster.
 type ClusterConfigurationAppliedCondition string
 
+// ClusterExternalRoutesAcceptedCondition - This condition indicates whether
+// every Gateway API route (TCPRoute, TLSRoute) and ListenerSet rendered for a
+// cluster's external listeners is accepted by the Gateway it targets. A route
+// counts as accepted when any of its current parents accepts it.
+//
+// This condition defaults to "False" with a reason of "NotReconciled" and must
+// be set by a controller when it subsequently reconciles a cluster.
+type ClusterExternalRoutesAcceptedCondition string
+
 // ClusterQuiescedCondition - This condition is used as to indicate that the
 // cluster is no longer reconciling due to it being in a finalized state for the
 // current generation.
@@ -399,6 +408,42 @@ const (
 	// Because the cluster should no longer be reconciled when a terminal error
 	// occurs, the "Quiesced" status should be set to True.
 	ClusterConfigurationAppliedReasonTerminalError ClusterConfigurationAppliedCondition = "TerminalError"
+
+	// ClusterExternalRoutesAccepted - This condition indicates whether every
+	// Gateway API route (TCPRoute, TLSRoute) and ListenerSet rendered for a
+	// cluster's external listeners is accepted by the Gateway it targets. A route
+	// counts as accepted when any of its current parents accepts it.
+	//
+	// This condition defaults to "False" with a reason of "NotReconciled" and must
+	// be set by a controller when it subsequently reconciles a cluster.
+	ClusterExternalRoutesAccepted = "ExternalRoutesAccepted"
+	// ClusterExternalRoutesAcceptedReasonAccepted - This reason is used with the
+	// "ExternalRoutesAccepted" condition when it evaluates to True because every
+	// rendered route is accepted by at least one parent, or the cluster renders no
+	// routes.
+	ClusterExternalRoutesAcceptedReasonAccepted ClusterExternalRoutesAcceptedCondition = "Accepted"
+	// ClusterExternalRoutesAcceptedReasonNotAccepted - This reason is used with the
+	// "ExternalRoutesAccepted" condition when it evaluates to False because a route
+	// has no parent that accepts it, or a ListenerSet is not accepted by its
+	// Gateway. The message lists them.
+	ClusterExternalRoutesAcceptedReasonNotAccepted ClusterExternalRoutesAcceptedCondition = "NotAccepted"
+	// ClusterExternalRoutesAcceptedReasonAPIMissing - This reason is used with the
+	// "ExternalRoutesAccepted" condition when it evaluates to False because the
+	// cluster's listeners need a Gateway API kind (for example TCPRoute v1) that
+	// the Kubernetes API does not serve, so those routes cannot be created.
+	ClusterExternalRoutesAcceptedReasonAPIMissing ClusterExternalRoutesAcceptedCondition = "APIMissing"
+	// ClusterExternalRoutesAcceptedReasonError - This reason is used when a cluster
+	// has only been partially reconciled and we have early returned due to a
+	// retryable error occurring prior to applying the desired cluster state. If it
+	// is set on any non-final condition, then the condition "Quiesced" will be
+	// False with a reason of "SillReconciling".
+	ClusterExternalRoutesAcceptedReasonError ClusterExternalRoutesAcceptedCondition = "Error"
+	// ClusterExternalRoutesAcceptedReasonTerminalError - This reason is used when a
+	// cluster has only been partially reconciled and we have early returned due to
+	// a known terminal error occurring prior to applying the desired cluster state.
+	// Because the cluster should no longer be reconciled when a terminal error
+	// occurs, the "Quiesced" status should be set to True.
+	ClusterExternalRoutesAcceptedReasonTerminalError ClusterExternalRoutesAcceptedCondition = "TerminalError"
 
 	// ClusterQuiesced - This condition is used as to indicate that the cluster is
 	// no longer reconciling due to it being in a finalized state for the current
@@ -995,18 +1040,20 @@ const (
 
 // ClusterStatus - Defines the observed status conditions of a cluster.
 type ClusterStatus struct {
-	conditions                           []metav1.Condition
-	hasTerminalError                     bool
-	isReadySet                           bool
-	isReadyTransientError                bool
-	isHealthySet                         bool
-	isHealthyTransientError              bool
-	isLicenseValidSet                    bool
-	isLicenseValidTransientError         bool
-	isResourcesSyncedSet                 bool
-	isResourcesSyncedTransientError      bool
-	isConfigurationAppliedSet            bool
-	isConfigurationAppliedTransientError bool
+	conditions                             []metav1.Condition
+	hasTerminalError                       bool
+	isReadySet                             bool
+	isReadyTransientError                  bool
+	isHealthySet                           bool
+	isHealthyTransientError                bool
+	isLicenseValidSet                      bool
+	isLicenseValidTransientError           bool
+	isResourcesSyncedSet                   bool
+	isResourcesSyncedTransientError        bool
+	isConfigurationAppliedSet              bool
+	isConfigurationAppliedTransientError   bool
+	isExternalRoutesAcceptedSet            bool
+	isExternalRoutesAcceptedTransientError bool
 }
 
 // NewCluster() returns a new ClusterStatus
@@ -1350,9 +1397,68 @@ func (s *ClusterStatus) SetConfigurationApplied(reason ClusterConfigurationAppli
 	})
 }
 
+// SetExternalRoutesAcceptedFromCurrent sets the underlying condition based on an existing object.
+func (s *ClusterStatus) SetExternalRoutesAcceptedFromCurrent(o client.Object) {
+	condition := apimeta.FindStatusCondition(GetConditions(o), ClusterExternalRoutesAccepted)
+	if condition == nil {
+		return
+	}
+
+	s.SetExternalRoutesAccepted(ClusterExternalRoutesAcceptedCondition(condition.Reason), condition.Message)
+}
+
+// SetExternalRoutesAccepted sets the underlying condition to the given reason.
+func (s *ClusterStatus) SetExternalRoutesAccepted(reason ClusterExternalRoutesAcceptedCondition, messages ...string) {
+	if s.isExternalRoutesAcceptedSet {
+		panic("you should only ever set a condition once, doing so more than once is a programming error")
+	}
+
+	var status metav1.ConditionStatus
+
+	s.isExternalRoutesAcceptedSet = true
+	message := strings.Join(messages, "; ")
+
+	switch reason {
+	case ClusterExternalRoutesAcceptedReasonAccepted:
+		if message == "" {
+			message = "All external routes are accepted"
+		}
+		status = metav1.ConditionTrue
+	case ClusterExternalRoutesAcceptedReasonNotAccepted:
+		if message == "" {
+			message = "Some external routes are not accepted"
+		}
+		status = metav1.ConditionFalse
+	case ClusterExternalRoutesAcceptedReasonAPIMissing:
+		if message == "" {
+			message = "A Gateway API kind the external listeners need is not served"
+		}
+		status = metav1.ConditionFalse
+	case ClusterExternalRoutesAcceptedReasonError:
+		s.isExternalRoutesAcceptedTransientError = true
+		status = metav1.ConditionFalse
+	case ClusterExternalRoutesAcceptedReasonTerminalError:
+		s.hasTerminalError = true
+		status = metav1.ConditionFalse
+	default:
+		panic("unhandled reason type")
+	}
+
+	if message == "" {
+		panic("message must be set")
+	}
+
+	s.conditions = append(s.conditions, metav1.Condition{
+		Type:    ClusterExternalRoutesAccepted,
+		Status:  status,
+		Reason:  string(reason),
+		Message: message,
+	})
+}
+
 func (s *ClusterStatus) getQuiesced() metav1.Condition {
-	transientErrorConditionsSet := s.isReadyTransientError || s.isHealthyTransientError || s.isLicenseValidTransientError || s.isResourcesSyncedTransientError || s.isConfigurationAppliedTransientError
-	allConditionsSet := s.isReadySet && s.isHealthySet && s.isLicenseValidSet && s.isResourcesSyncedSet && s.isConfigurationAppliedSet
+	transientErrorConditionsSet := s.isReadyTransientError || s.isHealthyTransientError || s.isLicenseValidTransientError || s.isResourcesSyncedTransientError || s.isConfigurationAppliedTransientError || s.isExternalRoutesAcceptedTransientError
+	allConditionsSet := s.isReadySet && s.isHealthySet && s.isLicenseValidSet && s.isResourcesSyncedSet && s.isConfigurationAppliedSet && s.isExternalRoutesAcceptedSet
 
 	if (allConditionsSet || s.hasTerminalError) && !transientErrorConditionsSet {
 		return metav1.Condition{
