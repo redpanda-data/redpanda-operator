@@ -436,6 +436,44 @@ func TestAggregateRedpandas_GatewayCountRequiresParentRefs(t *testing.T) {
 		"half-configured gateway clusters (no parentRefs / external disabled) must not be counted")
 }
 
+// TestAggregateRedpandas_GatewayRouteClusters counts clusters, not routes, by
+// the Gateway API kinds their external listeners render.
+func TestAggregateRedpandas_GatewayRouteClusters(t *testing.T) {
+	gateway := func(listenerSet bool) *redpandav1alpha2.External {
+		return &redpandav1alpha2.External{
+			Enabled: ptr.To(true),
+			Gateway: &redpandav1alpha2.GatewayExternalConfig{
+				Enabled:     ptr.To(true),
+				ParentRefs:  []gatewayv1.ParentReference{{Name: "gw"}},
+				ListenerSet: &redpandav1alpha2.GatewayListenerSet{Enabled: ptr.To(listenerSet)},
+			},
+		}
+	}
+	tcp := &redpandav1alpha2.ExternalListener{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(9094))}, Type: ptr.To("tcproute"), Host: ptr.To("gw.example.com"), NetworkPort: ptr.To(int32(9199)), BrokerNetworkPortBase: ptr.To(int32(9200))}
+	tls := &redpandav1alpha2.ExternalListener{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(9095))}, Type: ptr.To("tlsroute"), Host: ptr.To("kafka.example.com"), HostTemplate: ptr.To("kafka-$POD_ORDINAL.example.com")}
+	cluster := func(name string, external *redpandav1alpha2.External, listeners map[string]*redpandav1alpha2.ExternalListener) redpandav1alpha2.Redpanda {
+		return redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				External:  external,
+				Listeners: &redpandav1alpha2.Listeners{Kafka: &redpandav1alpha2.Kafka{External: listeners}},
+			}},
+		}
+	}
+	items := []redpandav1alpha2.Redpanda{
+		cluster("tcp-listenerset", gateway(true), map[string]*redpandav1alpha2.ExternalListener{"tcp": tcp}),
+		cluster("tcp-and-tls", gateway(false), map[string]*redpandav1alpha2.ExternalListener{"tcp": tcp, "tls": tls}),
+		cluster("gateway-no-route-listeners", gateway(true), nil),
+	}
+
+	payload := &Payload{}
+	var rp sizing
+	(&Collector{}).aggregateRedpandas(payload, items, &rp, map[string]corev1.ResourceRequirements{})
+	require.Equal(t, 2, payload.Redpanda.GatewayTCPRoute)
+	require.Equal(t, 1, payload.Redpanda.GatewayTLSRoute)
+	require.Equal(t, 1, payload.Redpanda.GatewayListenerSet)
+}
+
 // TestAggregateRedpandas_HostTunersRequiresOptIn locks the hostTunersEnabled
 // counter to spec.tuning.apply_host_tuners only: the long-standing
 // tune_aio_events tuner (a chart default) must not count as host-tuner

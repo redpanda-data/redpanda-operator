@@ -527,6 +527,16 @@ func (c *Collector) aggregateRedpandas(payload *Payload, items []redpandav1alpha
 			}
 			continue
 		}
+		for _, kind := range redpandav1alpha2.GatewayAPIKinds(values) {
+			switch kind {
+			case "TCPRoute":
+				payload.Redpanda.GatewayTCPRoute++
+			case "TLSRoute":
+				payload.Redpanda.GatewayTLSRoute++
+			case "ListenerSet":
+				payload.Redpanda.GatewayListenerSet++
+			}
+		}
 		replicas := int(values.Statefulset.Replicas)
 		payload.Redpanda.BrokerCount += replicas
 		reqs := values.Resources.GetResourceRequirements()

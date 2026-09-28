@@ -97,6 +97,13 @@ type Payload struct {
 		// GatewayAPIExternalAccess counts clusters using Gateway API TLSRoute-based
 		// external access (spec.external.gateway.enabled).
 		GatewayAPIExternalAccess int `json:"gatewayAPIExternalAccessEnabled"`
+		// GatewayTCPRoute, GatewayTLSRoute and GatewayListenerSet count the
+		// clusters whose external listeners render TCPRoutes, TLSRoutes, and a
+		// ListenerSet (external.gateway.listenerSet). An operator install uses
+		// one when its count is non-zero.
+		GatewayTCPRoute    int `json:"gatewayTCPRouteEnabled"`
+		GatewayTLSRoute    int `json:"gatewayTLSRouteEnabled"`
+		GatewayListenerSet int `json:"gatewayListenerSetEnabled"`
 		// HostTuners counts clusters with the chroot-based host tuning init
 		// container enabled (spec.tuning.apply_host_tuners), which lets
 		// `rpk redpanda tune all` apply host-level tuners like disk_irq,
