@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/statuses"
 )
 
@@ -52,7 +52,7 @@ func (r *RedpandaReconciler) reconcileExternalRoutes(ctx context.Context, state 
 
 	var missing []string
 	if values, err := rp.GetValues(); err == nil {
-		for _, kind := range wantedGatewayKinds(values) {
+		for _, kind := range redpandav1alpha2.GatewayAPIKinds(values) {
 			if _, err := c.RESTMapper().RESTMapping(schema.GroupKind{Group: gatewayv1.GroupName, Kind: kind}, "v1"); apimeta.IsNoMatchError(err) {
 				missing = append(missing, kind)
 			}
@@ -96,41 +96,6 @@ func listIfServed(ctx context.Context, c client.Client, list client.ObjectList, 
 		return err
 	}
 	return nil
-}
-
-// wantedGatewayKinds returns the Gateway API kinds the cluster's values render.
-func wantedGatewayKinds(values redpandachart.Values) []string {
-	if !values.External.IsGatewayEnabled() {
-		return nil
-	}
-	var tcp, tls bool
-	note := func(enabled bool, isTCP, isTLS bool) {
-		tcp = tcp || (enabled && isTCP)
-		tls = tls || (enabled && isTLS)
-	}
-	for _, l := range values.Listeners.Kafka.External {
-		note(ptr.Deref(l.Enabled, values.External.Enabled), l.IsTCPRouteListener(), l.IsTLSRouteListener())
-	}
-	for _, l := range values.Listeners.HTTP.External {
-		note(ptr.Deref(l.Enabled, values.External.Enabled), l.IsTCPRouteListener(), l.IsTLSRouteListener())
-	}
-	for _, l := range values.Listeners.Admin.External {
-		note(ptr.Deref(l.Enabled, values.External.Enabled), l.IsTCPRouteListener(), l.IsTLSRouteListener())
-	}
-	for _, l := range values.Listeners.SchemaRegistry.External {
-		note(ptr.Deref(l.Enabled, values.External.Enabled), l.IsTCPRouteListener(), l.IsTLSRouteListener())
-	}
-	var kinds []string
-	if tcp {
-		kinds = append(kinds, "TCPRoute")
-	}
-	if tls {
-		kinds = append(kinds, "TLSRoute")
-	}
-	if (tcp || tls) && values.External.Gateway.IsListenerSetEnabled() {
-		kinds = append(kinds, "ListenerSet")
-	}
-	return kinds
 }
 
 // externalRoutesCondition decides ExternalRoutesAccepted. A route is accepted

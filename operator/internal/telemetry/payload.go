@@ -97,6 +97,13 @@ type Payload struct {
 		// GatewayAPIExternalAccess counts clusters using Gateway API TLSRoute-based
 		// external access (spec.external.gateway.enabled).
 		GatewayAPIExternalAccess int `json:"gatewayAPIExternalAccessEnabled"`
+		// GatewayTCPRoute, GatewayTLSRoute and GatewayListenerSet count the
+		// clusters whose external listeners render TCPRoutes, TLSRoutes, and a
+		// ListenerSet (external.gateway.listenerSet). An operator install uses
+		// one when its count is non-zero.
+		GatewayTCPRoute    int `json:"gatewayTCPRouteEnabled"`
+		GatewayTLSRoute    int `json:"gatewayTLSRouteEnabled"`
+		GatewayListenerSet int `json:"gatewayListenerSetEnabled"`
 		// HostTuners counts clusters with the chroot-based host tuning init
 		// container enabled (spec.tuning.apply_host_tuners), which lets
 		// `rpk redpanda tune all` apply host-level tuners like disk_irq,
@@ -167,6 +174,18 @@ type Payload struct {
 		// context — both may be set at once during a migration.
 		Ingress int `json:"ingressEnabled"`
 	} `json:"console"`
+
+	// GatewayRoutes counts the Gateway API routes the operator rendered
+	// (Redpanda TCPRoutes/TLSRoutes, Console HTTPRoutes) by what they attach
+	// to, to track ListenerSet adoption. A route attached to both, the
+	// migration path, counts in Gateway, ListenerSet and Both.
+	GatewayRoutes struct {
+		TCPRoute  RouteAttachments `json:"tcpRoute"`
+		TLSRoute  RouteAttachments `json:"tlsRoute"`
+		HTTPRoute RouteAttachments `json:"httpRoute"`
+		// ListenerSets counts the ListenerSets the operator rendered.
+		ListenerSets int `json:"listenerSets"`
+	} `json:"gatewayRoutes"`
 
 	CRDCount int `json:"crdCount"`
 	// Features reports enabled operator-shape flags (controllers, webhook, leader
@@ -243,4 +262,13 @@ type ConnectStats struct {
 	// digest) is reported — never the repository, which can carry internal
 	// registry hostnames or team names. Anonymous.
 	Versions []string `json:"versions,omitempty"`
+}
+
+// RouteAttachments counts one kind of operator-rendered route by the kinds of
+// its parentRefs.
+type RouteAttachments struct {
+	Total       int `json:"total"`
+	Gateway     int `json:"gateway"`
+	ListenerSet int `json:"listenerSet"`
+	Both        int `json:"both"`
 }
