@@ -15,7 +15,6 @@
 package clusterconfiguration
 
 import (
-	"sort"
 	"strconv"
 	"strings"
 
@@ -60,19 +59,9 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 	case "array":
 		switch metadata.Items.Type {
 		case "string":
-			ss, err := convertStringToArray[string](repr)
-			if err != nil {
-				return nil, err
-			}
-			// Historically all string arrays have been sorted. It's likely this is
-			// NOT required and was an artifact of the operator and config-watcher
-			// "fighting" about the ordering of the superusers settings, which has
-			// since been fixed.
-			// However, there's no trail or test that would indicate why this is
-			// present so we've preserved it out of paranoia.
-			// DO NOT RELY ON THIS BEHAVIOR.
-			sort.Strings(ss)
-			return ss, nil
+			// Order is kept: it is significant for first-match rules and namespace
+			// paths. Superusers, a set, are normalized by the config syncer.
+			return convertStringToArray[string](repr)
 
 		// Fallback to any for all other types.
 		// TODO: make this method recursive rather than special casing arrays like

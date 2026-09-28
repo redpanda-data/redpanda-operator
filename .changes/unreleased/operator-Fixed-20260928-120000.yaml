@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: The operator no longer sorts string-array cluster configuration values before applying them. Order-sensitive properties such as `kafka_mtls_principal_mapping_rules` and `sasl_kerberos_principal_mapping` (first match wins) and `iceberg_default_catalog_namespace` now keep the order given in the Redpanda resource. Previously, a `DEFAULT` rule could sort ahead of custom rules and map every principal to its full DN.
+time: 2026-09-28T12:00:00.000000000-07:00
