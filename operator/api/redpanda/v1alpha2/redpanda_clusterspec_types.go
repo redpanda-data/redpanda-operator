@@ -559,7 +559,7 @@ type GatewayExternalConfig struct {
 	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 	// The port advertised to clients. Defaults to 443.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
-	// Renders the Gateway listeners that `type: tcproute` routes need as a ListenerSet per parent Gateway, so the Gateway owner only allows ListenerSets (`spec.allowedListeners`) instead of maintaining listeners. Requires Gateway API ListenerSet support.
+	// Renders the Gateway listeners that `type: tcproute` and `type: tlsroute` routes need as a ListenerSet per parent Gateway, so the Gateway owner only allows ListenerSets (`spec.allowedListeners`) instead of maintaining listeners. A `tlsroute` hostname gets a TLS-passthrough entry on `advertisedPort`. Requires Gateway API ListenerSet support.
 	ListenerSet *GatewayListenerSet `json:"listenerSet,omitempty"`
 	// Caps this release's `type: tcproute` ports on each Gateway, for example 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit.
 	// +kubebuilder:validation:Minimum=1

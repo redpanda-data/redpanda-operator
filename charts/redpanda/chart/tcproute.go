@@ -119,26 +119,35 @@ func TCPRoutes(state *RenderState) []*gatewayv1.TCPRoute {
 }
 
 // ListenerSets returns, when external.gateway.listenerSet is enabled, one
-// ListenerSet per parent Gateway holding a TCP listener for every tcproute
-// route on it, so scaling adds and removes Gateway ports with the routes.
+// ListenerSet per parent Gateway holding the listeners its routes need: a TCP
+// entry per tcproute route and a TLS-passthrough entry per tlsroute hostname
+// (on the Gateway's TLS port, shared and told apart by SNI). Scaling adds and
+// removes entries with the routes, so the Gateway is never edited.
 func ListenerSets(state *RenderState) []*gatewayv1.ListenerSet {
-	if !state.Values.External.IsGatewayEnabled() || !state.Values.External.Gateway.IsListenerSetEnabled() {
+	gwConfig := state.Values.External.Gateway
+	if !state.Values.External.IsGatewayEnabled() || !gwConfig.IsListenerSetEnabled() {
 		return nil
 	}
 
 	pods := gatewayPodNames(state)
 	listeners := tcpRouteListeners(state)
+	tlsListeners := tlsRouteListeners(state)
 
 	// Distinct parent Gateways, in first-use order.
 	seen := map[string]bool{}
 	var gateways []gatewayv1.ParentReference
+	var allRefs []gatewayv1.ParentReference
 	for _, l := range listeners {
-		for _, ref := range l.ParentRefs {
-			key := listenerSetName(state, ref)
-			if !helmette.HasKey(seen, key) {
-				seen[key] = true
-				gateways = append(gateways, ref)
-			}
+		allRefs = append(allRefs, l.ParentRefs...)
+	}
+	for _, l := range tlsListeners {
+		allRefs = append(allRefs, l.ParentRefs...)
+	}
+	for _, ref := range allRefs {
+		key := listenerSetName(state, ref)
+		if !helmette.HasKey(seen, key) {
+			seen[key] = true
+			gateways = append(gateways, ref)
 		}
 	}
 
@@ -147,13 +156,7 @@ func ListenerSets(state *RenderState) []*gatewayv1.ListenerSet {
 		name := listenerSetName(state, gw)
 		var entries []gatewayv1.ListenerEntry
 		for _, l := range listeners {
-			onGateway := false
-			for _, ref := range l.ParentRefs {
-				if listenerSetName(state, ref) == name {
-					onGateway = true
-				}
-			}
-			if !onGateway {
+			if !onGatewayRefs(state, l.ParentRefs, name) {
 				continue
 			}
 			for _, p := range tcpRoutePorts(state, pods, l) {
@@ -164,6 +167,24 @@ func ListenerSets(state *RenderState) []*gatewayv1.ListenerSet {
 					AllowedRoutes: &gatewayv1.AllowedRoutes{
 						Namespaces: &gatewayv1.RouteNamespaces{From: ptr.To(gatewayv1.FromNamespaces("Same"))},
 						Kinds:      []gatewayv1.RouteGroupKind{{Kind: gatewayv1.Kind("TCPRoute")}},
+					},
+				})
+			}
+		}
+		for _, l := range tlsListeners {
+			if !onGatewayRefs(state, l.ParentRefs, name) {
+				continue
+			}
+			for _, h := range tlsRouteHosts(state, pods, l) {
+				entries = append(entries, gatewayv1.ListenerEntry{
+					Name:     gatewayv1.SectionName(h.Section),
+					Hostname: ptr.To(gatewayv1.Hostname(h.Hostname)),
+					Port:     gatewayv1.PortNumber(gwConfig.GatewayAdvertisedPort()),
+					Protocol: gatewayv1.ProtocolType("TLS"),
+					TLS:      &gatewayv1.ListenerTLSConfig{Mode: ptr.To(gatewayv1.TLSModeType("Passthrough"))},
+					AllowedRoutes: &gatewayv1.AllowedRoutes{
+						Namespaces: &gatewayv1.RouteNamespaces{From: ptr.To(gatewayv1.FromNamespaces("Same"))},
+						Kinds:      []gatewayv1.RouteGroupKind{{Kind: gatewayv1.Kind("TLSRoute")}},
 					},
 				})
 			}
@@ -191,6 +212,17 @@ func ListenerSets(state *RenderState) []*gatewayv1.ListenerSet {
 		})
 	}
 	return sets
+}
+
+// onGatewayRefs reports whether any of refs is the Gateway whose ListenerSet is
+// named listenerSet.
+func onGatewayRefs(state *RenderState, refs []gatewayv1.ParentReference, listenerSet string) bool {
+	for _, ref := range refs {
+		if listenerSetName(state, ref) == listenerSet {
+			return true
+		}
+	}
+	return false
 }
 
 // listenerSetName names the release's ListenerSet on a parent Gateway. The

@@ -1905,10 +1905,12 @@ spec:
                             type: boolean
                           listenerSet:
                             description: 'Renders the Gateway listeners that `type:
-                              tcproute` routes need as a ListenerSet per parent Gateway,
-                              so the Gateway owner only allows ListenerSets (`spec.allowedListeners`)
-                              instead of maintaining listeners. Requires Gateway API
-                              ListenerSet support.'
+                              tcproute` and `type: tlsroute` routes need as a ListenerSet
+                              per parent Gateway, so the Gateway owner only allows
+                              ListenerSets (`spec.allowedListeners`) instead of maintaining
+                              listeners. A `tlsroute` hostname gets a TLS-passthrough
+                              entry on `advertisedPort`. Requires Gateway API ListenerSet
+                              support.'
                             properties:
                               attachToGateway:
                                 description: 'Also attaches every route to the Gateway
@@ -36789,10 +36791,12 @@ spec:
                             type: boolean
                           listenerSet:
                             description: 'Renders the Gateway listeners that `type:
-                              tcproute` routes need as a ListenerSet per parent Gateway,
-                              so the Gateway owner only allows ListenerSets (`spec.allowedListeners`)
-                              instead of maintaining listeners. Requires Gateway API
-                              ListenerSet support.'
+                              tcproute` and `type: tlsroute` routes need as a ListenerSet
+                              per parent Gateway, so the Gateway owner only allows
+                              ListenerSets (`spec.allowedListeners`) instead of maintaining
+                              listeners. A `tlsroute` hostname gets a TLS-passthrough
+                              entry on `advertisedPort`. Requires Gateway API ListenerSet
+                              support.'
                             properties:
                               attachToGateway:
                                 description: 'Also attaches every route to the Gateway

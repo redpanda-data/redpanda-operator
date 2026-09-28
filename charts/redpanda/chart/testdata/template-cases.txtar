@@ -1668,6 +1668,109 @@ listeners:
         tls:
           enabled: false
 
+-- gateway-api-tlsroute-listenerset --
+# listenerSet mode with a tlsroute listener alongside a tcproute one: one
+# ListenerSet holds TCP entries and a TLS-passthrough entry per SNI hostname on
+# advertisedPort; TLSRoutes keep their Gateway parentRef (attachToGateway).
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+    parentRefs:
+    - name: redpanda-shared
+      namespace: infra
+tls:
+  enabled: true
+  certs:
+    default:
+      caEnabled: true
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tlsroute
+        host: kafka.example.com
+        hostTemplate: kafka-$POD_ORDINAL.example.com
+        tls:
+          cert: default
+      plain:
+        port: 9095
+        type: tcproute
+        host: gw.example.com
+        networkPort: 9199
+        brokerNetworkPortBase: 9200
+        tls:
+          enabled: false
+  http:
+    external:
+      default:
+        port: 8083
+        type: tlsroute
+        host: proxy.example.com
+        tls:
+          cert: default
+
+-- gateway-api-tlsroute-listenerset-duplicate-host --
+# Two tlsroute listeners with the same SNI host would need two ListenerSet TLS
+# entries with one hostname on one port, which the API server rejects.
+# ASSERT-ERROR-CONTAINS ["hostname kafka.example.com is already used by kafka/default"]
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+    parentRefs:
+    - name: redpanda-shared
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tlsroute
+        host: kafka.example.com
+        hostTemplate: kafka-$POD_ORDINAL.example.com
+  http:
+    external:
+      default:
+        port: 8083
+        type: tlsroute
+        host: kafka.example.com
+
+-- gateway-api-tlsroute-listenerset-port-collision --
+# A tcproute port on the Gateway's TLS port (advertisedPort) would put a TCP and
+# a TLS listener on one port.
+# ASSERT-ERROR-CONTAINS ["the Gateway TLS port 443 (external.gateway.advertisedPort) is already used by kafka/plain bootstrap"]
+external:
+  enabled: true
+  gateway:
+    enabled: true
+    listenerSet:
+      enabled: true
+    parentRefs:
+    - name: redpanda-shared
+listeners:
+  kafka:
+    external:
+      default:
+        port: 9094
+        type: tlsroute
+        host: kafka.example.com
+        hostTemplate: kafka-$POD_ORDINAL.example.com
+      plain:
+        port: 9095
+        type: tcproute
+        host: gw.example.com
+        networkPort: 443
+        brokerNetworkPortBase: 9200
+        tls:
+          enabled: false
+
 -- gateway-api-tcproute-max-ports --
 # Two Kafka listeners of 3 brokers on one Gateway need 8 ports; a budget of 7
 # (for example what is left on a shared load balancer) must fail render.

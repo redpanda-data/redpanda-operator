@@ -85,7 +85,7 @@ func TestRenderResourcesGatewayTLSRouteMatchesTypes(t *testing.T) {
 }
 
 // TestValidateGatewayListener covers the upfront validation that replaced the
-// inline panics in tlsRoutesForListener (see validateGatewayListeners). It
+// inline panics in TLSRoute rendering (see validateGatewayListeners). It
 // documents the per-protocol per-broker routing policy: Kafka requires
 // hostTemplate for multi-broker clusters, while HTTP/Admin/Schema Registry are
 // load-balanceable and may run bootstrap-only.
@@ -211,20 +211,29 @@ func TestValidateGatewayListener(t *testing.T) {
 }
 
 func TestTLSRoutesForHTTPListenerAllowsBootstrapOnlyHost(t *testing.T) {
-	routes := tlsRoutesForListener(
-		"redpanda",
-		"default",
-		map[string]string{"app": "redpanda"},
-		map[string]string{"my.co/team": "platform"},
-		[]gatewayv1.ParentReference{{Name: "shared-gateway"}},
-		[]string{"redpanda-0", "redpanda-1"},
-		"proxy.example.com",
-		"",
-		"default",
-		"http",
-		8082,
-	)
+	helmValues, err := Chart.LoadValues(map[string]any{
+		"external": map[string]any{
+			"enabled": true,
+			"gateway": map[string]any{
+				"enabled":    true,
+				"parentRefs": []any{map[string]any{"name": "shared-gateway"}},
+			},
+		},
+		"statefulset": map[string]any{"replicas": 2},
+		"listeners": map[string]any{
+			"kafka": map[string]any{"external": map[string]any{"default": map[string]any{"enabled": false}}},
+			"http": map[string]any{"external": map[string]any{"default": map[string]any{
+				"port": 8082, "type": "tlsroute", "host": "proxy.example.com",
+			}}},
+		},
+	})
+	require.NoError(t, err)
+	dot, err := Chart.Dot(nil, helmette.Release{Name: "redpanda", Namespace: "default", Service: "Helm"}, helmValues)
+	require.NoError(t, err)
+	state, err := RenderStateFromDot(dot)
+	require.NoError(t, err)
 
+	routes := TLSRoutes(state)
 	require.Len(t, routes, 1)
 	require.Equal(t, metav1.TypeMeta{
 		APIVersion: "gateway.networking.k8s.io/v1",

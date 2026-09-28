@@ -114,25 +114,35 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (or (not (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r")) (not (get (fromJson (include "redpanda.GatewayConfig.IsListenerSetEnabled" (dict "a" (list $state.Values.external.gateway)))) "r"))) -}}
+{{- $gwConfig := $state.Values.external.gateway -}}
+{{- if (or (not (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r")) (not (get (fromJson (include "redpanda.GatewayConfig.IsListenerSetEnabled" (dict "a" (list $gwConfig)))) "r"))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $listeners := (get (fromJson (include "redpanda.tcpRouteListeners" (dict "a" (list $state)))) "r") -}}
+{{- $tlsListeners := (get (fromJson (include "redpanda.tlsRouteListeners" (dict "a" (list $state)))) "r") -}}
 {{- $seen := (dict) -}}
 {{- $gateways := (coalesce nil) -}}
+{{- $allRefs := (coalesce nil) -}}
 {{- range $_, $l := $listeners -}}
-{{- range $_, $ref := $l.ParentRefs -}}
+{{- $allRefs = (concat (default (list) $allRefs) (default (list) $l.ParentRefs)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $_, $l := $tlsListeners -}}
+{{- $allRefs = (concat (default (list) $allRefs) (default (list) $l.ParentRefs)) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- range $_, $ref := $allRefs -}}
 {{- $key := (get (fromJson (include "redpanda.listenerSetName" (dict "a" (list $state $ref)))) "r") -}}
 {{- if (not (hasKey $seen $key)) -}}
 {{- $_ := (set $seen $key true) -}}
 {{- $gateways = (concat (default (list) $gateways) (list $ref)) -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
@@ -143,20 +153,25 @@
 {{- $name := (get (fromJson (include "redpanda.listenerSetName" (dict "a" (list $state $gw)))) "r") -}}
 {{- $entries := (coalesce nil) -}}
 {{- range $_, $l := $listeners -}}
-{{- $onGateway := false -}}
-{{- range $_, $ref := $l.ParentRefs -}}
-{{- if (eq (get (fromJson (include "redpanda.listenerSetName" (dict "a" (list $state $ref)))) "r") $name) -}}
-{{- $onGateway = true -}}
+{{- if (not (get (fromJson (include "redpanda.onGatewayRefs" (dict "a" (list $state $l.ParentRefs $name)))) "r")) -}}
+{{- continue -}}
+{{- end -}}
+{{- range $_, $p := (get (fromJson (include "redpanda.tcpRoutePorts" (dict "a" (list $state $pods $l)))) "r") -}}
+{{- $entries = (concat (default (list) $entries) (list (mustMergeOverwrite (dict) (dict "name" (toString $p.Section) "port" (($p.NetworkPort | int) | int) "protocol" (toString "TCP") "allowedRoutes" (mustMergeOverwrite (dict) (dict "namespaces" (mustMergeOverwrite (dict) (dict "from" (toString "Same"))) "kinds" (list (mustMergeOverwrite (dict "kind" "") (dict "kind" (toString "TCPRoute")))))))))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- if (not $onGateway) -}}
+{{- range $_, $l := $tlsListeners -}}
+{{- if (not (get (fromJson (include "redpanda.onGatewayRefs" (dict "a" (list $state $l.ParentRefs $name)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
-{{- range $_, $p := (get (fromJson (include "redpanda.tcpRoutePorts" (dict "a" (list $state $pods $l)))) "r") -}}
-{{- $entries = (concat (default (list) $entries) (list (mustMergeOverwrite (dict) (dict "name" (toString $p.Section) "port" (($p.NetworkPort | int) | int) "protocol" (toString "TCP") "allowedRoutes" (mustMergeOverwrite (dict) (dict "namespaces" (mustMergeOverwrite (dict) (dict "from" (toString "Same"))) "kinds" (list (mustMergeOverwrite (dict "kind" "") (dict "kind" (toString "TCPRoute")))))))))) -}}
+{{- range $_, $h := (get (fromJson (include "redpanda.tlsRouteHosts" (dict "a" (list $state $pods $l)))) "r") -}}
+{{- $entries = (concat (default (list) $entries) (list (mustMergeOverwrite (dict) (dict "name" (toString $h.Section) "hostname" (toString $h.Hostname) "port" (((get (fromJson (include "redpanda.GatewayConfig.GatewayAdvertisedPort" (dict "a" (list $gwConfig)))) "r") | int) | int) "protocol" (toString "TLS") "tls" (mustMergeOverwrite (dict) (dict "mode" (toString "Passthrough"))) "allowedRoutes" (mustMergeOverwrite (dict) (dict "namespaces" (mustMergeOverwrite (dict) (dict "from" (toString "Same"))) "kinds" (list (mustMergeOverwrite (dict "kind" "") (dict "kind" (toString "TLSRoute")))))))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -172,6 +187,28 @@
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $sets) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.onGatewayRefs" -}}
+{{- $state := (index .a 0) -}}
+{{- $refs := (index .a 1) -}}
+{{- $listenerSet := (index .a 2) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- range $_, $ref := $refs -}}
+{{- if (eq (get (fromJson (include "redpanda.listenerSetName" (dict "a" (list $state $ref)))) "r") $listenerSet) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" true) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" false) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
