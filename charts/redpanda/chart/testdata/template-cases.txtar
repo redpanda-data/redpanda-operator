@@ -1475,3 +1475,9 @@ config:
 resources:
   cpu:
     cores: 500m
+-- network-policy-defaults --
+# ASSERT-NO-ERROR
+# ASSERT-GOLDEN
+# Only enabled: RPC and Admin API are restricted, client and external ports are open.
+networkPolicy:
+  enabled: true

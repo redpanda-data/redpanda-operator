@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    New opt-in `networkPolicy` value renders a NetworkPolicy for the broker Pods. The RPC port admits only the brokers. The Admin API admits this release's Pods, the operator (`networkPolicy.operatorPeer`) and `networkPolicy.adminPeers`, e.g. a Prometheus scraper. Kafka, HTTP Proxy, Schema Registry and external listener ports stay open unless `networkPolicy.clientPeers` is set.
+time: 2026-09-25T11:54:13.000000-07:00

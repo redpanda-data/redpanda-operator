@@ -170,3 +170,16 @@ spec:
             limits:
               cpu: 100m
               memory: 256Mi
+-- network-policy --
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: Redpanda
+metadata:
+  name: network-policy
+spec:
+  clusterSpec:
+    networkPolicy:
+      enabled: true
+      adminPeers:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring

@@ -22,6 +22,7 @@ import (
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
@@ -102,6 +103,7 @@ type Values struct {
 	External          ExternalConfig             `json:"external"`
 	Logging           Logging                    `json:"logging"`
 	Monitoring        Monitoring                 `json:"monitoring"`
+	NetworkPolicy     NetworkPolicyConfig        `json:"networkPolicy"`
 	Resources         RedpandaResources          `json:"resources"`
 	Storage           Storage                    `json:"storage"`
 	PostInstallJob    PostInstallJob             `json:"post_install_job"`
@@ -209,6 +211,25 @@ type Enterprise struct {
 // +gotohelm:ignore=true
 func (Enterprise) JSONSchemaExtend(schema *jsonschema.Schema) {
 	makeNullable(schema, "licenseSecretRef")
+}
+
+// NetworkPolicyConfig configures the opt-in NetworkPolicy for the broker Pods.
+type NetworkPolicyConfig struct {
+	Enabled bool `json:"enabled" jsonschema:"required"`
+	// OperatorPeer selects the Redpanda Operator's Pods. When unset, the
+	// operator fills in its own namespace as it renders the cluster.
+	OperatorPeer *networkingv1.NetworkPolicyPeer `json:"operatorPeer,omitempty"`
+	// AdminPeers are additional sources for the Admin API port, such as a
+	// Prometheus scraper for /public_metrics.
+	AdminPeers []networkingv1.NetworkPolicyPeer `json:"adminPeers"`
+	// ClientPeers restrict the Kafka, HTTP Proxy, Schema Registry and external
+	// listener ports. Empty admits every source.
+	ClientPeers []networkingv1.NetworkPolicyPeer `json:"clientPeers"`
+}
+
+// +gotohelm:ignore=true
+func (NetworkPolicyConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	makeNullable(schema, "operatorPeer")
 }
 
 type RackAwareness struct {

@@ -1,0 +1,5 @@
+project: operator
+kind: Added
+body: |-
+    Redpanda CRs gain `spec.clusterSpec.networkPolicy` for the chart's opt-in broker NetworkPolicy. When it is enabled without an `operatorPeer`, the operator admits its own namespace so it can keep reconciling. Anonymous telemetry reports how many clusters enable it (`redpanda.networkPolicyEnabled`).
+time: 2026-09-25T11:54:13.000000-07:00

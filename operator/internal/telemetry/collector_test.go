@@ -185,6 +185,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 						TuneAioEvents:   ptr.To(true),
 						ApplyHostTuners: ptr.To(true),
 					},
+					NetworkPolicy: &redpandav1alpha2.NetworkPolicy{Enabled: ptr.To(true)},
 				},
 			},
 			// Mid-migration: the StatefulSet is still authoritative while the
@@ -255,6 +256,7 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, 1, payload.Redpanda.ManagedConnectors)
 	require.Equal(t, 1, payload.Redpanda.GatewayAPIExternalAccess)
 	require.Equal(t, 1, payload.Redpanda.HostTuners)
+	require.Equal(t, 1, payload.Redpanda.NetworkPolicy)
 	// Sizing: 4c/16Gi per broker × 5 brokers (rp-1 default pool + correlated np-1).
 	require.Equal(t, 20, payload.Redpanda.TotalCPUCores)
 	require.Equal(t, 80, payload.Redpanda.TotalMemoryGiB)
@@ -346,6 +348,7 @@ func TestCollect_EmptyCluster(t *testing.T) {
 	require.Equal(t, 0, payload.Redpanda.ManagedConnectors)
 	require.Equal(t, 0, payload.Redpanda.GatewayAPIExternalAccess)
 	require.Equal(t, 0, payload.Redpanda.HostTuners)
+	require.Equal(t, 0, payload.Redpanda.NetworkPolicy)
 	require.Equal(t, 0, payload.StretchCluster.HostTuners)
 	require.Equal(t, 0, payload.VectorizedClusters.Count)
 	require.Empty(t, payload.Storage.CSIDrivers)

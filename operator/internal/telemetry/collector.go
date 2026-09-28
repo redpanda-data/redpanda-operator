@@ -478,6 +478,10 @@ func (c *Collector) aggregateRedpandas(payload *Payload, items []redpandav1alpha
 		if spec.Tuning != nil && ptrBool(spec.Tuning.ApplyHostTuners) {
 			payload.Redpanda.HostTuners++
 		}
+		// Opt-in (chart default false), so the raw spec is the effective state.
+		if spec.NetworkPolicy != nil && ptrBool(spec.NetworkPolicy.Enabled) {
+			payload.Redpanda.NetworkPolicy++
+		}
 
 		// Broker count + sizing: chart-rendered. Fall back to raw replicas for the
 		// count if rendering fails (sizing is simply skipped for that cluster).

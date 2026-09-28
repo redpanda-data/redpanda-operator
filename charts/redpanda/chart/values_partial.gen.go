@@ -19,6 +19,7 @@ import (
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
@@ -43,6 +44,7 @@ type PartialValues struct {
 	External          *PartialExternalConfig      "json:\"external,omitempty\""
 	Logging           *PartialLogging             "json:\"logging,omitempty\""
 	Monitoring        *PartialMonitoring          "json:\"monitoring,omitempty\""
+	NetworkPolicy     *PartialNetworkPolicyConfig "json:\"networkPolicy,omitempty\""
 	Resources         *PartialRedpandaResources   "json:\"resources,omitempty\""
 	Storage           *PartialStorage             "json:\"storage,omitempty\""
 	PostInstallJob    *PartialPostInstallJob      "json:\"post_install_job,omitempty\""
@@ -123,6 +125,13 @@ type PartialMonitoring struct {
 	Labels         map[string]string       "json:\"labels,omitempty\""
 	TLSConfig      *monitoringv1.TLSConfig "json:\"tlsConfig,omitempty\""
 	EnableHTTP2    *bool                   "json:\"enableHttp2,omitempty\""
+}
+
+type PartialNetworkPolicyConfig struct {
+	Enabled      *bool                            "json:\"enabled,omitempty\" jsonschema:\"required\""
+	OperatorPeer *networkingv1.NetworkPolicyPeer  "json:\"operatorPeer,omitempty\""
+	AdminPeers   []networkingv1.NetworkPolicyPeer "json:\"adminPeers,omitempty\""
+	ClientPeers  []networkingv1.NetworkPolicyPeer "json:\"clientPeers,omitempty\""
 }
 
 type PartialRedpandaResources struct {

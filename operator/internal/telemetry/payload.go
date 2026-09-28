@@ -104,6 +104,9 @@ type Payload struct {
 		// tune_aio_events tuner is not counted here — only the opt-in
 		// host-tuner mode.
 		HostTuners int `json:"hostTunersEnabled"`
+		// NetworkPolicy counts clusters with the chart's opt-in broker
+		// NetworkPolicy enabled (spec.networkPolicy.enabled).
+		NetworkPolicy int `json:"networkPolicyEnabled"`
 	} `json:"redpanda"`
 
 	// VectorizedClusters counts deprecated v1 (vectorized Cluster CR) installs

@@ -12,8 +12,11 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/redpanda-data/common-go/kube"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,6 +30,9 @@ import (
 // V2SimpleResourceRenderer represents an simple resource renderer for v2 clusters.
 type V2SimpleResourceRenderer struct {
 	kubeConfig *kube.RESTConfig
+	// operatorNamespace is admitted by the chart's NetworkPolicy unless the
+	// cluster sets its own operatorPeer. Empty outside a Pod.
+	operatorNamespace string
 }
 
 var _ SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools] = (*V2SimpleResourceRenderer)(nil)
@@ -34,7 +40,8 @@ var _ SimpleResourceRenderer[ClusterWithPools, *ClusterWithPools] = (*V2SimpleRe
 // NewV2SimpleResourceRenderer returns a V2SimpleResourceRenderer.
 func NewV2SimpleResourceRenderer(mgr ctrl.Manager) *V2SimpleResourceRenderer {
 	return &V2SimpleResourceRenderer{
-		kubeConfig: mgr.GetConfig(),
+		kubeConfig:        mgr.GetConfig(),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -63,6 +70,15 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 
 	// disable the console spec components so we don't try to render it twice
 	state.Values.Console.Enabled = ptr.To(false)
+
+	// The operator talks to the brokers, so its own policy must admit it.
+	if np := &state.Values.NetworkPolicy; np.Enabled && np.OperatorPeer == nil && m.operatorNamespace != "" {
+		np.OperatorPeer = &networkingv1.NetworkPolicyPeer{
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{corev1.LabelMetadataName: m.operatorNamespace},
+			},
+		}
+	}
 
 	resources, err := redpandachart.RenderResources(state)
 	if err != nil {
