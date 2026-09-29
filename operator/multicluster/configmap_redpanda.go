@@ -45,6 +45,11 @@ func redpandaConfigFile(state *RenderState, includeSeedServers bool, pool *redpa
 			})
 		}
 		redpanda["seed_servers"] = servers
+
+		// rpk derives --io-properties for well-known cloud VMs from
+		// data_directory before defaulting it, so an unset key crashes the
+		// broker's first start. Constant, so kept out of the checksum.
+		redpanda["data_directory"] = datadirMountPath
 	}
 
 	// Merge node config from CRD.

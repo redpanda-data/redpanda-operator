@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    Redpanda and StretchCluster brokers now get `redpanda.data_directory` in
+    their `redpanda.yaml`. On AWS instance types with rpk I/O profiles (for
+    example `i4i` or `m6id`), every broker pod previously crashed once on
+    start with `Couldn't stat` before its container restarted
+time: 2026-09-28T17:30:01.000000-07:00

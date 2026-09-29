@@ -889,6 +889,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
+        data_directory: /var/lib/redpanda/data
         empty_seed_starts_cluster: false
         kafka_api:
         - address: 0.0.0.0
@@ -1542,6 +1543,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
+        data_directory: /var/lib/redpanda/data
         empty_seed_starts_cluster: false
         kafka_api:
         - address: 0.0.0.0
@@ -2393,6 +2395,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
+        data_directory: /var/lib/redpanda/data
         empty_seed_starts_cluster: false
         kafka_api:
         - address: 0.0.0.0
@@ -3250,6 +3253,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
+        data_directory: /var/lib/redpanda/data
         empty_seed_starts_cluster: false
         kafka_api:
         - address: 0.0.0.0
@@ -4071,6 +4075,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
+        data_directory: /var/lib/redpanda/data
         empty_seed_starts_cluster: false
         kafka_api:
         - address: 0.0.0.0
@@ -4724,6 +4729,7 @@
           require_client_auth: false
           truststore_file: /etc/tls/certs/external/ca.crt
         crash_loop_limit: 5
+        data_directory: /var/lib/redpanda/data
         empty_seed_starts_cluster: false
         kafka_api:
         - address: 0.0.0.0

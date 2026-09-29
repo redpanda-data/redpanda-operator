@@ -147,6 +147,13 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 
 	redpanda = helmette.Merge(redpanda, state.Values.Config.Node.Translate())
 
+	// rpk derives --io-properties for well-known cloud VMs from data_directory
+	// before defaulting it, so an unset key crashes the broker's first start.
+	// Kept out of the checksum: it's constant, and hashing it would roll brokers.
+	if _, ok := redpanda["data_directory"]; !ok && includeNonHashableItems {
+		redpanda["data_directory"] = "/var/lib/redpanda/data"
+	}
+
 	configureListeners(redpanda, state)
 
 	redpandaYaml := map[string]any{

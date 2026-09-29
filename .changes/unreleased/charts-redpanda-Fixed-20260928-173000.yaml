@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    the rendered `redpanda.yaml` now sets `redpanda.data_directory`. On AWS
+    instance types with rpk I/O profiles (`i3`, `i3en`, `i4i`, `im4gn`,
+    `is4gen`, `m6id`, `m7gd`, `m8gd`, `m9gd`), every broker pod previously
+    crashed once on start with `Couldn't stat` before its container restarted
+time: 2026-09-28T17:30:00.000000-07:00
