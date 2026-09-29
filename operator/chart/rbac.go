@@ -45,9 +45,13 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 				"files/rbac/v1-manager.ClusterRole.yaml":           values.VectorizedControllers.Enabled,
 				"files/rbac/v1-manager.Role.yaml":                  values.VectorizedControllers.Enabled,
 				"files/rbac/v2-manager.ClusterRole.yaml":           true,
-				"files/rbac/endpoint-steering.ClusterRole.yaml":    !values.Multicluster.Enabled, // Steering is opted into per cluster by annotation, so a single-cluster operator always needs it; a multicluster one never runs the controller.
 				"files/rbac/pipeline.ClusterRole.yaml":             values.ConnectController.Enabled,
 				"files/rbac/multicluster-manager.ClusterRole.yaml": values.Multicluster.Enabled,
+				// Steering is opted into per cluster by annotation, so a
+				// single-cluster operator always needs the RBAC. A
+				// multicluster one never runs the controller; see
+				// internal/controller/endpointsteering.
+				"files/rbac/endpoint-steering.ClusterRole.yaml": !values.Multicluster.Enabled,
 			},
 		},
 		{
