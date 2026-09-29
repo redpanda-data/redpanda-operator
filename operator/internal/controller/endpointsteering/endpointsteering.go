@@ -38,6 +38,13 @@
 // (a cluster whose flag was turned back off) needs it running to delete the
 // slices it published and let the native controller take the Service back.
 //
+// Only the single-Kubernetes-cluster operator runs it. StretchClusters keep
+// the native EndpointSlice controller: a multicluster deployment reconciles
+// from the Raft leader, reaching its member clusters through
+// multicluster-runtime, and a controller running per member cluster instead
+// would be a second failure model for an operator that has one. Steering
+// them means teaching the portmapper multicluster-runtime first.
+//
 // One caveat on taking a Service over: the renderers drop spec.selector by
 // omitting it from their server-side apply, which removes it only where the
 // operator is its sole field manager. A selector co-owned by another manager
@@ -64,10 +71,10 @@ import (
 
 const (
 	// ServiceAnnotation opts a Service in. Its value names the cluster whose
-	// brokers back the Service -- the v1 Cluster, v2 Redpanda, or
-	// StretchCluster name, which is also the value of the brokers'
-	// app.kubernetes.io/instance label. The Service must define no selector,
-	// or the native controller publishes alongside this one.
+	// brokers back the Service -- the v1 Cluster or v2 Redpanda name, which
+	// is also the value of the brokers' app.kubernetes.io/instance label. The
+	// Service must define no selector, or the native controller publishes
+	// alongside this one.
 	ServiceAnnotation = "cluster.redpanda.com/endpoints-for"
 
 	// PodGroupLabel aligns pods with opted-in Services: a pod is a candidate

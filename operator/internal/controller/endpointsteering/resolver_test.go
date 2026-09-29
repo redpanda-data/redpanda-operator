@@ -98,7 +98,6 @@ func TestTypedResolvers(t *testing.T) {
 	}{
 		{name: "v2", resolver: V2Resolver, group: "v2", wantKind: &redpandav1alpha2.Redpanda{}},
 		{name: "v1", resolver: V1Resolver, group: "v1", wantKind: &vectorizedv1alpha1.Cluster{}},
-		{name: "stretch", resolver: StretchResolver, group: "stretch", wantKind: &redpandav1alpha2.StretchCluster{}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			factory := &recordingFactory{brokers: &fakeCluster{podSelector: map[string]string{"app.kubernetes.io/instance": tc.group}}}
@@ -111,8 +110,9 @@ func TestTypedResolvers(t *testing.T) {
 			require.IsType(t, tc.wantKind, factory.seen[0])
 			require.Equal(t, tc.group, factory.seen[0].(client.Object).GetName())
 
-			// The other kinds' clusters are not this resolver's business, and
-			// neither is a name that exists nowhere.
+			// The other kinds' clusters are not this resolver's business --
+			// a StretchCluster least of all, since nothing steers those --
+			// and neither is a name that exists nowhere.
 			for _, other := range []string{"v2", "v1", "stretch", "missing"} {
 				if other == tc.group {
 					continue

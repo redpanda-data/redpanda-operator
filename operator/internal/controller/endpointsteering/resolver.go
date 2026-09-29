@@ -114,13 +114,6 @@ func V1Resolver(reader client.Reader, brokers BrokersFunc) Resolver {
 	return clusterResolver[vectorizedv1alpha1.Cluster](reader, brokers)
 }
 
-// StretchResolver resolves groups as StretchClusters, reading their broker
-// pools from the local Kubernetes cluster -- the one whose pods this
-// operator instance publishes.
-func StretchResolver(reader client.Reader, brokers BrokersFunc) Resolver {
-	return clusterResolver[redpandav1alpha2.StretchCluster](reader, brokers)
-}
-
 // clusterResolver reads the cluster of type T named by the pod group and asks
 // brokers for its brokers. A group naming no such cluster is not this
 // resolver's business, which is what lets [Resolvers] try the next one.

@@ -20,7 +20,6 @@ import (
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	rendermulticluster "github.com/redpanda-data/redpanda-operator/operator/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 )
@@ -63,19 +62,15 @@ func (c *ClusterBrokers) SchemaRegistry() *schemaregistry.Listener {
 	return c.schemaRegistry
 }
 
-// ClusterBrokers returns the ClusterBrokers of a v1 Cluster, v2 Redpanda, or
-// StretchCluster. For a StretchCluster the listener is read from a
-// representative pool in clusterName -- the representative-pool model
-// SchemaRegistryClientForCluster uses, with the same heterogeneous-pool
-// caveat.
+// ClusterBrokers returns the ClusterBrokers of a v1 Cluster or v2 Redpanda.
+// A StretchCluster has none: endpoint steering, its only consumer, leaves
+// stretch deployments to the native EndpointSlice controller.
 func (c *Factory) ClusterBrokers(ctx context.Context, obj any, clusterName string) (*ClusterBrokers, error) {
 	switch cluster := obj.(type) {
 	case *redpandav1alpha2.Redpanda:
 		return c.redpandaClusterBrokers(ctx, cluster, clusterName)
 	case *vectorizedv1alpha1.Cluster:
 		return c.v1ClusterBrokers(ctx, cluster, clusterName)
-	case *redpandav1alpha2.StretchCluster:
-		return c.stretchClusterBrokers(ctx, cluster, clusterName)
 	}
 	return nil, errors.Newf("unsupported cluster object %T", obj)
 }
@@ -169,38 +164,5 @@ func (c *Factory) v1ClusterBrokers(_ context.Context, cluster *vectorizedv1alpha
 		}
 		return certs.GetSchemaTLSConfig(ctx, k8sClient)
 	})
-	return brokers, nil
-}
-
-func (c *Factory) stretchClusterBrokers(ctx context.Context, sc *redpandav1alpha2.StretchCluster, clusterName string) (*ClusterBrokers, error) {
-	k8sClient, err := c.GetClient(ctx, clusterName)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting k8s client")
-	}
-
-	pool, err := c.representativeBrokerPool(ctx, sc, k8sClient)
-	if err != nil {
-		return nil, errors.Wrap(err, "finding representative broker pool")
-	}
-	if pool == nil {
-		return nil, noRepresentativePoolError(sc)
-	}
-	poolSpec := defaultedPoolSpec(pool)
-
-	brokers := &ClusterBrokers{
-		podSelector:   rendermulticluster.BrokerPodSelector(sc.Name),
-		clusterDomain: strings.TrimSuffix(poolSpec.GetClusterDomain(), "."),
-	}
-
-	listener := poolSpec.Listeners.SchemaRegistry
-	if !listener.IsEnabled() {
-		return brokers, nil
-	}
-	brokers.schemaRegistry = &schemaregistry.Listener{
-		Port: poolSpec.SchemaRegistryPort(),
-		TLSConfig: memoizeTLS(func(ctx context.Context) (*tls.Config, error) {
-			return c.stretchClusterListenerTLSConfig(ctx, sc, poolFullnameFor(sc, pool), poolSpec, listener, k8sClient)
-		}),
-	}
 	return brokers, nil
 }
