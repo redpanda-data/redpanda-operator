@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -23,9 +24,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,6 +44,7 @@ import (
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	resourcetypes "github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
 const (
@@ -1879,3 +1883,135 @@ func TestScaleDownPassDoesNotGrantRoll(t *testing.T) {
 			"a roll-grant must not be issued in the pass that marked a decommission (decommissioning=%v granted=%v)", decommissioning, granted)
 	}
 }
+
+// TestEnsureLoadsNodePortService renders a broker-born cluster with an
+// external listener. No StatefulSet ever exists on that path, so the NodePort
+// Service reaches the configurator's HOST_PORT and the external container
+// ports only if obj() loads it itself.
+func TestEnsureLoadsNodePortService(t *testing.T) {
+	const externalPort = int32(30092)
+
+	tests := []struct {
+		name string
+		// nodePort is the Service's allocated NodePort; nil omits the Service.
+		nodePort *int32
+		check    func(t *testing.T, err error, brokers []redpandav1alpha2.Broker)
+	}{
+		{
+			name:     "allocated",
+			nodePort: ptr.To(externalPort),
+			check: func(t *testing.T, err error, brokers []redpandav1alpha2.Broker) {
+				require.NoError(t, err)
+				require.Len(t, brokers, 1)
+
+				spec := brokers[0].Spec.PodTemplate.Spec
+				configurator := containerByName(t, spec.InitContainers, configuratorContainerName)
+				require.Contains(t, configurator.Env, corev1.EnvVar{Name: "HOST_PORT", Value: "30092"})
+
+				redpanda := containerByName(t, spec.Containers, redpandaContainerName)
+				require.True(t, slices.ContainsFunc(redpanda.Ports, func(p corev1.ContainerPort) bool {
+					return p.Name == ExternalListenerName && p.HostPort == externalPort
+				}), "external container port missing from %v", redpanda.Ports)
+			},
+		},
+		{
+			name: "missing",
+			check: func(t *testing.T, err error, brokers []redpandav1alpha2.Broker) {
+				require.ErrorContains(t, err, "failed to retrieve node port service")
+				require.Empty(t, brokers)
+			},
+		},
+		{
+			name:     "unallocated",
+			nodePort: ptr.To(int32(0)),
+			check: func(t *testing.T, err error, brokers []redpandav1alpha2.Broker) {
+				require.ErrorIs(t, err, errNodePortMissing)
+				require.Empty(t, brokers)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			scheme := brokerSetTestScheme(t)
+			cluster := brokerSetTestCluster()
+			cluster.Spec = vectorizedv1alpha1.ClusterSpec{
+				Image:    "redpandadata/redpanda",
+				Version:  "v25.1.1",
+				Replicas: ptr.To(int32(1)),
+				Storage:  vectorizedv1alpha1.StorageSpec{Capacity: resource.MustParse("1Gi")},
+				Configuration: vectorizedv1alpha1.RedpandaConfig{
+					AdminAPI: []vectorizedv1alpha1.AdminAPI{{Port: 9644}},
+					KafkaAPI: []vectorizedv1alpha1.KafkaAPI{
+						{Port: 9092},
+						{Port: int(externalPort), External: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
+					},
+				},
+			}
+			nodePool := vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: cluster.GetNodePoolsFromSpec()[0]}
+			nodePortName := types.NamespacedName{Name: cluster.Name + "-external", Namespace: cluster.Namespace}
+
+			objs := []k8sclient.Object{cluster}
+			if tt.nodePort != nil {
+				objs = append(objs, &corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{Name: nodePortName.Name, Namespace: nodePortName.Namespace},
+					Spec: corev1.ServiceSpec{
+						Type: corev1.ServiceTypeNodePort,
+						Ports: []corev1.ServicePort{{
+							Name:       ExternalListenerName,
+							Port:       externalPort,
+							TargetPort: intstr.FromInt32(externalPort),
+							NodePort:   *tt.nodePort,
+						}},
+					},
+				})
+			}
+			c := fake.NewClientBuilder().
+				WithScheme(scheme).
+				WithObjects(objs...).
+				WithStatusSubresource(&vectorizedv1alpha1.Cluster{}).
+				Build()
+
+			// HOST_PORT and the container ports come from the Service, not
+			// the redpanda.yaml, so the empty config obj() can still hash
+			// stands in for CreateConfiguration's.
+			cfg := clusterconfiguration.NewConfig(cluster.Namespace, c, nil)
+			adminAPIFactory := func(context.Context, k8sclient.Reader, *vectorizedv1alpha1.Cluster, string, resourcetypes.AdminTLSConfigProvider, redpandaclient.DialContextFunc, time.Duration, ...string) (adminutils.AdminAPIClient, error) {
+				adminAPI := &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")}
+				adminAPI.SetClusterHealth(true)
+				return adminAPI, nil
+			}
+			sts := NewStatefulSet(c, cluster, scheme, "cluster.local", cluster.Name, nodePortName,
+				noTLSVolumes{}, nil, "",
+				ConfiguratorSettings{ConfiguratorBaseImage: "redpandadata/redpanda-operator", ConfiguratorTag: "latest"},
+				cfg, adminAPIFactory, nil, nil, time.Second, ctrl.Log.WithName("test"), time.Hour, nodePool, true, 0)
+			r := &BrokerSetResource{
+				Client:       c,
+				scheme:       scheme,
+				pandaCluster: cluster,
+				stsResource:  sts,
+				nodePool:     nodePool,
+				logger:       ctrl.Log.WithName("test"),
+			}
+
+			ensureErr := r.Ensure(ctx)
+
+			var list redpandav1alpha2.BrokerList
+			require.NoError(t, c.List(ctx, &list, &k8sclient.ListOptions{
+				LabelSelector: labels.ForCluster(cluster).WithNodePool(nodePool.Name).AsClientSelectorForNodePool(),
+			}))
+			tt.check(t, ensureErr, list.Items)
+		})
+	}
+}
+
+func containerByName(t *testing.T, containers []corev1.Container, name string) corev1.Container {
+	idx := slices.IndexFunc(containers, func(c corev1.Container) bool { return c.Name == name })
+	require.NotEqual(t, -1, idx, "container %q not rendered", name)
+	return containers[idx]
+}
+
+type noTLSVolumes struct{}
+
+func (noTLSVolumes) Volumes() ([]corev1.Volume, []corev1.VolumeMount) { return nil, nil }
