@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/go-logr/logr/testr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -150,7 +151,9 @@ func TestMetricsOptions(t *testing.T) {
 		o.MetricsCertPath = certPath
 		o.MetricsKeyPath = keyPath
 
-		options, err := o.metricsOptions(ctx, logger)
+		// The cert watcher goroutine logs when it exits, which can land after
+		// the test completes; testr panics on that, so discard its logs.
+		options, err := o.metricsOptions(t.Context(), logr.Discard())
 		require.NoError(t, err)
 		require.NotNil(t, options)
 		assert.True(t, options.SecureServing)
