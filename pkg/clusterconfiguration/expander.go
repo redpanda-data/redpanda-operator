@@ -59,8 +59,6 @@ func ParseRepresentation(repr string, metadata *rpadmin.ConfigPropertyMetadata) 
 	case "array":
 		switch metadata.Items.Type {
 		case "string":
-			// Order is kept: it is significant for first-match rules and namespace
-			// paths. Superusers, a set, are normalized by the config syncer.
 			return convertStringToArray[string](repr)
 
 		// Fallback to any for all other types.
