@@ -65,6 +65,25 @@ func TestCreateExternalNodesList(t *testing.T) {
 			},
 		},
 	}
+	nodePortSvc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp-external", Namespace: "test"},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{Name: resources.ExternalListenerName, Port: 9093, NodePort: 30093},
+			},
+		},
+	}
+	node := &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{Name: "node-a"},
+		Status: corev1.NodeStatus{
+			Addresses: []corev1.NodeAddress{
+				{Type: corev1.NodeExternalIP, Address: "203.0.113.7"},
+			},
+		},
+	}
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, vectorizedv1alpha1.Install(scheme))
 
 	for _, tc := range []struct {
 		name     string
@@ -136,26 +155,7 @@ func TestCreateExternalNodesList(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			nodePortSvc := &corev1.Service{
-				ObjectMeta: metav1.ObjectMeta{Name: "rp-external", Namespace: "test"},
-				Spec: corev1.ServiceSpec{
-					Ports: []corev1.ServicePort{
-						{Name: resources.ExternalListenerName, Port: 9093, NodePort: 30093},
-					},
-				},
-			}
-			node := &corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{Name: "node-a"},
-				Status: corev1.NodeStatus{
-					Addresses: []corev1.NodeAddress{
-						{Type: corev1.NodeExternalIP, Address: "203.0.113.7"},
-					},
-				},
-			}
-
-			scheme := runtime.NewScheme()
-			require.NoError(t, clientgoscheme.AddToScheme(scheme))
-			require.NoError(t, vectorizedv1alpha1.Install(scheme))
+			// One client per row: the two clusters share a name.
 			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(tc.cluster, nodePortSvc, node).Build()
 			r := &ClusterReconciler{Client: c, Scheme: scheme}
 

@@ -1274,7 +1274,7 @@ func subdomainAddress(
 ) (string, error) {
 	index, err := podOrdinal(pod, pandaCluster.Name)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "could not parse ordinal of pod %s", pod.Name)
 	}
 	var hostIndexOffset int
 	if pool, ok := pod.Labels[labels.NodePoolKey]; ok {
@@ -1288,7 +1288,7 @@ func subdomainAddress(
 	data := utils.NewEndpointTemplateData(index, pod.Status.HostIP, hostIndexOffset)
 	ep, err := utils.ComputeEndpoint(tmpl, data)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "computing endpoint of pod %s", pod.Name)
 	}
 
 	return fmt.Sprintf("%s.%s:%d",
@@ -1310,7 +1310,7 @@ func podOrdinal(pod *corev1.Pod, clusterName string) (int, error) {
 	}
 	index, err := utils.GetPodOrdinal(pod.Name, clusterName)
 	if err != nil {
-		return 0, fmt.Errorf("could not parse ordinal of pod %s: %w", pod.Name, err)
+		return 0, err
 	}
 	return int(index), nil
 }
