@@ -7,7 +7,7 @@ require (
 	github.com/cockroachdb/errors v1.12.0
 	github.com/cucumber/godog v0.14.1
 	github.com/prometheus/common v0.67.5
-	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
+	github.com/redpanda-data/common-go/kube v0.0.0-20260930161154-a407a571c1bb
 	github.com/redpanda-data/common-go/rpadmin v0.2.7
 	github.com/redpanda-data/common-go/rpsr v0.1.4
 	github.com/redpanda-data/redpanda-operator/harpoon v0.0.0-00010101000000-000000000000

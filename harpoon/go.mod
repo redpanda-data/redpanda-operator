@@ -7,7 +7,7 @@ require (
 	github.com/cucumber/godog v0.14.1
 	github.com/cucumber/messages/go/v21 v21.0.1
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
+	github.com/redpanda-data/common-go/kube v0.0.0-20260930161154-a407a571c1bb
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250123101329-b89e4b888a74
 	github.com/stretchr/testify v1.11.1
 	k8s.io/api v0.36.1

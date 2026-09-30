@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
 	github.com/redpanda-data/common-go/goldenfile v0.0.0-20260922181238-9566b7beb637
-	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
+	github.com/redpanda-data/common-go/kube v0.0.0-20260930161154-a407a571c1bb
 	github.com/redpanda-data/common-go/otelutil v0.0.0-20260413160920-df1679f86269
 	github.com/redpanda-data/common-go/rpadmin v0.2.7
 	github.com/redpanda-data/common-go/secrets v0.1.4
