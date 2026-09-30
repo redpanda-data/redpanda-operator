@@ -215,6 +215,23 @@ func TestStringSliceProperties(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []string{"a", "b", "c"}, concreteCfg["superusers"])
 
+	// Order is preserved: principal mapping rules are first-match and an
+	// Iceberg namespace is a path, so sorting them changes their meaning.
+	stringArray := rpadmin.ConfigPropertyMetadata{Type: "array", Items: rpadmin.ConfigPropertyItems{Type: "string"}}
+	config = clusterconfiguration.NewConfig("namespace", nil, nil)
+	config.Cluster.SetAdditionalConfiguration("kafka_mtls_principal_mapping_rules", `["RULE:.*CN=([^,]+).*/$1/", "DEFAULT"]`)
+	config.Cluster.SetAdditionalConfiguration("sasl_kerberos_principal_mapping", `["RULE:[1:$1]/L", "DEFAULT"]`)
+	config.Cluster.SetAdditionalConfiguration("iceberg_default_catalog_namespace", `["redpanda", "analytics"]`)
+	concreteCfg, err = config.ReifyClusterConfiguration(context.TODO(), rpadmin.ConfigSchema{
+		"kafka_mtls_principal_mapping_rules": stringArray,
+		"sasl_kerberos_principal_mapping":    stringArray,
+		"iceberg_default_catalog_namespace":  stringArray,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"RULE:.*CN=([^,]+).*/$1/", "DEFAULT"}, concreteCfg["kafka_mtls_principal_mapping_rules"])
+	assert.Equal(t, []string{"RULE:[1:$1]/L", "DEFAULT"}, concreteCfg["sasl_kerberos_principal_mapping"])
+	assert.Equal(t, []string{"redpanda", "analytics"}, concreteCfg["iceberg_default_catalog_namespace"])
+
 	// Can't append to a non-array
 	config = clusterconfiguration.NewConfig("namespace", nil, nil)
 	config.Cluster.Set("superusers", clusterconfiguration.ClusterConfigValue{Repr: ptr.To(clusterconfiguration.YAMLRepresentation(`"nonarrray"`))})
