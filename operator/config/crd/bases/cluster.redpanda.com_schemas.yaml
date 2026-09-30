@@ -2477,6 +2477,13 @@ spec:
                 description: SchemaHash is the hashed value of the schema synced to
                   the cluster
                 type: string
+              schemaId:
+                description: |-
+                  SchemaID is the ID of the latest schema version synced to the cluster.
+                  When the subject disappears from the Schema Registry, for example after the
+                  cluster's data was lost, the schema is registered again under this ID so that
+                  clients holding cached IDs keep working.
+                type: integer
               versions:
                 description: Versions shows the versions of a given schema
                 items:

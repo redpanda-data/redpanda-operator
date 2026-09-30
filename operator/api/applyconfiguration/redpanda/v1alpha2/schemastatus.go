@@ -22,6 +22,7 @@ type SchemaStatusApplyConfiguration struct {
 	Conditions         []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
 	Versions           []int                            `json:"versions,omitempty"`
 	SchemaHash         *string                          `json:"schemaHash,omitempty"`
+	SchemaID           *int                             `json:"schemaId,omitempty"`
 }
 
 // SchemaStatusApplyConfiguration constructs a declarative configuration of the SchemaStatus type for use with
@@ -66,5 +67,13 @@ func (b *SchemaStatusApplyConfiguration) WithVersions(values ...int) *SchemaStat
 // If called multiple times, the SchemaHash field is set to the value of the last call.
 func (b *SchemaStatusApplyConfiguration) WithSchemaHash(value string) *SchemaStatusApplyConfiguration {
 	b.SchemaHash = &value
+	return b
+}
+
+// WithSchemaID sets the SchemaID field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SchemaID field is set to the value of the last call.
+func (b *SchemaStatusApplyConfiguration) WithSchemaID(value int) *SchemaStatusApplyConfiguration {
+	b.SchemaID = &value
 	return b
 }
