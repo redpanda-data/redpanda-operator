@@ -6,7 +6,7 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "Objects" (list (get (fromJson (include "k8s.pod" (dict "a" (list $dot)))) "r") (get (fromJson (include "k8s.pdb" (dict "a" (list)))) "r") (get (fromJson (include "k8s.service" (dict "a" (list)))) "r")) "intstr" (list (10 | int) (11 | int) "12") "ptr.Deref" (list ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list (3 | int) (4 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list (coalesce nil) (3 | int))))) "r") | int) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list "" "oh?")))) "r")) "ptr.To" (list "hello" (0 | int) (dict)) "ptr.Equal" (list (get (fromJson (include "_shims.ptr_Equal" (dict "a" (list (coalesce nil) (coalesce nil))))) "r") (get (fromJson (include "_shims.ptr_Equal" (dict "a" (list (coalesce nil) (3 | int))))) "r") (get (fromJson (include "_shims.ptr_Equal" (dict "a" (list (3 | int) (3 | int))))) "r")) "lookup" (get (fromJson (include "k8s.lookup" (dict "a" (list $dot)))) "r") "quantity" (get (fromJson (include "k8s.quantity" (dict "a" (list $dot)))) "r") "resources" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r")))) | toJson -}}
+{{- (dict "r" (dict "Objects" (list (get (fromJson (include "k8s.pod" (dict "a" (list $dot)))) "r") (get (fromJson (include "k8s.pdb" (dict "a" (list)))) "r") (get (fromJson (include "k8s.service" (dict "a" (list)))) "r")) "DeepCopy" (get (fromJson (include "k8s.deepCopy" (dict "a" (list)))) "r") "intstr" (list (10 | int) (11 | int) "12") "ptr.Deref" (list ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list (3 | int) (4 | int))))) "r") | int) ((get (fromJson (include "_shims.ptr_Deref" (dict "a" (list (coalesce nil) (3 | int))))) "r") | int) (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list "" "oh?")))) "r")) "ptr.To" (list "hello" (0 | int) (dict)) "ptr.Equal" (list (get (fromJson (include "_shims.ptr_Equal" (dict "a" (list (coalesce nil) (coalesce nil))))) "r") (get (fromJson (include "_shims.ptr_Equal" (dict "a" (list (coalesce nil) (3 | int))))) "r") (get (fromJson (include "_shims.ptr_Equal" (dict "a" (list (3 | int) (3 | int))))) "r")) "lookup" (get (fromJson (include "k8s.lookup" (dict "a" (list $dot)))) "r") "quantity" (get (fromJson (include "k8s.quantity" (dict "a" (list $dot)))) "r") "resources" (dict "cpu" (get (fromJson (include "_shims.resource_MustParse" (dict "a" (list "100m")))) "r")))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -45,19 +45,33 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "k8s.deepCopy" -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $original := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" "original" "labels" (dict "a" "b"))) "spec" (mustMergeOverwrite (dict) (dict "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "admin" "port" (9644 | int)))))))) -}}
+{{- $copied := (deepCopy $original) -}}
+{{- $_ := (set $copied.metadata "name" "copied") -}}
+{{- $_ := (set $copied.metadata "labels" (dict "a" "c")) -}}
+{{- $_ := (set $copied.spec "ports" (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" "kafka" "port" (9093 | int))))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list $original $copied)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "k8s.lookup" -}}
 {{- $dot := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_133_svc_ok1 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Service" "namespace" "name")))) "r") -}}
-{{- $svc := (index $_133_svc_ok1 0) -}}
-{{- $ok1 := (index $_133_svc_ok1 1) -}}
+{{- $_156_svc_ok1 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Service" "namespace" "name")))) "r") -}}
+{{- $svc := (index $_156_svc_ok1 0) -}}
+{{- $ok1 := (index $_156_svc_ok1 1) -}}
 {{- if (not $ok1) -}}
 {{- $_ := (fail (printf "%T %q not found. Test setup should have created it?" (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "loadBalancer" (dict))) (dict)) "name")) -}}
 {{- end -}}
-{{- $_138_sts_ok2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman")))) "r") -}}
-{{- $sts := (index $_138_sts_ok2 0) -}}
-{{- $ok2 := (index $_138_sts_ok2 1) -}}
+{{- $_161_sts_ok2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" "spacename" "eman")))) "r") -}}
+{{- $sts := (index $_161_sts_ok2 0) -}}
+{{- $ok2 := (index $_161_sts_ok2 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list $svc $ok1 $sts $ok2)) | toJson -}}
 {{- break -}}
