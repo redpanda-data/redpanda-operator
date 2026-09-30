@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
@@ -28,23 +29,6 @@ const (
 	// [corev1.VolumeProjection] of truststores will be mounted to the redpanda
 	// container. (Without a trailing slash)
 	TrustStoreMountPath = "/etc/truststores"
-
-	// Injected bound service account token expiration which triggers monitoring of its time-bound feature.
-	// Reference
-	// https://github.com/kubernetes/kubernetes/blob/ae53151cb4e6fbba8bb78a2ef0b48a7c32a0a067/pkg/serviceaccount/claims.go#L38-L39
-	tokenExpirationSeconds = 60*60 + 7
-
-	// ServiceAccountVolumeName is the prefix name that will be added to volumes that mount ServiceAccount secrets
-	// Reference
-	// https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L52-L53
-	ServiceAccountVolumeName = "kube-api-access"
-
-	// DefaultAPITokenMountPath is the path that ServiceAccountToken secrets are automounted to.
-	// The token file would then be accessible at /var/run/secrets/kubernetes.io/serviceaccount
-	// Reference
-	// https://github.com/kubernetes/kubernetes/blob/c6669ea7d61af98da3a2aa8c1d2cdc9c2c57080a/plugin/pkg/admission/serviceaccount/admission.go#L55-L57
-	//nolint:gosec
-	DefaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
 
 	NodePoolLabelName       = "cluster.redpanda.com/nodepool-name"
 	NodePoolLabelGeneration = "cluster.redpanda.com/nodepool-generation"
@@ -203,15 +187,16 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 		volumes = append(volumes, *v)
 	}
 
-	volumes = append(volumes, kubeTokenAPIVolume(ServiceAccountVolumeName))
+	volumes = append(volumes, redpanda.KubeTokenAPIVolume())
 
 	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
-		volumes = append(volumes, HostTunerVolumes()...)
+		volumes = append(volumes, redpanda.HostTunerVolumes()...)
 	}
 
 	return volumes
 }
 
+<<<<<<< HEAD
 // HostTunerVolumes returns the hostPath volumes used by the host-mode
 // tuning init container (and, for the tuner state file, the broker
 // container). Bound only when Tuning.ApplyHostTuners is true. Exported
@@ -323,6 +308,8 @@ func kubeTokenAPIVolume(name string) corev1.Volume {
 	}
 }
 
+=======
+>>>>>>> ef2d9775 (charts/redpanda: dedupe broker scripts shared with the multicluster renderer)
 func statefulSetVolumeDataDir(state *RenderState) corev1.Volume {
 	datadirSource := corev1.VolumeSource{
 		EmptyDir: &corev1.EmptyDirVolumeSource{},
@@ -387,7 +374,7 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 		{Name: "base-config", MountPath: "/tmp/base-config"},
 		{Name: "lifecycle-scripts", MountPath: "/var/lifecycle"},
 		{Name: "datadir", MountPath: "/var/lib/redpanda/data"},
-		{Name: ServiceAccountVolumeName, MountPath: DefaultAPITokenMountPath, ReadOnly: true},
+		{Name: redpanda.ServiceAccountVolumeName, MountPath: redpanda.DefaultAPITokenMountPath, ReadOnly: true},
 	}...)
 
 	if len(state.Values.Listeners.TrustStores(&state.Values.TLS)) > 0 {
@@ -398,7 +385,7 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	}
 
 	if state.Values.Tuning.TuneAIOEvents && state.Values.Tuning.ApplyHostTuners {
-		mounts = append(mounts, HostTunerStateVolumeMount())
+		mounts = append(mounts, redpanda.HostTunerStateVolumeMount())
 	}
 
 	return mounts
@@ -422,33 +409,6 @@ func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container
 	containers = append(containers, bootstrapYamlTemplater(state, pool.Statefulset))
 	return containers
 }
-
-// HostTunerDirs returns the host filesystem directories bind-mounted
-// into the tuning container so that `rpk redpanda tune all` can chroot
-// in and see the host's /sys, /proc, NIC devices, block devices, and
-// rpk binary. Kept as a list (not whole-/) on purpose: bind-mounting /
-// into /host creates mount-loops with /opt/redpanda. See
-// https://redpandadata.atlassian.net/browse/CORE-13685
-// bin and sbin matter for non-usr-merged hosts (GKE's COS): there
-// /bin is a real directory — bash lives at /bin/bash, NOT
-// /usr/bin/bash — so without these mounts the chroot has no shell at
-// all and tuning silently no-ops. On usr-merged hosts (Ubuntu,
-// AL2023) /bin and /sbin are symlinks into /usr, and the bind mount
-// just resolves to the same content.
-//
-// Exported so the multicluster (StretchCluster) renderer can reuse it.
-func HostTunerDirs() []string {
-	return []string{"bin", "sbin", "sys", "proc", "etc", "usr", "lib", "lib64", "dev", "var", "run"}
-}
-
-// HostTunerStateFilePath is where rpk persists the net tuner's cpuset
-// state on the host (rpk's own default path; see
-// DefaultNodeTunerStateFile in rpk). The tuning init container writes
-// it through the /host/var and /host/run bind mounts, and the broker
-// container mounts it read-only at the same path so `rpk redpanda
-// start` picks the cpuset up without any extra flag. /var/run is tmpfs,
-// so state never outlives a node reboot.
-const HostTunerStateFilePath = "/var/run/redpanda_node_tuner_state.yaml"
 
 func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 	if !state.Values.Tuning.TuneAIOEvents {
@@ -501,7 +461,7 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 // `nsenter -t 1 -n` to enter the host network namespace, rpk sees the
 // real host and the tuners apply for real.
 //
-// Workarounds layered in by this function (see HostTunerScript for the
+// Workarounds layered in by this function (see redpanda.HostTunerScript for the
 // script-side ones):
 //   - cp (under umask 077) + sed the rendered redpanda.yaml into
 //     /var/tmp and inject `redpanda.data_directory` so the disk tuners
@@ -511,7 +471,7 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 //     live in the file.
 //   - busctl call into the host's systemd to try-restart irqbalance
 //     after rpk rewrites IRQ affinity (systemctl can't traverse a
-//     chroot). No non-systemd fallback — see HostTunerScript for why
+//     chroot). No non-systemd fallback — see redpanda.HostTunerScript for why
 //     none can work without hostPID.
 //   - a `which` shim written into /opt/redpanda/bin (bind-mounted into
 //     the chroot, first on PATH): rpk's fstrim tuner shells out to
@@ -527,7 +487,7 @@ func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container 
 	return &corev1.Container{
 		Name:    RedpandaTuningContainerName,
 		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
-		Command: []string{`/bin/bash`, `-c`, HostTunerScript()},
+		Command: []string{`/bin/bash`, `-c`, redpanda.HostTunerScript()},
 		SecurityContext: &corev1.SecurityContext{
 			// privileged: true already grants every capability;
 			// explicit Add entries would be redundant noise.
@@ -536,10 +496,11 @@ func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container 
 			RunAsUser:    ptr.To(int64(0)),
 			RunAsGroup:   ptr.To(int64(0)),
 		},
-		VolumeMounts: HostTunerVolumeMounts(),
+		VolumeMounts: redpanda.HostTunerVolumeMounts(),
 	}
 }
 
+<<<<<<< HEAD
 // HostTunerVolumeMounts returns the volume mounts for the host-mode
 // tuning init container. Exported so the multicluster (StretchCluster)
 // renderer can reuse it; the "base-config" and "datadir" volume names
@@ -697,6 +658,8 @@ chroot /host /bin/bash -c '
 `
 }
 
+=======
+>>>>>>> ef2d9775 (charts/redpanda: dedupe broker scripts shared with the multicluster renderer)
 func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool Pool) *corev1.Container {
 	if !pool.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
 		return nil
@@ -865,8 +828,8 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 
 	if state.Values.RackAwareness.Enabled {
 		volMounts = append(volMounts, corev1.VolumeMount{
-			Name:      ServiceAccountVolumeName,
-			MountPath: DefaultAPITokenMountPath,
+			Name:      redpanda.ServiceAccountVolumeName,
+			MountPath: redpanda.DefaultAPITokenMountPath,
 			ReadOnly:  true,
 		})
 	}
@@ -930,33 +893,6 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 	return containers
 }
 
-// wrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
-//   - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
-//   - It redirect stderr to stdout so all logs from cmd get the same treatment.
-//   - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
-//   - It tees the output to fd 1 of pid 1 so it shows up in kubectl logs.
-//   - When the wrapped command exceeds the time budget, it emits a clearly-marked
-//     TIMEOUT line — `timeout`'s own message can be sparse, and the trailing
-//     `true` below previously made the failure invisible to anyone scanning pod
-//     logs for a reason the broker shut down ungracefully. PIPESTATUS[0] is
-//     read for timeout's exit code (124 = SIGTERM sent, 137 = SIGKILL).
-//   - It still terminates the entire command with "true" so non-zero exits
-//     don't poison container lifecycle on transient hook issues. The TIMEOUT
-//     marker above is the diagnostic signal operators grep for.
-func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
-	wrapped := helmette.Join(" ", cmd)
-	script := fmt.Sprintf(
-		`timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1`+"\n"+
-			`ec=${PIPESTATUS[0]}`+"\n"+
-			`if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then`+"\n"+
-			`  echo "lifecycle-hook %s $(date): TIMEOUT after %ds — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1`+"\n"+
-			`fi`+"\n"+
-			`true`,
-		timeoutSeconds, wrapped, hook, hook, timeoutSeconds,
-	)
-	return []string{"bash", "-c", script}
-}
-
 func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Container {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "$(SERVICE_NAME)", InternalDomain(state))
 
@@ -968,7 +904,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			// finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
 			PostStart: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: wrapLifecycleHook(
+					Command: redpanda.WrapLifecycleHook(
 						"post-start",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"},
@@ -977,7 +913,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			},
 			PreStop: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: wrapLifecycleHook(
+					Command: redpanda.WrapLifecycleHook(
 						"pre-stop",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"},
@@ -1214,8 +1150,8 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 			ReadOnly:  true,
 		},
 		corev1.VolumeMount{
-			Name:      ServiceAccountVolumeName,
-			MountPath: DefaultAPITokenMountPath,
+			Name:      redpanda.ServiceAccountVolumeName,
+			MountPath: redpanda.DefaultAPITokenMountPath,
 			ReadOnly:  true,
 		},
 	)
