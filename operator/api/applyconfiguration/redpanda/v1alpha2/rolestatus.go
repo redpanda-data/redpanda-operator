@@ -18,12 +18,13 @@ import (
 // RoleStatusApplyConfiguration represents a declarative configuration of the RoleStatus type for use
 // with apply.
 type RoleStatusApplyConfiguration struct {
-	ObservedGeneration *int64                           `json:"observedGeneration,omitempty"`
-	Conditions         []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
-	ManagedACLs        *bool                            `json:"managedAcls,omitempty"`
-	ManagedRole        *bool                            `json:"managedRole,omitempty"`
-	ManagedPrincipals  *bool                            `json:"managedPrincipals,omitempty"`
-	EffectiveRoleName  *string                          `json:"effectiveRoleName,omitempty"`
+	ObservedGeneration       *int64                           `json:"observedGeneration,omitempty"`
+	Conditions               []v1.ConditionApplyConfiguration `json:"conditions,omitempty"`
+	ManagedACLs              *bool                            `json:"managedAcls,omitempty"`
+	ManagedRole              *bool                            `json:"managedRole,omitempty"`
+	ManagedPrincipals        *bool                            `json:"managedPrincipals,omitempty"`
+	EffectiveRoleName        *string                          `json:"effectiveRoleName,omitempty"`
+	PendingEffectiveRoleName *string                          `json:"pendingEffectiveRoleName,omitempty"`
 }
 
 // RoleStatusApplyConfiguration constructs a declarative configuration of the RoleStatus type for use with
@@ -82,5 +83,13 @@ func (b *RoleStatusApplyConfiguration) WithManagedPrincipals(value bool) *RoleSt
 // If called multiple times, the EffectiveRoleName field is set to the value of the last call.
 func (b *RoleStatusApplyConfiguration) WithEffectiveRoleName(value string) *RoleStatusApplyConfiguration {
 	b.EffectiveRoleName = &value
+	return b
+}
+
+// WithPendingEffectiveRoleName sets the PendingEffectiveRoleName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the PendingEffectiveRoleName field is set to the value of the last call.
+func (b *RoleStatusApplyConfiguration) WithPendingEffectiveRoleName(value string) *RoleStatusApplyConfiguration {
+	b.PendingEffectiveRoleName = &value
 	return b
 }

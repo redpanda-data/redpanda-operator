@@ -1,0 +1,7 @@
+project: operator
+kind: Fixed
+body: |-
+    An interrupted `RedpandaRole` rename no longer orphans the old role in
+    Redpanda. The new `status.pendingEffectiveRoleName` field records the
+    rename's target so the next reconciliation retries the rename.
+time: 2026-09-23T11:30:00.000000+01:00
