@@ -2608,6 +2608,14 @@ spec:
                 description: Specifies the last observed generation.
                 format: int64
                 type: integer
+              pendingEffectiveRoleName:
+                description: |-
+                  Records the effective role name that an in-progress rename is moving to.
+                  It is recorded alongside the failure that interrupted the rename and
+                  cleared once the rename completes, so that the rename can be retried, or
+                  its half-created role cleaned up if the spec reverts to the previous
+                  name in the meantime. Absent when no rename is in flight.
+                type: string
             type: object
         required:
         - spec

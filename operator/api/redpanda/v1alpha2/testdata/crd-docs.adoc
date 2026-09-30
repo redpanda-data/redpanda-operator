@@ -3854,6 +3854,12 @@ that are being reconciled by the operator. + |  |
 | *`effectiveRoleName`* __string__ | EffectiveRoleName stores the last known effective role name that was successfully +
 reconciled. This is used to detect role renames and clean up the old role. + |  | Optional: \{} +
 
+| *`pendingEffectiveRoleName`* __string__ | Records the effective role name that an in-progress rename is moving to. +
+It is recorded alongside the failure that interrupted the rename and +
+cleared once the rename completes, so that the rename can be retried, or +
+its half-created role cleaned up if the spec reverts to the previous +
+name in the meantime. Absent when no rename is in flight. + |  | Optional: \{} +
+
 |===
 
 

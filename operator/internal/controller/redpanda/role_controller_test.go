@@ -11,13 +11,17 @@ package redpanda
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	"github.com/twmb/franz-go/pkg/kgo"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -907,32 +911,8 @@ func TestRoleMembershipReconciliation(t *testing.T) {
 func TestRoleRename(t *testing.T) {
 	// Tests role rename happy path: K8s name → internal name → different internal name
 	// Verifies old roles are deleted and new roles created without orphaning.
-	//
-	// Unhappy path scenarios (documented for future implementation with mocks):
-	//
-	// Scenario 1: New role creation fails
-	//   - Rename detected, hasRole=false
-	//   - Create() returns error
-	//   - createPatch returns error
-	//   - Status NOT updated (keeps previousEffectiveName)
-	//   - Next reconciliation retries from beginning
-	//
-	// Scenario 2: Old role deletion fails
-	//   - Rename detected, hasRole=false
-	//   - Create() succeeds, new role exists
-	//   - DeleteByName() returns error
-	//   - createPatch returns error
-	//   - Status NOT updated (keeps previousEffectiveName)
-	//   - Next reconciliation: hasRole=true (skip create), retry delete
-	//
-	// Scenario 3: Retry after deletion failure
-	//   - Rename still detected (status has old name)
-	//   - hasRole=true (new role exists from previous attempt)
-	//   - Logs "New role already exists, skipping creation"
-	//   - DeleteByName() succeeds this time
-	//   - createPatch(nil) updates status to currentEffectiveName
-	//   - Rename complete, no orphaned roles
-	//nolint:laconiccomments
+	// The interrupted-rename path (status must keep the previous effective
+	// name until cleanup completes) is covered by TestRoleRenameInterrupted.
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
@@ -1055,4 +1035,176 @@ func TestRoleRename(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
 	})
+}
+
+func TestRoleRenameInterrupted(t *testing.T) {
+	// A rename interrupted by a transient failure must not advance
+	// status.EffectiveRoleName: the caller applies the status patch even when
+	// SyncResource errors, and once status records the new name the old
+	// role would never be revisited, permanently orphaning it in Redpanda.
+	// The in-flight target is recorded in status.PendingEffectiveRoleName
+	// instead, so cleanup also survives the spec reverting mid-rename.
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
+	defer cancel()
+
+	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
+	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+		extraOptions: []kgo.Opt{timeoutOption},
+	})
+
+	// The role must carry ACLs: the rename path only touches the
+	// SASL-authenticated Kafka client through the ACL syncer (the dev
+	// container's admin API is unauthenticated), and the interruptions below
+	// work by breaking those credentials. That pins where every interrupted
+	// pass dies: after the new role is created, before any cleanup.
+	role := &redpandav1alpha2.RedpandaRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: metav1.NamespaceDefault,
+			Name:      "interrupted-role",
+		},
+		Spec: redpandav1alpha2.RoleSpec{
+			ClusterSource: environment.ClusterSourceValid,
+			Principals:    []string{"User:user1"},
+			Authorization: &redpandav1alpha2.RoleAuthorizationSpec{
+				ACLs: []redpandav1alpha2.ACLRule{{
+					Type: redpandav1alpha2.ACLTypeAllow,
+					Resource: redpandav1alpha2.ACLResourceSpec{
+						Type: redpandav1alpha2.ResourceTypeGroup,
+						Name: "group",
+					},
+					Operations: []redpandav1alpha2.ACLOperation{
+						redpandav1alpha2.ACLOperationDescribe,
+					},
+				}},
+			},
+		},
+	}
+
+	key := client.ObjectKeyFromObject(role)
+	req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: key}, ClusterName: mcmanager.LocalCluster}
+
+	k8sClient, err := environment.Factory.GetClient(ctx, mcmanager.LocalCluster)
+	require.NoError(t, err)
+
+	// The unauthenticated admin API can inspect roles in Redpanda even while
+	// the Kafka credentials are corrupted.
+	adminClient, err := rpadmin.NewAdminAPI([]string{environment.AdminURL}, &rpadmin.NopAuth{}, nil)
+	require.NoError(t, err)
+	defer adminClient.Close()
+
+	hasRole := func(name string) bool {
+		t.Helper()
+		if _, err := adminClient.Role(ctx, name); err != nil {
+			var httpErr *rpadmin.HTTPResponseError
+			require.ErrorAs(t, err, &httpErr)
+			require.Equal(t, http.StatusNotFound, httpErr.Response.StatusCode)
+			return false
+		}
+		return true
+	}
+
+	principals := func(name string) []string {
+		t.Helper()
+		resp, err := adminClient.RoleMembers(ctx, name)
+		require.NoError(t, err)
+		var out []string
+		for _, member := range resp.Members {
+			out = append(out, member.PrincipalType+":"+member.Name)
+		}
+		return out
+	}
+
+	secretKey := client.ObjectKey{Namespace: metav1.NamespaceDefault, Name: "superuser"}
+	setPassword := func(password string) {
+		t.Helper()
+		var secret corev1.Secret
+		require.NoError(t, k8sClient.Get(ctx, secretKey, &secret))
+		secret.Data["password"] = []byte(password)
+		require.NoError(t, k8sClient.Update(ctx, &secret))
+	}
+
+	require.NoError(t, k8sClient.Create(ctx, role))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "interrupted-role", role.Status.EffectiveRoleName)
+
+	// Interrupt a rename: flip the internal flag while the SASL password
+	// secret referenced by the (immutable) ClusterSource is corrupted, so the
+	// pass dies at ACL sync. Terminal client errors surface as a condition,
+	// not a returned error, so the reconcile result is ignored here.
+	setPassword("wrong")
+	role.Spec.Internal = true
+	require.NoError(t, k8sClient.Update(ctx, role))
+	_, _ = environment.Reconciler.Reconcile(ctx, req)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	synced := apimeta.FindStatusCondition(role.Status.Conditions, redpandav1alpha2.ResourceConditionTypeSynced)
+	require.NotNil(t, synced)
+	require.Equal(t, metav1.ConditionFalse, synced.Status,
+		"the interrupted reconcile must report not-synced; Synced=True here means the corrupted credentials never bit and no rename was interrupted")
+	require.Equal(t, "interrupted-role", role.Status.EffectiveRoleName,
+		"an interrupted rename must keep reporting the previous effective name")
+	require.Equal(t, "__interrupted-role", role.Status.PendingEffectiveRoleName,
+		"the in-flight target must be recorded for later cleanup")
+	require.True(t, hasRole("interrupted-role"), "old role must survive until cleanup succeeds")
+	require.True(t, hasRole("__interrupted-role"), "interruption must land after the new role is created")
+
+	// Change principals between attempts: the retry finds the new role
+	// already created and must update its membership rather than skip it.
+	role.Spec.Principals = []string{"User:user2"}
+	require.NoError(t, k8sClient.Update(ctx, role))
+
+	setPassword("password")
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "__interrupted-role", role.Status.EffectiveRoleName)
+	require.Empty(t, role.Status.PendingEffectiveRoleName)
+	require.False(t, hasRole("interrupted-role"), "old role must be deleted once the rename resumes")
+	require.Equal(t, []string{"User:user2"}, principals("__interrupted-role"),
+		"principals changed between attempts must land on the already-created role")
+
+	// The completed rename must quiesce: another pass writes nothing.
+	resourceVersion := role.ResourceVersion
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, resourceVersion, role.ResourceVersion,
+		"reconciling a completed rename must not write")
+
+	// Revert mid-rename: interrupt a rename back to the plain name, then flip
+	// the spec back before the retry lands. Status matches spec again, so
+	// only PendingEffectiveRoleName still knows about the half-created role —
+	// it must be cleaned up, not orphaned.
+	setPassword("wrong")
+	role.Spec.Internal = false
+	require.NoError(t, k8sClient.Update(ctx, role))
+	_, _ = environment.Reconciler.Reconcile(ctx, req)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "__interrupted-role", role.Status.EffectiveRoleName)
+	require.Equal(t, "interrupted-role", role.Status.PendingEffectiveRoleName)
+	require.True(t, hasRole("interrupted-role"), "interruption must land after the new role is created")
+
+	setPassword("password")
+	role.Spec.Internal = true
+	require.NoError(t, k8sClient.Update(ctx, role))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+
+	require.NoError(t, k8sClient.Get(ctx, key, role))
+	require.Equal(t, "__interrupted-role", role.Status.EffectiveRoleName)
+	require.Empty(t, role.Status.PendingEffectiveRoleName)
+	require.False(t, hasRole("interrupted-role"),
+		"the reverted rename's half-created role must be cleaned up")
+	require.True(t, hasRole("__interrupted-role"))
+
+	require.NoError(t, k8sClient.Delete(ctx, role))
+	_, err = environment.Reconciler.Reconcile(ctx, req)
+	require.NoError(t, err)
+	require.True(t, apierrors.IsNotFound(k8sClient.Get(ctx, key, role)))
+	require.False(t, hasRole("__interrupted-role"))
 }
