@@ -10,7 +10,7 @@ require (
 	github.com/gonvenience/ytbx v1.5.0
 	github.com/homeport/dyff v1.12.0
 	github.com/imdario/mergo v0.3.16
-	github.com/redpanda-data/common-go/kube v0.0.0-20260408144400-efba9928bb27
+	github.com/redpanda-data/common-go/kube v0.0.0-20260930161154-a407a571c1bb
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250124085449-058118a82f50
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
