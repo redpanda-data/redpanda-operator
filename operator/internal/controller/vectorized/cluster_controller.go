@@ -1272,15 +1272,14 @@ func needExternalIP(external vectorizedv1alpha1.ExternalConnectivityConfig) bool
 func subdomainAddress(
 	tmpl string, pod *corev1.Pod, subdomain string, port int32, pandaCluster *vectorizedv1alpha1.Cluster,
 ) (string, error) {
-	prefixLen := len(pod.GenerateName)
-	index, err := strconv.Atoi(pod.Name[prefixLen:])
+	index, err := podOrdinal(pod, pandaCluster.Name)
 	if err != nil {
-		return "", fmt.Errorf("could not parse node ID from pod name %s: %w", pod.Name, err)
+		return "", err
 	}
 	var hostIndexOffset int
-	if val, ok := pod.GetAnnotations()[labels.NodePoolKey]; ok {
+	if pool, ok := pod.Labels[labels.NodePoolKey]; ok {
 		for _, np := range pandaCluster.GetNodePoolsFromSpec() {
-			if np.Name == val {
+			if np.Name == pool {
 				hostIndexOffset = np.HostIndexOffset
 				break
 			}
@@ -1297,6 +1296,23 @@ func subdomainAddress(
 		subdomain,
 		port,
 	), nil
+}
+
+// podOrdinal reads the pod's ordinal from the apps.kubernetes.io/pod-index
+// label (present on pods born from StatefulSet and Broker CR), and
+// falls back to the trailing dash token of the name for StatefulSet pods on
+// clusters without the PodIndexLabel feature gate.
+func podOrdinal(pod *corev1.Pod, clusterName string) (int, error) {
+	if v, ok := pod.Labels[appsv1.PodIndexLabel]; ok {
+		if index, err := strconv.Atoi(v); err == nil {
+			return index, nil
+		}
+	}
+	index, err := utils.GetPodOrdinal(pod.Name, clusterName)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse ordinal of pod %s: %w", pod.Name, err)
+	}
+	return int(index), nil
 }
 
 func getExternalIP(node *corev1.Node) string {
