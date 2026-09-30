@@ -37,6 +37,7 @@ func K8s(dot *helmette.Dot) map[string]any {
 			pdb(),
 			service(),
 		},
+		"DeepCopy": deepCopy(),
 		// intstr's are special cased because they have an... interesting
 		// JSON/YAML mapping.
 		"intstr": []intstr.IntOrString{
@@ -129,6 +130,28 @@ func service() *corev1.Service {
 			},
 		},
 	}
+}
+
+// deepCopy asserts that DeepCopy returns something the caller can mutate
+// without the original noticing. In template land structs are dicts, which
+// are handed around by reference, so this is the only way to get a copy.
+func deepCopy() []any {
+	original := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "original",
+			Labels: map[string]string{"a": "b"},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{{Name: "admin", Port: 9644}},
+		},
+	}
+
+	copied := original.DeepCopy()
+	copied.ObjectMeta.Name = "copied"
+	copied.ObjectMeta.Labels = map[string]string{"a": "c"}
+	copied.Spec.Ports = []corev1.ServicePort{{Name: "kafka", Port: 9093}}
+
+	return []any{original, *copied}
 }
 
 func lookup(dot *helmette.Dot) []any {
