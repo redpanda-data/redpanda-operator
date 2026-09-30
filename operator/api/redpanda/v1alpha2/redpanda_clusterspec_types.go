@@ -559,6 +559,20 @@ type GatewayExternalConfig struct {
 	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 	// The port advertised to clients. Defaults to 443.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+	// Renders the Gateway listeners that `type: tcproute` and `type: tlsroute` routes need as a ListenerSet per parent Gateway, so the Gateway owner only allows ListenerSets (`spec.allowedListeners`) instead of maintaining listeners. A `tlsroute` hostname gets a TLS-passthrough entry on `advertisedPort`. Requires Gateway API ListenerSet support.
+	ListenerSet *GatewayListenerSet `json:"listenerSet,omitempty"`
+	// Caps this release's `type: tcproute` ports on each Gateway, for example 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit.
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=64
+	MaxPorts *int32 `json:"maxPorts,omitempty"`
+}
+
+// GatewayListenerSet configures rendering `type: tcproute` Gateway listeners as a ListenerSet.
+type GatewayListenerSet struct {
+	// Enables a ListenerSet per parent Gateway for `type: tcproute` listeners.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Also attaches every route to the Gateway listener on the same port (default true), so moving an existing install to a ListenerSet drops no connections: the Gateway's own listeners keep serving until they are removed, then the ListenerSet's take over. Set false once they are gone.
+	AttachToGateway *bool `json:"attachToGateway,omitempty"`
 }
 
 // Logging configures logging settings in the Helm values. See https://docs.redpanda.com/current/manage/kubernetes/troubleshooting/troubleshoot/.
@@ -1038,13 +1052,24 @@ type ExternalListener struct {
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
 	NodePort        *int32  `json:"nodePort,omitempty"`
-	// Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" to route this listener via Gateway API: a TLSRoute is created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service.
-	// +kubebuilder:validation:Enum=tlsroute
+	// Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" (SNI hostnames) or "tcproute" (one Gateway port per broker) to route this listener via Gateway API: routes are created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service.
+	// +kubebuilder:validation:Enum=tlsroute;tcproute
 	Type *string `json:"type,omitempty"`
-	// Host is the SNI hostname for the bootstrap TLSRoute when using Gateway API external access.
+	// Host is the SNI hostname for the bootstrap TLSRoute, or the advertised host every broker shares for type tcproute.
 	Host *string `json:"host,omitempty"`
-	// HostTemplate is a Go template for per-broker TLSRoute SNI hostnames. Supports $POD_ORDINAL and $POD_NAME variables.
+	// HostTemplate is a Go template for per-broker TLSRoute SNI hostnames, or an optional per-broker advertised host for type tcproute. Supports $POD_ORDINAL and $POD_NAME variables.
 	HostTemplate *string `json:"hostTemplate,omitempty"`
+	// NetworkPort is the Gateway listener port the bootstrap TCPRoute attaches to (type tcproute).
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	NetworkPort *int32 `json:"networkPort,omitempty"`
+	// BrokerNetworkPortBase is the Gateway listener port of the broker with global ordinal 0; broker i attaches to and advertises base+i (type tcproute; advertisedPorts is ignored).
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=65535
+	BrokerNetworkPortBase *int32 `json:"brokerNetworkPortBase,omitempty"`
+	// ParentRefs overrides `external.gateway.parentRefs` for this listener's routes, for example to put TLS and plaintext listeners on separate Gateways (and so separate load balancers).
+	// +kubebuilder:validation:MaxItems=32
+	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 }
 
 // Admin configures settings for the Admin API listeners.

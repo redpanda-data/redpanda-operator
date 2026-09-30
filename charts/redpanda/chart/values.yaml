@@ -311,7 +311,7 @@ external:
   # @doc external.prefixTemplate -- Optional Go template for the prefix of each broker's advertised address. The result is prepended to `external.domain` during initContainer execution. Only used when `external.addresses` contains a single entry that serves all brokers.
   # @default -- `""`
   # prefixTemplate: ""
-  # -- Gateway API TLSRoute-based external access (alternative to NodePort/LoadBalancer).
+  # -- Gateway API TLSRoute- or TCPRoute-based external access (alternative to NodePort/LoadBalancer).
   # The chart creates a bootstrap TLSRoute plus one per-broker TLSRoute, routed by SNI
   # through a Gateway you manage. Opt individual listeners in by setting their type:
   # `listeners.<service>.external.<name>.type: tlsroute` (see listeners.kafka.external below).
@@ -330,6 +330,20 @@ external:
   #   # Port advertised to clients in broker metadata. Defaults to 443. The actual
   #   # listening port is configured on the Gateway, not on the TLSRoute.
   #   advertisedPort: 9094
+  #   # Render the Gateway listeners the TCPRoutes and TLSRoutes need as a
+  #   # ListenerSet per parent Gateway, so they follow the broker count (a tlsroute
+  #   # hostname gets a TLS-passthrough entry on advertisedPort). The Gateway owner
+  #   # allows ListenerSets from this namespace (spec.allowedListeners) and keeps at
+  #   # least one listener of its own.
+  #   listenerSet:
+  #     enabled: true
+  #     # Also attach every route to the Gateway listener on the same port, so moving
+  #     # an existing install to a ListenerSet drops no connections. Set false once the
+  #     # Gateway's own tcproute listeners are removed.
+  #     attachToGateway: true
+  #   # Caps this release's tcproute ports per Gateway, e.g. 50 behind an AWS NLB.
+  #   # Defaults to 64.
+  #   maxPorts: 50
 
 # -- Log-level settings.
 logging:
@@ -955,6 +969,26 @@ listeners:
         # Variables: $POD_ORDINAL, $POD_NAME. The broker advertises this same hostname,
         # so the SNI the client reconnects on matches what the Gateway routes by.
         # hostTemplate: redpanda-$POD_ORDINAL-broker.example.com
+        # With type: tcproute the chart creates a bootstrap + per-broker TCPRoute instead,
+        # telling brokers apart by Gateway port rather than SNI: one load balancer, one
+        # DNS name and one certificate SAN, and TLS (if enabled) passes through to the
+        # broker. `host` is the advertised host every broker shares. The Gateway must
+        # have a TCP listener on every port below; the chart pins each route to one.
+        # type: tcproute
+        # host: kafka.example.com
+        # -- Gateway listener port the bootstrap TCPRoute attaches to (type: tcproute).
+        # networkPort: 9199
+        # -- Gateway listener port of the broker with global ordinal 0; broker i attaches
+        # to and advertises base+i (type: tcproute). Pre-provision headroom on the Gateway
+        # so scale-up needs no Gateway change.
+        # brokerNetworkPortBase: 9200
+        # -- Overrides external.gateway.parentRefs for this listener's routes (type: tlsroute
+        # or tcproute). Put listeners on separate Gateways, and so separate load balancers,
+        # when one Gateway runs out of ports (an AWS NLB allows 50 listeners). Ports only
+        # need to be unique per Gateway.
+        # parentRefs:
+        #   - name: redpanda-tcp-plain
+        #     namespace: infra
   # -- RPC listener (this is never externally accessible).
   rpc:
     # -- (string) The address to bind this listener to.

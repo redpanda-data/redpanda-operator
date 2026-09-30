@@ -13,6 +13,12 @@
 {{- $parentRefs := (coalesce nil) -}}
 {{- range $_, $parentRef := $state.Values.gateway.parentRefs -}}
 {{- $ref := (mustMergeOverwrite (dict "name" "") (dict "name" (toString (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $parentRef.name))))) "r")))) -}}
+{{- if (ne (toJson $parentRef.group) "null") -}}
+{{- $_ := (set $ref "group" $parentRef.group) -}}
+{{- end -}}
+{{- if (ne (toJson $parentRef.kind) "null") -}}
+{{- $_ := (set $ref "kind" $parentRef.kind) -}}
+{{- end -}}
 {{- if (ne (toJson $parentRef.namespace) "null") -}}
 {{- $namespace := (get (fromJson (include (first $state.Template) (dict "a" (concat (rest $state.Template) (list $parentRef.namespace))))) "r") -}}
 {{- $_ := (set $ref "namespace" (toString $namespace)) -}}

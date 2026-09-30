@@ -7031,6 +7031,20 @@ spec:
                       description: GatewayParentReference identifies a parent Gateway
                         for the HTTPRoute.
                       properties:
+                        group:
+                          description: The API group of the parent, for a parent other
+                            than a Gateway. Defaults to `gateway.networking.k8s.io`.
+                          maxLength: 253
+                          pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        kind:
+                          description: The kind of the parent, for example `ListenerSet`
+                            to attach to a ListenerSet entry chosen by `sectionName`.
+                            Defaults to `Gateway`.
+                          maxLength: 63
+                          minLength: 1
+                          pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                          type: string
                         name:
                           type: string
                         namespace:

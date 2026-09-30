@@ -480,6 +480,27 @@ func TestGatewayConfigFields(t *testing.T) {
 	})
 }
 
+func TestGatewayParentRefKind(t *testing.T) {
+	// group/kind pass through, so the HTTPRoute can attach to a ListenerSet
+	// entry, or to a Gateway and a ListenerSet at once while migrating.
+	state, err := NewRenderState("ns", "rel", nil, PartialRenderValues{
+		Gateway: &PartialGatewayConfig{
+			Enabled: ptr.To(true),
+			ParentRefs: []PartialGatewayParentReference{
+				{Name: ptr.To("gw"), Namespace: ptr.To("infra"), SectionName: ptr.To(gatewayv1.SectionName("http"))},
+				{Group: ptr.To(gatewayv1.Group("gateway.networking.k8s.io")), Kind: ptr.To(gatewayv1.Kind("ListenerSet")), Name: ptr.To("console"), SectionName: ptr.To(gatewayv1.SectionName("http"))},
+			},
+		},
+	})
+	require.NoError(t, err)
+	hr := findHTTPRoute(Render(state))
+	require.NotNil(t, hr)
+	require.Equal(t, []gatewayv1.ParentReference{
+		{Name: "gw", Namespace: ptr.To(gatewayv1.Namespace("infra")), SectionName: ptr.To(gatewayv1.SectionName("http"))},
+		{Group: ptr.To(gatewayv1.Group("gateway.networking.k8s.io")), Kind: ptr.To(gatewayv1.Kind("ListenerSet")), Name: "console", SectionName: ptr.To(gatewayv1.SectionName("http"))},
+	}, hr.Spec.ParentRefs)
+}
+
 // isNonNil returns true if the kube.Object interface holds a non-nil pointer.
 func isNonNil(obj kube.Object) bool {
 	return obj != nil && !reflect.ValueOf(obj).IsNil()

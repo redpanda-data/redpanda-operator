@@ -301,6 +301,42 @@ func TestCollect_PopulatedCluster(t *testing.T) {
 	require.Equal(t, map[string]bool{"pvcUnbinder": true}, payload.Features)
 }
 
+// TestCollect_GatewayRouteAttachments counts only operator-owned routes, by
+// whether they attach to a Gateway, a ListenerSet, or both (the migration path).
+func TestCollect_GatewayRouteAttachments(t *testing.T) {
+	scheme := testScheme(t)
+	require.NoError(t, gatewayv1.Install(scheme))
+
+	rp := ownedBy(redpandaGVK, "rp", "rp-uid")
+	console := ownedBy(redpandav1alpha2.SchemeGroupVersion.WithKind("Console"), "console", "console-uid")
+	gw := gatewayv1.ParentReference{Name: "gw", Port: ptr.To(gatewayv1.PortNumber(9200))}
+	ls := gatewayv1.ParentReference{Kind: ptr.To(gatewayv1.Kind("ListenerSet")), Name: "rp-infra-gw", SectionName: ptr.To(gatewayv1.SectionName("kafka-default-0"))}
+	meta := func(name string, owners []metav1.OwnerReference) metav1.ObjectMeta {
+		return metav1.ObjectMeta{Name: name, Namespace: "redpanda", OwnerReferences: owners}
+	}
+	tcp := func(name string, owners []metav1.OwnerReference, refs ...gatewayv1.ParentReference) *gatewayv1.TCPRoute {
+		return &gatewayv1.TCPRoute{ObjectMeta: meta(name, owners), Spec: gatewayv1.TCPRouteSpec{CommonRouteSpec: gatewayv1.CommonRouteSpec{ParentRefs: refs}}}
+	}
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(
+		tcp("gateway-only", rp, gw),
+		tcp("listenerset-only", rp, ls),
+		tcp("both", rp, gw, ls),
+		tcp("not-ours", nil, gw), // someone else's route
+		&gatewayv1.TLSRoute{ObjectMeta: meta("tls", rp), Spec: gatewayv1.TLSRouteSpec{CommonRouteSpec: gatewayv1.CommonRouteSpec{ParentRefs: []gatewayv1.ParentReference{{Name: "gw"}}}}},
+		&gatewayv1.HTTPRoute{ObjectMeta: meta("console", console), Spec: gatewayv1.HTTPRouteSpec{CommonRouteSpec: gatewayv1.CommonRouteSpec{ParentRefs: []gatewayv1.ParentReference{ls}}}},
+		&gatewayv1.ListenerSet{ObjectMeta: meta("rp-infra-gw", rp)},
+		&gatewayv1.ListenerSet{ObjectMeta: meta("not-ours", nil)},
+	).Build()
+
+	payload, err := (&Collector{Reader: c}).Collect(t.Context())
+	require.NoError(t, err)
+	require.Equal(t, RouteAttachments{Total: 3, Gateway: 2, ListenerSet: 2, Both: 1}, payload.GatewayRoutes.TCPRoute)
+	require.Equal(t, RouteAttachments{Total: 1, Gateway: 1}, payload.GatewayRoutes.TLSRoute)
+	require.Equal(t, RouteAttachments{Total: 1, ListenerSet: 1}, payload.GatewayRoutes.HTTPRoute)
+	require.Equal(t, 1, payload.GatewayRoutes.ListenerSets)
+}
+
 func TestCollect_KubeVersionBestEffort(t *testing.T) {
 	scheme := testScheme(t)
 	c := fake.NewClientBuilder().WithScheme(scheme).Build()
@@ -398,6 +434,44 @@ func TestAggregateRedpandas_GatewayCountRequiresParentRefs(t *testing.T) {
 
 	require.Equal(t, 0, payload.Redpanda.GatewayAPIExternalAccess,
 		"half-configured gateway clusters (no parentRefs / external disabled) must not be counted")
+}
+
+// TestAggregateRedpandas_GatewayRouteClusters counts clusters, not routes, by
+// the Gateway API kinds their external listeners render.
+func TestAggregateRedpandas_GatewayRouteClusters(t *testing.T) {
+	gateway := func(listenerSet bool) *redpandav1alpha2.External {
+		return &redpandav1alpha2.External{
+			Enabled: ptr.To(true),
+			Gateway: &redpandav1alpha2.GatewayExternalConfig{
+				Enabled:     ptr.To(true),
+				ParentRefs:  []gatewayv1.ParentReference{{Name: "gw"}},
+				ListenerSet: &redpandav1alpha2.GatewayListenerSet{Enabled: ptr.To(listenerSet)},
+			},
+		}
+	}
+	tcp := &redpandav1alpha2.ExternalListener{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(9094))}, Type: ptr.To("tcproute"), Host: ptr.To("gw.example.com"), NetworkPort: ptr.To(int32(9199)), BrokerNetworkPortBase: ptr.To(int32(9200))}
+	tls := &redpandav1alpha2.ExternalListener{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(9095))}, Type: ptr.To("tlsroute"), Host: ptr.To("kafka.example.com"), HostTemplate: ptr.To("kafka-$POD_ORDINAL.example.com")}
+	cluster := func(name string, external *redpandav1alpha2.External, listeners map[string]*redpandav1alpha2.ExternalListener) redpandav1alpha2.Redpanda {
+		return redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
+			Spec: redpandav1alpha2.RedpandaSpec{ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				External:  external,
+				Listeners: &redpandav1alpha2.Listeners{Kafka: &redpandav1alpha2.Kafka{External: listeners}},
+			}},
+		}
+	}
+	items := []redpandav1alpha2.Redpanda{
+		cluster("tcp-listenerset", gateway(true), map[string]*redpandav1alpha2.ExternalListener{"tcp": tcp}),
+		cluster("tcp-and-tls", gateway(false), map[string]*redpandav1alpha2.ExternalListener{"tcp": tcp, "tls": tls}),
+		cluster("gateway-no-route-listeners", gateway(true), nil),
+	}
+
+	payload := &Payload{}
+	var rp sizing
+	(&Collector{}).aggregateRedpandas(payload, items, &rp, map[string]corev1.ResourceRequirements{})
+	require.Equal(t, 2, payload.Redpanda.GatewayTCPRoute)
+	require.Equal(t, 1, payload.Redpanda.GatewayTLSRoute)
+	require.Equal(t, 1, payload.Redpanda.GatewayListenerSet)
 }
 
 // TestAggregateRedpandas_HostTunersRequiresOptIn locks the hostTunersEnabled

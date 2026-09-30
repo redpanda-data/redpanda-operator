@@ -280,6 +280,44 @@ type GatewayConfig struct {
 	// because the actual listening port is configured on the Gateway, not
 	// on the TLSRoute.
 	AdvertisedPort *int32 `json:"advertisedPort,omitempty"`
+	// ListenerSet renders the Gateway listeners that type: tcproute and
+	// type: tlsroute routes need as one ListenerSet per parent Gateway, so the
+	// Gateway owner only allows ListenerSets instead of maintaining listeners.
+	ListenerSet *GatewayListenerSet `json:"listenerSet,omitempty"`
+	// MaxPorts caps this release's type: tcproute ports on each Gateway, e.g.
+	// 50 behind an AWS NLB. Defaults to 64, the Gateway API listener limit.
+	MaxPorts *int32 `json:"maxPorts,omitempty"`
+}
+
+// GatewayListenerSet configures rendering tcproute Gateway listeners as a
+// ListenerSet.
+type GatewayListenerSet struct {
+	Enabled bool `json:"enabled"`
+	// AttachToGateway also attaches every route to the Gateway listener on the
+	// same port (default true). Moving an existing install to a ListenerSet then
+	// drops nothing: the Gateway's own listeners keep serving until removed, and
+	// the ListenerSet's take over. Set false once they are gone.
+	AttachToGateway *bool `json:"attachToGateway,omitempty"`
+}
+
+// IsListenerSetEnabled reports whether tcproute listeners are rendered as a
+// ListenerSet per parent Gateway.
+func (g *GatewayConfig) IsListenerSetEnabled() bool {
+	return g.ListenerSet != nil && g.ListenerSet.Enabled
+}
+
+// AttachesRoutesToGateway reports whether ListenerSet-mode routes keep their
+// Gateway parentRef too.
+func (g *GatewayConfig) AttachesRoutesToGateway() bool {
+	return g.ListenerSet == nil || g.ListenerSet.AttachToGateway == nil || *g.ListenerSet.AttachToGateway
+}
+
+// GatewayMaxPorts returns the per-Gateway cap on tcproute ports.
+func (g *GatewayConfig) GatewayMaxPorts() int32 {
+	if g.MaxPorts != nil {
+		return *g.MaxPorts
+	}
+	return 64
 }
 
 // IsGatewayRequested returns true when the user asked for Gateway API
@@ -1994,20 +2032,37 @@ type ExternalListener[T ~string] struct {
 	// for it (requires external.gateway configured with parentRefs) and it is
 	// excluded from the NodePort/LoadBalancer Service. This per-listener type is
 	// authoritative, enabling gradual migration: some listeners can be tlsroute
-	// while others remain on the conventional external.type.
-	Type *string `json:"type,omitempty" jsonschema:"enum=tlsroute"`
-	// Host is the SNI hostname for the bootstrap TLSRoute (requires type: tlsroute).
+	// while others remain on the conventional external.type. "tcproute" routes
+	// the listener through Gateway API TCPRoutes, one Gateway port per broker.
+	Type *string `json:"type,omitempty" jsonschema:"enum=tlsroute,enum=tcproute"`
+	// Host is the SNI hostname for the bootstrap TLSRoute (type: tlsroute), or
+	// the advertised host every broker shares (type: tcproute).
 	Host *string `json:"host,omitempty"`
-	// HostTemplate is a template for per-broker TLSRoute SNI hostnames.
+	// HostTemplate is a template for per-broker TLSRoute SNI hostnames, or an
+	// optional per-broker advertised host for type: tcproute.
 	// Available variables: $POD_ORDINAL, $POD_NAME.
 	// Example: "kafka-$POD_ORDINAL-broker.example.com"
 	HostTemplate *string `json:"hostTemplate,omitempty"`
+	// NetworkPort is the Gateway listener port the bootstrap TCPRoute
+	// attaches to (type: tcproute).
+	NetworkPort *int32 `json:"networkPort,omitempty"`
+	// BrokerNetworkPortBase is the Gateway listener port of the broker with
+	// global ordinal 0; broker i attaches to and advertises base+i
+	// (type: tcproute; advertisedPorts is ignored).
+	BrokerNetworkPortBase *int32 `json:"brokerNetworkPortBase,omitempty"`
+	// ParentRefs overrides external.gateway.parentRefs for this listener's
+	// routes, e.g. to put TLS and plaintext listeners on separate Gateways.
+	ParentRefs []gatewayv1.ParentReference `json:"parentRefs,omitempty"`
 }
 
 // ExternalListenerTypeTLSRoute is the per-listener `type` value that routes a
 // listener through Gateway API TLSRoute instead of the conventional
 // NodePort/LoadBalancer Service.
 const ExternalListenerTypeTLSRoute = "tlsroute"
+
+// ExternalListenerTypeTCPRoute routes a listener through Gateway API TCPRoutes,
+// distinguishing brokers by Gateway port rather than by SNI hostname.
+const ExternalListenerTypeTCPRoute = "tcproute"
 
 func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 	var auth *string
@@ -2017,17 +2072,20 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 	}
 
 	return ExternalListener[string]{
-		Enabled:              l.Enabled,
-		AdvertisedPorts:      l.AdvertisedPorts,
-		Port:                 l.Port,
-		NodePort:             l.NodePort,
-		TLS:                  l.TLS,
-		Address:              l.Address,
-		AuthenticationMethod: auth,
-		PrefixTemplate:       l.PrefixTemplate,
-		Type:                 l.Type,
-		Host:                 l.Host,
-		HostTemplate:         l.HostTemplate,
+		Enabled:               l.Enabled,
+		AdvertisedPorts:       l.AdvertisedPorts,
+		Port:                  l.Port,
+		NodePort:              l.NodePort,
+		TLS:                   l.TLS,
+		Address:               l.Address,
+		AuthenticationMethod:  auth,
+		PrefixTemplate:        l.PrefixTemplate,
+		Type:                  l.Type,
+		Host:                  l.Host,
+		HostTemplate:          l.HostTemplate,
+		NetworkPort:           l.NetworkPort,
+		BrokerNetworkPortBase: l.BrokerNetworkPortBase,
+		ParentRefs:            l.ParentRefs,
 	}
 }
 
@@ -2040,10 +2098,27 @@ func (l *ExternalListener[T]) IsEnabled() bool {
 	return ptr.Deref(l.Enabled, true) && l.Port > 0
 }
 
-// IsGatewayListener returns true when this listener has opted into Gateway API
-// TLSRoute mode via `type: tlsroute`.
+// IsGatewayListener returns true when this listener is exposed through Gateway
+// API (`type: tlsroute` or `type: tcproute`) instead of a NodePort/LoadBalancer.
 func (l *ExternalListener[T]) IsGatewayListener() bool {
+	return l.IsTLSRouteListener() || l.IsTCPRouteListener()
+}
+
+func (l *ExternalListener[T]) IsTLSRouteListener() bool {
 	return ptr.Deref(l.Type, "") == ExternalListenerTypeTLSRoute
+}
+
+func (l *ExternalListener[T]) IsTCPRouteListener() bool {
+	return ptr.Deref(l.Type, "") == ExternalListenerTypeTCPRoute
+}
+
+// GatewayParentRefs returns the listener's own parentRefs, falling back to
+// external.gateway.parentRefs.
+func (l *ExternalListener[T]) GatewayParentRefs(defaults []gatewayv1.ParentReference) []gatewayv1.ParentReference {
+	if len(l.ParentRefs) > 0 {
+		return l.ParentRefs
+	}
+	return defaults
 }
 
 type TunableConfig map[string]any

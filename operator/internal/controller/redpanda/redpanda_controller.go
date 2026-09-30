@@ -178,6 +178,8 @@ type RedpandaReconciler struct {
 
 // Gateway API TLSRoute resources for external access
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=tlsroutes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=tcproutes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=listenersets,verbs=get;list;watch;create;update;patch;delete
 
 // redpanda resources
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch;create;update;patch;delete
@@ -458,6 +460,8 @@ func (r *RedpandaReconciler) clusterReconcilers() []clusterReconciliationFn {
 		// we sync all our non pool resources first so that they're in-place
 		// prior to us scaling up our node pools
 		r.reconcileResources,
+		// report whether the Gateway API routes just synced are accepted
+		r.reconcileExternalRoutes,
 		// next we sync up all of our pools themselves
 		r.reconcilePools,
 		// now we memoize the admin client onto the state

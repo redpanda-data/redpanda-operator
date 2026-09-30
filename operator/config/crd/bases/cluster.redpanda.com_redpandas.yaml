@@ -1903,6 +1903,36 @@ spec:
                             description: Enables Gateway API TLSRoute-based external
                               access.
                             type: boolean
+                          listenerSet:
+                            description: 'Renders the Gateway listeners that `type:
+                              tcproute` and `type: tlsroute` routes need as a ListenerSet
+                              per parent Gateway, so the Gateway owner only allows
+                              ListenerSets (`spec.allowedListeners`) instead of maintaining
+                              listeners. A `tlsroute` hostname gets a TLS-passthrough
+                              entry on `advertisedPort`. Requires Gateway API ListenerSet
+                              support.'
+                            properties:
+                              attachToGateway:
+                                description: 'Also attaches every route to the Gateway
+                                  listener on the same port (default true), so moving
+                                  an existing install to a ListenerSet drops no connections:
+                                  the Gateway''s own listeners keep serving until
+                                  they are removed, then the ListenerSet''s take over.
+                                  Set false once they are gone.'
+                                type: boolean
+                              enabled:
+                                description: 'Enables a ListenerSet per parent Gateway
+                                  for `type: tcproute` listeners.'
+                                type: boolean
+                            type: object
+                          maxPorts:
+                            description: 'Caps this release''s `type: tcproute` ports
+                              on each Gateway, for example 50 behind an AWS NLB. Defaults
+                              to 64, the Gateway API listener limit.'
+                            format: int32
+                            maximum: 64
+                            minimum: 1
+                            type: integer
                           parentRefs:
                             description: Defines which Gateway(s) handle the TLSRoutes.
                               At least one parent reference must be provided.
@@ -2189,22 +2219,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -2304,13 +2507,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -2450,22 +2655,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -2565,13 +2943,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -2716,22 +3096,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -2831,13 +3384,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -3069,22 +3624,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -3184,13 +3912,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -33962,6 +34692,11 @@ spec:
                 reason: NotReconciled
                 status: Unknown
                 type: ConfigurationApplied
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: ExternalRoutesAccepted
               - lastTransitionTime: "1970-01-01T00:00:00Z"
                 message: Waiting for controller
                 reason: NotReconciled
@@ -36059,6 +36794,36 @@ spec:
                             description: Enables Gateway API TLSRoute-based external
                               access.
                             type: boolean
+                          listenerSet:
+                            description: 'Renders the Gateway listeners that `type:
+                              tcproute` and `type: tlsroute` routes need as a ListenerSet
+                              per parent Gateway, so the Gateway owner only allows
+                              ListenerSets (`spec.allowedListeners`) instead of maintaining
+                              listeners. A `tlsroute` hostname gets a TLS-passthrough
+                              entry on `advertisedPort`. Requires Gateway API ListenerSet
+                              support.'
+                            properties:
+                              attachToGateway:
+                                description: 'Also attaches every route to the Gateway
+                                  listener on the same port (default true), so moving
+                                  an existing install to a ListenerSet drops no connections:
+                                  the Gateway''s own listeners keep serving until
+                                  they are removed, then the ListenerSet''s take over.
+                                  Set false once they are gone.'
+                                type: boolean
+                              enabled:
+                                description: 'Enables a ListenerSet per parent Gateway
+                                  for `type: tcproute` listeners.'
+                                type: boolean
+                            type: object
+                          maxPorts:
+                            description: 'Caps this release''s `type: tcproute` ports
+                              on each Gateway, for example 50 behind an AWS NLB. Defaults
+                              to 64, the Gateway API listener limit.'
+                            format: int32
+                            maximum: 64
+                            minimum: 1
+                            type: integer
                           parentRefs:
                             description: Defines which Gateway(s) handle the TLSRoutes.
                               At least one parent reference must be provided.
@@ -36345,22 +37110,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -36460,13 +37398,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -36606,22 +37546,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -36721,13 +37834,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -36872,22 +37987,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -36987,13 +38275,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -37225,22 +38515,195 @@ spec:
                                     for this listener. For example, 'mtls_identity',
                                     `sasl` or `http_basic`.
                                   type: string
+                                brokerNetworkPortBase:
+                                  description: BrokerNetworkPortBase is the Gateway
+                                    listener port of the broker with global ordinal
+                                    0; broker i attaches to and advertises base+i
+                                    (type tcproute; advertisedPorts is ignored).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 enabled:
                                   description: Specifies whether this Listener is
                                     enabled.
                                   type: boolean
                                 host:
                                   description: Host is the SNI hostname for the bootstrap
-                                    TLSRoute when using Gateway API external access.
+                                    TLSRoute, or the advertised host every broker
+                                    shares for type tcproute.
                                   type: string
                                 hostTemplate:
                                   description: HostTemplate is a Go template for per-broker
-                                    TLSRoute SNI hostnames. Supports $POD_ORDINAL
+                                    TLSRoute SNI hostnames, or an optional per-broker
+                                    advertised host for type tcproute. Supports $POD_ORDINAL
                                     and $POD_NAME variables.
                                   type: string
+                                networkPort:
+                                  description: NetworkPort is the Gateway listener
+                                    port the bootstrap TCPRoute attaches to (type
+                                    tcproute).
+                                  format: int32
+                                  maximum: 65535
+                                  minimum: 1
+                                  type: integer
                                 nodePort:
                                   format: int32
                                   type: integer
+                                parentRefs:
+                                  description: ParentRefs overrides `external.gateway.parentRefs`
+                                    for this listener's routes, for example to put
+                                    TLS and plaintext listeners on separate Gateways
+                                    (and so separate load balancers).
+                                  items:
+                                    description: |-
+                                      ParentReference identifies an API object (usually a Gateway) that can be considered
+                                      a parent of this resource (usually a route). There are two kinds of parent resources
+                                      with "Core" support:
+
+                                      * Gateway (Gateway conformance profile)
+                                      * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                      This API may be extended in the future to support additional kinds of parent
+                                      resources.
+
+                                      The API object must be valid in the cluster; the Group and Kind must
+                                      be registered in the cluster for this reference to be valid.
+                                    properties:
+                                      group:
+                                        default: gateway.networking.k8s.io
+                                        description: |-
+                                          Group is the group of the referent.
+                                          When unspecified, "gateway.networking.k8s.io" is inferred.
+                                          To set the core API group (such as for a "Service" kind referent),
+                                          Group must be explicitly set to "" (empty string).
+
+                                          Support: Core
+                                        maxLength: 253
+                                        pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                      kind:
+                                        default: Gateway
+                                        description: |-
+                                          Kind is kind of the referent.
+
+                                          There are two kinds of parent resources with "Core" support:
+
+                                          * Gateway (Gateway conformance profile)
+                                          * Service (Mesh conformance profile, ClusterIP Services only)
+
+                                          Support for other resources is Implementation-Specific.
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                                        type: string
+                                      name:
+                                        description: |-
+                                          Name is the name of the referent.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        type: string
+                                      namespace:
+                                        description: |-
+                                          Namespace is the namespace of the referent. When unspecified, this refers
+                                          to the local namespace of the Route.
+
+                                          Note that there are specific rules for ParentRefs which cross namespace
+                                          boundaries. Cross-namespace references are only valid if they are explicitly
+                                          allowed by something in the namespace they are referring to. For example:
+                                          Gateway has the AllowedRoutes field, and ReferenceGrant provides a
+                                          generic way to enable any other kind of cross-namespace reference.
+
+                                          <gateway:experimental:description>
+                                          ParentRefs from a Route to a Service in the same namespace are "producer"
+                                          routes, which apply default routing rules to inbound connections from
+                                          any namespace to the Service.
+
+                                          ParentRefs from a Route to a Service in a different namespace are
+                                          "consumer" routes, and these routing rules are only applied to outbound
+                                          connections originating from the same namespace as the Route, for which
+                                          the intended destination of the connections are a Service targeted as a
+                                          ParentRef of the Route.
+                                          </gateway:experimental:description>
+
+                                          Support: Core
+                                        maxLength: 63
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                                        type: string
+                                      port:
+                                        description: |-
+                                          Port is the network port this Route targets. It can be interpreted
+                                          differently based on the type of parent resource.
+
+                                          When the parent resource is a Gateway, this targets all listeners
+                                          listening on the specified port that also support this kind of Route(and
+                                          select this Route). It's not recommended to set `Port` unless the
+                                          networking behaviors specified in a Route must apply to a specific port
+                                          as opposed to a listener(s) whose port(s) may be changed. When both Port
+                                          and SectionName are specified, the name and port of the selected listener
+                                          must match both specified values.
+
+                                          <gateway:experimental:description>
+                                          When the parent resource is a Service, this targets a specific port in the
+                                          Service spec. When both Port (experimental) and SectionName are specified,
+                                          the name and port of the selected port must match both specified values.
+                                          </gateway:experimental:description>
+
+                                          Implementations MAY choose to support other parent resources.
+                                          Implementations supporting other types of parent resources MUST clearly
+                                          document how/if Port is interpreted.
+
+                                          For the purpose of status, an attachment is considered successful as
+                                          long as the parent resource accepts it partially. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment
+                                          from the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route,
+                                          the Route MUST be considered detached from the Gateway.
+
+                                          Support: Extended
+                                        format: int32
+                                        maximum: 65535
+                                        minimum: 1
+                                        type: integer
+                                      sectionName:
+                                        description: |-
+                                          SectionName is the name of a section within the target resource. In the
+                                          following resources, SectionName is interpreted as the following:
+
+                                          * Gateway: Listener name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+                                          * Service: Port name. When both Port (experimental) and SectionName
+                                          are specified, the name and port of the selected listener must match
+                                          both specified values.
+
+                                          Implementations MAY choose to support attaching Routes to other resources.
+                                          If that is the case, they MUST clearly document how SectionName is
+                                          interpreted.
+
+                                          When unspecified (empty string), this will reference the entire resource.
+                                          For the purpose of status, an attachment is considered successful if at
+                                          least one section in the parent resource accepts it. For example, Gateway
+                                          listeners can restrict which Routes can attach to them by Route kind,
+                                          namespace, or hostname. If 1 of 2 Gateway listeners accept attachment from
+                                          the referencing Route, the Route MUST be considered successfully
+                                          attached. If no Gateway listeners accept attachment from this Route, the
+                                          Route MUST be considered detached from the Gateway.
+
+                                          Support: Core
+                                        maxLength: 253
+                                        minLength: 1
+                                        pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                                        type: string
+                                    required:
+                                    - name
+                                    type: object
+                                  maxItems: 32
+                                  type: array
                                 port:
                                   description: Specifies the container port number
                                     for this listener.
@@ -37340,13 +38803,15 @@ spec:
                                 type:
                                   description: 'Selects how this listener is exposed
                                     externally. Unset inherits the cluster-wide external.type
-                                    (NodePort/LoadBalancer). Set to "tlsroute" to
-                                    route this listener via Gateway API: a TLSRoute
-                                    is created for it (requires external.gateway with
-                                    parentRefs) and it is excluded from the NodePort/LoadBalancer
+                                    (NodePort/LoadBalancer). Set to "tlsroute" (SNI
+                                    hostnames) or "tcproute" (one Gateway port per
+                                    broker) to route this listener via Gateway API:
+                                    routes are created for it (requires external.gateway
+                                    with parentRefs) and it is excluded from the NodePort/LoadBalancer
                                     Service.'
                                   enum:
                                   - tlsroute
+                                  - tcproute
                                   type: string
                               type: object
                             description: Defines settings for the external listeners.
@@ -68118,6 +69583,11 @@ spec:
                 reason: NotReconciled
                 status: Unknown
                 type: ConfigurationApplied
+              - lastTransitionTime: "1970-01-01T00:00:00Z"
+                message: Waiting for controller
+                reason: NotReconciled
+                status: Unknown
+                type: ExternalRoutesAccepted
               - lastTransitionTime: "1970-01-01T00:00:00Z"
                 message: Waiting for controller
                 reason: NotReconciled

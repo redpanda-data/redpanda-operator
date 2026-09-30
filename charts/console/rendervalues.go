@@ -115,6 +115,10 @@ type GatewayConfig struct {
 }
 
 type GatewayParentReference struct {
+	// Group and Kind select a parent other than a Gateway, e.g. kind
+	// ListenerSet (group gateway.networking.k8s.io).
+	Group       *gatewayv1.Group       `json:"group,omitempty"`
+	Kind        *gatewayv1.Kind        `json:"kind,omitempty"`
 	Name        string                 `json:"name"`
 	Namespace   *string                `json:"namespace,omitempty"`
 	SectionName *gatewayv1.SectionName `json:"sectionName,omitempty"`

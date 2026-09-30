@@ -209,6 +209,10 @@ type GatewayConfig struct {
 
 // GatewayParentReference identifies a parent Gateway for the HTTPRoute.
 type GatewayParentReference struct {
+	// The API group of the parent, for a parent other than a Gateway. Defaults to `gateway.networking.k8s.io`.
+	Group *gatewayv1.Group `json:"group,omitempty"`
+	// The kind of the parent, for example `ListenerSet` to attach to a ListenerSet entry chosen by `sectionName`. Defaults to `Gateway`.
+	Kind        *gatewayv1.Kind        `json:"kind,omitempty"`
 	Name        string                 `json:"name"`
 	Namespace   *string                `json:"namespace,omitempty"`
 	SectionName *gatewayv1.SectionName `json:"sectionName,omitempty"`

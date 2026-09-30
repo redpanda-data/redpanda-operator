@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    `type: tcproute` external listeners expose every broker through one Gateway API Gateway, and so one load balancer, telling brokers apart by port (`networkPort` for bootstrap, `brokerNetworkPortBase + i` per broker).
+
+    Listeners can set their own `parentRefs`. `external.gateway.listenerSet` renders the Gateway listeners the routes need as a ListenerSet, so scaling needs no Gateway edits. `external.gateway.maxPorts` caps the ports per Gateway.
+time: 2026-09-28T14:00:00.000000000-07:00

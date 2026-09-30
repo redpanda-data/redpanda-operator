@@ -18,9 +18,11 @@ import (
 // GatewayExternalConfigApplyConfiguration represents a declarative configuration of the GatewayExternalConfig type for use
 // with apply.
 type GatewayExternalConfigApplyConfiguration struct {
-	Enabled        *bool                `json:"enabled,omitempty"`
-	ParentRefs     []v1.ParentReference `json:"parentRefs,omitempty"`
-	AdvertisedPort *int32               `json:"advertisedPort,omitempty"`
+	Enabled        *bool                                 `json:"enabled,omitempty"`
+	ParentRefs     []v1.ParentReference                  `json:"parentRefs,omitempty"`
+	AdvertisedPort *int32                                `json:"advertisedPort,omitempty"`
+	ListenerSet    *GatewayListenerSetApplyConfiguration `json:"listenerSet,omitempty"`
+	MaxPorts       *int32                                `json:"maxPorts,omitempty"`
 }
 
 // GatewayExternalConfigApplyConfiguration constructs a declarative configuration of the GatewayExternalConfig type for use with
@@ -52,5 +54,21 @@ func (b *GatewayExternalConfigApplyConfiguration) WithParentRefs(values ...v1.Pa
 // If called multiple times, the AdvertisedPort field is set to the value of the last call.
 func (b *GatewayExternalConfigApplyConfiguration) WithAdvertisedPort(value int32) *GatewayExternalConfigApplyConfiguration {
 	b.AdvertisedPort = &value
+	return b
+}
+
+// WithListenerSet sets the ListenerSet field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ListenerSet field is set to the value of the last call.
+func (b *GatewayExternalConfigApplyConfiguration) WithListenerSet(value *GatewayListenerSetApplyConfiguration) *GatewayExternalConfigApplyConfiguration {
+	b.ListenerSet = value
+	return b
+}
+
+// WithMaxPorts sets the MaxPorts field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MaxPorts field is set to the value of the last call.
+func (b *GatewayExternalConfigApplyConfiguration) WithMaxPorts(value int32) *GatewayExternalConfigApplyConfiguration {
+	b.MaxPorts = &value
 	return b
 }

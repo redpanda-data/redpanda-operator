@@ -56,6 +56,8 @@ func Types() []kube.Object {
 		&corev1.Secret{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
+		&gatewayv1.TCPRoute{},
+		&gatewayv1.ListenerSet{},
 		&gatewayv1.TLSRoute{},
 		&monitoringv1.PodMonitor{},
 		&monitoringv1.ServiceMonitor{},
@@ -175,6 +177,12 @@ func renderResources(state *RenderState) []kube.Object {
 	}
 
 	for _, obj := range TLSRoutes(state) {
+		manifests = append(manifests, obj)
+	}
+	for _, obj := range TCPRoutes(state) {
+		manifests = append(manifests, obj)
+	}
+	for _, obj := range ListenerSets(state) {
 		manifests = append(manifests, obj)
 	}
 
