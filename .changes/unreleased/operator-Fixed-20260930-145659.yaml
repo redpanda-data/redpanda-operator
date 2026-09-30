@@ -1,0 +1,5 @@
+project: operator
+kind: Fixed
+body: |-
+    SASL users from the users secret were sometimes never created. The sidecar started by `--watch-users` ran its first sync pass once and only retried a pass that failed to read a users file, so when the admin API of the broker was not yet listening (`connection refused`) or returned an error, the failure was logged and dropped and nothing re-ran the pass until the secret changed or the pod restarted. Broker CR clusters hit this on every bootstrap, because their sidecar starts in the same second as the `redpanda` container; StatefulSet clusters only when the sidecar raced the broker. A pass in which the admin API cannot serve a request now marks itself incomplete and is retried with backoff (250ms doubling up to 1min), like a pass with an unreadable users file; a user the API rejects (for example with an unsupported mechanism) is still logged and skipped.
+time: 2026-09-30T14:56:59.93948757+02:00
