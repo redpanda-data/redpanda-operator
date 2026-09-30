@@ -12,8 +12,8 @@ package configwatcher
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"maps"
+	"net/http"
 	"os"
 	"path"
 	"slices"
@@ -36,11 +36,13 @@ const (
 	defaultUsersDirectory = "/etc/secret/users"
 
 	// syncRetryBase/syncRetryMax bound the retry of an incomplete sync pass.
-	// A pass that can't read every users file withholds the superusers patch
-	// (see SyncAll) and must be retried, because the events that would
-	// resolve it may never come: kubelet's AtomicWriter fires the `..data`
-	// CREATE *before* it removes the symlinks of deleted secret keys, and
-	// that cleanup emits only REMOVE events, which nothing handles.
+	// A pass that can't read every users file or reach the admin API
+	// withholds the superusers patch (see SyncAll) and must be retried,
+	// because the events that would resolve it may never come: kubelet's
+	// AtomicWriter fires the `..data` CREATE *before* it removes the symlinks
+	// of deleted secret keys, and that cleanup emits only REMOVE events,
+	// which nothing handles; and a broker that is still starting emits no
+	// filesystem event at all once it listens.
 	syncRetryBase = 250 * time.Millisecond
 	syncRetryMax  = time.Minute
 
@@ -136,13 +138,13 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 
 	config, err := params.Load(w.fs)
 	if err != nil {
-		return fmt.Errorf("loading rpk config: %w", err)
+		return errors.Wrap(err, "loading rpk config")
 	}
 
 	factory := internalclient.NewRPKOnlyFactory().WithFS(w.fs)
 	client, err := factory.RedpandaAdminClient(ctx, config.VirtualProfile())
 	if err != nil {
-		return fmt.Errorf("initializing Redpanda admin API client: %w", err)
+		return errors.Wrap(err, "initializing Redpanda admin API client")
 	}
 	defer client.Close()
 
@@ -170,11 +172,13 @@ func (w *ConfigWatcher) Start(ctx context.Context) error {
 // that can't read a users file gives up without patching.
 //
 // The returned bool reports whether the pass got far enough to make the
-// superusers decision from the directory's full contents. A false return
-// means the patch was withheld and the pass MUST be retried
-// (watchFilesystem re-arms one with backoff), otherwise the unread file's
-// users stay in (or out of) the superusers list indefinitely. Only read
-// failures give up; malformed file *content* never does — a users secret can
+// superusers decision from the directory's full contents and apply it. A
+// false return means the patch was withheld (or failed) and the pass MUST be
+// retried (watchFilesystem re-arms one with backoff), otherwise the unread
+// file's users stay in (or out of) the superusers list indefinitely, or the
+// users never get created at all when the broker was still starting. Only
+// read failures and an unreachable or failing admin API give up; malformed
+// file *content* and users the API rejects never do — a users secret can
 // carry non-users keys forever, and treating those as failures would wedge
 // superusers management just as long.
 func (w *ConfigWatcher) SyncAll(ctx context.Context) bool {
@@ -188,7 +192,10 @@ func (w *ConfigWatcher) SyncAll(ctx context.Context) bool {
 	internalSuperuser, password, mechanism := getInternalUser()
 	// the internal user should only ever be created once, so don't
 	// update its password ever.
-	w.syncUser(ctx, internalSuperuser, password, mechanism, false)
+	if err := w.syncUser(ctx, internalSuperuser, password, mechanism, false); err != nil {
+		w.log.Error(err, "unable to synchronize the internal user; not setting superusers this pass")
+		return false
+	}
 
 	users := map[string]struct{}{internalSuperuser: {}}
 	synced := 0
@@ -230,7 +237,10 @@ func (w *ConfigWatcher) SyncAll(ctx context.Context) bool {
 		return true
 	}
 
-	w.setSuperusers(ctx, users)
+	if err := w.setSuperusers(ctx, users); err != nil {
+		w.log.Error(err, "unable to set superusers")
+		return false
+	}
 	return true
 }
 
@@ -304,11 +314,12 @@ func (w *ConfigWatcher) watchFilesystem(ctx context.Context) error {
 // given users file and returns their names. Users files hold one
 // user:password[:mechanism] entry per line.
 //
-// A non-nil error means the file could not be *read* and the caller's pass is
-// incomplete. Content problems — malformed lines, or a line so long it can't
-// be a users entry — are logged and skipped but never returned as errors:
-// they'd recur on every retry, and the users secret is user-managed, so a
-// single odd key must not wedge superusers management indefinitely.
+// A non-nil error means the file could not be *read*, or the admin API could
+// not serve a request, and the caller's pass is incomplete. Content problems
+// — malformed lines, a line so long it can't be a users entry, or a user the
+// API rejects — are logged and skipped but never returned as errors: they'd
+// recur on every retry, and the users secret is user-managed, so a single odd
+// key must not wedge superusers management indefinitely.
 func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]string, error) {
 	file, err := w.fs.Open(path)
 	if err != nil {
@@ -341,7 +352,9 @@ func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]strin
 		// NB: not de-duplicated; SyncAll collects users into a set.
 		users = append(users, user)
 
-		w.syncUser(ctx, user, password, mechanism, true)
+		if err := w.syncUser(ctx, user, password, mechanism, true); err != nil {
+			return nil, err
+		}
 	}
 
 	// A read error on an open file (e.g. EISDIR when the "file" is really a
@@ -361,9 +374,9 @@ func (w *ConfigWatcher) syncUsersFile(ctx context.Context, path string) ([]strin
 	return users, nil
 }
 
-func (w *ConfigWatcher) setSuperusers(ctx context.Context, users map[string]struct{}) {
+func (w *ConfigWatcher) setSuperusers(ctx context.Context, users map[string]struct{}) error {
 	if w.noSetSuperusers {
-		return
+		return nil
 	}
 
 	// Sorted, like the post-install/upgrade job writes the property.
@@ -383,7 +396,7 @@ func (w *ConfigWatcher) setSuperusers(ctx context.Context, users map[string]stru
 			}
 			if len(existingUsers) == len(existing) && slices.Equal(slices.Compact(slices.Sorted(slices.Values(existingUsers))), desired) {
 				w.log.Info("superusers already up to date", "users", desired)
-				return
+				return nil
 			}
 		}
 	}
@@ -393,31 +406,75 @@ func (w *ConfigWatcher) setSuperusers(ctx context.Context, users map[string]stru
 	if _, err := w.adminClient.PatchClusterConfig(ctx, map[string]any{
 		"superusers": desired,
 	}, []string{}); err != nil {
-		w.log.Error(err, "could not set superusers")
+		return errors.Wrap(err, "could not set superusers")
 	}
+	return nil
 }
 
-func (w *ConfigWatcher) syncUser(ctx context.Context, user, password, mechanism string, recreate bool) {
+// syncUser creates the user, or updates its credentials when it exists and
+// recreate is set. A non-nil error means the admin API could not serve a
+// request and the pass is incomplete; a request the API rejected is logged
+// and dropped instead (see skipRejected).
+func (w *ConfigWatcher) syncUser(ctx context.Context, user, password, mechanism string, recreate bool) error {
 	w.log.Info("synchronizing user", "user", user)
 
-	if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			if recreate {
-				if err := w.adminClient.UpdateUser(ctx, user, password, mechanism); err != nil {
-					w.log.Error(err, "could not update user, falling back to delete/recreate", "user", user)
-					if err := w.adminClient.DeleteUser(ctx, user); err != nil {
-						w.log.Error(err, "could not delete user for recreation", "user", user)
-						return
-					}
-					if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
-						w.log.Error(err, "could not recreate user", "user", user)
-					}
-				}
-			}
-			return
-		}
-		w.log.Error(err, "could not create user", "user", user)
+	err := w.adminClient.CreateUser(ctx, user, password, mechanism)
+	if err == nil {
+		return nil
 	}
+	if !strings.Contains(err.Error(), "already exists") {
+		return w.skipRejected(err, "could not create user", user)
+	}
+	if !recreate {
+		return nil
+	}
+	return w.replaceCredentials(ctx, user, password, mechanism)
+}
+
+// replaceCredentials sets a new password and mechanism on an existing user.
+func (w *ConfigWatcher) replaceCredentials(ctx context.Context, user, password, mechanism string) error {
+	err := w.adminClient.UpdateUser(ctx, user, password, mechanism)
+	if err == nil {
+		return nil
+	}
+	if !isRejection(err) {
+		return errors.Wrapf(err, "could not update user %q", user)
+	}
+	// Redpanda versions without PUT /v1/security/users reject the update;
+	// the credentials can still be replaced by recreating the user.
+	w.log.Error(err, "could not update user, falling back to delete/recreate", "user", user)
+	if err := w.adminClient.DeleteUser(ctx, user); err != nil {
+		return w.skipRejected(err, "could not delete user for recreation", user)
+	}
+	if err := w.adminClient.CreateUser(ctx, user, password, mechanism); err != nil {
+		return w.skipRejected(err, "could not recreate user", user)
+	}
+	return nil
+}
+
+// skipRejected logs and swallows err when the admin API rejected the request
+// itself, so the pass moves on to the next user, and returns it otherwise so
+// the pass is marked incomplete and retried.
+func (w *ConfigWatcher) skipRejected(err error, msg, user string) error {
+	if isRejection(err) {
+		w.log.Error(err, msg, "user", user)
+		return nil
+	}
+	return errors.Wrapf(err, "%s %q", msg, user)
+}
+
+// isRejection reports whether err is the admin API refusing the request on
+// its merits (an unsupported mechanism, an invalid name, ...), which recurs
+// on every retry, as opposed to being unable to serve it. Unauthorized and
+// Forbidden count as the latter: the sidecar's credentials are the bootstrap
+// user, which a starting broker has not necessarily applied yet.
+func isRejection(err error) bool {
+	var httpErr *rpadmin.HTTPResponseError
+	if !errors.As(err, &httpErr) {
+		return false
+	}
+	status := httpErr.Response.StatusCode
+	return status/100 == 4 && status != http.StatusUnauthorized && status != http.StatusForbidden
 }
 
 func getInternalUser() (string, string, string) {
