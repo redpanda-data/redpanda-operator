@@ -456,13 +456,15 @@ func rpkKafkaClientTLSConfiguration(state *RenderState) map[string]any {
 		return map[string]any{}
 	}
 
+	pki := PKI(state)
+
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&state.Values.TLS),
+		"ca_file": tls.ServerCAPath(&pki),
 	}
 
-	if tls.RequireClientAuth {
-		result["cert_file"] = fmt.Sprintf("%s/tls.crt", tls.ClientMountPoint(&state.Values.TLS))
-		result["key_file"] = fmt.Sprintf("%s/tls.key", tls.ClientMountPoint(&state.Values.TLS))
+	if kp := tls.ClientKeypair(&pki); kp != nil {
+		result["cert_file"] = kp.CertFile()
+		result["key_file"] = kp.KeyFile()
 	}
 
 	return result
@@ -478,13 +480,15 @@ func rpkAdminAPIClientTLSConfiguration(state *RenderState) map[string]any {
 		return map[string]any{}
 	}
 
+	pki := PKI(state)
+
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&state.Values.TLS),
+		"ca_file": tls.ServerCAPath(&pki),
 	}
 
-	if tls.RequireClientAuth {
-		result["cert_file"] = fmt.Sprintf("%s/tls.crt", tls.ClientMountPoint(&state.Values.TLS))
-		result["key_file"] = fmt.Sprintf("%s/tls.key", tls.ClientMountPoint(&state.Values.TLS))
+	if kp := tls.ClientKeypair(&pki); kp != nil {
+		result["cert_file"] = kp.CertFile()
+		result["key_file"] = kp.KeyFile()
 	}
 
 	return result
@@ -500,13 +504,15 @@ func rpkSchemaRegistryClientTLSConfiguration(state *RenderState) map[string]any 
 		return map[string]any{}
 	}
 
+	pki := PKI(state)
+
 	result := map[string]any{
-		"ca_file": tls.ServerCAPath(&state.Values.TLS),
+		"ca_file": tls.ServerCAPath(&pki),
 	}
 
-	if tls.RequireClientAuth {
-		result["cert_file"] = fmt.Sprintf("%s/tls.crt", tls.ClientMountPoint(&state.Values.TLS))
-		result["key_file"] = fmt.Sprintf("%s/tls.key", tls.ClientMountPoint(&state.Values.TLS))
+	if kp := tls.ClientKeypair(&pki); kp != nil {
+		result["cert_file"] = kp.CertFile()
+		result["key_file"] = kp.KeyFile()
 	}
 
 	return result
@@ -549,18 +555,19 @@ func kafkaClient(state *RenderState, clientType string) map[string]any {
 
 	var brokerTLS map[string]any
 	if state.Values.Listeners.Kafka.TLS.IsEnabled(&state.Values.TLS) {
+		pki := PKI(state)
 		brokerTLS = map[string]any{
 			"enabled":             true,
 			"require_client_auth": kafkaTLS.RequireClientAuth,
 			// NB: truststore_file here is synonymous with ca_file in the RPK
 			// configuration. The difference being that redpanda does NOT read
 			// the ca_file key.
-			"truststore_file": kafkaTLS.ServerCAPath(&state.Values.TLS),
+			"truststore_file": kafkaTLS.ServerCAPath(&pki),
 		}
 
-		if kafkaTLS.RequireClientAuth {
-			brokerTLS["cert_file"] = fmt.Sprintf("%s/tls.crt", kafkaTLS.ClientMountPoint(&state.Values.TLS))
-			brokerTLS["key_file"] = fmt.Sprintf("%s/tls.key", kafkaTLS.ClientMountPoint(&state.Values.TLS))
+		if kp := kafkaTLS.ClientKeypair(&pki); kp != nil {
+			brokerTLS["cert_file"] = kp.CertFile()
+			brokerTLS["key_file"] = kp.KeyFile()
 		}
 
 	}
@@ -581,6 +588,8 @@ func configureListeners(redpanda map[string]any, state *RenderState) {
 		defaultKafkaAuth = ptr.To(SASLKafkaAuthenticationMethod)
 	}
 
+	pki := PKI(state)
+
 	redpanda["admin"] = state.Values.Listeners.Admin.Listeners(nil /* No auth on admin API */)
 	redpanda["kafka_api"] = state.Values.Listeners.Kafka.Listeners(defaultKafkaAuth)
 	redpanda["rpc_server"] = rpcListeners(state)
@@ -589,12 +598,12 @@ func configureListeners(redpanda map[string]any, state *RenderState) {
 	// slice, they should instead be nil.
 
 	redpanda["admin_api_tls"] = nil
-	if tls := state.Values.Listeners.Admin.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.Admin.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
 		redpanda["admin_api_tls"] = tls
 	}
 
 	redpanda["kafka_api_tls"] = nil
-	if tls := state.Values.Listeners.Kafka.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.Kafka.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
 		redpanda["kafka_api_tls"] = tls
 	}
 
@@ -612,9 +621,11 @@ func pandaProxyListener(state *RenderState) map[string]any {
 		pandaProxyAuth = ptr.To(BasicHTTPAuthenticationMethod)
 	}
 
+	pki := PKI(state)
+
 	pandaProxy["pandaproxy_api"] = state.Values.Listeners.HTTP.Listeners(pandaProxyAuth)
 	pandaProxy["pandaproxy_api_tls"] = nil
-	if tls := state.Values.Listeners.HTTP.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.HTTP.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
 		pandaProxy["pandaproxy_api_tls"] = tls
 	}
 	return pandaProxy
@@ -622,9 +633,10 @@ func pandaProxyListener(state *RenderState) map[string]any {
 
 func schemaRegistry(state *RenderState) map[string]any {
 	schemaReg := map[string]any{}
+	pki := PKI(state)
 	schemaReg["schema_registry_api"] = state.Values.Listeners.SchemaRegistry.Listeners(nil /* No auth on admin API */)
 	schemaReg["schema_registry_api_tls"] = nil
-	if tls := state.Values.Listeners.SchemaRegistry.ListenersTLS(&state.Values.TLS); len(tls) > 0 {
+	if tls := state.Values.Listeners.SchemaRegistry.ListenersTLS(&pki, &state.Values.TLS); len(tls) > 0 {
 		schemaReg["schema_registry_api_tls"] = tls
 	}
 	return schemaReg
@@ -637,12 +649,15 @@ func rpcListenersTLS(state *RenderState) map[string]any {
 		return map[string]any{}
 	}
 
+	pki := PKI(state)
+	kp := pki.ServerKeypair(r.TLS.Cert)
+
 	return map[string]any{
 		"enabled":             true,
-		"cert_file":           fmt.Sprintf("%s/tls.crt", r.TLS.ServerMountPoint(&state.Values.TLS)),
-		"key_file":            fmt.Sprintf("%s/tls.key", r.TLS.ServerMountPoint(&state.Values.TLS)),
+		"cert_file":           kp.CertFile(),
+		"key_file":            kp.KeyFile(),
 		"require_client_auth": r.TLS.RequireClientAuth,
-		"truststore_file":     r.TLS.TrustStoreFilePath(&state.Values.TLS),
+		"truststore_file":     r.TLS.TrustStoreFilePath(&pki),
 	}
 }
 
@@ -653,19 +668,20 @@ func rpcListeners(state *RenderState) map[string]any {
 	}
 }
 
-// First parameter defaultTLSEnabled must come from `state.Values.tls.enabled`.
-func createInternalListenerTLSCfg(tls *TLS, internal InternalTLS) map[string]any {
+func createInternalListenerTLSCfg(pki *redpanda.PKI, tls *TLS, internal InternalTLS) map[string]any {
 	if !internal.IsEnabled(tls) {
 		return map[string]any{}
 	}
 
+	kp := pki.ServerKeypair(internal.Cert)
+
 	return map[string]any{
 		"name":                "internal",
 		"enabled":             true,
-		"cert_file":           fmt.Sprintf("%s/tls.crt", internal.ServerMountPoint(tls)),
-		"key_file":            fmt.Sprintf("%s/tls.key", internal.ServerMountPoint(tls)),
+		"cert_file":           kp.CertFile(),
+		"key_file":            kp.KeyFile(),
 		"require_client_auth": internal.RequireClientAuth,
-		"truststore_file":     internal.TrustStoreFilePath(tls),
+		"truststore_file":     internal.TrustStoreFilePath(pki),
 	}
 }
 

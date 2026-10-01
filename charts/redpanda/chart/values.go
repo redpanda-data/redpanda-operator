@@ -13,6 +13,8 @@ package chart
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -29,6 +31,7 @@ import (
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
@@ -1124,7 +1127,7 @@ func (l *Listeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
 
 	var sources []corev1.VolumeProjection
 
-	for _, name := range helmette.SortedKeys(cmSources) {
+	for _, name := range slices.Sorted(maps.Keys(cmSources)) {
 		keys := cmSources[name]
 		sources = append(sources, corev1.VolumeProjection{
 			ConfigMap: &corev1.ConfigMapProjection{
@@ -1136,7 +1139,7 @@ func (l *Listeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
 		})
 	}
 
-	for _, name := range helmette.SortedKeys(secretSources) {
+	for _, name := range slices.Sorted(maps.Keys(secretSources)) {
 		keys := secretSources[name]
 		sources = append(sources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
@@ -1377,30 +1380,6 @@ type TLSCert struct {
 	ClientSecretRef       *corev1.LocalObjectReference `json:"clientSecretRef"`
 }
 
-func (c *TLSCert) ServerVolumeName(name string) string {
-	// NB: Volume names are intentionally hardcoded to redpanda to make
-	// overrides easier.
-	return fmt.Sprintf("redpanda-%s-cert", name)
-}
-
-func (c *TLSCert) ClientVolumeName(name string) string {
-	// NB: Volume names are intentionally hardcoded to redpanda to make
-	// overrides easier.
-	return fmt.Sprintf("redpanda-%s-client-cert", name)
-}
-
-func (c *TLSCert) ServerMountPoint(name string) string {
-	// NB: The path here is intentionally hardcoded to discourage manual
-	// construct of this mount point.
-	return fmt.Sprintf("/etc/tls/certs/%s", name)
-}
-
-func (c *TLSCert) ClientMountPoint(name string) string {
-	// NB: The path here is intentionally hardcoded to discourage manual
-	// construct of this mount point.
-	return fmt.Sprintf("/etc/tls/certs/%s-client", name)
-}
-
 func (c *TLSCert) ServerSecretName(state *RenderState, name string) string {
 	if c.SecretRef != nil {
 		return c.SecretRef.Name
@@ -1609,14 +1588,13 @@ func (t *InternalTLS) IsEnabled(tls *TLS) bool {
 	return ptr.Deref(t.Enabled, tls.Enabled) && t.Cert != ""
 }
 
-func (t *InternalTLS) TrustStoreFilePath(tls *TLS) string {
+func (t *InternalTLS) TrustStoreFilePath(pki *redpanda.PKI) string {
 	if t.TrustStore != nil {
 		return t.TrustStore.TrustStoreFilePath()
 	}
 
-	cert := tls.Certs.MustGet(t.Cert)
-	if cert.CAEnabled {
-		return fmt.Sprintf("%s/ca.crt", cert.ServerMountPoint(t.Cert))
+	if kp := pki.ServerKeypair(t.Cert); kp.CA != nil {
+		return kp.CAFile()
 	}
 
 	return defaultTruststorePath
@@ -1624,47 +1602,35 @@ func (t *InternalTLS) TrustStoreFilePath(tls *TLS) string {
 
 // ServerCAPath returns the path on disk to a certificate that may be used to
 // verify a connection with this server.
-func (t *InternalTLS) ServerCAPath(tls *TLS) string {
+func (t *InternalTLS) ServerCAPath(pki *redpanda.PKI) string {
 	if t.TrustStore != nil {
 		return t.TrustStore.TrustStoreFilePath()
 	}
 
-	cert := tls.Certs.MustGet(t.Cert)
-	if cert.CAEnabled {
-		return fmt.Sprintf("%s/ca.crt", cert.ServerMountPoint(t.Cert))
+	kp := pki.ServerKeypair(t.Cert)
+	return kp.CAOrCertFile()
+}
+
+// ClientKeypair returns the keypair this listener presents when it requires
+// mTLS, or nil when it doesn't.
+func (t *InternalTLS) ClientKeypair(pki *redpanda.PKI) *redpanda.Keypair {
+	// NB: gated on the listener, not the certificate. [redpanda.PKI] is keyed
+	// by certificate name and issues a client keypair when *any* listener
+	// sharing that certificate requires mTLS, so its keypair is non-nil for
+	// listeners that don't -- which must not present one.
+	if !t.RequireClientAuth {
+		return nil
 	}
-
-	// Strange but technically correct, if CAEnabled is false, we can't safely
-	// assume that a ca.crt file will exist. So we fallback to using the
-	// server's certificate itself.
-	// Other options would be: failing or falling back to the container's
-	// default truststore.
-	return fmt.Sprintf("%s/tls.crt", cert.ServerMountPoint(t.Cert))
-}
-
-// ServerMountPoint is a helper to call [TLSCert.ServerMountPoint] on the
-// configure certificate.
-func (t *InternalTLS) ServerMountPoint(tls *TLS) string {
-	cert := tls.Certs.MustGet(t.Cert)
-	return cert.ServerMountPoint(t.Cert)
-}
-
-// ClientMountPoint is a helper to call [TLSCert.ClientMountPoint] on the
-// configure certificate.
-func (t *InternalTLS) ClientMountPoint(tls *TLS) string {
-	cert := tls.Certs.MustGet(t.Cert)
-	return cert.ClientMountPoint(t.Cert)
+	return pki.ClientKeypair(t.Cert)
 }
 
 // ToCommonTLS converts InternalTLS configuration to ir.CommonTLS format with proper secret references.
-func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
-	if !t.IsEnabled(tls) {
+func (t *InternalTLS) ToCommonTLS(state *RenderState, pki *redpanda.PKI) *ir.CommonTLS {
+	if !t.IsEnabled(&state.Values.TLS) {
 		return nil
 	}
 
 	spec := &ir.CommonTLS{}
-	cert := tls.Certs.MustGet(t.Cert)
-	secretName := cert.ServerSecretName(state, t.Cert)
 
 	if t.TrustStore != nil {
 		// Only one of ConfigMapKeyRef or SecretKeyRef should actually be set.
@@ -1674,45 +1640,32 @@ func (t *InternalTLS) ToCommonTLS(state *RenderState, tls *TLS) *ir.CommonTLS {
 			ConfigMapKeyRef: t.TrustStore.ConfigMapKeyRef,
 			SecretKeyRef:    t.TrustStore.SecretKeyRef,
 		}
-	} else if cert.CAEnabled {
-		spec.CaCert = &ir.ValueSource{
-			Namespace: state.Release.Namespace,
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: secretName,
-				},
-				Key: "ca.crt",
-			},
-		}
 	} else {
+		// NB: mirrors [redpanda.Keypair.CAOrCertFile].
+		server := pki.ServerKeypair(t.Cert)
 		spec.CaCert = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: secretName,
-				},
-				Key: "cert.crt",
+				LocalObjectReference: server.Secret,
+				Key:                  ptr.Deref(server.CA, corev1.TLSCertKey),
 			},
 		}
 	}
 
-	// Add client certificate and key if client auth is required
-	if t.RequireClientAuth {
-		clientSecretName := cert.ClientSecretName(state, t.Cert)
-
+	if kp := t.ClientKeypair(pki); kp != nil {
 		spec.Cert = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: clientSecretName},
-				Key:                  "tls.crt",
+				LocalObjectReference: kp.Secret,
+				Key:                  corev1.TLSCertKey,
 			},
 		}
 
 		spec.Key = &ir.ValueSource{
 			Namespace: state.Release.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: clientSecretName},
-				Key:                  "tls.key",
+				LocalObjectReference: kp.Secret,
+				Key:                  corev1.TLSPrivateKeyKey,
 			},
 		}
 	}
@@ -1742,14 +1695,13 @@ func (t *ExternalTLS) GetCertName(i *InternalTLS) string {
 	return ptr.Deref(t.Cert, i.Cert)
 }
 
-func (t *ExternalTLS) TrustStoreFilePath(i *InternalTLS, tls *TLS) string {
+func (t *ExternalTLS) TrustStoreFilePath(i *InternalTLS, pki *redpanda.PKI) string {
 	if t.TrustStore != nil {
 		return t.TrustStore.TrustStoreFilePath()
 	}
 
-	name := t.GetCertName(i)
-	if cert := t.GetCert(i, tls); cert.CAEnabled {
-		return fmt.Sprintf("%s/ca.crt", cert.ServerMountPoint(name))
+	if kp := pki.ServerKeypair(t.GetCertName(i)); kp.CA != nil {
+		return kp.CAFile()
 	}
 
 	return defaultTruststorePath
@@ -1903,10 +1855,10 @@ func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
 	return listeners
 }
 
-func (l *ListenerConfig[T]) ListenersTLS(tls *TLS) []map[string]any {
+func (l *ListenerConfig[T]) ListenersTLS(pki *redpanda.PKI, tls *TLS) []map[string]any {
 	pp := []map[string]any{}
 
-	internal := createInternalListenerTLSCfg(tls, l.TLS)
+	internal := createInternalListenerTLSCfg(pki, tls, l.TLS)
 	if len(internal) > 0 {
 		pp = append(pp, internal)
 	}
@@ -1916,16 +1868,15 @@ func (l *ListenerConfig[T]) ListenersTLS(tls *TLS) []map[string]any {
 			continue
 		}
 
-		certName := lis.TLS.GetCertName(&l.TLS)
-		cert := tls.Certs.MustGet(certName)
+		kp := pki.ServerKeypair(lis.TLS.GetCertName(&l.TLS))
 
 		pp = append(pp, map[string]any{
 			"name":                k,
 			"enabled":             true,
-			"cert_file":           fmt.Sprintf("%s/tls.crt", cert.ServerMountPoint(certName)),
-			"key_file":            fmt.Sprintf("%s/tls.key", cert.ServerMountPoint(certName)),
+			"cert_file":           kp.CertFile(),
+			"key_file":            kp.KeyFile(),
 			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
-			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, tls),
+			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, pki),
 		})
 	}
 	return pp

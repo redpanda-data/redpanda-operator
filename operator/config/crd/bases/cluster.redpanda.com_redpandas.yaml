@@ -33702,10 +33702,15 @@ spec:
                                 Requires cert-manager. See https://cert-manager.io/v1.1-docs.
                               properties:
                                 group:
+                                  description: |-
+                                    Group specifies the API group of the issuer. Set this when using an
+                                    external issuer, such as `cas-issuer.jetstack.io`. Defaults to
+                                    `cert-manager.io`.
                                   type: string
                                 kind:
-                                  description: Specifies the kind of resource. One
-                                    of `Issuer` or `ClusterIssuer`.
+                                  description: |-
+                                    Kind specifies the kind of resource: `Issuer`, `ClusterIssuer`, or the
+                                    kind of an external issuer, such as `GoogleCASClusterIssuer`.
                                   type: string
                                 name:
                                   description: Specifies the name of the resource.
@@ -67859,10 +67864,15 @@ spec:
                                 Requires cert-manager. See https://cert-manager.io/v1.1-docs.
                               properties:
                                 group:
+                                  description: |-
+                                    Group specifies the API group of the issuer. Set this when using an
+                                    external issuer, such as `cas-issuer.jetstack.io`. Defaults to
+                                    `cert-manager.io`.
                                   type: string
                                 kind:
-                                  description: Specifies the kind of resource. One
-                                    of `Issuer` or `ClusterIssuer`.
+                                  description: |-
+                                    Kind specifies the kind of resource: `Issuer`, `ClusterIssuer`, or the
+                                    kind of an external issuer, such as `GoogleCASClusterIssuer`.
                                   type: string
                                 name:
                                   description: Specifies the name of the resource.

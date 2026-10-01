@@ -214,9 +214,12 @@ tls:
     default:
       # -- To use a custom pre-installed Issuer,
       # add its name and kind to the `issuerRef` object.
+      # For an external issuer, such as Google CAS, also set its `group`.
+      # The server and client Certificates both use this issuer.
       # issuerRef:
       #   name: redpanda-default-root-issuer
-      #   kind: Issuer   # Can be Issuer or ClusterIssuer
+      #   kind: Issuer   # Can be Issuer, ClusterIssuer, or an external issuer's kind
+      #   group: cert-manager.io   # Defaults to cert-manager.io
       # -- To use a secret with custom tls files,
       # secretRef:
       #  name: my-tls-secret
@@ -238,9 +241,12 @@ tls:
     external:
       # -- To use a custom pre-installed Issuer,
       # add its name and kind to the `issuerRef` object.
+      # For an external issuer, such as Google CAS, also set its `group`.
+      # The server and client Certificates both use this issuer.
       # issuerRef:
       #   name: redpanda-default-root-issuer
-      #   kind: Issuer   # Can be Issuer or ClusterIssuer
+      #   kind: Issuer   # Can be Issuer, ClusterIssuer, or an external issuer's kind
+      #   group: cert-manager.io   # Defaults to cert-manager.io
       # -- To use a secret with custom tls files,
       # secretRef:
       #   name: my-tls-secret

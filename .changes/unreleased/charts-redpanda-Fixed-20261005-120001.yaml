@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    With `tls.certs.<name>.caEnabled: false`, the CA reference the chart
+    provides to the operator and Console now points at the serving
+    certificate's `tls.crt`. It previously pointed at a nonexistent
+    `cert.crt` key, so those clients couldn't verify the cluster.
+time: 2026-10-05T12:00:01.000000-07:00

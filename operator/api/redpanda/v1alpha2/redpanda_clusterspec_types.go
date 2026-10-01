@@ -482,8 +482,12 @@ type Certificate struct {
 type IssuerRef struct {
 	// Specifies the name of the resource.
 	Name *string `json:"name,omitempty"`
-	// Specifies the kind of resource. One of `Issuer` or `ClusterIssuer`.
-	Kind  *string `json:"kind,omitempty"`
+	// Kind specifies the kind of resource: `Issuer`, `ClusterIssuer`, or the
+	// kind of an external issuer, such as `GoogleCASClusterIssuer`.
+	Kind *string `json:"kind,omitempty"`
+	// Group specifies the API group of the issuer. Set this when using an
+	// external issuer, such as `cas-issuer.jetstack.io`. Defaults to
+	// `cert-manager.io`.
 	Group *string `json:"group,omitempty"`
 }
 
