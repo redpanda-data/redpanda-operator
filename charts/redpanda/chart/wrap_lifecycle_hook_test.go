@@ -48,6 +48,8 @@ import (
 //   - timeout(1) is not on PATH — GNU coreutils utility; CI's nix
 //     devshell provides it.
 func TestWrapLifecycleHook_TimeoutSurfaced(t *testing.T) {
+	t.Parallel()
+
 	if runtime.GOOS != "linux" {
 		t.Skipf("skipping: wrapper hardcodes /proc/1/fd/1; only meaningful on linux (got %s)", runtime.GOOS)
 	}
