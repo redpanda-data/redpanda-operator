@@ -17,7 +17,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applymetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
-	"k8s.io/utils/ptr"
 
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
@@ -134,25 +133,9 @@ func CommonMounts(state *RenderState) []corev1.VolumeMount {
 		})
 	}
 
-	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
-		cert := state.Values.TLS.Certs.MustGet(name)
-
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      cert.ServerVolumeName(name),
-			MountPath: cert.ServerMountPoint(name),
-		})
-	}
-
-	// mTLS for any potentially in use listeners (kafka, admin, schema?)
-	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
-		cert := state.Values.TLS.Certs.MustGet(name)
-
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      cert.ClientVolumeName(name),
-			MountPath: cert.ClientMountPoint(name),
-		})
-
-	}
+	// Server certs, then the client certs of any listener requiring mTLS.
+	pki := PKI(state)
+	mounts = append(mounts, pki.Mounts()...)
 
 	return mounts
 }
@@ -176,34 +159,9 @@ func DefaultVolumes(state *RenderState) []corev1.Volume {
 func CommonVolumes(state *RenderState) []corev1.Volume {
 	volumes := []corev1.Volume{}
 
-	for _, name := range state.Values.Listeners.InUseServerCerts(&state.Values.TLS) {
-		cert := state.Values.TLS.Certs.MustGet(name)
-
-		volumes = append(volumes, corev1.Volume{
-			// Intentionally use static names for VolumeNames to make overrides easier.
-			Name: cert.ServerVolumeName(name),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  cert.ServerSecretName(state, name),
-					DefaultMode: ptr.To[int32](0o440),
-				},
-			},
-		})
-	}
-
-	for _, name := range state.Values.Listeners.InUseClientCerts(&state.Values.TLS) {
-		cert := state.Values.TLS.Certs.MustGet(name)
-
-		volumes = append(volumes, corev1.Volume{
-			Name: cert.ClientVolumeName(name),
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:  cert.ClientSecretName(state, name),
-					DefaultMode: ptr.To[int32](0o440),
-				},
-			},
-		})
-	}
+	// Volume names are intentionally static to make overrides easier.
+	pki := PKI(state)
+	volumes = append(volumes, pki.Volumes()...)
 
 	if sasl := state.Values.Auth.SASL; sasl.Enabled && sasl.SecretRef != "" {
 		volumes = append(volumes, corev1.Volume{
