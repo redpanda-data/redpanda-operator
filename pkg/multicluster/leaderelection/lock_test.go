@@ -32,6 +32,8 @@ import (
 // The leader retains all log entries (no compaction) and catches the
 // follower up via MsgApp.
 func TestFollowerRejoinsAfterRestart(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 
 	leaders := setupLockTest(t, ctx, 3)
@@ -87,6 +89,8 @@ func TestFollowerRejoinsAfterRestart(t *testing.T) {
 // Once the snapshot is applied, heartbeats no longer exceed lastIndex and
 // processing continues normally.
 func TestFreshNodeJoinsRunningCluster(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 
 	leaders := setupLockTest(t, ctx, 3)
@@ -130,6 +134,8 @@ func TestFreshNodeJoinsRunningCluster(t *testing.T) {
 // library from panicking in commitTo when a fresh follower's lastIndex
 // is behind the leader's Commit.
 func TestHeartbeatCommitClamping(t *testing.T) {
+	t.Parallel()
+
 	storage := raft.NewMemoryStorage()
 
 	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
@@ -204,6 +210,8 @@ func (s *stubNode) ReportSnapshot(uint64, raft.SnapshotStatus)                  
 func (s *stubNode) Stop()                                                       {}
 
 func TestLocker(t *testing.T) {
+	t.Parallel()
+
 	for name, tt := range map[string]struct {
 		nodes int
 	}{

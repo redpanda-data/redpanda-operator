@@ -71,6 +71,8 @@ func TestTemplate(t *testing.T) {
 	for _, tc := range append(casesArchive.Files, generatedCasesArchive.Files...) {
 		tc := tc
 		t.Run(tc.Name, func(t *testing.T) {
+			t.Parallel()
+
 			var values PartialValues
 			require.NoError(t, yaml.Unmarshal(tc.Data, &values))
 
