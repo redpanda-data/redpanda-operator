@@ -51,11 +51,23 @@ type fakeCluster struct {
 	podSelector    map[string]string
 	clusterDomain  string
 	schemaRegistry *schemaregistry.Listener
+	// externalPorts are the registry's external listener ports, which the
+	// probed internal one gates alongside its own.
+	externalPorts []int32
 }
 
 func (f *fakeCluster) PodSelector() map[string]string           { return f.podSelector }
 func (f *fakeCluster) ClusterDomain() string                    { return f.clusterDomain }
 func (f *fakeCluster) SchemaRegistry() *schemaregistry.Listener { return f.schemaRegistry }
+
+// SchemaRegistryPorts mirrors the real implementation's invariant: the
+// probed listener's port is always in the set.
+func (f *fakeCluster) SchemaRegistryPorts() []int32 {
+	if f.schemaRegistry == nil {
+		return f.externalPorts
+	}
+	return append([]int32{f.schemaRegistry.Port}, f.externalPorts...)
+}
 
 type fakeResolver struct {
 	calls   atomic.Int32
@@ -77,6 +89,14 @@ func testBrokers(schemaRegistry *schemaregistry.Listener) Cluster {
 		clusterDomain:  "cluster.local",
 		schemaRegistry: schemaRegistry,
 	}
+}
+
+// externalRegistry is testBrokers with external listener ports alongside the
+// probed internal one.
+func externalRegistry(schemaRegistry *schemaregistry.Listener, external ...int32) Cluster {
+	brokers := testBrokers(schemaRegistry).(*fakeCluster)
+	brokers.externalPorts = external
+	return brokers
 }
 
 func brokerPod(ready bool) *corev1.Pod {
@@ -116,7 +136,7 @@ func tcpPort(name string, port int32) portmapper.Port {
 }
 
 func newTestChecker(resolver Resolver) *checker {
-	c := newChecker(resolver, "cluster.local")
+	c := newChecker(resolver)
 	// Hanging probes are part of the test matrix; don't wait the production
 	// 5s for them.
 	c.probeTimeout = 300 * time.Millisecond
@@ -325,6 +345,37 @@ func TestCheckerDecide(t *testing.T) {
 			svc:      testService(true),
 			pod:      brokerPod(true),
 			port:     tcpPort("registry", downPort),
+			want:     portmapper.Include,
+		},
+		{
+			// An external listener is the port cloud publishes; leaving it
+			// ungated would send clients to a replaying broker through the
+			// very Service the internal port protects.
+			name:       "external schema registry port is gated by the internal probe",
+			resolver:   &fakeResolver{brokers: externalRegistry(plaintext(replayingPort), 8084)},
+			svc:        testService(true),
+			pod:        brokerPod(true),
+			port:       tcpPort("schema-default", 8084),
+			want:       portmapper.Exclude,
+			wantProbes: 1,
+		},
+		{
+			name:       "external schema registry port follows a healthy internal probe",
+			resolver:   &fakeResolver{brokers: externalRegistry(plaintext(readyPort), 8084)},
+			svc:        testService(true),
+			pod:        brokerPod(true),
+			port:       tcpPort("schema-default", 8084),
+			want:       portmapper.Include,
+			wantProbes: 1,
+		},
+		{
+			// With no internal listener there is nothing to probe, and
+			// excluding every broker would take the port down.
+			name:     "external schema registry port is ungated without an internal listener",
+			resolver: &fakeResolver{brokers: externalRegistry(nil, 8084)},
+			svc:      testService(true),
+			pod:      brokerPod(true),
+			port:     tcpPort("schema-default", 8084),
 			want:     portmapper.Include,
 		},
 		{

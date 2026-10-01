@@ -47,10 +47,9 @@ func rbacBundles(dot *helmette.Dot) []RBACBundle {
 				"files/rbac/v2-manager.ClusterRole.yaml":           true,
 				"files/rbac/pipeline.ClusterRole.yaml":             values.ConnectController.Enabled,
 				"files/rbac/multicluster-manager.ClusterRole.yaml": values.Multicluster.Enabled,
-				// Steering is opted into per cluster by annotation, so a
-				// single-cluster operator always needs the RBAC. A
-				// multicluster one never runs the controller; see
-				// internal/controller/endpointsteering.
+				// Steering is opted into per cluster, so a regular
+				// operator always needs these rules. The StretchCluster
+				// operator never steers, so it never needs them.
 				"files/rbac/endpoint-steering.ClusterRole.yaml": !values.Multicluster.Enabled,
 			},
 		},

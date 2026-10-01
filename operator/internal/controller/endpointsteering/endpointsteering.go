@@ -7,55 +7,43 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package endpointsteering publishes the EndpointSlices of Services that opt
-// in via [ServiceAnnotation], so that each of a Service's ports can be backed
-// by a different subset of a Redpanda cluster's broker pods.
+// Package endpointsteering publishes the endpoints of Services that opt in
+// via [ServiceAnnotation], so that each port of a Service can be backed by a
+// different subset of a Redpanda cluster's brokers.
 //
-// The native EndpointSlice controller decides membership per pod: a pod is
-// either behind every port of a Service or behind none. Redpanda brokers
-// don't fit that model. A restarted broker serves Kafka as soon as it is up,
-// but its Schema Registry replays the _schemas topic first and answers with
-// errors until it has caught up -- and because broker discovery Services
-// must publish not-ready addresses (Raft needs them), pod readiness cannot
-// pull a replaying Schema Registry out of rotation without pulling Kafka
-// with it (INC-2903, K8S-932). This controller instead asks each broker's
-// Schema Registry directly and publishes the Schema Registry port only for
-// brokers that answer.
+// Kubernetes decides endpoints per pod: a pod sits behind every port of a
+// Service or none of them. Redpanda brokers don't fit that. A restarted
+// broker serves Kafka immediately, but its Schema Registry replays the
+// _schemas topic first and errors until it catches up. Readiness can't
+// express the difference: broker discovery Services publish not-ready
+// addresses because Raft needs them, and marking the pod unready would take
+// Kafka down along with the registry (INC-2903, K8S-932). So this controller
+// asks each broker's Schema Registry directly, and publishes the registry
+// ports -- internal and external, one registry backs them all -- only for
+// the brokers that answer.
 //
-// It is built on the common-go portmapper. A Service opts in by carrying
-// [ServiceAnnotation] naming the cluster whose brokers back it and by
-// defining no selector; the cluster's broker pods are found through the
-// app.kubernetes.io/instance label every one of them already carries, so no
-// pod template changes and nothing restarts.
+// A Service opts in by naming its cluster in [ServiceAnnotation] and
+// declaring no selector. Brokers are matched by the
+// app.kubernetes.io/instance label they already carry, so turning steering
+// on restarts nothing. The v1 and v2 renderers opt a cluster's own Service
+// in through [Steer], for a cluster carrying the feature.EndpointSteering
+// annotation; any other Service, a load balancer say, carries
+// [ServiceAnnotation] itself. StretchCluster Services are left to
+// Kubernetes: steering pods in several Kubernetes clusters from one operator
+// needs the portmapper this is built on to reach them first.
 //
-// A cluster opts its own internal Services in with the
-// feature.EndpointSteering annotation, which is what the v1 and v2
-// renderers read before handing a Service to [Steer]. A Service the operator
-// does not render -- a load balancer Service managed alongside it, say --
-// opts in by carrying [ServiceAnnotation] itself.
+// NB: the controller runs even with nothing opted in, because handing a
+// Service back -- deleting what it published once the annotation goes away
+// -- is its job too.
 //
-// The controller therefore always runs: a Service that loses the annotation
-// (a cluster whose flag was turned back off) needs it running to delete the
-// slices it published and let the native controller take the Service back.
+// NB: [Steer] drops spec.selector, which only sticks where the operator owns
+// that field alone. A selector another manager co-owns survives, both
+// publishers then write, and the portmapper raises a warning Event on the
+// Service.
 //
-// Only the single-Kubernetes-cluster operator runs it. StretchClusters keep
-// the native EndpointSlice controller: a multicluster deployment reconciles
-// from the Raft leader, reaching its member clusters through
-// multicluster-runtime, and a controller running per member cluster instead
-// would be a second failure model for an operator that has one. Steering
-// them means teaching the portmapper multicluster-runtime first.
-//
-// One caveat on taking a Service over: the renderers drop spec.selector by
-// omitting it from their server-side apply, which removes it only where the
-// operator is its sole field manager. A selector co-owned by another manager
-// survives, both controllers then publish, and the port-mapper says so with
-// a warning Event on the Service.
-//
-// And one behavioral difference from the native controller: a pod that fails
-// a check is left out of the slice, where the native controller would
-// publish it with "ready: false". Traffic goes to the same places either
-// way, since kube-proxy and CoreDNS route on readiness, but a consumer
-// reading the slices sees an absence rather than an unready endpoint.
+// NB: a pod that fails its check is left out of the endpoints, where
+// Kubernetes would publish it as not ready. Traffic reaches the same places
+// either way, but anything reading the endpoints sees an absence.
 package endpointsteering
 
 import (
@@ -70,38 +58,35 @@ import (
 )
 
 const (
-	// ServiceAnnotation opts a Service in. Its value names the cluster whose
-	// brokers back the Service -- the v1 Cluster or v2 Redpanda name, which
-	// is also the value of the brokers' app.kubernetes.io/instance label. The
-	// Service must define no selector, or the native controller publishes
-	// alongside this one.
+	// ServiceAnnotation opts a Service in. Its value is the name of the
+	// cluster whose brokers back it, which is also those brokers'
+	// app.kubernetes.io/instance label.
 	ServiceAnnotation = "cluster.redpanda.com/endpoints-for"
 
-	// PodGroupLabel aligns pods with opted-in Services: a pod is a candidate
-	// for a Service when this label equals the Service's annotation value.
-	// The checker then confirms the pod really is a broker of that cluster.
+	// PodGroupLabel pairs pods with opted-in Services: a pod is a candidate
+	// when this label matches the Service's annotation. The checker then
+	// confirms it really is a broker of that cluster.
 	PodGroupLabel = labels.InstanceKey
 
-	// ManagedBy is written to the endpointslice.kubernetes.io/managed-by
-	// label of every published slice.
+	// ManagedBy goes in every published slice's
+	// endpointslice.kubernetes.io/managed-by label.
 	ManagedBy = "redpanda-operator"
 
-	// DefaultResyncPeriod bounds how long a broker whose Schema Registry has
-	// come up (or gone down) stays unpublished (or published), since neither
-	// changes anything the API server would report.
+	// DefaultResyncPeriod bounds how long a Schema Registry that has come up
+	// or gone down waits to be noticed. Neither changes anything Kubernetes
+	// would tell us about.
 	DefaultResyncPeriod = 10 * time.Second
 )
 
-// Steer hands svc's EndpointSlices to this controller, which publishes them
-// per port for the brokers of the named cluster. The selector goes, or the
-// native EndpointSlice controller publishes every broker on every port
-// alongside; the annotation names the cluster, and overrides any value a
-// user set for the same key, since the controller relies on it.
+// Steer hands svc's endpoints to this controller, which publishes them per
+// port for the named cluster's brokers. The v1 and v2 renderers call it on
+// whichever Service carries the cluster's Schema Registry listener. The
+// chart deliberately does not: a Helm release has no operator to publish
+// its endpoints.
 //
-// The v1 and v2 renderers apply it to whichever Service carries the
-// cluster's Schema Registry listener, for a cluster that asked for it. A
-// Helm release has nothing to publish its endpoints, so this is deliberately
-// not part of the chart.
+// NB: the selector has to go, or Kubernetes publishes every broker on every
+// port alongside us, and the annotation overwrites any value a user set for
+// the same key, since the controller depends on it.
 func Steer(svc *corev1.Service, cluster string) {
 	svc.Spec.Selector = nil
 	if svc.Annotations == nil {
@@ -112,20 +97,19 @@ func Steer(svc *corev1.Service, cluster string) {
 
 // Options configures Setup.
 type Options struct {
-	// Resolver maps a Service's annotation value to the cluster it names.
-	// Required.
+	// Resolver maps a Service's annotation to the cluster it names. Required.
 	Resolver Resolver
-	// ClusterDomain is the Kubernetes cluster domain (kubelet's
-	// --cluster-domain), used to name pods when verifying a TLS listener.
+	// ClusterDomain is kubelet's --cluster-domain, used to name pods when
+	// verifying a TLS listener. It applies to clusters that record no domain
+	// of their own; see withClusterDomain.
 	ClusterDomain string
 	// ResyncPeriod overrides DefaultResyncPeriod.
 	ResyncPeriod time.Duration
 }
 
-// The Node permission only feeds topology zones onto published endpoints;
-// the rest is what publishing EndpointSlices for a selectorless Service
-// takes, including deleting the legacy Endpoints object the native
-// controller abandons when a Service's selector is removed.
+// Nodes only feed topology zones onto published endpoints. The rest is what
+// publishing endpoints for a selectorless Service takes, down to deleting
+// the legacy Endpoints object Kubernetes abandons when a selector goes away.
 //
 // +kubebuilder:rbac:groups="",resources=services;pods;nodes,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=endpoints,verbs=get;list;watch;delete
@@ -148,8 +132,7 @@ func Setup(mgr ctrl.Manager, opts Options) error {
 // mapperConfig translates opts into the portmapper's configuration.
 func mapperConfig(opts Options) (portmapper.Config, error) {
 	// A resolver that can never name a cluster would drain every opted-in
-	// Service to no endpoints, so an empty set of resolvers is a
-	// misconfiguration rather than a no-op.
+	// Service, so no resolvers at all is an error rather than a no-op.
 	if resolvers, ok := opts.Resolver.(Resolvers); ok && len(resolvers) == 0 {
 		opts.Resolver = nil
 	}
@@ -165,11 +148,10 @@ func mapperConfig(opts Options) (portmapper.Config, error) {
 		ManagedBy:    ManagedBy,
 		ServiceKey:   portmapper.AnnotationKey(ServiceAnnotation),
 		PodKey:       portmapper.LabelKey(PodGroupLabel),
-		Membership:   portmapper.DeciderFunc(newChecker(opts.Resolver, opts.ClusterDomain).Decide),
+		Membership:   portmapper.DeciderFunc(newChecker(withClusterDomain(opts.Resolver, opts.ClusterDomain)).Decide),
 		ResyncPeriod: resync,
-		// Membership checks are network probes; with a single worker one
-		// cluster full of replaying brokers would hold up every other
-		// Service's resync.
+		// Checks are network probes; with one worker a single cluster full
+		// of replaying brokers would hold up every other Service.
 		MaxConcurrentReconciles: 4,
 	}, nil
 }

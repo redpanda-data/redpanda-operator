@@ -124,3 +124,45 @@ func TestTypedResolvers(t *testing.T) {
 		})
 	}
 }
+
+func TestWithClusterDomain(t *testing.T) {
+	boom := errors.New("boom")
+
+	for _, tc := range []struct {
+		name     string
+		cluster  *fakeCluster
+		err      error
+		fallback string
+		want     string
+	}{
+		{name: "fills an empty domain in", cluster: &fakeCluster{}, fallback: "cluster.local", want: "cluster.local"},
+		{name: "leaves the cluster's own alone", cluster: &fakeCluster{clusterDomain: "k8s.example"}, fallback: "cluster.local", want: "k8s.example"},
+		{name: "no fallback leaves it empty", cluster: &fakeCluster{}, want: ""},
+		{name: "failures pass through", err: boom, fallback: "cluster.local"},
+		// The contract violation the checker turns into a failed lookup must
+		// reach it, not panic on the way.
+		{name: "no cluster and no error passes through", fallback: "cluster.local"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			resolved := Cluster(tc.cluster)
+			if tc.cluster == nil {
+				resolved = nil
+			}
+			resolver := withClusterDomain(ResolverFunc(func(context.Context, string, string) (Cluster, error) {
+				return resolved, tc.err
+			}), tc.fallback)
+
+			got, err := resolver.Resolve(t.Context(), testNamespace, testCluster)
+			if tc.err != nil {
+				require.ErrorIs(t, err, tc.err)
+				return
+			}
+			require.NoError(t, err)
+			if tc.cluster == nil {
+				require.Nil(t, got)
+				return
+			}
+			require.Equal(t, tc.want, got.ClusterDomain())
+		})
+	}
+}

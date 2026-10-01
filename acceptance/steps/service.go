@@ -55,9 +55,9 @@ func checkServiceWithPort(ctx context.Context, t framework.TestingT, serviceName
 	t.Logf("Found port named %q on service %q with value %d!", portName, serviceName, port)
 }
 
-// serviceShouldHaveNoSelector asserts a Service the operator steers has shed
-// its selector, which is what keeps the native EndpointSlice controller from
-// publishing every broker on every port alongside the operator.
+// serviceShouldHaveNoSelector asserts a steered Service has shed its
+// selector, which is what keeps Kubernetes from publishing every broker on
+// every port alongside the operator.
 func serviceShouldHaveNoSelector(ctx context.Context, t framework.TestingT, serviceName string) {
 	var service corev1.Service
 	key := t.ResourceKey(serviceName)
@@ -71,18 +71,16 @@ func serviceShouldHaveNoSelector(ctx context.Context, t framework.TestingT, serv
 	}))
 }
 
-// serviceShouldHaveSelector asserts a Service is still the native
-// EndpointSlice controller's to publish.
+// serviceShouldHaveSelector asserts a Service is still Kubernetes' to
+// publish.
 func serviceShouldHaveSelector(ctx context.Context, t framework.TestingT, serviceName string) {
 	var service corev1.Service
 	require.NoError(t, t.Get(ctx, t.ResourceKey(serviceName), &service))
 	require.NotEmpty(t, service.Spec.Selector, "service %q lost its selector", serviceName)
 }
 
-// servicePortShouldPublishPods asserts that the EndpointSlices the operator
-// publishes for a Service eventually list exactly the given pods (comma
-// separated) for the named port -- and no others, which is the whole point
-// of steering a port.
+// servicePortShouldPublishPods asserts the operator eventually publishes
+// exactly the given pods (comma separated) on the named port, and no others.
 func servicePortShouldPublishPods(ctx context.Context, t framework.TestingT, portName, serviceName, podList string) {
 	want := sets.List(sets.New(strings.Fields(strings.ReplaceAll(podList, ",", " "))...))
 	var got []string
@@ -98,12 +96,10 @@ func servicePortShouldPublishPods(ctx context.Context, t framework.TestingT, por
 		return slices.Equal(got, want)
 	}, 5*time.Minute, 5*time.Second)
 	if !published {
-		// Which pods a port ends up with is a conclusion the operator
-		// reached from the Service, the pods, and a probe of each one, so
-		// report all three rather than only the conclusion. The shared
-		// operator's own log is dumped for every feature, but a V1 cluster's
-		// reconciler alone outruns the tail, so the lines about this Service
-		// have to be pulled out by name.
+		// The operator reached this from the Service, the pods and a probe
+		// of each, so report all three, not just the conclusion. Its own log
+		// is dumped for every feature, but a V1 reconciler alone outruns the
+		// tail, so pull this Service's lines out by name.
 		dumpSteeringDiagnostics(ctx, t, serviceName)
 		require.Failf(t, "endpoints never matched",
 			"port %q of service %q published %v, wanted %v", portName, serviceName, got, want)
@@ -119,9 +115,9 @@ func serviceOfClusterShouldHaveNoSelector(ctx context.Context, t framework.Testi
 }
 
 // unsteeredServicesOfClusterShouldHaveSelectors asserts the cluster's other
-// Services stay with the native EndpointSlice controller: on V1 the headless
-// Service, which carries broker discovery alone. A V2 cluster serves every
-// listener on the one steered Service, so it has none.
+// Services stay with Kubernetes: on V1 the headless one, which carries
+// broker discovery alone. A V2 cluster serves every listener on its one
+// steered Service, so it has no others.
 func unsteeredServicesOfClusterShouldHaveSelectors(ctx context.Context, t framework.TestingT, clusterName string) {
 	if getVersion(t, "") != "vectorized" {
 		t.Logf("Cluster %q serves every listener on its steered Service; no other service to check", clusterName)
@@ -131,8 +127,8 @@ func unsteeredServicesOfClusterShouldHaveSelectors(ctx context.Context, t framew
 }
 
 // clusterListenerShouldPublishPods is servicePortShouldPublishPods against
-// the cluster's own steered Service, naming a listener rather than a port so
-// that one scenario reads the same for both cluster APIs.
+// the cluster's own steered Service, by listener rather than port so one
+// scenario reads the same for both cluster APIs.
 func clusterListenerShouldPublishPods(ctx context.Context, t framework.TestingT, listener, clusterName, podList string) {
 	service, ports := steeredServiceOf(t, clusterName)
 	port, ok := ports[listener]
@@ -141,13 +137,13 @@ func clusterListenerShouldPublishPods(ctx context.Context, t framework.TestingT,
 }
 
 // steeredServiceOf is the Service carrying a cluster's Schema Registry
-// listener -- the one the operator is asked to steer -- and the names its
-// ports go by, which the two cluster APIs spell differently.
+// listener, and the names its ports go by, which the two cluster APIs spell
+// differently.
 func steeredServiceOf(t framework.TestingT, clusterName string) (string, map[string]string) {
 	if getVersion(t, "") == "vectorized" {
 		// A V1 cluster serves Schema Registry on its ClusterIP Service; the
-		// headless one carries broker discovery alone and is left to the
-		// native EndpointSlice controller.
+		// headless one carries broker discovery alone and is left to
+		// Kubernetes.
 		return clusterName + "-cluster", map[string]string{
 			"kafka":           vectorizedv1alpha1.InternalListenerName,
 			"schema registry": resources.SchemaRegistryPortName,
@@ -160,9 +156,9 @@ func steeredServiceOf(t framework.TestingT, clusterName string) (string, map[str
 }
 
 // dumpSteeringDiagnostics reports everything that decides a steered
-// Service's endpoints: the Service itself, every slice published for it
-// whoever owns it, any NetworkPolicy that could be shaping the probes, and
-// the operator's own account of the decision.
+// Service's endpoints: the Service, every slice published for it whoever
+// owns it, any NetworkPolicy that could be shaping the probes, and the
+// operator's own account of the decision.
 func dumpSteeringDiagnostics(ctx context.Context, t framework.TestingT, serviceName string) {
 	var service corev1.Service
 	if err := t.Get(ctx, t.ResourceKey(serviceName), &service); err != nil {

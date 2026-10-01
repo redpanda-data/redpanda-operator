@@ -89,9 +89,9 @@ func (m *V2SimpleResourceRenderer) Render(ctx context.Context, cluster *ClusterW
 }
 
 // steerInternalService hands the cluster's internal Service to the endpoint
-// steering controller. It is the one Service a v2 cluster publishes its
-// Schema Registry on, and also the one carrying broker discovery, so the
-// operator becomes the publisher of both.
+// steering controller. A v2 cluster serves Schema Registry and broker
+// discovery on that one Service, so the operator becomes the publisher of
+// both.
 func steerInternalService(resources []client.Object, serviceName, cluster string) {
 	for _, resource := range resources {
 		svc, ok := resource.(*corev1.Service)

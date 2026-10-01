@@ -27,12 +27,12 @@ Feature: Endpoint steering
     Given cluster "steering" is available
     # A Service managed outside the operator opts in with the annotation and
     # no selector. Its port names differ from the cluster's own on purpose:
-    # steering keys on the cluster's Schema Registry port number.
+    # steering keys on the cluster's Schema Registry port numbers.
     #
     # It publishes not-ready addresses, as the cluster's own Services and the
     # cloud seed load balancers do, which is what leaves the Schema Registry
     # probe as the only thing that can move an endpoint here.
-    And I apply Kubernetes manifest:
+    When I apply Kubernetes manifest:
     """
     ---
     apiVersion: v1

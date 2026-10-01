@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"slices"
 	"sync"
 	"syscall"
 	"time"
@@ -31,53 +32,45 @@ import (
 )
 
 const (
-	// clusterCacheTTL bounds how long a cluster's resolved shape (its pod
-	// identity and Schema Registry listener) is reused before being read
-	// again. Checks run for every pod and port on every resync, so resolving
-	// per check would re-render and re-read the cluster at that rate.
+	// clusterCacheTTL is how long a cluster's resolved shape -- its pod
+	// labels and Schema Registry listener -- is reused. Checks run per pod
+	// per port per resync, so resolving per check would re-read the cluster
+	// at that rate.
 	clusterCacheTTL = 30 * time.Second
 
-	// clusterFailureTTL is how long a failed resolution is remembered, to
-	// keep an unreadable cluster from re-resolving on every check of every
-	// pod. Short, because it also bounds how long a cluster that has just
-	// become readable keeps its old shape.
+	// clusterFailureTTL is how long a failed resolution is remembered, so an
+	// unreadable cluster isn't re-resolved on every check. Short, because it
+	// also bounds how long a cluster that just became readable keeps its
+	// stale shape.
 	clusterFailureTTL = 5 * time.Second
 
-	// probeFailureThreshold is how many consecutive failed probes it takes
-	// to unpublish a broker's Schema Registry, mirroring kubelet's default
-	// readiness failureThreshold: a single slow answer under load must not
-	// flap a healthy registry out of rotation.
+	// probeFailureThreshold is how many failed probes in a row unpublish a
+	// broker's Schema Registry, matching kubelet's readiness default so one
+	// slow answer under load can't flap a healthy registry out.
 	probeFailureThreshold = 3
 
-	// probeSuccessThreshold is how many consecutive successful probes it
-	// takes to publish it again. Kubelet's readiness equivalent is 1, but
-	// kubelet is deciding one pod's condition where this decides an
-	// EndpointSlice: a listener that comes and goes -- a restarting broker,
-	// a store that syncs and falls behind again -- would otherwise be
-	// written back in on every other probe, and each flip rewrites the
-	// slice for every consumer of the Service. Requiring two consecutive
-	// successes costs a recovered broker one resync, against a replay
-	// measured in minutes, and keeps a genuinely flapping listener out
-	// rather than oscillating.
+	// probeSuccessThreshold is how many successes in a row publish it again.
+	// Kubelet's equivalent is 1, but kubelet decides one pod's condition
+	// where this rewrites endpoints every client of the Service reads, so a
+	// listener that comes and goes would be written back in on every other
+	// probe. Two costs a recovered broker one resync, against a replay
+	// measured in minutes.
 	probeSuccessThreshold = 2
 )
 
-// checker is the portmapper membership decision for Redpanda broker pods. It
-// publishes a pod for a Service port when the pod is one of the named
-// cluster's brokers, the pod would be published by the native controller
-// (Ready, or the Service publishes not-ready addresses), and -- for the
-// cluster's Schema Registry port only -- the broker's Schema Registry answers
-// GET /status/ready.
+// checker decides whether to publish one pod on one Service port. It says
+// yes when the pod is one of the named cluster's brokers, Kubernetes would
+// publish it too, and -- on the Schema Registry port only -- its Schema
+// Registry answers GET /status/ready.
 type checker struct {
-	resolver      Resolver
-	clusterDomain string
-	probeTimeout  time.Duration
-	// podReady is the native controller's inclusion rule, which every port
-	// is still held to. It reads only the pod's conditions, so the Service's
-	// publishNotReadyAddresses is applied around it.
+	resolver     Resolver
+	probeTimeout time.Duration
+	// podReady is Kubernetes' own rule, which every port is still held to.
+	// It reads the pod's conditions alone, so publishNotReadyAddresses is
+	// applied around it.
 	podReady portmapper.Checker
-	// schemaRegistry damps probeSchemaRegistry's answers so a single slow
-	// or dropped probe doesn't flap a healthy registry.
+	// schemaRegistry damps probeSchemaRegistry so one slow or dropped probe
+	// doesn't flap a healthy registry.
 	schemaRegistry portmapper.Decider
 
 	mu       sync.Mutex
@@ -94,25 +87,22 @@ type clusterEntry struct {
 }
 
 // newChecker returns a checker resolving clusters through resolver.
-func newChecker(resolver Resolver, clusterDomain string) *checker {
+func newChecker(resolver Resolver) *checker {
 	c := &checker{
-		resolver:      resolver,
-		clusterDomain: clusterDomain,
-		probeTimeout:  schemaregistry.ProbeTimeout,
-		podReady:      portmapper.PodReady(),
-		clusters:      map[string]clusterEntry{},
-		now:           time.Now,
+		resolver:     resolver,
+		probeTimeout: schemaregistry.ProbeTimeout,
+		podReady:     portmapper.PodReady(),
+		clusters:     map[string]clusterEntry{},
+		now:          time.Now,
 	}
-	// Stable's checker is always a Decider (that is how it damps an
-	// [portmapper.Abstain] without resetting a streak); asserting it here is
-	// what lets Decide consult it directly.
+	// NB: Stable always returns a Decider -- that is how it damps an Abstain
+	// without breaking a streak -- and asserting it lets Decide call it
+	// directly.
 	c.schemaRegistry = portmapper.Stable(portmapper.DeciderFunc(c.probeSchemaRegistry), probeSuccessThreshold, probeFailureThreshold).(portmapper.Decider)
 	return c
 }
 
-// Decide implements [portmapper.Decider]. The mapper's membership is typed
-// [portmapper.Checker], so it is handed a [portmapper.DeciderFunc] over this;
-// see mapperConfig.
+// Decide implements [portmapper.Decider].
 func (c *checker) Decide(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
 	logger := log.FromContext(ctx).WithValues("pod", client.ObjectKeyFromObject(pod), "port", port.Name, "targetPort", port.Port)
 
@@ -132,25 +122,23 @@ func (c *checker) Decide(ctx context.Context, svc *corev1.Service, pod *corev1.P
 		return portmapper.Exclude
 	}
 
-	// Every port is still held to the native controller's inclusion rule: a
-	// pod backs a Service once it is Ready, or as soon as it has an address
-	// when the Service publishes not-ready addresses -- which a broker
-	// discovery Service must, since Raft needs members to resolve each other
-	// before they are ready.
+	// Every port is still held to Kubernetes' own rule, so steering only
+	// ever narrows what would be published. Broker discovery Services
+	// publish not-ready addresses, since Raft members have to resolve each
+	// other before they are ready.
 	if !svc.Spec.PublishNotReadyAddresses && !c.podReady.Check(ctx, svc, pod, port) {
 		return portmapper.Exclude
 	}
-	// Ports other than Schema Registry are then published exactly as the
-	// native controller would, so enabling steering changes nothing about
-	// them.
+	// Any other port is published just as Kubernetes would, so steering
+	// changes nothing for it.
 	if !isSchemaRegistryPort(port, brokers) {
 		return portmapper.Include
 	}
 	return c.schemaRegistry.Decide(ctx, svc, pod, port)
 }
 
-// groupOf is the pod group a membership check is about: the Service's
-// annotation, which alignment guarantees equals the pod's label.
+// groupOf is the cluster a check is about: the Service's annotation, which
+// pairing guarantees equals the pod's label.
 func groupOf(svc *corev1.Service, pod *corev1.Pod) string {
 	if group := svc.Annotations[ServiceAnnotation]; group != "" {
 		return group
@@ -158,31 +146,36 @@ func groupOf(svc *corev1.Service, pod *corev1.Pod) string {
 	return pod.Labels[PodGroupLabel]
 }
 
-// isBroker reports whether pod is one of brokers' pods, by the selector the
-// cluster's own Services use: nothing the operator renders matches it but
-// brokers.
+// isBroker reports whether pod is one of the cluster's brokers, by the
+// selector the cluster's own Services use.
 func isBroker(pod *corev1.Pod, brokers Cluster) bool {
 	return labels.SelectorFromSet(brokers.PodSelector()).Matches(labels.Set(pod.Labels))
 }
 
+// isSchemaRegistryPort reports whether port is one a broker serves its
+// registry on, internal or external.
+//
+// NB: a cluster with no internal listener is left ungated even if it has
+// external ones. There is then nothing to probe, and excluding every broker
+// would take the port down rather than steer it.
 func isSchemaRegistryPort(port portmapper.Port, brokers Cluster) bool {
-	listener := brokers.SchemaRegistry()
-	return listener != nil &&
+	return brokers.SchemaRegistry() != nil &&
 		port.Protocol == corev1.ProtocolTCP &&
-		port.Port == listener.Port
+		slices.Contains(brokers.SchemaRegistryPorts(), port.Port)
 }
 
-// probeSchemaRegistry asks the broker's Schema Registry whether its store has
-// caught up, through a client scoped to this pod's address.
-// /status/ready is auth-exempt and blocks until _schemas is replayed, so a
-// timeout is the "still replaying" answer rather than a transport failure.
+// probeSchemaRegistry asks one broker's Schema Registry whether its store
+// has caught up, over a client scoped to this pod's address.
+//
+// NB: /status/ready is auth-exempt and blocks until _schemas is replayed, so
+// a timeout means "still replaying", not a broken connection.
 func (c *checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, pod *corev1.Pod, port portmapper.Port) portmapper.Decision {
 	logger := log.FromContext(ctx).WithValues("checker", "SchemaRegistryReady", "pod", client.ObjectKeyFromObject(pod), "port", port.Name, "targetPort", port.Port)
 
 	brokers, err := c.brokers(ctx, pod.Namespace, groupOf(svc, pod))
 	if err != nil || brokers.SchemaRegistry() == nil {
-		// Decide already ruled on both cases; being here means the cache
-		// turned over between the two lookups.
+		// Decide ruled on both already; being here means the cache turned
+		// over in between.
 		return portmapper.Abstain
 	}
 
@@ -190,7 +183,7 @@ func (c *checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, 
 	if address == "" {
 		address = pod.Status.PodIP
 	}
-	broker, err := brokers.SchemaRegistry().BrokerAt(ctx, address, c.podDNSName(pod, brokers))
+	broker, err := brokers.SchemaRegistry().BrokerAt(ctx, address, podDNSName(pod, brokers))
 	if err != nil {
 		logger.V(1).Info("abstaining: building the schema registry probe failed", "error", err.Error())
 		return portmapper.Abstain
@@ -207,15 +200,13 @@ func (c *checker) probeSchemaRegistry(ctx context.Context, svc *corev1.Service, 
 }
 
 // classifyProbeError separates failures that describe the broker from
-// failures that describe the prober. A timeout is Schema Registry still
-// replaying (or a broker that cannot be reached at all), a refused or
-// dropped connection is its listener not being up, and a non-2xx is its own
-// verdict: all three exclude, because an endpoint the operator cannot get a
-// healthy answer out of is not one to send clients to, and [portmapper.Stable]
-// damps the transient cases. Anything else -- a TLS verification failure, an
-// unroutable pod network, a misconfigured transport -- says nothing about the
-// broker and would read as "every broker is down" if it excluded, so it
-// abstains and the previously published membership stands.
+// failures that describe the prober. A timeout (still replaying, or
+// unreachable), a refused or dropped connection, and a non-2xx answer all
+// exclude: an endpoint we can't get a healthy answer out of is not one to
+// send clients to, and [portmapper.Stable] damps the transient cases.
+// Anything else -- a TLS failure, an unroutable pod network, a broken
+// transport -- says nothing about the broker and would read as "every broker
+// is down", so it abstains and what is already published stands.
 func classifyProbeError(err error) portmapper.Decision {
 	var (
 		netErr      net.Error
@@ -237,11 +228,11 @@ func classifyProbeError(err error) portmapper.Decision {
 }
 
 // podDNSName is the pod's stable DNS name under its cluster's internal
-// Service, which every implementation's broker certificates cover with a
-// wildcard SAN. Empty for a pod that names no subdomain and so has no such
-// record; the probe then verifies a TLS listener against the pod's address,
-// which broker certificates never carry, and abstains.
-func (c *checker) podDNSName(pod *corev1.Pod, brokers Cluster) string {
+// Service, which broker certificates cover with a wildcard SAN. Empty for a
+// pod naming no subdomain, which has no such record: a TLS listener is then
+// verified against the pod's address, which no certificate carries, and the
+// probe abstains.
+func podDNSName(pod *corev1.Pod, brokers Cluster) string {
 	if pod.Spec.Subdomain == "" {
 		return ""
 	}
@@ -249,17 +240,12 @@ func (c *checker) podDNSName(pod *corev1.Pod, brokers Cluster) string {
 	if hostname == "" {
 		hostname = pod.Name
 	}
-	domain := brokers.ClusterDomain()
-	if domain == "" {
-		domain = c.clusterDomain
-	}
-	return fmt.Sprintf("%s.%s.%s.svc.%s", hostname, pod.Spec.Subdomain, pod.Namespace, domain)
+	return fmt.Sprintf("%s.%s.%s.svc.%s", hostname, pod.Spec.Subdomain, pod.Namespace, brokers.ClusterDomain())
 }
 
-// brokers resolves group's cluster, caching the answer -- a failure included,
-// briefly -- so that a cluster is read once per TTL however many pods and
-// ports are checked against it. Concurrent misses for one cluster share a
-// single resolution.
+// brokers resolves group's cluster, caching the answer -- failures included,
+// briefly -- so a cluster is read once per TTL however many pods and ports
+// are checked against it. Concurrent misses share one resolution.
 func (c *checker) brokers(ctx context.Context, namespace, group string) (Cluster, error) {
 	key := namespace + "/" + group
 
@@ -273,12 +259,11 @@ func (c *checker) brokers(ctx context.Context, namespace, group string) (Cluster
 
 	result, err, _ := c.inflight.Do(key, func() (any, error) {
 		brokers, err := c.resolver.Resolve(ctx, namespace, group)
-		// A resolver answering with neither a cluster nor an error breaks
-		// [Resolver]'s contract. Turn it into a failed lookup here, the one
-		// place a Cluster enters the decision path: every consumer below is
-		// then free to use it without a nil check, and the checker abstains
-		// instead of panicking a port-mapper goroutine -- which would take
-		// the manager down rather than fail one reconcile.
+		// NB: a resolver answering with neither a cluster nor an error
+		// breaks [Resolver]'s contract. Turning it into a failure here, the
+		// one place a Cluster enters, lets everything below skip the nil
+		// check: a panic in a portmapper goroutine would take the manager
+		// down, not just fail one reconcile.
 		if err == nil && brokers == nil {
 			err = errors.Newf("resolver returned no cluster for %q and no error", key)
 		}

@@ -60,11 +60,10 @@ func (c *Factory) SchemaRegistryBrokerClients(ctx context.Context, obj any) ([]s
 }
 
 // redpandaSchemaRegistryBrokerClient builds a v2 cluster's Schema Registry
-// client with one URL per broker pod that exists, rather than per SRV record
-// like SchemaRegistryClient. Under endpoint steering the internal Service's
-// Schema Registry port is published only for brokers whose store has caught
-// up, so its SRV record omits exactly the brokers the rolling-restart gate
-// has to wait for.
+// client with one URL per broker pod, rather than per SRV record like
+// SchemaRegistryClient. Steering publishes the Schema Registry port only for
+// brokers whose store has caught up, so the SRV record omits exactly the
+// brokers a rolling restart has to wait for.
 func (c *Factory) redpandaSchemaRegistryBrokerClient(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*sr.Client, error) {
 	state, err := c.redpandaRenderState(ctx, cluster, clusterName)
 	if err != nil {
@@ -92,13 +91,13 @@ func (c *Factory) redpandaSchemaRegistryBrokerClient(ctx context.Context, cluste
 }
 
 // schemaRegistryBrokerHosts returns the sorted "host:port" Schema Registry
-// addresses of the broker pods among pods. Pods are narrowed to those under
-// the internal Service -- which is both what makes the returned names
-// resolvable and what tells a broker from any pod labelled like one -- and to
-// those a connection can be established to at all,
-// since the gate fails closed and a pod with no address (Pending, or
-// finished) would defer the roll forever rather than for as long as it takes
-// its store to catch up.
+// addresses of the broker pods among pods. Only pods under the internal
+// Service count, which both makes the names resolvable and tells a broker
+// from any pod labelled like one.
+//
+// NB: pods with no address are skipped too. The gate fails closed, so a
+// Pending or finished pod would defer the roll forever rather than for as
+// long as its store takes to catch up.
 func schemaRegistryBrokerHosts(state *redpandachart.RenderState, pods []corev1.Pod) []string {
 	var hosts []string
 	for i := range pods {

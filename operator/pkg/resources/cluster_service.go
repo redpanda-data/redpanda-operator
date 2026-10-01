@@ -59,14 +59,15 @@ func NewClusterService(
 	}
 }
 
-// WithEndpointSteering hands this Service's EndpointSlices to the operator's
-// endpoint steering controller, which publishes them per port. Whether the
-// cluster asked for that is the caller's to read (feature.EndpointSteering).
-// This is the Service a v1 cluster serves its Schema Registry on; the
-// headless Service is deliberately left to the native controller, since it
-// carries broker discovery and no Schema Registry port, so steering it would
-// make seed and admin DNS depend on the operator being up for nothing in
-// return.
+// WithEndpointSteering hands this Service's endpoints to the operator's
+// endpoint steering controller, which publishes them per port. Reading
+// whether the cluster asked for it is the caller's job
+// (feature.EndpointSteering).
+//
+// NB: this is the Service a v1 cluster serves Schema Registry on. The
+// headless one is left to Kubernetes: it carries broker discovery and no
+// Schema Registry port, so steering it would make seed and admin DNS depend
+// on the operator being up, for nothing.
 func (r *ClusterServiceResource) WithEndpointSteering(enabled bool) *ClusterServiceResource {
 	r.endpointSteering = enabled
 	return r

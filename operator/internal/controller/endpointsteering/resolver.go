@@ -23,35 +23,39 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
 )
 
-// ErrUnknownCluster reports that no cluster named by a pod group exists in
-// the namespace. Pods aligned to such a Service are excluded rather than
-// held: with no cluster there is nothing to probe and nothing to preserve.
+// ErrUnknownCluster reports that the namespace holds no cluster of that
+// name. Pods paired with such a Service are excluded rather than held: with
+// no cluster there is nothing to probe.
 var ErrUnknownCluster = errors.New("no cluster found for pod group")
 
-// Cluster is the view of a Redpanda cluster a membership decision needs: how
-// to tell its broker pods apart from everything else in the namespace, and
-// the Schema Registry listener they serve.
+// Cluster is what a membership decision needs to know about a Redpanda
+// cluster: how to tell its broker pods from everything else in the
+// namespace, and the Schema Registry listener they serve.
 //
-// client.Factory.ClusterBrokers produces it. It is named here as an
-// interface, rather than imported from that package, because pkg/client sits
-// above the v1 and v2 renderers and the renderers import this package for
-// [Steer] -- so importing it back would be a cycle.
+// NB: client.Factory.ClusterBrokers produces it, but is named here as an
+// interface rather than imported: pkg/client sits above the v1 and v2
+// renderers, and those renderers import this package for [Steer].
 type Cluster interface {
-	// PodSelector is carried by every broker pod of the cluster, across node
-	// pools; it is the cluster's own Service selector.
+	// PodSelector is the cluster's own Service selector, carried by every
+	// one of its broker pods across node pools.
 	PodSelector() map[string]string
 	// ClusterDomain completes a broker pod's DNS record, or is empty when
-	// the cluster kind records none and the operator's own applies.
+	// the cluster records none and the operator's own applies.
 	ClusterDomain() string
-	// SchemaRegistry is nil when the cluster's listener is disabled.
+	// SchemaRegistry is the listener to probe, nil when the cluster's
+	// internal listener is disabled.
 	SchemaRegistry() *schemaregistry.Listener
+	// SchemaRegistryPorts is every port a broker serves the registry on,
+	// internal and external alike. One registry backs them all, so the one
+	// probe decides the lot.
+	SchemaRegistryPorts() []int32
 }
 
-// Resolver maps a pod group -- the value of [ServiceAnnotation] on a
-// Service, which names a cluster -- to that cluster's brokers.
+// Resolver maps a pod group -- the cluster named by [ServiceAnnotation] on a
+// Service -- to that cluster's brokers.
 type Resolver interface {
-	// Resolve returns ErrUnknownCluster when no cluster named group exists
-	// in namespace. A nil error means a usable Cluster: neither a nil
+	// Resolve returns ErrUnknownCluster when namespace holds no cluster
+	// named group. A nil error means a usable Cluster: neither a nil
 	// interface nor one holding a nil pointer (see [BrokersOf]).
 	Resolve(ctx context.Context, namespace, group string) (Cluster, error)
 }
@@ -64,9 +68,8 @@ func (f ResolverFunc) Resolve(ctx context.Context, namespace, group string) (Clu
 	return f(ctx, namespace, group)
 }
 
-// Resolvers consults each resolver in turn and answers with the first that
-// knows the group, so one controller serves whichever cluster kinds an
-// operator runs.
+// Resolvers answers with the first resolver that knows the group, so one
+// controller serves whichever cluster kinds an operator runs.
 type Resolvers []Resolver
 
 // Resolve implements [Resolver].
@@ -82,16 +85,17 @@ func (rs Resolvers) Resolve(ctx context.Context, namespace, group string) (Clust
 }
 
 // BrokersFunc resolves a cluster object to its brokers.
-// client.Factory.ClusterBrokers is the implementation; it is passed in rather
-// than imported for the reason [Cluster] gives. It must return a nil Cluster
-// on failure -- a typed-nil pointer in a non-nil interface would read as a
-// resolved cluster.
+// client.Factory.ClusterBrokers is the implementation, passed in rather than
+// imported for the reason [Cluster] gives. It must return a nil Cluster on
+// failure.
 type BrokersFunc func(ctx context.Context, cluster any, clusterName string) (Cluster, error)
 
 // BrokersOf adapts a resolver of concrete brokers -- Factory.ClusterBrokers
-// -- to a [BrokersFunc]. It exists so the nil is written once: returning a
-// failed lookup's typed-nil pointer straight into the interface would make a
-// non-nil Cluster that panics on first use.
+// -- to a [BrokersFunc].
+//
+// NB: it exists so the nil is written once. A failed lookup's typed-nil
+// pointer put straight into the interface reads as a resolved cluster and
+// panics on first use.
 func BrokersOf[T Cluster](resolve func(ctx context.Context, cluster any, clusterName string) (T, error)) BrokersFunc {
 	return func(ctx context.Context, cluster any, clusterName string) (Cluster, error) {
 		brokers, err := resolve(ctx, cluster, clusterName)
@@ -103,8 +107,8 @@ func BrokersOf[T Cluster](resolve func(ctx context.Context, cluster any, cluster
 }
 
 // V2Resolver resolves groups as v2 Redpanda clusters read through reader,
-// which must be backed by an informer for the type (the manager's client in
-// an operator running the Redpanda controllers).
+// which needs an informer for the type -- the manager's client in an
+// operator running the Redpanda controllers.
 func V2Resolver(reader client.Reader, brokers BrokersFunc) Resolver {
 	return clusterResolver[redpandav1alpha2.Redpanda](reader, brokers)
 }
@@ -114,9 +118,9 @@ func V1Resolver(reader client.Reader, brokers BrokersFunc) Resolver {
 	return clusterResolver[vectorizedv1alpha1.Cluster](reader, brokers)
 }
 
-// clusterResolver reads the cluster of type T named by the pod group and asks
+// clusterResolver reads the cluster of type T named by the group and asks
 // brokers for its brokers. A group naming no such cluster is not this
-// resolver's business, which is what lets [Resolvers] try the next one.
+// resolver's business, which lets [Resolvers] try the next one.
 func clusterResolver[T any, PT interface {
 	*T
 	client.Object
@@ -132,3 +136,30 @@ func clusterResolver[T any, PT interface {
 		return brokers(ctx, cluster, mcmanager.LocalCluster)
 	})
 }
+
+// withClusterDomain fills a resolved cluster's empty domain in with the
+// operator's own, so a membership decision never has to know there was a
+// default. A v1 Cluster records no domain of its own.
+func withClusterDomain(resolver Resolver, domain string) Resolver {
+	if domain == "" {
+		return resolver
+	}
+	return ResolverFunc(func(ctx context.Context, namespace, group string) (Cluster, error) {
+		cluster, err := resolver.Resolve(ctx, namespace, group)
+		// A resolver answering with neither a cluster nor an error breaks
+		// [Resolver]'s contract; pass it through for the checker to turn into
+		// a failed lookup rather than dereferencing it here.
+		if err != nil || cluster == nil || cluster.ClusterDomain() != "" {
+			return cluster, err
+		}
+		return defaultedDomain{Cluster: cluster, domain: domain}, nil
+	})
+}
+
+// defaultedDomain is a [Cluster] answering with the operator's domain.
+type defaultedDomain struct {
+	Cluster
+	domain string
+}
+
+func (d defaultedDomain) ClusterDomain() string { return d.domain }

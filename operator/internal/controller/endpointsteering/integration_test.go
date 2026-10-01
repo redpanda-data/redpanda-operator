@@ -46,7 +46,13 @@ import (
 
 // kafkaTestPort is the Kafka port the steered Services under test carry; it
 // exists only to be a port the Schema Registry probe has no say over.
-const kafkaTestPort = 9092
+const (
+	kafkaTestPort = 9092
+	// externalRegistryTestPort stands in for the registry's external
+	// listener. Nothing listens there: the point is that the internal
+	// listener's probe decides it.
+	externalRegistryTestPort = 18081
+)
 
 // TestSteersSchemaRegistryPort drives the controller against a real API
 // server, for both cluster kinds at once as the operator runs them: broker
@@ -174,14 +180,19 @@ func TestSteersSchemaRegistryPort(t *testing.T) {
 
 	requirePublished("kafka", allBrokers)
 	requirePublished("schema-registry", allBrokers)
+	requirePublished("schema-registry-external", allBrokers)
 
-	// A registry that stops answering leaves its own port, and nothing else.
+	// A registry that stops answering leaves every port it serves -- the
+	// external one included, since one registry backs them both -- and
+	// nothing else.
 	serving.Store(false)
 	requirePublished("schema-registry", none)
+	requirePublished("schema-registry-external", none)
 	requirePublished("kafka", allBrokers)
 
 	serving.Store(true)
 	requirePublished("schema-registry", allBrokers)
+	requirePublished("schema-registry-external", allBrokers)
 }
 
 // steeredCluster is one cluster under test: the Service the operator steers
@@ -208,6 +219,10 @@ func applyV1Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 				KafkaAPI:       []vectorizedv1alpha1.KafkaAPI{{Port: kafkaTestPort}},
 				AdminAPI:       []vectorizedv1alpha1.AdminAPI{{Port: 9644}},
 				SchemaRegistry: &vectorizedv1alpha1.SchemaRegistryAPI{Port: address.Port},
+				SchemaRegistryAPI: []vectorizedv1alpha1.SchemaRegistryAPI{{
+					Port:     externalRegistryTestPort,
+					External: &vectorizedv1alpha1.SchemaRegistryExternalConnectivityConfig{ExternalConnectivityConfig: vectorizedv1alpha1.ExternalConnectivityConfig{Enabled: true}},
+				}},
 			},
 		},
 	})
@@ -237,8 +252,13 @@ func applyV2Cluster(t *testing.T, ctl *kube.Ctl, namespace, name string, address
 				// stand-in.
 				TLS: &redpandav1alpha2.TLS{Enabled: ptr.To(false)},
 				Listeners: &redpandav1alpha2.Listeners{
-					Kafka:          &redpandav1alpha2.Kafka{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(kafkaTestPort))}},
-					SchemaRegistry: &redpandav1alpha2.SchemaRegistry{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(address.Port))}},
+					Kafka: &redpandav1alpha2.Kafka{Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(kafkaTestPort))}},
+					SchemaRegistry: &redpandav1alpha2.SchemaRegistry{
+						Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(address.Port))},
+						External: map[string]*redpandav1alpha2.ExternalListener{
+							"default": {Listener: redpandav1alpha2.Listener{Port: ptr.To(int32(externalRegistryTestPort))}, AdvertisedPorts: []int32{30081}},
+						},
+					},
 				},
 			},
 		},
@@ -273,6 +293,11 @@ func applySteeredService(t *testing.T, ctl *kube.Ctl, namespace, cluster string,
 			Ports: []corev1.ServicePort{
 				{Name: "kafka", Port: kafkaTestPort, TargetPort: intstr.FromInt32(kafkaTestPort), Protocol: corev1.ProtocolTCP},
 				{Name: "schema-registry", Port: int32(address.Port), TargetPort: intstr.FromInt32(int32(address.Port)), Protocol: corev1.ProtocolTCP},
+				// The external listener, exposed the way a node-ported or
+				// load-balanced Service exposes it: a different Service port,
+				// the listener's container port behind it. Nothing answers
+				// there -- the internal probe speaks for it.
+				{Name: "schema-registry-external", Port: 30081, TargetPort: intstr.FromInt32(externalRegistryTestPort), Protocol: corev1.ProtocolTCP},
 			},
 		},
 	})

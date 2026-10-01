@@ -53,31 +53,31 @@ type Broker struct {
 	Client *sr.Client
 }
 
-// Listener describes a cluster's internal Schema Registry listener well
-// enough to probe one broker at a time at an address the caller already
-// holds -- a pod IP. Where [PerBrokerClients] splits a client whose URLs
-// came from the cluster's DNS, a caller that publishes those DNS records
-// itself (the endpoint steering controller) cannot depend on records it is
-// in the middle of deciding, so it addresses pods directly.
+// Listener is enough of a cluster's internal Schema Registry listener to
+// probe one broker at an address the caller already holds -- a pod IP.
+// [PerBrokerClients] splits a client whose URLs came from the cluster's DNS;
+// the endpoint steering controller publishes those DNS records itself, so it
+// can't depend on records it is in the middle of deciding and addresses pods
+// directly.
 //
-// No credentials are needed: /status/ready is registered auth-exempt in
-// core. Nor is there a dialer to configure -- probes go straight to the pod
-// network, so the only caller that can use this is one running in-cluster.
+// NB: probes go straight to the pod network, so only an in-cluster caller
+// can use this. No credentials are needed, since /status/ready is auth-exempt
+// in core.
 type Listener struct {
 	// Port is the listener's port on every broker.
 	Port int32
 	// TLSConfig returns the listener's client TLS configuration, or nil for
-	// a plaintext listener. It is consulted per probe rather than up front,
-	// so a cluster whose certificates cannot be read yet fails only its
-	// Schema Registry probes and not everything else the caller knows about
-	// the cluster; implementations that read Secrets should memoize.
+	// a plaintext listener. It is consulted per probe, so a cluster whose
+	// certificates can't be read yet fails only its probes and nothing else
+	// the caller knows about it. Implementations reading Secrets should
+	// memoize.
 	TLSConfig func(ctx context.Context) (*tls.Config, error)
 }
 
-// BrokerAt returns a [Broker] addressed at host, which is normally a pod IP.
-// serverName is the DNS name to verify the listener's certificate against,
-// needed because broker certificates never carry pod IPs; it is ignored for
-// a plaintext listener, or when the TLS config names a server itself.
+// BrokerAt returns a [Broker] addressed at host, normally a pod IP.
+// serverName is the DNS name to verify the certificate against, needed
+// because broker certificates never carry pod IPs. It is ignored for a
+// plaintext listener, or when the TLS config names a server itself.
 func (l *Listener) BrokerAt(ctx context.Context, host, serverName string) (Broker, error) {
 	scheme := "http"
 	var opts []sr.ClientOpt
