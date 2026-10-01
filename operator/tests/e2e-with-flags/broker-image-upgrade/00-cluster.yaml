@@ -1,5 +1,8 @@
 # Broker-mode image upgrade: the Cluster is born with the use-broker-cr
 # annotation, so the operator manages Broker CRs instead of a StatefulSet.
+# The external listener behind a subdomain is the shape of every Redpanda
+# Cloud cluster: the configurator must advertise the NodePort Service's port
+# and status.nodes.external needs the ordinal of pods without a generateName.
 apiVersion: redpanda.vectorized.io/v1alpha1
 kind: Cluster
 metadata:
@@ -26,6 +29,10 @@ spec:
       port: 33145
     kafkaApi:
       - port: 9092
+      - port: 30001
+        external:
+          enabled: true
+          subdomain: "test.subdomain.com"
     adminApi:
       - port: 9644
     developerMode: true
