@@ -35,9 +35,9 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
@@ -46,6 +46,39 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
+
+// TestResourceReconcilers drives every resource-reconciler case against one
+// control plane. Each case used to start its own `kube-apiserver`+`etcd`
+// alongside its Redpanda container, which was most of the ~10-25s a case took.
+//
+// The cases stay serial and keep a container each: they assert on
+// Redpanda-side state (users, roles, ACLs, schemas) by name, so sharing a
+// broker would mean auditing every case for collisions there.
+func TestResourceReconcilers(t *testing.T) {
+	testEnv := testutils.RedpandaTestEnv{}
+	cfg, err := testEnv.StartRedpandaTestEnv(false)
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = testEnv.Stop() })
+
+	for name, fn := range map[string]func(*testing.T, *rest.Config){
+		"group/acl-configurations": testGroupACLConfigurations,
+		"group/acl-lifecycle":      testGroupACLLifecycle,
+		"group/oidc":               testGroupOIDCIntegration,
+		"group/reconcile":          testGroupReconcile,
+		"resource/controller":      testResourceController,
+		"role/lifecycle":           testRoleLifecycleTransitions,
+		"role/membership":          testRoleMembershipReconciliation,
+		"role/principals-and-acls": testRolePrincipalsAndACLs,
+		"role/reconcile":           testRoleReconcile,
+		"role/rename":              testRoleRename,
+		"schema/reconcile":         testSchemaReconcile,
+		"user/password-schema":     testUserPasswordSchemaValidation,
+		"user/reconcile":           testUserReconcile,
+	} {
+		t.Run(name, func(t *testing.T) { fn(t, cfg) })
+	}
+}
 
 // OIDCConfig configures a Dex OIDC provider for integration testing.
 // The fields are interpolated into both the Dex server config and the
@@ -129,6 +162,7 @@ type ResourceReconcilerTestEnvironment[T any, U Resource[T]] struct {
 	AdminURL                      string
 	KafkaURL                      string
 	SchemaRegistryURL             string
+	Namespace                     string
 
 	oidcConfig *OIDCConfig
 	dexURL     string
@@ -169,30 +203,11 @@ func (e *ResourceReconcilerTestEnvironment[T, U]) FetchOIDCToken(t *testing.T) s
 	return tok.IDToken
 }
 
-func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx context.Context, reconciler ResourceReconciler[U], opts ...TestOption) *ResourceReconcilerTestEnvironment[T, U] {
+func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx context.Context, cfg *rest.Config, reconciler ResourceReconciler[U], opts ...TestOption) *ResourceReconcilerTestEnvironment[T, U] {
 	var options testOptions
 	for _, opt := range opts {
 		opt(&options)
 	}
-
-	server := &envtest.APIServer{}
-	etcd := &envtest.Etcd{}
-
-	testEnv := testutils.RedpandaTestEnv{
-		Environment: envtest.Environment{
-			ControlPlane: envtest.ControlPlane{
-				APIServer: server,
-				Etcd:      etcd,
-			},
-		},
-	}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	t.Cleanup(func() {
-		_ = testEnv.Stop()
-	})
 
 	testImage := os.Getenv("TEST_REDPANDA_REPO") + ":" + os.Getenv("TEST_REDPANDA_VERSION")
 
@@ -272,11 +287,17 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	mgr := SetupTestManager(t, ctx, cfg, c)
 	factory := internalclient.NewFactory(mgr, nil)
 
+	// Generate a unique Namespace. Control plane is shared.
+	namespace := strings.ToLower(strings.NewReplacer("/", "-", "_", "-").Replace(t.Name()))
+	require.NoError(t, c.Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: namespace},
+	}))
+
 	// ensure we have a secret which we can pull a password from
 	err = c.Create(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "superuser",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: namespace,
 		},
 		Data: map[string][]byte{
 			"password": []byte("password"),
@@ -287,7 +308,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	err = c.Create(ctx, &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "invalidsuperuser",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: namespace,
 		},
 		Data: map[string][]byte{
 			"password": []byte("invalid"),
@@ -464,6 +485,7 @@ func InitializeResourceReconcilerTest[T any, U Resource[T]](t *testing.T, ctx co
 	)
 
 	return &ResourceReconcilerTestEnvironment[T, U]{
+		Namespace:                     namespace,
 		Reconciler:                    NewResourceController(mgr, factory, reconciler, "Test"),
 		Factory:                       factory,
 		ClusterSourceValid:            validClusterSource,
@@ -519,7 +541,7 @@ func (r *testReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	return nil
 }
 
-func TestResourceController(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+func testResourceController(t *testing.T, cfg *rest.Config) { // nolint:funlen // These tests have clear subtests.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
@@ -527,7 +549,7 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 	controller.UnifiedScheme.AddKnownTypes(redpandav1alpha2.SchemeGroupVersion, &testObject{})
 
 	reconciler := &testReconciler{}
-	environment := InitializeResourceReconcilerTest(t, ctx, reconciler)
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, reconciler)
 
 	crd := &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -600,7 +622,7 @@ func TestResourceController(t *testing.T) { // nolint:funlen // These tests have
 		doReconcileLifecycle(&testObject{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("test-%d", i),
-				Namespace: metav1.NamespaceDefault,
+				Namespace: environment.Namespace,
 			},
 		}, i%2 == 0)
 	}
