@@ -18,6 +18,7 @@ import (
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
 )
@@ -50,6 +51,8 @@ func certificatesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrok
 		return nil, nil
 	}
 
+	pki := poolPKI(state, pool)
+
 	fullname := state.fullname()
 	poolFullname := state.poolFullname(pool)
 	// Headless Service is cluster-wide and always named after the cluster.
@@ -58,145 +61,82 @@ func certificatesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrok
 	// Trailing dots don't play nice with TLS/SNI.
 	domain := strings.TrimSuffix(poolSpec.GetClusterDomain(), ".")
 
-	var certs []*certmanagerv1.Certificate
-
-	// Server certificates.
-	for _, name := range poolSpec.InUseServerCerts() {
-		cert := tlsCfg.Certs[name]
-
-		// Don't generate server certs if a secret is provided.
-		if cert != nil && cert.SecretRef != nil {
-			continue
+	// external.domain is templated, so expand it once rather than per cert.
+	externalDomain := ""
+	if ext := poolSpec.External; ext != nil && ext.Domain != nil {
+		expanded, err := tplutil.Tpl(*ext.Domain, state.tplData())
+		if err != nil {
+			return nil, fmt.Errorf("expanding external domain template: %w", err)
 		}
-
-		var names []string
-		if cert == nil || cert.IssuerRef == nil || cert.ShouldApplyInternalDNSNames() {
-			names = append(names,
-				fmt.Sprintf("%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain),
-				fmt.Sprintf("%s-cluster.%s.%s.svc", fullname, service, ns),
-				fmt.Sprintf("%s-cluster.%s.%s", fullname, service, ns),
-				fmt.Sprintf("*.%s-cluster.%s.%s.svc.%s", fullname, service, ns, domain),
-				fmt.Sprintf("*.%s-cluster.%s.%s.svc", fullname, service, ns),
-				fmt.Sprintf("*.%s-cluster.%s.%s", fullname, service, ns),
-				fmt.Sprintf("%s.%s.svc.%s", service, ns, domain),
-				fmt.Sprintf("%s.%s.svc", service, ns),
-				fmt.Sprintf("%s.%s", service, ns),
-				fmt.Sprintf("*.%s.%s.svc.%s", service, ns, domain),
-				fmt.Sprintf("*.%s.%s.svc", service, ns),
-				fmt.Sprintf("*.%s.%s", service, ns),
-				// Per-pod service names are standalone services in the namespace,
-				// not subdomains of the headless service. Namespace-wide
-				// wildcards cover the FQDN and 3-label forms of those services.
-				// The 2-label form `<pod>.<ns>` is covered by the explicit
-				// per-broker SANs below — a `*.<ns>` wildcard would be on a
-				// single-label parent (RFC 6125 §6.4.3) which OpenSSL ≥3.0
-				// rejects with "hostname mismatch", so emitting one would
-				// add noise without buying anything.
-				fmt.Sprintf("*.%s.svc.%s", ns, domain),
-				fmt.Sprintf("*.%s.svc", ns),
-			)
-			// In flat & MCS modes the operator writes 2-label hostnames
-			// (`<pod>.<ns>`) into seed_servers / advertised_rpc_api, which
-			// only a single-label-parent wildcard could match — and that's
-			// the RFC violation noted above. Enumerate one well-formed SAN
-			// per broker so the RPC handshake doesn't fail under strict
-			// hostname verification and the cluster can actually reach
-			// quorum (see #1499).
-			for _, p := range state.Pools() {
-				for i := int32(0); i < p.GetReplicas(); i++ {
-					podName := PerPodServiceName(state.poolFullname(p), i)
-					names = append(names, fmt.Sprintf("%s.%s", podName, ns))
-				}
-			}
-		}
-
-		// MCS networking is cluster-wide; add clusterset.local SANs.
-		if state.Spec().Networking.IsMCS() {
-			names = append(names,
-				fmt.Sprintf("%s-cluster.%s.%s.svc.clusterset.local", fullname, service, ns),
-				fmt.Sprintf("*.%s-cluster.%s.%s.svc.clusterset.local", fullname, service, ns),
-				fmt.Sprintf("%s.%s.svc.clusterset.local", service, ns),
-				fmt.Sprintf("*.%s.%s.svc.clusterset.local", service, ns),
-			)
-			for _, p := range state.Pools() {
-				for i := int32(0); i < p.GetReplicas(); i++ {
-					podName := PerPodServiceName(state.poolFullname(p), i)
-					names = append(names, fmt.Sprintf("%s.%s.svc.clusterset.local", podName, ns))
-				}
-			}
-		}
-
-		if ext := poolSpec.External; ext != nil && ext.Domain != nil {
-			expandedDomain, err := tplutil.Tpl(*ext.Domain, state.tplData())
-			if err != nil {
-				return nil, fmt.Errorf("expanding external domain template: %w", err)
-			}
-			names = append(names, expandedDomain)
-			names = append(names, fmt.Sprintf("*.%s", expandedDomain))
-		}
-
-		certs = append(certs, &certmanagerv1.Certificate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "cert-manager.io/v1",
-				Kind:       "Certificate",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-cert", poolFullname, name),
-				Labels:    state.commonLabels(),
-				Namespace: state.namespace,
-			},
-			Spec: certmanagerv1.CertificateSpec{
-				DNSNames:   names,
-				Duration:   &metav1.Duration{Duration: certDuration(cert)},
-				IsCA:       false,
-				IssuerRef:  certIssuerRef(fullname, name, cert),
-				SecretName: tlsCfg.CertServerSecretName(poolFullname, name),
-				PrivateKey: &certmanagerv1.CertificatePrivateKey{
-					Algorithm: "ECDSA",
-					Size:      256,
-				},
-			},
-		})
+		externalDomain = expanded
 	}
 
-	// Client certificates.
-	for _, name := range poolSpec.InUseClientCerts() {
-		cert := tlsCfg.Certs[name]
+	brokers := perPodHosts(state)
+	isMCS := state.Spec().Networking.IsMCS()
 
-		if cert != nil {
-			if cert.SecretRef != nil && cert.ClientSecretRef == nil {
-				return nil, fmt.Errorf(".clientSecretRef MUST be set if .secretRef is set and require_client_auth is true: Cert %q", name)
-			}
-			if cert.ClientSecretRef != nil {
-				continue
+	// NB: map values aren't addressable, so each certificate is copied out,
+	// given its requests, and written back.
+	issuing := map[string]redpanda.Certificate{}
+	for name, cert := range pki.Certificates {
+		data := tlsCfg.Certs[name]
+
+		if cert.Client != nil && data != nil && data.SecretRef != nil && data.ClientSecretRef == nil {
+			return nil, fmt.Errorf(".clientSecretRef MUST be set if .secretRef is set and require_client_auth is true: Cert %q", name)
+		}
+
+		// A provided secretRef means the keypair already exists; only the
+		// generated ones are issued.
+		if data == nil || data.SecretRef == nil {
+			cert.Server.Request = &redpanda.CertificateRequest{
+				ObjectName: fmt.Sprintf("%s-%s-cert", poolFullname, name),
+				DNSNames:   poolSANs(data, fullname, service, ns, domain, externalDomain, brokers, isMCS),
+				Duration:   &metav1.Duration{Duration: certDuration(data)},
+				IssuerRef:  certIssuerRef(fullname, name, data),
 			}
 		}
 
-		certs = append(certs, &certmanagerv1.Certificate{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "cert-manager.io/v1",
-				Kind:       "Certificate",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s-client", poolFullname, name),
-				Namespace: state.namespace,
-				Labels:    state.commonLabels(),
-			},
-			Spec: certmanagerv1.CertificateSpec{
+		if cert.Client != nil && (data == nil || data.ClientSecretRef == nil) {
+			client := *cert.Client
+			client.Request = &redpanda.CertificateRequest{
+				ObjectName: fmt.Sprintf("%s-%s-client", poolFullname, name),
 				CommonName: fmt.Sprintf("%s--%s-client", poolFullname, name),
-				Duration:   &metav1.Duration{Duration: certDuration(cert)},
-				IsCA:       false,
-				SecretName: tlsCfg.CertClientSecretName(poolFullname, name),
-				PrivateKey: &certmanagerv1.CertificatePrivateKey{
-					Algorithm: "ECDSA",
-					Size:      256,
-				},
-				IssuerRef: certIssuerRef(fullname, name, cert),
-			},
-		})
+				Duration:   &metav1.Duration{Duration: certDuration(data)},
+				IssuerRef:  certIssuerRef(fullname, name, data),
+			}
+			cert.Client = &client
+		}
+
+		issuing[name] = cert
 	}
 
-	return certs, nil
+	pki.Certificates = issuing
+
+	return pki.Render(), nil
+}
+
+// poolSANs is the operator's SAN set. Per-pod Services are standalone in the
+// namespace rather than subdomains of the headless Service, hence the
+// namespace wildcards and per-broker names; see [redpanda.NamespaceSANs].
+func poolSANs(
+	data *redpandav1alpha2.Certificate,
+	fullname, service, ns, domain, externalDomain string,
+	brokers []string,
+	isMCS bool,
+) []string {
+	var names []string
+
+	if data == nil || data.IssuerRef == nil || data.ShouldApplyInternalDNSNames() {
+		names = append(names, redpanda.ServiceSANs(fullname, service, ns, domain)...)
+		names = append(names, redpanda.NamespaceSANs(ns, domain, brokers)...)
+	}
+
+	if isMCS {
+		names = append(names, redpanda.ClusterSetSANs(fullname, service, ns, brokers)...)
+	}
+
+	names = append(names, redpanda.DomainSANs(externalDomain)...)
+
+	return names
 }
 
 // certDuration returns the certificate duration, falling back to defaultCertDuration.
@@ -222,4 +162,15 @@ func certIssuerRef(fullname, certName string, cert *redpandav1alpha2.Certificate
 		Group: "cert-manager.io",
 		Name:  fmt.Sprintf("%s-%s-root-issuer", fullname, certName),
 	}
+}
+
+// perPodHosts returns every broker's per-pod Service name across all pools.
+func perPodHosts(state *RenderState) []string {
+	var hosts []string
+	for _, p := range state.Pools() {
+		for i := int32(0); i < p.GetReplicas(); i++ {
+			hosts = append(hosts, PerPodServiceName(state.poolFullname(p), i))
+		}
+	}
+	return hosts
 }

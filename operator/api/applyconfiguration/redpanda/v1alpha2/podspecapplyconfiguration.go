@@ -12,13 +12,13 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/client-go/applyconfigurations/core/v1"
+	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 // PodSpecApplyConfigurationApplyConfiguration represents a declarative configuration of the PodSpecApplyConfiguration type for use
 // with apply.
 type PodSpecApplyConfigurationApplyConfiguration struct {
-	v1.PodSpecApplyConfiguration `json:",inline"`
+	applycorev1.PodSpecApplyConfiguration `json:",inline"`
 }
 
 // PodSpecApplyConfigurationApplyConfiguration constructs a declarative configuration of the PodSpecApplyConfiguration type for use with
