@@ -32,6 +32,8 @@ import (
 )
 
 func TestShadowLinkClusterSettings_BootstrapRegression(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	defer cancel()
 
@@ -95,6 +97,8 @@ func TestShadowLinkClusterSettings_BootstrapRegression(t *testing.T) {
 }
 
 func TestShadowLinkClusterSettings_SchemaRegistryCredentials(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 	defer cancel()
 

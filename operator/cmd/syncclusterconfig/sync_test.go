@@ -280,6 +280,8 @@ func TestSync(t *testing.T) {
 }
 
 func TestSyncUpgradeRegressions(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := testr.New(t)
 	ctx = log.IntoContext(ctx, logger)
@@ -366,6 +368,8 @@ func TestSyncUpgradeRegressions(t *testing.T) {
 // The syncer must therefore skip unknown properties entirely rather than
 // trying to remove them.
 func TestSyncUnknownPropertyRegression(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	logger := testr.New(t)
 	ctx = log.IntoContext(ctx, logger)

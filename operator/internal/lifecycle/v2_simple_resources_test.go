@@ -37,6 +37,8 @@ import (
 // A real envtest apiserver backs the kube config because chart-state
 // construction resolves cluster capabilities via API discovery.
 func TestV2GetAdminAPIEndpoints(t *testing.T) {
+	t.Parallel()
+
 	environment := &envtest.Environment{}
 	config, err := environment.Start()
 	require.NoError(t, err)

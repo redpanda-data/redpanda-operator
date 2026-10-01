@@ -155,7 +155,7 @@
   status: {}
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: YDt1UCdNPDFuW3NpPiZzZz0oLS9JL2JDWHV7JyVafDk=
+    authentication-jwt-signingkey: SENVVGlJPS9+QG1qRGVsWi5fLnZJNV5fYFhTSC0gK3o=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -184,7 +184,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: YDt1UCdNPDFuW3NpPiZzZz0oLS9JL2JDWHV7JyVafDk=
+    key: SENVVGlJPS9+QG1qRGVsWi5fLnZJNV5fYFhTSC0gK3o=
   immutable: true
   kind: Secret
   metadata:
@@ -382,7 +382,7 @@
   status: {}
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: NWNDdmN+dUVLaUV6SylvTXBZM2hVMGR9Z0NkfT9+NG0=
+    authentication-jwt-signingkey: akJRRUguNVt4UTo2NnhTLiZdT2IvQmx5Oy9Td3M0R1Y=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -411,7 +411,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: NWNDdmN+dUVLaUV6SylvTXBZM2hVMGR9Z0NkfT9+NG0=
+    key: akJRRUguNVt4UTo2NnhTLiZdT2IvQmx5Oy9Td3M0R1Y=
   immutable: true
   kind: Secret
   metadata:
@@ -610,7 +610,7 @@
     parents: null
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: cyBVLipLbStGaHl5LXg4XlAsP1glSj5XNX1KWWFISX4=
+    authentication-jwt-signingkey: M0N4H2s7MW1IT0ppYycoaUZuWzJ8dmtKJEQzaTFEbC4=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -639,7 +639,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: cyBVLipLbStGaHl5LXg4XlAsP1glSj5XNX1KWWFISX4=
+    key: M0N4H2s7MW1IT0ppYycoaUZuWzJ8dmtKJEQzaTFEbC4=
   immutable: true
   kind: Secret
   metadata:
@@ -836,7 +836,7 @@
     parents: null
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: QFMxdEokPGxVdnZlWXU7QVsuRiIubz9AUkNFS3YoXiw=
+    authentication-jwt-signingkey: ejpWYSN2c3ppSSEiIXpGPUorfSBNbXopfEJMSWsqTUA=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -865,7 +865,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: QFMxdEokPGxVdnZlWXU7QVsuRiIubz9AUkNFS3YoXiw=
+    key: ejpWYSN2c3ppSSEiIXpGPUorfSBNbXopfEJMSWsqTUA=
   immutable: true
   kind: Secret
   metadata:
@@ -1215,7 +1215,7 @@
   status: {}
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: fUImb3hQLlUzRkEkaDsuaj0lY0ojcDlRQ1UzJ28jR2E=
+    authentication-jwt-signingkey: WVtAbDF6aVpgeyBMI3VRLB9vNlNwcDtzaHdgKVluSiE=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -1244,7 +1244,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: fUImb3hQLlUzRkEkaDsuaj0lY0ojcDlRQ1UzJ28jR2E=
+    key: WVtAbDF6aVpgeyBMI3VRLB9vNlNwcDtzaHdgKVluSiE=
   immutable: true
   kind: Secret
   metadata:
@@ -1425,7 +1425,7 @@
   status: {}
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: eTE4KVpfbiRnT2daKls3bX4hQT0qc2lbYElfT25rTGM=
+    authentication-jwt-signingkey: eEVjcnNLJkV8QSM8N1d5JCdAVFdKL1FBM3pUNWs2Mzk=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -1454,7 +1454,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: eTE4KVpfbiRnT2daKls3bX4hQT0qc2lbYElfT25rTGM=
+    key: eEVjcnNLJkV8QSM8N1d5JCdAVFdKL1FBM3pUNWs2Mzk=
   immutable: true
   kind: Secret
   metadata:
@@ -1650,7 +1650,7 @@
   status: {}
 - apiVersion: v1
   data:
-    authentication-jwt-signingkey: UyNVLX1iWyhoS2VIe0lLNXV4aHJbckQ0X0g9IyV8ams=
+    authentication-jwt-signingkey: QDBvbm1qXnxjSV4yRDNQYipmWF9xKR9wZWliUCBRSWU=
     authentication-oidc-client-secret: ""
     kafka-sasl-aws-msk-iam-secret-key: ""
     kafka-sasl-password: ""
@@ -1679,7 +1679,7 @@
   type: Opaque
 - apiVersion: v1
   data:
-    key: UyNVLX1iWyhoS2VIe0lLNXV4aHJbckQ0X0g9IyV8ams=
+    key: QDBvbm1qXnxjSV4yRDNQYipmWF9xKR9wZWliUCBRSWU=
   immutable: true
   kind: Secret
   metadata:
