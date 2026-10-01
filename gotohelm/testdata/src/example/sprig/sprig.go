@@ -43,6 +43,8 @@ func Sprig(dot *helmette.Dot) map[string]any {
 		"keys":            keys(),
 		"len":             lenTest(),
 		"mapIteration":    mapIteration(),
+		"mapsClone":       mapsClone(),
+		"mapsCopy":        mapsCopy(),
 		"min":             minFunc(),
 		"regex":           regex(),
 		"regexReplaceAll": regexReplaceAll(),
@@ -249,6 +251,46 @@ func keys() [][]string {
 		// where sprig's sortAlpha returns an empty list. _shims.slices_Sorted
 		// normalizes helm to go's behavior; this case guards that.
 		slices.Sorted(maps.Keys(map[string]int{})),
+	}
+}
+
+// mapsCopy exercises maps.Copy. The zero valued entries matter: sprig's
+// merge is mergo based and would drop them, which is why this transpiles to a
+// shim that assigns key by key.
+func mapsCopy() []map[string]any {
+	dst := map[string]any{"keep": "me", "clobber": "before"}
+	maps.Copy(dst, map[string]any{
+		"clobber": "after",
+		"false":   false,
+		"zero":    0,
+		"empty":   "",
+	})
+
+	fromEmpty := map[string]any{"untouched": true}
+	maps.Copy(fromEmpty, map[string]any{})
+
+	var intoEmpty map[string]any = map[string]any{}
+	maps.Copy(intoEmpty, map[string]any{"a": 1})
+
+	return []map[string]any{dst, fromEmpty, intoEmpty}
+}
+
+// mapsClone exercises maps.Clone. The clone must be a distinct map -- mutating
+// it may not be visible through the original -- and a nil map must clone to
+// nil rather than to an empty map.
+func mapsClone() []any {
+	original := map[string]any{"a": 1, "false": false}
+	cloned := maps.Clone(original)
+	cloned["a"] = 2
+	cloned["added"] = true
+
+	var nilMap map[string]any
+
+	return []any{
+		original,
+		cloned,
+		maps.Clone(nilMap),
+		maps.Clone(map[string]any{}),
 	}
 }
 

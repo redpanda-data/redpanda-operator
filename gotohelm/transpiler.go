@@ -1238,6 +1238,10 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	}
 
 	switch id {
+	case "maps.Copy":
+		return litCall("_shims.maps_Copy", args...)
+	case "maps.Clone":
+		return t.maybeCast(litCall("_shims.maps_Clone", args...), signature.Results().At(0).Type())
 	case "sort.Strings":
 		return &BuiltInCall{Func: Literal("sortAlpha"), Arguments: args}
 	case "slices.Sorted":
