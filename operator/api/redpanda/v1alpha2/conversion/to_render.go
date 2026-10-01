@@ -19,6 +19,7 @@ import (
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -274,28 +275,28 @@ func convertStatefulsetInitContainersV2Fields(state *redpandachart.RenderState, 
 		return err
 	}
 
-	if err := convertInitContainer(state, values, redpandachart.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
+	if err := convertInitContainer(state, values, redpanda.RedpandaConfiguratorContainerName, spec.Configurator); err != nil {
 		return err
 	}
 
 	// NB: we need to check if the following containers are enabled first, otherwise we wind up with a badly merged pod template spec.
 	if values.Tuning.TuneAIOEvents {
-		if err := convertInitContainer(state, values, redpandachart.RedpandaTuningContainerName, spec.Tuning); err != nil {
+		if err := convertInitContainer(state, values, redpanda.RedpandaTuningContainerName, spec.Tuning); err != nil {
 			return err
 		}
 	}
 	if values.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
-		if err := convertInitContainer(state, values, redpandachart.SetDataDirectoryOwnershipContainerName, spec.SetDataDirOwnership); err != nil {
+		if err := convertInitContainer(state, values, redpanda.SetDataDirectoryOwnershipContainerName, spec.SetDataDirOwnership); err != nil {
 			return err
 		}
 	}
 	if values.Storage.IsTieredStorageEnabled() {
-		if err := convertInitContainer(state, values, redpandachart.SetTieredStorageCacheOwnershipContainerName, spec.SetTieredStorageCacheDirOwnership); err != nil {
+		if err := convertInitContainer(state, values, redpanda.SetTieredStorageCacheOwnershipContainerName, spec.SetTieredStorageCacheDirOwnership); err != nil {
 			return err
 		}
 	}
 	if values.Statefulset.InitContainers.FSValidator.Enabled {
-		if err := convertInitContainer(state, values, redpandachart.FSValidatorContainerName, spec.FsValidator); err != nil {
+		if err := convertInitContainer(state, values, redpanda.FSValidatorContainerName, spec.FsValidator); err != nil {
 			return err
 		}
 	}
@@ -412,18 +413,18 @@ func convertV2NodepoolToPool(clusterValues redpandachart.Values, pool *redpandav
 
 			// override all of the containers that generally are set via Values.Image
 			container := containerOrInit(&values.Statefulset.PodTemplate.Spec.Containers, redpandachart.RedpandaContainerName)
-			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpandachart.RedpandaConfiguratorContainerName)
+			configurator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaConfiguratorContainerName)
 
 			container.Image = ptr.To(image)
 			configurator.Image = ptr.To(image)
 
 			// here we use clusterValues since we need to look at the cluster-level context
 			if clusterValues.Tuning.TuneAIOEvents {
-				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpandachart.RedpandaTuningContainerName)
+				tuning := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.RedpandaTuningContainerName)
 				tuning.Image = ptr.To(image)
 			}
 			if values.Statefulset.InitContainers.FSValidator.Enabled {
-				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpandachart.FSValidatorContainerName)
+				validator := containerOrInit(&values.Statefulset.PodTemplate.Spec.InitContainers, redpanda.FSValidatorContainerName)
 				validator.Image = ptr.To(image)
 			}
 		}
