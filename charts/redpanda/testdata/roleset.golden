@@ -1,0 +1,143 @@
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-rpk-debug-bundle
+    namespace: ns
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    - endpoints
+    - events
+    - limitranges
+    - persistentvolumeclaims
+    - pods
+    - pods/log
+    - replicationcontrollers
+    - resourcequotas
+    - serviceaccounts
+    - services
+    verbs:
+    - get
+    - list
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-sidecar
+    namespace: ns
+  rules:
+  - apiGroups:
+    - coordination.k8s.io
+    resources:
+    - leases
+    verbs:
+    - create
+    - delete
+    - get
+    - list
+    - patch
+    - update
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-ns-metrics-reader
+  rules:
+  - nonResourceURLs:
+    - /metrics
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-ns-rack-awareness
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - nodes
+    verbs:
+    - get
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-rpk-debug-bundle
+    namespace: ns
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: release-rpk-debug-bundle
+  subjects:
+  - kind: ServiceAccount
+    name: release-sa
+    namespace: ns
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-sidecar
+    namespace: ns
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: release-sidecar
+  subjects:
+  - kind: ServiceAccount
+    name: release-sa
+    namespace: ns
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-ns-metrics-reader
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: release-ns-metrics-reader
+  subjects:
+  - kind: ServiceAccount
+    name: release-sa
+    namespace: ns
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::1:role/rp
+    labels:
+      app.kubernetes.io/name: redpanda
+    name: release-ns-rack-awareness
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: release-ns-rack-awareness
+  subjects:
+  - kind: ServiceAccount
+    name: release-sa
+    namespace: ns

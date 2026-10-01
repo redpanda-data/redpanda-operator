@@ -160,6 +160,58 @@ func TestRender(t *testing.T) {
 	}
 }
 
+// TestRenderCaseFixturesAreStrict asserts every render case decodes without
+// dropping fields. It currently fails for 14 of the 41 cases, which set
+// StretchCluster fields that don't exist on StretchClusterSpec --
+// `rackAwareness`, `listeners`, `external`, `clusterDomain`,
+// `enableMemoryLocking` and possibly more, since strict decoding stops at the
+// first one per document. Those knobs live on BrokerPoolSpec; the cluster spec
+// was never a superset of the pool's, and MergeFromCluster only inherits the
+// three fields that exist on both.
+//
+// TestRender's decoder is non-strict, so they're discarded silently and the
+// code they were meant to exercise is never reached. Traced for rack
+// awareness: no case enables it on a pool, so all four
+// RackAwareness.IsEnabled() gates -- the ClusterRole, enable_rack_awareness,
+// ConfiguratorRackAwarenessSh, and the API token mount -- render as disabled
+// everywhere.
+//
+// Fixing it means relocating those fields onto the pools, which moves large
+// parts of both resource goldens. Skipped rather than deleted so the gap stays
+// visible.
+func TestRenderCaseFixturesAreStrict(t *testing.T) {
+	t.Skip("fixtures set StretchCluster fields that moved to BrokerPoolSpec; see doc comment")
+
+	casesArchive, err := txtar.ParseFile("testdata/render-cases.txtar")
+	require.NoError(t, err)
+
+	for _, file := range casesArchive.Files {
+		t.Run(file.Name, func(t *testing.T) {
+			for _, doc := range strings.Split(string(file.Data), "---") {
+				if strings.TrimSpace(doc) == "" {
+					continue
+				}
+
+				var typed struct {
+					Kind string `json:"kind"`
+				}
+				require.NoError(t, yaml.Unmarshal([]byte(doc), &typed))
+
+				switch typed.Kind {
+				case "StretchCluster":
+					var cluster redpandav1alpha2.StretchCluster
+					require.NoError(t, yaml.UnmarshalStrict([]byte(doc), &cluster))
+				case "RedpandaBrokerPool":
+					var pool redpandav1alpha2.RedpandaBrokerPool
+					require.NoError(t, yaml.UnmarshalStrict([]byte(doc), &pool))
+				default:
+					t.Fatalf("unexpected kind %q", typed.Kind)
+				}
+			}
+		})
+	}
+}
+
 // assertBucketParity verifies that the three new bucket entry points
 // (RenderClusterResources + RenderInClusterPoolResources over inClusterPools
 // + RenderEachPoolResources over Pools) produce the same multiset of objects

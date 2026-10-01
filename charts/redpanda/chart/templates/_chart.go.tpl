@@ -53,30 +53,8 @@
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- range $_, $obj := (get (fromJson (include "redpanda.Roles" (dict "a" (list $state)))) "r") -}}
-{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $_, $obj := (get (fromJson (include "redpanda.ClusterRoles" (dict "a" (list $state)))) "r") -}}
-{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $_, $obj := (get (fromJson (include "redpanda.RoleBindings" (dict "a" (list $state)))) "r") -}}
-{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- range $_, $obj := (get (fromJson (include "redpanda.ClusterRoleBindings" (dict "a" (list $state)))) "r") -}}
-{{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
+{{- $rbac := (get (fromJson (include "redpanda.RoleSet" (dict "a" (list $state)))) "r") -}}
+{{- $manifests = (concat (default (list) $manifests) (default (list) (get (fromJson (include "_redpanda.RoleSet.Render" (dict "a" (list $rbac)))) "r"))) -}}
 {{- range $_, $obj := (get (fromJson (include "redpanda.LoadBalancerServices" (dict "a" (list $state)))) "r") -}}
 {{- $manifests = (concat (default (list) $manifests) (list $obj)) -}}
 {{- end -}}
