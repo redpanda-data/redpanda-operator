@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
@@ -27,15 +28,15 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func TestSchemaReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+func testSchemaReconcile(t *testing.T, cfg *rest.Config) { // nolint:funlen // These tests have clear subtests.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
-	environment := InitializeResourceReconcilerTest(t, ctx, &SchemaReconciler{})
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &SchemaReconciler{})
 
 	baseSchema := &redpandav1alpha2.Schema{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.SchemaSpec{
 			ClusterSource: environment.ClusterSourceValid,
