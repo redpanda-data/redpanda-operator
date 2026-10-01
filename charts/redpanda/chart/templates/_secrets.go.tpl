@@ -259,15 +259,14 @@
 {{- (dict "r" "") | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- if $state.Values.listeners.admin.tls.requireClientAuth -}}
-{{- $path := (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (printf "--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key" $path $path $path)) | toJson -}}
-{{- break -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- $flags := (printf "--cacert %s" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $state.Values.listeners.admin.tls $pki)))) "r")) -}}
+{{- $kp_5 := (get (fromJson (include "redpanda.InternalTLS.ClientKeypair" (dict "a" (list $state.Values.listeners.admin.tls $pki)))) "r") -}}
+{{- if (ne (toJson $kp_5) "null") -}}
+{{- $flags = (printf "%s --cert %s --key %s" $flags (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp_5)))) "r") (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp_5)))) "r")) -}}
 {{- end -}}
-{{- $path := (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (printf "--cacert %s" $path)) | toJson -}}
+{{- (dict "r" $flags) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -312,9 +311,9 @@
 {{- else -}}
 {{- $address = (index $state.Values.external.addresses (0 | int)) -}}
 {{- end -}}
-{{- $domain_5 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
-{{- if (ne $domain_5 "") -}}
-{{- $hostMap = (dict "name" $name "address" (printf "%s.%s" $address (tpl $domain_5 $state.Dot)) "port" $port) -}}
+{{- $domain_6 := (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $state.Values.external.domain "")))) "r") -}}
+{{- if (ne $domain_6 "") -}}
+{{- $hostMap = (dict "name" $name "address" (printf "%s.%s" $address (tpl $domain_6 $state.Dot)) "port" $port) -}}
 {{- else -}}
 {{- $hostMap = (dict "name" $name "address" $address "port" $port) -}}
 {{- end -}}

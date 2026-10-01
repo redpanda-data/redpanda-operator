@@ -425,10 +425,12 @@
 {{- (dict "r" (dict)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $state.Values.tls)))) "r")) -}}
-{{- if $tls.requireClientAuth -}}
-{{- $_ := (set $result "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
-{{- $_ := (set $result "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $pki)))) "r")) -}}
+{{- $kp_10 := (get (fromJson (include "redpanda.InternalTLS.ClientKeypair" (dict "a" (list $tls $pki)))) "r") -}}
+{{- if (ne (toJson $kp_10) "null") -}}
+{{- $_ := (set $result "cert_file" (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp_10)))) "r")) -}}
+{{- $_ := (set $result "key_file" (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp_10)))) "r")) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
@@ -446,10 +448,12 @@
 {{- (dict "r" (dict)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $state.Values.tls)))) "r")) -}}
-{{- if $tls.requireClientAuth -}}
-{{- $_ := (set $result "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
-{{- $_ := (set $result "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $pki)))) "r")) -}}
+{{- $kp_11 := (get (fromJson (include "redpanda.InternalTLS.ClientKeypair" (dict "a" (list $tls $pki)))) "r") -}}
+{{- if (ne (toJson $kp_11) "null") -}}
+{{- $_ := (set $result "cert_file" (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp_11)))) "r")) -}}
+{{- $_ := (set $result "key_file" (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp_11)))) "r")) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
@@ -467,10 +471,12 @@
 {{- (dict "r" (dict)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $state.Values.tls)))) "r")) -}}
-{{- if $tls.requireClientAuth -}}
-{{- $_ := (set $result "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
-{{- $_ := (set $result "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $tls $state.Values.tls)))) "r"))) -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- $result := (dict "ca_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $tls $pki)))) "r")) -}}
+{{- $kp_12 := (get (fromJson (include "redpanda.InternalTLS.ClientKeypair" (dict "a" (list $tls $pki)))) "r") -}}
+{{- if (ne (toJson $kp_12) "null") -}}
+{{- $_ := (set $result "cert_file" (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp_12)))) "r")) -}}
+{{- $_ := (set $result "key_file" (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp_12)))) "r")) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $result) | toJson -}}
@@ -486,9 +492,9 @@
 {{- $brokerList := (list) -}}
 {{- $useLocalhostKey := (printf "%s_client.use_localhost" $clientType) -}}
 {{- $useLocalhost := false -}}
-{{- $_533_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
-{{- $val := (index $_533_val_ok 0) -}}
-{{- $ok := (index $_533_val_ok 1) -}}
+{{- $_539_val_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $state.Values.config.node $useLocalhostKey (coalesce nil))))) "r") -}}
+{{- $val := (index $_539_val_ok 0) -}}
+{{- $ok := (index $_539_val_ok 1) -}}
 {{- if $ok -}}
 {{- if (kindIs "bool" $val) -}}
 {{- $useLocalhost = (eq $val true) -}}
@@ -511,10 +517,12 @@
 {{- $kafkaTLS := $state.Values.listeners.kafka.tls -}}
 {{- $brokerTLS := (coalesce nil) -}}
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.kafka.tls $state.Values.tls)))) "r") -}}
-{{- $brokerTLS = (dict "enabled" true "require_client_auth" $kafkaTLS.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $kafkaTLS $state.Values.tls)))) "r")) -}}
-{{- if $kafkaTLS.requireClientAuth -}}
-{{- $_ := (set $brokerTLS "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $kafkaTLS $state.Values.tls)))) "r"))) -}}
-{{- $_ := (set $brokerTLS "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ClientMountPoint" (dict "a" (list $kafkaTLS $state.Values.tls)))) "r"))) -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- $brokerTLS = (dict "enabled" true "require_client_auth" $kafkaTLS.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.ServerCAPath" (dict "a" (list $kafkaTLS $pki)))) "r")) -}}
+{{- $kp_13 := (get (fromJson (include "redpanda.InternalTLS.ClientKeypair" (dict "a" (list $kafkaTLS $pki)))) "r") -}}
+{{- if (ne (toJson $kp_13) "null") -}}
+{{- $_ := (set $brokerTLS "cert_file" (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp_13)))) "r")) -}}
+{{- $_ := (set $brokerTLS "key_file" (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp_13)))) "r")) -}}
 {{- end -}}
 {{- end -}}
 {{- $cfg := (dict "brokers" $brokerList) -}}
@@ -536,22 +544,23 @@
 {{- if $state.Values.auth.sasl.enabled -}}
 {{- $defaultKafkaAuth = "sasl" -}}
 {{- end -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (set $redpanda "admin" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $state.Values.listeners.admin (coalesce nil))))) "r")) -}}
 {{- $_ := (set $redpanda "kafka_api" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $state.Values.listeners.kafka $defaultKafkaAuth)))) "r")) -}}
 {{- $_ := (set $redpanda "rpc_server" (get (fromJson (include "redpanda.rpcListeners" (dict "a" (list $state)))) "r")) -}}
 {{- $_ := (set $redpanda "admin_api_tls" (coalesce nil)) -}}
-{{- $tls_10 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.admin $state.Values.tls)))) "r") -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_10)))) "r") | int) (0 | int)) -}}
-{{- $_ := (set $redpanda "admin_api_tls" $tls_10) -}}
+{{- $tls_14 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.admin $pki $state.Values.tls)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_14)))) "r") | int) (0 | int)) -}}
+{{- $_ := (set $redpanda "admin_api_tls" $tls_14) -}}
 {{- end -}}
 {{- $_ := (set $redpanda "kafka_api_tls" (coalesce nil)) -}}
-{{- $tls_11 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.kafka $state.Values.tls)))) "r") -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_11)))) "r") | int) (0 | int)) -}}
-{{- $_ := (set $redpanda "kafka_api_tls" $tls_11) -}}
+{{- $tls_15 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.kafka $pki $state.Values.tls)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_15)))) "r") | int) (0 | int)) -}}
+{{- $_ := (set $redpanda "kafka_api_tls" $tls_15) -}}
 {{- end -}}
-{{- $tls_12 := (get (fromJson (include "redpanda.rpcListenersTLS" (dict "a" (list $state)))) "r") -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_12)))) "r") | int) (0 | int)) -}}
-{{- $_ := (set $redpanda "rpc_server_tls" $tls_12) -}}
+{{- $tls_16 := (get (fromJson (include "redpanda.rpcListenersTLS" (dict "a" (list $state)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_16)))) "r") | int) (0 | int)) -}}
+{{- $_ := (set $redpanda "rpc_server_tls" $tls_16) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -565,11 +574,12 @@
 {{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $state.Values.auth)))) "r") -}}
 {{- $pandaProxyAuth = "http_basic" -}}
 {{- end -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (set $pandaProxy "pandaproxy_api" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $state.Values.listeners.http $pandaProxyAuth)))) "r")) -}}
 {{- $_ := (set $pandaProxy "pandaproxy_api_tls" (coalesce nil)) -}}
-{{- $tls_13 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.http $state.Values.tls)))) "r") -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_13)))) "r") | int) (0 | int)) -}}
-{{- $_ := (set $pandaProxy "pandaproxy_api_tls" $tls_13) -}}
+{{- $tls_17 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.http $pki $state.Values.tls)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_17)))) "r") | int) (0 | int)) -}}
+{{- $_ := (set $pandaProxy "pandaproxy_api_tls" $tls_17) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $pandaProxy) | toJson -}}
@@ -582,11 +592,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $schemaReg := (dict) -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (set $schemaReg "schema_registry_api" (get (fromJson (include "redpanda.ListenerConfig.Listeners" (dict "a" (list $state.Values.listeners.schemaRegistry (coalesce nil))))) "r")) -}}
 {{- $_ := (set $schemaReg "schema_registry_api_tls" (coalesce nil)) -}}
-{{- $tls_14 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.schemaRegistry $state.Values.tls)))) "r") -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_14)))) "r") | int) (0 | int)) -}}
-{{- $_ := (set $schemaReg "schema_registry_api_tls" $tls_14) -}}
+{{- $tls_18 := (get (fromJson (include "redpanda.ListenerConfig.ListenersTLS" (dict "a" (list $state.Values.listeners.schemaRegistry $pki $state.Values.tls)))) "r") -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $tls_18)))) "r") | int) (0 | int)) -}}
+{{- $_ := (set $schemaReg "schema_registry_api_tls" $tls_18) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $schemaReg) | toJson -}}
@@ -604,8 +615,10 @@
 {{- (dict "r" (dict)) | toJson -}}
 {{- break -}}
 {{- end -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $state)))) "r") -}}
+{{- $kp := (get (fromJson (include "_redpanda.PKI.ServerKeypair" (dict "a" (list $pki $r.tls.cert)))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "enabled" true "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $r.tls $state.Values.tls)))) "r")) "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $r.tls $state.Values.tls)))) "r")) "require_client_auth" $r.tls.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $r.tls $state.Values.tls)))) "r"))) | toJson -}}
+{{- (dict "r" (dict "enabled" true "cert_file" (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp)))) "r") "key_file" (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp)))) "r") "require_client_auth" $r.tls.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $r.tls $pki)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -621,8 +634,9 @@
 {{- end -}}
 
 {{- define "redpanda.createInternalListenerTLSCfg" -}}
-{{- $tls := (index .a 0) -}}
-{{- $internal := (index .a 1) -}}
+{{- $pki := (index .a 0) -}}
+{{- $tls := (index .a 1) -}}
+{{- $internal := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (not (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $internal $tls)))) "r")) -}}
@@ -630,8 +644,9 @@
 {{- (dict "r" (dict)) | toJson -}}
 {{- break -}}
 {{- end -}}
+{{- $kp := (get (fromJson (include "_redpanda.PKI.ServerKeypair" (dict "a" (list $pki $internal.cert)))) "r") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (dict "name" "internal" "enabled" true "cert_file" (printf "%s/tls.crt" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $internal $tls)))) "r")) "key_file" (printf "%s/tls.key" (get (fromJson (include "redpanda.InternalTLS.ServerMountPoint" (dict "a" (list $internal $tls)))) "r")) "require_client_auth" $internal.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $internal $tls)))) "r"))) | toJson -}}
+{{- (dict "r" (dict "name" "internal" "enabled" true "cert_file" (get (fromJson (include "_redpanda.Keypair.CertFile" (dict "a" (list $kp)))) "r") "key_file" (get (fromJson (include "_redpanda.Keypair.KeyFile" (dict "a" (list $kp)))) "r") "require_client_auth" $internal.requireClientAuth "truststore_file" (get (fromJson (include "redpanda.InternalTLS.TrustStoreFilePath" (dict "a" (list $internal $pki)))) "r"))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -654,19 +669,19 @@
 {{- end -}}
 {{- $enabledOptions := (dict "true" true "1" true "" true) -}}
 {{- $lockMemory := false -}}
-{{- $_713_value_15_ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
-{{- $value_15 := (index $_713_value_15_ok_16 0) -}}
-{{- $ok_16 := (index $_713_value_15_ok_16 1) -}}
-{{- if $ok_16 -}}
-{{- $lockMemory = (ternary (index $enabledOptions $value_15) false (hasKey $enabledOptions $value_15)) -}}
+{{- $_729_value_19_ok_20 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--lock-memory" "")))) "r") -}}
+{{- $value_19 := (index $_729_value_19_ok_20 0) -}}
+{{- $ok_20 := (index $_729_value_19_ok_20 1) -}}
+{{- if $ok_20 -}}
+{{- $lockMemory = (ternary (index $enabledOptions $value_19) false (hasKey $enabledOptions $value_19)) -}}
 {{- $_ := (unset $flags "--lock-memory") -}}
 {{- end -}}
 {{- $overprovisioned := false -}}
-{{- $_720_value_17_ok_18 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
-{{- $value_17 := (index $_720_value_17_ok_18 0) -}}
-{{- $ok_18 := (index $_720_value_17_ok_18 1) -}}
-{{- if $ok_18 -}}
-{{- $overprovisioned = (ternary (index $enabledOptions $value_17) false (hasKey $enabledOptions $value_17)) -}}
+{{- $_736_value_21_ok_22 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $flags "--overprovisioned" "")))) "r") -}}
+{{- $value_21 := (index $_736_value_21_ok_22 0) -}}
+{{- $ok_22 := (index $_736_value_21_ok_22 1) -}}
+{{- if $ok_22 -}}
+{{- $overprovisioned = (ternary (index $enabledOptions $value_21) false (hasKey $enabledOptions $value_21)) -}}
 {{- $_ := (unset $flags "--overprovisioned") -}}
 {{- end -}}
 {{- $keys := (keys $flags) -}}

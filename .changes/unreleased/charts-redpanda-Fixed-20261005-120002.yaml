@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    When the admin listener sets `requireClientAuth: true`, the StatefulSet's
+    admin API `curl` calls now verify the server with the listener's
+    `trustStore`, or with the server certificate's CA, instead of always
+    using `ca.crt` from the client certificate's Secret.
+time: 2026-10-05T12:00:02.000000-07:00

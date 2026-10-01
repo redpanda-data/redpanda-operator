@@ -392,13 +392,13 @@ func adminTLSCurlFlags(state *RenderState) string {
 		return ""
 	}
 
-	if state.Values.Listeners.Admin.TLS.RequireClientAuth {
-		path := state.Values.Listeners.Admin.TLS.ClientMountPoint(&state.Values.TLS)
-		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
-	}
+	pki := PKI(state)
 
-	path := state.Values.Listeners.Admin.TLS.ServerCAPath(&state.Values.TLS)
-	return fmt.Sprintf("--cacert %s", path)
+	flags := fmt.Sprintf("--cacert %s", state.Values.Listeners.Admin.TLS.ServerCAPath(&pki))
+	if kp := state.Values.Listeners.Admin.TLS.ClientKeypair(&pki); kp != nil {
+		flags = fmt.Sprintf("%s --cert %s --key %s", flags, kp.CertFile(), kp.KeyFile())
+	}
+	return flags
 }
 
 func externalAdvertiseAddress(state *RenderState) string {

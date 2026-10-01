@@ -52,9 +52,10 @@
 {{- $_is_returning := false -}}
 {{- $username := (get (fromJson (include "redpanda.BootstrapUser.Username" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r") -}}
 {{- $passwordRef := (get (fromJson (include "redpanda.BootstrapUser.SecretKeySelector" (dict "a" (list $r.Values.auth.sasl.bootstrapUser (get (fromJson (include "redpanda.Fullname" (dict "a" (list $r)))) "r"))))) "r") -}}
+{{- $pki := (get (fromJson (include "redpanda.PKI" (dict "a" (list $r)))) "r") -}}
 {{- $kafkaSpec := (mustMergeOverwrite (dict "brokers" (coalesce nil)) (dict "brokers" (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $r ($r.Values.listeners.kafka.port | int))))) "r"))) -}}
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $r.Values.listeners.kafka.tls $r.Values.tls)))) "r") -}}
-{{- $_ := (set $kafkaSpec "tls" (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.kafka.tls $r $r.Values.tls)))) "r")) -}}
+{{- $_ := (set $kafkaSpec "tls" (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.kafka.tls $r $pki)))) "r")) -}}
 {{- end -}}
 {{- if (get (fromJson (include "redpanda.Auth.IsSASLEnabled" (dict "a" (list $r.Values.auth)))) "r") -}}
 {{- $_ := (set $kafkaSpec "sasl" (mustMergeOverwrite (dict "mechanism" "") (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $r.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))) "mechanism" (toString (get (fromJson (include "redpanda.BootstrapUser.GetMechanism" (dict "a" (list $r.Values.auth.sasl.bootstrapUser)))) "r"))))) -}}
@@ -63,12 +64,12 @@
 {{- $adminSchema := "http" -}}
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $r.Values.listeners.admin.tls $r.Values.tls)))) "r") -}}
 {{- $adminSchema = "https" -}}
-{{- $adminTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.admin.tls $r $r.Values.tls)))) "r") -}}
+{{- $adminTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.admin.tls $r $pki)))) "r") -}}
 {{- end -}}
 {{- $adminAuth := (coalesce nil) -}}
-{{- $_167_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $r.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
-{{- $adminAuthEnabled := (index $_167_adminAuthEnabled__ 0) -}}
-{{- $_ := (index $_167_adminAuthEnabled__ 1) -}}
+{{- $_168_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $r.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
+{{- $adminAuthEnabled := (index $_168_adminAuthEnabled__ 0) -}}
+{{- $_ := (index $_168_adminAuthEnabled__ 1) -}}
 {{- if $adminAuthEnabled -}}
 {{- $adminAuth = (mustMergeOverwrite (dict) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $r.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))))) -}}
 {{- end -}}
@@ -79,7 +80,7 @@
 {{- $schemaSchema := "http" -}}
 {{- if (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $r.Values.listeners.schemaRegistry.tls $r.Values.tls)))) "r") -}}
 {{- $schemaSchema = "https" -}}
-{{- $schemaTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.schemaRegistry.tls $r $r.Values.tls)))) "r") -}}
+{{- $schemaTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.schemaRegistry.tls $r $pki)))) "r") -}}
 {{- end -}}
 {{- $schemaURLs := (coalesce nil) -}}
 {{- $brokers := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $r ($r.Values.listeners.schemaRegistry.port | int))))) "r") -}}

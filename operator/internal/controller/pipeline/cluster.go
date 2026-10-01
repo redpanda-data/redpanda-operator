@@ -424,7 +424,7 @@ func poolsRevision(pools []*redpandav1alpha2.NodePool) string {
 // honored:
 //
 //   - a Secret-backed CA (cert-manager issued, key ca.crt — or the server
-//     cert itself under cert.crt when the bundle carries no CA)
+//     cert itself under tls.crt when the bundle carries no CA)
 //   - a ConfigMap-backed truststore (listeners.kafka.tls.trustStore)
 //   - client cert + key Secrets when the listener sets requireClientAuth
 //     (mTLS) — dropping these would dial an mTLS listener without a client

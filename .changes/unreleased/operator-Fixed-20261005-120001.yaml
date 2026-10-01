@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    Redpanda clusters whose certificates set `caEnabled: false` are now
+    reachable over TLS from the operator, from Console, and from Pipelines
+    that reference the cluster. Each previously read the CA from a
+    nonexistent `cert.crt` Secret key.
+time: 2026-10-05T12:00:01.000000-07:00

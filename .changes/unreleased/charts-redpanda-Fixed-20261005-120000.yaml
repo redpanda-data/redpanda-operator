@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    Client `Certificate`s now respect `tls.certs.<name>.issuerRef.group`.
+    Previously the group was forced to `cert-manager.io`, so with an external
+    issuer (e.g. Google CAS) and `requireClientAuth: true` the client
+    Certificate was never issued.
+time: 2026-10-05T12:00:00.000000-07:00

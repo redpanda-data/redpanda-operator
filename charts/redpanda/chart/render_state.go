@@ -119,6 +119,7 @@ func (r *RenderState) FetchStatefulSetPodSelector() {
 func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 	username := r.Values.Auth.SASL.BootstrapUser.Username()
 	passwordRef := r.Values.Auth.SASL.BootstrapUser.SecretKeySelector(Fullname(r))
+	pki := PKI(r)
 
 	// Kafka API configuration
 	kafkaSpec := &ir.KafkaAPISpec{
@@ -127,7 +128,7 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 
 	// Add TLS configuration for Kafka if enabled
 	if r.Values.Listeners.Kafka.TLS.IsEnabled(&r.Values.TLS) {
-		kafkaSpec.TLS = r.Values.Listeners.Kafka.TLS.ToCommonTLS(r, &r.Values.TLS)
+		kafkaSpec.TLS = r.Values.Listeners.Kafka.TLS.ToCommonTLS(r, &pki)
 	}
 
 	// TODO This check may need to be more complex.
@@ -152,7 +153,7 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 	adminSchema := "http"
 	if r.Values.Listeners.Admin.TLS.IsEnabled(&r.Values.TLS) {
 		adminSchema = "https"
-		adminTLS = r.Values.Listeners.Admin.TLS.ToCommonTLS(r, &r.Values.TLS)
+		adminTLS = r.Values.Listeners.Admin.TLS.ToCommonTLS(r, &pki)
 	}
 
 	var adminAuth *ir.AdminAuth
@@ -186,7 +187,7 @@ func (r *RenderState) AsStaticConfigSource() ir.StaticConfigurationSource {
 		schemaSchema := "http"
 		if r.Values.Listeners.SchemaRegistry.TLS.IsEnabled(&r.Values.TLS) {
 			schemaSchema = "https"
-			schemaTLS = r.Values.Listeners.SchemaRegistry.TLS.ToCommonTLS(r, &r.Values.TLS)
+			schemaTLS = r.Values.Listeners.SchemaRegistry.TLS.ToCommonTLS(r, &pki)
 		}
 
 		var schemaURLs []string

@@ -1759,8 +1759,11 @@ IssuerRef configures the Issuer or ClusterIssuer resource to use to generate cer
 |===
 | Field | Description | Default | Validation
 | *`name`* __string__ | Specifies the name of the resource. + |  | 
-| *`kind`* __string__ | Specifies the kind of resource. One of `Issuer` or `ClusterIssuer`. + |  | 
-| *`group`* __string__ |  |  | 
+| *`kind`* __string__ | Kind specifies the kind of resource: `Issuer`, `ClusterIssuer`, or the +
+kind of an external issuer, such as `GoogleCASClusterIssuer`. + |  | 
+| *`group`* __string__ | Group specifies the API group of the issuer. Set this when using an +
+external issuer, such as `cas-issuer.jetstack.io`. Defaults to +
+`cert-manager.io`. + |  | 
 |===
 
 
