@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -40,8 +41,28 @@ import (
 )
 
 func TestFieldManagers(t *testing.T) {
-	scheme := controller.UnifiedScheme
 	config := kubetest.NewEnv(t).RestConfig()
+
+	ctl, err := kube.FromRESTConfig(config, kube.Options{
+		Options: client.Options{Scheme: controller.UnifiedScheme},
+	})
+	require.NoError(t, err)
+
+	installCRDs(t, ctl)
+
+	for name, fn := range map[string]func(*testing.T, *rest.Config){
+		"migrates undesired managers":    migratesUndesiredManagers,
+		"helm-controller probe conflict": migratesHelmControllerProbeConflict,
+		"skips forbidden list types":     skipsForbiddenListTypes,
+		"forbidden CR list is fatal":     forbiddenCRListIsFatal,
+		"forbidden update continues":     forbiddenUpdateContinues,
+	} {
+		t.Run(name, func(t *testing.T) { fn(t, config) })
+	}
+}
+
+func migratesUndesiredManagers(t *testing.T, config *rest.Config) {
+	scheme := controller.UnifiedScheme
 
 	oldctl, err := kube.FromRESTConfig(config, kube.Options{
 		Options: client.Options{
@@ -61,19 +82,6 @@ func TestFieldManagers(t *testing.T) {
 
 	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
 	require.NoError(t, err)
-
-	// install our CRDs
-	require.NoError(t, kube.ApplyAll(t.Context(), oldctl, crds.All()...))
-	for _, crd := range crds.All() {
-		require.NoError(t, kube.WaitFor(t.Context(), oldctl, crd.DeepCopy(), func(ext *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-			for _, cond := range ext.Status.Conditions {
-				if cond.Type == apiextensionsv1.Established && cond.Status == apiextensionsv1.ConditionTrue {
-					return true, nil
-				}
-			}
-			return false, nil
-		}))
-	}
 
 	// Create a Redpanda cluster with the normal client
 	cluster := &redpandav1alpha2.Redpanda{
@@ -321,9 +329,8 @@ func TestFieldManagers(t *testing.T) {
 	}
 }
 
-func TestFieldManagersRegression(t *testing.T) {
+func migratesHelmControllerProbeConflict(t *testing.T, config *rest.Config) {
 	scheme := controller.UnifiedScheme
-	config := kubetest.NewEnv(t).RestConfig()
 
 	helmctl, err := kube.FromRESTConfig(config, kube.Options{
 		Options: client.Options{
@@ -483,9 +490,8 @@ func TestFieldManagersRegression(t *testing.T) {
 // TestFieldManagersSkipsForbiddenListTypes verifies that a Forbidden error
 // while listing a swept resource type skips that type (warning once) instead
 // of failing the migration, and that the sweep continues on to later types.
-func TestFieldManagersSkipsForbiddenListTypes(t *testing.T) {
+func skipsForbiddenListTypes(t *testing.T, config *rest.Config) {
 	scheme := controller.UnifiedScheme
-	config := kubetest.NewEnv(t).RestConfig()
 
 	oldctl, err := kube.FromRESTConfig(config, kube.Options{
 		Options: client.Options{
@@ -505,8 +511,6 @@ func TestFieldManagersSkipsForbiddenListTypes(t *testing.T) {
 
 	k8sClient, err := client.NewWithWatch(config, client.Options{Scheme: scheme})
 	require.NoError(t, err)
-
-	installCRDs(t, oldctl)
 
 	// Two clusters so the forbidden type is swept twice, proving the warning
 	// dedupes to one line per type.
@@ -552,9 +556,8 @@ func TestFieldManagersSkipsForbiddenListTypes(t *testing.T) {
 
 // TestFieldManagersForbiddenCRListIsFatal verifies that Forbidden while
 // listing the Redpanda CRs themselves still fails the migration.
-func TestFieldManagersForbiddenCRListIsFatal(t *testing.T) {
+func forbiddenCRListIsFatal(t *testing.T, config *rest.Config) {
 	scheme := controller.UnifiedScheme
-	config := kubetest.NewEnv(t).RestConfig()
 
 	newctl, err := kube.FromRESTConfig(config, kube.Options{
 		Options: client.Options{
@@ -584,9 +587,8 @@ func TestFieldManagersForbiddenCRListIsFatal(t *testing.T) {
 // TestFieldManagersForbiddenUpdateContinues verifies that a Forbidden error
 // while updating a found resource warns and moves on to the remaining
 // resources instead of failing the migration.
-func TestFieldManagersForbiddenUpdateContinues(t *testing.T) {
+func forbiddenUpdateContinues(t *testing.T, config *rest.Config) {
 	scheme := controller.UnifiedScheme
-	config := kubetest.NewEnv(t).RestConfig()
 
 	oldctl, err := kube.FromRESTConfig(config, kube.Options{
 		Options: client.Options{
@@ -606,8 +608,6 @@ func TestFieldManagersForbiddenUpdateContinues(t *testing.T) {
 
 	k8sClient, err := client.NewWithWatch(config, client.Options{Scheme: scheme})
 	require.NoError(t, err)
-
-	installCRDs(t, oldctl)
 
 	cluster := newTestCluster(t, k8sClient, "forbidden-update")
 

@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,19 +33,18 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 // TestUserAdoptExisting verifies that a User CR applied for an already-existing
 // Redpanda user is adopted (managedUser becomes true) instead of being left
 // unmanaged. This is the fix for
 // https://github.com/redpanda-data/redpanda-operator/issues/1354.
-func TestUserAdoptExisting(t *testing.T) {
+func testUserAdoptExisting(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &UserReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -75,7 +75,7 @@ func TestUserAdoptExisting(t *testing.T) {
 	user := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -129,12 +129,12 @@ func TestUserAdoptExisting(t *testing.T) {
 // auto-create the Secret (the default behavior in TestUserAdoptExisting) but
 // instead fails reconciliation. This documents the explicit opt-out path for
 // the auto-create-Secret-on-missing behavior in Client.getPassword.
-func TestUserNoGenerateMissingSecret(t *testing.T) {
+func testUserNoGenerateMissingSecret(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &UserReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -151,7 +151,7 @@ func TestUserNoGenerateMissingSecret(t *testing.T) {
 	user := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -191,7 +191,7 @@ func TestUserNoGenerateMissingSecret(t *testing.T) {
 
 	// Verify no Secret was created out of band.
 	var maybeSecret corev1.Secret
-	getErr := k8sClient.Get(ctx, client.ObjectKey{Namespace: metav1.NamespaceDefault, Name: secretName}, &maybeSecret)
+	getErr := k8sClient.Get(ctx, client.ObjectKey{Namespace: environment.Namespace, Name: secretName}, &maybeSecret)
 	require.True(t, apierrors.IsNotFound(getErr), "controller must not auto-create the Secret when NoGenerate=true; got: %v", getErr)
 
 	// Cleanup.
@@ -202,12 +202,12 @@ func TestUserNoGenerateMissingSecret(t *testing.T) {
 // TestUserCredentialSync verifies that when syncCredentials is enabled, updating
 // the password Secret causes the operator to push the new password to Redpanda
 // on the next reconciliation cycle.
-func TestUserCredentialSync(t *testing.T) {
+func testUserCredentialSync(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &UserReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -221,7 +221,7 @@ func TestUserCredentialSync(t *testing.T) {
 	passwordSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Data: map[string][]byte{
 			"password": []byte("initial-password"),
@@ -233,7 +233,7 @@ func TestUserCredentialSync(t *testing.T) {
 	user := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -306,12 +306,12 @@ func TestUserCredentialSync(t *testing.T) {
 // existence-only check reports "nothing to do" while the user's only credential
 // is for a mechanism it no longer uses. The user is then unable to authenticate
 // at all, and the CR still reports Synced=True.
-func TestUserMechanismChange(t *testing.T) {
+func testUserMechanismChange(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &UserReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -324,7 +324,7 @@ func TestUserMechanismChange(t *testing.T) {
 	user := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      userName,
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -430,12 +430,12 @@ func TestUserMechanismChange(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestUserManagedUserDrift(t *testing.T) {
+func testUserManagedUserDrift(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &UserReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -445,7 +445,7 @@ func TestUserManagedUserDrift(t *testing.T) {
 	user := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "drift-user-" + strconv.Itoa(int(time.Now().UnixNano())),
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -509,12 +509,12 @@ func TestUserManagedUserDrift(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+func testUserReconcile(t *testing.T, cfg *rest.Config) { // nolint:funlen // These tests have clear subtests.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &UserReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &UserReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -546,7 +546,7 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 
 	baseUser := &redpandav1alpha2.User{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.UserSpec{
 			ClusterSource:  environment.ClusterSourceValid,
@@ -798,22 +798,26 @@ func TestUserReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 // (the structural check fired before the either/or rule could run).
 // Regression test for
 // https://github.com/redpanda-data/redpanda-operator/issues/1290.
-func TestUserPasswordSchemaValidation(t *testing.T) {
+func testUserPasswordSchemaValidation(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-
 	scheme := runtime.NewScheme()
 	require.NoError(t, redpandav1alpha2.Install(scheme))
+	require.NoError(t, corev1.AddToScheme(scheme))
+
 	c, err := client.New(cfg, client.Options{Scheme: scheme})
 	require.NoError(t, err)
 
+	namespace := strings.ToLower(t.Name())
+	namespace = strings.NewReplacer("/", "-", "_", "-").Replace(namespace)
+	require.NoError(t, c.Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: namespace},
+	}))
+
 	user := func(name string, password redpandav1alpha2.Password) *redpandav1alpha2.User {
 		return &redpandav1alpha2.User{
-			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "default"},
+			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 			Spec: redpandav1alpha2.UserSpec{
 				ClusterSource: &redpandav1alpha2.ClusterSource{
 					ClusterRef: &redpandav1alpha2.ClusterRef{Name: "redpanda"},
