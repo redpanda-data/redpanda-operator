@@ -258,6 +258,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -268,7 +271,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: audit-logging-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -328,7 +331,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: audit-logging-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: audit-logging-pool-a-configurator
@@ -636,6 +639,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -646,7 +652,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: common-labels-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -706,7 +712,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: common-labels-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: common-labels-pool-a-configurator
@@ -1010,6 +1016,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1020,7 +1029,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-cluster-domain-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1080,7 +1089,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-cluster-domain-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: custom-cluster-domain-pool-a-configurator
@@ -1384,6 +1393,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1394,7 +1406,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-config-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1454,7 +1466,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-config-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: custom-config-pool-a-configurator
@@ -1760,6 +1772,9 @@
           image: custom-registry.example.com/redpanda:v24.3.1
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1770,7 +1785,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-image-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -1830,7 +1845,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-image-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: custom-image-pool-a-configurator
@@ -2134,6 +2149,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2144,7 +2162,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-resources-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2204,7 +2222,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-resources-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: custom-resources-pool-a-configurator
@@ -2511,6 +2529,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2521,7 +2542,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: custom-resources-explicit-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2581,7 +2602,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: custom-resources-explicit-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: custom-resources-explicit-pool-a-configurator
@@ -2885,6 +2906,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2895,7 +2919,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: enterprise-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -2955,7 +2979,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: enterprise-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: enterprise-pool-a-configurator
@@ -3259,6 +3283,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -3269,7 +3296,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: external-loadbalancer-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -3329,7 +3356,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: external-loadbalancer-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: external-loadbalancer-pool-a-configurator
@@ -3633,6 +3660,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -3643,7 +3673,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: external-nodeport-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -3703,7 +3733,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: external-nodeport-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: external-nodeport-pool-a-configurator
@@ -4007,6 +4037,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -4017,7 +4050,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: external-tls-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -4077,7 +4110,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: external-tls-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: external-tls-pool-a-configurator
@@ -4381,6 +4414,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -4391,7 +4427,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: flat-network-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -4451,7 +4487,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: flat-network-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: flat-network-pool-a-configurator
@@ -4755,6 +4791,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -4765,7 +4804,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: flat-network-tls-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -4825,7 +4864,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: flat-network-tls-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: flat-network-tls-pool-a-configurator
@@ -5179,6 +5218,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -5192,7 +5234,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: full-featured-pool-cold-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -5256,7 +5298,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: full-featured-pool-cold-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: full-featured-pool-cold-configurator
@@ -5595,7 +5637,7 @@
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
           - mountPath: /etc/secrets/fs-validator/scripts/
-            name: full-featured-pool-hot-fs-validator
+            name: fs-validator
           - mountPath: /var/lib/redpanda/data
             name: datadir
         - command:
@@ -5645,6 +5687,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -5658,7 +5703,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: full-featured-pool-hot-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -5722,11 +5767,11 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: full-featured-pool-hot-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: full-featured-pool-hot-configurator
-        - name: full-featured-pool-hot-fs-validator
+        - name: fs-validator
           secret:
             defaultMode: 509
             secretName: full-featured-pool-hot-fs-validator
@@ -6102,6 +6147,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -6112,7 +6160,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: host-tuners-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -6172,7 +6220,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: host-tuners-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: host-tuners-pool-a-configurator
@@ -6532,7 +6580,7 @@
           - mountPath: /etc/tls/certs/external
             name: redpanda-external-cert
           - mountPath: /etc/secrets/fs-validator/scripts/
-            name: init-containers-pool-a-fs-validator
+            name: fs-validator
           - mountPath: /var/lib/redpanda/data
             name: datadir
         - command:
@@ -6559,6 +6607,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -6569,7 +6620,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: init-containers-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -6629,11 +6680,11 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: init-containers-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: init-containers-pool-a-configurator
-        - name: init-containers-pool-a-fs-validator
+        - name: fs-validator
           secret:
             defaultMode: 509
             secretName: init-containers-pool-a-fs-validator
@@ -6937,6 +6988,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -6947,7 +7001,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: mcs-network-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -7007,7 +7061,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: mcs-network-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: mcs-network-pool-a-configurator
@@ -7311,6 +7365,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -7321,7 +7378,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: mcs-network-tls-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -7381,7 +7438,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: mcs-network-tls-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: mcs-network-tls-pool-a-configurator
@@ -7685,6 +7742,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -7695,7 +7755,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: memory-locking-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -7755,7 +7815,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: memory-locking-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: memory-locking-pool-a-configurator
@@ -8059,6 +8119,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -8069,7 +8132,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: minimal-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -8129,7 +8192,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: minimal-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: minimal-pool-a-configurator
@@ -8433,6 +8496,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -8443,7 +8509,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: monitoring-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -8503,7 +8569,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: monitoring-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: monitoring-pool-a-configurator
@@ -8807,6 +8873,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -8817,7 +8886,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -8877,7 +8946,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-pool-a-configurator
@@ -9183,6 +9252,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -9193,7 +9265,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-pool-b-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -9254,7 +9326,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-pool-b-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-pool-b-configurator
@@ -9558,6 +9630,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -9568,7 +9643,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-heterogeneous-ports-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -9628,7 +9703,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-heterogeneous-ports-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-heterogeneous-ports-pool-a-configurator
@@ -9931,6 +10006,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -9941,7 +10019,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-heterogeneous-ports-pool-b-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -10001,7 +10079,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-heterogeneous-ports-pool-b-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-heterogeneous-ports-pool-b-configurator
@@ -10304,6 +10382,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -10314,7 +10395,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: multi-pool-heterogeneous-ports-pool-c-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -10374,7 +10455,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: multi-pool-heterogeneous-ports-pool-c-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: multi-pool-heterogeneous-ports-pool-c-configurator
@@ -10678,6 +10759,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -10688,7 +10772,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: per-pod-service-overrides-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -10748,7 +10832,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: per-pod-service-overrides-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: per-pod-service-overrides-pool-a-configurator
@@ -11052,6 +11136,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -11062,7 +11149,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: per-pod-service-remote-disabled-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -11122,7 +11209,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: per-pod-service-remote-disabled-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: per-pod-service-remote-disabled-pool-a-configurator
@@ -11431,6 +11518,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -11441,7 +11531,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: pool-overrides-cluster-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -11501,7 +11591,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: pool-overrides-cluster-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: pool-overrides-cluster-pool-a-configurator
@@ -11814,6 +11904,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -11824,7 +11917,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: pvc-retention-policy-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -11884,7 +11977,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: pvc-retention-policy-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: pvc-retention-policy-pool-a-configurator
@@ -12188,6 +12281,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -12198,7 +12294,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: rack-awareness-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -12258,7 +12354,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: rack-awareness-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: rack-awareness-pool-a-configurator
@@ -12582,6 +12678,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -12595,7 +12694,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: sasl-scram256-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -12658,7 +12757,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: sasl-scram256-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: sasl-scram256-pool-a-configurator
@@ -12982,6 +13081,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/secrets/users
             name: users
@@ -12995,7 +13097,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: sasl-scram512-with-tls-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -13058,7 +13160,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: sasl-scram512-with-tls-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: sasl-scram512-with-tls-pool-a-configurator
@@ -13362,6 +13464,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -13372,7 +13477,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: single-replica-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -13432,7 +13537,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: single-replica-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: single-replica-pool-a-configurator
@@ -13736,6 +13841,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -13746,7 +13854,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: storage-hostpath-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -13806,7 +13914,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: storage-hostpath-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: storage-hostpath-pool-a-configurator
@@ -14096,6 +14204,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -14106,7 +14217,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: storage-pv-custom-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -14166,7 +14277,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: storage-pv-custom-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: storage-pv-custom-pool-a-configurator
@@ -14493,6 +14604,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -14503,7 +14617,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tiered-storage-emptydir-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -14563,7 +14677,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tiered-storage-emptydir-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tiered-storage-emptydir-pool-a-configurator
@@ -14892,6 +15006,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -14902,7 +15019,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tiered-storage-hostpath-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -14962,7 +15079,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tiered-storage-hostpath-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tiered-storage-hostpath-pool-a-configurator
@@ -15291,6 +15408,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -15301,7 +15421,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tiered-storage-pv-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -15361,7 +15481,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tiered-storage-pv-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tiered-storage-pv-pool-a-configurator
@@ -15666,13 +15786,16 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/redpanda
             name: config
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-disabled-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -15724,7 +15847,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-disabled-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tls-disabled-pool-a-configurator
@@ -16028,6 +16151,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -16038,7 +16164,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-issuer-ref-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -16098,7 +16224,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-issuer-ref-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tls-issuer-ref-pool-a-configurator
@@ -16402,6 +16528,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -16412,7 +16541,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-issuer-ref-mtls-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -16472,7 +16601,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-issuer-ref-mtls-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tls-issuer-ref-mtls-pool-a-configurator
@@ -16776,6 +16905,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -16786,7 +16918,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-mtls-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -16846,7 +16978,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-mtls-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tls-mtls-pool-a-configurator
@@ -17150,6 +17282,9 @@
           image: docker.redpanda.com/redpandadata/redpanda:v99.9.9
           name: redpanda-configurator
           resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -17160,7 +17295,7 @@
           - mountPath: /tmp/base-config
             name: base-config
           - mountPath: /etc/secrets/configurator/scripts/
-            name: tls-self-signed-pool-a-configurator
+            name: configurator
         - command:
           - /redpanda-operator
           - bootstrap
@@ -17220,7 +17355,7 @@
           name: base-config
         - emptyDir: {}
           name: config
-        - name: tls-self-signed-pool-a-configurator
+        - name: configurator
           secret:
             defaultMode: 509
             secretName: tls-self-signed-pool-a-configurator

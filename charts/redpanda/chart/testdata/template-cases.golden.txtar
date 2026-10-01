@@ -1193,7 +1193,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -1256,7 +1256,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -2658,7 +2658,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -2713,7 +2713,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -4002,7 +4002,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -4065,7 +4065,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -5564,7 +5564,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -5622,7 +5622,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -7036,7 +7036,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -7102,7 +7102,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -8699,7 +8699,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: kube-api-access
           readOnly: true
@@ -8765,7 +8765,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -10399,7 +10399,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -10466,7 +10466,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -12102,7 +12102,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -12165,7 +12165,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -13698,7 +13698,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -13761,7 +13761,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -15413,7 +15413,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -15479,7 +15479,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -17029,7 +17029,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -17092,7 +17092,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -18629,7 +18629,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -18692,7 +18692,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -20026,7 +20026,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -20081,7 +20081,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -21435,7 +21435,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -21498,7 +21498,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -23062,7 +23062,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -23125,7 +23125,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -24661,7 +24661,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -24724,7 +24724,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -26257,7 +26257,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -26320,7 +26320,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -27924,7 +27924,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -27987,7 +27987,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -29590,7 +29590,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -29653,7 +29653,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -31256,7 +31256,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -31319,7 +31319,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -32874,7 +32874,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -32937,7 +32937,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -34542,7 +34542,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -34605,7 +34605,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -36226,7 +36226,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -36289,7 +36289,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -37910,7 +37910,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -37973,7 +37973,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -39547,7 +39547,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -39610,7 +39610,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -41230,7 +41230,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -41293,7 +41293,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -42914,7 +42914,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -42977,7 +42977,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -44598,7 +44598,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -44661,7 +44661,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -46235,7 +46235,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -46298,7 +46298,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -47847,7 +47847,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -47910,7 +47910,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -49444,7 +49444,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -49507,7 +49507,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -51040,7 +51040,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -51103,7 +51103,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -52723,7 +52723,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -52786,7 +52786,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -54325,7 +54325,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -54388,7 +54388,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -55970,7 +55970,7 @@ spec:
         - mountPath: /etc/tls/certs/external
           name: redpanda-external-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
       - command:
@@ -56013,7 +56013,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -56076,11 +56076,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -57613,7 +57613,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -57676,7 +57676,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -59216,7 +59216,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -59279,7 +59279,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -60851,7 +60851,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -60921,7 +60921,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -62475,7 +62475,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -62538,7 +62538,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -63884,7 +63884,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -63955,7 +63955,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -65623,7 +65623,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -65686,7 +65686,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -67249,7 +67249,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -67315,7 +67315,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -68916,7 +68916,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -68979,7 +68979,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -70519,7 +70519,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -70582,7 +70582,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -72147,7 +72147,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -72210,7 +72210,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -73771,7 +73771,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -73834,7 +73834,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -75276,7 +75276,7 @@ spec:
         - mountPath: /etc/tls/certs/selfsigned
           name: redpanda-selfsigned-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
       - command:
@@ -75339,7 +75339,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -75414,11 +75414,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -76924,7 +76924,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -76987,7 +76987,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -78631,7 +78631,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: kube-api-access
           readOnly: true
@@ -78697,7 +78697,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -80320,7 +80320,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -80383,7 +80383,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -82030,7 +82030,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -82096,7 +82096,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -113016,7 +113016,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -113079,7 +113079,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -114418,7 +114418,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -114481,7 +114481,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -115821,7 +115821,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -115906,7 +115906,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -117518,7 +117518,7 @@ spec:
         - mountPath: /etc/tls/certs/external
           name: redpanda-external-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
         - mountPath: /fake/fsValidator
@@ -117563,7 +117563,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /fake/configurator
           name: test-extra-volume
       - command:
@@ -117637,11 +117637,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -119280,7 +119280,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -119343,7 +119343,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -120982,7 +120982,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -121045,7 +121045,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -122698,7 +122698,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -122761,7 +122761,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -124593,7 +124593,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -124656,7 +124656,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -126391,7 +126391,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -126454,7 +126454,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -128190,7 +128190,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -128253,7 +128253,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -129861,7 +129861,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -129932,7 +129932,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -130405,6 +130405,1832 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
+<<<<<<< HEAD
+=======
+-- testdata/TestTemplate/mtls-distinct-client-certs.notes.golden --
+
+
+
+
+
+Congratulations on installing redpanda!
+
+The pods will rollout in a few seconds. To check the status:
+
+  kubectl -n default rollout status statefulset redpanda --watch
+
+If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:
+
+  helm upgrade redpanda redpanda/redpanda --reuse-values -n default --set $(kubectl get svc -n default -l app.kubernetes.io/instance=redpanda,redpanda.com/type=loadbalancer -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')
+
+Set up rpk for access to your external listeners:
+  kubectl get secret -n default redpanda-kafka-tls-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
+  kubectl get secret -n default redpanda-kafka-client-cert -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt
+  kubectl get secret -n default redpanda-kafka-client-cert -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key
+  kubectl get secret -n default redpanda-admin-client-cert -o go-template='{{ index .data "tls.crt" | base64decode }}' > admin-tls.crt
+  kubectl get secret -n default redpanda-admin-client-cert -o go-template='{{ index .data "tls.key" | base64decode }}' > admin-tls.key
+  rpk profile create --from-profile <(kubectl get configmap -n default redpanda-rpk -o go-template='{{ .data.profile }}') default
+
+Set up dns to look up the pods on their Kubernetes Nodes. You can use this query to get the list of short-names to IP addresses. Add your external domain to the hostnames and you could test by adding these to your /etc/hosts:
+
+  kubectl get pod -n default -o custom-columns=node:.status.hostIP,name:.metadata.name --no-headers -l app.kubernetes.io/name=redpanda,app.kubernetes.io/component=redpanda-statefulset
+
+Try some sample commands:
+
+Get the api status:
+
+  rpk cluster info
+
+Create a topic
+
+  rpk topic create test-topic -p 3 -r 3
+
+Describe the topic:
+
+  rpk topic describe test-topic
+
+Delete the topic:
+
+  rpk topic delete test-topic
+-- testdata/TestTemplate/mtls-distinct-client-certs.yaml.golden --
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: redpanda
+      redpanda.com/poddisruptionbudget: redpanda
+---
+# Source: redpanda/charts/console/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-sts-lifecycle
+  namespace: default
+stringData:
+  common.sh: |-
+    #!/usr/bin/env bash
+
+    # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+    CURL_URL="https://${SERVICE_NAME}.redpanda.default.svc.cluster.local:9643"
+
+    # commands used throughout. Every curl carries --max-time so a single
+    # hung admin connection can never freeze a lifecycle hook until the
+    # termination grace period expires; the callers retry as needed.
+    CURL_NODE_ID_CMD="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/node_config"
+
+    CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent --max-time 5 -o /dev/null -w "%{http_code}"'
+    CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent --max-time 5 -o /dev/null -w "%{http_code}"'
+    CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --max-time 5 --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/maintenance"
+
+    # run bare to list all brokers, or append /<node id> for a single broker
+    CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/brokers"
+
+    # the address this pod's broker advertises to the rest of the cluster,
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
+    POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
+  postStart.sh: |-
+    #!/usr/bin/env bash
+    # This code should be similar if not exactly the same as that found in the panda-operator, see
+    # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+    # path below should match the path defined on the statefulset
+    source /var/lifecycle/common.sh
+
+    postStartHook () {
+      set -x
+
+      touch /tmp/postStartHookStarted
+
+      until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+          sleep 0.5
+      done
+
+      echo "Clearing maintenance mode on node ${NODE_ID}"
+      CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+      # a 400 here would mean not in maintenance mode
+      until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+          status=$(${CURL_MAINTENANCE_DELETE_CMD})
+          sleep 0.5
+      done
+
+      # A previous incarnation of this pod may have re-registered with the
+      # cluster under a different node id after losing its data directory
+      # (e.g. when running without persistent storage). preStop put that old
+      # node id into maintenance mode and nothing ever clears it: the ghost
+      # broker occupies the cluster's only maintenance-mode slot, and the
+      # partition autobalancer excludes maintenance-mode brokers from
+      # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+      # maintenance mode on any broker id that advertises this pod's address
+      # but isn't the current broker. Only a broker the cluster reports dead
+      # (is_alive=false) and draining is cleared — but the health monitor can
+      # lag a fast pod restart and briefly report the dead previous
+      # incarnation as still alive, so keep re-checking until every stale
+      # drainer at this address is gone; the surrounding timeout wrapper
+      # bounds this loop.
+      while true; do
+          GHOSTS_REMAIN=false
+          until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+              sleep 0.5
+          done
+          for BROKER_ID in ${BROKER_IDS}; do
+              if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+              BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+              # compare the advertised address exactly (not as a regex, which
+              # would treat the dots in ${POD_FQDN} as wildcards)
+              BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+              if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+              if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+              # a drainer at this pod's address still reported alive is the
+              # health monitor lagging behind the restart; retry until the
+              # cluster reports it dead
+              if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+              echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+              CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+              GHOST_STATUS=""
+              # a 400 means not in maintenance mode, a 404 means already removed
+              until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                  GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                  sleep 0.5
+              done
+          done
+          if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+          sleep 5
+      done
+
+      touch /tmp/postStartHookFinished
+    }
+
+    postStartHook
+    true
+  preStop.sh: |-
+    #!/usr/bin/env bash
+    # This code should be similar if not exactly the same as that found in the panda-operator, see
+    # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+    touch /tmp/preStopHookStarted
+
+    # path below should match the path defined on the statefulset
+    source /var/lifecycle/common.sh
+
+    set -x
+
+    preStopHook () {
+      # Read this broker's node id. A broker being gracefully rolled answers
+      # immediately; a crashlooping / dead-admin broker never binds its admin
+      # API, so bound the attempts instead of spinning the whole termination
+      # grace period — if we cannot even read the node id there is nothing
+      # locally to drain, so skip the drain and let the pod terminate.
+      NODE_ID=""
+      for attempt in $(seq 1 20); do
+          NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$') && break
+          NODE_ID=""
+          sleep 0.5
+      done
+      if [ -z "${NODE_ID}" ]; then
+          echo "Could not read node id from the local admin API; skipping maintenance drain."
+          touch /tmp/preStopHookFinished
+          return 0
+      fi
+
+      echo "Setting maintenance mode on node ${NODE_ID}"
+      CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+      # A 404 means this broker's node id is no longer a cluster member -- e.g.
+      # a bad_rejoin broker whose id was decommissioned while its pod was down
+      # (the redpanda#31057 recovery path): there is nothing to drain, and the
+      # drain-status poll below would never terminate, so skip it instead of
+      # burning the hook timeout and delaying pod termination. A 400 (the
+      # cluster's single maintenance slot is busy with another draining broker)
+      # must keep retrying: waiting our turn for the slot is what serializes
+      # drains during rolling restarts.
+      until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"404"' ]; do
+          status=$(${CURL_MAINTENANCE_PUT_CMD})
+          sleep 0.5
+      done
+
+      if [ "${status:-}" = '"200"' ]; then
+          # Wait for the drain to finish. draining=false must NOT be accepted
+          # until we have first observed draining=true (or an explicit
+          # finished=true): immediately after the PUT the broker may not have
+          # started draining yet, and reading that initial draining=false as
+          # "done" would SIGTERM a broker still holding all its leadership.
+          saw_draining=""
+          finished=""
+          draining=""
+          until [ "${finished:-}" = "true" ] || { [ "${saw_draining:-}" = "yes" ] && [ "${draining:-}" = "false" ]; }; do
+              res=$(${CURL_MAINTENANCE_GET_CMD})
+              finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+              draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+              if [ "${draining:-}" = "true" ]; then saw_draining=yes; fi
+              sleep 0.5
+          done
+      fi
+
+      touch /tmp/preStopHookFinished
+    }
+    preStopHook
+    true
+type: Opaque
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-configurator
+  namespace: default
+stringData:
+  configurator.sh: |-
+    set -xe
+    SERVICE_NAME=$1
+    KUBERNETES_NODE_NAME=$2
+    POD_ORDINAL=${SERVICE_NAME##*-}
+    BROKER_INDEX=`expr $POD_ORDINAL + 1`
+
+    CONFIG=/etc/redpanda/redpanda.yaml
+
+    # Setup config files
+    cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+    LISTENER="{\"address\":\"${SERVICE_NAME}.redpanda.default.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+    rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+    ADVERTISED_KAFKA_ADDRESSES=()
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-0.\\u003cour domain\\u003e\",\"name\":\"default\",\"port\":9094}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-1.\\u003cour domain\\u003e\",\"name\":\"default\",\"port\":9094}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"redpanda-2.\\u003cour domain\\u003e\",\"name\":\"default\",\"port\":9094}")
+
+    rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
+
+    LISTENER="{\"address\":\"${SERVICE_NAME}.redpanda.default.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+    rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+    ADVERTISED_HTTP_ADDRESSES=()
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-0.\\u003cour domain\\u003e\",\"name\":\"default\",\"port\":30082}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-1.\\u003cour domain\\u003e\",\"name\":\"default\",\"port\":30082}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"redpanda-2.\\u003cour domain\\u003e\",\"name\":\"default\",\"port\":30082}")
+
+    rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
+type: Opaque
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+data:
+  .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","enable_rack_awareness":"false","enable_sasl":"false","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"false","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","storage_min_free_bytes":"1073741824"}'
+  bootstrap.yaml.fixups: '[]'
+  redpanda.yaml: |-
+    config_file: /etc/redpanda/redpanda.yaml
+    pandaproxy:
+      pandaproxy_api:
+      - address: 0.0.0.0
+        name: internal
+        port: 8082
+      - address: 0.0.0.0
+        name: default
+        port: 8083
+      pandaproxy_api_tls:
+      - cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        name: internal
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      - cert_file: /etc/tls/certs/external/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/external/tls.key
+        name: default
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/external/ca.crt
+    pandaproxy_client:
+      broker_tls:
+        cert_file: /etc/tls/certs/kafka-client/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/kafka-client/tls.key
+        require_client_auth: true
+        truststore_file: /etc/tls/certs/kafka/ca.crt
+      brokers:
+      - address: redpanda-0.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-1.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-2.redpanda.default.svc.cluster.local.
+        port: 9093
+    redpanda:
+      admin:
+      - address: 0.0.0.0
+        name: internal
+        port: 9643
+      - address: 0.0.0.0
+        name: default
+        port: 9644
+      admin_api_tls:
+      - cert_file: /etc/tls/certs/admin/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/admin/tls.key
+        name: internal
+        require_client_auth: true
+        truststore_file: /etc/tls/certs/admin/ca.crt
+      - cert_file: /etc/tls/certs/admin/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/admin/tls.key
+        name: default
+        require_client_auth: true
+        truststore_file: /etc/tls/certs/admin/ca.crt
+      crash_loop_limit: 5
+      empty_seed_starts_cluster: false
+      kafka_api:
+      - address: 0.0.0.0
+        name: internal
+        port: 9093
+      - address: 0.0.0.0
+        name: default
+        port: 9094
+      kafka_api_tls:
+      - cert_file: /etc/tls/certs/kafka/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/kafka/tls.key
+        name: internal
+        require_client_auth: true
+        truststore_file: /etc/tls/certs/kafka/ca.crt
+      - cert_file: /etc/tls/certs/kafka/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/kafka/tls.key
+        name: default
+        require_client_auth: true
+        truststore_file: /etc/tls/certs/kafka/ca.crt
+      rpc_server:
+        address: 0.0.0.0
+        port: 33145
+      rpc_server_tls:
+        cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      seed_servers:
+      - host:
+          address: redpanda-0.redpanda.default.svc.cluster.local.
+          port: 33145
+      - host:
+          address: redpanda-1.redpanda.default.svc.cluster.local.
+          port: 33145
+      - host:
+          address: redpanda-2.redpanda.default.svc.cluster.local.
+          port: 33145
+    rpk:
+      additional_start_flags:
+      - --default-log-level=info
+      - --memory=2048M
+      - --reserve-memory=205M
+      - --smp=1
+      admin_api:
+        addresses:
+        - redpanda-0.redpanda.default.svc.cluster.local.:9643
+        - redpanda-1.redpanda.default.svc.cluster.local.:9643
+        - redpanda-2.redpanda.default.svc.cluster.local.:9643
+        tls:
+          ca_file: /etc/tls/certs/admin/ca.crt
+          cert_file: /etc/tls/certs/admin-client/tls.crt
+          key_file: /etc/tls/certs/admin-client/tls.key
+      enable_memory_locking: false
+      kafka_api:
+        brokers:
+        - redpanda-0.redpanda.default.svc.cluster.local.:9093
+        - redpanda-1.redpanda.default.svc.cluster.local.:9093
+        - redpanda-2.redpanda.default.svc.cluster.local.:9093
+        tls:
+          ca_file: /etc/tls/certs/kafka/ca.crt
+          cert_file: /etc/tls/certs/kafka-client/tls.crt
+          key_file: /etc/tls/certs/kafka-client/tls.key
+      overprovisioned: false
+      schema_registry:
+        addresses:
+        - redpanda-0.redpanda.default.svc.cluster.local.:8081
+        - redpanda-1.redpanda.default.svc.cluster.local.:8081
+        - redpanda-2.redpanda.default.svc.cluster.local.:8081
+        tls:
+          ca_file: /etc/tls/certs/default/ca.crt
+      tune_aio_events: true
+    schema_registry:
+      schema_registry_api:
+      - address: 0.0.0.0
+        name: internal
+        port: 8081
+      - address: 0.0.0.0
+        name: default
+        port: 8084
+      schema_registry_api_tls:
+      - cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        name: internal
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      - cert_file: /etc/tls/certs/external/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/external/tls.key
+        name: default
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/external/ca.crt
+    schema_registry_client:
+      broker_tls:
+        cert_file: /etc/tls/certs/kafka-client/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/kafka-client/tls.key
+        require_client_auth: true
+        truststore_file: /etc/tls/certs/kafka/ca.crt
+      brokers:
+      - address: redpanda-0.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-1.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-2.redpanda.default.svc.cluster.local.
+        port: 9093
+kind: ConfigMap
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+data:
+  profile: |-
+    admin_api:
+      addresses:
+      - redpanda-0.<our domain>:9644
+      - redpanda-1.<our domain>:9644
+      - redpanda-2.<our domain>:9644
+      tls:
+        ca_file: ca.crt
+        cert_file: /etc/tls/certs/admin-client/tls.crt
+        key_file: /etc/tls/certs/admin-client/tls.key
+    kafka_api:
+      brokers:
+      - redpanda-0.<our domain>:9094
+      - redpanda-1.<our domain>:9094
+      - redpanda-2.<our domain>:9094
+      tls:
+        ca_file: ca.crt
+        cert_file: /etc/tls/certs/kafka-client/tls.crt
+        key_file: /etc/tls/certs/kafka-client/tls.key
+    name: default
+    schema_registry:
+      addresses:
+      - redpanda-0.<our domain>:30081
+      - redpanda-1.<our domain>:30081
+      - redpanda-2.<our domain>:30081
+      tls:
+        ca_file: ca.crt
+kind: ConfigMap
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-rpk
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+data:
+  config.yaml: |
+    # from .Values.config
+    kafka:
+      brokers:
+      - redpanda-0.redpanda.default.svc.cluster.local.:9093
+      - redpanda-1.redpanda.default.svc.cluster.local.:9093
+      - redpanda-2.redpanda.default.svc.cluster.local.:9093
+      tls:
+        caFilepath: /etc/tls/certs/secrets/redpanda-kafka-tls-cert/ca.crt
+        certFilepath: /etc/tls/certs/secrets/redpanda-kafka-client-cert/tls.crt
+        enabled: true
+        keyFilepath: /etc/tls/certs/secrets/redpanda-kafka-client-cert/tls.key
+    redpanda:
+      adminApi:
+        enabled: true
+        tls:
+          caFilepath: /etc/tls/certs/secrets/redpanda-admin-tls-cert/ca.crt
+          certFilepath: /etc/tls/certs/secrets/redpanda-admin-client-cert/tls.crt
+          enabled: true
+          keyFilepath: /etc/tls/certs/secrets/redpanda-admin-client-cert/tls.key
+        urls:
+        - https://redpanda.default.svc.cluster.local.:9643
+    schemaRegistry:
+      enabled: true
+      tls:
+        caFilepath: /etc/tls/certs/secrets/redpanda-default-cert/ca.crt
+        enabled: true
+      urls:
+      - https://redpanda-0.redpanda.default.svc.cluster.local.:8081
+      - https://redpanda-1.redpanda.default.svc.cluster.local.:8081
+      - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-rpk-debug-bundle
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-sidecar
+  namespace: default
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-rpk-debug-bundle
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: redpanda-rpk-debug-bundle
+subjects:
+- kind: ServiceAccount
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-sidecar
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: redpanda-sidecar
+subjects:
+- kind: ServiceAccount
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/charts/console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 0
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: console
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    monitoring.redpanda.com/enabled: "false"
+  name: redpanda
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - appProtocol: null
+    name: admin
+    port: 9643
+    protocol: TCP
+    targetPort: 9643
+  - name: http
+    port: 8082
+    protocol: TCP
+    targetPort: 8082
+  - name: kafka
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  - name: rpc
+    port: 33145
+    protocol: TCP
+    targetPort: 33145
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redpanda-0.<our domain>
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
+    repdanda.com/type: loadbalancer
+  name: lb-redpanda-0
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: null
+  ports:
+  - appProtocol: null
+    name: admin-default
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - appProtocol: null
+    name: kafka-default
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
+    port: 30082
+    protocol: TCP
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
+    port: 30081
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+    statefulset.kubernetes.io/pod-name: redpanda-0
+  sessionAffinity: None
+  type: LoadBalancer
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redpanda-1.<our domain>
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
+    repdanda.com/type: loadbalancer
+  name: lb-redpanda-1
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: null
+  ports:
+  - appProtocol: null
+    name: admin-default
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - appProtocol: null
+    name: kafka-default
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
+    port: 30082
+    protocol: TCP
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
+    port: 30081
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+    statefulset.kubernetes.io/pod-name: redpanda-1
+  sessionAffinity: None
+  type: LoadBalancer
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redpanda-2.<our domain>
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
+    repdanda.com/type: loadbalancer
+  name: lb-redpanda-2
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: null
+  ports:
+  - appProtocol: null
+    name: admin-default
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - appProtocol: null
+    name: kafka-default
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - appProtocol: null
+    name: http-default
+    port: 30082
+    protocol: TCP
+    targetPort: 8083
+  - appProtocol: null
+    name: schema-default
+    port: 30081
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+    statefulset.kubernetes.io/pod-name: redpanda-2
+  sessionAffinity: None
+  type: LoadBalancer
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: console
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        checksum/config: 5b2e553350970eb9967d6b35b08f5f4d2c66c2e56c05b1913e8b847dceb093bc
+      labels:
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/name: console
+    spec:
+      affinity: {}
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --config.filepath=/etc/console/configs/config.yaml
+        command: null
+        env:
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.9.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.9.0
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0-gke
+        - name: REDPANDA_METRICS_K8S_ENVIRONMENT
+          value: GCP
+        envFrom: []
+        image: docker.redpanda.com/redpandadata/console:v3.9.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: console
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/console/configs
+          name: configs
+          readOnly: true
+        - mountPath: /etc/tls/certs
+          name: redpanda-certificates
+      imagePullSecrets: []
+      initContainers: null
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 99
+        fsGroupChangePolicy: Always
+        runAsUser: 99
+      serviceAccountName: redpanda-console
+      tolerations: []
+      topologySpreadConstraints: []
+      volumes:
+      - configMap:
+          name: redpanda-console
+        name: configs
+      - name: redpanda-certificates
+        projected:
+          sources:
+          - secret:
+              items:
+              - key: tls.crt
+                path: secrets/redpanda-admin-client-cert/tls.crt
+              - key: tls.key
+                path: secrets/redpanda-admin-client-cert/tls.key
+              name: redpanda-admin-client-cert
+          - secret:
+              items:
+              - key: ca.crt
+                path: secrets/redpanda-admin-tls-cert/ca.crt
+              name: redpanda-admin-tls-cert
+          - secret:
+              items:
+              - key: ca.crt
+                path: secrets/redpanda-default-cert/ca.crt
+              name: redpanda-default-cert
+          - secret:
+              items:
+              - key: tls.crt
+                path: secrets/redpanda-kafka-client-cert/tls.crt
+              - key: tls.key
+                path: secrets/redpanda-kafka-client-cert/tls.key
+              name: redpanda-kafka-client-cert
+          - secret:
+              items:
+              - key: ca.crt
+                path: secrets/redpanda-kafka-tls-cert/ca.crt
+              name: redpanda-kafka-tls-cert
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: redpanda-statefulset
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: redpanda
+  serviceName: redpanda
+  template:
+    metadata:
+      annotations:
+        config.redpanda.com/checksum: 8ba84e7fafa072d57be7a2766291b3ebb599f7074b1a8bbaa8741e726b7d8702
+      labels:
+        app.kubernetes.io/component: redpanda-statefulset
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: redpanda
+        cluster.redpanda.com/broker: "true"
+        helm.sh/chart: redpanda-26.2.1
+        redpanda.com/poddisruptionbudget: redpanda
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: redpanda-statefulset
+                app.kubernetes.io/instance: redpanda
+                app.kubernetes.io/name: redpanda
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - rpk
+        - redpanda
+        - start
+        - --advertise-rpc-addr=$(SERVICE_NAME).redpanda.default.svc.cluster.local.:33145
+        env:
+        - name: SERVICE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0-gke
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 26.2.1
+        - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        - name: REDPANDA_METRICS_K8S_ENVIRONMENT
+          value: GCP
+        image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - bash
+              - -c
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
+          preStop:
+            exec:
+              command:
+              - bash
+              - -c
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          tcpSocket:
+            port: 9643
+        name: redpanda
+        ports:
+        - containerPort: 9643
+          name: admin
+        - containerPort: 9644
+          name: admin-default
+        - containerPort: 8082
+          name: http
+        - containerPort: 8083
+          name: http-default
+        - containerPort: 9093
+          name: kafka
+        - containerPort: 9094
+          name: kafka-default
+        - containerPort: 33145
+          name: rpc
+        - containerPort: 8081
+          name: schemaregistry
+        - containerPort: 8084
+          name: schema-default
+        resources:
+          limits:
+            cpu: 1
+            memory: 2.5Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/admin-client/ca.crt --cert /etc/tls/certs/admin-client/tls.crt --key /etc/tls/certs/admin-client/tls.key "https://${SERVICE_NAME}.redpanda.default.svc.cluster.local.:9643/v1/status/ready")
+              echo $RESULT
+              echo $RESULT | grep ready
+          failureThreshold: 120
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /etc/tls/certs/admin
+          name: redpanda-admin-cert
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/tls/certs/kafka
+          name: redpanda-kafka-cert
+        - mountPath: /etc/tls/certs/admin-client
+          name: redpanda-admin-client-cert
+        - mountPath: /etc/tls/certs/kafka-client
+          name: redpanda-kafka-client-cert
+        - mountPath: /etc/redpanda
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+        - mountPath: /var/lifecycle
+          name: lifecycle-scripts
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      - args:
+        - supervisor
+        - --
+        - /redpanda-operator
+        - sidecar
+        - --redpanda-yaml
+        - /etc/redpanda/redpanda.yaml
+        - --redpanda-cluster-namespace
+        - default
+        - --redpanda-cluster-name
+        - redpanda
+        - --selector=helm.sh/chart=redpanda-26.2.1,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=redpanda
+        - --run-broker-probe
+        - --broker-probe-broker-url
+        - $(SERVICE_NAME).redpanda.default.svc.cluster.local.:9643
+        - --watch-rpk-profile
+        - --rpk-profile-source=/tmp/base-config/redpanda.yaml
+        command:
+        - /redpanda-operator
+        env:
+        - name: SERVICE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: sidecar
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8093
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 0
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsGroup: 101
+          runAsNonRoot: true
+          runAsUser: 101
+        volumeMounts:
+        - mountPath: /etc/tls/certs/admin
+          name: redpanda-admin-cert
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/tls/certs/kafka
+          name: redpanda-kafka-cert
+        - mountPath: /etc/tls/certs/admin-client
+          name: redpanda-admin-client-cert
+        - mountPath: /etc/tls/certs/kafka-client
+          name: redpanda-kafka-client-cert
+        - mountPath: /etc/redpanda
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+          readOnly: true
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      imagePullSecrets: []
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - rpk redpanda tune all
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        name: tuning
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+            - SYS_RESOURCE
+          privileged: true
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/tls/certs/admin
+          name: redpanda-admin-cert
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/tls/certs/kafka
+          name: redpanda-kafka-cert
+        - mountPath: /etc/tls/certs/admin-client
+          name: redpanda-admin-client-cert
+        - mountPath: /etc/tls/certs/kafka-client
+          name: redpanda-kafka-client-cert
+        - mountPath: /etc/redpanda
+          name: base-config
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+      - command:
+        - /bin/bash
+        - -c
+        - trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}"
+          & wait $!
+        env:
+        - name: CONFIGURATOR_SCRIPT
+          value: /etc/secrets/configurator/scripts/configurator.sh
+        - name: SERVICE_NAME
+          valueFrom:
+            configMapKeyRef: null
+            fieldRef:
+              fieldPath: metadata.name
+            resourceFieldRef: null
+            secretKeyRef: null
+        - name: KUBERNETES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        name: redpanda-configurator
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/tls/certs/admin
+          name: redpanda-admin-cert
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/tls/certs/kafka
+          name: redpanda-kafka-cert
+        - mountPath: /etc/tls/certs/admin-client
+          name: redpanda-admin-client-cert
+        - mountPath: /etc/tls/certs/kafka-client
+          name: redpanda-kafka-client-cert
+        - mountPath: /etc/redpanda
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+        - mountPath: /etc/secrets/configurator/scripts/
+          name: configurator
+      - command:
+        - /redpanda-operator
+        - bootstrap
+        - --in-dir
+        - /tmp/base-config
+        - --out-dir
+        - /tmp/config
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: bootstrap-yaml-envsubst
+        resources:
+          limits:
+            cpu: 100m
+            memory: 125Mi
+          requests:
+            cpu: 100m
+            memory: 125Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/config/
+          name: config
+        - mountPath: /tmp/base-config/
+          name: base-config
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        runAsUser: 101
+      serviceAccountName: redpanda
+      terminationGracePeriodSeconds: 90
+      tolerations: []
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: redpanda-statefulset
+            app.kubernetes.io/instance: redpanda
+            app.kubernetes.io/name: redpanda
+        maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+      volumes:
+      - name: redpanda-admin-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-admin-tls-cert
+      - name: redpanda-default-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-default-cert
+      - name: redpanda-external-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-external-cert
+      - name: redpanda-kafka-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-kafka-tls-cert
+      - name: redpanda-admin-client-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-admin-client-cert
+      - name: redpanda-kafka-client-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-kafka-client-cert
+      - name: lifecycle-scripts
+        secret:
+          defaultMode: 509
+          secretName: redpanda-sts-lifecycle
+      - configMap:
+          name: redpanda
+        name: base-config
+      - emptyDir: {}
+        name: config
+      - name: configurator
+        secret:
+          defaultMode: 509
+          secretName: redpanda-configurator
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      annotations: null
+      labels:
+        app.kubernetes.io/component: redpanda
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/name: redpanda
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+    status: {}
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-root-certificate
+  namespace: default
+spec:
+  commonName: redpanda-default-root-certificate
+  duration: 43800h0m0s
+  isCA: true
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: redpanda-default-selfsigned-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-default-root-certificate
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external-root-certificate
+  namespace: default
+spec:
+  commonName: redpanda-external-root-certificate
+  duration: 43800h0m0s
+  isCA: true
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: redpanda-external-selfsigned-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-external-root-certificate
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-cert
+  namespace: default
+spec:
+  dnsNames:
+  - redpanda-cluster.redpanda.default.svc.cluster.local
+  - redpanda-cluster.redpanda.default.svc
+  - redpanda-cluster.redpanda.default
+  - '*.redpanda-cluster.redpanda.default.svc.cluster.local'
+  - '*.redpanda-cluster.redpanda.default.svc'
+  - '*.redpanda-cluster.redpanda.default'
+  - redpanda.default.svc.cluster.local
+  - redpanda.default.svc
+  - redpanda.default
+  - '*.redpanda.default.svc.cluster.local'
+  - '*.redpanda.default.svc'
+  - '*.redpanda.default'
+  - <our domain>
+  - '*.<our domain>'
+  duration: 43800h0m0s
+  isCA: false
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: redpanda-default-root-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-default-cert
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external-cert
+  namespace: default
+spec:
+  dnsNames:
+  - redpanda-cluster.redpanda.default.svc.cluster.local
+  - redpanda-cluster.redpanda.default.svc
+  - redpanda-cluster.redpanda.default
+  - '*.redpanda-cluster.redpanda.default.svc.cluster.local'
+  - '*.redpanda-cluster.redpanda.default.svc'
+  - '*.redpanda-cluster.redpanda.default'
+  - redpanda.default.svc.cluster.local
+  - redpanda.default.svc
+  - redpanda.default
+  - '*.redpanda.default.svc.cluster.local'
+  - '*.redpanda.default.svc'
+  - '*.redpanda.default'
+  - <our domain>
+  - '*.<our domain>'
+  duration: 43800h0m0s
+  isCA: false
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: redpanda-external-root-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-external-cert
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-selfsigned-issuer
+  namespace: default
+spec:
+  selfSigned: {}
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-root-issuer
+  namespace: default
+spec:
+  ca:
+    secretName: redpanda-default-root-certificate
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external-selfsigned-issuer
+  namespace: default
+spec:
+  selfSigned: {}
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external-root-issuer
+  namespace: default
+spec:
+  ca:
+    secretName: redpanda-external-root-certificate
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+    helm.sh/hook-weight: "-5"
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-configuration
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations: {}
+      generateName: redpanda-post-
+      labels:
+        app.kubernetes.io/component: redpanda-post-install
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/name: redpanda-configuration
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /redpanda-operator
+        - sync-cluster-config
+        - --users-directory
+        - /etc/secrets/users
+        - --redpanda-yaml
+        - /tmp/base-config/redpanda.yaml
+        - --bootstrap-yaml
+        - /tmp/config/.bootstrap.yaml
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: post-install
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/tls/certs/admin
+          name: redpanda-admin-cert
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/tls/certs/kafka
+          name: redpanda-kafka-cert
+        - mountPath: /etc/tls/certs/admin-client
+          name: redpanda-admin-client-cert
+        - mountPath: /etc/tls/certs/kafka-client
+          name: redpanda-kafka-client-cert
+        - mountPath: /tmp/config
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+      imagePullSecrets: []
+      initContainers:
+      - command:
+        - /redpanda-operator
+        - bootstrap
+        - --in-dir
+        - /tmp/base-config
+        - --out-dir
+        - /tmp/config
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: bootstrap-yaml-envsubst
+        resources:
+          limits:
+            cpu: 100m
+            memory: 125Mi
+          requests:
+            cpu: 100m
+            memory: 125Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/config/
+          name: config
+        - mountPath: /tmp/base-config/
+          name: base-config
+      nodeSelector: {}
+      restartPolicy: Never
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        runAsUser: 101
+      serviceAccountName: redpanda
+      tolerations: []
+      volumes:
+      - name: redpanda-admin-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-admin-tls-cert
+      - name: redpanda-default-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-default-cert
+      - name: redpanda-external-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-external-cert
+      - name: redpanda-kafka-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-kafka-tls-cert
+      - name: redpanda-admin-client-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-admin-client-cert
+      - name: redpanda-kafka-client-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-kafka-client-cert
+      - configMap:
+          name: redpanda
+        name: base-config
+      - emptyDir: {}
+        name: config
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 -- testdata/TestTemplate/name-overrides.notes.golden --
 
 
@@ -131600,7 +133426,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: also-not-redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -131663,7 +133489,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: also-not-redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: also-not-redpanda-configurator
@@ -133196,7 +135022,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -133259,7 +135085,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -134793,7 +136619,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -134856,7 +136682,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -136387,7 +138213,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -136450,7 +138276,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -137983,7 +139809,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -138046,7 +139872,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -139606,7 +141432,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -139669,7 +141495,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -141215,7 +143041,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -141278,7 +143104,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -141758,7 +143584,1770 @@ metadata:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
+<<<<<<< HEAD
     helm.sh/chart: redpanda-26.2.4
+=======
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-sts-lifecycle
+  namespace: default
+stringData:
+  common.sh: |-
+    #!/usr/bin/env bash
+
+    # the SERVICE_NAME comes from the metadata.name of the pod, essentially the POD_NAME
+    CURL_URL="https://${SERVICE_NAME}.redpanda.default.svc.cluster.local:9644"
+
+    # commands used throughout. Every curl carries --max-time so a single
+    # hung admin connection can never freeze a lifecycle hook until the
+    # termination grace period expires; the callers retry as needed.
+    CURL_NODE_ID_CMD="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/node_config"
+
+    CURL_MAINTENANCE_DELETE_CMD_PREFIX='curl -X DELETE --silent --max-time 5 -o /dev/null -w "%{http_code}"'
+    CURL_MAINTENANCE_PUT_CMD_PREFIX='curl -X PUT --silent --max-time 5 -o /dev/null -w "%{http_code}"'
+    CURL_MAINTENANCE_GET_CMD="curl -X GET --silent --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/maintenance"
+
+    # run bare to list all brokers, or append /<node id> for a single broker
+    CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
+
+    # the address this pod's broker advertises to the rest of the cluster,
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
+    POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
+  postStart.sh: |-
+    #!/usr/bin/env bash
+    # This code should be similar if not exactly the same as that found in the panda-operator, see
+    # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+    # path below should match the path defined on the statefulset
+    source /var/lifecycle/common.sh
+
+    postStartHook () {
+      set -x
+
+      touch /tmp/postStartHookStarted
+
+      until NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$'); do
+          sleep 0.5
+      done
+
+      echo "Clearing maintenance mode on node ${NODE_ID}"
+      CURL_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+      # a 400 here would mean not in maintenance mode
+      until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"400"' ]; do
+          status=$(${CURL_MAINTENANCE_DELETE_CMD})
+          sleep 0.5
+      done
+
+      # A previous incarnation of this pod may have re-registered with the
+      # cluster under a different node id after losing its data directory
+      # (e.g. when running without persistent storage). preStop put that old
+      # node id into maintenance mode and nothing ever clears it: the ghost
+      # broker occupies the cluster's only maintenance-mode slot, and the
+      # partition autobalancer excludes maintenance-mode brokers from
+      # auto-decommission (redpanda-data/redpanda-operator#1674). Clear
+      # maintenance mode on any broker id that advertises this pod's address
+      # but isn't the current broker. Only a broker the cluster reports dead
+      # (is_alive=false) and draining is cleared — but the health monitor can
+      # lag a fast pod restart and briefly report the dead previous
+      # incarnation as still alive, so keep re-checking until every stale
+      # drainer at this address is gone; the surrounding timeout wrapper
+      # bounds this loop.
+      while true; do
+          GHOSTS_REMAIN=false
+          until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
+              sleep 0.5
+          done
+          for BROKER_ID in ${BROKER_IDS}; do
+              if [ "${BROKER_ID}" = "${NODE_ID}" ]; then continue; fi
+              BROKER=$(${CURL_BROKERS_CMD_PREFIX}/${BROKER_ID}) || continue
+              # compare the advertised address exactly (not as a regex, which
+              # would treat the dots in ${POD_FQDN} as wildcards)
+              BROKER_ADDRESS=$(echo "${BROKER}" | grep -o '\"internal_rpc_address\": *\"[^\"]*' | grep -o '[^\"]*$')
+              if [ "${BROKER_ADDRESS}" != "${POD_FQDN}" ]; then continue; fi
+              if ! echo "${BROKER}" | grep -q '\"draining\": *true'; then continue; fi
+              # a drainer at this pod's address still reported alive is the
+              # health monitor lagging behind the restart; retry until the
+              # cluster reports it dead
+              if ! echo "${BROKER}" | grep -q '\"is_alive\": *false'; then GHOSTS_REMAIN=true; continue; fi
+              echo "Clearing maintenance mode left behind by node ${BROKER_ID}, a previous incarnation of this pod"
+              CURL_GHOST_MAINTENANCE_DELETE_CMD="${CURL_MAINTENANCE_DELETE_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${BROKER_ID}/maintenance"
+              GHOST_STATUS=""
+              # a 400 means not in maintenance mode, a 404 means already removed
+              until [ "${GHOST_STATUS:-}" = '"200"' ] || [ "${GHOST_STATUS:-}" = '"400"' ] || [ "${GHOST_STATUS:-}" = '"404"' ]; do
+                  GHOST_STATUS=$(${CURL_GHOST_MAINTENANCE_DELETE_CMD})
+                  sleep 0.5
+              done
+          done
+          if [ "${GHOSTS_REMAIN}" = "false" ]; then break; fi
+          sleep 5
+      done
+
+      touch /tmp/postStartHookFinished
+    }
+
+    postStartHook
+    true
+  preStop.sh: |-
+    #!/usr/bin/env bash
+    # This code should be similar if not exactly the same as that found in the panda-operator, see
+    # https://github.com/redpanda-data/redpanda/blob/e51d5b7f2ef76d5160ca01b8c7a8cf07593d29b6/src/go/k8s/pkg/resources/secret.go
+
+    touch /tmp/preStopHookStarted
+
+    # path below should match the path defined on the statefulset
+    source /var/lifecycle/common.sh
+
+    set -x
+
+    preStopHook () {
+      # Read this broker's node id. A broker being gracefully rolled answers
+      # immediately; a crashlooping / dead-admin broker never binds its admin
+      # API, so bound the attempts instead of spinning the whole termination
+      # grace period — if we cannot even read the node id there is nothing
+      # locally to drain, so skip the drain and let the pod terminate.
+      NODE_ID=""
+      for attempt in $(seq 1 20); do
+          NODE_ID=$(${CURL_NODE_ID_CMD} | grep -o '\"node_id\":[^,}]*' | grep -o '[^: ]*$') && break
+          NODE_ID=""
+          sleep 0.5
+      done
+      if [ -z "${NODE_ID}" ]; then
+          echo "Could not read node id from the local admin API; skipping maintenance drain."
+          touch /tmp/preStopHookFinished
+          return 0
+      fi
+
+      echo "Setting maintenance mode on node ${NODE_ID}"
+      CURL_MAINTENANCE_PUT_CMD="${CURL_MAINTENANCE_PUT_CMD_PREFIX} --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers/${NODE_ID}/maintenance"
+      # A 404 means this broker's node id is no longer a cluster member -- e.g.
+      # a bad_rejoin broker whose id was decommissioned while its pod was down
+      # (the redpanda#31057 recovery path): there is nothing to drain, and the
+      # drain-status poll below would never terminate, so skip it instead of
+      # burning the hook timeout and delaying pod termination. A 400 (the
+      # cluster's single maintenance slot is busy with another draining broker)
+      # must keep retrying: waiting our turn for the slot is what serializes
+      # drains during rolling restarts.
+      until [ "${status:-}" = '"200"' ] || [ "${status:-}" = '"404"' ]; do
+          status=$(${CURL_MAINTENANCE_PUT_CMD})
+          sleep 0.5
+      done
+
+      if [ "${status:-}" = '"200"' ]; then
+          # Wait for the drain to finish. draining=false must NOT be accepted
+          # until we have first observed draining=true (or an explicit
+          # finished=true): immediately after the PUT the broker may not have
+          # started draining yet, and reading that initial draining=false as
+          # "done" would SIGTERM a broker still holding all its leadership.
+          saw_draining=""
+          finished=""
+          draining=""
+          until [ "${finished:-}" = "true" ] || { [ "${saw_draining:-}" = "yes" ] && [ "${draining:-}" = "false" ]; }; do
+              res=$(${CURL_MAINTENANCE_GET_CMD})
+              finished=$(echo $res | grep -o '\"finished\":[^,}]*' | grep -o '[^: ]*$')
+              draining=$(echo $res | grep -o '\"draining\":[^,}]*' | grep -o '[^: ]*$')
+              if [ "${draining:-}" = "true" ]; then saw_draining=yes; fi
+              sleep 0.5
+          done
+      fi
+
+      touch /tmp/preStopHookFinished
+    }
+    preStopHook
+    true
+type: Opaque
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-configurator
+  namespace: default
+stringData:
+  configurator.sh: |-
+    set -xe
+    SERVICE_NAME=$1
+    KUBERNETES_NODE_NAME=$2
+    POD_ORDINAL=${SERVICE_NAME##*-}
+    BROKER_INDEX=`expr $POD_ORDINAL + 1`
+
+    CONFIG=/etc/redpanda/redpanda.yaml
+
+    # Setup config files
+    cp /tmp/base-config/redpanda.yaml "${CONFIG}"
+
+    LISTENER="{\"address\":\"${SERVICE_NAME}.redpanda.default.svc.cluster.local.\",\"name\":\"internal\",\"port\":9093}"
+    rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[0] "$LISTENER"
+
+    ADVERTISED_KAFKA_ADDRESSES=()
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":31092}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":31092}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_KAFKA_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":31092}")
+
+    rpk redpanda config --config "$CONFIG" set redpanda.advertised_kafka_api[1] "${ADVERTISED_KAFKA_ADDRESSES[$POD_ORDINAL]}"
+
+    LISTENER="{\"address\":\"${SERVICE_NAME}.redpanda.default.svc.cluster.local.\",\"name\":\"internal\",\"port\":8082}"
+    rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[0] "$LISTENER"
+
+    ADVERTISED_HTTP_ADDRESSES=()
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":30082}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":30082}")
+
+    PREFIX_TEMPLATE=""
+    ADVERTISED_HTTP_ADDRESSES+=("{\"address\":\"${SERVICE_NAME}.redpanda.dev.somecustomer.net\",\"name\":\"default\",\"port\":30082}")
+
+    rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
+type: Opaque
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+immutable: true
+kind: Secret
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-bootstrap-user
+  namespace: default
+stringData:
+  password: changeme
+type: Opaque
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+data:
+  .bootstrap.json.in: '{"audit_enabled":"false","cloud_storage_cache_size":"5368709120","cloud_storage_enable_remote_read":"true","cloud_storage_enable_remote_write":"true","cloud_storage_enabled":"false","compacted_log_segment_size":"67108864","default_topic_replications":"3","election_timeout_ms":"5000","enable_leader_balancer":"true","enable_rack_awareness":"false","enable_sasl":"true","kafka_connection_rate_limit":"1000","kafka_enable_authorization":"true","log_segment_size_max":"268435456","log_segment_size_min":"16777216","max_compacted_log_segment_size":"536870912","partition_autobalancing_mode":"\"continuous\"","raft_heartbeat_interval_ms":"500","storage_min_free_bytes":"5368709120","superusers":"[\"kubernetes-controller\"]"}'
+  bootstrap.yaml.fixups: '[]'
+  redpanda.yaml: |-
+    config_file: /etc/redpanda/redpanda.yaml
+    pandaproxy:
+      pandaproxy_api:
+      - address: 0.0.0.0
+        authentication_method: http_basic
+        name: internal
+        port: 8082
+      pandaproxy_api_tls:
+      - cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        name: internal
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+    pandaproxy_client:
+      broker_tls:
+        enabled: true
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      brokers:
+      - address: redpanda-0.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-1.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-2.redpanda.default.svc.cluster.local.
+        port: 9093
+    redpanda:
+      admin:
+      - address: 0.0.0.0
+        name: internal
+        port: 9644
+      admin_api_tls:
+      - cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        name: internal
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      crash_loop_limit: 5
+      empty_seed_starts_cluster: false
+      kafka_api:
+      - address: 0.0.0.0
+        authentication_method: sasl
+        name: internal
+        port: 9093
+      - address: 0.0.0.0
+        authentication_method: sasl
+        name: default
+        port: 9094
+      kafka_api_tls:
+      - cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        name: internal
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      - cert_file: /etc/tls/certs/external/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/external/tls.key
+        name: default
+        require_client_auth: false
+        truststore_file: /etc/ssl/certs/ca-certificates.crt
+      rpc_server:
+        address: 0.0.0.0
+        port: 33145
+      seed_servers:
+      - host:
+          address: redpanda-0.redpanda.default.svc.cluster.local.
+          port: 33145
+      - host:
+          address: redpanda-1.redpanda.default.svc.cluster.local.
+          port: 33145
+      - host:
+          address: redpanda-2.redpanda.default.svc.cluster.local.
+          port: 33145
+    rpk:
+      additional_start_flags:
+      - --default-log-level=info
+      - --memory=16384M
+      - --reserve-memory=240M
+      - --smp=7
+      admin_api:
+        addresses:
+        - redpanda-0.redpanda.default.svc.cluster.local.:9644
+        - redpanda-1.redpanda.default.svc.cluster.local.:9644
+        - redpanda-2.redpanda.default.svc.cluster.local.:9644
+        tls:
+          ca_file: /etc/tls/certs/default/ca.crt
+      enable_memory_locking: true
+      kafka_api:
+        brokers:
+        - redpanda-0.redpanda.default.svc.cluster.local.:9093
+        - redpanda-1.redpanda.default.svc.cluster.local.:9093
+        - redpanda-2.redpanda.default.svc.cluster.local.:9093
+        tls:
+          ca_file: /etc/tls/certs/default/ca.crt
+      overprovisioned: false
+      schema_registry:
+        addresses:
+        - redpanda-0.redpanda.default.svc.cluster.local.:8081
+        - redpanda-1.redpanda.default.svc.cluster.local.:8081
+        - redpanda-2.redpanda.default.svc.cluster.local.:8081
+        tls:
+          ca_file: /etc/tls/certs/default/ca.crt
+      tune_aio_events: true
+    schema_registry:
+      schema_registry_api:
+      - address: 0.0.0.0
+        name: internal
+        port: 8081
+      schema_registry_api_tls:
+      - cert_file: /etc/tls/certs/default/tls.crt
+        enabled: true
+        key_file: /etc/tls/certs/default/tls.key
+        name: internal
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+    schema_registry_client:
+      broker_tls:
+        enabled: true
+        require_client_auth: false
+        truststore_file: /etc/tls/certs/default/ca.crt
+      brokers:
+      - address: redpanda-0.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-1.redpanda.default.svc.cluster.local.
+        port: 9093
+      - address: redpanda-2.redpanda.default.svc.cluster.local.
+        port: 9093
+kind: ConfigMap
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+data:
+  profile: |-
+    admin_api:
+      addresses:
+      - redpanda-0.redpanda.dev.somecustomer.net:31644
+      - redpanda-1.redpanda.dev.somecustomer.net:31644
+      - redpanda-2.redpanda.dev.somecustomer.net:31644
+      tls:
+        ca_file: ca.crt
+    kafka_api:
+      brokers:
+      - redpanda-0.redpanda.dev.somecustomer.net:31092
+      - redpanda-1.redpanda.dev.somecustomer.net:31092
+      - redpanda-2.redpanda.dev.somecustomer.net:31092
+      tls:
+        ca_file: ca.crt
+    name: default
+    schema_registry:
+      addresses:
+      - redpanda-0.redpanda.dev.somecustomer.net:30081
+      - redpanda-1.redpanda.dev.somecustomer.net:30081
+      - redpanda-2.redpanda.dev.somecustomer.net:30081
+      tls:
+        ca_file: ca.crt
+kind: ConfigMap
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-rpk
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+data:
+  config.yaml: |
+    # from .Values.config
+    connect:
+      connectTimeout: 15s
+      readTimeout: 60s
+      requestTimeout: 6s
+    kafka:
+      brokers:
+      - redpanda-0.redpanda.default.svc.cluster.local.:9093
+      - redpanda-1.redpanda.default.svc.cluster.local.:9093
+      - redpanda-2.redpanda.default.svc.cluster.local.:9093
+      sasl:
+        enabled: true
+        mechanism: SCRAM-SHA-256
+        username: kubernetes-controller
+      tls:
+        caFilepath: /etc/tls/certs/secrets/redpanda-default-cert/ca.crt
+        enabled: true
+    redpanda:
+      adminApi:
+        enabled: true
+        tls:
+          caFilepath: /etc/tls/certs/secrets/redpanda-default-cert/ca.crt
+          enabled: true
+        urls:
+        - https://redpanda.default.svc.cluster.local.:9644
+    schemaRegistry:
+      authentication:
+        basic:
+          username: kubernetes-controller
+      enabled: true
+      tls:
+        caFilepath: /etc/tls/certs/secrets/redpanda-default-cert/ca.crt
+        enabled: true
+      urls:
+      - https://redpanda-0.redpanda.default.svc.cluster.local.:8081
+      - https://redpanda-1.redpanda.default.svc.cluster.local.:8081
+      - https://redpanda-2.redpanda.default.svc.cluster.local.:8081
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-rpk-debug-bundle
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - events
+  - limitranges
+  - persistentvolumeclaims
+  - pods
+  - pods/log
+  - replicationcontrollers
+  - resourcequotas
+  - serviceaccounts
+  - services
+  verbs:
+  - get
+  - list
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-sidecar
+  namespace: default
+rules:
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-rpk-debug-bundle
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: redpanda-rpk-debug-bundle
+subjects:
+- kind: ServiceAccount
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-sidecar
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: redpanda-sidecar
+subjects:
+- kind: ServiceAccount
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/charts/console/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 0
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: console
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    monitoring.redpanda.com/enabled: "true"
+  name: redpanda
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - appProtocol: null
+    name: admin
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - name: http
+    port: 8082
+    protocol: TCP
+    targetPort: 8082
+  - name: kafka
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  - name: rpc
+    port: 33145
+    protocol: TCP
+    targetPort: 33145
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redpanda-0.redpanda.dev.somecustomer.net
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
+    repdanda.com/type: loadbalancer
+  name: lb-redpanda-0
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: null
+  ports:
+  - appProtocol: null
+    name: kafka-default
+    port: 31092
+    protocol: TCP
+    targetPort: 9094
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+    statefulset.kubernetes.io/pod-name: redpanda-0
+  sessionAffinity: None
+  type: LoadBalancer
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redpanda-1.redpanda.dev.somecustomer.net
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
+    repdanda.com/type: loadbalancer
+  name: lb-redpanda-1
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: null
+  ports:
+  - appProtocol: null
+    name: kafka-default
+    port: 31092
+    protocol: TCP
+    targetPort: 9094
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+    statefulset.kubernetes.io/pod-name: redpanda-1
+  sessionAffinity: None
+  type: LoadBalancer
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: redpanda-2.redpanda.dev.somecustomer.net
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    redpanda.com/type: loadbalancer
+    repdanda.com/type: loadbalancer
+  name: lb-redpanda-2
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  loadBalancerSourceRanges: null
+  ports:
+  - appProtocol: null
+    name: kafka-default
+    port: 31092
+    protocol: TCP
+    targetPort: 9094
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+    statefulset.kubernetes.io/pod-name: redpanda-2
+  sessionAffinity: None
+  type: LoadBalancer
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: console
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        checksum/config: 64651eb4ff837fa7e4992a1f706dadc1b2301bf7d7b92f6470f34e4d6e5ebf0f
+      labels:
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/name: console
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: redpanda-statefulset
+                app.kubernetes.io/instance: redpanda
+                app.kubernetes.io/name: redpanda
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - --config.filepath=/etc/console/configs/config.yaml
+        command: null
+        env:
+        - name: KAFKA_SASL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redpanda-bootstrap-user
+        - name: SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redpanda-bootstrap-user
+        - name: LICENSE
+          valueFrom:
+            secretKeyRef:
+              key: license
+              name: redpanda-enterprise-license
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 3.9.0
+        - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+          value: redpandadata/console:v3.9.0
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0-gke
+        - name: REDPANDA_METRICS_K8S_ENVIRONMENT
+          value: GCP
+        envFrom: []
+        image: docker.redpanda.com/redpandadata/console:v3.9.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: console
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /admin/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        securityContext:
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/console/configs
+          name: configs
+          readOnly: true
+        - mountPath: /etc/tls/certs
+          name: redpanda-certificates
+      imagePullSecrets: []
+      initContainers: null
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 99
+        fsGroupChangePolicy: Always
+        runAsUser: 99
+      serviceAccountName: redpanda-console
+      tolerations: []
+      topologySpreadConstraints: []
+      volumes:
+      - configMap:
+          name: redpanda-console
+        name: configs
+      - name: redpanda-certificates
+        projected:
+          sources:
+          - secret:
+              items:
+              - key: ca.crt
+                path: secrets/redpanda-default-cert/ca.crt
+              name: redpanda-default-cert
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: Parallel
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: redpanda-statefulset
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: redpanda
+  serviceName: redpanda
+  template:
+    metadata:
+      annotations:
+        config.redpanda.com/checksum: af76624dd852d2724eb5f120c208cbc964be906efd325d02a832b9d0dca12770
+      labels:
+        app.kubernetes.io/component: redpanda-statefulset
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: redpanda
+        cluster.redpanda.com/broker: "true"
+        helm.sh/chart: redpanda-26.2.1
+        redpanda.com/poddisruptionbudget: redpanda
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: redpanda-statefulset
+                app.kubernetes.io/instance: redpanda
+                app.kubernetes.io/name: redpanda
+            topologyKey: kubernetes.io/hostname
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - rpk
+        - redpanda
+        - start
+        - --advertise-rpc-addr=$(SERVICE_NAME).redpanda.default.svc.cluster.local.:33145
+        env:
+        - name: SERVICE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: RPK_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redpanda-bootstrap-user
+        - name: RPK_USER
+          value: kubernetes-controller
+        - name: RPK_SASL_MECHANISM
+          value: SCRAM-SHA-256
+        - name: RP_BOOTSTRAP_USER
+          value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
+        - name: REDPANDA_METRICS_K8S_VERSION
+          value: v1.99.0-gke
+        - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+          value: helm
+        - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          value: 26.2.1
+        - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
+          value: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        - name: REDPANDA_METRICS_K8S_ENVIRONMENT
+          value: GCP
+        image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - bash
+              - -c
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/postStart.sh 2>&1 | sed "s/^/lifecycle-hook post-start $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook post-start $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
+          preStop:
+            exec:
+              command:
+              - bash
+              - -c
+              - |-
+                timeout -v 45 bash -x /var/lifecycle/preStop.sh 2>&1 | sed "s/^/lifecycle-hook pre-stop $(date): /" | tee /proc/1/fd/1
+                ec=${PIPESTATUS[0]}
+                if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then
+                  echo "lifecycle-hook pre-stop $(date): TIMEOUT after 45s — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1
+                fi
+                true
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          tcpSocket:
+            port: 9644
+        name: redpanda
+        ports:
+        - containerPort: 9644
+          name: admin
+        - containerPort: 8082
+          name: http
+        - containerPort: 9093
+          name: kafka
+        - containerPort: 9094
+          name: kafka-default
+        - containerPort: 33145
+          name: rpc
+        - containerPort: 8081
+          name: schemaregistry
+        resources:
+          limits:
+            cpu: "7"
+            memory: 25Gi
+          requests:
+            cpu: "7"
+            memory: 20Gi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              RESULT=$(curl --silent --fail -k -m 5 --cacert /etc/tls/certs/default/ca.crt "https://${SERVICE_NAME}.redpanda.default.svc.cluster.local.:9644/v1/status/ready")
+              echo $RESULT
+              echo $RESULT | grep ready
+          failureThreshold: 120
+          initialDelaySeconds: 1
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /etc/secrets/users
+          name: users
+          readOnly: true
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/redpanda
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+        - mountPath: /var/lifecycle
+          name: lifecycle-scripts
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      - args:
+        - supervisor
+        - --
+        - /redpanda-operator
+        - sidecar
+        - --redpanda-yaml
+        - /etc/redpanda/redpanda.yaml
+        - --redpanda-cluster-namespace
+        - default
+        - --redpanda-cluster-name
+        - redpanda
+        - --selector=helm.sh/chart=redpanda-26.2.1,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=redpanda
+        - --run-broker-probe
+        - --broker-probe-broker-url
+        - $(SERVICE_NAME).redpanda.default.svc.cluster.local.:9644
+        - --watch-rpk-profile
+        - --rpk-profile-source=/tmp/base-config/redpanda.yaml
+        - --watch-users
+        - --users-directory=/etc/secrets/users/
+        command:
+        - /redpanda-operator
+        env:
+        - name: RPK_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redpanda-bootstrap-user
+        - name: RPK_USER
+          value: kubernetes-controller
+        - name: RPK_SASL_MECHANISM
+          value: SCRAM-SHA-256
+        - name: SERVICE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: sidecar
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8093
+          initialDelaySeconds: 1
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 0
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsGroup: 101
+          runAsNonRoot: true
+          runAsUser: 101
+        volumeMounts:
+        - mountPath: /etc/secrets/users
+          name: users
+          readOnly: true
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/redpanda
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+          readOnly: true
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access
+          readOnly: true
+      imagePullSecrets: []
+      initContainers:
+      - command:
+        - /bin/bash
+        - -c
+        - rpk redpanda tune all
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        name: tuning
+        resources: {}
+        securityContext:
+          capabilities:
+            add:
+            - SYS_RESOURCE
+          privileged: true
+          runAsGroup: 0
+          runAsNonRoot: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/secrets/users
+          name: users
+          readOnly: true
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/redpanda
+          name: base-config
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+      - command:
+        - /bin/sh
+        - -c
+        - chown 101:101 -R /var/lib/redpanda/data
+        env: null
+        image: busybox:latest
+        name: set-datadir-ownership
+        resources: {}
+        securityContext:
+          runAsGroup: 0
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /etc/secrets/users
+          name: users
+          readOnly: true
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /var/lib/redpanda/data
+          name: datadir
+      - command:
+        - /bin/bash
+        - -c
+        - trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}"
+          & wait $!
+        env:
+        - name: CONFIGURATOR_SCRIPT
+          value: /etc/secrets/configurator/scripts/configurator.sh
+        - name: SERVICE_NAME
+          valueFrom:
+            configMapKeyRef: null
+            fieldRef:
+              fieldPath: metadata.name
+            resourceFieldRef: null
+            secretKeyRef: null
+        - name: KUBERNETES_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: HOST_IP_ADDRESS
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: RPK_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redpanda-bootstrap-user
+        - name: RPK_USER
+          value: kubernetes-controller
+        - name: RPK_SASL_MECHANISM
+          value: SCRAM-SHA-256
+        image: docker.redpanda.com/redpandadata/redpanda:v26.2.1
+        name: redpanda-configurator
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /etc/secrets/users
+          name: users
+          readOnly: true
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /etc/redpanda
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+        - mountPath: /etc/secrets/configurator/scripts/
+          name: configurator
+      - command:
+        - /redpanda-operator
+        - bootstrap
+        - --in-dir
+        - /tmp/base-config
+        - --out-dir
+        - /tmp/config
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: bootstrap-yaml-envsubst
+        resources:
+          limits:
+            cpu: 100m
+            memory: 125Mi
+          requests:
+            cpu: 100m
+            memory: 125Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/config/
+          name: config
+        - mountPath: /tmp/base-config/
+          name: base-config
+      nodeSelector: {}
+      priorityClassName: ""
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        runAsUser: 101
+      serviceAccountName: redpanda
+      terminationGracePeriodSeconds: 90
+      tolerations: []
+      topologySpreadConstraints:
+      - labelSelector:
+          matchLabels:
+            app.kubernetes.io/component: redpanda-statefulset
+            app.kubernetes.io/instance: redpanda
+            app.kubernetes.io/name: redpanda
+        maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: ScheduleAnyway
+      volumes:
+      - name: redpanda-default-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-default-cert
+      - name: redpanda-external-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-external-cert
+      - name: users
+        secret:
+          secretName: kafka-credentials
+      - name: lifecycle-scripts
+        secret:
+          defaultMode: 509
+          secretName: redpanda-sts-lifecycle
+      - configMap:
+          name: redpanda
+        name: base-config
+      - emptyDir: {}
+        name: config
+      - name: configurator
+        secret:
+          defaultMode: 509
+          secretName: redpanda-configurator
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: datadir
+      - name: kube-api-access
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace
+  updateStrategy:
+    type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      annotations: null
+      labels:
+        app.kubernetes.io/component: redpanda
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/name: redpanda
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 500Gi
+    status: {}
+---
+# Source: redpanda/charts/console/templates/entry-point.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    nginx.ingress.kubernetes.io/auth-realm: '"Authentication required"'
+    nginx.ingress.kubernetes.io/auth-secret: ingress-basic-auth-credentials
+    nginx.ingress.kubernetes.io/auth-type: basic
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: console.redpanda.dev.somecustomer.net
+    http:
+      paths:
+      - backend:
+          service:
+            name: redpanda-console
+            port:
+              number: 8080
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - console.redpanda.dev.somecustomer.net
+    secretName: redpanda-console-production-tls
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-root-certificate
+  namespace: default
+spec:
+  commonName: redpanda-default-root-certificate
+  duration: 43800h0m0s
+  isCA: true
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: redpanda-default-selfsigned-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-default-root-certificate
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-cert
+  namespace: default
+spec:
+  dnsNames:
+  - redpanda-cluster.redpanda.default.svc.cluster.local
+  - redpanda-cluster.redpanda.default.svc
+  - redpanda-cluster.redpanda.default
+  - '*.redpanda-cluster.redpanda.default.svc.cluster.local'
+  - '*.redpanda-cluster.redpanda.default.svc'
+  - '*.redpanda-cluster.redpanda.default'
+  - redpanda.default.svc.cluster.local
+  - redpanda.default.svc
+  - redpanda.default
+  - '*.redpanda.default.svc.cluster.local'
+  - '*.redpanda.default.svc'
+  - '*.redpanda.default'
+  - redpanda.dev.somecustomer.net
+  - '*.redpanda.dev.somecustomer.net'
+  duration: 43800h0m0s
+  isCA: false
+  issuerRef:
+    group: cert-manager.io
+    kind: Issuer
+    name: redpanda-default-root-issuer
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-default-cert
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external-cert
+  namespace: default
+spec:
+  dnsNames:
+  - redpanda.dev.somecustomer.net
+  - '*.redpanda.dev.somecustomer.net'
+  duration: 43800h0m0s
+  isCA: false
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: redpanda-external-cert
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-selfsigned-issuer
+  namespace: default
+spec:
+  selfSigned: {}
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-default-root-issuer
+  namespace: default
+spec:
+  ca:
+    secretName: redpanda-default-root-certificate
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+spec:
+  endpoints:
+  - interval: 30s
+    path: /public_metrics
+    port: admin
+    scheme: https
+    tlsConfig:
+      ca: {}
+      cert: {}
+      insecureSkipVerify: true
+  namespaceSelector: {}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: redpanda
+      monitoring.redpanda.com/enabled: "true"
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+    helm.sh/hook-weight: "-5"
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-configuration
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations: {}
+      generateName: redpanda-post-
+      labels:
+        app.kubernetes.io/component: redpanda-post-install
+        app.kubernetes.io/instance: redpanda
+        app.kubernetes.io/name: redpanda-configuration
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /redpanda-operator
+        - sync-cluster-config
+        - --users-directory
+        - /etc/secrets/users
+        - --redpanda-yaml
+        - /tmp/base-config/redpanda.yaml
+        - --bootstrap-yaml
+        - /tmp/config/.bootstrap.yaml
+        env:
+        - name: REDPANDA_LICENSE
+          valueFrom:
+            secretKeyRef:
+              key: license
+              name: redpanda-enterprise-license
+        - name: RPK_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: redpanda-bootstrap-user
+        - name: RPK_USER
+          value: kubernetes-controller
+        - name: RPK_SASL_MECHANISM
+          value: SCRAM-SHA-256
+        - name: RP_BOOTSTRAP_USER
+          value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: post-install
+        resources: {}
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /etc/secrets/users
+          name: users
+          readOnly: true
+        - mountPath: /etc/tls/certs/default
+          name: redpanda-default-cert
+        - mountPath: /etc/tls/certs/external
+          name: redpanda-external-cert
+        - mountPath: /tmp/config
+          name: config
+        - mountPath: /tmp/base-config
+          name: base-config
+      imagePullSecrets: []
+      initContainers:
+      - command:
+        - /redpanda-operator
+        - bootstrap
+        - --in-dir
+        - /tmp/base-config
+        - --out-dir
+        - /tmp/config
+        env: null
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.1
+        name: bootstrap-yaml-envsubst
+        resources:
+          limits:
+            cpu: 100m
+            memory: 125Mi
+          requests:
+            cpu: 100m
+            memory: 125Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /tmp/config/
+          name: config
+        - mountPath: /tmp/base-config/
+          name: base-config
+      nodeSelector: {}
+      restartPolicy: Never
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: OnRootMismatch
+        runAsUser: 101
+      serviceAccountName: redpanda
+      tolerations: []
+      volumes:
+      - name: redpanda-default-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-default-cert
+      - name: redpanda-external-cert
+        secret:
+          defaultMode: 288
+          secretName: redpanda-external-cert
+      - name: users
+        secret:
+          secretName: kafka-credentials
+      - configMap:
+          name: redpanda
+        name: base-config
+      - emptyDir: {}
+        name: config
+-- testdata/TestTemplate/somecustomrepo-v23.2.8-0.notes.golden --
+
+
+
+
+
+Congratulations on installing redpanda!
+
+The pods will rollout in a few seconds. To check the status:
+
+  kubectl -n default rollout status statefulset redpanda --watch
+
+Set up rpk for access to your external listeners:
+  kubectl get secret -n default redpanda-external-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt
+  rpk profile create --from-profile <(kubectl get configmap -n default redpanda-rpk -o go-template='{{ .data.profile }}') default
+
+Set up dns to look up the pods on their Kubernetes Nodes. You can use this query to get the list of short-names to IP addresses. Add your external domain to the hostnames and you could test by adding these to your /etc/hosts:
+
+  kubectl get pod -n default -o custom-columns=node:.status.hostIP,name:.metadata.name --no-headers -l app.kubernetes.io/name=redpanda,app.kubernetes.io/component=redpanda-statefulset
+
+Try some sample commands:
+
+Get the api status:
+
+  rpk cluster info
+
+Create a topic
+
+  rpk topic create test-topic -p 3 -r 3
+
+Describe the topic:
+
+  rpk topic describe test-topic
+
+Delete the topic:
+
+  rpk topic delete test-topic
+-- testdata/TestTemplate/somecustomrepo-v23.2.8-0.yaml.golden --
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: redpanda
+      app.kubernetes.io/name: redpanda
+      redpanda.com/poddisruptionbudget: redpanda
+---
+# Source: redpanda/charts/console/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: console
+    app.kubernetes.io/version: v3.9.0
+    helm.sh/chart: console-3.9.0
+  name: redpanda-console
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda
+  namespace: default
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
   name: redpanda-sts-lifecycle
   namespace: default
 stringData:
@@ -154392,7 +157981,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -154455,7 +158044,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -156152,7 +159741,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -156215,7 +159804,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -157562,7 +161151,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -157625,7 +161214,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -159228,7 +162817,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -159291,7 +162880,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -160942,7 +164531,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -161005,7 +164594,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator

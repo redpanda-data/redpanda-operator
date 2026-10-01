@@ -15,10 +15,10 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
@@ -32,51 +32,6 @@ func BootstrapTemplateEnvVars(state *RenderState) []corev1.EnvVar {
 	env := state.Values.Storage.Tiered.CredentialsSecretRef.AsEnvVars(state.Values.Storage.GetTieredStorageConfig())
 	_, _, additionalEnv := state.Values.Config.ExtraClusterConfiguration.Translate()
 	return append(env, additionalEnv...)
-}
-
-// bootstrapYamlTemplater returns an initcontainer that will template
-// environment variables into ${base-config}/boostrap.yaml and output it to
-// ${config}/.bootstrap.yaml.
-func bootstrapYamlTemplater(state *RenderState, sts Statefulset) corev1.Container {
-	image := fmt.Sprintf(`%s:%s`,
-		sts.SideCars.Image.Repository,
-		sts.SideCars.Image.Tag,
-	)
-
-	return corev1.Container{
-		Name:  "bootstrap-yaml-envsubst",
-		Image: image,
-		Command: append([]string{
-			"/redpanda-operator",
-			"bootstrap",
-			"--in-dir",
-			"/tmp/base-config",
-			"--out-dir",
-			"/tmp/config",
-		}, state.Values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs...),
-		Env: BootstrapTemplateEnvVars(state),
-		Resources: corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("125Mi"),
-			},
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("125Mi"),
-			},
-		},
-		SecurityContext: &corev1.SecurityContext{
-			// NB: RunAsUser and RunAsGroup will be inherited from the
-			// PodSecurityContext of consumers.
-			AllowPrivilegeEscalation: ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-			RunAsNonRoot:             ptr.To(true),
-		},
-		VolumeMounts: []corev1.VolumeMount{
-			{Name: "config", MountPath: "/tmp/config/"},
-			{Name: "base-config", MountPath: "/tmp/base-config/"},
-		},
-	}
 }
 
 // postInstallJobPodLabels returns the labels for the post-install job's pod
@@ -102,6 +57,14 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 		state.Values.Statefulset.SideCars.Image.Repository,
 		state.Values.Statefulset.SideCars.Image.Tag,
 	)
+
+	initRenderer := redpanda.InitContainerRenderer{
+		SidecarImage: fmt.Sprintf(`%s:%s`, state.Values.Statefulset.SideCars.Image.Repository, state.Values.Statefulset.SideCars.Image.Tag),
+		Bootstrap: &redpanda.BootstrapInitContainer{
+			Env:               BootstrapTemplateEnvVars(state),
+			AdditionalCLIArgs: state.Values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs,
+		},
+	}
 
 	job := &batchv1.Job{
 		TypeMeta: metav1.TypeMeta{
@@ -143,7 +106,7 @@ func PostInstallUpgradeJob(state *RenderState) *batchv1.Job {
 						},
 						Spec: corev1.PodSpec{
 							RestartPolicy:                corev1.RestartPolicyNever,
-							InitContainers:               []corev1.Container{bootstrapYamlTemplater(state, state.Values.Statefulset)},
+							InitContainers:               initRenderer.Render(),
 							AutomountServiceAccountToken: ptr.To(false),
 							Containers: []corev1.Container{
 								{
