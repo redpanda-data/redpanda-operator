@@ -405,9 +405,7 @@ func (s *ControllerSuite) TestSetupWithManager() {
 	require.NoError(t, c.SetupWithManager(t.Context(), mgr, ""))
 	assert.False(t, c.podMonitorCRDInstalled(t.Context(), mgr))
 
-	// Install a minimal PodMonitor CRD. A fresh manager (fresh RESTMapper —
-	// the lazy mapper caches negative lookups) must now detect it pre-start.
-	require.NoError(t, kube.ApplyAll(t.Context(), ctl, &apiextensionsv1.CustomResourceDefinition{
+	testutils.InstallCRDs(t, ctl, &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{Name: "podmonitors.monitoring.coreos.com"},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "monitoring.coreos.com",
@@ -430,7 +428,7 @@ func (s *ControllerSuite) TestSetupWithManager() {
 				},
 			}},
 		},
-	}))
+	})
 
 	mgr2 := newManager()
 	c2 := &Controller{Ctl: ctl}

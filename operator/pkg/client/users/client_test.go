@@ -40,8 +40,10 @@ func getTestImage() string {
 }
 
 func TestClient(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	testEnv := testutils.RedpandaTestEnv{}
 	cfg, err := testEnv.StartRedpandaTestEnv(false)
@@ -182,6 +184,8 @@ func TestClient(t *testing.T) {
 	}
 
 	t.Run("default test image", func(t *testing.T) {
+		t.Parallel()
+
 		container, err := redpanda.Run(ctx, getTestImage(),
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
@@ -195,6 +199,8 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("25.2.1 release candidate", func(t *testing.T) {
+		t.Parallel()
+
 		container, err := redpanda.Run(ctx, "redpandadata/redpanda-unstable:v25.2.1-rc7",
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
@@ -292,6 +298,8 @@ func TestCredentialState(t *testing.T) {
 }
 
 func TestClientPasswordCreation(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
@@ -412,6 +420,8 @@ func TestClientPasswordCreation(t *testing.T) {
 }
 
 func TestPasswordNotGenerated(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 

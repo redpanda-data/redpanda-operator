@@ -1068,6 +1068,8 @@ func getConfigMaps(manifests []byte) (r *corev1.ConfigMap, rpk *corev1.ConfigMap
 }
 
 func TestLabels(t *testing.T) {
+	t.Parallel()
+
 	ctx := testutil.Context(t)
 	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
 	require.NoError(t, err)
@@ -1128,6 +1130,8 @@ func TestLabels(t *testing.T) {
 }
 
 func TestAnnotations(t *testing.T) {
+	t.Parallel()
+
 	ctx := testutil.Context(t)
 	client, err := helm.New(helm.Options{ConfigHome: testutil.TempDir(t)})
 	require.NoError(t, err)
@@ -1404,6 +1408,8 @@ func TestGoHelmEquivalence(t *testing.T) {
 // - Multiple instances of the redpanda chart with different names may be installed in the same instance.
 // - Multiple instances of the redpanda chart with the same name may be installed in different namespaces.
 func TestMultiNamespaceInstall(t *testing.T) {
+	t.Parallel()
+
 	ctl := kubetest.NewEnv(t)
 	client, err := helm.New(helm.Options{
 		KubeConfig: ctl.RestConfig(),
