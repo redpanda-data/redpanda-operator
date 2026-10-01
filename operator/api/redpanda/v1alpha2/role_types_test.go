@@ -10,18 +10,13 @@
 package v1alpha2
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func TestRole_GetPrincipal(t *testing.T) {
@@ -161,19 +156,13 @@ func TestRole_HasManagedACLs(t *testing.T) {
 	}
 }
 
-func TestRoleValidation(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+func testRoleValidation(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	baseRole := RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: RoleSpec{
 			ClusterSource: &ClusterSource{
@@ -183,13 +172,6 @@ func TestRoleValidation(t *testing.T) {
 			},
 		},
 	}
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
 
 	for name, tt := range map[string]validationTestCase[*RedpandaRole]{
 		"basic create": {},
@@ -310,27 +292,14 @@ func TestRoleValidation(t *testing.T) {
 	}
 }
 
-func TestRoleDefaults(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func testRoleDefaults(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	// Test role with just principals (Redpanda RBAC mode)
 	require.NoError(t, c.Create(ctx, &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "principals-only",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: RoleSpec{
 			ClusterSource: &ClusterSource{
@@ -343,7 +312,7 @@ func TestRoleDefaults(t *testing.T) {
 	}))
 
 	var principalsOnlyRole RedpandaRole
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "principals-only"}, &principalsOnlyRole))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "principals-only"}, &principalsOnlyRole))
 
 	require.Len(t, principalsOnlyRole.Status.Conditions, 1)
 	require.Equal(t, ResourceConditionTypeSynced, principalsOnlyRole.Status.Conditions[0].Type)
@@ -358,7 +327,7 @@ func TestRoleDefaults(t *testing.T) {
 	require.NoError(t, c.Create(ctx, &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "with-authorization",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: RoleSpec{
 			ClusterSource: &ClusterSource{
@@ -381,7 +350,7 @@ func TestRoleDefaults(t *testing.T) {
 	}))
 
 	var authRole RedpandaRole
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "with-authorization"}, &authRole))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "with-authorization"}, &authRole))
 
 	require.Equal(t, []string{"User:alice"}, authRole.Spec.Principals)
 	require.NotNil(t, authRole.Spec.Authorization)
@@ -393,26 +362,13 @@ func TestRoleDefaults(t *testing.T) {
 	require.Equal(t, "*", *authRole.Spec.Authorization.ACLs[0].Host)
 }
 
-func TestRoleImmutableFields(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func testRoleImmutableFields(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	require.NoError(t, c.Create(ctx, &RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: RoleSpec{
 			ClusterSource: &ClusterSource{
@@ -424,14 +380,12 @@ func TestRoleImmutableFields(t *testing.T) {
 	}))
 
 	var role RedpandaRole
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &role))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &role))
 
 	role.Spec.ClusterSource.ClusterRef.Name = "other"
-	err = c.Update(ctx, &role)
+	require.EqualError(t, c.Update(ctx, &role), `RedpandaRole.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 
-	require.EqualError(t, err, `RedpandaRole.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
-
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &role))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &role))
 	role.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 		Kafka: &KafkaAPISpec{
 			Brokers: []string{"test:123"},
@@ -440,7 +394,5 @@ func TestRoleImmutableFields(t *testing.T) {
 			URLs: []string{"http://test:123"},
 		},
 	}
-	err = c.Update(ctx, &role)
-
-	require.EqualError(t, err, `RedpandaRole.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
+	require.EqualError(t, c.Update(ctx, &role), `RedpandaRole.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 }
