@@ -33,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 // TestIntegrationBrokerSafeToRestart exercises the operator's
@@ -51,9 +52,8 @@ import (
 // orchestrating partition recovery — it is covered by the rpadmin-side
 // integration test (common-go#170) which uses the same endpoint.
 func TestIntegrationBrokerSafeToRestart(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in -short mode")
-	}
+	testutil.SkipIfNotIntegration(t)
+
 	testImage := os.Getenv("TEST_REDPANDA_REPO") + ":" + os.Getenv("TEST_REDPANDA_VERSION")
 	if testImage == ":" {
 		t.Skip("TEST_REDPANDA_REPO / TEST_REDPANDA_VERSION not set")

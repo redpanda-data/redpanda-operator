@@ -71,6 +71,8 @@ func TestMain(m *testing.M) {
 // - https://github.com/redpanda-data/helm-charts/issues/1454
 // - https://redpandadata.slack.com/archives/C01H6JRQX1S/p1728322201042639 (Kinda)
 func TestTemplateHelm310(t *testing.T) {
+	t.Parallel()
+
 	cmd := exec.Command("helm-3.10.3", "--kube-version", "v1.99.0-eks", "template", ".", "--generate-name")
 	out, err := cmd.CombinedOutput()
 	require.NoErrorf(t, err, "helm-3.10.3 template failed:\n%s", out)

@@ -47,19 +47,15 @@ import (
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
-// TestResourceReconcilers drives every resource-reconciler case against one
-// control plane. Each case used to start its own `kube-apiserver`+`etcd`
-// alongside its Redpanda container, which was most of the ~10-25s a case took.
-//
-// The cases stay serial and keep a container each: they assert on
-// Redpanda-side state (users, roles, ACLs, schemas) by name, so sharing a
-// broker would mean auditing all 18 for collisions there.
 func TestResourceReconcilers(t *testing.T) {
 	testEnv := testutils.RedpandaTestEnv{}
 	cfg, err := testEnv.StartRedpandaTestEnv(false)
 	require.NoError(t, err)
 
 	t.Cleanup(func() { _ = testEnv.Stop() })
+
+	// Bound concurrent broker containers to 4.
+	sem := make(chan struct{}, 4)
 
 	for name, fn := range map[string]func(*testing.T, *rest.Config){
 		"group/acl-configurations": testGroupACLConfigurations,
@@ -81,7 +77,14 @@ func TestResourceReconcilers(t *testing.T) {
 		"user/password-schema":     testUserPasswordSchemaValidation,
 		"user/reconcile":           testUserReconcile,
 	} {
-		t.Run(name, func(t *testing.T) { fn(t, cfg) })
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			fn(t, cfg)
+		})
 	}
 }
 

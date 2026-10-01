@@ -32,6 +32,8 @@ import (
 // The leader retains all log entries (no compaction) and catches the
 // follower up via MsgApp.
 func TestFollowerRejoinsAfterRestart(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 
 	leaders := setupLockTest(t, ctx, 3)
@@ -89,6 +91,8 @@ func TestFollowerRejoinsAfterRestart(t *testing.T) {
 //
 //nolint:laconiccomments
 func TestFreshNodeJoinsRunningCluster(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 
 	leaders := setupLockTest(t, ctx, 3)
@@ -132,6 +136,8 @@ func TestFreshNodeJoinsRunningCluster(t *testing.T) {
 // library from panicking in commitTo when a fresh follower's lastIndex
 // is behind the leader's Commit.
 func TestHeartbeatCommitClamping(t *testing.T) {
+	t.Parallel()
+
 	storage := raft.NewMemoryStorage()
 
 	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
@@ -188,6 +194,8 @@ func TestHeartbeatCommitClamping(t *testing.T) {
 // caused by the leader's stale progress tracker (match+1 floor in
 // MaybeDecrTo) and signals the leader to send a snapshot instead.
 func TestMsgAppRejectedWhenBeyondLog(t *testing.T) {
+	t.Parallel()
+
 	storage := raft.NewMemoryStorage()
 
 	// Simulate a fresh follower: 3 ConfChange entries from StartNode.
@@ -241,6 +249,8 @@ func TestMsgAppRejectedWhenBeyondLog(t *testing.T) {
 // can't match, the leader sends a snapshot, the follower applies it and its
 // committed index catches up to the leader's.
 func TestSnapshotRecoveryAfterRestart(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Minute)
 
 	// Attach TestHooks to all nodes so we can read committed indices.
@@ -340,6 +350,8 @@ func (s *stubNode) ReportSnapshot(uint64, raft.SnapshotStatus)                  
 func (s *stubNode) Stop()                                                       {}
 
 func TestLocker(t *testing.T) {
+	t.Parallel()
+
 	for name, tt := range map[string]struct {
 		nodes int
 	}{
