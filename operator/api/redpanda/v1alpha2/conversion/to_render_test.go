@@ -21,6 +21,7 @@ import (
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
@@ -266,13 +267,13 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 						Configurator: &redpandav1alpha2.Configurator{
 							ExtraVolumeMounts: ptr.To("- name: cfg-extra\n  mountPath: /cfg-extra"),
 						},
-						ExtraInitContainers: ptr.To("- name: " + redpandachart.RedpandaConfiguratorContainerName + "\n  env:\n  - name: FROM_LAST_DUPLICATE\n    value: \"1\""),
+						ExtraInitContainers: ptr.To("- name: " + redpanda.RedpandaConfiguratorContainerName + "\n  env:\n  - name: FROM_LAST_DUPLICATE\n    value: \"1\""),
 					},
 					PodTemplate: &redpandav1alpha2.PodTemplate{
 						Spec: &applycorev1.PodSpecApplyConfiguration{
 							InitContainers: []applycorev1.ContainerApplyConfiguration{
 								{
-									Name: ptr.To(redpandachart.RedpandaConfiguratorContainerName),
+									Name: ptr.To(redpanda.RedpandaConfiguratorContainerName),
 									Env: []applycorev1.EnvVarApplyConfiguration{
 										{Name: ptr.To("FROM_FIRST_DUPLICATE"), Value: ptr.To("1")},
 									},
@@ -293,7 +294,7 @@ func TestDuplicateInitContainerOverridesSurviveRender(t *testing.T) {
 
 	var configurator *corev1.Container
 	for i, container := range sets[0].Spec.Template.Spec.InitContainers {
-		if container.Name == redpandachart.RedpandaConfiguratorContainerName {
+		if container.Name == redpanda.RedpandaConfiguratorContainerName {
 			require.Nil(t, configurator, "rendered pod spec must contain exactly one configurator init container")
 			configurator = &sets[0].Spec.Template.Spec.InitContainers[i]
 		}

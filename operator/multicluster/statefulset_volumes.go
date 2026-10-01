@@ -125,7 +125,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 			},
 		},
 		corev1.Volume{
-			Name: fmt.Sprintf("%.51s-configurator", poolFullname),
+			Name: redpanda.ConfiguratorScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.51s-configurator", poolFullname),
@@ -137,7 +137,7 @@ func statefulSetVolumes(state *RenderState, pool *redpandav1alpha2.RedpandaBroke
 
 	if pool.Spec.InitContainers != nil && pool.Spec.InitContainers.FSValidator.IsEnabled() {
 		volumes = append(volumes, corev1.Volume{
-			Name: fmt.Sprintf("%.49s-fs-validator", poolFullname),
+			Name: redpanda.FSValidatorScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.49s-fs-validator", poolFullname),

@@ -171,7 +171,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 			},
 		},
 		{
-			Name: fmt.Sprintf("%.51s-configurator", fullname),
+			Name: redpanda.ConfiguratorScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.51s-configurator", poolFullname),
@@ -183,7 +183,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 
 	if pool.Statefulset.InitContainers.FSValidator.Enabled {
 		volumes = append(volumes, corev1.Volume{
-			Name: fmt.Sprintf("%.49s-fs-validator", fullname),
+			Name: redpanda.FSValidatorScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.49s-fs-validator", poolFullname),
@@ -404,7 +404,11 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	return mounts
 }
 
+// StatefulSetInitContainers resolves this chart's values into the init
+// container renderer shared with the operator's multicluster renderer, which
+// never sees chart values or a Pool itself.
 func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container {
+<<<<<<< HEAD
 	var containers []corev1.Container
 	if c := statefulSetInitContainerTuning(state); c != nil {
 		containers = append(containers, *c)
@@ -466,16 +470,22 @@ func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
 			`/bin/bash`,
 			`-c`,
 			`rpk redpanda tune all`,
+=======
+	renderer := redpanda.InitContainerRenderer{
+		Image:        fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
+		InitImage:    fmt.Sprintf(`%s:%s`, pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
+		SidecarImage: fmt.Sprintf(`%s:%s`, pool.Statefulset.SideCars.Image.Repository, pool.Statefulset.SideCars.Image.Tag),
+		CommonMounts: CommonMounts(state),
+		Configurator: &redpanda.ConfiguratorInitContainer{
+			MountAPIToken: state.Values.RackAwareness.Enabled,
+			AdditionalEnv: rpkEnvVars(state, nil),
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 		},
-		SecurityContext: &corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Add: []corev1.Capability{`SYS_RESOURCE`},
-			},
-			Privileged:   ptr.To(true),
-			RunAsNonRoot: ptr.To(false),
-			RunAsUser:    ptr.To(int64(0)),
-			RunAsGroup:   ptr.To(int64(0)),
+		Bootstrap: &redpanda.BootstrapInitContainer{
+			Env:               BootstrapTemplateEnvVars(state),
+			AdditionalCLIArgs: state.Values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs,
 		},
+<<<<<<< HEAD
 		VolumeMounts: append(
 			CommonMounts(state),
 			corev1.VolumeMount{
@@ -700,30 +710,53 @@ chroot /host /bin/bash -c '
 func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool Pool) *corev1.Container {
 	if !pool.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
 		return nil
+=======
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 	}
 
-	uid, gid := securityContextUidGid(state, pool, "set-datadir-ownership")
-
-	return &corev1.Container{
-		Name:  SetDataDirectoryOwnershipContainerName,
-		Image: fmt.Sprintf("%s:%s", pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
-		Command: []string{
-			`/bin/sh`,
-			`-c`,
-			fmt.Sprintf(`chown %d:%d -R /var/lib/redpanda/data`, uid, gid),
-		},
-		SecurityContext: &corev1.SecurityContext{
-			RunAsUser:  ptr.To[int64](0),
-			RunAsGroup: ptr.To[int64](0),
-		},
-		VolumeMounts: append(
-			CommonMounts(state),
-			corev1.VolumeMount{
-				Name:      `datadir`,
-				MountPath: `/var/lib/redpanda/data`,
-			},
-		),
+	if state.Values.Tuning.TuneAIOEvents {
+		renderer.Tuning = &redpanda.TuningInitContainer{
+			OnHost: state.Values.Tuning.ApplyHostTuners,
+		}
 	}
+
+	// securityContextUidGid panics when the pod template specifies neither
+	// runAsUser nor fsGroup, so it's resolved inside these branches: a chart
+	// that never chowns anything must not fail to render over an ownership it
+	// doesn't need.
+	if pool.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
+		uid, gid := securityContextUidGid(state, pool, redpanda.SetDataDirectoryOwnershipContainerName)
+		renderer.DataDirOwnership = &redpanda.DataDirOwnershipInitContainer{UID: uid, GID: gid}
+	}
+
+	if pool.Statefulset.InitContainers.FSValidator.Enabled {
+		renderer.FSValidator = &redpanda.FSValidatorInitContainer{
+			ExpectedFS: pool.Statefulset.InitContainers.FSValidator.ExpectedFS,
+		}
+	}
+
+	if state.Values.Storage.IsTieredStorageEnabled() {
+		uid, gid := securityContextUidGid(state, pool, redpanda.SetTieredStorageCacheOwnershipContainerName)
+
+		// An empty volume name tells the renderer the cache directory lives on
+		// the datadir volume and needs no mount of its own.
+		cacheVolumeName := ""
+		if state.Values.Storage.TieredMountType() != "none" {
+			cacheVolumeName = "tiered-storage-dir"
+			if state.Values.Storage.PersistentVolume != nil && state.Values.Storage.PersistentVolume.NameOverwrite != "" {
+				cacheVolumeName = state.Values.Storage.PersistentVolume.NameOverwrite
+			}
+		}
+
+		renderer.TieredStorageCacheOwnership = &redpanda.TieredStorageCacheOwnershipInitContainer{
+			UID:             uid,
+			GID:             gid,
+			CacheDirectory:  state.Values.Storage.TieredCacheDirectory(state),
+			CacheVolumeName: cacheVolumeName,
+		}
+	}
+
+	return renderer.Render()
 }
 
 //nolint:stylecheck
@@ -774,6 +807,7 @@ func giduidFromPodTemplate(tpl *PodTemplate, containerName string) (*int64, *int
 	return gid, uid
 }
 
+<<<<<<< HEAD
 func statefulSetInitContainerFSValidator(state *RenderState, pool Pool) *corev1.Container {
 	if !pool.Statefulset.InitContainers.FSValidator.Enabled {
 		return nil
@@ -921,6 +955,8 @@ func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container 
 	}
 }
 
+=======
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 	var containers []corev1.Container
 	containers = append(containers, statefulSetContainerRedpanda(state, pool))
@@ -930,7 +966,11 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 	return containers
 }
 
+<<<<<<< HEAD
 // wrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
+=======
+// WrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 //   - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
 //   - It redirect stderr to stdout so all logs from cmd get the same treatment.
 //   - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
@@ -943,8 +983,13 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 //   - It still terminates the entire command with "true" so non-zero exits
 //     don't poison container lifecycle on transient hook issues. The TIMEOUT
 //     marker above is the diagnostic signal operators grep for.
+<<<<<<< HEAD
 func wrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
 	wrapped := helmette.Join(" ", cmd)
+=======
+func WrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
+	wrapped := strings.Join(cmd, " ")
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 	script := fmt.Sprintf(
 		`timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1`+"\n"+
 			`ec=${PIPESTATUS[0]}`+"\n"+
@@ -968,7 +1013,11 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			// finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
 			PostStart: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
+<<<<<<< HEAD
 					Command: wrapLifecycleHook(
+=======
+					Command: WrapLifecycleHook(
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 						"post-start",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"},
@@ -977,7 +1026,11 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			},
 			PreStop: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
+<<<<<<< HEAD
 					Command: wrapLifecycleHook(
+=======
+					Command: WrapLifecycleHook(
+>>>>>>> e5676e1f (charts/redpanda, multicluster: share init container rendering)
 						"pre-stop",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"},
