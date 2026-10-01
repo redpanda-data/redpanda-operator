@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/rest"
@@ -29,6 +28,7 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func TestFieldManagers(t *testing.T) {
@@ -39,7 +39,7 @@ func TestFieldManagers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	installCRDs(t, ctl)
+	testutils.InstallCRDs(t, ctl, crds.All()...)
 
 	for name, fn := range map[string]func(*testing.T, *rest.Config){
 		"migrates undesired managers":    migratesUndesiredManagers,
@@ -339,19 +339,6 @@ func migratesHelmControllerProbeConflict(t *testing.T, config *rest.Config) {
 	k8sClient, err := client.New(config, client.Options{Scheme: scheme})
 	require.NoError(t, err)
 
-	// install our CRDs
-	require.NoError(t, kube.ApplyAll(t.Context(), helmctl, crds.All()...))
-	for _, crd := range crds.All() {
-		require.NoError(t, kube.WaitFor(t.Context(), helmctl, crd.DeepCopy(), func(ext *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-			for _, cond := range ext.Status.Conditions {
-				if cond.Type == apiextensionsv1.Established && cond.Status == apiextensionsv1.ConditionTrue {
-					return true, nil
-				}
-			}
-			return false, nil
-		}))
-	}
-
 	// Create a Redpanda cluster for ownership
 	cluster := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
@@ -473,21 +460,6 @@ func migratesHelmControllerProbeConflict(t *testing.T, config *rest.Config) {
 	require.Nil(t, probe.Exec, "exec probe should be gone after migration + re-apply")
 	require.NotNil(t, probe.TCPSocket, "tcp probe should be the only one remaining")
 	require.Equal(t, intstr.FromInt32(9644), probe.TCPSocket.Port)
-}
-
-func installCRDs(t *testing.T, ctl *kube.Ctl) {
-	t.Helper()
-	require.NoError(t, kube.ApplyAll(t.Context(), ctl, crds.All()...))
-	for _, crd := range crds.All() {
-		require.NoError(t, kube.WaitFor(t.Context(), ctl, crd.DeepCopy(), func(ext *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-			for _, cond := range ext.Status.Conditions {
-				if cond.Type == apiextensionsv1.Established && cond.Status == apiextensionsv1.ConditionTrue {
-					return true, nil
-				}
-			}
-			return false, nil
-		}))
-	}
 }
 
 func getFieldManagers(o client.Object) []string {
