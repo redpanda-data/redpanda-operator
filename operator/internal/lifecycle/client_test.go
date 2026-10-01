@@ -242,6 +242,8 @@ func (tt *clientTest) Run(ctx context.Context, t *testing.T, name string, fn fun
 }
 
 func TestClientDeleteAll(t *testing.T) {
+	t.Parallel()
+
 	for name, tt := range map[string]*clientTest{
 		"no-op": {},
 		"overlapping-resources": {
@@ -358,6 +360,8 @@ func TestClientDeleteAll(t *testing.T) {
 }
 
 func TestClientWatchResources(t *testing.T) {
+	t.Parallel()
+
 	for name, tt := range map[string]struct {
 		watchedResources []string
 		ownedResources   []string
@@ -402,6 +406,8 @@ func TestClientWatchResources(t *testing.T) {
 }
 
 func TestClientFetchExistingAndDesiredPools(t *testing.T) {
+	t.Parallel()
+
 	for name, tt := range map[string]*clientTest{
 		"no-op": {},
 		"render-error": {
