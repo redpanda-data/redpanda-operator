@@ -15,3 +15,24 @@ commands:
     test "$(kubectl get brokers.cluster.redpanda.com -n $NAMESPACE -l $SEL --no-headers | wc -l)" = "3"
     test "$(kubectl get sts -n $NAMESPACE -l $SEL --no-headers 2>/dev/null | wc -l)" = "0"
     test "$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.spec.containers[?(@.name=="redpanda")].image}{"\n"}{end}' | grep -c 'redpandadata/redpanda:v24.2.24')" = "3"
+    # The configurator advertises the external listener on the NodePort
+    # Service's port, which is only known once that Service exists.
+    test "$(kubectl get pods -n $NAMESPACE -l $SEL -o jsonpath='{range .items[*]}{.spec.initContainers[?(@.name=="redpanda-configurator")].env[?(@.name=="HOST_PORT")].value}{"\n"}{end}' | grep -cx 30001)" = "3"
+    # Status is written only after the external node list succeeds, which
+    # needs the ordinal of every Broker pod.
+    kubectl wait --for=condition=OperatorQuiescent=True cluster/broker-upgrade -n $NAMESPACE --timeout=120s
+    external=$(kubectl get cluster broker-upgrade -n $NAMESPACE -o jsonpath='{range .status.nodes.external[*]}{@}{"\n"}{end}' | sort | tr '\n' ' ')
+    test "$external" = "0.test.subdomain.com:30001 1.test.subdomain.com:30001 2.test.subdomain.com:30001 "
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-upgrade-external
+spec:
+  ports:
+    - name: kafka-external
+      port: 30001
+      protocol: TCP
+      targetPort: 30001
+      nodePort: 30001
+  type: NodePort

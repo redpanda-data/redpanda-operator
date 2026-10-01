@@ -109,7 +109,6 @@ type StatefulSetResource struct {
 	serviceFQDN            string
 	serviceName            string
 	nodePortName           types.NamespacedName
-	nodePortSvc            corev1.Service
 	volumeProvider         resourcetypes.StatefulsetTLSVolumeProvider
 	adminTLSConfigProvider resourcetypes.AdminTLSConfigProvider
 	serviceAccountName     string
@@ -173,7 +172,6 @@ func NewStatefulSet(
 		serviceFQDN:                        serviceFQDN,
 		serviceName:                        serviceName,
 		nodePortName:                       nodePortName,
-		nodePortSvc:                        corev1.Service{},
 		volumeProvider:                     volumeProvider,
 		adminTLSConfigProvider:             adminTLSConfigProvider,
 		serviceAccountName:                 serviceAccountName,
@@ -201,18 +199,6 @@ func NewStatefulSet(
 func (r *StatefulSetResource) Ensure(ctx context.Context) error {
 	log := r.logger.WithName("StatefulSetResource.Ensure").WithValues("nodepool", r.nodePool.Name)
 	log.Info("Ensure")
-	if r.pandaCluster.ExternalListener() != nil {
-		err := r.Get(ctx, r.nodePortName, &r.nodePortSvc)
-		if err != nil {
-			return fmt.Errorf("failed to retrieve node port service %s: %w", r.nodePortName, err)
-		}
-
-		for _, port := range r.nodePortSvc.Spec.Ports {
-			if port.NodePort == 0 {
-				return fmt.Errorf("node port service %s, port %s is 0: %w", r.nodePortName, port.Name, errNodePortMissing)
-			}
-		}
-	}
 
 	obj, err := r.obj(ctx)
 	if err != nil {
@@ -340,7 +326,20 @@ func (r *StatefulSetResource) obj(
 	externalSubdomain := ""
 	externalAddressType := ""
 	externalEndpointTemplate := ""
+	var nodePortSvc corev1.Service
 	if externalListener != nil {
+		// Load the NodePort Service here, so any caller
+		// (Broker based rendering, StatefulSet rendering)
+		// doesn't need to do this on his own.
+		if err := r.Get(ctx, r.nodePortName, &nodePortSvc); err != nil {
+			return nil, fmt.Errorf("failed to retrieve node port service %s: %w", r.nodePortName, err)
+		}
+		for _, port := range nodePortSvc.Spec.Ports {
+			if port.NodePort == 0 {
+				return nil, fmt.Errorf("node port service %s, port %s is 0: %w", r.nodePortName, port.Name, errNodePortMissing)
+			}
+		}
+
 		externalSubdomain = externalListener.External.Subdomain
 		externalAddressType = externalListener.External.PreferredAddressType
 		externalEndpointTemplate = externalListener.External.EndpointTemplate
@@ -574,7 +573,7 @@ func (r *StatefulSetResource) obj(
 								},
 								{
 									Name:  "HOST_PORT",
-									Value: r.getNodePort(ExternalListenerName),
+									Value: getNodePort(&nodePortSvc, ExternalListenerName),
 								},
 								{
 									Name:  "RACK_AWARENESS",
@@ -584,7 +583,7 @@ func (r *StatefulSetResource) obj(
 									Name:  "VALIDATE_MOUNTED_VOLUME",
 									Value: strconv.FormatBool(r.pandaCluster.Spec.InitialValidationForVolume != nil && *r.pandaCluster.Spec.InitialValidationForVolume),
 								},
-							}, append(r.pandaproxyEnvVars(), r.AdditionalListenersEnvVars()...)...),
+							}, append(r.pandaproxyEnvVars(&nodePortSvc), r.AdditionalListenersEnvVars()...)...),
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser:                ptr.To(int64(userID)),
 								RunAsGroup:               ptr.To(int64(groupID)),
@@ -660,7 +659,7 @@ func (r *StatefulSetResource) obj(
 									Name:          "rpc",
 									ContainerPort: int32(r.pandaCluster.Spec.Configuration.RPCServer.Port),
 								},
-							}, r.getPorts()...),
+							}, r.getPorts(&nodePortSvc)...),
 							ReadinessProbe: &corev1.Probe{
 								TimeoutSeconds: 5,
 								ProbeHandler: corev1.ProbeHandler{
@@ -1035,20 +1034,20 @@ func prepareAdditionalArguments(
 }
 
 // TODO: lift this into configuration construction
-func (r *StatefulSetResource) pandaproxyEnvVars() []corev1.EnvVar {
+func (r *StatefulSetResource) pandaproxyEnvVars(nodePortSvc *corev1.Service) []corev1.EnvVar {
 	var envs []corev1.EnvVar
 	listener := r.pandaCluster.PandaproxyAPIExternal()
 	if listener != nil {
 		envs = append(envs, corev1.EnvVar{
 			Name:  "PROXY_HOST_PORT",
-			Value: r.getNodePort(PandaproxyPortExternalName),
+			Value: getNodePort(nodePortSvc, PandaproxyPortExternalName),
 		})
 	}
 	return envs
 }
 
-func (r *StatefulSetResource) getNodePort(name string) string {
-	for _, port := range r.nodePortSvc.Spec.Ports {
+func getNodePort(nodePortSvc *corev1.Service, name string) string {
+	for _, port := range nodePortSvc.Spec.Ports {
 		if port.Name == name {
 			return strconv.FormatInt(int64(port.NodePort), 10)
 		}
@@ -1080,7 +1079,7 @@ func (r *StatefulSetResource) portsConfiguration() string {
 	return fmt.Sprintf("--advertise-rpc-addr=$(POD_NAME).%s:%d", serviceFQDN, rpcAPIPort)
 }
 
-func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
+func (r *StatefulSetResource) getPorts(nodePortSvc *corev1.Service) []corev1.ContainerPort {
 	ports := []corev1.ContainerPort{{
 		Name:          AdminPortName,
 		ContainerPort: int32(r.pandaCluster.AdminAPIInternal().Port),
@@ -1108,8 +1107,8 @@ func (r *StatefulSetResource) getPorts() []corev1.ContainerPort {
 
 	ports = append(ports, r.GetPortsForListenersInAdditionalConfig()...)
 
-	if len(r.nodePortSvc.Spec.Ports) > 0 {
-		for _, port := range r.nodePortSvc.Spec.Ports {
+	if len(nodePortSvc.Spec.Ports) > 0 {
+		for _, port := range nodePortSvc.Spec.Ports {
 			ports = append(ports, corev1.ContainerPort{
 				Name: port.Name,
 				// To distinguish external from internal clients the new listener

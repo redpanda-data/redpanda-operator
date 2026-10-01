@@ -19,6 +19,13 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
+// rpkSASLEnvironmentVariables is the set of environment variables rpk reads
+// SASL credentials from. The REDPANDA_SASL_* spelling it replaced was only
+// needed for Redpanda older than v23.2.1.
+//
+// was:   rpk sasl environment variables
+const rpkSASLEnvironmentVariables = `RPK_USER RPK_PASS RPK_SASL_MECHANISM`
+
 // Notes is the entrypoint for NOTES.txt, which is rendered outside of
 // [render] and therefore has no [RenderState] of its own.
 func Notes(dot *helmette.Dot) []string {
@@ -70,11 +77,14 @@ func notes(state *RenderState) []string {
 			``,
 			`If you are using the load balancer service with a cloud provider, the services will likely have automatically-generated addresses. In this scenario the advertised listeners must be updated in order for external access to work. Run the following command once Redpanda is deployed:`,
 			``,
-			// Yes, this really is a jsonpath string to be exposed to the user
-			fmt.Sprintf(`  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')`,
-				Name(state),
+			// Yes, this really is a jsonpath string to be exposed to the user.
+			fmt.Sprintf(`  helm upgrade %s redpanda/redpanda --reuse-values -n %s --set $(kubectl get svc -n %s -l app.kubernetes.io/instance=%s,%s=%s -o jsonpath='{"external.addresses={"}{ range .items[*]}{.status.loadBalancer.ingress[0].ip }{.status.loadBalancer.ingress[0].hostname}{","}{ end }{"}\n"}')`,
+				state.Release.Name,
 				state.Release.Namespace,
 				state.Release.Namespace,
+				state.Release.Name,
+				loadBalancerTypeLabelKey,
+				loadBalancerTypeLabelValue,
 			),
 		)
 	}
@@ -93,24 +103,50 @@ func notes(state *RenderState) []string {
 		} else {
 			external = state.Values.Listeners.Kafka.TLS.Cert
 		}
+		serverCert := state.Values.TLS.Certs.MustGet(external)
 		out = append(out,
-			fmt.Sprintf(`  kubectl get secret -n %s %s-%s-cert -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt`,
+			fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "ca.crt" | base64decode }}' > ca.crt`,
 				state.Release.Namespace,
-				Fullname(state),
-				external,
+				serverCert.ServerSecretName(state, external),
 			),
 		)
-		if state.Values.Listeners.Kafka.TLS.RequireClientAuth || state.Values.Listeners.Admin.TLS.RequireClientAuth {
+		// One fetch per listener requiring client auth: rpk presents the
+		// kafka listener's client cert on the kafka API and the admin
+		// listener's on the admin API (see rpk*ClientTLSConfiguration).
+		var kafkaClientSecret string
+		if state.Values.Listeners.Kafka.TLS.RequireClientAuth {
+			certName := state.Values.Listeners.Kafka.TLS.Cert
+			cert := state.Values.TLS.Certs.MustGet(certName)
+			kafkaClientSecret = cert.ClientSecretName(state, certName)
 			out = append(out,
-				fmt.Sprintf(`  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt`,
+				fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.crt" | base64decode }}' > tls.crt`,
 					state.Release.Namespace,
-					Fullname(state),
+					kafkaClientSecret,
 				),
-				fmt.Sprintf(`  kubectl get secret -n %s %s-client -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key`,
+				fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.key" | base64decode }}' > tls.key`,
 					state.Release.Namespace,
-					Fullname(state),
+					kafkaClientSecret,
 				),
 			)
+		}
+		if state.Values.Listeners.Admin.TLS.RequireClientAuth {
+			certName := state.Values.Listeners.Admin.TLS.Cert
+			cert := state.Values.TLS.Certs.MustGet(certName)
+			clientSecretName := cert.ClientSecretName(state, certName)
+			// Both APIs commonly share one client cert; the kafka fetch
+			// above already wrote it.
+			if clientSecretName != kafkaClientSecret {
+				out = append(out,
+					fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.crt" | base64decode }}' > admin-tls.crt`,
+						state.Release.Namespace,
+						clientSecretName,
+					),
+					fmt.Sprintf(`  kubectl get secret -n %s %s -o go-template='{{ index .data "tls.key" | base64decode }}' > admin-tls.key`,
+						state.Release.Namespace,
+						clientSecretName,
+					),
+				)
+			}
 		}
 	}
 	out = append(out,
@@ -131,13 +167,16 @@ func notes(state *RenderState) []string {
 			``,
 			`Set the credentials in the environment:`,
 			``,
-			fmt.Sprintf(`  kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}" | IFS=: read -r %s`,
+			// In bash, `read` at the end of a pipeline runs in a subshell and
+			// its variables vanish; process substitution keeps them in the
+			// user's shell.
+			fmt.Sprintf(`  IFS=: read -r %s < <(kubectl -n %s get secret %s -o go-template="{{ range .data }}{{ . | base64decode }}{{ end }}")`,
+				rpkSASLEnvironmentVariables,
 				state.Release.Namespace,
 				state.Values.Auth.SASL.SecretRef,
-				rpkSASLEnvironmentVariables(state),
 			),
 			fmt.Sprintf(`  export %s`,
-				rpkSASLEnvironmentVariables(state),
+				rpkSASLEnvironmentVariables,
 			),
 		)
 	}
@@ -176,16 +215,4 @@ func notes(state *RenderState) []string {
 	)
 
 	return out
-}
-
-// was:   rpk sasl environment variables
-//
-// This will return a string with the correct environment variables to use for SASL based on the
-// version of the redpanda container being used
-func rpkSASLEnvironmentVariables(state *RenderState) string {
-	if RedpandaAtLeast_23_2_1(state) {
-		return `RPK_USER RPK_PASS RPK_SASL_MECHANISM`
-	} else {
-		return `REDPANDA_SASL_USERNAME REDPANDA_SASL_PASSWORD REDPANDA_SASL_MECHANISM`
-	}
 }

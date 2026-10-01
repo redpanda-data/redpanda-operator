@@ -1,0 +1,7 @@
+project: operator
+kind: Changed
+body: |-
+    `values.schema.json` now emits each type once under `$defs` and references it, rather than inlining every use site. The schema is unchanged in what it accepts, with one exception noted below, and is 3-5x smaller -- which every `helm template`, `helm install`, and `helm upgrade` pays to compile.
+
+      Arrays nested inside a list or map of objects (for example `podTemplate.spec.containers[].args`) now accept `null` as well as a list, matching how arrays elsewhere in the schema already behaved.
+time: 2026-09-21T18:00:00.000000-04:00

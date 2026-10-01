@@ -52,11 +52,22 @@ func Must[T any](value T, err error) T {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	// $defs keys are interpolated into `$ref` JSON pointers verbatim, and those
+	// split on `/`. Percent encoding does not help -- the resolver decodes before
+	// parsing the pointer -- and RFC 6901's `~1`, which would, can't be applied to
+	// only one side when both come from this string.
+	defsKey := strings.NewReplacer("/", ".", "[", "_", "]", "", ",", "_", " ", "")
+
 	r := &jsonschema.Reflector{
-		//  These values are set to minimize the diff between the
-		// handwritten jsonschema and the generated jsonschema.
 		ExpandedStruct: true,
-		DoNotReference: true,
+		DoNotReference: false,
+
+		Namer: func(t reflect.Type) string {
+			if t.Name() == "" {
+				return ""
+			}
+			return defsKey.Replace(t.PkgPath() + "." + t.Name())
+		},
 
 		// Explicitly deny any keys that aren't accept by the chart. This
 		// prevents indent issues, typos, and usage of values from an older
@@ -164,7 +175,17 @@ func run(cmd *cobra.Command, args []string) {
 	fmt.Printf("%s\n", data)
 }
 
+// makeArrayNullableRecursive rewrites array valued properties to also accept
+// null, matching how the charts unmarshal them.
+//
+// [jsonschema.Reflector] emits each struct type once under $defs and refs it
+// from use sites, so Definitions has to be walked too; refs themselves are not
+// arrays and are skipped by the type check.
 func makeArrayNullableRecursive(schema *jsonschema.Schema) {
+	for _, def := range schema.Definitions {
+		makeArrayNullableRecursive(def)
+	}
+
 	for pair := schema.Properties.Oldest(); pair != nil; pair = pair.Next() {
 		if pair.Value.Type == "array" {
 			schema.Properties.Set(pair.Key, &jsonschema.Schema{

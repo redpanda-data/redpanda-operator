@@ -146,6 +146,13 @@ type RoleStatus struct {
 	// reconciled. This is used to detect role renames and clean up the old role.
 	// +optional
 	EffectiveRoleName string `json:"effectiveRoleName,omitempty"`
+	// Records the effective role name that an in-progress rename is moving to.
+	// It is recorded alongside the failure that interrupted the rename and
+	// cleared once the rename completes, so that the rename can be retried, or
+	// its half-created role cleaned up if the spec reverts to the previous
+	// name in the meantime. Absent when no rename is in flight.
+	// +optional
+	PendingEffectiveRoleName string `json:"pendingEffectiveRoleName,omitempty"`
 }
 
 // RedpandaRoleList contains a list of Redpanda role objects.

@@ -82,3 +82,19 @@ func TestClusterCreateArgs(t *testing.T) {
 		}
 	})
 }
+
+func TestNormalizeImageRef(t *testing.T) {
+	for given, want := range map[string]string{
+		"localhost/redpanda-operator:dev":                "localhost/redpanda-operator:dev",
+		"redpandadata/redpanda:v25.2.1":                  "docker.io/redpandadata/redpanda:v25.2.1",
+		"rancher/mirrored-library-busybox:1.36.1":        "docker.io/rancher/mirrored-library-busybox:1.36.1",
+		"busybox:1.36.1":                                 "docker.io/library/busybox:1.36.1",
+		"busybox":                                        "docker.io/library/busybox:latest",
+		"redpandadata/redpanda":                          "docker.io/redpandadata/redpanda:latest",
+		"quay.io/jetstack/cert-manager-controller:v1.17": "quay.io/jetstack/cert-manager-controller:v1.17",
+		"ghcr.io/loft-sh/vcluster-pro:4.4.0":             "ghcr.io/loft-sh/vcluster-pro:4.4.0",
+		"registry:5000/img":                              "registry:5000/img:latest",
+	} {
+		require.Equal(t, want, normalizeImageRef(given), "input %q", given)
+	}
+}

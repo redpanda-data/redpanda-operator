@@ -48,7 +48,7 @@ func backupStatefulSetPayload(sts *appsv1.StatefulSet) ([]byte, error) {
 // ensureMigration runs the StatefulSet→Broker CR migration state machine.
 //
 // State 0→1: Create shadow Broker CRs + back up STS spec to ConfigMap.
-// State 1→2: Verify PVC retention, orphan-delete STS.
+// State 1→2: Orphan-delete STS.
 //
 // The Broker controller handles pod adoption once pods are orphaned.
 //
@@ -146,14 +146,14 @@ func (s *BrokerSet) ensureMigration(ctx context.Context, l logr.Logger, sts, des
 		}
 	}
 
-	// State 1→2: verify retention, orphan-delete STS.
+	// State 1→2: orphan-delete STS.
 	// We rely solely on orphan propagation to strip the STS ownerRef from
 	// pods and PVCs. Manually stripping ownerRefs before deletion creates a
 	// race where the STS controller re-adopts pods in the gap, which can
-	// lead to pod deletion.
-	if err := verifyPVCRetention(sts); err != nil {
-		return errors.Wrap(err, "migration precondition failed")
-	}
+	// lead to pod deletion. A Delete PVC retention policy (--auto-delete-pvcs)
+	// changes nothing here: it only owner-references the claims to the
+	// StatefulSet, and a non-cascading delete removes those references
+	// rather than following them (KEP-1847: "no PVC will be deleted").
 
 	l.Info("migration: orphan-deleting StatefulSet", "name", sts.Name)
 	if err := s.Client.Delete(ctx, sts, k8sclient.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !apierrors.IsNotFound(err) {
@@ -288,16 +288,4 @@ func (s *BrokerSet) ensureBackupConfigMap(ctx context.Context, l logr.Logger, st
 	l.Info("migration: applying STS backup ConfigMap", "name", cmName, "pool", s.PoolName)
 	return s.Client.Apply(ctx, cm,
 		k8sclient.ForceOwnership, k8sclient.FieldOwner("brokerset-migration-"+s.PoolName))
-}
-
-func verifyPVCRetention(sts *appsv1.StatefulSet) error {
-	p := sts.Spec.PersistentVolumeClaimRetentionPolicy
-	if p == nil {
-		return nil // default is Retain/Retain
-	}
-	if p.WhenDeleted == appsv1.DeletePersistentVolumeClaimRetentionPolicyType ||
-		p.WhenScaled == appsv1.DeletePersistentVolumeClaimRetentionPolicyType {
-		return errors.Newf("StatefulSet %s has PVC retention policy with Delete; refusing migration to avoid data loss", sts.Name)
-	}
-	return nil
 }

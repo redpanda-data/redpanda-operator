@@ -1381,6 +1381,12 @@ func waitForStatefulSetReadyInTheNode(ctx context.Context, node *vclusterNode) e
 	if err := node.List(ctx, &stsList, client.InNamespace("default"), client.MatchingLabels{redpandaLabel: redpandaLabelValue}); err != nil {
 		return fmt.Errorf("error listing statefulsets in %s: %v", node.Name(), err)
 	}
+	// Ready requires at least one StatefulSet to exist: with an empty list
+	// the loop below would fall through and report a cluster with nothing
+	// rendered as ready.
+	if len(stsList.Items) == 0 {
+		return fmt.Errorf("no redpanda statefulset rendered in %s yet", node.Name())
+	}
 	for _, sts := range stsList.Items {
 		if sts.Spec.Replicas != nil && sts.Status.ReadyReplicas == *sts.Spec.Replicas && *sts.Spec.Replicas > 0 {
 			continue

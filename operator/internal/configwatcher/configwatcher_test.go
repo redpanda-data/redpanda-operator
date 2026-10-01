@@ -13,12 +13,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -459,17 +461,192 @@ func TestSyncAllToleratesNonUsersFileBlobs(t *testing.T) {
 	<-done
 }
 
+// TestWatchRetriesAdminAPIFailures runs the watch loop against an admin API
+// that fails in different ways and checks which failures a sync pass retries
+// until they clear, which it skips, and that a complete pass still patches
+// superusers exactly once.
+func TestWatchRetriesAdminAPIFailures(t *testing.T) {
+	// See TestWatchRecoversFromIncompleteSyncPass: the dangling-symlink row
+	// relies on inotify accepting it at Add time.
+	if runtime.GOOS != "linux" {
+		t.Skipf("the fsnotify watch loop relies on inotify semantics; GOOS=%s uses kqueue", runtime.GOOS)
+	}
+
+	const bootstrapUser = "admin-bootstrap"
+	const password = "password"
+	const saslMechanism = "SCRAM-SHA-512"
+
+	t.Setenv("RPK_USER", bootstrapUser)
+	t.Setenv("RPK_PASS", password)
+	t.Setenv("RPK_SASL_MECHANISM", saslMechanism)
+
+	// rpadmin retries every request this many times itself (pester's
+	// MaxRetries) before returning an error; refusing exactly that many
+	// exhausts it, so the fourth attempt can only come from the watcher's
+	// own retry of the pass.
+	const adminAPIAttempts = 3
+	isPatch := func(r *http.Request) bool {
+		return r.Method == http.MethodPut && r.URL.Path == "/v1/cluster_config"
+	}
+
+	for _, tc := range []struct {
+		name         string
+		users        []string
+		unreadable   bool
+		refuse       int
+		refuseStatus int
+		refuseMatch  func(*http.Request) bool
+		wantUsers    []string
+		// wantPatch is the single expected superusers patch; nil means the
+		// patch must be withheld.
+		wantPatch []string
+	}{
+		{
+			name:      "broker not listening yet",
+			users:     []string{createUserLine("alice", password, "SCRAM-SHA-512"), createUserLine("bob", password, "SCRAM-SHA-256")},
+			refuse:    adminAPIAttempts,
+			wantUsers: []string{bootstrapUser, "alice", "bob"},
+			wantPatch: []string{bootstrapUser, "alice", "bob"},
+		},
+		{
+			name:         "admin API unavailable",
+			users:        []string{createUserLine("alice", password, "SCRAM-SHA-512"), createUserLine("bob", password, "SCRAM-SHA-256")},
+			refuse:       adminAPIAttempts,
+			refuseStatus: http.StatusServiceUnavailable,
+			wantUsers:    []string{bootstrapUser, "alice", "bob"},
+			wantPatch:    []string{bootstrapUser, "alice", "bob"},
+		},
+		{
+			name:         "superusers patch fails",
+			users:        []string{createUserLine("alice", password, "SCRAM-SHA-512"), createUserLine("bob", password, "SCRAM-SHA-256")},
+			refuse:       adminAPIAttempts,
+			refuseStatus: http.StatusServiceUnavailable,
+			refuseMatch:  isPatch,
+			wantUsers:    []string{bootstrapUser, "alice", "bob"},
+			wantPatch:    []string{bootstrapUser, "alice", "bob"},
+		},
+		{
+			// The API rejects carol's mechanism on every attempt, so the pass
+			// skips her rather than retrying forever. Her name still goes
+			// into the superusers list, which holds names, not credentials.
+			name:      "rejected user is skipped",
+			users:     []string{createUserLine("alice", password, "SCRAM-SHA-512"), createUserLine("carol", password, "INVALID"), createUserLine("bob", password, "SCRAM-SHA-256")},
+			wantUsers: []string{bootstrapUser, "alice", "bob"},
+			wantPatch: []string{bootstrapUser, "alice", "bob", "carol"},
+		},
+		{
+			// The directory walk stops at the dangling symlink, which sorts
+			// before users.txt, so only the internal user gets synced.
+			name:       "unreadable users file withholds the patch",
+			users:      []string{createUserLine("alice", password, "SCRAM-SHA-512")},
+			unreadable: true,
+			wantUsers:  []string{bootstrapUser},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := testr.New(t)
+			ctx, cancel := context.WithCancel(log.IntoContext(context.Background(), logger))
+			defer cancel()
+
+			admin := newFakeAdminAPI()
+			admin.refuseNext(tc.refuse, tc.refuseStatus, tc.refuseMatch)
+			server := httptest.NewServer(admin)
+			t.Cleanup(server.Close)
+
+			usersDir := t.TempDir()
+			require.NoError(t, os.WriteFile(filepath.Join(usersDir, "users.txt"), []byte(strings.Join(tc.users, "\n")), 0o644))
+			if tc.unreadable {
+				require.NoError(t, os.Symlink(filepath.Join("..data", "missing.txt"), filepath.Join(usersDir, "dangling.txt")))
+			}
+			configPath := filepath.Join(t.TempDir(), "redpanda.yaml")
+			require.NoError(t, os.WriteFile(configPath, []byte(createRedpandaYaml(server.URL, bootstrapUser, password, saslMechanism)), 0o644))
+
+			initialized := make(chan struct{})
+			watcher := configwatcher.NewConfigWatcher(
+				logger,
+				true,
+				configwatcher.WithFs(afero.NewOsFs()),
+				configwatcher.WithRedpandaConfigPath(configPath),
+				configwatcher.WithUsersDirectory(usersDir),
+				configwatcher.WithInitializedSignal(initialized),
+			)
+
+			errCh := make(chan error, 1)
+			done := make(chan struct{})
+			go func() {
+				defer close(done)
+				if err := watcher.Start(ctx); err != nil {
+					errCh <- err
+				}
+			}()
+			defer func() {
+				cancel()
+				<-done
+			}()
+
+			select {
+			case <-initialized:
+			case err := <-errCh:
+				require.NoError(t, err)
+			}
+
+			if tc.wantPatch == nil {
+				// Long enough for the initial pass and its first retries.
+				time.Sleep(time.Second)
+				require.Empty(t, admin.superuserPatches())
+				require.ElementsMatch(t, tc.wantUsers, admin.userNames())
+				return
+			}
+
+			require.Eventually(t, func() bool { return len(admin.superuserPatches()) > 0 }, 15*time.Second, 25*time.Millisecond,
+				"no superusers patch arrived: the failed pass was never retried")
+			require.Zero(t, admin.refusalsLeft(), "the fake never got to refuse anything")
+			patches := admin.superuserPatches()
+			require.Len(t, patches, 1)
+			require.ElementsMatch(t, tc.wantPatch, patches[0])
+			require.ElementsMatch(t, tc.wantUsers, admin.userNames())
+
+			// A rerun over unchanged input is complete and hits the equality
+			// skip.
+			require.True(t, watcher.SyncAll(ctx))
+			require.Len(t, admin.superuserPatches(), 1)
+		})
+	}
+}
+
 // fakeAdminAPI implements just enough of the Redpanda admin API for the
-// watcher: user creation and cluster config reads/patches, recording every
-// value the superusers property is patched with.
+// watcher: user creation, update and deletion, and cluster config
+// reads/patches, recording the users it holds and every value the
+// superusers property is patched with. It can be told to refuse the next n
+// matching requests, either with an HTTP status or by dropping the
+// connection.
 type fakeAdminAPI struct {
 	mu      sync.Mutex
 	config  map[string]any
 	patches [][]string
+	users   map[string]string
+
+	refuse       int
+	refuseStatus int
+	refuseMatch  func(*http.Request) bool
 }
 
 func newFakeAdminAPI() *fakeAdminAPI {
-	return &fakeAdminAPI{config: map[string]any{}}
+	return &fakeAdminAPI{config: map[string]any{}, users: map[string]string{}}
+}
+
+// refuseNext makes the next n requests accepted by match (every request when
+// nil) fail with status, or with a dropped connection when status is 0.
+func (f *fakeAdminAPI) refuseNext(n, status int, match func(*http.Request) bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.refuse, f.refuseStatus, f.refuseMatch = n, status, match
+}
+
+func (f *fakeAdminAPI) refusalsLeft() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.refuse
 }
 
 func (f *fakeAdminAPI) superuserPatches() [][]string {
@@ -478,10 +655,26 @@ func (f *fakeAdminAPI) superuserPatches() [][]string {
 	return slices.Clone(f.patches)
 }
 
+func (f *fakeAdminAPI) userNames() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return slices.Collect(maps.Keys(f.users))
+}
+
 func (f *fakeAdminAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
+	if f.refuse > 0 && (f.refuseMatch == nil || f.refuseMatch(r)) {
+		f.refuse--
+		if f.refuseStatus == 0 {
+			panic(http.ErrAbortHandler)
+		}
+		http.Error(w, `{"message":"not ready","code":`+strconv.Itoa(f.refuseStatus)+`}`, f.refuseStatus)
+		return
+	}
+
+	const usersPath = "/v1/security/users"
 	switch {
 	case r.Method == http.MethodGet && r.URL.Path == "/v1/cluster_config":
 		_ = json.NewEncoder(w).Encode(f.config)
@@ -503,7 +696,32 @@ func (f *fakeAdminAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"config_version": len(f.patches)})
 
-	case strings.HasPrefix(r.URL.Path, "/v1/security/users"):
+	case r.Method == http.MethodPost && r.URL.Path == usersPath:
+		var body struct {
+			Username  string `json:"username"`
+			Algorithm string `json:"algorithm"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		switch _, exists := f.users[body.Username]; {
+		case body.Algorithm == "INVALID":
+			http.Error(w, `{"message":"Unsupported mechanism","code":400}`, http.StatusBadRequest)
+		case exists:
+			http.Error(w, `{"message":"User already exists","code":400}`, http.StatusBadRequest)
+		default:
+			f.users[body.Username] = body.Algorithm
+			_, _ = w.Write([]byte("{}"))
+		}
+
+	case r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, usersPath+"/"):
+		var body struct {
+			Algorithm string `json:"algorithm"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		f.users[strings.TrimPrefix(r.URL.Path, usersPath+"/")] = body.Algorithm
+		_, _ = w.Write([]byte("{}"))
+
+	case r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, usersPath+"/"):
+		delete(f.users, strings.TrimPrefix(r.URL.Path, usersPath+"/"))
 		_, _ = w.Write([]byte("{}"))
 
 	default:

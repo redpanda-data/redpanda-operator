@@ -1,0 +1,30 @@
+project: operator
+kind: Added
+body: |-
+    `podTemplate` now applies to every workload the chart renders — the operator
+    Deployment, the CRD installation Job, and the post-upgrade migration Job —
+    rather than the Deployment alone.
+
+    New `deployment.podTemplate`, `jobs.crd.podTemplate`, and
+    `jobs.migration.podTemplate` layer per-workload overrides on top of it,
+    making the hook Jobs' container `securityContext` configurable.
+
+    Pod templates are merged using a form of strategic merge patch that keys on
+    unique names as defined by Kubernetes. For example: to apply container specific
+    overrides specify the name of the container you're targeting:
+
+    ```yaml
+    deployment:
+      podTemplate:
+        spec:
+          containers:
+          - name: manager # Targets the operators manager container
+            securityContext: { ... }
+    ```
+
+    As a consequence of the widened scope, both Jobs now inherit
+    `podTemplate`'s default pod `securityContext` (`runAsUser: 65532`), which
+    previously reached only the Deployment.
+
+    Fixes [#1287](https://github.com/redpanda-data/redpanda-operator/issues/1287).
+time: 2026-09-21T12:00:00.000000000-04:00

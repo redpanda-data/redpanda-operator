@@ -273,6 +273,19 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// Unmanaged Brokers are left entirely alone. Dropping the finalizer means
+	// deleting an unmanaged Broker skips release/decommission — its pod is
+	// GC'd along with the CR.
+	if !feature.V2Managed.Get(ctx, &broker) {
+		if controllerutil.RemoveFinalizer(&broker, brokerFinalizerName) {
+			if err := k8sClient.Update(ctx, &broker); err != nil {
+				l.Error(err, "updating broker finalizer")
+				return ignoreConflict(err)
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
 	if broker.DeletionTimestamp.IsZero() {
 		if !controllerutil.ContainsFinalizer(&broker, brokerFinalizerName) {
 			controllerutil.AddFinalizer(&broker, brokerFinalizerName)

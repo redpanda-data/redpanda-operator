@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    the SASL credential setup in the post-install notes works in bash:
+    `read` no longer runs in a pipeline subshell that discards the
+    variables before the `export`
+time: 2026-09-21T13:00:02.000000-07:00

@@ -25,7 +25,6 @@
 {{- $state := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_ := (get (fromJson (include "redpanda.checkVersion" (dict "a" (list $state)))) "r") -}}
 {{- $_ := (get (fromJson (include "redpanda.ExternalConfig.ValidateGateway" (dict "a" (list $state.Values.external)))) "r") -}}
 {{- $_ := (get (fromJson (include "redpanda.validateGatewayListeners" (dict "a" (list $state)))) "r") -}}
 {{- $manifests := (list (get (fromJson (include "redpanda.NodePortService" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.PodDisruptionBudget" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.ServiceAccount" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.ServiceInternal" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.ServiceMonitor" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.PostInstallUpgradeJob" (dict "a" (list $state)))) "r")) -}}
@@ -105,17 +104,6 @@
 {{- $_is_returning = true -}}
 {{- (dict "r" $manifests) | toJson -}}
 {{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "redpanda.checkVersion" -}}
-{{- $state := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- if (and (not (get (fromJson (include "redpanda.RedpandaAtLeast_22_2_0" (dict "a" (list $state)))) "r")) (not $state.Values.force)) -}}
-{{- $sv := (get (fromJson (include "redpanda.semver" (dict "a" (list $state)))) "r") -}}
-{{- $_ := (fail (printf "Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n" $sv)) -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 

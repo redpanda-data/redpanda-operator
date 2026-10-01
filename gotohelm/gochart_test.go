@@ -31,7 +31,7 @@ import (
 	"github.com/redpanda-data/common-go/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yamlv3 "gopkg.in/yaml.v3" //nolint:depguard // this is intentional
+	yamlv3 "go.yaml.in/yaml/v3" //nolint:depguard // this is intentional
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"

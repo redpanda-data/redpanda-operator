@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -109,9 +110,14 @@ type Release struct {
 // hermetic but shares a global cache to keep network chatter to a minimum. See
 // `helm env` for more details.
 type Client struct {
-	env        []string
-	configHome string
-	config     *action.Configuration
+	env            []string
+	configHome     string
+	registryClient *registry.Client
+
+	mu struct {
+		sync.Mutex
+		env map[string]string
+	}
 }
 
 type Options struct {
@@ -163,16 +169,9 @@ func New(opts Options) (*Client, error) {
 	}
 
 	return &Client{
-		config: &action.Configuration{
-			// NB: Currently, only `helm template` is "in process" as opposed
-			// to sub processing everything. If anything else is migrated to
-			// use this configuration, we'll probably want to use the secret
-			// storage engine for compatibilities with the `helm` CLI.
-			Releases:       storage.Init(driver.NewMemory()),
-			RegistryClient: registryClient,
-		},
-		configHome: opts.ConfigHome,
-		env:        append(os.Environ(), env...),
+		configHome:     opts.ConfigHome,
+		registryClient: registryClient,
+		env:            append(os.Environ(), env...),
 	}, nil
 }
 
@@ -317,7 +316,12 @@ func (c *Client) TemplateWithNotes(ctx context.Context, chart string, opts Templ
 	// Template.
 	// TODO: Support IsUpgrade and the like and find a nice way to inject a
 	// fake KubeClient.
-	client := action.NewInstall(c.config)
+	// NB: ClientOnly writes Capabilities, KubeClient, and Releases onto the
+	// Configuration. Each call needs its own instance.
+	client := action.NewInstall(&action.Configuration{
+		Releases:       storage.Init(driver.NewMemory()),
+		RegistryClient: c.registryClient,
+	})
 
 	client.ChartPathOptions.Version = opts.Version
 
@@ -538,7 +542,17 @@ func (c *Client) DependencyBuild(ctx context.Context, chartDir string) error {
 
 // Env returns the parsed output of `helm env`. Useful for debugging or
 // acquiring helm's computed settings.
+//
+// The result is memoized; helm computes it from the process environment, which
+// this Client fixes at construction.
 func (c *Client) Env(ctx context.Context) (map[string]string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.mu.env != nil {
+		return c.mu.env, nil
+	}
+
 	stdout, _, err := c.runHelm(ctx, "env")
 	if err != nil {
 		return nil, err
@@ -558,6 +572,9 @@ func (c *Client) Env(ctx context.Context) (map[string]string, error) {
 		// val will have a trailing ", the leading " is removed by the split.
 		env[string(key)] = string(val[:len(val)-1])
 	}
+
+	c.mu.env = env
+
 	return env, nil
 }
 

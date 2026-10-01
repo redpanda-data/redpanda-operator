@@ -234,9 +234,13 @@ func disableHTTP2(c *tls.Config) {
 // here — which is what happened before secure serving got a default — meant
 // every scrape died in the TLS handshake, so the metrics of a multicluster
 // deployment were simply never collected.
-func (o *MulticlusterOptions) metricsOptions(ctx context.Context, setupLog logr.Logger) (*metricsserver.Options, error) {
+//
+// When a certificate path is given, the returned CertWatcher feeds
+// GetCertificate in the returned TLSOpts and the caller must run its Start;
+// nothing watches the certificate files until then.
+func (o *MulticlusterOptions) metricsOptions(setupLog logr.Logger) (*metricsserver.Options, *certwatcher.CertWatcher, error) {
 	if o.MetricsBindAddress == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	options := &metricsserver.Options{
@@ -255,28 +259,26 @@ func (o *MulticlusterOptions) metricsOptions(ctx context.Context, setupLog logr.
 	}
 
 	if !options.SecureServing {
-		return options, nil
+		return options, nil, nil
 	}
 
 	options.TLSOpts = []func(*tls.Config){disableHTTP2}
 
-	if o.MetricsCertPath != "" || o.MetricsKeyPath != "" {
-		// Set up all of the certificate watching code
-		metricsCertWatcher, err := certwatcher.New(o.MetricsCertPath, o.MetricsKeyPath)
-		if err != nil {
-			setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
-			return nil, err
-		}
-		go func() {
-			setupLog.Error(metricsCertWatcher.Start(ctx), "metrics cert watcher exited")
-		}()
-
-		options.TLSOpts = append(options.TLSOpts, func(config *tls.Config) {
-			config.GetCertificate = metricsCertWatcher.GetCertificate
-		})
+	if o.MetricsCertPath == "" && o.MetricsKeyPath == "" {
+		return options, nil, nil
 	}
 
-	return options, nil
+	metricsCertWatcher, err := certwatcher.New(o.MetricsCertPath, o.MetricsKeyPath)
+	if err != nil {
+		setupLog.Error(err, "to initialize metrics certificate watcher", "error", err)
+		return nil, nil, err
+	}
+
+	options.TLSOpts = append(options.TLSOpts, func(config *tls.Config) {
+		config.GetCertificate = metricsCertWatcher.GetCertificate
+	})
+
+	return options, metricsCertWatcher, nil
 }
 
 func (o *MulticlusterOptions) BindFlags(cmd *cobra.Command) {
@@ -404,11 +406,16 @@ func Run(
 		},
 	}
 
-	metrics, err := opts.metricsOptions(ctx, setupLog)
+	metrics, metricsCertWatcher, err := opts.metricsOptions(setupLog)
 	if err != nil {
 		return err
 	}
 	config.Metrics = metrics
+	if metricsCertWatcher != nil {
+		go func() {
+			setupLog.Error(metricsCertWatcher.Start(ctx), "metrics cert watcher exited")
+		}()
+	}
 
 	if opts.WebhookCertPath != "" || opts.WebhookKeyPath != "" {
 		// Set up all of the certificate watching code

@@ -89,7 +89,6 @@ func TestMetricsOptionsFlagDefault(t *testing.T) {
 }
 
 func TestMetricsOptions(t *testing.T) {
-	ctx := t.Context()
 	logger := testr.New(t)
 
 	// nextProtos reports the ALPN protocols the built TLSOpts settle on,
@@ -106,9 +105,10 @@ func TestMetricsOptions(t *testing.T) {
 		o := validBaseOptions()
 		o.MetricsSecure = true
 
-		options, err := o.metricsOptions(ctx, logger)
+		options, watcher, err := o.metricsOptions(logger)
 		require.NoError(t, err)
 		assert.Nil(t, options)
+		assert.Nil(t, watcher)
 	})
 
 	t.Run("serves TLS by default", func(t *testing.T) {
@@ -116,13 +116,14 @@ func TestMetricsOptions(t *testing.T) {
 		o.MetricsBindAddress = ":8443"
 		o.MetricsSecure = true
 
-		options, err := o.metricsOptions(ctx, logger)
+		options, watcher, err := o.metricsOptions(logger)
 		require.NoError(t, err)
 		require.NotNil(t, options)
 		assert.Equal(t, ":8443", options.BindAddress)
 		assert.True(t, options.SecureServing)
 		assert.NotNil(t, options.FilterProvider, "metrics must stay behind authn/authz")
 		// No certificate path: controller-runtime generates a self-signed one.
+		assert.Nil(t, watcher)
 		assert.Equal(t, []string{"http/1.1"}, nextProtos(options), "HTTP/2 must be disabled")
 	})
 
@@ -131,12 +132,13 @@ func TestMetricsOptions(t *testing.T) {
 		o.MetricsBindAddress = ":8443"
 		o.MetricsSecure = false
 
-		options, err := o.metricsOptions(ctx, logger)
+		options, watcher, err := o.metricsOptions(logger)
 		require.NoError(t, err)
 		require.NotNil(t, options)
 		assert.False(t, options.SecureServing)
 		assert.NotNil(t, options.FilterProvider, "--metrics-secure=false must not also drop authentication")
 		assert.Empty(t, options.TLSOpts)
+		assert.Nil(t, watcher)
 	})
 
 	t.Run("a certificate path implies TLS", func(t *testing.T) {
@@ -150,10 +152,14 @@ func TestMetricsOptions(t *testing.T) {
 		o.MetricsCertPath = certPath
 		o.MetricsKeyPath = keyPath
 
-		options, err := o.metricsOptions(ctx, logger)
+		options, watcher, err := o.metricsOptions(logger)
 		require.NoError(t, err)
 		require.NotNil(t, options)
 		assert.True(t, options.SecureServing)
+		// The watcher comes back unstarted: were metricsOptions to start it
+		// itself, its goroutine would outlive this test and log through the
+		// test logger after completion, which panics.
+		require.NotNil(t, watcher, "the caller must be handed the watcher to run")
 
 		config := &tls.Config{} //nolint:gosec // no MinVersion needed; only TLSOpts' effect is under test
 		for _, opt := range options.TLSOpts {
@@ -169,7 +175,7 @@ func TestMetricsOptions(t *testing.T) {
 		o.MetricsCertPath = filepath.Join(t.TempDir(), "absent.crt")
 		o.MetricsKeyPath = filepath.Join(t.TempDir(), "absent.key")
 
-		_, err := o.metricsOptions(ctx, logger)
+		_, _, err := o.metricsOptions(logger)
 		require.Error(t, err)
 	})
 }

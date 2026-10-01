@@ -12,7 +12,6 @@ package chart
 
 import (
 	"embed"
-	"fmt"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
@@ -117,7 +116,6 @@ func render(dot *helmette.Dot) []kube.Object {
 }
 
 func renderResources(state *RenderState) []kube.Object {
-	checkVersion(state)
 	state.Values.External.ValidateGateway()
 	validateGatewayListeners(state)
 
@@ -190,13 +188,6 @@ func renderResources(state *RenderState) []kube.Object {
 	// Filtering happens elsewhere, don't call this function directly if you
 	// can avoid it.
 	return manifests
-}
-
-func checkVersion(state *RenderState) {
-	if !RedpandaAtLeast_22_2_0(state) && !state.Values.Force {
-		sv := semver(state)
-		panic(fmt.Sprintf("Error: The Redpanda version (%s) is no longer supported \nTo accept this risk, run the upgrade again adding `--force=true`\n", sv))
-	}
 }
 
 // ChartFiles is the chart's on-disk representation.

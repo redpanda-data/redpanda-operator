@@ -30,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	mcbuilder "sigs.k8s.io/multicluster-runtime/pkg/builder"
@@ -277,7 +278,13 @@ func (r *MulticlusterController) SetupWithMultiClusterManager() error {
 	})
 	unbinderPredicate := predicate.NewPredicateFuncs(pvcUnbinderPredicate)
 
+	// Same single-worker constraint as [Controller.SetupWithManager].
+	// The one queue (and worker) spans every engaged cluster — stricter
+	// than the per-cluster serialization the gates need, but safe.
 	return mcbuilder.ControllerManagedBy(r.Manager).
+		WithOptions(ctrlcontroller.TypedOptions[mcreconcile.Request]{
+			MaxConcurrentReconciles: 1,
+		}).
 		For(
 			&corev1.Pod{},
 			mcbuilder.WithEngageWithLocalCluster(true),
@@ -351,7 +358,16 @@ func (r *Controller) SetupWithManager(mgr ctrl.Manager) error {
 	})
 	unbinderPredicate := predicate.NewPredicateFuncs(pvcUnbinderPredicate)
 
-	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Pod{}, builder.WithPredicates(selectorPredicate, unbinderPredicate)).Complete(r)
+	// One worker, and it is load-bearing: the unbind pipeline is
+	// serialized by this, not only by the gates. Two victims reconciled
+	// concurrently could both pass Gate 0 before either writes its
+	// in-flight annotations (each annotates its own PVs, so the patches
+	// never conflict) and run concurrent unbinds — the cross-broker
+	// swap shape the gates exist to prevent. Do not raise.
+	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(ctrlcontroller.Options{MaxConcurrentReconciles: 1}).
+		For(&corev1.Pod{}, builder.WithPredicates(selectorPredicate, unbinderPredicate)).
+		Complete(r)
 }
 
 // Reconcile runs the algorithm described on [Controller]: it checks

@@ -17,6 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/chartutil"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
@@ -160,7 +161,7 @@ func RedpandaConfigFile(state *RenderState, includeNonHashableItems bool, pool P
 		redpandaYaml["rpk"] = rpkNodeConfig(state, pool)
 		redpandaYaml["pandaproxy_client"] = kafkaClient(state, "pandaproxy")
 		redpandaYaml["schema_registry_client"] = kafkaClient(state, "schema_registry")
-		if RedpandaAtLeast_23_3_0(state) && state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
+		if state.Values.AuditLogging.Enabled && state.Values.Auth.IsSASLEnabled() {
 			redpandaYaml["audit_log_client"] = kafkaClient(state, "audit_log")
 		}
 	}
@@ -287,7 +288,7 @@ func advertisedKafkaPort(state *RenderState, i int32) int {
 func advertisedAdminPort(state *RenderState, i int32) int {
 	keys := helmette.Keys(state.Values.Listeners.Admin.External)
 
-	helmette.SortAlpha(keys)
+	keys = helmette.SortAlpha(keys)
 
 	externalAdminListenerName := helmette.First(keys)
 
@@ -311,7 +312,7 @@ func advertisedAdminPort(state *RenderState, i int32) int {
 func advertisedSchemaPort(state *RenderState, i int32) int {
 	keys := helmette.Keys(state.Values.Listeners.SchemaRegistry.External)
 
-	helmette.SortAlpha(keys)
+	keys = helmette.SortAlpha(keys)
 
 	externalSchemaListenerName := helmette.First(keys)
 
@@ -358,7 +359,10 @@ func advertisedHost(state *RenderState, i int32) string {
 func getFirstExternalKafkaListener(state *RenderState) string {
 	keys := helmette.Keys(state.Values.Listeners.Kafka.External)
 
-	helmette.SortAlpha(keys)
+	// The result must be assigned: sprig's sortAlpha is non-mutating, so the
+	// discard form sorts only in the Go path and the transpiled template
+	// would pick a map-random key.
+	keys = helmette.SortAlpha(keys)
 
 	return helmette.First(keys).(string)
 }
@@ -435,7 +439,7 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	// writing `config.rpk.tune_fstrim: false` keeps that opt-out even
 	// with apply_host_tuners enabled.
 	if state.Values.Tuning.ApplyHostTuners {
-		result = helmette.Merge(result, HostTunerDefaults())
+		result = helmette.Merge(result, redpanda.HostTunerDefaults())
 	}
 
 	return result
@@ -627,12 +631,6 @@ func schemaRegistry(state *RenderState) map[string]any {
 
 func rpcListenersTLS(state *RenderState) map[string]any {
 	r := state.Values.Listeners.RPC
-
-	if !(RedpandaAtLeast_22_2_atleast_22_2_10(state) ||
-		RedpandaAtLeast_22_3_atleast_22_3_13(state) ||
-		RedpandaAtLeast_23_1_2(state)) && (r.TLS.Enabled == nil && state.Values.TLS.Enabled || ptr.Deref(r.TLS.Enabled, false)) {
-		panic(fmt.Sprintf("Redpanda version v%s does not support TLS on the RPC port. Please upgrade. See technical service bulletin 2023-01.", helmette.TrimPrefix("v", Tag(state))))
-	}
 
 	if !r.TLS.IsEnabled(&state.Values.TLS) {
 		return map[string]any{}

@@ -1416,6 +1416,15 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 		return litCall("_shims.resource_MustParse", receiver)
 	}
 
+	// For any function that looks like a deepcopy-gen DeepCopy call, transpile
+	// it to sprig's deepCopy.
+	//
+	// NB: resource.Quantity is handled in the switch above. Its DeepCopy
+	// returns a value rather than a pointer, so it would not match here.
+	if isDeepCopy(callee) {
+		return &BuiltInCall{Func: Literal("deepCopy"), Arguments: []Node{receiver}}
+	}
+
 	// Final stop, all our special cases have been handled. Either this call is
 	// going to a transpiled function or it's not supported. For this, we
 	// consult .dependencies which will have any dependencies (subcharts) and
@@ -1527,6 +1536,37 @@ func (t *Transpiler) transpileCallExpr(n *ast.CallExpr) Node {
 	}
 
 	return call
+}
+
+// isDeepCopy reports whether obj is a deepcopy-gen style `func (in *T)
+// DeepCopy() *T`.
+func isDeepCopy(obj types.Object) bool {
+	fn, ok := obj.(*types.Func)
+	if !ok {
+		return false
+	}
+
+	if fn.Name() != "DeepCopy" {
+		return false
+	}
+
+	sig, ok := fn.Type().(*types.Signature)
+	if !ok {
+		return false
+	}
+
+	// Ensure sig matches func(T) DeepCopy() T
+	switch {
+	case sig.Recv() == nil,
+		sig.Params().Len() != 0,
+		sig.Results().Len() != 1,
+		!types.Identical(sig.Recv().Type(), sig.Results().At(0).Type()):
+		return false
+	}
+
+	// Final check: make sure T is a pointer
+	_, ok = sig.Recv().Type().(*types.Pointer)
+	return ok
 }
 
 func (t *Transpiler) transpileCast(expr ast.Expr, to types.Type) Node {

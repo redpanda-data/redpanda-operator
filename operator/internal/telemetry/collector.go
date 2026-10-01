@@ -26,12 +26,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redpanda-data/redpanda-operator/operator/api/apiutil"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 )
 
 const (
@@ -46,6 +48,11 @@ const (
 	// collectTimeout bounds a single collection cycle so a slow or unresponsive
 	// API server cannot stall the reporter loop indefinitely.
 	collectTimeout = 30 * time.Second
+)
+
+var (
+	vectorizedClusterGK = schema.GroupKind{Group: vectorizedv1alpha1.GroupName, Kind: vectorizedv1alpha1.ClusterKind}
+	redpandaGK          = schema.GroupKind{Group: redpandav1alpha2.GroupName, Kind: redpandav1alpha2.RedpandaKind}
 )
 
 // Collector gathers anonymous cluster-shape telemetry about a Redpanda
@@ -236,9 +243,19 @@ func (c *Collector) Collect(ctx context.Context) (*Payload, error) {
 	}
 
 	payload.Broker.Enabled = c.BrokerCREnabled
-	if err := c.count(ctx, redpandav1alpha2.SchemeGroupVersion.WithKind("BrokerList"), &payload.Broker.Count); err != nil {
+	// Every Broker CR is controller-owned by its cluster resource, and
+	// ownerReferences are metadata, so the metadata-only list also yields the
+	// per-cluster view: distinct owners are the clusters in broker mode and
+	// the owner's kind is the V1/V2 split.
+	var brokers metav1.PartialObjectMetadataList
+	brokers.SetGroupVersionKind(redpandav1alpha2.SchemeGroupVersion.WithKind("BrokerList"))
+	if ok, err := c.list(ctx, &brokers); err != nil {
 		return nil, err
+	} else if ok {
+		c.aggregateBrokers(payload, brokers.Items)
 	}
+
+	c.recordBrokerMigration(payload, redpandas.Items, vectorized.Items)
 
 	// Supporting CR-type counts. Metadata-only lists: we only need len(), so
 	// avoid loading full objects into memory.
@@ -497,6 +514,56 @@ func (c *Collector) aggregateConsoles(payload *Payload, items []redpandav1alpha2
 		}
 		if spec.Ingress != nil && ptrBool(spec.Ingress.Enabled) {
 			payload.Console.Ingress++
+		}
+	}
+}
+
+// aggregateBrokers folds the Broker CR fleet into the payload: the CR count,
+// and the clusters in broker mode as distinct controller-owner UIDs split by
+// the owner's kind.
+func (c *Collector) aggregateBrokers(payload *Payload, items []metav1.PartialObjectMetadata) {
+	payload.Broker.Count = len(items)
+	owners := map[types.UID]schema.GroupKind{}
+	for i := range items {
+		if ref := metav1.GetControllerOfNoCopy(&items[i]); ref != nil {
+			owners[ref.UID] = schema.FromAPIVersionAndKind(ref.APIVersion, ref.Kind).GroupKind()
+		}
+	}
+	payload.Broker.Clusters.Total = len(owners)
+	for _, gk := range owners {
+		switch gk {
+		case vectorizedClusterGK:
+			payload.Broker.Clusters.Vectorized++
+		case redpandaGK:
+			payload.Broker.Clusters.Redpanda++
+		}
+	}
+}
+
+func (c *Collector) recordBrokerMigration(payload *Payload, redpandas []redpandav1alpha2.Redpanda, vectorized []vectorizedv1alpha1.Cluster) {
+	// Migration health comes from the cluster-scoped BrokerMigration
+	// condition, set either on Redpanda (V2) or Cluster (V1) CR.
+	recordMigrationCondition := func(stats *BrokerMigrationStats, reason string) {
+		switch reason {
+		case brokerset.MigrationReasonBlocked:
+			stats.Blocked++
+		case brokerset.MigrationReasonInProgress:
+			stats.InProgress++
+		case brokerset.MigrationReasonComplete:
+			stats.Complete++
+		case brokerset.MigrationReasonRolledBack:
+			stats.RolledBack++
+		}
+	}
+
+	for i := range redpandas {
+		if cond := meta.FindStatusCondition(redpandas[i].Status.Conditions, redpandav1alpha2.BrokerMigrationConditionType); cond != nil {
+			recordMigrationCondition(&payload.Broker.Migration, cond.Reason)
+		}
+	}
+	for i := range vectorized {
+		if cond := vectorized[i].Status.GetCondition(vectorizedv1alpha1.BrokerMigrationConditionType); cond != nil {
+			recordMigrationCondition(&payload.Broker.Migration, cond.Reason)
 		}
 	}
 }

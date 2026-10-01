@@ -718,6 +718,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -1623,6 +1624,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -2502,6 +2504,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -3376,6 +3379,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -4249,6 +4253,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -5122,6 +5127,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -5995,6 +6001,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -6868,6 +6875,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -7741,6 +7749,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -8614,6 +8623,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -9487,6 +9497,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -10349,6 +10360,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -11295,6 +11307,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -12944,6 +12957,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -13158,6 +13172,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -14207,6 +14222,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -15080,6 +15096,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -16006,6 +16023,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -16874,6 +16892,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -17786,6 +17805,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -18659,6 +18679,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -19560,6 +19581,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -20911,6 +20933,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -21123,6 +21146,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -22944,6 +22968,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -23156,6 +23181,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -23368,6 +23394,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -24218,6 +24245,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -24981,6 +25009,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -25764,6 +25793,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -26637,6 +26667,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -27510,6 +27541,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -28387,6 +28419,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -29279,6 +29312,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -30144,6 +30178,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -30927,6 +30962,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -31800,6 +31836,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -32673,6 +32710,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -33546,6 +33584,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -34419,6 +34458,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -35110,6 +35150,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -35983,6 +36024,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -36856,6 +36898,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -37729,6 +37772,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 
@@ -38602,6 +38646,7 @@
       SERVICE_NAME=$1
       KUBERNETES_NODE_NAME=$2
       POD_ORDINAL=${SERVICE_NAME##*-}
+      BROKER_INDEX=`expr $POD_ORDINAL + 1`
 
       CONFIG=/etc/redpanda/redpanda.yaml
 

@@ -12,6 +12,7 @@ package redpanda
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -51,15 +52,6 @@ type RoleReconciler struct {
 	rolesOptions []roles.Option
 }
 
-// isRoleRename returns true if a role rename operation is needed.
-// A rename is needed when:
-// - We have a previous effective name tracked in status (not empty)
-// - The effective name has changed
-// - We are managing this role
-func isRoleRename(previousEffectiveName, currentEffectiveName string, hasManagedRole bool) bool {
-	return previousEffectiveName != "" && previousEffectiveName != currentEffectiveName && hasManagedRole
-}
-
 func (r *RoleReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alpha2.RedpandaRole]) client.Patch {
 	role := request.object
 	config := redpandav1alpha2ac.RedpandaRole(role.Name, role.Namespace)
@@ -71,9 +63,28 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	hasManagedACLs, hasManagedRole, hasManagedPrincipals := role.HasManagedACLs(), role.HasManagedRole(), role.HasManagedPrincipals()
 	shouldManageACLs, shouldManageRole, shouldManagePrincipals := role.ShouldManageACLs(), role.ShouldManageRole(), role.ShouldManagePrincipals()
 
-	// Get current and previous effective role names to detect renames
-	currentEffectiveName := role.GetEffectiveRoleName()
-	previousEffectiveName := role.Status.EffectiveRoleName
+	desiredEffectiveName := role.GetEffectiveRoleName()
+	currentEffectiveName := role.Status.EffectiveRoleName
+	pendingEffectiveName := role.Status.PendingEffectiveRoleName
+
+	// Roles we created under a name the spec no longer produces: the last
+	// reconciled name during a rename, plus the in-flight target of an
+	// interrupted rename whose spec has since been reverted.
+	var undesiredEffectiveNames []string
+	if hasManagedRole {
+		undesiredEffectiveNames = undesiredEffectiveRoleNames(role)
+	}
+
+	// The caller applies createPatch's status patch even when SyncResource
+	// returns an error, so both names must be maintained carefully:
+	// currentEffectiveName may only advance once cleanup fully completes
+	// (otherwise the undesired role is never revisited and survives in Redpanda
+	// forever), while pendingEffectiveName must record the target before
+	// anything is created under it (otherwise a spec revert mid-rename
+	// orphans the half-created role).
+	if desiredEffectiveName != currentEffectiveName {
+		pendingEffectiveName = desiredEffectiveName
+	}
 
 	var srSyncWarning error
 
@@ -95,6 +106,7 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 			WithManagedACLs(hasManagedACLs).
 			WithManagedPrincipals(hasManagedPrincipals).
 			WithEffectiveRoleName(currentEffectiveName).
+			WithPendingEffectiveRoleName(pendingEffectiveName).
 			WithConditions(utils.StatusConditionConfigs(role.Status.Conditions, role.Generation, []metav1.Condition{
 				syncCondition,
 			})...))), err
@@ -107,49 +119,13 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 	defer rolesClient.Close()
 	defer syncer.Close()
 
-	// Handle role rename if effective name changed
-	if isRoleRename(previousEffectiveName, currentEffectiveName, hasManagedRole) {
-		request.logger.V(1).Info("Role rename", "from", previousEffectiveName, "to", currentEffectiveName)
-
-		// Create new role
-		if !hasRole {
-			if err := rolesClient.Create(ctx, role); err != nil {
-				return createPatch(errors.Wrap(err, "creating renamed role"))
-			}
-		} else {
-			request.logger.V(1).Info("New role already exists, skipping creation", "role", currentEffectiveName)
-		}
-
-		// Sync new ACLs first
-		if shouldManageACLs {
-			if err := syncer.Sync(ctx, role); err != nil {
-				if !errors.Is(err, acls.ErrSchemaRegistryNotConfigured) {
-					return createPatch(errors.Wrap(err, "syncing new ACLs"))
-				}
-				srSyncWarning = err
-			}
-		}
-
-		// Clean up old resources
-		previousRole := &redpandav1alpha2.RedpandaRole{
-			ObjectMeta: metav1.ObjectMeta{Name: previousEffectiveName},
-		}
-
-		if hasManagedACLs {
-			if err := syncer.DeleteAll(ctx, previousRole); err != nil {
-				return createPatch(errors.Wrap(err, "deleting old ACLs"))
-			}
-		}
-
-		if err := rolesClient.Delete(ctx, previousRole); err != nil {
-			return createPatch(errors.Wrap(err, "deleting old role"))
-		}
-
-		hasManagedRole = true
-		hasManagedPrincipals = shouldManagePrincipals
-		hasManagedACLs = shouldManageACLs
-		return createPatch(nil)
+	if len(undesiredEffectiveNames) > 0 {
+		request.logger.V(1).Info("Role rename", "from", undesiredEffectiveNames, "to", desiredEffectiveName)
 	}
+
+	// hasManagedACLs is rebound below to the desired principal's sync state;
+	// undesired-principal ACL cleanup must gate on the value at entry.
+	hadManagedACLs := hasManagedACLs
 
 	if !hasRole && shouldManageRole {
 		if err := rolesClient.Create(ctx, role); err != nil {
@@ -199,6 +175,24 @@ func (r *RoleReconciler) SyncResource(ctx context.Context, request ResourceReque
 		hasManagedACLs = false
 	}
 
+	// The desired role and its ACLs are in place, so removing the undesired ones
+	// can't leave a window where neither role grants its permissions.
+	for _, undesiredName := range undesiredEffectiveNames {
+		undesiredRole := &redpandav1alpha2.RedpandaRole{
+			ObjectMeta: metav1.ObjectMeta{Name: undesiredName},
+		}
+		if hadManagedACLs {
+			if err := syncer.DeleteAll(ctx, undesiredRole); err != nil {
+				return createPatch(errors.Wrapf(err, "deleting ACLs of undesired role %q", undesiredName))
+			}
+		}
+		if err := rolesClient.Delete(ctx, undesiredRole); err != nil {
+			return createPatch(errors.Wrapf(err, "deleting undesired role %q", undesiredName))
+		}
+	}
+
+	currentEffectiveName = desiredEffectiveName
+	pendingEffectiveName = ""
 	return createPatch(nil)
 }
 
@@ -215,26 +209,26 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 	defer rolesClient.Close()
 	defer syncer.Close()
 
-	// Get current and previous effective names for comprehensive cleanup
-	currentEffectiveName := role.GetEffectiveRoleName()
-	previousEffectiveName := role.Status.EffectiveRoleName
+	undesiredEffectiveNames := undesiredEffectiveRoleNames(role)
 
 	// Delete current role (from spec)
 	if hasRole && hasManagedRole {
-		request.logger.V(2).Info("Deleting current managed role", "name", currentEffectiveName)
+		request.logger.V(2).Info("Deleting current managed role", "name", role.GetEffectiveRoleName())
 		if err := rolesClient.Delete(ctx, role); err != nil {
 			return ignoreAllConnectionErrors(request.logger, err)
 		}
 	}
 
-	// Delete previous role if different (handles incomplete rename scenarios)
-	if isRoleRename(previousEffectiveName, currentEffectiveName, hasManagedRole) {
-		request.logger.V(2).Info("Deleting previous role from incomplete rename", "name", previousEffectiveName)
-		previousRole := &redpandav1alpha2.RedpandaRole{
-			ObjectMeta: metav1.ObjectMeta{Name: previousEffectiveName},
-		}
-		if err := rolesClient.Delete(ctx, previousRole); err != nil {
-			return ignoreAllConnectionErrors(request.logger, err)
+	// Delete roles left under old names by incomplete renames
+	if hasManagedRole {
+		for _, undesiredName := range undesiredEffectiveNames {
+			request.logger.V(2).Info("Deleting undesired role from incomplete rename", "name", undesiredName)
+			undesiredRole := &redpandav1alpha2.RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{Name: undesiredName},
+			}
+			if err := rolesClient.Delete(ctx, undesiredRole); err != nil {
+				return ignoreAllConnectionErrors(request.logger, err)
+			}
 		}
 	}
 
@@ -245,21 +239,33 @@ func (r *RoleReconciler) DeleteResource(ctx context.Context, request ResourceReq
 			return ignoreAllConnectionErrors(request.logger, err)
 		}
 
-		// Delete ACLs for previous principal if it differs (handles rename scenarios)
-		if previousEffectiveName != "" && previousEffectiveName != currentEffectiveName {
-			request.logger.V(2).Info("Deleting ACLs for previous principal", "previousName", previousEffectiveName)
-
-			previousRole := &redpandav1alpha2.RedpandaRole{
-				ObjectMeta: metav1.ObjectMeta{Name: previousEffectiveName},
+		for _, undesiredName := range undesiredEffectiveNames {
+			request.logger.V(2).Info("Deleting ACLs of undesired role", "name", undesiredName)
+			undesiredRole := &redpandav1alpha2.RedpandaRole{
+				ObjectMeta: metav1.ObjectMeta{Name: undesiredName},
 			}
-
-			if err := syncer.DeleteAll(ctx, previousRole); err != nil {
+			if err := syncer.DeleteAll(ctx, undesiredRole); err != nil {
 				return ignoreAllConnectionErrors(request.logger, err)
 			}
 		}
 	}
 
 	return nil
+}
+
+// undesiredEffectiveRoleNames returns the effective role names recorded in status
+// that the spec no longer produces: the last successfully reconciled name and
+// the in-flight target of an interrupted rename. Either may name a role that
+// still exists in Redpanda and needs cleanup.
+func undesiredEffectiveRoleNames(role *redpandav1alpha2.RedpandaRole) []string {
+	desired := role.GetEffectiveRoleName()
+	var undesired []string
+	for _, name := range []string{role.Status.EffectiveRoleName, role.Status.PendingEffectiveRoleName} {
+		if name != "" && name != desired && !slices.Contains(undesired, name) {
+			undesired = append(undesired, name)
+		}
+	}
+	return undesired
 }
 
 func (r *RoleReconciler) roleAndACLClients(ctx context.Context, request ResourceRequest[*redpandav1alpha2.RedpandaRole]) (*roles.Client, *acls.Syncer, bool, error) {

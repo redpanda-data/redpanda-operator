@@ -48,7 +48,9 @@ func loadBalancerServicesForPool(state *RenderState, pool *redpandav1alpha2.Redp
 	}
 
 	labels := state.commonLabels()
-	// Preserved typo for backwards compat.
+	// Mirrors the chart's LoadBalancer Service labels; the typo'd key is
+	// kept until the next major release.
+	labels["redpanda.com/type"] = "loadbalancer"
 	labels["repdanda.com/type"] = "loadbalancer"
 
 	selector := state.clusterPodLabelsSelector()
