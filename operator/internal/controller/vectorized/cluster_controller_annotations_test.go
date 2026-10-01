@@ -10,7 +10,9 @@
 package vectorized
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr/testr"
 	"github.com/redpanda-data/common-go/kube"
@@ -18,7 +20,6 @@ import (
 	"github.com/redpanda-data/common-go/otelutil/log"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +30,7 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources"
 )
 
@@ -56,19 +58,7 @@ func TestClusterSpecAnnotationsReachStatefulSet(t *testing.T) {
 		Options: client.Options{Scheme: testScheme},
 	})
 
-	require.NoError(t, kube.ApplyAllAndWait(ctx, ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-
-		for _, cond := range crd.Status.Conditions {
-			if cond.Type == apiextensionsv1.Established {
-				return cond.Status == apiextensionsv1.ConditionTrue, nil
-			}
-		}
-
-		return false, nil
-	}, crds.All()...))
+	testutils.InstallCRDs(t, ctl, crds.All()...)
 
 	mgr, err := ctrl.NewManager(ctl.RestConfig(), manager.Options{
 		Logger:  testr.New(t),
@@ -110,7 +100,11 @@ func TestClusterSpecAnnotationsReachStatefulSet(t *testing.T) {
 
 		sts := &appsv1.StatefulSet{ObjectMeta: cluster.ObjectMeta}
 		sts.Name = cluster.Name
-		require.NoError(t, ctl.WaitFor(ctx, sts, func(_ kube.Object, err error) (bool, error) {
+
+		waitCtx, cancelWait := context.WithTimeout(ctx, 30*time.Second)
+		defer cancelWait()
+
+		require.NoError(t, ctl.WaitFor(waitCtx, sts, func(_ kube.Object, err error) (bool, error) {
 			if err != nil {
 				return false, client.IgnoreNotFound(err)
 			}
@@ -133,7 +127,10 @@ func TestClusterSpecAnnotationsReachStatefulSet(t *testing.T) {
 	awaitPropagation := func(t *testing.T, sts *appsv1.StatefulSet) error {
 		t.Helper()
 
-		return ctl.WaitFor(ctx, sts, func(obj kube.Object, err error) (bool, error) {
+		waitCtx, cancelWait := context.WithTimeout(ctx, 30*time.Second)
+		defer cancelWait()
+
+		return ctl.WaitFor(waitCtx, sts, func(obj kube.Object, err error) (bool, error) {
 			if err != nil {
 				return false, client.IgnoreNotFound(err)
 			}
@@ -142,6 +139,8 @@ func TestClusterSpecAnnotationsReachStatefulSet(t *testing.T) {
 	}
 
 	t.Run("annotating a live Cluster updates the pod template", func(t *testing.T) {
+		t.Parallel()
+
 		cluster, sts := createConvergedCluster(t, "annotation-propagation", 30093)
 		annotate(t, cluster)
 
@@ -154,6 +153,8 @@ func TestClusterSpecAnnotationsReachStatefulSet(t *testing.T) {
 	})
 
 	t.Run("an unreachable cluster doesn't hold up the pod template", func(t *testing.T) {
+		t.Parallel()
+
 		cluster, sts := createConvergedCluster(t, "annotation-unreachable", 30094)
 
 		// Writing the StatefulSet spec is deliberately upstream of every
