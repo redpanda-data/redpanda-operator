@@ -22,6 +22,7 @@ import (
 	"github.com/twmb/franz-go/pkg/sasl/scram"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
@@ -30,12 +31,12 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+func testGroupReconcile(t *testing.T, cfg *rest.Config) { // nolint:funlen // These tests have clear subtests.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &GroupReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &GroupReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -54,7 +55,7 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 
 	baseGroup := &redpandav1alpha2.Group{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.GroupSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -204,12 +205,12 @@ func TestGroupReconcile(t *testing.T) { // nolint:funlen // These tests have cle
 	}
 }
 
-func TestGroupACLConfigurations(t *testing.T) { // nolint:funlen // Comprehensive test coverage
+func testGroupACLConfigurations(t *testing.T, cfg *rest.Config) { // nolint:funlen // Comprehensive test coverage
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &GroupReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &GroupReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -281,7 +282,7 @@ func TestGroupACLConfigurations(t *testing.T) { // nolint:funlen // Comprehensiv
 		t.Run(tt.name, func(t *testing.T) {
 			group := &redpandav1alpha2.Group{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: metav1.NamespaceDefault,
+					Namespace: environment.Namespace,
 					Name:      "test-group-" + strconv.Itoa(int(time.Now().UnixNano())),
 				},
 				Spec: redpandav1alpha2.GroupSpec{
@@ -325,18 +326,18 @@ func TestGroupACLConfigurations(t *testing.T) { // nolint:funlen // Comprehensiv
 	}
 }
 
-func TestGroupACLLifecycle(t *testing.T) {
+func testGroupACLLifecycle(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &GroupReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &GroupReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
 	group := &redpandav1alpha2.Group{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 			Name:      "lifecycle-group-" + strconv.Itoa(int(time.Now().UnixNano())),
 		},
 		Spec: redpandav1alpha2.GroupSpec{
@@ -492,7 +493,7 @@ func TestGroupACLLifecycle(t *testing.T) {
 	})
 }
 
-func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end integration test.
+func testGroupOIDCIntegration(t *testing.T, cfg *rest.Config) { //nolint:funlen // End-to-end integration test.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancel()
 
@@ -506,7 +507,7 @@ func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end inte
 	}
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &GroupReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &GroupReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	}, WithOIDC(oidcConfig))
 
@@ -557,7 +558,7 @@ func TestGroupOIDCIntegration(t *testing.T) { //nolint:funlen // End-to-end inte
 		group := &redpandav1alpha2.Group{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "engineering",
-				Namespace: metav1.NamespaceDefault,
+				Namespace: environment.Namespace,
 			},
 			Spec: redpandav1alpha2.GroupSpec{
 				ClusterSource: environment.ClusterSourceValid,
