@@ -159,7 +159,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 			},
 		},
 		{
-			Name: fmt.Sprintf("%.51s-configurator", fullname),
+			Name: redpanda.ConfiguratorScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.51s-configurator", poolFullname),
@@ -171,7 +171,7 @@ func StatefulSetVolumes(state *RenderState, pool Pool) []corev1.Volume {
 
 	if pool.Statefulset.InitContainers.FSValidator.Enabled {
 		volumes = append(volumes, corev1.Volume{
-			Name: fmt.Sprintf("%.49s-fs-validator", fullname),
+			Name: redpanda.FSValidatorScriptsVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:  fmt.Sprintf("%.49s-fs-validator", poolFullname),
@@ -281,144 +281,68 @@ func StatefulSetVolumeMounts(state *RenderState) []corev1.VolumeMount {
 	return mounts
 }
 
+// StatefulSetInitContainers resolves this chart's values into the init
+// container renderer shared with the operator's multicluster renderer, which
+// never sees chart values or a Pool itself.
 func StatefulSetInitContainers(state *RenderState, pool Pool) []corev1.Container {
-	var containers []corev1.Container
-	if c := statefulSetInitContainerTuning(state); c != nil {
-		containers = append(containers, *c)
-	}
-	if c := statefulSetInitContainerSetDataDirOwnership(state, pool); c != nil {
-		containers = append(containers, *c)
-	}
-	if c := statefulSetInitContainerFSValidator(state, pool); c != nil {
-		containers = append(containers, *c)
-	}
-	if c := statefulSetInitContainerSetTieredStorageCacheDirOwnership(state, pool); c != nil {
-		containers = append(containers, *c)
-	}
-	containers = append(containers, *statefulSetInitContainerConfigurator(state))
-	containers = append(containers, bootstrapYamlTemplater(state, pool.Statefulset))
-	return containers
-}
-
-func statefulSetInitContainerTuning(state *RenderState) *corev1.Container {
-	if !state.Values.Tuning.TuneAIOEvents {
-		return nil
-	}
-
-	if state.Values.Tuning.ApplyHostTuners {
-		return statefulSetInitContainerTuningOnHost(state)
-	}
-
-	return &corev1.Container{
-		Name:  RedpandaTuningContainerName,
-		Image: fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
-		Command: []string{
-			`/bin/bash`,
-			`-c`,
-			`rpk redpanda tune all`,
+	renderer := redpanda.InitContainerRenderer{
+		Image:        fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
+		InitImage:    fmt.Sprintf(`%s:%s`, pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
+		SidecarImage: fmt.Sprintf(`%s:%s`, pool.Statefulset.SideCars.Image.Repository, pool.Statefulset.SideCars.Image.Tag),
+		CommonMounts: CommonMounts(state),
+		Configurator: &redpanda.ConfiguratorInitContainer{
+			MountAPIToken: state.Values.RackAwareness.Enabled,
+			AdditionalEnv: rpkEnvVars(state, nil),
 		},
-		SecurityContext: &corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Add: []corev1.Capability{`SYS_RESOURCE`},
-			},
-			Privileged:   ptr.To(true),
-			RunAsNonRoot: ptr.To(false),
-			RunAsUser:    ptr.To(int64(0)),
-			RunAsGroup:   ptr.To(int64(0)),
+		Bootstrap: &redpanda.BootstrapInitContainer{
+			Env:               BootstrapTemplateEnvVars(state),
+			AdditionalCLIArgs: state.Values.Statefulset.InitContainers.Configurator.AdditionalCLIArgs,
 		},
-		VolumeMounts: append(
-			CommonMounts(state),
-			corev1.VolumeMount{
-				Name:      "base-config",
-				MountPath: "/etc/redpanda",
-			},
-			corev1.VolumeMount{
-				Name:      `datadir`,
-				MountPath: `/var/lib/redpanda/data`,
-			},
-		),
-	}
-}
-
-// statefulSetInitContainerTuningOnHost returns the tuning init container
-// that runs `rpk redpanda tune all` in a chroot to the host filesystem.
-//
-// Why a chroot: the default tuning container runs rpk inside the pod's
-// own filesystem and namespaces, so the disk_irq / disk_scheduler /
-// disk_nomerges / net tuners can't find host block devices in /sys/block
-// or write host sysctls in /proc/sys/net. By chrooting into /host (which
-// has the host's /sys, /proc, /usr, ... bind-mounted) and using
-// `nsenter -t 1 -n` to enter the host network namespace, rpk sees the
-// real host and the tuners apply for real.
-//
-// Workarounds layered in by this function (see redpanda.HostTunerScript for the
-// script-side ones):
-//   - cp (under umask 077) + sed the rendered redpanda.yaml into
-//     /var/tmp and inject `redpanda.data_directory` so the disk tuners
-//     have a path to resolve. The base chart deliberately omits
-//     data_directory (the broker doesn't need it) but rpk's tuner
-//     refuses to combine `--dirs` with `--config`, so the value must
-//     live in the file.
-//   - busctl call into the host's systemd to try-restart irqbalance
-//     after rpk rewrites IRQ affinity (systemctl can't traverse a
-//     chroot). No non-systemd fallback — see redpanda.HostTunerScript for why
-//     none can work without hostPID.
-//   - a `which` shim written into /opt/redpanda/bin (bind-mounted into
-//     the chroot, first on PATH): rpk's fstrim tuner shells out to
-//     `which`, and some minimal node images (AKS Ubuntu) ship a broken
-//     or missing /usr/bin/which.
-//
-// Pre-conditions for this to work:
-//   - one Redpanda pod per node (anti-affinity); concurrent tuners race
-//     on the same kernel parameters.
-//   - the pod's ServiceAccount is bound to an SCC / PSA level that
-//     allows hostPath volumes and privileged: true.
-//
-//nolint:laconiccomments
-func statefulSetInitContainerTuningOnHost(state *RenderState) *corev1.Container {
-	return &corev1.Container{
-		Name:    RedpandaTuningContainerName,
-		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
-		Command: []string{`/bin/bash`, `-c`, redpanda.HostTunerScript()},
-		SecurityContext: &corev1.SecurityContext{
-			// privileged: true already grants every capability;
-			// explicit Add entries would be redundant noise.
-			Privileged:   ptr.To(true),
-			RunAsNonRoot: ptr.To(false),
-			RunAsUser:    ptr.To(int64(0)),
-			RunAsGroup:   ptr.To(int64(0)),
-		},
-		VolumeMounts: redpanda.HostTunerVolumeMounts(),
-	}
-}
-
-func statefulSetInitContainerSetDataDirOwnership(state *RenderState, pool Pool) *corev1.Container {
-	if !pool.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
-		return nil
 	}
 
-	uid, gid := securityContextUidGid(state, pool, "set-datadir-ownership")
-
-	return &corev1.Container{
-		Name:  SetDataDirectoryOwnershipContainerName,
-		Image: fmt.Sprintf("%s:%s", pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
-		Command: []string{
-			`/bin/sh`,
-			`-c`,
-			fmt.Sprintf(`chown %d:%d -R /var/lib/redpanda/data`, uid, gid),
-		},
-		SecurityContext: &corev1.SecurityContext{
-			RunAsUser:  ptr.To[int64](0),
-			RunAsGroup: ptr.To[int64](0),
-		},
-		VolumeMounts: append(
-			CommonMounts(state),
-			corev1.VolumeMount{
-				Name:      `datadir`,
-				MountPath: `/var/lib/redpanda/data`,
-			},
-		),
+	if state.Values.Tuning.TuneAIOEvents {
+		renderer.Tuning = &redpanda.TuningInitContainer{
+			OnHost: state.Values.Tuning.ApplyHostTuners,
+		}
 	}
+
+	// securityContextUidGid panics when the pod template specifies neither
+	// runAsUser nor fsGroup, so it's resolved inside these branches: a chart
+	// that never chowns anything must not fail to render over an ownership it
+	// doesn't need.
+	if pool.Statefulset.InitContainers.SetDataDirOwnership.Enabled {
+		uid, gid := securityContextUidGid(state, pool, redpanda.SetDataDirectoryOwnershipContainerName)
+		renderer.DataDirOwnership = &redpanda.DataDirOwnershipInitContainer{UID: uid, GID: gid}
+	}
+
+	if pool.Statefulset.InitContainers.FSValidator.Enabled {
+		renderer.FSValidator = &redpanda.FSValidatorInitContainer{
+			ExpectedFS: pool.Statefulset.InitContainers.FSValidator.ExpectedFS,
+		}
+	}
+
+	if state.Values.Storage.IsTieredStorageEnabled() {
+		uid, gid := securityContextUidGid(state, pool, redpanda.SetTieredStorageCacheOwnershipContainerName)
+
+		// An empty volume name tells the renderer the cache directory lives on
+		// the datadir volume and needs no mount of its own.
+		cacheVolumeName := ""
+		if state.Values.Storage.TieredMountType() != "none" {
+			cacheVolumeName = "tiered-storage-dir"
+			if state.Values.Storage.PersistentVolume != nil && state.Values.Storage.PersistentVolume.NameOverwrite != "" {
+				cacheVolumeName = state.Values.Storage.PersistentVolume.NameOverwrite
+			}
+		}
+
+		renderer.TieredStorageCacheOwnership = &redpanda.TieredStorageCacheOwnershipInitContainer{
+			UID:             uid,
+			GID:             gid,
+			CacheDirectory:  state.Values.Storage.TieredCacheDirectory(state),
+			CacheVolumeName: cacheVolumeName,
+		}
+	}
+
+	return renderer.Render()
 }
 
 //nolint:stylecheck
@@ -469,153 +393,6 @@ func giduidFromPodTemplate(tpl *PodTemplate, containerName string) (*int64, *int
 	return gid, uid
 }
 
-func statefulSetInitContainerFSValidator(state *RenderState, pool Pool) *corev1.Container {
-	if !pool.Statefulset.InitContainers.FSValidator.Enabled {
-		return nil
-	}
-
-	return &corev1.Container{
-		Name:    FSValidatorContainerName,
-		Image:   fmt.Sprintf("%s:%s", state.Values.Image.Repository, Tag(state)),
-		Command: []string{`/bin/sh`},
-		Args: []string{
-			`-c`,
-			fmt.Sprintf(`trap "exit 0" TERM; exec /etc/secrets/fs-validator/scripts/fsValidator.sh %s & wait $!`,
-				pool.Statefulset.InitContainers.FSValidator.ExpectedFS,
-			),
-		},
-		VolumeMounts: append(
-			CommonMounts(state),
-			corev1.VolumeMount{
-				Name:      fmt.Sprintf(`%.49s-fs-validator`, Fullname(state)),
-				MountPath: `/etc/secrets/fs-validator/scripts/`,
-			},
-			corev1.VolumeMount{
-				Name:      `datadir`,
-				MountPath: `/var/lib/redpanda/data`,
-			},
-		),
-	}
-}
-
-func statefulSetInitContainerSetTieredStorageCacheDirOwnership(state *RenderState, pool Pool) *corev1.Container {
-	if !state.Values.Storage.IsTieredStorageEnabled() {
-		return nil
-	}
-
-	uid, gid := securityContextUidGid(state, pool, "set-tiered-storage-cache-dir-ownership")
-	cacheDir := state.Values.Storage.TieredCacheDirectory(state)
-	mounts := CommonMounts(state)
-	mounts = append(mounts, corev1.VolumeMount{
-		Name:      "datadir",
-		MountPath: "/var/lib/redpanda/data",
-	})
-	if state.Values.Storage.TieredMountType() != "none" {
-		name := "tiered-storage-dir"
-		if state.Values.Storage.PersistentVolume != nil && state.Values.Storage.PersistentVolume.NameOverwrite != "" {
-			name = state.Values.Storage.PersistentVolume.NameOverwrite
-		}
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      name,
-			MountPath: cacheDir,
-		})
-	}
-
-	return &corev1.Container{
-		Name:  SetTieredStorageCacheOwnershipContainerName,
-		Image: fmt.Sprintf(`%s:%s`, pool.Statefulset.InitContainerImage.Repository, pool.Statefulset.InitContainerImage.Tag),
-		Command: []string{
-			`/bin/sh`,
-			`-c`,
-			fmt.Sprintf(`mkdir -p %s; chown %d:%d -R %s`,
-				cacheDir,
-				uid, gid,
-				cacheDir,
-			),
-		},
-		SecurityContext: &corev1.SecurityContext{
-			RunAsUser:  ptr.To[int64](0),
-			RunAsGroup: ptr.To[int64](0),
-		},
-		VolumeMounts: mounts,
-	}
-}
-
-func statefulSetInitContainerConfigurator(state *RenderState) *corev1.Container {
-	volMounts := CommonMounts(state)
-	volMounts = append(volMounts,
-		corev1.VolumeMount{
-			Name:      "config",
-			MountPath: "/etc/redpanda",
-		},
-		corev1.VolumeMount{
-			Name:      "base-config",
-			MountPath: "/tmp/base-config",
-		},
-		corev1.VolumeMount{
-			Name:      fmt.Sprintf(`%.51s-configurator`, Fullname(state)),
-			MountPath: "/etc/secrets/configurator/scripts/",
-		},
-	)
-
-	if state.Values.RackAwareness.Enabled {
-		volMounts = append(volMounts, corev1.VolumeMount{
-			Name:      redpanda.ServiceAccountVolumeName,
-			MountPath: redpanda.DefaultAPITokenMountPath,
-			ReadOnly:  true,
-		})
-	}
-
-	return &corev1.Container{
-		Name:  RedpandaConfiguratorContainerName,
-		Image: fmt.Sprintf(`%s:%s`, state.Values.Image.Repository, Tag(state)),
-		Command: []string{
-			`/bin/bash`,
-			`-c`,
-			`trap "exit 0" TERM; exec $CONFIGURATOR_SCRIPT "${SERVICE_NAME}" "${KUBERNETES_NODE_NAME}" & wait $!`,
-		},
-		Env: rpkEnvVars(state, []corev1.EnvVar{
-			{
-				Name:  "CONFIGURATOR_SCRIPT",
-				Value: "/etc/secrets/configurator/scripts/configurator.sh",
-			},
-			{
-				Name: "SERVICE_NAME",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.name",
-					},
-					ResourceFieldRef: nil,
-					ConfigMapKeyRef:  nil,
-					SecretKeyRef:     nil,
-				},
-			},
-			{
-				Name: "KUBERNETES_NODE_NAME",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "spec.nodeName",
-					},
-				},
-			},
-			{
-				Name: "HOST_IP_ADDRESS",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						APIVersion: "v1",
-						FieldPath:  "status.hostIP",
-					},
-				},
-			},
-		}),
-		VolumeMounts: volMounts,
-		SecurityContext: &corev1.SecurityContext{
-			RunAsNonRoot:             ptr.To(true),
-			AllowPrivilegeEscalation: ptr.To(false),
-		},
-	}
-}
-
 func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 	var containers []corev1.Container
 	containers = append(containers, statefulSetContainerRedpanda(state, pool))
@@ -623,6 +400,33 @@ func StatefulSetContainers(state *RenderState, pool Pool) []corev1.Container {
 		containers = append(containers, *c)
 	}
 	return containers
+}
+
+// WrapLifecycleHook wraps the given command in an attempt to make it more friendly for Kubernetes' lifecycle hooks.
+//   - It attaches a maximum time limit by wrapping the command with `timeout -v <timeout>`
+//   - It redirect stderr to stdout so all logs from cmd get the same treatment.
+//   - It prepends the "lifecycle-hook $(hook) $(date)" to al lines emitted by the hook for easy identification.
+//   - It tees the output to fd 1 of pid 1 so it shows up in kubectl logs.
+//   - When the wrapped command exceeds the time budget, it emits a clearly-marked
+//     TIMEOUT line — `timeout`'s own message can be sparse, and the trailing
+//     `true` below previously made the failure invisible to anyone scanning pod
+//     logs for a reason the broker shut down ungracefully. PIPESTATUS[0] is
+//     read for timeout's exit code (124 = SIGTERM sent, 137 = SIGKILL).
+//   - It still terminates the entire command with "true" so non-zero exits
+//     don't poison container lifecycle on transient hook issues. The TIMEOUT
+//     marker above is the diagnostic signal operators grep for.
+func WrapLifecycleHook(hook string, timeoutSeconds int64, cmd []string) []string {
+	wrapped := strings.Join(cmd, " ")
+	script := fmt.Sprintf(
+		`timeout -v %d %s 2>&1 | sed "s/^/lifecycle-hook %s $(date): /" | tee /proc/1/fd/1`+"\n"+
+			`ec=${PIPESTATUS[0]}`+"\n"+
+			`if [ "$ec" = "124" ] || [ "$ec" = "137" ]; then`+"\n"+
+			`  echo "lifecycle-hook %s $(date): TIMEOUT after %ds — hook killed before completion; the broker will receive SIGTERM with work in-flight (exit $ec)" | tee /proc/1/fd/1`+"\n"+
+			`fi`+"\n"+
+			`true`,
+		timeoutSeconds, wrapped, hook, hook, timeoutSeconds,
+	)
+	return []string{"bash", "-c", script}
 }
 
 func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Container {
@@ -636,7 +440,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			// finish the lifecycle scripts with "true" to prevent them from terminating the pod prematurely
 			PostStart: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: redpanda.WrapLifecycleHook(
+					Command: WrapLifecycleHook(
 						"post-start",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"},
@@ -645,7 +449,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool Pool) corev1.Containe
 			},
 			PreStop: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: redpanda.WrapLifecycleHook(
+					Command: WrapLifecycleHook(
 						"pre-stop",
 						*pool.Statefulset.PodTemplate.Spec.TerminationGracePeriodSeconds/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"},

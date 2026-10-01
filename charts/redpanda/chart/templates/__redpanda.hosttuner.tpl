@@ -31,7 +31,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "_redpanda.HostTunerVolumeMounts" -}}
+{{- define "_redpanda.hostTunerVolumeMounts" -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $readOnlyDirs := (dict "bin" true "sbin" true "usr" true "lib" true "lib64" true) -}}
@@ -54,38 +54,6 @@
 {{- $_is_returning := false -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "host-tuner-state" "mountPath" "/var/run/redpanda_node_tuner_state.yaml" "readOnly" true))) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.HostTunerScript" -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" `set -xeuo pipefail
-umask 077
-mkdir -p /host/opt/redpanda
-mount --bind /opt/redpanda /host/opt/redpanda
-printf '#!/bin/sh\ncommand -v "$@"\n' > /opt/redpanda/bin/which
-chmod +x /opt/redpanda/bin/which
-chroot /host /bin/bash -c 'true' || { echo "FATAL: cannot exec /bin/bash inside the /host chroot; this node's filesystem layout is not supported by tuning.apply_host_tuners" >&2; exit 1; }
-trap 'rm -f /host/var/tmp/redpanda-tune.yaml' EXIT
-cp /host/redpanda_etc/redpanda.yaml /host/var/tmp/redpanda-tune.yaml
-grep -q 'data_directory:' /host/var/tmp/redpanda-tune.yaml || sed -i 's|^redpanda:|redpanda:\n  data_directory: /var/lib/redpanda/data|' /host/var/tmp/redpanda-tune.yaml
-chroot /host /bin/bash -c '
-  set -xeuo pipefail
-  export PATH="/opt/redpanda/bin:$PATH"
-  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune list --config /var/tmp/redpanda-tune.yaml
-  rc=0
-  nsenter -t 1 -n /opt/redpanda/bin/rpk redpanda tune all --config /var/tmp/redpanda-tune.yaml -v || rc=$?
-  if [ "$rc" -ne 0 ]; then
-    echo "WARNING: rpk redpanda tune all exited $rc; at least one enabled tuner failed to apply (see output above). Not blocking broker startup over a single degraded tuner." >&2
-  fi
-  busctl call org.freedesktop.systemd1 /org/freedesktop/systemd1 \
-    org.freedesktop.systemd1.Manager TryRestartUnit ss "irqbalance.service" "replace" \
-    || true
-'
-`) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
