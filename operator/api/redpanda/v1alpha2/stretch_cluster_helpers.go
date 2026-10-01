@@ -19,8 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 )
 
 // NOTE: this file contains helper methods for the StretchClusterSpec and related types.
@@ -707,26 +705,6 @@ func sortedKeys[V any](m map[string]V) []string {
 	}
 	sort.Strings(keys)
 	return keys
-}
-
-// --- ListenerTLS truststore helpers ---
-
-// ServerCAPath returns the path to the CA/truststore file for this listener.
-// If a TrustStore is configured, its path takes precedence.
-// Otherwise falls back to the certificate's CA, else its serving certificate.
-// Safe to call on nil receiver.
-func (l *StretchListenerTLS) ServerCAPath(pki *redpanda.PKI) string {
-	if l != nil && l.TrustStore != nil {
-		return l.TrustStore.TrustStoreFilePath()
-	}
-
-	certName := l.GetCert()
-	if certName == "" {
-		return ""
-	}
-
-	kp := pki.ServerKeypair(certName)
-	return kp.CAOrCertFile()
 }
 
 // --- TLS (parameterized helpers) ---

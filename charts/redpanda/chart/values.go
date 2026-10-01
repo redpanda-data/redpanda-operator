@@ -13,8 +13,6 @@ package chart
 
 import (
 	"fmt"
-	"maps"
-	"slices"
 	"strings"
 
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
@@ -25,13 +23,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	consolechart "github.com/redpanda-data/redpanda-operator/charts/console/v3/chart"
-	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
@@ -39,8 +35,6 @@ import (
 
 const (
 	fiveGiB = 5368709120
-	// That default path inside Redpanda container which is based on debian.
-	defaultTruststorePath = "/etc/ssl/certs/ca-certificates.crt"
 
 	// RedpandaContainerName is the user facing name of the redpanda container
 	// in the redpanda StatefulSet.
@@ -1095,105 +1089,6 @@ func (l *Listeners) InUseClientCerts(tls *TLS) []string {
 	return helmette.SortedKeys(certs)
 }
 
-func (l *Listeners) CreateSeedServers(replicas int32, fullname, internalDomain string) []map[string]any {
-	var result []map[string]any
-	for i := int32(0); i < replicas; i++ {
-		result = append(result, map[string]any{
-			"host": map[string]any{
-				"address": fmt.Sprintf("%s-%d.%s", fullname, i, internalDomain),
-				"port":    l.RPC.Port,
-			},
-		})
-	}
-	return result
-}
-
-// TrustStoreVolume returns a [corev1.Volume] containing a projected volume
-// that mounts all required truststore files. If no truststores are configured,
-// it returns nil.
-func (l *Listeners) TrustStoreVolume(tls *TLS) *corev1.Volume {
-	cmSources := map[string][]corev1.KeyToPath{}
-	secretSources := map[string][]corev1.KeyToPath{}
-
-	for _, ts := range l.TrustStores(tls) {
-		projection := ts.VolumeProjection()
-
-		if projection.Secret != nil {
-			secretSources[projection.Secret.Name] = append(secretSources[projection.Secret.Name], projection.Secret.Items...)
-		} else {
-			cmSources[projection.ConfigMap.Name] = append(cmSources[projection.ConfigMap.Name], projection.ConfigMap.Items...)
-		}
-	}
-
-	var sources []corev1.VolumeProjection
-
-	for _, name := range slices.Sorted(maps.Keys(cmSources)) {
-		keys := cmSources[name]
-		sources = append(sources, corev1.VolumeProjection{
-			ConfigMap: &corev1.ConfigMapProjection{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: name,
-				},
-				Items: dedupKeyToPaths(keys),
-			},
-		})
-	}
-
-	for _, name := range slices.Sorted(maps.Keys(secretSources)) {
-		keys := secretSources[name]
-		sources = append(sources, corev1.VolumeProjection{
-			Secret: &corev1.SecretProjection{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: name,
-				},
-				Items: dedupKeyToPaths(keys),
-			},
-		})
-	}
-
-	if len(sources) < 1 {
-		return nil
-	}
-
-	return &corev1.Volume{
-		Name: "truststores",
-		VolumeSource: corev1.VolumeSource{
-			Projected: &corev1.ProjectedVolumeSource{
-				Sources: sources,
-			},
-		},
-	}
-}
-
-func dedupKeyToPaths(items []corev1.KeyToPath) []corev1.KeyToPath {
-	// NB: This logic is a non-idiomatic fashion to dance around suspected
-	// limitations in gotohelm.
-
-	seen := map[string]bool{}
-	var deduped []corev1.KeyToPath
-
-	for _, item := range items {
-		if _, ok := seen[item.Key]; ok {
-			continue
-		}
-
-		deduped = append(deduped, item)
-		seen[item.Key] = true
-	}
-
-	return deduped
-}
-
-// TrustStores returns an aggregate slice of all "active" [TrustStore]s across
-// all listeners.
-func (l *Listeners) TrustStores(tls *TLS) []*TrustStore {
-	tss := l.Kafka.TrustStores(tls)
-	tss = append(tss, l.Admin.TrustStores(tls)...)
-	tss = append(tss, l.HTTP.TrustStores(tls)...)
-	tss = append(tss, l.SchemaRegistry.TrustStores(tls)...)
-	return tss
-}
-
 type Config struct {
 	Cluster                   ClusterConfig         `json:"cluster" jsonschema:"required"`
 	ExtraClusterConfiguration ClusterConfiguration  `json:"extraClusterConfiguration"`
@@ -1531,44 +1426,6 @@ func (TrustStore) JSONSchemaExtend(schema *jsonschema.Schema) {
 	schema.MinProperties = ptr.To[uint64](1)
 }
 
-func (t *TrustStore) TrustStoreFilePath() string {
-	return fmt.Sprintf("%s/%s", TrustStoreMountPath, t.RelativePath())
-}
-
-func (t *TrustStore) RelativePath() string {
-	if t.ConfigMapKeyRef != nil {
-		return fmt.Sprintf("configmaps/%s-%s", t.ConfigMapKeyRef.Name, t.ConfigMapKeyRef.Key)
-	}
-	return fmt.Sprintf("secrets/%s-%s", t.SecretKeyRef.Name, t.SecretKeyRef.Key)
-}
-
-func (t *TrustStore) VolumeProjection() corev1.VolumeProjection {
-	if t.ConfigMapKeyRef != nil {
-		return corev1.VolumeProjection{
-			ConfigMap: &corev1.ConfigMapProjection{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: t.ConfigMapKeyRef.Name,
-				},
-				Items: []corev1.KeyToPath{{
-					Key:  t.ConfigMapKeyRef.Key,
-					Path: t.RelativePath(),
-				}},
-			},
-		}
-	}
-	return corev1.VolumeProjection{
-		Secret: &corev1.SecretProjection{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: t.SecretKeyRef.Name,
-			},
-			Items: []corev1.KeyToPath{{
-				Key:  t.SecretKeyRef.Key,
-				Path: t.RelativePath(),
-			}},
-		},
-	}
-}
-
 // InternalTLS is the TLS configuration for "internal" listeners. Internal
 // listeners all have default values specified within values.yaml which allows
 // us to be more strict about the schema here.
@@ -1586,43 +1443,6 @@ type InternalTLS struct {
 func (t *InternalTLS) IsEnabled(tls *TLS) bool {
 	// Default Enabled to the value of the global TLS struct.
 	return ptr.Deref(t.Enabled, tls.Enabled) && t.Cert != ""
-}
-
-func (t *InternalTLS) TrustStoreFilePath(pki *redpanda.PKI) string {
-	if t.TrustStore != nil {
-		return t.TrustStore.TrustStoreFilePath()
-	}
-
-	if kp := pki.ServerKeypair(t.Cert); kp.CA != nil {
-		return kp.CAFile()
-	}
-
-	return defaultTruststorePath
-}
-
-// ServerCAPath returns the path on disk to a certificate that may be used to
-// verify a connection with this server.
-func (t *InternalTLS) ServerCAPath(pki *redpanda.PKI) string {
-	if t.TrustStore != nil {
-		return t.TrustStore.TrustStoreFilePath()
-	}
-
-	kp := pki.ServerKeypair(t.Cert)
-	return kp.CAOrCertFile()
-}
-
-// ClientKeypair returns the keypair this listener presents when it requires
-// mTLS, or nil when it doesn't.
-//
-// NB: gated on the listener, not the certificate. [redpanda.PKI] is keyed by
-// certificate name and issues a client keypair when *any* listener sharing
-// that certificate requires mTLS, so its keypair is non-nil for listeners that
-// don't -- which must not present one.
-func (t *InternalTLS) ClientKeypair(pki *redpanda.PKI) *redpanda.Keypair {
-	if !t.RequireClientAuth {
-		return nil
-	}
-	return pki.ClientKeypair(t.Cert)
 }
 
 // ToCommonTLS converts InternalTLS configuration to ir.CommonTLS format with proper secret references.
@@ -1711,18 +1531,6 @@ func (t *ExternalTLS) GetCertName(i *InternalTLS) string {
 	return ptr.Deref(t.Cert, i.Cert)
 }
 
-func (t *ExternalTLS) TrustStoreFilePath(i *InternalTLS, pki *redpanda.PKI) string {
-	if t.TrustStore != nil {
-		return t.TrustStore.TrustStoreFilePath()
-	}
-
-	if kp := pki.ServerKeypair(t.GetCertName(i)); kp.CA != nil {
-		return kp.CAFile()
-	}
-
-	return defaultTruststorePath
-}
-
 // IsEnabled reports the value of [ExternalTLS.Enabled], falling back to
 // [InternalTLS.IsEnabled] if not specified.
 func (t *ExternalTLS) IsEnabled(i *InternalTLS, tls *TLS) bool {
@@ -1777,127 +1585,6 @@ func (ListenerConfig[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
 	external.PatternProperties, external.AdditionalProperties = map[string]*jsonschema.Schema{
 		`^[A-Za-z_][A-Za-z0-9_]*$`: external.AdditionalProperties,
 	}, nil
-}
-
-func (l *ListenerConfig[T]) ServicePorts(namePrefix string, external *ExternalConfig) []corev1.ServicePort {
-	var ports []corev1.ServicePort
-	for name, listener := range helmette.SortedMap(l.External) {
-		if !ptr.Deref(listener.Enabled, external.Enabled) {
-			continue
-		}
-		// Skip listeners whose type is tlsroute; they get their own Gateway
-		// API TLSRoute + ClusterIP services instead. The per-listener type is
-		// authoritative on its own — it must exclude the listener from the
-		// conventional NodePort/LoadBalancer Service regardless of the global
-		// external.gateway state. Otherwise a `type: tlsroute` listener while the
-		// global gateway block is off/absent would silently fall back to a
-		// node-exposed Service. validateGatewayListeners fails render for that
-		// misconfiguration; this skip is the matching fail-closed exclusion.
-		if listener.IsGatewayListener() {
-			continue
-		}
-
-		fallbackPorts := append(listener.AdvertisedPorts, l.Port)
-
-		ports = append(ports, corev1.ServicePort{
-			Name:        fmt.Sprintf("%s-%s", namePrefix, name),
-			Protocol:    corev1.ProtocolTCP,
-			AppProtocol: l.AppProtocol,
-			TargetPort:  intstr.FromInt32(listener.Port),
-			Port:        ptr.Deref(listener.NodePort, fallbackPorts[0]),
-		})
-	}
-	return ports
-}
-
-// TrustStores returns a slice of all configured and enabled [TrustStore]s on
-// both internal and external listeners.
-func (l *ListenerConfig[T]) TrustStores(tls *TLS) []*TrustStore {
-	tss := []*TrustStore{}
-
-	if l.TLS.IsEnabled(tls) && l.TLS.TrustStore != nil {
-		tss = append(tss, l.TLS.TrustStore)
-	}
-
-	for _, key := range helmette.SortedKeys(l.External) {
-		lis := l.External[key]
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) || lis.TLS.TrustStore == nil {
-			continue
-		}
-		tss = append(tss, lis.TLS.TrustStore)
-
-	}
-
-	return tss
-}
-
-// Listeners returns a slice of maps suitable for use as the value of
-// `<listener>_api` in a redpanda.yml file.
-func (l *ListenerConfig[T]) Listeners(auth *T) []map[string]any {
-	internal := map[string]any{
-		"name":    "internal",
-		"address": ptr.Deref(l.Address, "0.0.0.0"),
-		"port":    l.Port,
-	}
-
-	defaultAuth := ptr.Deref(auth, "")
-
-	if am := ptr.Deref(l.AuthenticationMethod, defaultAuth); am != "" {
-		internal["authentication_method"] = am
-	}
-
-	listeners := []map[string]any{
-		internal,
-	}
-
-	for k, l := range helmette.SortedMap(l.External) {
-		if !l.IsEnabled() {
-			continue
-		}
-
-		listener := map[string]any{
-			"name":    k,
-			"port":    l.Port,
-			"address": ptr.Deref(l.Address, "0.0.0.0"),
-		}
-
-		if am := ptr.Deref(l.AuthenticationMethod, defaultAuth); am != "" {
-			listener["authentication_method"] = am
-		}
-
-		listeners = append(listeners, listener)
-	}
-
-	return listeners
-}
-
-func (l *ListenerConfig[T]) ListenersTLS(pki *redpanda.PKI, tls *TLS) []map[string]any {
-	pp := []map[string]any{}
-
-	internal := createInternalListenerTLSCfg(pki, tls, l.TLS)
-	if len(internal) > 0 {
-		pp = append(pp, internal)
-	}
-
-	for k, lis := range helmette.SortedMap(l.External) {
-		if !lis.IsEnabled() || !lis.TLS.IsEnabled(&l.TLS, tls) {
-			continue
-		}
-
-		// NB: enablement above guarantees the cert is in InUseServerCerts, so
-		// the lookup always hits.
-		kp := pki.ServerKeypair(lis.TLS.GetCertName(&l.TLS))
-
-		pp = append(pp, map[string]any{
-			"name":                k,
-			"enabled":             true,
-			"cert_file":           kp.CertFile(),
-			"key_file":            kp.KeyFile(),
-			"require_client_auth": ptr.Deref(lis.TLS.RequireClientAuth, false),
-			"truststore_file":     lis.TLS.TrustStoreFilePath(&l.TLS, pki),
-		})
-	}
-	return pp
 }
 
 type ExternalListener[T ~string] struct {
