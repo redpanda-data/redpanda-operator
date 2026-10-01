@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	redpanda "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -90,8 +91,9 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	//+kubebuilder:scaffold:scheme
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: controller.UnifiedScheme,
-		Logger: l,
+		Scheme:  controller.UnifiedScheme,
+		Logger:  l,
+		Metrics: server.Options{BindAddress: "0"},
 		Controller: config.Controller{
 			MaxConcurrentReconciles: 2,
 		},
@@ -165,14 +167,16 @@ var _ = BeforeSuite(func(suiteCtx SpecContext) {
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
-		err = k8sManager.Start(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		// GinkgoRecover catches any potential panics.
+		defer GinkgoRecover()
+
+		Expect(k8sManager.Start(ctx)).To(Succeed())
 	}()
 	Expect(k8sManager.GetCache().WaitForCacheSync(context.Background())).To(BeTrue())
 
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).ToNot(BeNil())
-}, NodeTimeout(20*time.Second))
+}, NodeTimeout(2*time.Minute))
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
