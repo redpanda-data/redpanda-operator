@@ -42,6 +42,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -216,19 +217,7 @@ func TestController(t *testing.T) {
 	allCRDs := crds.All()
 	allCRDs = append(allCRDs, loadGatewayAPICRDs(t)...)
 
-	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-
-		for _, cond := range crd.Status.Conditions {
-			if cond.Type == apiextensionsv1.Established {
-				return cond.Status == apiextensionsv1.ConditionTrue, nil
-			}
-		}
-
-		return false, nil
-	}, allCRDs...))
+	testutils.InstallCRDs(t, ctl, allCRDs...)
 
 	// Create namespace
 	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
