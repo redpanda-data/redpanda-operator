@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
@@ -26,6 +27,7 @@ func SetupTestManager(t *testing.T, ctx context.Context, cfg *rest.Config, c cli
 
 	mgr, err := multicluster.NewSingleClusterManager(cfg, manager.Options{
 		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
 		NewClient: func(_ *rest.Config, _ client.Options) (client.Client, error) {
 			return c, nil
 		},

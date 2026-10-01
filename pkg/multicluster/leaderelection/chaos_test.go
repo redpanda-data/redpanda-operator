@@ -62,6 +62,8 @@ func findLeader(t *testing.T, leaders []*testLeader, timeout time.Duration) (lea
 // the absence of faults. Any modification to the transport that causes
 // spurious re-elections will break this test.
 func TestLeaderRemainsStable_WhenAllPeersHealthy(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 
@@ -100,6 +102,8 @@ func TestLeaderRemainsStable_WhenAllPeersHealthy(t *testing.T) {
 // Stopping both followers leaves the leader alone, and CheckQuorum must
 // fire — otherwise we'd silently be running without a real quorum.
 func TestLeaderStepsDown_WhenMinorityIsolated(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
 	defer cancel()
 
@@ -144,6 +148,8 @@ func TestLeaderStepsDown_WhenMinorityIsolated(t *testing.T) {
 // in place so it will automatically start passing once the per-peer
 // fan-out work lands (see the fix PR for finding #1).
 func TestLeaderSurvives_AsymmetricSilentDropOnOnePeer(t *testing.T) {
+	t.Parallel()
+
 	// Wire a BlockIngress control into each node's TestHooks; we'll only
 	// flip the one on the isolated follower.
 	hooks := make([]*TestHooks, 3)
