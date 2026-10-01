@@ -101,6 +101,29 @@ func slices_Sorted(s any) []string {
 	return SortAlpha(s)
 }
 
+// re-implementation of maps.Copy.
+//
+// Keys are copied in sorted order purely so the emitted template is stable;
+// the destination is a dict, which has no order of its own.
+func maps_Copy(dst map[string]any, src map[string]any) {
+	for _, key := range slices_Sorted(Keys(src)) {
+		dst[key] = src[key]
+	}
+}
+
+// re-implementation of maps.Clone.
+//
+// Shallow and nil preserving like go.
+func maps_Clone(m map[string]any) map[string]any {
+	if m == nil {
+		return nil
+	}
+
+	cloned := map[string]any{}
+	maps_Copy(cloned, m)
+	return cloned
+}
+
 // re-implementation of k8s.io/utils/ptr.Deref.
 func ptr_Deref(ptr, def any) any {
 	if ptr != nil {

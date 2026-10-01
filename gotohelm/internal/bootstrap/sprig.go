@@ -29,6 +29,10 @@ func Get(map[string]any, string) any {
 	panic("not implemented")
 }
 
+func Keys(in map[string]any) []string {
+	return sprig.FuncMap()["keys"].(func(...map[string]any) []string)(in)
+}
+
 func Len(any) int {
 	panic("not implemented")
 }

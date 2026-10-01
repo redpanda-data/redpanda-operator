@@ -32,6 +32,11 @@ func Get(map[string]any, string) any {
 	panic("not implemented")
 }
 
+// +gotohelm:builtin=keys
+func Keys(map[string]any) []string {
+	panic("not implemented")
+}
+
 // +gotohelm:builtin=len
 func Len(any) int {
 	panic("not implemented")
