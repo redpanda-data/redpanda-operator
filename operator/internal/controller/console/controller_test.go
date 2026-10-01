@@ -20,7 +20,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -32,6 +31,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 	"github.com/redpanda-data/redpanda-operator/pkg/kube/kubetest"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
@@ -124,19 +124,7 @@ func TestController(t *testing.T) {
 		},
 	})
 
-	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-
-		for _, cond := range crd.Status.Conditions {
-			if cond.Type == apiextensionsv1.Established {
-				return cond.Status == apiextensionsv1.ConditionTrue, nil
-			}
-		}
-
-		return false, nil
-	}, crds.All()...))
+	testutils.InstallCRDs(t, ctl, crds.All()...)
 
 	// Create namespace
 	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
