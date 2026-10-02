@@ -16,8 +16,12 @@ package schemaregistry
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
+	"net"
 	"net/http"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -47,6 +51,58 @@ type Broker struct {
 	URL string
 	// Client is an sr.Client restricted to URL.
 	Client *sr.Client
+}
+
+// Listener is enough of a cluster's internal Schema Registry listener to
+// probe one broker at an address the caller already holds -- a pod IP.
+// [PerBrokerClients] splits a client whose URLs came from the cluster's DNS;
+// the endpoint steering controller publishes those DNS records itself, so it
+// can't depend on records it is in the middle of deciding and addresses pods
+// directly.
+//
+// NB: probes go straight to the pod network, so only an in-cluster caller
+// can use this. No credentials are needed, since /status/ready is auth-exempt
+// in core.
+type Listener struct {
+	// Port is the listener's port on every broker.
+	Port int32
+	// TLSConfig returns the listener's client TLS configuration, or nil for
+	// a plaintext listener. It is consulted per probe, so a cluster whose
+	// certificates can't be read yet fails only its probes and nothing else
+	// the caller knows about it. Implementations reading Secrets should
+	// memoize.
+	TLSConfig func(ctx context.Context) (*tls.Config, error)
+}
+
+// BrokerAt returns a [Broker] addressed at host, normally a pod IP.
+// serverName is the DNS name to verify the certificate against, needed
+// because broker certificates never carry pod IPs. It is ignored for a
+// plaintext listener, or when the TLS config names a server itself.
+func (l *Listener) BrokerAt(ctx context.Context, host, serverName string) (Broker, error) {
+	scheme := "http"
+	var opts []sr.ClientOpt
+
+	if l.TLSConfig != nil {
+		tlsConfig, err := l.TLSConfig(ctx)
+		if err != nil {
+			return Broker{}, errors.Wrap(err, "reading schema registry listener TLS configuration")
+		}
+		if tlsConfig != nil {
+			scheme = "https"
+			if tlsConfig.ServerName == "" && serverName != "" {
+				tlsConfig = tlsConfig.Clone()
+				tlsConfig.ServerName = serverName
+			}
+			opts = append(opts, sr.DialTLSConfig(tlsConfig))
+		}
+	}
+
+	url := fmt.Sprintf("%s://%s", scheme, net.JoinHostPort(host, strconv.Itoa(int(l.Port))))
+	client, err := sr.NewClient(append(opts, sr.URLs(url))...)
+	if err != nil {
+		return Broker{}, errors.Wrapf(err, "building schema registry client for %q", url)
+	}
+	return Broker{URL: url, Client: client}, nil
 }
 
 // PerBrokerClients splits an aggregate sr.Client into one client per

@@ -41,6 +41,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	consolecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/console"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/decommissioning"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/endpointsteering"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/olddecommission"
 	pipelinecontroller "github.com/redpanda-data/redpanda-operator/operator/internal/controller/pipeline"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
@@ -669,6 +670,31 @@ func Run(
 	if v1Controllers {
 		setupLog.Info("setting up vectorized controllers")
 		if err := setupVectorizedControllers(ctx, mgr, factory, cloudExpander, opts); err != nil {
+			return err
+		}
+	}
+
+	// Steering is opted into per cluster, with the feature.EndpointSteering
+	// annotation, so the controller always runs: a Service that loses the
+	// annotation needs it running to hand its endpoints back to the native
+	// EndpointSlice controller.
+	//
+	// It resolves a Service's cluster through the manager's cache, so it can
+	// only look up the cluster kinds whose controllers -- and hence
+	// informers -- are running; with none there is nothing to steer.
+	var resolvers endpointsteering.Resolvers
+	if v2Controllers {
+		resolvers = append(resolvers, endpointsteering.V2Resolver(mgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)))
+	}
+	if v1Controllers {
+		resolvers = append(resolvers, endpointsteering.V1Resolver(mgr.GetClient(), endpointsteering.BrokersOf(factory.ClusterBrokers)))
+	}
+	if len(resolvers) > 0 {
+		if err := endpointsteering.Setup(mgr, endpointsteering.Options{
+			Resolver:      resolvers,
+			ClusterDomain: opts.clusterDomain,
+		}); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "EndpointSteering")
 			return err
 		}
 	}

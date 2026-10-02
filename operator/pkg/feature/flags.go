@@ -43,6 +43,23 @@ var V2UseBrokerCR = &AnnotationFeatureFlag[bool]{
 	},
 }
 
+// EndpointSteering controls whether the operator publishes a cluster's
+// Service endpoints itself, port by port, rather than leaving them to
+// Kubernetes. The same annotation serves Clusters and Redpandas. See
+// internal/controller/endpointsteering.
+//
+// NB: not registered in either bundle. SetDefaults would put the annotation
+// back whenever a user removed it, and removing it is how a Service is
+// handed back to Kubernetes.
+// Valid Value(s): true
+var EndpointSteering = &AnnotationFeatureFlag[bool]{
+	Key:     "operator.redpanda.com/enable-endpoint-steering",
+	Default: "false",
+	Parse: func(s string) (bool, error) {
+		return s == "true", nil
+	},
+}
+
 // V1Managed controls whether a Cluster resource is
 // reconciled or by the cluster controller(s) or not.
 // Valid Value(s): false

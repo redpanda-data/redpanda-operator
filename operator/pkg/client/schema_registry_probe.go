@@ -12,10 +12,16 @@ package client
 import (
 	"context"
 	"fmt"
+	"slices"
 
+	"github.com/cockroachdb/errors"
+	"github.com/twmb/franz-go/pkg/sr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	mcmanager "sigs.k8s.io/multicluster-runtime/pkg/manager"
 
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
@@ -32,8 +38,15 @@ import (
 // its Schema Registry listener (v2 Redpanda spec, or a v1 Cluster without an
 // internal SR listener).
 func (c *Factory) SchemaRegistryBrokerClients(ctx context.Context, obj any) ([]schemaregistry.Broker, error) {
-	if rp, ok := obj.(*redpandav1alpha2.Redpanda); ok && !redpandaSchemaRegistryEnabled(rp) {
-		return nil, schemaregistry.ErrDisabled
+	if rp, ok := obj.(*redpandav1alpha2.Redpanda); ok {
+		if !redpandaSchemaRegistryEnabled(rp) {
+			return nil, schemaregistry.ErrDisabled
+		}
+		srClient, err := c.redpandaSchemaRegistryBrokerClient(ctx, rp, mcmanager.LocalCluster)
+		if err != nil {
+			return nil, err
+		}
+		return schemaregistry.PerBrokerClients(srClient)
 	}
 	if vc, ok := obj.(*vectorizedv1alpha1.Cluster); ok && vc.SchemaRegistryInternalListener() == nil {
 		return nil, schemaregistry.ErrDisabled
@@ -44,6 +57,58 @@ func (c *Factory) SchemaRegistryBrokerClients(ctx context.Context, obj any) ([]s
 		return nil, err
 	}
 	return schemaregistry.PerBrokerClients(client)
+}
+
+// redpandaSchemaRegistryBrokerClient builds a v2 cluster's Schema Registry
+// client with one URL per broker pod, rather than per SRV record like
+// SchemaRegistryClient. Steering publishes the Schema Registry port only for
+// brokers whose store has caught up, so the SRV record omits exactly the
+// brokers a rolling restart has to wait for.
+func (c *Factory) redpandaSchemaRegistryBrokerClient(ctx context.Context, cluster *redpandav1alpha2.Redpanda, clusterName string) (*sr.Client, error) {
+	state, err := c.redpandaRenderState(ctx, cluster, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	k8sClient, err := c.GetClient(ctx, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
+	var pods corev1.PodList
+	if err := k8sClient.List(ctx, &pods, client.InNamespace(cluster.Namespace), client.MatchingLabels(redpandachart.ClusterPodLabelsSelector(state))); err != nil {
+		return nil, errors.Wrap(err, "listing broker pods")
+	}
+	hosts := schemaRegistryBrokerHosts(state, pods.Items)
+	if len(hosts) == 0 {
+		return nil, errors.Newf("no broker pods found for cluster %s/%s", cluster.Namespace, cluster.Name)
+	}
+
+	var opts []sr.ClientOpt
+	if c.userAuth != nil {
+		opts = append(opts, sr.BasicAuth(c.userAuth.Username, c.userAuth.Password))
+	}
+	return redpandaclient.SchemaRegistryClientForHosts(state, c.dialer, hosts, opts...)
+}
+
+// schemaRegistryBrokerHosts returns the sorted "host:port" Schema Registry
+// addresses of the broker pods among pods. Only pods under the internal
+// Service count, which both makes the names resolvable and tells a broker
+// from any pod labelled like one.
+//
+// NB: pods with no address are skipped too. The gate fails closed, so a
+// Pending or finished pod would defer the roll forever rather than for as
+// long as its store takes to catch up.
+func schemaRegistryBrokerHosts(state *redpandachart.RenderState, pods []corev1.Pod) []string {
+	var hosts []string
+	for i := range pods {
+		pod := &pods[i]
+		if pod.Spec.Subdomain != redpandachart.ServiceName(state) || !podDialable(pod) {
+			continue
+		}
+		hosts = append(hosts, fmt.Sprintf("%s.%s:%d", pod.Name, redpandachart.InternalDomain(state), state.Values.Listeners.SchemaRegistry.Port))
+	}
+	slices.Sort(hosts)
+	return hosts
 }
 
 // redpandaSchemaRegistryEnabled reports whether a v2 cluster's Schema
