@@ -281,11 +281,12 @@ func HostTunerStateVolumeMount() corev1.VolumeMount {
 // and cannot crashloop the init container on hosts that lack the
 // feature".
 //
-// These are merged at LOWEST precedence in rpkNodeConfig — after both
-// Tuning.Translate() and the user's config.rpk — so an explicit
-// `config.rpk.tune_*: false` opt-out always wins over these defaults.
-// The multicluster (StretchCluster) renderer applies the same map with
-// the same precedence.
+// rpkNodeConfig applies these by presence check, only for keys neither
+// Tuning.Translate() nor the user's config.rpk set, so an explicit
+// `config.rpk.tune_*: false` opt-out always wins. Merging them would not
+// work: Sprig/mergo merge treats an explicit false as empty and overwrites
+// it. The multicluster (StretchCluster) renderer applies the same map
+// with the same precedence.
 //
 //nolint:laconiccomments
 func HostTunerDefaults() map[string]any {

@@ -433,13 +433,17 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	result = helmette.Merge(result, state.Values.Tuning.Translate())
 	result = helmette.Merge(result, state.Values.Config.CreateRPKConfiguration())
 
-	// Merge is first-argument-wins, so merging the host tuner defaults
-	// last gives them the LOWEST precedence: they only fill keys neither
-	// values.tuning nor the user's config.rpk set explicitly. An operator
-	// writing `config.rpk.tune_fstrim: false` keeps that opt-out even
-	// with apply_host_tuners enabled.
+	// The host tuner defaults only fill keys neither values.tuning nor the
+	// user's config.rpk set explicitly, so `config.rpk.tune_fstrim: false`
+	// keeps that opt-out with apply_host_tuners enabled. This must be a
+	// presence check: Merge treats an explicit false as an empty slot and
+	// lets a later true overwrite it (#1936).
 	if state.Values.Tuning.ApplyHostTuners {
-		result = helmette.Merge(result, redpanda.HostTunerDefaults())
+		for key, value := range redpanda.HostTunerDefaults() {
+			if _, ok := result[key]; !ok {
+				result[key] = value
+			}
+		}
 	}
 
 	return result
