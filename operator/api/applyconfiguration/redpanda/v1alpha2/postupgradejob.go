@@ -12,7 +12,7 @@
 package v1alpha2
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // PostUpgradeJobApplyConfiguration represents a declarative configuration of the PostUpgradeJob type for use
@@ -21,12 +21,12 @@ type PostUpgradeJobApplyConfiguration struct {
 	Annotations     map[string]string              `json:"annotations,omitempty"`
 	Enabled         *bool                          `json:"enabled,omitempty"`
 	Labels          map[string]string              `json:"labels,omitempty"`
-	ExtraEnv        []v1.EnvVar                    `json:"extraEnv,omitempty"`
-	ExtraEnvFrom    []v1.EnvFromSource             `json:"extraEnvFrom,omitempty"`
-	Resources       *v1.ResourceRequirements       `json:"resources,omitempty"`
+	ExtraEnv        []corev1.EnvVar                `json:"extraEnv,omitempty"`
+	ExtraEnvFrom    []corev1.EnvFromSource         `json:"extraEnvFrom,omitempty"`
+	Resources       *corev1.ResourceRequirements   `json:"resources,omitempty"`
 	BackoffLimit    *int32                         `json:"backoffLimit,omitempty"`
-	Affinity        *v1.Affinity                   `json:"affinity,omitempty"`
-	SecurityContext *v1.SecurityContext            `json:"securityContext,omitempty"`
+	Affinity        *corev1.Affinity               `json:"affinity,omitempty"`
+	SecurityContext *corev1.SecurityContext        `json:"securityContext,omitempty"`
 	PodTemplate     *PodTemplateApplyConfiguration `json:"podTemplate,omitempty"`
 }
 
@@ -75,7 +75,7 @@ func (b *PostUpgradeJobApplyConfiguration) WithLabels(entries map[string]string)
 // WithExtraEnv adds the given value to the ExtraEnv field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ExtraEnv field.
-func (b *PostUpgradeJobApplyConfiguration) WithExtraEnv(values ...v1.EnvVar) *PostUpgradeJobApplyConfiguration {
+func (b *PostUpgradeJobApplyConfiguration) WithExtraEnv(values ...corev1.EnvVar) *PostUpgradeJobApplyConfiguration {
 	for i := range values {
 		b.ExtraEnv = append(b.ExtraEnv, values[i])
 	}
@@ -85,7 +85,7 @@ func (b *PostUpgradeJobApplyConfiguration) WithExtraEnv(values ...v1.EnvVar) *Po
 // WithExtraEnvFrom adds the given value to the ExtraEnvFrom field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the ExtraEnvFrom field.
-func (b *PostUpgradeJobApplyConfiguration) WithExtraEnvFrom(values ...v1.EnvFromSource) *PostUpgradeJobApplyConfiguration {
+func (b *PostUpgradeJobApplyConfiguration) WithExtraEnvFrom(values ...corev1.EnvFromSource) *PostUpgradeJobApplyConfiguration {
 	for i := range values {
 		b.ExtraEnvFrom = append(b.ExtraEnvFrom, values[i])
 	}
@@ -95,7 +95,7 @@ func (b *PostUpgradeJobApplyConfiguration) WithExtraEnvFrom(values ...v1.EnvFrom
 // WithResources sets the Resources field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Resources field is set to the value of the last call.
-func (b *PostUpgradeJobApplyConfiguration) WithResources(value v1.ResourceRequirements) *PostUpgradeJobApplyConfiguration {
+func (b *PostUpgradeJobApplyConfiguration) WithResources(value corev1.ResourceRequirements) *PostUpgradeJobApplyConfiguration {
 	b.Resources = &value
 	return b
 }
@@ -111,7 +111,7 @@ func (b *PostUpgradeJobApplyConfiguration) WithBackoffLimit(value int32) *PostUp
 // WithAffinity sets the Affinity field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Affinity field is set to the value of the last call.
-func (b *PostUpgradeJobApplyConfiguration) WithAffinity(value v1.Affinity) *PostUpgradeJobApplyConfiguration {
+func (b *PostUpgradeJobApplyConfiguration) WithAffinity(value corev1.Affinity) *PostUpgradeJobApplyConfiguration {
 	b.Affinity = &value
 	return b
 }
@@ -119,7 +119,7 @@ func (b *PostUpgradeJobApplyConfiguration) WithAffinity(value v1.Affinity) *Post
 // WithSecurityContext sets the SecurityContext field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the SecurityContext field is set to the value of the last call.
-func (b *PostUpgradeJobApplyConfiguration) WithSecurityContext(value v1.SecurityContext) *PostUpgradeJobApplyConfiguration {
+func (b *PostUpgradeJobApplyConfiguration) WithSecurityContext(value corev1.SecurityContext) *PostUpgradeJobApplyConfiguration {
 	b.SecurityContext = &value
 	return b
 }

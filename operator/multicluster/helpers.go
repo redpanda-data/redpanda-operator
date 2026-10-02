@@ -124,23 +124,3 @@ func setPtr[T any](dst map[string]any, key string, val *T) {
 		dst[key] = *val
 	}
 }
-
-// certServerVolumeName returns the volume name for a server cert.
-func certServerVolumeName(certName string) string {
-	return fmt.Sprintf("redpanda-%s-cert", certName)
-}
-
-// certClientVolumeName returns the volume name for a client cert.
-func certClientVolumeName(certName string) string {
-	return fmt.Sprintf("redpanda-%s-client-cert", certName)
-}
-
-// certServerMountPoint returns the mount path for a server cert.
-func certServerMountPoint(certName string) string {
-	return fmt.Sprintf("/etc/tls/certs/%s", certName)
-}
-
-// certClientMountPoint returns the mount path for a client cert.
-func certClientMountPoint(certName string) string {
-	return fmt.Sprintf("/etc/tls/certs/%s-client", certName)
-}

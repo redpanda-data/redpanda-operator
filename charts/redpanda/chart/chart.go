@@ -146,7 +146,8 @@ func renderResources(state *RenderState) []kube.Object {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range ClientCerts(state) {
+	pki := PKI(state)
+	for _, obj := range pki.Render() {
 		manifests = append(manifests, obj)
 	}
 
