@@ -1477,3 +1477,50 @@ func TestMultiNamespaceInstall(t *testing.T) {
 		require.Error(t, err)
 	}
 }
+
+// TestHostTunerOptOutGoRender renders through the Go chart, the path the
+// operator uses for Redpanda CRs, and checks that explicit
+// config.rpk.tune_*: false opt-outs survive apply_host_tuners (#1936).
+// TestTemplate covers the same values through the transpiled templates.
+func TestHostTunerOptOutGoRender(t *testing.T) {
+	objs, err := redpandachart.Chart.Render(nil, helmette.Release{
+		Name:      "redpanda",
+		Namespace: "default",
+		Service:   "Helm",
+	}, redpandachart.PartialValues{
+		Tuning: &redpandachart.PartialTuning{
+			TuneAIOEvents:   ptr.To(true),
+			ApplyHostTuners: ptr.To(true),
+		},
+		Config: &redpandachart.PartialConfig{
+			RPK: map[string]any{
+				"tune_network":                       true,
+				"allow_dedicated_interrupt_mode":     true,
+				"cores_per_dedicated_interrupt_core": 6,
+				"tune_disk_irq":                      false,
+				"tune_disk_scheduler":                false,
+				"tune_disk_nomerges":                 false,
+				"tune_fstrim":                        false,
+				"tune_cpu":                           false,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	var rpk map[string]any
+	for _, obj := range objs {
+		if cm, ok := obj.(*corev1.ConfigMap); ok && cm.Name == "redpanda" {
+			var cfg map[string]any
+			require.NoError(t, yaml.Unmarshal([]byte(cm.Data["redpanda.yaml"]), &cfg))
+			rpk, _ = cfg["rpk"].(map[string]any)
+		}
+	}
+	require.NotNil(t, rpk, "redpanda.yaml has no rpk section")
+
+	for _, key := range []string{"tune_disk_irq", "tune_disk_scheduler", "tune_disk_nomerges", "tune_fstrim", "tune_cpu"} {
+		require.Equal(t, false, rpk[key], key)
+	}
+	// Keys the user left unset still get the host-mode default.
+	require.Equal(t, true, rpk["tune_disk_write_cache"])
+	require.Equal(t, true, rpk["tune_network"])
+}
