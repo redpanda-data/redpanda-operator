@@ -12,11 +12,11 @@ package test
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/moby/moby/pkg/namesgenerator"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/redpanda-data/common-go/rpadmin"
@@ -757,7 +757,9 @@ func getInitialTestCluster(
 	namespace *corev1.Namespace,
 	api *admin.MockAdminAPI,
 ) {
-	ns := strings.Replace(namesgenerator.GetRandomName(0), "_", "-", 1)
+	suffix := make([]byte, 4)
+	_, _ = rand.Read(suffix)
+	ns := "test-" + hex.EncodeToString(suffix)
 	key = types.NamespacedName{
 		Name:      name,
 		Namespace: ns,

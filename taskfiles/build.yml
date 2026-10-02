@@ -70,15 +70,20 @@ tasks:
       - task: go:build
         vars: { DIR: gen }
 
+  # gotohelm is a pinned external module (see gen/go.mod's tool directive), not
+  # a workspace member, so it builds out of gen's module graph.
   gotohelm:
     cmds:
       - task: go:build
-        vars: { DIR: gotohelm, PACKAGE: ./cmd/gotohelm }
+        vars:
+          DIR: gen
+          BIN: gotohelm
+          PACKAGE: github.com/redpanda-data/redpanda-operator/gotohelm/cmd/gotohelm
 
   go:build:
     internal: true
     run: when_changed
-    label: "go:build:{{ .DIR }}"
+    label: "go:build:{{ .BIN | default .DIR }}"
     vars:
       # this is a workaround for rpk packages using buf-built grpc-gateway protobuf options, whereas the kubernetes ecosystem
       # uses the google provided libraries, which conflict due to them being the same library.
@@ -90,7 +95,7 @@ tasks:
     requires:
       vars: [DIR]
     cmds:
-    - go build -C {{ .DIR }} -ldflags='{{ .LD_FLAGS }}' -o ../.build/{{ .DIR }} {{ .PACKAGE }}
+    - go build -C {{ .DIR }} -ldflags='{{ .LD_FLAGS }}' -o ../.build/{{ .BIN | default .DIR }} {{ .PACKAGE }}
     status:
     # NB: Task's globbing is finicky and tracking all possible go files is
     # prone to error. Instead, rely on go build's caching. Cache status must be
@@ -104,4 +109,4 @@ tasks:
     # through mvdan/sh, where `!` binds to the pipeline's first command rather
     # than the pipeline, so the status took grep's exit code (1 == no match)
     # as "needs rebuild" and never once reported up-to-date.
-    - 'test -z "$(go build -C {{ .DIR }} -n -ldflags=''{{ .LD_FLAGS }}'' -o ../.build/{{ .DIR }} {{ .PACKAGE }} 2>&1 | grep ''mv $WORK'')"'
+    - 'test -z "$(go build -C {{ .DIR }} -n -ldflags=''{{ .LD_FLAGS }}'' -o ../.build/{{ .BIN | default .DIR }} {{ .PACKAGE }} 2>&1 | grep ''mv $WORK'')"'
