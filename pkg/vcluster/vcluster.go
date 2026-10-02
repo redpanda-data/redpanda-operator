@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -159,9 +160,18 @@ func New(ctx context.Context, config *kube.RESTConfig) (*Cluster, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	// The vcluster kubeconfig secret may not be available immediately after
+	// helm install --wait completes. Poll until it appears.
+	secretKey := client.ObjectKey{Namespace: rel.Namespace, Name: "vc-" + rel.Name}
 	var kubeConfig corev1.Secret
-	if err := c.Get(ctx, client.ObjectKey{Namespace: rel.Namespace, Name: "vc-" + rel.Name}, &kubeConfig); err != nil {
-		return nil, errors.WithStack(err)
+	pollErr := wait.PollUntilContextTimeout(ctx, 2*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
+		if err := c.Get(ctx, secretKey, &kubeConfig); err != nil {
+			return false, nil //nolint:nilerr // keep polling
+		}
+		return true, nil
+	})
+	if pollErr != nil {
+		return nil, errors.Wrapf(pollErr, "waiting for vcluster kubeconfig secret %q", secretKey)
 	}
 
 	apiConfig, err := clientcmd.Load(kubeConfig.Data["config"])

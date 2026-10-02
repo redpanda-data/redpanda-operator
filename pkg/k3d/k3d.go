@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redpanda-data/redpanda-operator/pkg/kube"
+	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
 const (
@@ -410,8 +411,11 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		}
 	}
 
-	// Wait for all bootstrapping jobs to finish running.
-	return wait.PollUntilContextTimeout(ctx, time.Second, 2*time.Minute, false, func(ctx context.Context) (done bool, err error) {
+	// Wait for all bootstrapping jobs to finish running. The deadline is
+	// generous: the cert-manager helm-install job pulls its chart and images
+	// over the network inside the fresh cluster, which can exceed two
+	// minutes on a cold or slow connection.
+	if err := wait.PollUntilContextTimeout(ctx, time.Second, 5*time.Minute, false, func(ctx context.Context) (done bool, err error) {
 		var jobs batchv1.JobList
 		if err := cl.List(ctx, &jobs, client.InNamespace("kube-system")); err != nil {
 			return false, err
@@ -428,7 +432,17 @@ func (c *Cluster) waitForJobs(ctx context.Context) error {
 		}
 
 		return true, nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	// If manifests were installed, cert-manager was deployed via the k3s
+	// helm controller. Wait for its webhook to be ready before returning,
+	// otherwise helm operations that create Certificate resources will fail.
+	if !c.skipManifests {
+		return testutil.WaitForCertManagerWebhook(ctx, cl, 2*time.Minute)
+	}
+	return nil
 }
 
 // startupManifests parses the embedded FS of Kubernetes manifests as a slice
