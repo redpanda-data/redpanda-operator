@@ -39,7 +39,7 @@ require (
 	github.com/redpanda-data/console/backend v0.0.0-20260723153234-2f5c2ee63008
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 v3.9.0
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 v25.3.1
-	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20250909192010-c59ff494d04a
+	github.com/redpanda-data/redpanda-operator/gotohelm v1.2.1-0.20261002143720-f60bacbffee9
 	github.com/redpanda-data/redpanda-operator/pkg v0.0.0-20250528175436-e8cca0053dc6
 	github.com/redpanda-data/redpanda/src/go/rpk v0.0.0-20250716004441-6e1647296ad6
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
@@ -62,7 +62,7 @@ require (
 	golang.org/x/time v0.15.0
 	golang.org/x/tools v0.48.0
 	google.golang.org/grpc v1.83.2
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.5
 	k8s.io/api v0.35.1
@@ -346,8 +346,8 @@ require (
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/api v0.270.0 // indirect
 	google.golang.org/genproto v0.0.0-20260316180232-0b37fe3546d5 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20260526163538-3dc84a4a5aaa // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
@@ -369,7 +369,6 @@ require (
 replace (
 	github.com/redpanda-data/redpanda-operator/charts/console/v3 => ../charts/console
 	github.com/redpanda-data/redpanda-operator/charts/redpanda/v25 => ../charts/redpanda
-	github.com/redpanda-data/redpanda-operator/gotohelm => ../gotohelm
 	// we want to leverage the latest pkg -- all of this should go away when we
 	// reintroduce go.work
 	github.com/redpanda-data/redpanda-operator/pkg => ../pkg

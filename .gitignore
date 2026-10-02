@@ -50,6 +50,5 @@ charts/*/*/charts/*.tgz
 charts/charts.xml
 genpartial/genpartial.xml
 genschema/genschema.xml
-gotohelm/gotohelm.xml
 pkg/pkg.xml
 /result
