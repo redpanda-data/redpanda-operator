@@ -28,6 +28,8 @@ type schema struct {
 	SchemaMetadata     *sr.SchemaMetadata
 	SchemaRuleSet      *sr.SchemaRuleSet
 	Hash               string
+	ID                 int
+	ImportMode         bool
 }
 
 func (s *schema) toKafka() sr.Schema {
@@ -55,7 +57,7 @@ func schemaFromV1Alpha2Schema(s *redpandav1alpha2.Schema) (*schema, error) {
 	}, nil
 }
 
-func schemaFromRedpandaSubjectSchema(s *sr.SubjectSchema, hash string, compatibility sr.CompatibilityLevel) *schema {
+func schemaFromRedpandaSubjectSchema(s *sr.SubjectSchema, hash string, compatibility sr.CompatibilityLevel, importMode bool) *schema {
 	return &schema{
 		Subject:            s.Subject,
 		CompatibilityLevel: compatibility,
@@ -63,6 +65,8 @@ func schemaFromRedpandaSubjectSchema(s *sr.SubjectSchema, hash string, compatibi
 		Type:               s.Type,
 		References:         s.References,
 		Hash:               hash,
+		ID:                 s.ID,
+		ImportMode:         importMode,
 	}
 }
 
