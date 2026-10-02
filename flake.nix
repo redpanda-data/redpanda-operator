@@ -49,7 +49,7 @@
           # nix commands. e.g. nix copy .#devshell.
           packages.devshell = self'.devShells.default;
 
-          packages.envtest-shim = pkgs.buildGoModule {
+          packages.envtest-shim = (pkgs.buildGoModule.override { go = pkgs.go_1_26_6; }) {
             name = "envtest-shim";
 
             src = ./reaper;
