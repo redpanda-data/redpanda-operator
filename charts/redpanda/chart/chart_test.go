@@ -1085,14 +1085,11 @@ func TestLabels(t *testing.T) {
 			Console: &consolechart.PartialValues{Enabled: ptr.To(false)},
 		}
 
-		helmValues, err := redpandachart.Chart.LoadValues(values)
-		require.NoError(t, err)
-
 		dot, err := redpandachart.Chart.Dot(nil, helmette.Release{
 			Name:      "redpanda",
 			Namespace: "redpanda",
 			Service:   "Helm",
-		}, helmValues)
+		}, values)
 		require.NoError(t, err)
 
 		state, err := redpandachart.RenderStateFromDot(dot)
@@ -1141,14 +1138,11 @@ func TestAnnotations(t *testing.T) {
 		// This guarantee does not currently extend to console.
 		values.Console = &consolechart.PartialValues{Enabled: ptr.To(false)}
 
-		helmValues, err := redpandachart.Chart.LoadValues(values)
-		require.NoError(t, err)
-
 		dot, err := redpandachart.Chart.Dot(nil, helmette.Release{
 			Name:      "redpanda",
 			Namespace: "redpanda",
 			Service:   "Helm",
-		}, helmValues)
+		}, values)
 		require.NoError(t, err)
 
 		state, err := redpandachart.RenderStateFromDot(dot)
