@@ -15,7 +15,6 @@ import (
 	"reflect"
 	"slices"
 
-	"github.com/redpanda-data/common-go/kube"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -24,11 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-<<<<<<< HEAD
-=======
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
-	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type clientList[T client.Object] interface {
@@ -42,33 +38,19 @@ func clusterReferenceIndexName(name string) string {
 
 func RegisterClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
 	indexName := clusterReferenceIndexName(name)
-<<<<<<< HEAD
-	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
-		return cr.IsV2()
-	})); err != nil {
-=======
-	cluster, err := mgr.GetCluster(ctx, clusterName)
-	if err != nil {
-		return nil, err
-	}
-	if err := cluster.GetFieldIndexer().IndexField(ctx, o, indexName, v2ClusterKeys); err != nil {
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
+	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, v2ClusterKeys); err != nil {
 		return nil, err
 	}
 	return enqueueFromSourceCluster(mgr, name, l), nil
 }
 
-<<<<<<< HEAD
-func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
-=======
 // EnqueueFromNodePool maps a NodePool event to the objects indexed under name
 // by [RegisterClusterSourceIndex] that reference the pool's cluster.
-func EnqueueFromNodePool[T client.Object, U clientList[T]](mgr multicluster.Manager, name, clusterName string, l U) mchandler.EventHandlerFunc {
-	return enqueueReferencing(mgr, name, clusterName, l, v2ClusterKeys)
+func EnqueueFromNodePool[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U) handler.EventHandler {
+	return enqueueReferencing(mgr, name, l, v2ClusterKeys)
 }
 
-func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr multicluster.Manager, name, clusterName string, o T, l U) (mchandler.EventHandlerFunc, error) {
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
+func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
 	indexName := clusterReferenceIndexName(name)
 	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
 		return cr.IsV1()
@@ -128,40 +110,25 @@ func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c cli
 	return requests, nil
 }
 
-<<<<<<< HEAD
 func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
-		requests, err := sourceClusters(ctx, mgr.GetClient(), list, name, client.ObjectKeyFromObject(o))
-		if err != nil {
-			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
-			return nil
-=======
-func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr multicluster.Manager, name string, clusterName string, l U) mchandler.EventHandlerFunc {
-	return enqueueReferencing(mgr, name, clusterName, l, func(o client.Object) []string {
+	return enqueueReferencing(mgr, name, l, func(o client.Object) []string {
 		return []string{client.ObjectKeyFromObject(o).String()}
 	})
 }
 
 // enqueueReferencing enqueues the objects indexed under name that reference
 // any of the clusters clusterKeys maps the event's object to.
-func enqueueReferencing[T client.Object, U clientList[T]](mgr multicluster.Manager, name string, clusterName string, l U, clusterKeys func(client.Object) []string) mchandler.EventHandlerFunc {
-	return mchandler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		cluster, err := mgr.GetCluster(ctx, clusterName)
-		if err != nil {
-			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
-			return nil
-		}
+func enqueueReferencing[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U, clusterKeys func(client.Object) []string) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
 		var requests []reconcile.Request
 		for _, key := range clusterKeys(o) {
 			list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
-			referencing, err := sourceClusters(ctx, cluster.GetClient(), list, name, key)
+			referencing, err := sourceClusters(ctx, mgr.GetClient(), list, name, key)
 			if err != nil {
 				mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
 				return nil
 			}
 			requests = append(requests, referencing...)
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 		}
 		return requests
 	})
@@ -184,10 +151,8 @@ func FromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c 
 // List so that callers don't depend on the NodePool controller having
 // registered that index.
 func NodePoolsFor(ctx context.Context, ctl *kube.Ctl, cluster *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.NodePool, error) {
-	// A pool's clusterRef may name another namespace, and the index this
-	// mirrors spans all of them.
 	var pools redpandav1alpha2.NodePoolList
-	if err := ctl.List(ctx, "", &pools); err != nil {
+	if err := ctl.List(ctx, cluster.Namespace, &pools); err != nil {
 		return nil, err
 	}
 
