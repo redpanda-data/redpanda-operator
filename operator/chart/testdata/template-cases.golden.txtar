@@ -141,6 +141,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -1115,6 +1123,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -1863,6 +1879,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -2865,6 +2889,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -3633,6 +3665,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -4621,6 +4661,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -5375,6 +5423,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -6585,6 +6641,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -7620,6 +7684,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -8608,6 +8680,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -9360,6 +9440,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -10388,6 +10476,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -11233,6 +11329,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -12307,6 +12411,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -13187,6 +13299,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -14195,6 +14315,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -14952,6 +15080,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -15946,6 +16082,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -16703,6 +16847,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -17729,6 +17881,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -18529,6 +18689,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -19358,6 +19526,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -20130,6 +20306,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -21132,6 +21316,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -21906,6 +22098,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -23132,6 +23332,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -24073,6 +24281,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -24945,6 +25161,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -25688,6 +25912,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -26692,6 +26924,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -27456,6 +27696,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -28450,6 +28698,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -29689,6 +29945,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -30900,6 +31164,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -31720,6 +31992,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -32754,6 +33034,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -33509,6 +33797,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -34677,6 +34973,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -36002,6 +36306,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -37154,6 +37466,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -37914,6 +38234,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -39325,6 +39653,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -40364,6 +40700,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -41370,6 +41714,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -42145,6 +42497,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -43477,6 +43837,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -44938,6 +45306,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -46139,6 +46515,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -47730,6 +48114,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -48952,6 +49344,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -49846,6 +50246,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -51056,6 +51464,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -51983,6 +52399,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -53231,6 +53655,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -55140,6 +55572,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -56536,6 +56976,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -57734,6 +58182,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -58755,6 +59211,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -59992,6 +60456,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -61461,6 +61933,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -64474,6 +64954,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -66056,6 +66544,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -69226,6 +69722,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -70518,6 +71022,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -74268,6 +74780,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -75807,6 +76327,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -77129,6 +77657,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -78705,6 +79241,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -81198,6 +81742,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -82490,6 +83042,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -84910,6 +85470,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -86453,6 +87021,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -87964,6 +88540,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -89313,6 +89897,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -90917,6 +91509,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -92525,6 +93125,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -94311,6 +94919,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -95807,6 +96423,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -97502,6 +98126,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -98669,6 +99301,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -99418,6 +100058,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -99582,6 +100230,16 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
+  - redpandas
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - pipelines
   verbs:
   - get
@@ -99603,15 +100261,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  - users
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -100481,6 +101130,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -100645,6 +101302,16 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
+  - redpandas
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - pipelines
   verbs:
   - get
@@ -100666,15 +101333,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  - users
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -101320,6 +101978,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -101484,6 +102150,16 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
+  - redpandas
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - pipelines
   verbs:
   - get
@@ -101505,15 +102181,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  - users
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -102391,6 +103058,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -102555,6 +103230,16 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
+  - redpandas
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - pipelines
   verbs:
   - get
@@ -102576,15 +103261,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  - users
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -103230,6 +103906,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -103394,6 +104078,16 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
+  - redpandas
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - pipelines
   verbs:
   - get
@@ -103415,15 +104109,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  - users
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -104295,6 +104980,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -104459,6 +105152,16 @@ rules:
 - apiGroups:
   - cluster.redpanda.com
   resources:
+  - nodepools
+  - redpandas
+  - users
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
   - pipelines
   verbs:
   - get
@@ -104480,15 +105183,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - redpandas
-  - users
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -105133,6 +105827,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -106109,6 +106811,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -106857,6 +107567,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -107875,6 +108593,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -108719,6 +109445,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -109738,6 +110472,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -110581,6 +111323,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -111555,6 +112305,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -112303,6 +113061,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -113294,6 +114060,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -114061,6 +114835,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -115033,6 +115815,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -115783,6 +116573,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -116756,6 +117554,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -117504,6 +118310,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -118478,6 +119292,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -119226,6 +120048,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -120208,6 +121038,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -120956,6 +121794,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -121938,6 +122784,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -122686,6 +123540,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -123697,6 +124559,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -124445,6 +125315,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -125460,6 +126338,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -126186,6 +127072,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -127197,6 +128091,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -127945,6 +128847,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -128953,6 +129863,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -129701,6 +130619,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -130835,6 +131761,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -131583,6 +132517,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -132593,6 +133535,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -133341,6 +134291,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -134351,6 +135309,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -135099,6 +136065,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -136108,6 +137082,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -136856,6 +137838,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -137903,6 +138893,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -138725,6 +139723,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -139827,6 +140833,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -140649,6 +141663,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -141745,6 +142767,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -142567,6 +143597,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -143596,6 +144634,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -144418,6 +145464,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -145439,6 +146493,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -146261,6 +147323,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -147366,6 +148436,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -148114,6 +149192,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -149095,6 +150181,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -149849,6 +150943,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -150872,6 +151974,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - gateway.networking.k8s.io
   resources:
   - httproutes
@@ -151725,6 +152835,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:
@@ -152699,6 +153817,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - gateway.networking.k8s.io
   resources:

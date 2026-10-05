@@ -58,6 +58,7 @@ const (
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=consoles,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=consoles/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch
 // +kubebuilder:rbac:groups=autoscaling,resources=horizontalpodautoscalers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;create;update;patch;delete
@@ -79,6 +80,12 @@ type Controller struct {
 	// Reconcile-time reads and writes target the cluster where the Console
 	// CR actually lives.
 	Manager multicluster.Manager
+
+	// UseNodePools counts a referenced Redpanda's NodePools toward its broker
+	// list. It must match the Redpanda controller's UseNodePools: the pools
+	// whose brokers exist are exactly the ones it deploys, and the NodePool
+	// CRD may not be installed otherwise.
+	UseNodePools bool
 
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
@@ -134,6 +141,12 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr multicluster.Mana
 		// If a redpanda is updated, any console's referring to it will be
 		// re-reconciled.
 		builder.Watches(&redpandav1alpha2.Redpanda{}, eventHandler, controller.WatchOptions(clusterName)...)
+
+		// A pool's brokers are part of its cluster's broker list, so adding,
+		// removing, or resizing one must re-render the cluster's Consoles.
+		if c.UseNodePools {
+			builder.Watches(&redpandav1alpha2.NodePool{}, controller.EnqueueFromNodePool(mgr, "console", clusterName, &redpandav1alpha2.ConsoleList{}), controller.ClusterSourceWatchOptions(clusterName)...)
+		}
 	}
 
 	return builder.Complete(controller.FilterNamespaceReconciler(namespace, c))
@@ -356,10 +369,11 @@ func (c *Controller) rendererFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) *r
 	}
 
 	return &render{
-		ctl:     ctl,
-		console: cr,
-		labels:  c.ownershipLabelsFor(cr),
-		metrics: metrics,
+		ctl:          ctl,
+		console:      cr,
+		labels:       c.ownershipLabelsFor(cr),
+		metrics:      metrics,
+		useNodePools: c.UseNodePools,
 	}
 }
 
@@ -463,10 +477,11 @@ func (c *Controller) skipWatchIfNotInstalled(ctx context.Context, list client.Ob
 
 // render implements [kube.Renderer].
 type render struct {
-	ctl     *kube.Ctl
-	labels  map[string]string
-	console *redpandav1alpha2.Console
-	metrics console.MetricsState
+	ctl          *kube.Ctl
+	labels       map[string]string
+	console      *redpandav1alpha2.Console
+	metrics      console.MetricsState
+	useNodePools bool
 }
 
 func (r *render) Types() []kube.Object {
@@ -566,10 +581,15 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 			return console.PartialRenderValues{}, err
 		}
 
+		pools, err := r.nodePoolsFor(ctx, &rp)
+		if err != nil {
+			return console.PartialRenderValues{}, err
+		}
+
 		state, err := conversion.ConvertV2ToRenderState(nil, &conversion.V2Defaulters{
 			RedpandaImage: func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
 			SidecarImage:  func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
-		}, &rp, nil)
+		}, &rp, pools)
 		if err != nil {
 			return console.PartialRenderValues{}, err
 		}
@@ -605,4 +625,14 @@ func (r *render) findRepresentativePool(ctx context.Context, sc *redpandav1alpha
 		}
 	}
 	return nil, fmt.Errorf("no RedpandaBrokerPool found in this k8s cluster for stretch cluster %s. Please create one before creating Console", sc.Name)
+}
+
+// nodePoolsFor returns the NodePools whose brokers belong in rp's broker list.
+// A finished NodePool migration leaves rp's own StatefulSet at zero replicas,
+// so without them that list is empty and Console refuses to start.
+func (r *render) nodePoolsFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.NodePool, error) {
+	if !r.useNodePools {
+		return nil, nil
+	}
+	return controller.NodePoolsFor(ctx, r.ctl, rp)
 }
