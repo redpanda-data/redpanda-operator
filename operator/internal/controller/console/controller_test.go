@@ -120,24 +120,6 @@ func TestController(t *testing.T) {
 				},
 			},
 		},
-<<<<<<< HEAD
-=======
-		{
-			name: "stretch-cluster-ref",
-			console: &redpandav1alpha2.Console{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "console-stretch-cluster-ref",
-				},
-				Spec: redpandav1alpha2.ConsoleSpec{
-					ClusterSource: &redpandav1alpha2.ClusterSource{
-						ClusterRef: &redpandav1alpha2.ClusterRef{
-							Name: "test-stretch",
-							Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
-						},
-					},
-				},
-			},
-		},
 		{
 			// test-redpanda-pools is in the end state of a NodePool
 			// migration: its own StatefulSet is drained and every broker
@@ -156,7 +138,6 @@ func TestController(t *testing.T) {
 				},
 			},
 		},
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 	}
 
 	ctl := kubetest.NewEnv(t, kube.Options{
@@ -194,8 +175,6 @@ func TestController(t *testing.T) {
 		},
 	}))
 
-<<<<<<< HEAD
-=======
 	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-redpanda-pools",
@@ -225,31 +204,6 @@ func TestController(t *testing.T) {
 		},
 	}))
 
-	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.StretchCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-stretch",
-			Namespace: ns.Name,
-		},
-	}))
-
-	// TLS / Listeners / ClusterDomain moved off StretchCluster.Spec onto each
-	// RedpandaBrokerPool. The Console controller resolves a representative
-	// pool to derive those fields for its connection config (it errors out
-	// otherwise), so create a minimal pool referencing test-stretch.
-	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.RedpandaBrokerPool{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-stretch-pool",
-			Namespace: ns.Name,
-		},
-		Spec: redpandav1alpha2.BrokerPoolSpec{
-			ClusterRef: redpandav1alpha2.ClusterRef{
-				Name: "test-stretch",
-				Kind: ptr.To(redpandav1alpha2.StretchClusterRefKind),
-			},
-		},
-	}))
-
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 	consoleCtrl := Controller{
 		Ctl:          ctl,
 		UseNodePools: true,

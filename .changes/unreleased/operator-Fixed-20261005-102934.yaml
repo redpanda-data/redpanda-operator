@@ -1,5 +1,0 @@
-project: operator
-kind: Fixed
-body: |-
-    A `Pipeline` that references a Redpanda cluster through `clusterRef` now connects to the cluster's NodePool brokers. Previously, once a NodePool migration drained the cluster's own StatefulSet to `statefulset.replicas: 0`, the Pipeline got no seed brokers. With `--enable-v2-nodepools`, Pipelines now include every NodePool bound to the cluster and pick up a NodePool being added, removed, or resized.
-time: 2026-10-05T10:29:34.000000000-04:00

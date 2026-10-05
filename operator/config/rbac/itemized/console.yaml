@@ -72,8 +72,6 @@ rules:
   - patch
   - update
 - apiGroups:
-<<<<<<< HEAD
-=======
   - cluster.redpanda.com
   resources:
   - nodepools
@@ -82,19 +80,6 @@ rules:
   - list
   - watch
 - apiGroups:
-  - gateway.networking.k8s.io
-  resources:
-  - httproutes
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
   - monitoring.coreos.com
   resources:
   - servicemonitors

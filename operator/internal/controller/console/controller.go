@@ -65,22 +65,12 @@ type Controller struct {
 	Ctl    *kube.Ctl
 	Config *kube.RESTConfig
 
-<<<<<<< HEAD
-=======
-	// Manager, when non-nil, enables per-cluster routing for reconciles
-	// whose req.ClusterName names a provider cluster. SetupWithManager and
-	// SetupWithMulticlusterManager both populate this so that
-	// Reconcile-time reads and writes target the cluster where the Console
-	// CR actually lives.
-	Manager multicluster.Manager
-
 	// UseNodePools counts a referenced Redpanda's NodePools toward its broker
 	// list. It must match the Redpanda controller's UseNodePools: the pools
 	// whose brokers exist are exactly the ones it deploys, and the NodePool
 	// CRD may not be installed otherwise.
 	UseNodePools bool
 
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
 	// value.
@@ -265,18 +255,11 @@ func (c *Controller) rendererFor(cr *redpandav1alpha2.Console) *render {
 	}
 
 	return &render{
-<<<<<<< HEAD
-		ctl:     c.Ctl,
-		console: cr,
-		labels:  c.ownershipLabelsFor(cr),
-		metrics: metrics,
-=======
-		ctl:          ctl,
+		ctl:          c.Ctl,
 		console:      cr,
 		labels:       c.ownershipLabelsFor(cr),
 		metrics:      metrics,
 		useNodePools: c.UseNodePools,
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 	}
 }
 
@@ -485,28 +468,6 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 
 	return console.PartialRenderValues{}, nil
 }
-<<<<<<< HEAD
-=======
-
-// findRepresentativePool returns the first RedpandaBrokerPool in the
-// StretchCluster's namespace that references sc. Pools live in the same
-// K8s cluster as the Console (the local cluster the renderer's r.ctl is
-// scoped to). Returns (nil, nil) if no matching pool exists yet — Console
-// will be re-reconciled via the StretchCluster watch as pools come and go.
-func (r *render) findRepresentativePool(ctx context.Context, sc *redpandav1alpha2.StretchCluster) (*redpandav1alpha2.RedpandaBrokerPool, error) {
-	var pools redpandav1alpha2.RedpandaBrokerPoolList
-	if err := r.ctl.List(ctx, sc.Namespace, &pools); err != nil {
-		return nil, err
-	}
-	for i := range pools.Items {
-		pool := &pools.Items[i]
-		ref := pool.Spec.ClusterRef
-		if ref.IsStretchCluster() && ref.Name == sc.Name {
-			return pool, nil
-		}
-	}
-	return nil, fmt.Errorf("no RedpandaBrokerPool found in this k8s cluster for stretch cluster %s. Please create one before creating Console", sc.Name)
-}
 
 // nodePoolsFor returns the NodePools whose brokers belong in rp's broker list.
 // A finished NodePool migration leaves rp's own StatefulSet at zero replicas,
@@ -517,4 +478,3 @@ func (r *render) nodePoolsFor(ctx context.Context, rp *redpandav1alpha2.Redpanda
 	}
 	return controller.NodePoolsFor(ctx, r.ctl, rp)
 }
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
