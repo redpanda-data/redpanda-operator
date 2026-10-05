@@ -2,15 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: console
+  name: pipeline
 rules:
 - apiGroups:
   - ""
   resources:
   - configmaps
   - secrets
-  - serviceaccounts
-  - services
   verbs:
   - create
   - delete
@@ -18,6 +16,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - apps
@@ -32,63 +38,43 @@ rules:
   - update
   - watch
 - apiGroups:
-  - autoscaling
-  resources:
-  - horizontalpodautoscalers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cluster.redpanda.com
-  resources:
-  - consoles/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-<<<<<<< HEAD
-=======
   - cluster.redpanda.com
   resources:
   - nodepools
+  - redpandas
+  - users
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - gateway.networking.k8s.io
+  - cluster.redpanda.com
   resources:
-  - httproutes
+  - pipelines
   verbs:
-  - create
-  - delete
   - get
   - list
   - patch
   - update
   - watch
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - pipelines/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - monitoring.coreos.com
   resources:
-  - servicemonitors
+  - podmonitors
   verbs:
   - create
   - delete
@@ -98,10 +84,9 @@ rules:
   - update
   - watch
 - apiGroups:
->>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
-  - networking.k8s.io
+  - policy
   resources:
-  - ingresses
+  - poddisruptionbudgets
   verbs:
   - create
   - delete

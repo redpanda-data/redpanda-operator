@@ -437,11 +437,55 @@ func Run(
 				return err
 			}
 
+<<<<<<< HEAD
 			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+=======
+			setupLog.Info("starting Console controller")
+
+			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig(), UseNodePools: opts.enableV2NodepoolController}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+>>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}
 		}
+<<<<<<< HEAD
+=======
+
+		// Connect Reconciler (enterprise feature, gated by the operator-level
+		// license from --license-file-path / enterprise.licenseSecretRef).
+		if opts.enableConnectController {
+			pipelineCtl, err := kube.FromRESTConfig(mgr.GetConfig(), kube.Options{
+				Options: client.Options{
+					Scheme: mgr.GetScheme(),
+					Cache: &client.CacheOptions{
+						Reader: mgr.GetCache(),
+					},
+				},
+				FieldManager: string(lifecycle.DefaultFieldOwner),
+			})
+			if err != nil {
+				return err
+			}
+
+			setupLog.Info("starting Connect controller")
+
+			if err := (&pipelinecontroller.Controller{
+				Ctl:                pipelineCtl,
+				LicenseFilePath:    opts.licenseFilePath,
+				ConnectAnnotations: opts.connectAnnotations,
+				DefaultImage:       opts.connectDefaultImage,
+				Monitoring: pipelinecontroller.MonitoringConfig{
+					Enabled:        opts.connectMonitoringEnabled,
+					ScrapeInterval: opts.connectMonitoringScrapeInterval,
+					Labels:         opts.connectMonitoringLabels,
+				},
+				UseNodePools: opts.enableV2NodepoolController,
+			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
+				return err
+			}
+		}
+>>>>>>> d4103755 ([bug] Make Console and Pipeline controllers handle NodePools properly (#1955))
 	}
 
 	if err := redpandacontrollers.SetupShadowLinkController(ctx, mgr, cloudExpander, v1Controllers, v2Controllers, opts.namespace); err != nil {
