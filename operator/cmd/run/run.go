@@ -612,6 +612,7 @@ func Run(
 					ScrapeInterval: opts.connectMonitoringScrapeInterval,
 					Labels:         opts.connectMonitoringLabels,
 				},
+				UseNodePools: opts.enableV2NodepoolController,
 			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
