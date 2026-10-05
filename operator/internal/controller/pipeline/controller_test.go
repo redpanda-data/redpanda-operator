@@ -505,6 +505,63 @@ func (s *ControllerSuite) TestResolveClusterSource_Success() {
 	assert.NotSame(t, conn, fresh, "a recreated cluster (new UID) must be re-resolved, not served from the stale cache entry")
 }
 
+// TestResolveClusterSource_NodePools covers the end state of a NodePool
+// migration, where every broker lives in a NodePool.
+func (s *ControllerSuite) TestResolveClusterSource_NodePools() {
+	t := s.T()
+
+	ctl, ns := s.ctl, s.ns
+
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "pooled", Namespace: ns.Name},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{Replicas: ptr.To(0)},
+			},
+		},
+	}))
+
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: ns.Name},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Replicas: ptr.To[int32](2)},
+			ClusterRef:           redpandav1alpha2.ClusterRef{Name: "pooled"},
+		},
+	}
+	require.NoError(t, ctl.Apply(t.Context(), pool))
+
+	pipeline := &redpandav1alpha2.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{Name: "pooled", Namespace: ns.Name},
+		Spec: redpandav1alpha2.PipelineSpec{
+			ConfigYAML: "input:\n  stdin: {}\noutput:\n  stdout: {}\n",
+			ClusterSource: &redpandav1alpha2.ClusterSource{
+				ClusterRef: &redpandav1alpha2.ClusterRef{Name: "pooled"},
+			},
+		},
+	}
+
+	brokers := func(n int) []string {
+		var brokers []string
+		for i := range n {
+			brokers = append(brokers, fmt.Sprintf("pooled-pool-%d.pooled.%s.svc.cluster.local.:9093", i, ns.Name))
+		}
+		return brokers
+	}
+
+	c := &Controller{Ctl: ctl, UseNodePools: true, clusterConns: newClusterConnCache()}
+
+	conn, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, brokers(2), conn.Brokers)
+
+	pool.Spec.Replicas = ptr.To[int32](3)
+	require.NoError(t, ctl.Apply(t.Context(), pool))
+
+	resized, err := c.resolveClusterSource(t.Context(), pipeline)
+	require.NoError(t, err)
+	assert.Equal(t, brokers(3), resized.Brokers, "a resized pool must be re-rendered, not served from the cache")
+}
+
 // TestResolveClusterSource_RejectsCrossNamespaceAndForeignKinds covers the
 // controller-side guard behind the CEL rules: clusterRef.namespace/group/kind
 // were previously accepted by the schema and silently ignored, binding the
