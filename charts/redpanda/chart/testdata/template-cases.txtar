@@ -1460,15 +1460,31 @@ tuning:
 # ASSERT-STATEFULSET-ALL-VOLUMES-ARE-USED
 # ASSERT-STATEFULSET-VOLUME-MOUNTS-VERIFICATION
 # ASSERT-VALID-RPK-CONFIGURATION
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_disk_irq}", false]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_disk_scheduler}", false]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_disk_nomerges}", false]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_fstrim}", false]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_cpu}", false]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_network}", true]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.tune_disk_write_cache}", true]
+# ASSERT-NESTED-FIELD-EQUALS ["v1/ConfigMap", "default/redpanda", "{.data.redpanda\\.yaml}", "{.rpk.cores_per_dedicated_interrupt_core}", 6]
 # The tuners apply_host_tuners default-enables are defaults, not
-# overrides: an explicit config.rpk opt-out (tune_fstrim: false here)
-# must survive into the rendered rpk config.
+# overrides: every explicit config.rpk tune_*: false opt-out must survive
+# into the rendered rpk config, while keys the user left unset
+# (tune_disk_write_cache) still get the default. Values from #1936.
 tuning:
   tune_aio_events: true
   apply_host_tuners: true
 config:
   rpk:
+    tune_network: true
+    allow_dedicated_interrupt_mode: true
+    cores_per_dedicated_interrupt_core: 6
+    tune_disk_irq: false
+    tune_disk_scheduler: false
+    tune_disk_nomerges: false
     tune_fstrim: false
+    tune_cpu: false
 -- notes-cpu-below-minimum --
 # ASSERT-NO-ERROR
 # ASSERT-GOLDEN
