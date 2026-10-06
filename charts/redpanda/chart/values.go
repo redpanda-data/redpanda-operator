@@ -996,11 +996,10 @@ func (t *Tuning) Translate() map[string]any {
 // and cannot crashloop the init container on hosts that lack the
 // feature".
 //
-// These are merged at LOWEST precedence in rpkNodeConfig — after both
-// Tuning.Translate() and the user's config.rpk — so an explicit
-// `config.rpk.tune_*: false` opt-out always wins over these defaults.
-// The multicluster (StretchCluster) renderer applies the same map with
-// the same precedence.
+// rpkNodeConfig only fills keys Tuning.Translate() and the user's
+// config.rpk left unset, so an explicit `config.rpk.tune_*: false` opt-out
+// always wins (Sprig/mergo merge would drop the false). The multicluster
+// (StretchCluster) renderer applies the same map with the same precedence.
 func HostTunerDefaults() map[string]any {
 	return map[string]any{
 		"tune_disk_irq":         true,

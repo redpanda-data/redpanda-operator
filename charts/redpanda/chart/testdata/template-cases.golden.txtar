@@ -158405,6 +158405,8 @@ data:
         - redpanda-2.redpanda.default.svc.cluster.local.:9644
         tls:
           ca_file: /etc/tls/certs/default/ca.crt
+      allow_dedicated_interrupt_mode: true
+      cores_per_dedicated_interrupt_core: 6
       enable_memory_locking: false
       kafka_api:
         brokers:
@@ -158422,12 +158424,12 @@ data:
         tls:
           ca_file: /etc/tls/certs/default/ca.crt
       tune_aio_events: true
-      tune_cpu: true
-      tune_disk_irq: true
-      tune_disk_nomerges: true
-      tune_disk_scheduler: true
+      tune_cpu: false
+      tune_disk_irq: false
+      tune_disk_nomerges: false
+      tune_disk_scheduler: false
       tune_disk_write_cache: true
-      tune_fstrim: true
+      tune_fstrim: false
       tune_network: true
     schema_registry:
       schema_registry_api:
