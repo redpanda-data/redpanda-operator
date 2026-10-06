@@ -12,6 +12,7 @@ package chart
 
 import (
 	"fmt"
+	"maps"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -433,13 +434,13 @@ func rpkNodeConfig(state *RenderState, pool Pool) map[string]any {
 	result = helmette.Merge(result, state.Values.Tuning.Translate())
 	result = helmette.Merge(result, state.Values.Config.CreateRPKConfiguration())
 
-	// Merge is first-argument-wins, so merging the host tuner defaults
-	// last gives them the LOWEST precedence: they only fill keys neither
-	// values.tuning nor the user's config.rpk set explicitly. An operator
-	// writing `config.rpk.tune_fstrim: false` keeps that opt-out even
-	// with apply_host_tuners enabled.
+	// Layer everything set so far over the host tuner defaults, so an explicit
+	// `config.rpk.tune_fstrim: false` keeps that opt-out. Not Merge: it drops
+	// the false and lets the default true win (#1936).
 	if state.Values.Tuning.ApplyHostTuners {
-		result = helmette.Merge(result, redpanda.HostTunerDefaults())
+		defaults := redpanda.HostTunerDefaults()
+		maps.Copy(defaults, result)
+		result = defaults
 	}
 
 	return result
