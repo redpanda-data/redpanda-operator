@@ -574,7 +574,7 @@ func Run(
 
 			setupLog.Info("starting Console controller")
 
-			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig()}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
+			if err := (&consolecontroller.Controller{Ctl: ctl, Config: mgr.GetConfig(), UseNodePools: opts.enableV2NodepoolController}).SetupWithManager(ctx, mcmanager, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}
@@ -608,6 +608,7 @@ func Run(
 					ScrapeInterval: opts.connectMonitoringScrapeInterval,
 					Labels:         opts.connectMonitoringLabels,
 				},
+				UseNodePools: opts.enableV2NodepoolController,
 			}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Pipeline")
 				return err
