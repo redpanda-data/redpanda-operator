@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Fixed
+body: A LoadBalancer Service port for an external listener without `advertisedPorts` or `nodePort` is now the port of the listener. Before, it was the in-cluster port of the API, but the broker advertised the port of the listener. Thus, clients could not connect.
+time: 2026-10-06T12:00:00.000000-04:00
