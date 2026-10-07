@@ -14,37 +14,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
-
-// Rendered chart output is covered by the golden cases of
-// charts/redpanda/chart. The tests here cover the paths that the chart does
-// not take.
-
-func TestExternalServicePorts(t *testing.T) {
-	l := NewListeners([]API{
-		{
-			Kind:     AdminAPI,
-			Reserved: &Listener{Name: ReservedListenerName, Port: 9644},
-			Additional: []Listener{
-				{Name: "default", Port: 9645, PortName: "admin-default", Exposed: true, AdvertisedPorts: []int32{31644}},
-				{Name: "unexposed", Port: 9646, PortName: "admin-unexposed"},
-			},
-		},
-		{
-			Kind:     SchemaRegistryAPI,
-			Reserved: &Listener{Name: ReservedListenerName, Port: 8081},
-			Additional: []Listener{
-				{Name: "default", Port: 8084, PortName: "schema-default", Exposed: true, Gateway: &GatewayRoute{Host: "schema.example.com"}},
-			},
-		},
-	})
-
-	require.Equal(t, []corev1.ServicePort{
-		{Name: "admin-default", Protocol: corev1.ProtocolTCP, Port: 9645, TargetPort: intstr.FromInt32(9645)},
-	}, l.ExternalServicePorts())
-}
 
 func TestTrustStoreFile(t *testing.T) {
 	pki := testPKI()

@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -147,36 +146,9 @@ func (l *Listeners) HTTP() *API           { return l.ByKind[HTTPAPI] }
 func (l *Listeners) SchemaRegistry() *API { return l.ByKind[SchemaRegistryAPI] }
 func (l *Listeners) RPC() *API            { return l.ByKind[RPCAPI] }
 
-// Each order below is different. A change to an order changes the rendered
-// output.
-
-// APIs returns the APIs in external Service port order. It does not include
-// RPC, because rpc_server is not an *_api key.
-func (l *Listeners) APIs() []*API {
-	return l.inOrder([]APIKind{AdminAPI, KafkaAPI, HTTPAPI, SchemaRegistryAPI})
-}
-
-// All returns all APIs in truststore projection order. It includes RPC,
-// because RPC also has a truststore_file.
-func (l *Listeners) All() []*API {
-	return l.inOrder([]APIKind{KafkaAPI, AdminAPI, HTTPAPI, SchemaRegistryAPI, RPCAPI})
-}
-
-// Ports returns the APIs in container port and headless Service port order.
-// The container ports are part of the Pod template. Thus, a change to this
-// order restarts all brokers.
-func (l *Listeners) Ports() []*API {
-	return l.inOrder([]APIKind{AdminAPI, HTTPAPI, KafkaAPI, RPCAPI, SchemaRegistryAPI})
-}
-
-// Gateways returns the APIs in TLSRoute and SAN order. The SANs are in the
-// dnsNames of the serving certificates. Thus, a change to this order rotates
-// the certificates.
-func (l *Listeners) Gateways() []*API {
-	return l.inOrder([]APIKind{KafkaAPI, HTTPAPI, AdminAPI, SchemaRegistryAPI})
-}
-
-func (l *Listeners) inOrder(kinds []APIKind) []*API {
+// InOrder returns the APIs of kinds, in the sequence of kinds. It skips a kind
+// that the cluster does not bind.
+func (l *Listeners) InOrder(kinds []APIKind) []*API {
 	var apis []*API
 	for _, kind := range kinds {
 		if api, ok := l.ByKind[kind]; ok {
@@ -186,8 +158,44 @@ func (l *Listeners) inOrder(kinds []APIKind) []*API {
 	return apis
 }
 
-// ConfigSections returns the redpanda.yaml entries of all APIs, keyed by
-// top-level section.
+// ListenersInOrder returns the listeners of the APIs of kinds, in the sequence
+// of kinds. See [Listeners.InOrder].
+func (l *Listeners) ListenersInOrder(kinds []APIKind) []Listener {
+	var listeners []Listener
+	for _, api := range l.InOrder(kinds) {
+		listeners = append(listeners, api.Listeners()...)
+	}
+	return listeners
+}
+
+// Reserved returns the [API.Reserved] listener of each API. It omits an API
+// that has no reserved listener.
+func (l *Listeners) Reserved() Listeners {
+	var apis []API
+	for _, kind := range slices.Sorted(maps.Keys(l.ByKind)) {
+		api := l.ByKind[kind]
+		if api.Reserved != nil {
+			apis = append(apis, API{Kind: kind, Reserved: api.Reserved})
+		}
+	}
+	return NewListeners(apis)
+}
+
+// Additional returns the [API.Additional] listeners of each API. It omits an
+// API that has no additional listeners.
+func (l *Listeners) Additional() Listeners {
+	var apis []API
+	for _, kind := range slices.Sorted(maps.Keys(l.ByKind)) {
+		api := l.ByKind[kind]
+		if len(api.Additional) > 0 {
+			apis = append(apis, API{Kind: kind, Additional: api.Additional})
+		}
+	}
+	return NewListeners(apis)
+}
+
+// ConfigSections renders every API's redpanda.yaml entries, keyed by the top
+// level section they nest under.
 func (l *Listeners) ConfigSections() map[string]map[string]any {
 	// NB: Two APIs can use the same section, but not the same entry key. Thus,
 	// no entry overwrites an entry of a different API.
@@ -197,23 +205,16 @@ func (l *Listeners) ConfigSections() map[string]map[string]any {
 		"schema_registry": {},
 	}
 
-	for _, api := range l.APIs() {
-		addEntries(sections[api.Kind.ConfigSection()], api.configEntries())
+	for _, api := range l.InOrder([]APIKind{AdminAPI, KafkaAPI, HTTPAPI, SchemaRegistryAPI}) {
+		maps.Copy(sections[api.Kind.ConfigSection()], api.configEntries())
 	}
-	addEntries(sections[RPCAPI.ConfigSection()], l.rpcConfigEntries())
+	maps.Copy(sections[RPCAPI.ConfigSection()], l.rpcConfigEntries())
 
 	return sections
 }
 
-func addEntries(section map[string]any, entries map[string]any) {
-	// NB: gotohelm does not support maps.Copy or a range over a map here.
-	for _, key := range slices.Sorted(maps.Keys(entries)) {
-		section[key] = entries[key]
-	}
-}
-
-// rpcConfigEntries returns rpc_server and rpc_server_tls. Each key contains
-// one listener as a map, not a list of named listeners.
+// rpcConfigEntries renders rpc_server and rpc_server_tls, which take one
+// listener as a bare map rather than the named list the *_api keys carry.
 func (l *Listeners) rpcConfigEntries() map[string]any {
 	listener := l.RPC().Reserved
 
@@ -231,12 +232,13 @@ func (l *Listeners) rpcConfigEntries() map[string]any {
 	return entries
 }
 
-// ContainerPorts returns the ports of the redpanda container in
-// [Listeners.Ports] order.
+// ContainerPorts returns the ports of the redpanda container.
 func (l *Listeners) ContainerPorts() []corev1.ContainerPort {
 	var ports []corev1.ContainerPort
 
-	for _, api := range l.Ports() {
+	// NB: The container ports are part of the pod template. Thus, a change to
+	// this sequence restarts all brokers.
+	for _, api := range l.InOrder([]APIKind{AdminAPI, HTTPAPI, KafkaAPI, RPCAPI, SchemaRegistryAPI}) {
 		for _, listener := range api.Listeners() {
 			ports = append(ports, corev1.ContainerPort{
 				Name:          listener.ContainerPortName,
@@ -248,173 +250,12 @@ func (l *Listeners) ContainerPorts() []corev1.ContainerPort {
 	return ports
 }
 
-// InternalServicePorts returns the ports of the headless Service. There is
-// one port for the in-cluster listener of each API, in [Listeners.Ports] order.
-func (l *Listeners) InternalServicePorts() []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	for _, api := range l.Ports() {
-		listener := api.Reserved
-		if !listener.Exposed {
-			continue
-		}
-
-		port := corev1.ServicePort{
-			Name:       listener.PortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       listener.Port,
-			TargetPort: intstr.FromInt32(listener.Port),
-		}
-
-		// Only set AppProtocol if specified. This is purely to reduce golden
-		// churn.
-		if api.AppProtocol != nil {
-			port.AppProtocol = api.AppProtocol
-		}
-
-		ports = append(ports, port)
-	}
-
-	return ports
-}
-
-// NodePortServicePorts returns the NodePort Service ports. The node port of a
-// listener is its first advertised port.
-//
-// [Listeners.LoadBalancerServicePorts] and [Listeners.ExternalServicePorts] use
-// different port values.
-func (l *Listeners) NodePortServicePorts() []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	for _, api := range l.APIs() {
-		for _, listener := range api.Additional {
-			if !listener.Exposed || listener.Gateway != nil {
-				continue
-			}
-
-			port := corev1.ServicePort{
-				Name:       listener.PortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       listener.Port,
-				TargetPort: intstr.FromInt32(listener.Port),
-				NodePort:   listener.Port,
-			}
-
-			if len(listener.AdvertisedPorts) > 0 {
-				port.NodePort = listener.AdvertisedPorts[0]
-			}
-
-			// Only set AppProtocol if specified. This is purely to reduce golden
-			// churn.
-			if api.AppProtocol != nil {
-				port.AppProtocol = api.AppProtocol
-			}
-
-			ports = append(ports, port)
-		}
-	}
-
-	return ports
-}
-
-// LoadBalancerServicePorts returns the LoadBalancer Service ports of the
-// chart. Each port is the advertised port and targets the listener port.
-func (l *Listeners) LoadBalancerServicePorts() []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	for _, api := range l.APIs() {
-		for _, listener := range api.Additional {
-			if !listener.Exposed || listener.Gateway != nil {
-				continue
-			}
-
-			port := corev1.ServicePort{
-				Name:       listener.PortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       listener.Port,
-				TargetPort: intstr.FromInt32(listener.Port),
-			}
-
-			if len(listener.AdvertisedPorts) > 0 {
-				port.Port = listener.AdvertisedPorts[0]
-			}
-
-			// Only set AppProtocol if specified. This is purely to reduce golden
-			// churn.
-			if api.AppProtocol != nil {
-				port.AppProtocol = api.AppProtocol
-			}
-
-			ports = append(ports, port)
-		}
-	}
-
-	return ports
-}
-
-// ExternalServicePorts returns the LoadBalancer Service ports of the
-// operator. Each port is the listener port, not the advertised port. The
-// operator does not use this method at this time.
-func (l *Listeners) ExternalServicePorts() []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	for _, api := range l.APIs() {
-		for _, listener := range api.Additional {
-			if !listener.Exposed || listener.Gateway != nil {
-				continue
-			}
-
-			port := corev1.ServicePort{
-				Name:       listener.PortName,
-				Protocol:   corev1.ProtocolTCP,
-				Port:       listener.Port,
-				TargetPort: intstr.FromInt32(listener.Port),
-			}
-
-			// Only set AppProtocol if specified. This is purely to reduce golden
-			// churn.
-			if api.AppProtocol != nil {
-				port.AppProtocol = api.AppProtocol
-			}
-
-			ports = append(ports, port)
-		}
-	}
-
-	return ports
-}
-
-// GatewayServicePorts returns the ClusterIP Service ports for the TLSRoutes
-// of the listeners that use Gateway API. The order is [Listeners.APIs], not
-// [Listeners.Gateways].
-func (l *Listeners) GatewayServicePorts() []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	for _, api := range l.APIs() {
-		for _, listener := range api.Additional {
-			if !listener.Exposed || listener.Gateway == nil {
-				continue
-			}
-
-			ports = append(ports, corev1.ServicePort{
-				Name:        listener.PortName,
-				Protocol:    corev1.ProtocolTCP,
-				AppProtocol: api.AppProtocol,
-				Port:        listener.Port,
-				TargetPort:  intstr.FromInt32(listener.Port),
-			})
-		}
-	}
-
-	return ports
-}
-
-// TrustStores returns the truststores of all TLS listeners in [Listeners.All]
-// order.
+// TrustStores returns every active truststore. This includes the RPC
+// truststore, because rpc_server_tls has a truststore_file.
 func (l *Listeners) TrustStores() []*TrustStore {
 	var stores []*TrustStore
 
-	for _, api := range l.All() {
+	for _, api := range l.InOrder([]APIKind{KafkaAPI, AdminAPI, HTTPAPI, SchemaRegistryAPI, RPCAPI}) {
 		for _, listener := range api.Listeners() {
 			if listener.TLS == nil {
 				continue
@@ -499,15 +340,10 @@ type API struct {
 	// keys of this API come from Kind.
 	Kind APIKind
 
-	// AppProtocol is the appProtocol of all Service ports of this API.
-	AppProtocol *string
-
-	// Reserved is the listener that the chart and the operator use. The
-	// probes, the sidecar, rpk, the Redpanda clients and the headless Service
-	// use it. Its name is [ReservedListenerName].
-	//
-	// Reserved must not be nil. The render methods do not do a nil check,
-	// because a panic is better than a listener with port 0.
+	// Reserved is the listener that the chart and the operator use: the probes,
+	// the sidecar, rpk, the clients of Redpanda itself, and the headless
+	// Service. Its name is [ReservedListenerName]. It is nil if the API binds no
+	// reserved listener.
 	Reserved *Listener
 
 	// Additional contains the other listeners in redpanda.yaml order.
@@ -516,7 +352,11 @@ type API struct {
 
 // Listeners returns all listeners of the API in redpanda.yaml order.
 func (a *API) Listeners() []Listener {
-	return append([]Listener{*a.Reserved}, a.Additional...)
+	var listeners []Listener
+	if a.Reserved != nil {
+		listeners = append(listeners, *a.Reserved)
+	}
+	return append(listeners, a.Additional...)
 }
 
 // RPKClientTLS returns the rpk TLS configuration of this API. It returns nil,
@@ -664,26 +504,21 @@ type Listener struct {
 	PortName          string
 	ContainerPortName string
 
-	// TLS is nil if this listener has no TLS.
+	// AppProtocol is the appProtocol of each Service port that publishes this
+	// listener.
+	AppProtocol *string
+
+	// TLS is nil when this listener serves none.
 	TLS *ListenerTLS
 
-	// PrefixTemplate, AdvertisedPorts and Gateway configure the advertised
-	// addresses. They apply also if [Listener.Exposed] is false.
+	// PrefixTemplate and AdvertisedPorts configure advertisement in
+	// redpanda.yaml.
 	PrefixTemplate string
 
-	// AdvertisedPorts is not normalized. The advertised address uses the
-	// replica index, and the Service ports use the first element.
+	// AdvertisedPorts contains the ports as the user sets them. The advertised
+	// address uses the replica as an index. [ServiceKindNodePort] and
+	// [ServiceKindLoadBalancer] use the first port.
 	AdvertisedPorts []int32
-
-	// Gateway is nil unless this listener opted into Gateway API. Its presence
-	// moves it off the NodePort/LoadBalancer Services and onto the gateway
-	// ones.
-	Gateway *GatewayRoute
-
-	// Exposed is true if Kubernetes publishes this listener with a Service
-	// port, a TLSRoute and a gateway SAN. If Exposed is false, Redpanda still
-	// binds and advertises the listener, and the container still has the port.
-	Exposed bool
 }
 
 // AdvertisedPort returns the port that this listener advertises for replica.
@@ -699,19 +534,8 @@ func (l *Listener) AdvertisedPort(replica int32) int32 {
 	return l.Port
 }
 
-// GatewayRoute is the Gateway API routing of a listener. All hostnames are
-// fully rendered.
-type GatewayRoute struct {
-	// Host is the SNI name of the bootstrap TLSRoute.
-	Host string
-
-	// BrokerHosts contains one SNI name for each broker, in global ordinal
-	// order.
-	BrokerHosts []string
-}
-
-// ListenerTLS is the TLS configuration of a listener, resolved against a
-// [PKI].
+// ListenerTLS is the TLS a listener serves, resolved against a [PKI] by the
+// caller. Nothing in here is a name waiting to be looked up.
 type ListenerTLS struct {
 	// Server is the keypair that this listener presents.
 	Server Keypair
