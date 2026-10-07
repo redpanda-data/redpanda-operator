@@ -16,6 +16,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/tplutil"
@@ -111,6 +112,11 @@ func externalServicePorts(l *redpandav1alpha2.StretchListeners, includeNodePort 
 				if len(ext.AdvertisedPorts) > 0 {
 					sp.NodePort = ext.AdvertisedPorts[0]
 				}
+			} else if len(ext.AdvertisedPorts) > 0 {
+				// NB: Clients connect to the advertised port. The LoadBalancer
+				// publishes it and forwards to the listener.
+				sp.Port = ext.AdvertisedPorts[0]
+				sp.TargetPort = intstr.FromInt32(port)
 			}
 			ports = append(ports, sp)
 		})
