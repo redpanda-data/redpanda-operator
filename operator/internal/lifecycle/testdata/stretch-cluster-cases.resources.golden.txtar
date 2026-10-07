@@ -1276,22 +1276,22 @@
       nodePort: 31644
       port: 9645
       protocol: TCP
-      targetPort: 0
+      targetPort: 9645
     - name: kafka-default
       nodePort: 31092
       port: 9094
       protocol: TCP
-      targetPort: 0
+      targetPort: 9094
     - name: http-default
       nodePort: 30082
       port: 8083
       protocol: TCP
-      targetPort: 0
+      targetPort: 8083
     - name: schema-default
       nodePort: 30081
       port: 8084
       protocol: TCP
-      targetPort: 0
+      targetPort: 8084
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
@@ -1914,22 +1914,22 @@
       nodePort: 31644
       port: 9645
       protocol: TCP
-      targetPort: 0
+      targetPort: 9645
     - name: kafka-default
       nodePort: 31092
       port: 9094
       protocol: TCP
-      targetPort: 0
+      targetPort: 9094
     - name: http-default
       nodePort: 30082
       port: 8083
       protocol: TCP
-      targetPort: 0
+      targetPort: 8083
     - name: schema-default
       nodePort: 30081
       port: 8084
       protocol: TCP
-      targetPort: 0
+      targetPort: 8084
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
@@ -2742,22 +2742,22 @@
       nodePort: 31644
       port: 9645
       protocol: TCP
-      targetPort: 0
+      targetPort: 9645
     - name: kafka-default
       nodePort: 31092
       port: 9094
       protocol: TCP
-      targetPort: 0
+      targetPort: 9094
     - name: http-default
       nodePort: 30082
       port: 8083
       protocol: TCP
-      targetPort: 0
+      targetPort: 8083
     - name: schema-default
       nodePort: 30081
       port: 8084
       protocol: TCP
-      targetPort: 0
+      targetPort: 8084
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
@@ -3584,22 +3584,22 @@
       nodePort: 31644
       port: 9645
       protocol: TCP
-      targetPort: 0
+      targetPort: 9645
     - name: kafka-default
       nodePort: 31092
       port: 9094
       protocol: TCP
-      targetPort: 0
+      targetPort: 9094
     - name: http-default
       nodePort: 30082
       port: 8083
       protocol: TCP
-      targetPort: 0
+      targetPort: 8083
     - name: schema-default
       nodePort: 30081
       port: 8084
       protocol: TCP
-      targetPort: 0
+      targetPort: 8084
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
@@ -4398,22 +4398,22 @@
       nodePort: 31644
       port: 9645
       protocol: TCP
-      targetPort: 0
+      targetPort: 9645
     - name: kafka-default
       nodePort: 31092
       port: 9094
       protocol: TCP
-      targetPort: 0
+      targetPort: 9094
     - name: http-default
       nodePort: 30082
       port: 8083
       protocol: TCP
-      targetPort: 0
+      targetPort: 8083
     - name: schema-default
       nodePort: 30081
       port: 8084
       protocol: TCP
-      targetPort: 0
+      targetPort: 8084
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""
@@ -5036,22 +5036,22 @@
       nodePort: 31644
       port: 9645
       protocol: TCP
-      targetPort: 0
+      targetPort: 9645
     - name: kafka-default
       nodePort: 31092
       port: 9094
       protocol: TCP
-      targetPort: 0
+      targetPort: 9094
     - name: http-default
       nodePort: 30082
       port: 8083
       protocol: TCP
-      targetPort: 0
+      targetPort: 8083
     - name: schema-default
       nodePort: 30081
       port: 8084
       protocol: TCP
-      targetPort: 0
+      targetPort: 8084
     publishNotReadyAddresses: true
     selector:
       app.kubernetes.io/cluster-name: ""

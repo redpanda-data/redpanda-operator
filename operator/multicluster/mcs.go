@@ -73,7 +73,7 @@ func serviceImportsForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 	var imports []*mcsv1alpha1.ServiceImport
 	for i := int32(0); i < pool.GetReplicas(); i++ {
 		name := PerPodServiceName(state.poolFullname(pool), i)
-		ports := perPodServicePorts(&pool.Spec)
+		ports := perPodServicePorts(state, pool)
 		var importPorts []mcsv1alpha1.ServicePort
 		for _, p := range ports {
 			importPorts = append(importPorts, mcsv1alpha1.ServicePort{
