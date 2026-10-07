@@ -15,9 +15,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/kube/servicetemplate"
 )
@@ -40,84 +40,93 @@ func perPodServices(state *RenderState) ([]*corev1.Service, error) {
 // perPodServicesForPool returns the per-pod ClusterIP Services for a single
 // BrokerPool (local or remote). Caller iterates state.Pools().
 func perPodServicesForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ([]*corev1.Service, error) {
-	isLocal := state.isLocalPool(pool)
-	override := perPodServiceOverride(pool, isLocal)
+	override := perPodServiceOverride(pool, state.isLocalPool(pool))
 	if !override.IsEnabled() {
 		return nil, nil
 	}
-	var services []*corev1.Service
+
+	var brokers []redpanda.BrokerService
 	for i := int32(0); i < pool.GetReplicas(); i++ {
-		svc, err := perPodService(state, pool, i, isLocal, override)
-		if err != nil {
-			return nil, err
+		// In flat network mode, all per-pod Services are headless and have no
+		// selectors. The controller manages EndpointSlices that contain the pod
+		// IPs of the local and the remote pods.
+		var selector map[string]string
+		if !state.Spec().Networking.IsFlatNetwork() {
+			selector = perPodServiceSelector(state, pool, i)
 		}
-		services = append(services, svc)
-	}
-	return services, nil
-}
 
-func perPodService(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, ordinal int32, _ bool, override *redpandav1alpha2.PerPodServiceOverride) (*corev1.Service, error) {
-	spec := state.Spec()
-	poolSpec := &pool.Spec
-
-	labels := state.commonLabels()
-	labels[labelMonitorKey] = fmt.Sprintf("%t", poolSpec.Monitoring.IsEnabled())
-
-	ports := perPodServicePorts(poolSpec)
-
-	name := PerPodServiceName(state.poolFullname(pool), ordinal)
-	annotations := make(map[string]string)
-	// Internal-service annotations are cluster-wide (the headless Service spans pools).
-	if anns := spec.InternalServiceAnnotations; len(anns) > 0 {
-		annotations = anns
+		brokers = append(brokers, redpanda.BrokerService{
+			Name:     PerPodServiceName(state.poolFullname(pool), i),
+			Selector: selector,
+		})
 	}
 
-	// In flat network mode, ALL per-pod Services are rendered as headless
-	// without selectors. The controller manages EndpointSlices with actual
-	// pod IPs for both local and remote pods.
-	var selector map[string]string
-	clusterIP := ""
-	if spec.Networking.IsFlatNetwork() {
-		clusterIP = corev1.ClusterIPNone
-	} else {
-		selector = perPodServiceSelector(state, pool, ordinal)
+	config := perPodServiceConfig(state, pool)
+	config.Brokers = brokers
+	services := config.Render()
+
+	if override == nil {
+		return services, nil
 	}
 
-	svc := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   state.namespace,
-			Labels:      labels,
-			Annotations: annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Type:                     corev1.ServiceTypeClusterIP,
-			ClusterIP:                clusterIP,
-			PublishNotReadyAddresses: true,
-			Selector:                 selector,
-			Ports:                    ports,
-			IPFamilyPolicy:           ptr.To(corev1.IPFamilyPolicySingleStack),
-		},
-	}
-
-	// Apply per-pod service overrides from the pool spec.
-	if override != nil {
+	for i, svc := range services {
 		merged, err := servicetemplate.StrategicMergePatch(servicetemplate.Overrides{
 			Labels:      override.Labels,
 			Annotations: override.Annotations,
 			Spec:        override.Spec,
 		}, *svc)
 		if err != nil {
-			return nil, fmt.Errorf("applying per-pod service overrides for %s: %w", name, err)
+			return nil, fmt.Errorf("applying per-pod service overrides for %s: %w", svc.Name, err)
 		}
-		svc = &merged
+		services[i] = &merged
 	}
 
-	return svc, nil
+	return services, nil
+}
+
+// perPodServicePorts returns the ports that each per-pod Service of pool
+// publishes.
+func perPodServicePorts(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) []corev1.ServicePort {
+	// NB: The result is never nil, because the admin port is always published.
+	config := perPodServiceConfig(state, pool)
+	return config.Ports()
+}
+
+func perPodServiceConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) redpanda.ServiceConfig {
+	spec := state.Spec()
+
+	labels := state.commonLabels()
+	labels[labelMonitorKey] = fmt.Sprintf("%t", pool.Spec.Monitoring.IsEnabled())
+
+	var clusterIP string
+	if spec.Networking.IsFlatNetwork() {
+		clusterIP = corev1.ClusterIPNone
+	}
+
+	listeners := poolListeners(state, pool)
+	return redpanda.ServiceConfig{
+		Kind:      redpanda.ServiceKindBroker,
+		Listeners: withoutDisabled(listeners.InCluster(), pool, []redpanda.APIKind{redpanda.HTTPAPI, redpanda.SchemaRegistryAPI}),
+		Template: corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Service",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: state.namespace,
+				Labels:    labels,
+				// The internal Service annotations apply to the full cluster, because
+				// the headless Service includes all pools.
+				Annotations: spec.InternalServiceAnnotations,
+			},
+			Spec: corev1.ServiceSpec{
+				Type:                     corev1.ServiceTypeClusterIP,
+				ClusterIP:                clusterIP,
+				PublishNotReadyAddresses: true,
+				IPFamilyPolicy:           ptr.To(corev1.IPFamilyPolicySingleStack),
+			},
+		},
+	}
 }
 
 // perPodServiceOverride returns the applicable override for a per-pod Service,
@@ -148,56 +157,6 @@ func BrokerPodSelector(releaseName string) map[string]string {
 		labelNameKey:     labelNameValue,
 		labelInstanceKey: releaseName,
 	}
-}
-
-func perPodServicePorts(spec *redpandav1alpha2.BrokerPoolSpec) []corev1.ServicePort {
-	var ports []corev1.ServicePort
-
-	adminPort := spec.AdminPort()
-	ports = append(ports, corev1.ServicePort{
-		Name:       internalAdminAPIPortName,
-		Protocol:   corev1.ProtocolTCP,
-		Port:       adminPort,
-		TargetPort: intstr.FromInt32(adminPort),
-	})
-
-	if l := spec.Listeners; l != nil && l.HTTP != nil && l.HTTP.IsEnabled() {
-		httpPort := spec.HTTPPort()
-		ports = append(ports, corev1.ServicePort{
-			Name:       internalPandaProxyPortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       httpPort,
-			TargetPort: intstr.FromInt32(httpPort),
-		})
-	}
-
-	kafkaPort := spec.KafkaPort()
-	ports = append(ports, corev1.ServicePort{
-		Name:       internalKafkaPortName,
-		Protocol:   corev1.ProtocolTCP,
-		Port:       kafkaPort,
-		TargetPort: intstr.FromInt32(kafkaPort),
-	})
-
-	rpcPort := spec.RPCPort()
-	ports = append(ports, corev1.ServicePort{
-		Name:       internalRPCPortName,
-		Protocol:   corev1.ProtocolTCP,
-		Port:       rpcPort,
-		TargetPort: intstr.FromInt32(rpcPort),
-	})
-
-	if l := spec.Listeners; l != nil && l.SchemaRegistry != nil && l.SchemaRegistry.IsEnabled() {
-		srPort := spec.SchemaRegistryPort()
-		ports = append(ports, corev1.ServicePort{
-			Name:       internalSchemaRegistryPortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       srPort,
-			TargetPort: intstr.FromInt32(srPort),
-		})
-	}
-
-	return ports
 }
 
 func perPodServiceSelector(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool, ordinal int32) map[string]string {
