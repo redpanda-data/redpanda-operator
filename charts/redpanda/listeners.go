@@ -323,19 +323,15 @@ func (l *Listeners) LoadBalancerServicePorts() []corev1.ServicePort {
 	var ports []corev1.ServicePort
 
 	for _, api := range l.APIs() {
-		inCluster := api.Reserved
-
 		for _, listener := range api.Additional {
 			if !listener.Exposed || listener.Gateway != nil {
 				continue
 			}
 
-			// NB: The last fallback is the port of the in-cluster listener,
-			// not the port of this listener.
 			port := corev1.ServicePort{
 				Name:       listener.PortName,
 				Protocol:   corev1.ProtocolTCP,
-				Port:       inCluster.Port,
+				Port:       listener.Port,
 				TargetPort: intstr.FromInt32(listener.Port),
 			}
 
