@@ -313,8 +313,8 @@ func (l *Listeners) NodePortServicePorts() []corev1.ServicePort {
 // LoadBalancerServicePorts publishes the advertised port and targets the
 // listener's own. The chart's formula.
 //
-// NB: nodePort wins, then the first advertised port, then the port of the
-// listener. The last agrees with [Listener.AdvertisedPort].
+// NB: The first advertised port, else the port of the listener. This agrees
+// with [Listener.AdvertisedPort].
 func (l *Listeners) LoadBalancerServicePorts() []corev1.ServicePort {
 	var ports []corev1.ServicePort
 
@@ -327,9 +327,6 @@ func (l *Listeners) LoadBalancerServicePorts() []corev1.ServicePort {
 			port := listener.Port
 			if len(listener.AdvertisedPorts) > 0 {
 				port = listener.AdvertisedPorts[0]
-			}
-			if listener.NodePort != nil {
-				port = *listener.NodePort
 			}
 
 			ports = append(ports, corev1.ServicePort{
@@ -687,9 +684,6 @@ type Listener struct {
 	// Raw: the advertised address indexes it by replica while two Service
 	// formulas read its first element.
 	AdvertisedPorts []int32
-
-	// NodePort pins what [Listeners.LoadBalancerServicePorts] publishes.
-	NodePort *int32
 
 	// Gateway is nil unless this listener opted into Gateway API. Its presence
 	// moves it off the NodePort/LoadBalancer Services and onto the gateway

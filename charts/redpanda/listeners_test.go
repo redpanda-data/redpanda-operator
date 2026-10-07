@@ -75,7 +75,6 @@ func testListeners() Listeners {
 					AuthenticationMethod: "sasl",
 					ContainerPortName:    "kafka-default",
 					PortName:             "kafka-default",
-					NodePort:             ptr.To[int32](32092),
 					Exposed:              true,
 					AdvertisedPorts:      []int32{31092, 31093},
 				},
@@ -401,12 +400,10 @@ func TestServicePorts(t *testing.T) {
 		{Name: "kafka-default", Protocol: corev1.ProtocolTCP, Port: 9094, TargetPort: intstr.FromInt32(9094), NodePort: 31092},
 	}, l.NodePortServicePorts())
 
-	// LoadBalancer: nodePort wins, then the first advertised port, then the
-	// API's in-cluster port. admin has no nodePort so it advertises; kafka's
-	// nodePort overrides its advertised ports.
+	// LoadBalancer: the first advertised port.
 	require.Equal(t, []corev1.ServicePort{
 		{Name: "admin-default", Protocol: corev1.ProtocolTCP, Port: 31644, TargetPort: intstr.FromInt32(9645)},
-		{Name: "kafka-default", Protocol: corev1.ProtocolTCP, Port: 32092, TargetPort: intstr.FromInt32(9094)},
+		{Name: "kafka-default", Protocol: corev1.ProtocolTCP, Port: 31092, TargetPort: intstr.FromInt32(9094)},
 	}, l.LoadBalancerServicePorts())
 
 	// The operator's LoadBalancer publishes the listener's bound port where the
@@ -424,24 +421,15 @@ func TestServicePorts(t *testing.T) {
 	}, l.GatewayServicePorts())
 }
 
-// TestLoadBalancerPortFallback walks the three-step chain on its own, since the
-// shared fixture only exercises two of the steps.
+// TestLoadBalancerPortFallback examines the fallback when there are no
+// advertised ports.
 func TestLoadBalancerPortFallback(t *testing.T) {
 	base := testListeners()
-	base.Admin().Listeners[1].NodePort = nil
 	base.Admin().Listeners[1].AdvertisedPorts = nil
 
 	// Neither set: the port of the listener, which it also advertises.
 	require.Equal(t, int32(9645), base.LoadBalancerServicePorts()[0].Port)
 	require.Equal(t, intstr.FromInt32(9645), base.LoadBalancerServicePorts()[0].TargetPort)
-
-	advertised := testListeners()
-	advertised.Admin().Listeners[1].NodePort = nil
-	require.Equal(t, int32(31644), advertised.LoadBalancerServicePorts()[0].Port)
-
-	nodePort := testListeners()
-	nodePort.Admin().Listeners[1].NodePort = ptr.To[int32](30001)
-	require.Equal(t, int32(30001), nodePort.LoadBalancerServicePorts()[0].Port)
 }
 
 // TestServicePortGating asserts the two questions stay apart. Exposed drives

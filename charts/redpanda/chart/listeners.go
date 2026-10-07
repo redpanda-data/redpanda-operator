@@ -114,7 +114,6 @@ func resolveAPIListeners(state *RenderState, kind redpanda.APIKind, listener *Li
 			TLS:                  resolveExternalTLS(external.TLS, &listener.TLS, tls, pki),
 			PrefixTemplate:       ptr.Deref(external.PrefixTemplate, ""),
 			AdvertisedPorts:      external.AdvertisedPorts,
-			NodePort:             external.NodePort,
 			Gateway:              resolveGateway(state, external),
 			Exposed:              ptr.Deref(external.Enabled, state.Values.External.Enabled),
 		})

@@ -140,7 +140,6 @@ func resolveAPIListeners(api *redpandav1alpha2.StretchAPIListener, spec *redpand
 			TLS:                  resolveListenerTLS(external.TLS, spec, certRequiresClientAuth(spec, external.TLS), pki),
 			PrefixTemplate:       ptrDeref(external.PrefixTemplate),
 			AdvertisedPorts:      external.AdvertisedPorts,
-			NodePort:             external.NodePort,
 			// NB: always. This renderer has no cluster-wide external.enabled, so
 			// binding and publishing are one decision where the chart splits
 			// them.

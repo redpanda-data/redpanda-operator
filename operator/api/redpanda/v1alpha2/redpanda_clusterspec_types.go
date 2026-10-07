@@ -1041,7 +1041,9 @@ type ExternalListener struct {
 
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
-	NodePort        *int32  `json:"nodePort,omitempty"`
+	// Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+	// external Service publishes.
+	NodePort *int32 `json:"nodePort,omitempty"`
 	// Selects how this listener is exposed externally. Unset inherits the cluster-wide external.type (NodePort/LoadBalancer). Set to "tlsroute" to route this listener via Gateway API: a TLSRoute is created for it (requires external.gateway with parentRefs) and it is excluded from the NodePort/LoadBalancer Service.
 	// +kubebuilder:validation:Enum=tlsroute
 	Type *string `json:"type,omitempty"`
