@@ -103,9 +103,10 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 	// Global pod order: main STS (2) then the pool (1).
 	require.Equal(t, []string{"redpanda-0", "redpanda-1", "redpanda-np-0"}, gatewayPodNames(state))
 
-	// The resolver expands hostTemplate one time, with global ordinals. The
-	// other functions use this list and do not expand the template again.
-	gateway := listeners.Kafka().Additional[0].Gateway
+	// The resolver expands hostTemplate once, at global ordinals, and everything
+	// downstream indexes that list rather than re-expanding the template.
+	network := resolveNetwork(state, &listeners)
+	gateway := network.Route(redpanda.KafkaAPI, listeners.Kafka().Additional[0].Name)
 	require.NotNil(t, gateway)
 	require.Equal(t, []string{
 		"redpanda-0.example.com",
@@ -122,7 +123,7 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 	// And that advertised host must equal the hostname of the per-broker TLSRoute
 	// rendered for the same global ordinal.
 	var poolRouteHost string
-	for _, r := range TLSRoutes(state, &listeners) {
+	for _, r := range TLSRoutes(state, &network) {
 		if r.ObjectMeta.Name == "redpanda-kafka-default-2" {
 			poolRouteHost = string(r.Spec.Hostnames[0])
 		}
