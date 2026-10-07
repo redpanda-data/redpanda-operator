@@ -153,11 +153,8 @@ func TestTLSRoutesForListener(t *testing.T) {
 	// No per-broker hostnames: the bootstrap route alone.
 	routes := tlsRoutesForListener(
 		"redpanda", "default", labels, annotations, parentRefs, pods, redpanda.HTTPAPI,
-		redpanda.Listener{
-			Name:    "default",
-			Port:    8082,
-			Gateway: &redpanda.GatewayRoute{Host: "proxy.example.com"},
-		},
+		redpanda.Listener{Name: "default", Port: 8082},
+		&redpanda.GatewayRoute{Host: "proxy.example.com"},
 	)
 
 	require.Len(t, routes, 1)
@@ -174,13 +171,10 @@ func TestTLSRoutesForListener(t *testing.T) {
 	// Service that routes to that broker.
 	routes = tlsRoutesForListener(
 		"redpanda", "default", labels, annotations, parentRefs, pods, redpanda.KafkaAPI,
-		redpanda.Listener{
-			Name: "default",
-			Port: 9094,
-			Gateway: &redpanda.GatewayRoute{
-				Host:        "redpanda.example.com",
-				BrokerHosts: []string{"b-0.example.com", "b-1.example.com"},
-			},
+		redpanda.Listener{Name: "default", Port: 9094},
+		&redpanda.GatewayRoute{
+			Host:        "redpanda.example.com",
+			BrokerHosts: []string{"b-0.example.com", "b-1.example.com"},
 		},
 	)
 

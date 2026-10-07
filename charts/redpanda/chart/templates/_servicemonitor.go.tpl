@@ -3,6 +3,7 @@
 
 {{- define "redpanda.ServiceMonitor" -}}
 {{- $state := (index .a 0) -}}
+{{- $listeners := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if (not $state.Values.monitoring.enabled) -}}
@@ -10,7 +11,7 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $endpoint := (mustMergeOverwrite (dict) (dict "interval" $state.Values.monitoring.scrapeInterval "path" "/public_metrics" "port" "admin" "scheme" (toString "http"))) -}}
+{{- $endpoint := (mustMergeOverwrite (dict) (dict "interval" $state.Values.monitoring.scrapeInterval "path" "/public_metrics" "port" (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list (get (fromJson (include "_redpanda.Listeners.Admin" (dict "a" (list $listeners)))) "r"))))) "r").PortName "scheme" (toString "http"))) -}}
 {{- if (or (get (fromJson (include "redpanda.InternalTLS.IsEnabled" (dict "a" (list $state.Values.listeners.admin.tls $state.Values.tls)))) "r") (ne (toJson $state.Values.monitoring.tlsConfig) "null")) -}}
 {{- $_ := (set $endpoint "scheme" (toString "https")) -}}
 {{- $_ := (set $endpoint "tlsConfig" $state.Values.monitoring.tlsConfig) -}}

@@ -57,26 +57,20 @@ func listenersForPool(spec *redpandav1alpha2.BrokerPoolSpec, saslEnabled bool, p
 
 	return redpanda.NewListeners([]redpanda.API{
 		{
-			Kind:        redpanda.AdminAPI,
-			AppProtocol: apiAppProtocol(admin),
-			// NB: published unconditionally. The probes and the sidecar dial
-			// the in-cluster admin port, so gating it can only break them.
-			Listeners: resolveAPIListeners(admin, spec, redpanda.AdminAPI, spec.AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "", pki, true),
+			Kind:      redpanda.AdminAPI,
+			Listeners: resolveAPIListeners(admin, spec, redpanda.AdminAPI, spec.AdminPort(), redpandav1alpha2.DefaultExternalAdminPort, "", pki),
 		},
 		{
-			Kind:        redpanda.KafkaAPI,
-			AppProtocol: apiAppProtocol(kafka),
-			Listeners:   resolveAPIListeners(kafka, spec, redpanda.KafkaAPI, spec.KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, kafkaAuth, pki, true),
+			Kind:      redpanda.KafkaAPI,
+			Listeners: resolveAPIListeners(kafka, spec, redpanda.KafkaAPI, spec.KafkaPort(), redpandav1alpha2.DefaultExternalKafkaPort, kafkaAuth, pki),
 		},
 		{
-			Kind:        redpanda.HTTPAPI,
-			AppProtocol: apiAppProtocol(http),
-			Listeners:   resolveAPIListeners(http, spec, redpanda.HTTPAPI, spec.HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, httpAuth, pki, apiIsEnabled(http)),
+			Kind:      redpanda.HTTPAPI,
+			Listeners: resolveAPIListeners(http, spec, redpanda.HTTPAPI, spec.HTTPPort(), redpandav1alpha2.DefaultExternalHTTPPort, httpAuth, pki),
 		},
 		{
-			Kind:        redpanda.SchemaRegistryAPI,
-			AppProtocol: apiAppProtocol(schemaRegistry),
-			Listeners:   resolveAPIListeners(schemaRegistry, spec, redpanda.SchemaRegistryAPI, spec.SchemaRegistryPort(), redpandav1alpha2.DefaultExternalSchemaRegistryPort, "", pki, apiIsEnabled(schemaRegistry)),
+			Kind:      redpanda.SchemaRegistryAPI,
+			Listeners: resolveAPIListeners(schemaRegistry, spec, redpanda.SchemaRegistryAPI, spec.SchemaRegistryPort(), redpandav1alpha2.DefaultExternalSchemaRegistryPort, "", pki),
 		},
 		{
 			Kind: redpanda.RPCAPI,
@@ -86,7 +80,6 @@ func listenersForPool(spec *redpandav1alpha2.BrokerPoolSpec, saslEnabled bool, p
 				Address:           defaultListenAddress,
 				PortName:          redpanda.RPCAPI.InternalPortName(),
 				ContainerPortName: redpanda.RPCAPI.InternalPortName(),
-				Exposed:           true,
 				// NB: RPC takes its own requireClientAuth rather than the
 				// certificate's, unlike the APIs above.
 				TLS: resolveListenerTLS(rpcTLS, spec, rpcTLS.RequiresClientAuth(), pki),
@@ -100,14 +93,12 @@ func listenersForPool(spec *redpandav1alpha2.BrokerPoolSpec, saslEnabled bool, p
 // does not bind is absent, not flagged.
 //
 // its API alone: "schemaregistry" against "schema-<name>".
-func resolveAPIListeners(api *redpandav1alpha2.StretchAPIListener, spec *redpandav1alpha2.BrokerPoolSpec, kind redpanda.APIKind, port, defaultExternalPort int32, authMethod string, pki *redpanda.PKI, serviceEnabled bool) []redpanda.Listener {
+func resolveAPIListeners(api *redpandav1alpha2.StretchAPIListener, spec *redpandav1alpha2.BrokerPoolSpec, kind redpanda.APIKind, port, defaultExternalPort int32, authMethod string, pki *redpanda.PKI) []redpanda.Listener {
 	var tls *redpandav1alpha2.StretchListenerTLS
 	if api != nil {
 		tls = api.TLS
 	}
 
-	// NB: unconditional. Redpanda always binds it; serviceEnabled carries
-	// whether the headless Service publishes it.
 	listeners := []redpanda.Listener{{
 		Name:                 redpanda.InternalListenerName,
 		Port:                 port,
@@ -115,8 +106,8 @@ func resolveAPIListeners(api *redpandav1alpha2.StretchAPIListener, spec *redpand
 		AuthenticationMethod: authMethod,
 		PortName:             kind.InternalPortName(),
 		ContainerPortName:    kind.InternalPortName(),
+		AppProtocol:          apiAppProtocol(api),
 		TLS:                  resolveListenerTLS(tls, spec, certRequiresClientAuth(spec, tls), pki),
-		Exposed:              serviceEnabled,
 	}}
 
 	if api == nil {
@@ -137,13 +128,10 @@ func resolveAPIListeners(api *redpandav1alpha2.StretchAPIListener, spec *redpand
 			AuthenticationMethod: authMethod,
 			PortName:             kind.PortName(name),
 			ContainerPortName:    kind.ContainerPortName(name),
+			AppProtocol:          apiAppProtocol(api),
 			TLS:                  resolveListenerTLS(external.TLS, spec, certRequiresClientAuth(spec, external.TLS), pki),
 			PrefixTemplate:       ptrDeref(external.PrefixTemplate),
 			AdvertisedPorts:      external.AdvertisedPorts,
-			// NB: always. This renderer has no cluster-wide external.enabled, so
-			// binding and publishing are one decision where the chart splits
-			// them.
-			Exposed: true,
 		})
 	})
 
@@ -192,15 +180,6 @@ func poolTLS(spec *redpandav1alpha2.BrokerPoolSpec) *redpandav1alpha2.TLS {
 		return nil
 	}
 	return spec.TLS
-}
-
-// apiIsEnabled reports an API's own enabled flag, defaulting false when the API
-// is absent.
-//
-// NB: not api.IsEnabled(). That promotes through an embedded value, so it
-// panics on a nil API rather than defaulting.
-func apiIsEnabled(api *redpandav1alpha2.StretchAPIListener) bool {
-	return api != nil && api.IsEnabled()
 }
 
 func apiAppProtocol(api *redpandav1alpha2.StretchAPIListener) *string {

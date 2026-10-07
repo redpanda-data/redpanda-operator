@@ -4,6 +4,7 @@
 {{- define "redpanda.Secrets" -}}
 {{- $state := (index .a 0) -}}
 {{- $listeners := (index .a 1) -}}
+{{- $network := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $secrets := (coalesce nil) -}}
@@ -12,14 +13,14 @@
 {{- if (ne (toJson $saslUsers_1) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $saslUsers_1)) -}}
 {{- end -}}
-{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state $listeners (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)) (0 | int))))) "r"))) -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state $listeners $network (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)) (0 | int))))) "r"))) -}}
 {{- $fsValidator_2 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state (mustMergeOverwrite (dict "Name" "" "Generation" "" "Statefulset" (dict "additionalSelectorLabels" (coalesce nil) "replicas" 0 "updateStrategy" (dict) "additionalRedpandaCmdFlags" (coalesce nil) "podTemplate" (dict) "budget" (dict "maxUnavailable" 0) "podAntiAffinity" (dict "topologyKey" "" "type" "" "weight" 0 "custom" (coalesce nil)) "sideCars" (dict "image" (dict "repository" "" "tag" "") "args" (coalesce nil) "pvcUnbinder" (dict "enabled" false "unbindAfter" "" "disableStuckClaimExemption" false) "brokerDecommissioner" (dict "enabled" false "decommissionAfter" "" "decommissionRequeueTimeout" "") "configWatcher" (dict "enabled" false) "rpkProfileWatcher" (dict "enabled" false) "controllers" (dict "image" (coalesce nil) "enabled" false "createRBAC" false "healthProbeAddress" "" "metricsAddress" "" "pprofAddress" "" "run" (coalesce nil))) "initContainers" (dict "fsValidator" (dict "enabled" false "expectedFS" "") "setDataDirOwnership" (dict "enabled" false) "configurator" (dict)) "initContainerImage" (dict "repository" "" "tag" "")) "ServiceAnnotations" (coalesce nil)) (dict "Statefulset" $state.Values.statefulset)))))) "r") -}}
 {{- if (ne (toJson $fsValidator_2) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $fsValidator_2)) -}}
 {{- end -}}
 {{- $ordinalOffset := (($state.Values.statefulset.replicas | int) | int) -}}
 {{- range $_, $set := $state.Pools -}}
-{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state $listeners $set $ordinalOffset)))) "r"))) -}}
+{{- $secrets = (concat (default (list) $secrets) (list (get (fromJson (include "redpanda.SecretConfigurator" (dict "a" (list $state $listeners $network $set $ordinalOffset)))) "r"))) -}}
 {{- $fsValidator_3 := (get (fromJson (include "redpanda.SecretFSValidator" (dict "a" (list $state $set)))) "r") -}}
 {{- if (ne (toJson $fsValidator_3) "null") -}}
 {{- $secrets = (concat (default (list) $secrets) (list $fsValidator_3)) -}}
@@ -137,14 +138,15 @@
 {{- define "redpanda.SecretConfigurator" -}}
 {{- $state := (index .a 0) -}}
 {{- $listeners := (index .a 1) -}}
-{{- $pool := (index .a 2) -}}
-{{- $ordinalOffset := (index .a 3) -}}
+{{- $network := (index .a 2) -}}
+{{- $pool := (index .a 3) -}}
+{{- $ordinalOffset := (index .a 4) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $configuratorSh := (get (fromJson (include "_redpanda.ConfiguratorPrologueSh" (dict "a" (list)))) "r") -}}
-{{- $kafkaSnippet := (get (fromJson (include "redpanda.secretConfiguratorAdvertisedConfig" (dict "a" (list $state (get (fromJson (include "_redpanda.Listeners.Kafka" (dict "a" (list $listeners)))) "r") $pool.Statefulset $ordinalOffset)))) "r") -}}
+{{- $kafkaSnippet := (get (fromJson (include "redpanda.secretConfiguratorAdvertisedConfig" (dict "a" (list $state (get (fromJson (include "_redpanda.Listeners.Kafka" (dict "a" (list $listeners)))) "r") $network $pool.Statefulset $ordinalOffset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $kafkaSnippet)) -}}
-{{- $httpSnippet := (get (fromJson (include "redpanda.secretConfiguratorAdvertisedConfig" (dict "a" (list $state (get (fromJson (include "_redpanda.Listeners.HTTP" (dict "a" (list $listeners)))) "r") $pool.Statefulset $ordinalOffset)))) "r") -}}
+{{- $httpSnippet := (get (fromJson (include "redpanda.secretConfiguratorAdvertisedConfig" (dict "a" (list $state (get (fromJson (include "_redpanda.Listeners.HTTP" (dict "a" (list $listeners)))) "r") $network $pool.Statefulset $ordinalOffset)))) "r") -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) $httpSnippet)) -}}
 {{- if $state.Values.rackAwareness.enabled -}}
 {{- $configuratorSh = (concat (default (list) $configuratorSh) (default (list) (get (fromJson (include "_redpanda.ConfiguratorRackAwarenessSh" (dict "a" (list $state.Values.rackAwareness.nodeAnnotation)))) "r"))) -}}
@@ -158,8 +160,9 @@
 {{- define "redpanda.secretConfiguratorAdvertisedConfig" -}}
 {{- $state := (index .a 0) -}}
 {{- $api := (index .a 1) -}}
-{{- $sts := (index .a 2) -}}
-{{- $ordinalOffset := (index .a 3) -}}
+{{- $network := (index .a 2) -}}
+{{- $sts := (index .a 3) -}}
+{{- $ordinalOffset := (index .a 4) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
@@ -172,7 +175,7 @@
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
 {{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` $arrayName))) -}}
 {{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}
-{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $listener.Name ((get (fromJson (include "_redpanda.Listener.AdvertisedPort" (dict "a" (list $listener ($replicaIndex | int))))) "r") | int) $replicaIndex ((add $ordinalOffset $replicaIndex) | int) $listener.Gateway)))) "r") -}}
+{{- $host := (get (fromJson (include "redpanda.advertisedHostJSON" (dict "a" (list $state $listener.Name ((get (fromJson (include "_redpanda.Listener.AdvertisedPort" (dict "a" (list $listener ($replicaIndex | int))))) "r") | int) $replicaIndex ((add $ordinalOffset $replicaIndex) | int) (get (fromJson (include "_redpanda.Network.Route" (dict "a" (list $network $api.Kind $listener.Name)))) "r"))))) "r") -}}
 {{- $address := (toJson $host) -}}
 {{- $prefixTemplate := $listener.PrefixTemplate -}}
 {{- if (eq $prefixTemplate "") -}}

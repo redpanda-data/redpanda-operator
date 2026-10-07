@@ -196,8 +196,10 @@ type gatewayAPI struct {
 	Listeners ListenerConfig[string]
 }
 
-// gatewayListenerConfigs is the values' four client facing APIs in
-// [redpanda.Listeners.Gateways] order, which a certificate's dnsNames pin.
+// gatewayListenerConfigs returns the values of the four client APIs.
+//
+// NB: This sequence sets the sequence of the dnsNames of a certificate. Thus,
+// a change to it rotates certificates.
 func gatewayListenerConfigs(state *RenderState) []gatewayAPI {
 	return []gatewayAPI{
 		{Kind: redpanda.KafkaAPI, Listeners: state.Values.Listeners.Kafka.AsString()},

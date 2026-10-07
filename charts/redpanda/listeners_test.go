@@ -16,18 +16,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
 // testListeners is one fixture shared by most tests below, so a change in one
 // render path shows up as a diff against the same input every other path sees.
 //
-// admin  -- in-cluster TLS with a CA and mTLS, one plain exposed listener
-// kafka  -- SASL on both, exposed listener with two advertised ports
-// http   -- no TLS, in-cluster listener not published by the headless Service
-// schema -- one exposed listener that opted into Gateway API
-// rpc    -- single valued, TLS via an explicit truststore
+//   - admin: The in-cluster listener has TLS with a CA and mTLS. One external
+//     listener has no TLS.
+//   - kafka: Both listeners use SASL. The external listener has two advertised
+//     ports.
+//   - http: There is only an in-cluster listener. It has no TLS.
+//   - schema: There is one external listener.
+//   - rpc: There is one listener. Its TLS uses an explicit truststore.
 func testListeners() Listeners {
 	pki := testPKI()
 
@@ -41,7 +42,6 @@ func testListeners() Listeners {
 					Address:           "0.0.0.0",
 					ContainerPortName: "admin",
 					PortName:          "admin",
-					Exposed:           true,
 					TLS:               chartTLS(&pki, "default", true, nil),
 				},
 				{
@@ -50,7 +50,6 @@ func testListeners() Listeners {
 					Address:           "0.0.0.0",
 					ContainerPortName: "admin-default",
 					PortName:          "admin-default",
-					Exposed:           true,
 					AdvertisedPorts:   []int32{31644},
 					TLS:               chartTLS(&pki, "external", false, nil),
 				},
@@ -66,7 +65,6 @@ func testListeners() Listeners {
 					AuthenticationMethod: "sasl",
 					ContainerPortName:    "kafka",
 					PortName:             "kafka",
-					Exposed:              true,
 				},
 				{
 					Name:                 "default",
@@ -75,7 +73,6 @@ func testListeners() Listeners {
 					AuthenticationMethod: "sasl",
 					ContainerPortName:    "kafka-default",
 					PortName:             "kafka-default",
-					Exposed:              true,
 					AdvertisedPorts:      []int32{31092, 31093},
 				},
 			},
@@ -87,8 +84,7 @@ func testListeners() Listeners {
 				Port:              8082,
 				Address:           "0.0.0.0",
 				ContainerPortName: "http",
-				// Redpanda binds it and the container declares its port; no
-				// exposure, so the headless Service does not publish it.
+				PortName:          "http",
 			}},
 		},
 		{
@@ -102,19 +98,13 @@ func testListeners() Listeners {
 					// API's own -- "schemaregistry" against a "schema" prefix.
 					ContainerPortName: "schemaregistry",
 					PortName:          "schemaregistry",
-					Exposed:           true,
 				},
 				{
 					Name:              "default",
 					Port:              8084,
 					Address:           "0.0.0.0",
 					ContainerPortName: "schema-default",
-					Gateway: &GatewayRoute{
-						Host:        "schema.example.com",
-						BrokerHosts: []string{"schema-0.example.com"},
-					},
-					PortName: "schema-default",
-					Exposed:  true,
+					PortName:          "schema-default",
 				},
 			},
 		},
@@ -126,7 +116,6 @@ func testListeners() Listeners {
 				Address:           "0.0.0.0",
 				ContainerPortName: "rpc",
 				PortName:          "rpc",
-				Exposed:           true,
 				TLS:               chartTLS(&pki, "default", false, &TrustStore{ConfigMapKeyRef: cmKeyRef("rpc-ca", "ca.crt")}),
 			}},
 		},
@@ -174,32 +163,21 @@ func configKeys(apis []*API) []string {
 	return keys
 }
 
-func portNames(ports []corev1.ContainerPort) []string {
-	var names []string
-	for _, p := range ports {
-		names = append(names, p.Name)
-	}
-	return names
-}
-
 func sortedMapKeys[V any](m map[string]V) []string {
 	return slices.Sorted(maps.Keys(m))
 }
 
-// TestAccessorOrders pins all four. They disagree, and aligning any two
-// reshuffles Service ports, rolls every broker, or rotates certificates.
-func TestAccessorOrders(t *testing.T) {
+// TestInOrder makes sure that InOrder keeps the sequence of kinds and skips the
+// kinds that the cluster does not bind.
+func TestInOrder(t *testing.T) {
 	l := testListeners()
 
-	require.Equal(t, []string{"admin", "kafka_api", "pandaproxy_api", "schema_registry_api"}, configKeys(l.APIs()))
-	require.Equal(t, []string{"kafka_api", "admin", "pandaproxy_api", "schema_registry_api", "rpc_server"}, configKeys(l.All()))
-	require.Equal(t, []string{"admin", "pandaproxy_api", "kafka_api", "rpc_server", "schema_registry_api"}, configKeys(l.Ports()))
-	require.Equal(t, []string{"kafka_api", "pandaproxy_api", "admin", "schema_registry_api"}, configKeys(l.Gateways()))
+	require.Equal(t, []string{"rpc_server", "kafka_api", "admin"}, configKeys(l.InOrder([]APIKind{RPCAPI, KafkaAPI, AdminAPI})))
 
-	// rpc_server is not an *_api key, so only All() carries it.
-	require.NotContains(t, configKeys(l.APIs()), "rpc_server")
-	require.NotContains(t, configKeys(l.Gateways()), "rpc_server")
-	require.Len(t, l.Ports(), 5)
+	delete(l.ByKind, KafkaAPI)
+	require.Equal(t, []string{"rpc_server", "admin"}, configKeys(l.InOrder([]APIKind{RPCAPI, KafkaAPI, AdminAPI})))
+
+	require.Equal(t, []string{"rpc", "admin", "admin-default"}, listenerPortNames(l.ListenersInOrder([]APIKind{RPCAPI, KafkaAPI, AdminAPI})))
 }
 
 // TestInClusterAndExternal pins the two derived views over the one list. The
@@ -233,6 +211,17 @@ func TestInClusterAndExternal(t *testing.T) {
 	http := l.HTTP()
 	require.Empty(t, http.External())
 	require.Equal(t, int32(8082), http.InCluster().Port)
+
+	// The views of Listeners apply the views of API to each API. External
+	// omits an API that has no external listeners.
+	order := []APIKind{AdminAPI, HTTPAPI, KafkaAPI, RPCAPI, SchemaRegistryAPI}
+
+	inClusterListeners := l.InCluster()
+	require.Equal(t, []string{"admin", "http", "kafka", "rpc", "schemaregistry"}, listenerPortNames(inClusterListeners.ListenersInOrder(order)))
+
+	externalListeners := l.External()
+	require.Equal(t, []string{"admin-default", "kafka-default", "schema-default"}, listenerPortNames(externalListeners.ListenersInOrder(order)))
+	require.NotContains(t, externalListeners.ByKind, HTTPAPI)
 }
 
 // TestConfigSections pins the whole rendered map: which section each API nests
@@ -308,17 +297,12 @@ func TestConfigSections(t *testing.T) {
 	}, sections["schema_registry"])
 }
 
-// TestConfigSectionsGating asserts Exposed does not reach the config. Whether
-// Redpanda binds a listener is answered by its presence in the list.
+// TestConfigSectionsGating makes sure that the listener list controls which
+// listeners Redpanda binds.
 func TestConfigSectionsGating(t *testing.T) {
-	unpublished := testListeners()
-	unpublished.Admin().Listeners[1].Exposed = false
-	entries := unpublished.ConfigSections()["redpanda"]["admin"].([]map[string]any)
-	require.Len(t, entries, 2, "an unpublished listener is still bound by Redpanda")
-
 	unbound := testListeners()
 	unbound.Admin().Listeners = unbound.Admin().Listeners[:1]
-	entries = unbound.ConfigSections()["redpanda"]["admin"].([]map[string]any)
+	entries := unbound.ConfigSections()["redpanda"]["admin"].([]map[string]any)
 	require.Len(t, entries, 1)
 	require.Equal(t, "internal", entries[0]["name"])
 
@@ -370,97 +354,6 @@ func TestContainerPorts(t *testing.T) {
 		{Name: "schemaregistry", ContainerPort: 8081},
 		{Name: "schema-default", ContainerPort: 8084},
 	}, l.ContainerPorts())
-
-	// One port per listener, not per exposure: Redpanda binds the port, so the
-	// container declares it whether or not anything publishes it. http proves
-	// it -- no exposures, still a port.
-	unpublished := testListeners()
-	unpublished.Admin().Listeners[1].Exposed = false
-	require.Contains(t, portNames(unpublished.ContainerPorts()), "admin-default")
-}
-
-// TestServicePorts renders all five formulas from one fixture. They disagree;
-// unifying any two moves goldens on one path or the other.
-func TestServicePorts(t *testing.T) {
-	l := testListeners()
-
-	// Headless Service: in-cluster listeners only, one port per exposure.
-	// http has none, so it is absent while still being bound.
-	require.Equal(t, []corev1.ServicePort{
-		{Name: "admin", Protocol: corev1.ProtocolTCP, Port: 9644, TargetPort: intstr.FromInt32(9644)},
-		{Name: "kafka", Protocol: corev1.ProtocolTCP, Port: 9093, TargetPort: intstr.FromInt32(9093)},
-		{Name: "rpc", Protocol: corev1.ProtocolTCP, Port: 33145, TargetPort: intstr.FromInt32(33145)},
-		{Name: "schemaregistry", Protocol: corev1.ProtocolTCP, Port: 8081, TargetPort: intstr.FromInt32(8081)},
-	}, l.InternalServicePorts())
-
-	// NodePort: the listener's own port, published at the first advertised
-	// port. The gateway listener is excluded.
-	require.Equal(t, []corev1.ServicePort{
-		{Name: "admin-default", Protocol: corev1.ProtocolTCP, Port: 9645, TargetPort: intstr.FromInt32(9645), NodePort: 31644},
-		{Name: "kafka-default", Protocol: corev1.ProtocolTCP, Port: 9094, TargetPort: intstr.FromInt32(9094), NodePort: 31092},
-	}, l.NodePortServicePorts())
-
-	// LoadBalancer: the first advertised port.
-	require.Equal(t, []corev1.ServicePort{
-		{Name: "admin-default", Protocol: corev1.ProtocolTCP, Port: 31644, TargetPort: intstr.FromInt32(9645)},
-		{Name: "kafka-default", Protocol: corev1.ProtocolTCP, Port: 31092, TargetPort: intstr.FromInt32(9094)},
-	}, l.LoadBalancerServicePorts())
-
-	// The operator's LoadBalancer publishes the listener's bound port where the
-	// chart's publishes the advertised one. The only surviving difference
-	// between the two formulas.
-	require.Equal(t, []corev1.ServicePort{
-		{Name: "admin-default", Protocol: corev1.ProtocolTCP, Port: 9645, TargetPort: intstr.FromInt32(9645)},
-		{Name: "kafka-default", Protocol: corev1.ProtocolTCP, Port: 9094, TargetPort: intstr.FromInt32(9094)},
-	}, l.ExternalServicePorts())
-
-	// Gateway Services carry only the listeners that opted in, and in APIs()
-	// order rather than Gateways().
-	require.Equal(t, []corev1.ServicePort{
-		{Name: "schema-default", Protocol: corev1.ProtocolTCP, Port: 8084, TargetPort: intstr.FromInt32(8084)},
-	}, l.GatewayServicePorts())
-}
-
-// TestLoadBalancerPortFallback examines the fallback when there are no
-// advertised ports.
-func TestLoadBalancerPortFallback(t *testing.T) {
-	base := testListeners()
-	base.Admin().Listeners[1].AdvertisedPorts = nil
-
-	// Neither set: the port of the listener, which it also advertises.
-	require.Equal(t, int32(9645), base.LoadBalancerServicePorts()[0].Port)
-	require.Equal(t, intstr.FromInt32(9645), base.LoadBalancerServicePorts()[0].TargetPort)
-}
-
-// TestServicePortGating asserts the two questions stay apart. Exposed drives
-// every Service port method at once, while the listener stays bound and still
-// advertised -- what values.yaml's external.enabled false promises.
-func TestServicePortGating(t *testing.T) {
-	unpublished := testListeners()
-	unpublished.Admin().Listeners[1].Exposed = false
-	unpublished.SchemaRegistry().Listeners[1].Exposed = false
-
-	require.Len(t, unpublished.NodePortServicePorts(), 1)
-	require.Len(t, unpublished.ExternalServicePorts(), 1)
-	require.Len(t, unpublished.LoadBalancerServicePorts(), 1)
-	require.Empty(t, unpublished.GatewayServicePorts())
-	require.Contains(t, portNames(unpublished.ContainerPorts()), "admin-default")
-
-	// Still bound, still advertised at the port it would have been published
-	// on, and the container still declares it. That is the half exposure does
-	// not reach.
-	entries := unpublished.ConfigSections()["redpanda"]["admin"].([]map[string]any)
-	require.Len(t, entries, 2)
-	require.Equal(t, int32(31644), unpublished.Admin().Listeners[1].AdvertisedPort(0))
-
-	// A listener Redpanda does not bind is absent instead, which drops the
-	// config entry as well.
-	unbound := testListeners()
-	unbound.Admin().Listeners = unbound.Admin().Listeners[:1]
-
-	entries = unbound.ConfigSections()["redpanda"]["admin"].([]map[string]any)
-	require.Len(t, entries, 1)
-	require.Len(t, unbound.NodePortServicePorts(), 1)
 }
 
 // TestTrustStoreFile pins the fallback split. Conflating the two makes a broker
@@ -635,4 +528,12 @@ func TestAdvertisedPorts(t *testing.T) {
 
 	// No exposed listeners at all: the in-cluster port, and no first name.
 	require.Equal(t, int32(8082), l.HTTP().ProfileAdvertisedPort(0))
+}
+
+func listenerPortNames(listeners []Listener) []string {
+	var names []string
+	for _, listener := range listeners {
+		names = append(names, listener.PortName)
+	}
+	return names
 }

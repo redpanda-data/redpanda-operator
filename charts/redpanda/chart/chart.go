@@ -123,14 +123,23 @@ func renderResources(state *RenderState, pki *redpanda.PKI, listeners *redpanda.
 	state.Values.External.ValidateGateway()
 	validateGatewayListeners(state)
 
-	manifests := []kube.Object{
-		NodePortService(state, listeners),
-		PodDisruptionBudget(state),
-		ServiceAccount(state),
-		ServiceInternal(state, listeners),
-		ServiceMonitor(state),
-		PostInstallUpgradeJob(state, pki),
+	network := resolveNetwork(state, listeners)
+
+	var manifests []kube.Object
+
+	for _, obj := range network.Render(redpanda.ServiceKindNodePort) {
+		manifests = append(manifests, obj)
 	}
+
+	manifests = append(manifests, PodDisruptionBudget(state))
+	manifests = append(manifests, ServiceAccount(state))
+
+	for _, obj := range network.Render(redpanda.ServiceKindHeadless) {
+		manifests = append(manifests, obj)
+	}
+
+	manifests = append(manifests, ServiceMonitor(state, listeners))
+	manifests = append(manifests, PostInstallUpgradeJob(state, pki))
 
 	// NB: gotohelm doesn't currently have a way to handle casting from
 	// []Instance -> []Interface as doing so generally requires some go
@@ -156,19 +165,19 @@ func renderResources(state *RenderState, pki *redpanda.PKI, listeners *redpanda.
 
 	manifests = append(manifests, RoleSet(state).Render()...)
 
-	for _, obj := range LoadBalancerServices(state, listeners) {
+	for _, obj := range network.Render(redpanda.ServiceKindLoadBalancer) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range GatewayServices(state, listeners) {
+	for _, obj := range network.Render(redpanda.ServiceKindGateway) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range TLSRoutes(state, listeners) {
+	for _, obj := range TLSRoutes(state, &network) {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Secrets(state, listeners) {
+	for _, obj := range Secrets(state, listeners, &network) {
 		manifests = append(manifests, obj)
 	}
 

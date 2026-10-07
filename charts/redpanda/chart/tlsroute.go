@@ -22,9 +22,11 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-// TLSRoutes returns Gateway API TLSRoute resources for external access.
-func TLSRoutes(state *RenderState, listeners *redpanda.Listeners) []*gatewayv1.TLSRoute {
-	if !state.Values.External.IsGatewayEnabled() {
+// TLSRoutes returns the Gateway API TLSRoutes for the listeners of the
+// gateway Services.
+func TLSRoutes(state *RenderState, network *redpanda.Network) []*gatewayv1.TLSRoute {
+	gateway := network.Service(redpanda.ServiceKindGateway)
+	if gateway == nil {
 		return nil
 	}
 
@@ -37,21 +39,16 @@ func TLSRoutes(state *RenderState, listeners *redpanda.Listeners) []*gatewayv1.T
 
 	var routes []*gatewayv1.TLSRoute
 
-	for _, api := range listeners.Gateways() {
-		for _, listener := range api.External() {
-			if !listener.Exposed || listener.Gateway == nil {
-				continue
-			}
-			routes = append(routes, tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, api.Kind, listener)...)
+	for _, api := range gateway.Listeners.InOrder([]redpanda.APIKind{redpanda.KafkaAPI, redpanda.HTTPAPI, redpanda.AdminAPI, redpanda.SchemaRegistryAPI}) {
+		for _, listener := range api.Listeners {
+			routes = append(routes, tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, api.Kind, listener, network.Route(api.Kind, listener.Name))...)
 		}
 	}
 
 	return routes
 }
 
-func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, annotations map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, kind redpanda.APIKind, listener redpanda.Listener) []*gatewayv1.TLSRoute {
-	gateway := listener.Gateway
-
+func tlsRoutesForListener(fullname string, namespace string, labels map[string]string, annotations map[string]string, parentRefs []gatewayv1.ParentReference, pods []string, kind redpanda.APIKind, listener redpanda.Listener, gateway *redpanda.GatewayRoute) []*gatewayv1.TLSRoute {
 	// Invariants (host present; kafka multi-broker requires hostTemplate) are
 	// enforced upfront by validateGatewayListeners so misconfigurations surface
 	// as a single clear error before any rendering. By the time we get here the

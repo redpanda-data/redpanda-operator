@@ -12,6 +12,7 @@ package chart
 
 import (
 	"fmt"
+	"maps"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,17 +35,7 @@ const (
 	legacyLoadBalancerTypeLabelKey = "repdanda.com/type"
 )
 
-func LoadBalancerServices(state *RenderState, listeners *redpanda.Listeners) []*corev1.Service {
-	// This is technically a divergence from previous behavior but this matches
-	// the NodePort's check and is more reasonable.
-	if !state.Values.External.Enabled || !state.Values.External.Service.Enabled {
-		return nil
-	}
-
-	if state.Values.External.Type != corev1.ServiceTypeLoadBalancer {
-		return nil
-	}
-
+func loadBalancerServiceConfig(state *RenderState, listeners redpanda.Listeners) redpanda.ServiceConfig {
 	externalDNS := ptr.Deref(state.Values.External.ExternalDNS, Enableable{})
 
 	labels := FullLabels(state)
@@ -52,31 +43,15 @@ func LoadBalancerServices(state *RenderState, listeners *redpanda.Listeners) []*
 	labels[loadBalancerTypeLabelKey] = loadBalancerTypeLabelValue
 	labels[legacyLoadBalancerTypeLabelKey] = loadBalancerTypeLabelValue
 
-	selector := ClusterPodLabelsSelector(state)
-
-	// If every enabled external listener opted into gateway mode (or there are
-	// no external listener ports at all), there is nothing to publish. Emitting
-	// a LoadBalancer Service with an empty port list is rejected by the API
-	// server (`spec.ports: Required value`), so mirror the NodePort path and
-	// render no LoadBalancer Services in that case.
-	ports := listeners.LoadBalancerServicePorts()
-	if len(ports) == 0 {
-		return nil
-	}
-
-	var services []*corev1.Service
 	pods := PodNames(state, Pool{Statefulset: state.Values.Statefulset})
 	for _, set := range state.Pools {
 		pods = append(pods, PodNames(state, set)...)
 	}
 
+	var brokers []redpanda.BrokerService
+
 	for i, podname := range pods {
-		// NB: A range loop is used here as its the most terse way to handle
-		// nil maps in gotohelm.
 		annotations := map[string]string{}
-		for k, v := range helmette.SortedMap(state.Values.External.Annotations) {
-			annotations[k] = v
-		}
 
 		// TODO: this looks quite broken just based on the fact that if replicas > addresses
 		// this panics
@@ -95,39 +70,41 @@ func LoadBalancerServices(state *RenderState, listeners *redpanda.Listeners) []*
 			annotations["external-dns.alpha.kubernetes.io/hostname"] = address
 		}
 
-		// NB: A range loop is used here as its the most terse way to handle
-		// nil maps in gotohelm.
-		podSelector := map[string]string{}
-		for k, v := range selector {
-			podSelector[k] = v
-		}
+		brokers = append(brokers, redpanda.BrokerService{
+			Name:        fmt.Sprintf("lb-%s", podname),
+			Selector:    map[string]string{"statefulset.kubernetes.io/pod-name": podname},
+			Annotations: annotations,
+		})
+	}
 
-		podSelector["statefulset.kubernetes.io/pod-name"] = podname
+	// NB: An annotation in external.annotations replaces a common annotation
+	// that has the same key.
+	annotations := map[string]string{}
+	maps.Copy(annotations, FullAnnotations(state))
+	maps.Copy(annotations, state.Values.External.Annotations)
 
-		svc := &corev1.Service{
+	return redpanda.ServiceConfig{
+		Kind:      redpanda.ServiceKindLoadBalancer,
+		Listeners: listeners,
+		Template: corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
 				Kind:       "Service",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        fmt.Sprintf("lb-%s", podname),
 				Namespace:   state.Release.Namespace,
 				Labels:      labels,
-				Annotations: helmette.Merge(annotations, FullAnnotations(state)),
+				Annotations: annotations,
 			},
 			Spec: corev1.ServiceSpec{
 				ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
 				LoadBalancerSourceRanges: state.Values.External.SourceRanges,
-				Ports:                    ports,
 				PublishNotReadyAddresses: true,
-				Selector:                 podSelector,
+				Selector:                 ClusterPodLabelsSelector(state),
 				SessionAffinity:          corev1.ServiceAffinityNone,
 				Type:                     corev1.ServiceTypeLoadBalancer,
 			},
-		}
-
-		services = append(services, svc)
+		},
+		Brokers: brokers,
 	}
-
-	return services
 }
