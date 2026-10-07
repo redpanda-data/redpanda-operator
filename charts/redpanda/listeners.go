@@ -339,10 +339,6 @@ func (l *Listeners) LoadBalancerServicePorts() []corev1.ServicePort {
 				port.Port = listener.AdvertisedPorts[0]
 			}
 
-			if listener.NodePort != nil {
-				port.Port = *listener.NodePort
-			}
-
 			// Only set AppProtocol if specified. This is purely to reduce golden
 			// churn.
 			if api.AppProtocol != nil {
@@ -679,12 +675,9 @@ type Listener struct {
 	// replica index, and the Service ports use the first element.
 	AdvertisedPorts []int32
 
-	// NodePort, if set, is the port of [Listeners.LoadBalancerServicePorts].
-	NodePort *int32
-
-	// Gateway is nil if this listener does not use Gateway API. If Gateway is
-	// set, the gateway Services contain this listener, and the NodePort and
-	// LoadBalancer Services do not.
+	// Gateway is nil unless this listener opted into Gateway API. Its presence
+	// moves it off the NodePort/LoadBalancer Services and onto the gateway
+	// ones.
 	Gateway *GatewayRoute
 
 	// Exposed is true if Kubernetes publishes this listener with a Service

@@ -2215,6 +2215,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -2476,6 +2479,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -2742,6 +2748,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -3095,6 +3104,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -36393,6 +36405,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -36654,6 +36669,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -36920,6 +36938,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
@@ -37273,6 +37294,9 @@ spec:
                                     and $POD_NAME variables.
                                   type: string
                                 nodePort:
+                                  description: |-
+                                    Deprecated: This field has no effect. Use `advertisedPorts` to set the port that the
+                                    external Service publishes.
                                   format: int32
                                   type: integer
                                 port:
