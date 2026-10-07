@@ -401,12 +401,11 @@
 {{- $_is_returning := false -}}
 {{- $ports := (coalesce nil) -}}
 {{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.APIs" (dict "a" (list $l)))) "r") -}}
-{{- $inCluster := $api.Reserved -}}
 {{- range $_, $listener := $api.Additional -}}
 {{- if (or (not $listener.Exposed) (ne (toJson $listener.Gateway) "null")) -}}
 {{- continue -}}
 {{- end -}}
-{{- $port := (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "port" ($inCluster.Port | int) "targetPort" ($listener.Port | int))) -}}
+{{- $port := (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "port" ($listener.Port | int) "targetPort" ($listener.Port | int))) -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $listener.AdvertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $port "port" (index $listener.AdvertisedPorts (0 | int))) -}}
 {{- end -}}
@@ -841,9 +840,9 @@
 {{- $seen := (dict) -}}
 {{- $deduped := (coalesce nil) -}}
 {{- range $_, $item := $items -}}
-{{- $_859___ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
-{{- $_ := (index $_859___ok_8 0) -}}
-{{- $ok_8 := (index $_859___ok_8 1) -}}
+{{- $_855___ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
+{{- $_ := (index $_855___ok_8 0) -}}
+{{- $ok_8 := (index $_855___ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- continue -}}
 {{- end -}}
