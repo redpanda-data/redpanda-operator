@@ -120,9 +120,9 @@ func resolveAPIListeners(api *redpandav1alpha2.StretchAPIListener, spec *redpand
 			TLS:                  resolveListenerTLS(external.TLS, spec, spec.CertRequiresClientAuth(external.TLS.GetCert()), pki),
 			PrefixTemplate:       ptr.Deref(external.PrefixTemplate, ""),
 			AdvertisedPorts:      external.AdvertisedPorts,
-			NodePort:             external.NodePort,
-			// NB: The operator has no external.enabled setting. Thus, all
-			// listeners that Redpanda binds are exposed.
+			// NB: always. This renderer has no cluster-wide external.enabled, so
+			// binding and publishing are one decision where the chart splits
+			// them.
 			Exposed: true,
 		})
 	})

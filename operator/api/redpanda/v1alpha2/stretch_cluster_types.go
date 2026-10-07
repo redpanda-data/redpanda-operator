@@ -335,7 +335,8 @@ type StretchExternalListener struct {
 
 	// Specifies the network port that the external Service listens on.
 	AdvertisedPorts []int32 `json:"advertisedPorts,omitempty"`
-	NodePort        *int32  `json:"nodePort,omitempty"`
+	// Deprecated: This field has no effect.
+	NodePort *int32 `json:"nodePort,omitempty"`
 }
 
 // StretchRPC configures the RPC API listener for stretch clusters.

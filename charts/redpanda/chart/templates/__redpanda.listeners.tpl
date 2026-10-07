@@ -409,9 +409,6 @@
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $listener.AdvertisedPorts)))) "r") | int) (0 | int)) -}}
 {{- $_ := (set $port "port" (index $listener.AdvertisedPorts (0 | int))) -}}
 {{- end -}}
-{{- if (ne (toJson $listener.NodePort) "null") -}}
-{{- $_ := (set $port "port" $listener.NodePort) -}}
-{{- end -}}
 {{- if (ne (toJson $api.AppProtocol) "null") -}}
 {{- $_ := (set $port "appProtocol" $api.AppProtocol) -}}
 {{- end -}}
@@ -840,9 +837,9 @@
 {{- $seen := (dict) -}}
 {{- $deduped := (coalesce nil) -}}
 {{- range $_, $item := $items -}}
-{{- $_855___ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
-{{- $_ := (index $_855___ok_8 0) -}}
-{{- $ok_8 := (index $_855___ok_8 1) -}}
+{{- $_848___ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
+{{- $_ := (index $_848___ok_8 0) -}}
+{{- $ok_8 := (index $_848___ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- continue -}}
 {{- end -}}
