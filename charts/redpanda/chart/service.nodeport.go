@@ -20,45 +20,33 @@ import (
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func NodePortService(state *RenderState, listeners *redpanda.Listeners) *corev1.Service {
-	if !state.Values.External.Enabled || !state.Values.External.Service.Enabled {
-		return nil
-	}
-
-	if state.Values.External.Type != corev1.ServiceTypeNodePort {
-		return nil
-	}
-
-	ports := listeners.NodePortServicePorts()
-
-	// If all listeners opted into gateway mode, no NodePort service is needed.
-	if len(ports) == 0 {
-		return nil
-	}
-
+func nodePortServiceConfig(state *RenderState, listeners redpanda.Listeners) redpanda.ServiceConfig {
 	annotations := state.Values.External.Annotations
 	if annotations == nil {
 		annotations = map[string]string{}
 	}
 
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-external", ServiceName(state)),
-			Namespace:   state.Release.Namespace,
-			Labels:      FullLabels(state),
-			Annotations: helmette.Merge(annotations, FullAnnotations(state)),
-		},
-		Spec: corev1.ServiceSpec{
-			ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
-			Ports:                    ports,
-			PublishNotReadyAddresses: true,
-			Selector:                 ClusterPodLabelsSelector(state),
-			SessionAffinity:          corev1.ServiceAffinityNone,
-			Type:                     corev1.ServiceTypeNodePort,
+	return redpanda.ServiceConfig{
+		Kind:      redpanda.ServiceKindNodePort,
+		Listeners: listeners,
+		Template: corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Service",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        fmt.Sprintf("%s-external", ServiceName(state)),
+				Namespace:   state.Release.Namespace,
+				Labels:      FullLabels(state),
+				Annotations: helmette.Merge(annotations, FullAnnotations(state)),
+			},
+			Spec: corev1.ServiceSpec{
+				ExternalTrafficPolicy:    corev1.ServiceExternalTrafficPolicyLocal,
+				PublishNotReadyAddresses: true,
+				Selector:                 ClusterPodLabelsSelector(state),
+				SessionAffinity:          corev1.ServiceAffinityNone,
+				Type:                     corev1.ServiceTypeNodePort,
+			},
 		},
 	}
 }

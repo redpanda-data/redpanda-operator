@@ -1,51 +1,4 @@
 -- basic-test --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: basic-test
-      helm.sh/chart: redpanda-26.2.1
-      helm.toolkit.fluxcd.io/name: basic-test
-      helm.toolkit.fluxcd.io/namespace: basic-test
-    name: basic-test-external
-    namespace: basic-test
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 9645
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 9094
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 8083
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 8084
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/instance: basic-test
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -136,6 +89,53 @@
       app.kubernetes.io/instance: basic-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: basic-test
+      helm.sh/chart: redpanda-26.2.1
+      helm.toolkit.fluxcd.io/name: basic-test
+      helm.toolkit.fluxcd.io/namespace: basic-test
+    name: basic-test-external
+    namespace: basic-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 9645
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 9094
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 8083
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 8084
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: basic-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
   status:
     loadBalancer: {}
 - apiVersion: v1
@@ -968,53 +968,6 @@
     secret: {}
   status: {}
 -- compat-test --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: compat-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: compat-test
-      helm.sh/chart: redpanda-26.2.1
-      helm.toolkit.fluxcd.io/name: compat-test
-      helm.toolkit.fluxcd.io/namespace: compat-test
-    name: compat-test-external
-    namespace: compat-test
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 9645
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 9094
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 8083
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 8084
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/instance: compat-test
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -1105,6 +1058,53 @@
       app.kubernetes.io/instance: compat-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: compat-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: compat-test
+      helm.sh/chart: redpanda-26.2.1
+      helm.toolkit.fluxcd.io/name: compat-test
+      helm.toolkit.fluxcd.io/namespace: compat-test
+    name: compat-test-external
+    namespace: compat-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 9645
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 9094
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 8083
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 8084
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: compat-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
   status:
     loadBalancer: {}
 - apiVersion: v1
@@ -2361,53 +2361,6 @@
     secret: {}
   status: {}
 -- console-disabled --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: console-disabled
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: console-disabled
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: console-disabled
-      helm.sh/chart: redpanda-26.2.1
-      helm.toolkit.fluxcd.io/name: console-disabled
-      helm.toolkit.fluxcd.io/namespace: console-disabled
-    name: console-disabled-external
-    namespace: console-disabled
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 9645
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 9094
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 8083
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 8084
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/instance: console-disabled
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -2498,6 +2451,53 @@
       app.kubernetes.io/instance: console-disabled
       app.kubernetes.io/name: redpanda
     type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: console-disabled
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: console-disabled
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: console-disabled
+      helm.sh/chart: redpanda-26.2.1
+      helm.toolkit.fluxcd.io/name: console-disabled
+      helm.toolkit.fluxcd.io/namespace: console-disabled
+    name: console-disabled-external
+    namespace: console-disabled
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 9645
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 9094
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 8083
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 8084
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: console-disabled
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
   status:
     loadBalancer: {}
 - apiVersion: v1
@@ -3313,53 +3313,6 @@
       rpk redpanda config --config "$CONFIG" set pandaproxy.advertised_pandaproxy_api[1] "${ADVERTISED_HTTP_ADDRESSES[$POD_ORDINAL]}"
   type: Opaque
 -- nodepool-basic-test --
-- apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app.kubernetes.io/component: redpanda
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/managed-by: Helm
-      app.kubernetes.io/name: redpanda
-      cluster.redpanda.com/namespace: nodepool-basic-test
-      cluster.redpanda.com/operator: v2
-      cluster.redpanda.com/owner: nodepool-basic-test
-      helm.sh/chart: redpanda-26.2.1
-      helm.toolkit.fluxcd.io/name: nodepool-basic-test
-      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
-    name: nodepool-basic-test-external
-    namespace: nodepool-basic-test
-  spec:
-    externalTrafficPolicy: Local
-    ports:
-    - name: admin-default
-      nodePort: 31644
-      port: 9645
-      protocol: TCP
-      targetPort: 9645
-    - name: kafka-default
-      nodePort: 31092
-      port: 9094
-      protocol: TCP
-      targetPort: 9094
-    - name: http-default
-      nodePort: 30082
-      port: 8083
-      protocol: TCP
-      targetPort: 8083
-    - name: schema-default
-      nodePort: 30081
-      port: 8084
-      protocol: TCP
-      targetPort: 8084
-    publishNotReadyAddresses: true
-    selector:
-      app.kubernetes.io/instance: nodepool-basic-test
-      app.kubernetes.io/name: redpanda
-    sessionAffinity: None
-    type: NodePort
-  status:
-    loadBalancer: {}
 - apiVersion: policy/v1
   kind: PodDisruptionBudget
   metadata:
@@ -3450,6 +3403,53 @@
       app.kubernetes.io/instance: nodepool-basic-test
       app.kubernetes.io/name: redpanda
     type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/component: redpanda
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/name: redpanda
+      cluster.redpanda.com/namespace: nodepool-basic-test
+      cluster.redpanda.com/operator: v2
+      cluster.redpanda.com/owner: nodepool-basic-test
+      helm.sh/chart: redpanda-26.2.1
+      helm.toolkit.fluxcd.io/name: nodepool-basic-test
+      helm.toolkit.fluxcd.io/namespace: nodepool-basic-test
+    name: nodepool-basic-test-external
+    namespace: nodepool-basic-test
+  spec:
+    externalTrafficPolicy: Local
+    ports:
+    - name: admin-default
+      nodePort: 31644
+      port: 9645
+      protocol: TCP
+      targetPort: 9645
+    - name: kafka-default
+      nodePort: 31092
+      port: 9094
+      protocol: TCP
+      targetPort: 9094
+    - name: http-default
+      nodePort: 30082
+      port: 8083
+      protocol: TCP
+      targetPort: 8083
+    - name: schema-default
+      nodePort: 30081
+      port: 8084
+      protocol: TCP
+      targetPort: 8084
+    publishNotReadyAddresses: true
+    selector:
+      app.kubernetes.io/instance: nodepool-basic-test
+      app.kubernetes.io/name: redpanda
+    sessionAffinity: None
+    type: NodePort
   status:
     loadBalancer: {}
 - apiVersion: v1
