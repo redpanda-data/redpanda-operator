@@ -33,6 +33,10 @@ func (m *V2ClusterStatusUpdater) Update(cluster *ClusterWithPools, status *Clust
 		}
 	}
 
+	if prunePools(&cluster.Status.NodePools, status.Pools) {
+		dirty = true
+	}
+
 	if status.ConfigVersion != nil && cluster.Status.ConfigVersion != *status.ConfigVersion {
 		cluster.Status.ConfigVersion = *status.ConfigVersion
 		dirty = true
@@ -87,6 +91,37 @@ func setAndDirtyCheckPools(pools *[]redpandav1alpha2.EmbeddedNodePoolStatus, upd
 		ReadyReplicas:     updated.ReadyReplicas,
 		RunningReplicas:   updated.RunningReplicas,
 	})
+	return true
+}
+
+// prunePools drops status entries for pools that no longer exist. status.Pools
+// unions the live StatefulSets with the desired ones, so an entry only becomes
+// prunable once its pool is neither present nor wanted. An empty current set
+// means the pools were not determined this pass, not that every pool vanished.
+// Kept entries hold their existing order: PoolStatuses ranges over maps, so
+// reordering to match it would re-dirty the status every reconcile.
+func prunePools(pools *[]redpandav1alpha2.EmbeddedNodePoolStatus, current []PoolStatus) bool {
+	if len(current) == 0 {
+		return false
+	}
+
+	names := make(map[string]struct{}, len(current))
+	for _, pool := range current {
+		names[pool.Name] = struct{}{}
+	}
+
+	var kept []redpandav1alpha2.EmbeddedNodePoolStatus
+	for _, existing := range *pools {
+		if _, ok := names[existing.Name]; ok {
+			kept = append(kept, existing)
+		}
+	}
+
+	if len(kept) == len(*pools) {
+		return false
+	}
+
+	*pools = kept
 	return true
 }
 
