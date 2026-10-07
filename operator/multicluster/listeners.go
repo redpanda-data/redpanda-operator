@@ -133,3 +133,26 @@ func resolveListenerTLS(tls *redpandav1alpha2.StretchListenerTLS, spec *redpanda
 
 	return redpanda.NewListenerTLS(pki, certName, requireClientAuth, trustStore)
 }
+
+// withoutDisabled removes each API of kinds that the pool spec explicitly
+// disables. It changes only what a Service publishes. Redpanda still binds the
+// listeners of a disabled API.
+//
+// NB: [redpandav1alpha2.BrokerPoolSpec.MergeDefaults] sets each API. Thus, the
+// APIs are not nil.
+func withoutDisabled(listeners redpanda.Listeners, pool *redpandav1alpha2.RedpandaBrokerPool, kinds []redpanda.APIKind) redpanda.Listeners {
+	l := pool.Spec.Listeners
+	enabled := map[redpanda.APIKind]bool{
+		redpanda.AdminAPI:          l.Admin.IsEnabled(),
+		redpanda.KafkaAPI:          l.Kafka.IsEnabled(),
+		redpanda.HTTPAPI:           l.HTTP.IsEnabled(),
+		redpanda.SchemaRegistryAPI: l.SchemaRegistry.IsEnabled(),
+	}
+
+	for _, kind := range kinds {
+		if !enabled[kind] {
+			delete(listeners.ByKind, kind)
+		}
+	}
+	return listeners
+}
