@@ -313,20 +313,18 @@ func (l *Listeners) NodePortServicePorts() []corev1.ServicePort {
 // LoadBalancerServicePorts publishes the advertised port and targets the
 // listener's own. The chart's formula.
 //
-// NB: nodePort wins, then the first advertised port, then the API's
-// *in-cluster* port -- not the exposed listener's.
+// NB: nodePort wins, then the first advertised port, then the port of the
+// listener. The last agrees with [Listener.AdvertisedPort].
 func (l *Listeners) LoadBalancerServicePorts() []corev1.ServicePort {
 	var ports []corev1.ServicePort
 
 	for _, api := range l.APIs() {
-		inCluster := api.InCluster()
-
 		for _, listener := range api.External() {
 			if !listener.Exposed || listener.Gateway != nil {
 				continue
 			}
 
-			port := inCluster.Port
+			port := listener.Port
 			if len(listener.AdvertisedPorts) > 0 {
 				port = listener.AdvertisedPorts[0]
 			}

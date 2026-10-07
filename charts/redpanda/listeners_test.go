@@ -431,8 +431,8 @@ func TestLoadBalancerPortFallback(t *testing.T) {
 	base.Admin().Listeners[1].NodePort = nil
 	base.Admin().Listeners[1].AdvertisedPorts = nil
 
-	// Neither set: the API's in-cluster port, not the exposed listener's.
-	require.Equal(t, int32(9644), base.LoadBalancerServicePorts()[0].Port)
+	// Neither set: the port of the listener, which it also advertises.
+	require.Equal(t, int32(9645), base.LoadBalancerServicePorts()[0].Port)
 	require.Equal(t, intstr.FromInt32(9645), base.LoadBalancerServicePorts()[0].TargetPort)
 
 	advertised := testListeners()
