@@ -65,7 +65,7 @@ func perPodEndpointsForPool(state *RenderState, pool *redpandav1alpha2.RedpandaB
 		return nil
 	}
 	logger := log.FromContext(state.Context()).WithName("perPodEndpointsForPool")
-	ports := perPodServicePorts(&pool.Spec)
+	ports := perPodServicePorts(state, pool)
 
 	var objects []kube.Object
 	for i := int32(0); i < pool.GetReplicas(); i++ {
