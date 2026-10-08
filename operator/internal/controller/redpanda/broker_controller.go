@@ -1007,16 +1007,27 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioning}, err
 	}
 
-	member := false
+	var member *rpadmin.Broker
 	for i := range brokers {
 		if brokers[i].NodeID == brokerID {
-			member = true
+			member = &brokers[i]
 			break
 		}
 	}
-	if !member {
+	if member == nil {
 		l.Info("broker already absent from cluster membership, decommission finished", "brokerID", brokerID)
 		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioned}, nil
+	}
+
+	// A disk-lost incarnation's node cannot be alive: an alive entry at the
+	// pinned id means the id belongs to a live node — e.g. the replacement,
+	// written into the tombstone's status by an operator predating the
+	// K8S-976 fix. Decommissioning it is the exact incident the tombstone
+	// exists to prevent; park for a human (manual recommission, manual
+	// tombstone removal) instead.
+	if broker.IsDiskLost() && member.IsAlive != nil && *member.IsAlive {
+		l.Info("blocking decommission: pinned node_id is alive, so it cannot belong to a disk-lost incarnation", "brokerID", brokerID)
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseStuck}, nil
 	}
 
 	// Last-broker guard.
@@ -1248,6 +1259,17 @@ func (r *BrokerReconciler) disableMaintenanceMode(ctx context.Context, clusterNa
 }
 
 func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string, broker *redpandav1alpha2.Broker, pod *corev1.Pod, podName string) (resolved *rpadmin.Broker, found bool, err error) {
+	// A DiskLost tombstone resolves by its pinned node_id alone, never
+	// through its pod: from network-index release onward the pod name and IP
+	// belong to the replacement Broker, so the membership matching below
+	// would adopt the LIVE replacement's node_id — and the caller would
+	// decommission it (K8S-976). The id is pinned in Status.BrokerID at
+	// registration and cleared only by the tombstone's own completed
+	// decommission; once cleared, nothing is left to resolve.
+	if broker.IsDiskLost() && broker.Status.BrokerID == nil {
+		return nil, false, nil
+	}
+
 	admin, err := r.ClientFactory.RedpandaAdminClientForCluster(ctx, broker, clusterName)
 	if err != nil {
 		return nil, false, err
@@ -1257,6 +1279,15 @@ func (r *BrokerReconciler) resolveBroker(ctx context.Context, clusterName string
 	brokers, err := admin.Brokers(ctx)
 	if err != nil {
 		return nil, false, err
+	}
+
+	if broker.IsDiskLost() {
+		for i := range brokers {
+			if brokers[i].NodeID == int(*broker.Status.BrokerID) {
+				return &brokers[i], true, nil
+			}
+		}
+		return nil, false, nil
 	}
 
 	var matches []rpadmin.Broker
