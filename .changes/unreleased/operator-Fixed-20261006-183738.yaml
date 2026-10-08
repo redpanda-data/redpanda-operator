@@ -1,0 +1,9 @@
+project: operator
+kind: Fixed
+body: |-
+    A retired node pool is now removed from a `Redpanda` resource's `status.nodePools`
+    instead of lingering forever. A stale entry kept its last replica counts, so after a
+    blue/green pool migration the `redpanda_ready_nodes` gauge read higher than
+    `redpanda_desired_nodes` and could mask a broker outage. An entry is dropped only
+    once its pool is neither running nor desired. StretchCluster status is unchanged.
+time: 2026-10-06T18:37:38.000000000+02:00
