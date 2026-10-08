@@ -11,9 +11,14 @@ package redpanda
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/redpanda-data/common-go/rpadmin"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 )
 
 func deleteTestScheme(t *testing.T) *runtime.Scheme {
@@ -232,4 +238,214 @@ func TestReconcileDeleteTombstoneKeepsReplacementClaims(t *testing.T) {
 	var b redpandav1alpha2.Broker
 	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(broker), &b))
 	require.Empty(t, b.Finalizers)
+}
+
+// TestReconcileDeleteTombstoneNeverDecommissionsReplacement pins the K8S-976
+// regression: a DiskLost tombstone whose dead node_id already finished
+// decommissioning (BrokerID cleared on completion) is deleted while its pod
+// NAME — matched against cluster membership — already belongs to the
+// replacement Broker at the same network index. Resolving identity through
+// the pod decommissioned the live replacement; resolveBroker must refuse to
+// resolve a tombstone through its pod, so the deletion completes as a
+// terminal no-op.
+func TestReconcileDeleteTombstoneNeverDecommissionsReplacement(t *testing.T) {
+	ctx := context.Background()
+	scheme := deleteTestScheme(t)
+	tombstone, _, _ := deleteTestBroker(t, scheme, nil)
+	tombstone.Spec.Decommission = true
+	tombstone.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now(), ResourcesReleased: true}
+	tombstone.Status.Phase = redpandav1alpha2.BrokerPhaseDecommissioned
+
+	// The replacement Broker at the same index: it owns the pod at the shared
+	// name and is registered in the cluster as node_id 3.
+	replacement, pod, _ := deleteTestBroker(t, scheme, nil)
+	replacement.Name, replacement.UID = "rp-broker-0-repl", "replacement-uid"
+	pod.OwnerReferences = nil
+	require.NoError(t, controllerutil.SetControllerReference(replacement, pod, scheme))
+	pod.Status.PodIP = "10.0.0.3"
+
+	var calls adminCalls
+	srv := fakeAdminServer(t, replacementMembership(tombstone.PodName()), &calls)
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithStatusSubresource(&redpandav1alpha2.Broker{}).
+		WithObjects(tombstone, replacement, pod).Build()
+	r := &BrokerReconciler{ClientFactory: stubAdminFactory{url: srv.URL}}
+
+	_, err := r.reconcileDelete(ctx, logr.Discard(), c, "", tombstone, tombstone.PodName())
+	require.NoError(t, err)
+
+	require.Empty(t, calls.decommissions,
+		"a tombstone with no recorded node_id must never decommission anything")
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(tombstone), &b))
+	require.Empty(t, b.Finalizers, "the tombstone's deletion must complete")
+	require.Nil(t, b.Status.BrokerID, "the replacement's identity must never contaminate the tombstone")
+	var keptPod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), &keptPod))
+	require.True(t, metav1.IsControlledBy(&keptPod, replacement),
+		"the replacement's pod must survive the tombstone's deletion untouched")
+}
+
+// TestResolveBroker pins the tombstone rule of K8S-976: a DiskLost Broker
+// resolves only by its pinned node_id — never through its pod name or IP,
+// which belong to the replacement from network-index release onward.
+func TestResolveBroker(t *testing.T) {
+	podName := "rp-broker-0"
+	for _, tc := range []struct {
+		name       string
+		diskLost   bool
+		brokerID   *int32
+		wantFound  bool
+		wantNodeID int
+	}{
+		{"live broker matches by pod name", false, nil, true, 3},
+		{"tombstone with no recorded id resolves nothing", true, nil, false, 0},
+		{"tombstone resolves its pinned id, not the pod-name match", true, ptr.To(int32(1)), true, 1},
+		{"tombstone whose pinned id left the membership", true, ptr.To(int32(9)), false, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var calls adminCalls
+			srv := fakeAdminServer(t, replacementMembership(podName), &calls)
+			broker := &redpandav1alpha2.Broker{}
+			broker.Status.BrokerID = tc.brokerID
+			if tc.diskLost {
+				broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
+			}
+			r := &BrokerReconciler{ClientFactory: stubAdminFactory{url: srv.URL}}
+
+			resolved, found, err := r.resolveBroker(t.Context(), "", broker, nil, podName)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantFound, found)
+			if tc.wantFound {
+				require.Equal(t, tc.wantNodeID, resolved.NodeID)
+			}
+		})
+	}
+}
+
+// TestExecuteDecommission pins the liveness guard on the K8S-976 upgrade
+// path: a disk-lost incarnation's node cannot be alive, so an alive
+// membership entry at the pinned node_id proves the id belongs to a live
+// node (the replacement, adopted by a pre-fix operator) and must park in
+// Stuck instead of decommissioning. Dead, liveness-unreported, and
+// non-DiskLost targets must keep decommissioning.
+func TestExecuteDecommission(t *testing.T) {
+	member := func(id int, alive *bool) rpadmin.Broker {
+		return rpadmin.Broker{NodeID: id, MembershipStatus: rpadmin.MembershipStatusActive, IsAlive: alive}
+	}
+	for _, tc := range []struct {
+		name            string
+		diskLost        bool
+		target          rpadmin.Broker
+		wantPhase       redpandav1alpha2.BrokerPhase
+		wantDecommCalls int
+	}{
+		{"tombstone refuses its alive pinned id", true, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseStuck, 0},
+		{"tombstone decommissions its dead pinned id", true, member(3, ptr.To(false)), redpandav1alpha2.BrokerPhaseDecommissioning, 1},
+		{"tombstone decommissions when liveness is unreported", true, member(3, nil), redpandav1alpha2.BrokerPhaseDecommissioning, 1},
+		{"live broker decommissions while alive", false, member(3, ptr.To(true)), redpandav1alpha2.BrokerPhaseDecommissioning, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var calls adminCalls
+			srv := fakeAdminServer(t, []rpadmin.Broker{member(1, ptr.To(true)), tc.target}, &calls)
+			broker := &redpandav1alpha2.Broker{}
+			broker.Status.BrokerID = ptr.To(int32(3))
+			if tc.diskLost {
+				broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
+			}
+			r := &BrokerReconciler{ClientFactory: stubAdminFactory{url: srv.URL}}
+
+			result, err := r.executeDecommission(t.Context(), "", broker)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantPhase, result.phase)
+			require.Len(t, calls.decommissions, tc.wantDecommCalls)
+		})
+	}
+}
+
+// TestReconcileDeleteContaminatedTombstoneHoldsDeletion pins the K8S-976
+// upgrade path end to end: a pre-fix operator persisted the live
+// replacement's node_id into the tombstone's Status.BrokerID, so the
+// deletion path skips resolveBroker and goes straight to the decommission.
+// The liveness guard must refuse it and hold the deletion in Stuck for a
+// human (manual recommission, manual finalizer removal) instead of
+// re-decommissioning the replacement on every pass.
+func TestReconcileDeleteContaminatedTombstoneHoldsDeletion(t *testing.T) {
+	ctx := context.Background()
+	scheme := deleteTestScheme(t)
+	tombstone, _, _ := deleteTestBroker(t, scheme, nil)
+	tombstone.Spec.Decommission = true
+	tombstone.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now(), ResourcesReleased: true}
+	tombstone.Status.BrokerID = ptr.To(int32(3)) // contaminated: the live replacement's id
+
+	var calls adminCalls
+	srv := fakeAdminServer(t, replacementMembership(tombstone.PodName()), &calls)
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithStatusSubresource(&redpandav1alpha2.Broker{}).
+		WithObjects(tombstone).Build()
+	r := &BrokerReconciler{ClientFactory: stubAdminFactory{url: srv.URL}}
+
+	res, err := r.reconcileDelete(ctx, logr.Discard(), c, "", tombstone, tombstone.PodName())
+	require.NoError(t, err)
+	require.Equal(t, periodicRequeue, res.RequeueAfter, "a held deletion must keep re-checking")
+
+	require.Empty(t, calls.decommissions, "an alive pinned id must never be decommissioned")
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(tombstone), &b))
+	require.Contains(t, b.Finalizers, brokerFinalizerName, "the deletion must hold for a human")
+	require.Equal(t, redpandav1alpha2.BrokerPhaseStuck, b.Status.Phase)
+}
+
+// adminCalls records the decommission PUTs the fake admin server received.
+type adminCalls struct {
+	decommissions []string
+}
+
+// replacementMembership is the post-disk-loss cluster: the dead node already
+// decommissioned and gone, its replacement (node 3) registered at the
+// tombstone's released pod name.
+func replacementMembership(podName string) []rpadmin.Broker {
+	alive := ptr.To(true)
+	return []rpadmin.Broker{
+		{NodeID: 1, InternalRPCAddress: "rp-1.rp.test.svc.cluster.local", MembershipStatus: rpadmin.MembershipStatusActive, IsAlive: alive},
+		{NodeID: 2, InternalRPCAddress: "rp-2.rp.test.svc.cluster.local", MembershipStatus: rpadmin.MembershipStatusActive, IsAlive: alive},
+		{NodeID: 3, InternalRPCAddress: podName + ".rp.test.svc.cluster.local", MembershipStatus: rpadmin.MembershipStatusActive, IsAlive: alive},
+	}
+}
+
+// stubAdminFactory implements only RedpandaAdminClientForCluster, pointing
+// every client at one fake admin server; the embedded nil interface panics on
+// any other method.
+type stubAdminFactory struct {
+	internalclient.ClientFactory
+	url string
+}
+
+func (s stubAdminFactory) RedpandaAdminClientForCluster(context.Context, any, string) (*rpadmin.AdminAPI, error) {
+	return rpadmin.NewAdminAPI([]string{s.url}, new(rpadmin.NopAuth), nil)
+}
+
+// fakeAdminServer serves the given cluster membership, answers any
+// decommission status probe with "not decommissioning" (the reply that makes
+// the controller initiate one), and records every decommission PUT it
+// receives into calls.
+func fakeAdminServer(t *testing.T, brokers []rpadmin.Broker, calls *adminCalls) *httptest.Server {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/v1/brokers":
+			require.NoError(t, json.NewEncoder(w).Encode(brokers))
+		case r.Method == http.MethodGet && strings.HasSuffix(r.URL.Path, "/decommission"):
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"message": "the node is not decommissioning", "code": 400}`))
+		case r.Method == http.MethodPut && strings.HasSuffix(r.URL.Path, "/decommission"):
+			calls.decommissions = append(calls.decommissions, r.URL.Path)
+			_, _ = w.Write([]byte(`{}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv
 }
