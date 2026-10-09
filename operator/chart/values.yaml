@@ -166,10 +166,10 @@ connectController:
   # does not pin its own `.spec.image`. Per-Pipeline `.spec.image` still
   # wins; if neither is set, the operator falls back to the
   # PipelineDefaultImage constant baked into the binary (currently
-  # docker.redpanda.com/redpandadata/connect:4.101.0).
+  # docker.redpanda.com/redpandadata/connect:4.113.0).
   # image:
   #   repository: docker.redpanda.com/redpandadata/connect
-  #   tag: "4.101.0"
+  #   tag: "4.113.0"
   # -- Monitoring configuration for Connect pipeline pods.
   monitoring:
     # -- Enables PodMonitor creation for all Connect pipelines.
