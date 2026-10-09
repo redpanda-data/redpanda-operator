@@ -34,34 +34,35 @@ func MonitoringEnabledLabel(state *RenderState) map[string]string {
 	}
 }
 
-func ServiceInternal(state *RenderState, listeners *redpanda.Listeners) *corev1.Service {
+func internalServiceConfig(state *RenderState, listeners redpanda.Listeners) redpanda.ServiceConfig {
 	// This service is only used to create the DNS enteries for each pod in
 	// the stateful set and allow the serviceMonitor to target the pods.
 	// This service should not be used by any client application.
-	ports := listeners.InternalServicePorts()
-
 	annotations := map[string]string{}
 	if state.Values.Service != nil {
 		annotations = state.Values.Service.Internal.Annotations
 	}
 
-	return &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        ServiceName(state),
-			Namespace:   state.Release.Namespace,
-			Labels:      helmette.Merge(FullLabels(state), MonitoringEnabledLabel(state)),
-			Annotations: helmette.Merge(annotations, FullAnnotations(state)),
-		},
-		Spec: corev1.ServiceSpec{
-			Type:                     corev1.ServiceTypeClusterIP,
-			PublishNotReadyAddresses: true,
-			ClusterIP:                corev1.ClusterIPNone,
-			Selector:                 ClusterPodLabelsSelector(state),
-			Ports:                    ports,
+	return redpanda.ServiceConfig{
+		Kind:      redpanda.ServiceKindHeadless,
+		Listeners: listeners,
+		Template: corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Service",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        ServiceName(state),
+				Namespace:   state.Release.Namespace,
+				Labels:      helmette.Merge(FullLabels(state), MonitoringEnabledLabel(state)),
+				Annotations: helmette.Merge(annotations, FullAnnotations(state)),
+			},
+			Spec: corev1.ServiceSpec{
+				Type:                     corev1.ServiceTypeClusterIP,
+				PublishNotReadyAddresses: true,
+				ClusterIP:                corev1.ClusterIPNone,
+				Selector:                 ClusterPodLabelsSelector(state),
+			},
 		},
 	}
 }

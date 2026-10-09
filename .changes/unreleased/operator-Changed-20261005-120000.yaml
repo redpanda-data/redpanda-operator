@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: StretchCluster external NodePort and LoadBalancer Service ports now set `targetPort` and the `appProtocol` of the listener. Before, the API server set `targetPort` to `port`. Thus, this change has no effect on the cluster.
+time: 2026-10-05T12:00:00.000000-04:00

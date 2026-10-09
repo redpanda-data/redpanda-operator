@@ -1,0 +1,4 @@
+project: charts/redpanda
+kind: Removed
+body: '`listeners.<api>.external.<listener-name>.nodePort` has no effect. It set the port of the LoadBalancer Service, but clients connect to the advertised port. The LoadBalancer Service now publishes the first entry of `advertisedPorts`. If `advertisedPorts` is empty, it publishes the port of the listener.'
+time: 2026-10-06T13:00:00.000000-04:00

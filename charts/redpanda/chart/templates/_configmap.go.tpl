@@ -119,7 +119,7 @@
 {{- $_is_returning := false -}}
 {{- $redpandaConfig := (dict "empty_seed_starts_cluster" false) -}}
 {{- if $includeNonHashableItems -}}
-{{- $rpcPort := ((get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list (get (fromJson (include "_redpanda.Listeners.RPC" (dict "a" (list $listeners)))) "r"))))) "r").Port | int) -}}
+{{- $rpcPort := ((get (fromJson (include "_redpanda.Listeners.RPC" (dict "a" (list $listeners)))) "r").Reserved.Port | int) -}}
 {{- $seeds := (coalesce nil) -}}
 {{- range $_, $host := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state -1)))) "r") -}}
 {{- $seeds = (concat (default (list) $seeds) (list (dict "host" (dict "address" $host "port" $rpcPort)))) -}}
@@ -299,7 +299,7 @@
 {{- $pool := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $kafka := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list (get (fromJson (include "_redpanda.Listeners.Kafka" (dict "a" (list $listeners)))) "r"))))) "r") -}}
+{{- $kafka := (get (fromJson (include "_redpanda.Listeners.Kafka" (dict "a" (list $listeners)))) "r").Reserved -}}
 {{- $brokerList := (get (fromJson (include "redpanda.BrokerList" (dict "a" (list $state ($kafka.Port | int))))) "r") -}}
 {{- $adminTLS := (get (fromJson (include "_redpanda.API.RPKClientTLS" (dict "a" (list (get (fromJson (include "_redpanda.Listeners.Admin" (dict "a" (list $listeners)))) "r"))))) "r") -}}
 {{- $brokerTLS := (get (fromJson (include "_redpanda.API.RPKClientTLS" (dict "a" (list (get (fromJson (include "_redpanda.Listeners.Kafka" (dict "a" (list $listeners)))) "r"))))) "r") -}}

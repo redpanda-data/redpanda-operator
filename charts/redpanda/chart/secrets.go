@@ -24,7 +24,7 @@ import (
 
 const DefaultSASLMechanism = SASLMechanism("SCRAM-SHA-512")
 
-func Secrets(state *RenderState, listeners *redpanda.Listeners) []*corev1.Secret {
+func Secrets(state *RenderState, listeners *redpanda.Listeners, network *redpanda.Network) []*corev1.Secret {
 	var secrets []*corev1.Secret
 	secrets = append(secrets, SecretSTSLifecycle(state, listeners))
 	if saslUsers := SecretSASLUsers(state); saslUsers != nil {
@@ -34,13 +34,13 @@ func Secrets(state *RenderState, listeners *redpanda.Listeners) []*corev1.Secret
 	// the same main-then-pools order as [gatewayPodNames]. The configurator
 	// renders advertised addresses with a pool-local ordinal, so it needs this
 	// offset to recover the global ordinal that Gateway TLSRoutes/services use.
-	secrets = append(secrets, SecretConfigurator(state, listeners, Pool{Statefulset: state.Values.Statefulset}, 0))
+	secrets = append(secrets, SecretConfigurator(state, listeners, network, Pool{Statefulset: state.Values.Statefulset}, 0))
 	if fsValidator := SecretFSValidator(state, Pool{Statefulset: state.Values.Statefulset}); fsValidator != nil {
 		secrets = append(secrets, fsValidator)
 	}
 	ordinalOffset := int(state.Values.Statefulset.Replicas)
 	for _, set := range state.Pools {
-		secrets = append(secrets, SecretConfigurator(state, listeners, set, ordinalOffset))
+		secrets = append(secrets, SecretConfigurator(state, listeners, network, set, ordinalOffset))
 		if fsValidator := SecretFSValidator(state, set); fsValidator != nil {
 			secrets = append(secrets, fsValidator)
 		}
@@ -183,13 +183,13 @@ func SecretFSValidator(state *RenderState, pool Pool) *corev1.Secret {
 	return secret
 }
 
-func SecretConfigurator(state *RenderState, listeners *redpanda.Listeners, pool Pool, ordinalOffset int) *corev1.Secret {
+func SecretConfigurator(state *RenderState, listeners *redpanda.Listeners, network *redpanda.Network, pool Pool, ordinalOffset int) *corev1.Secret {
 	configuratorSh := redpanda.ConfiguratorPrologueSh()
 
-	kafkaSnippet := secretConfiguratorAdvertisedConfig(state, listeners.Kafka(), pool.Statefulset, ordinalOffset)
+	kafkaSnippet := secretConfiguratorAdvertisedConfig(state, listeners.Kafka(), network, pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, kafkaSnippet...)
 
-	httpSnippet := secretConfiguratorAdvertisedConfig(state, listeners.HTTP(), pool.Statefulset, ordinalOffset)
+	httpSnippet := secretConfiguratorAdvertisedConfig(state, listeners.HTTP(), network, pool.Statefulset, ordinalOffset)
 	configuratorSh = append(configuratorSh, httpSnippet...)
 
 	if state.Values.RackAwareness.Enabled {
@@ -217,19 +217,19 @@ func SecretConfigurator(state *RenderState, listeners *redpanda.Listeners, pool 
 // secretConfiguratorAdvertisedConfig emits the configurator snippet setting one
 // API's advertised addresses: the internal one at index 0, then a per-replica
 // bash array per external listener, indexed by $POD_ORDINAL.
-func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, sts Statefulset, ordinalOffset int) []string {
+func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, network *redpanda.Network, sts Statefulset, ordinalOffset int) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
-	inCluster := api.InCluster()
+	reserved := api.Reserved
 
 	var snippet []string
 
 	snippet = append(snippet,
 		``,
 		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
-			"name":    redpanda.InternalListenerName,
+			"name":    redpanda.ReservedListenerName,
 			"address": internalAdvertiseAddress,
-			"port":    inCluster.Port,
+			"port":    reserved.Port,
 		}))),
 		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.%s[0] "$LISTENER"`,
 			api.Kind.AdvertisedConfigSection(),
@@ -242,7 +242,7 @@ func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, s
 	// NB: ungated on exposure. A listener with no Service is still advertised;
 	// values.yaml says the user may create that Service themselves.
 	externalCounter := 0
-	for _, listener := range api.External() {
+	for _, listener := range api.Additional {
 		externalCounter = externalCounter + 1
 
 		snippet = append(snippet,
@@ -258,7 +258,7 @@ func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, s
 				listener.AdvertisedPort(int32(replicaIndex)),
 				replicaIndex,
 				ordinalOffset+replicaIndex,
-				listener.Gateway,
+				network.Route(api.Kind, listener.Name),
 			)
 			// XXX: the original code used the stringified `host` value as a template
 			// for re-expansion; however it was impossible to make this work usefully,

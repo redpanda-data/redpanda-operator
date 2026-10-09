@@ -954,7 +954,7 @@
 {{- $auth = $authAStr -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (mustMergeOverwrite (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "nodePort" (coalesce nil) "tls" (coalesce nil)) (dict "enabled" $l.enabled "advertisedPorts" $l.advertisedPorts "port" ($l.port | int) "nodePort" $l.nodePort "tls" $l.tls "address" $l.address "authenticationMethod" $auth "prefixTemplate" $l.prefixTemplate "type" $l.type "host" $l.host "hostTemplate" $l.hostTemplate))) | toJson -}}
+{{- (dict "r" (mustMergeOverwrite (dict "enabled" (coalesce nil) "advertisedPorts" (coalesce nil) "port" 0 "tls" (coalesce nil) "nodePort" (coalesce nil)) (dict "enabled" $l.enabled "advertisedPorts" $l.advertisedPorts "port" ($l.port | int) "tls" $l.tls "address" $l.address "authenticationMethod" $auth "prefixTemplate" $l.prefixTemplate "type" $l.type "host" $l.host "hostTemplate" $l.hostTemplate))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -1010,9 +1010,9 @@
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
 {{- if (not (empty $v)) -}}
-{{- $_1685___ok_12 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
-{{- $_ := ((index $_1685___ok_12 0) | float64) -}}
-{{- $ok_12 := (index $_1685___ok_12 1) -}}
+{{- $_1686___ok_12 := (get (fromJson (include "_shims.asnumeric" (dict "a" (list $v)))) "r") -}}
+{{- $_ := ((index $_1686___ok_12 0) | float64) -}}
+{{- $ok_12 := (index $_1686___ok_12 1) -}}
 {{- if $ok_12 -}}
 {{- $_ := (set $result $k $v) -}}
 {{- else -}}{{- if (kindIs "bool" $v) -}}
@@ -1038,9 +1038,9 @@
 {{- $_is_returning := false -}}
 {{- $result := (dict) -}}
 {{- range $k, $v := $c -}}
-{{- $_1705_b_13_ok_14 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
-{{- $b_13 := (index $_1705_b_13_ok_14 0) -}}
-{{- $ok_14 := (index $_1705_b_13_ok_14 1) -}}
+{{- $_1706_b_13_ok_14 := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" $v false)))) "r") -}}
+{{- $b_13 := (index $_1706_b_13_ok_14 0) -}}
+{{- $ok_14 := (index $_1706_b_13_ok_14 1) -}}
 {{- if $ok_14 -}}
 {{- $_ := (set $result $k $b_13) -}}
 {{- continue -}}
@@ -1083,15 +1083,15 @@
 {{- $config := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1750___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1750___hasAccessKey 0) -}}
-{{- $hasAccessKey := (index $_1750___hasAccessKey 1) -}}
-{{- $_1751___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1751___hasSecretKey 0) -}}
-{{- $hasSecretKey := (index $_1751___hasSecretKey 1) -}}
-{{- $_1752___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1752___hasSharedKey 0) -}}
-{{- $hasSharedKey := (index $_1752___hasSharedKey 1) -}}
+{{- $_1751___hasAccessKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_access_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1751___hasAccessKey 0) -}}
+{{- $hasAccessKey := (index $_1751___hasAccessKey 1) -}}
+{{- $_1752___hasSecretKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_secret_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1752___hasSecretKey 0) -}}
+{{- $hasSecretKey := (index $_1752___hasSecretKey 1) -}}
+{{- $_1753___hasSharedKey := (get (fromJson (include "_shims.dicttest" (dict "a" (list $config "cloud_storage_azure_shared_key" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1753___hasSharedKey 0) -}}
+{{- $hasSharedKey := (index $_1753___hasSharedKey 1) -}}
 {{- $envvars := (coalesce nil) -}}
 {{- if (and (not $hasAccessKey) (get (fromJson (include "redpanda.SecretRef.IsValid" (dict "a" (list $tsc.accessKey)))) "r")) -}}
 {{- $envvars = (concat (default (list) $envvars) (list (mustMergeOverwrite (dict "name" "") (dict "name" "REDPANDA_CLOUD_STORAGE_ACCESS_KEY" "valueFrom" (get (fromJson (include "redpanda.SecretRef.AsSource" (dict "a" (list $tsc.accessKey)))) "r"))))) -}}
@@ -1114,12 +1114,12 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1788___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1788___containerExists 0) -}}
-{{- $containerExists := (index $_1788___containerExists 1) -}}
-{{- $_1789___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
-{{- $_ := (index $_1789___accountExists 0) -}}
-{{- $accountExists := (index $_1789___accountExists 1) -}}
+{{- $_1789___containerExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_container" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1789___containerExists 0) -}}
+{{- $containerExists := (index $_1789___containerExists 1) -}}
+{{- $_1790___accountExists := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c "cloud_storage_azure_storage_account" (coalesce nil))))) "r") -}}
+{{- $_ := (index $_1790___accountExists 0) -}}
+{{- $accountExists := (index $_1790___accountExists 1) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (and $containerExists $accountExists)) | toJson -}}
 {{- break -}}
@@ -1130,9 +1130,9 @@
 {{- $c := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_1794_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
-{{- $value := (index $_1794_value_ok 0) -}}
-{{- $ok := (index $_1794_value_ok 1) -}}
+{{- $_1795_value_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $c `cloud_storage_cache_size` (coalesce nil))))) "r") -}}
+{{- $value := (index $_1795_value_ok 0) -}}
+{{- $ok := (index $_1795_value_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}

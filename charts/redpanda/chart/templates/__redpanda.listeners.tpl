@@ -101,7 +101,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "_redpanda.APIKind.InternalPortName" -}}
+{{- define "_redpanda.APIKind.ReservedPortName" -}}
 {{- $k := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
@@ -205,56 +205,16 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "_redpanda.Listeners.APIs" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "_redpanda.Listeners.inOrder" (dict "a" (list $l (list "admin" "kafka" "http" "schema"))))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.All" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "_redpanda.Listeners.inOrder" (dict "a" (list $l (list "kafka" "admin" "http" "schema" "rpc"))))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.Ports" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "_redpanda.Listeners.inOrder" (dict "a" (list $l (list "admin" "http" "kafka" "rpc" "schema"))))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.Gateways" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "_redpanda.Listeners.inOrder" (dict "a" (list $l (list "kafka" "http" "admin" "schema"))))) "r")) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.inOrder" -}}
+{{- define "_redpanda.Listeners.InOrder" -}}
 {{- $l := (index .a 0) -}}
 {{- $kinds := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $apis := (coalesce nil) -}}
 {{- range $_, $kind := $kinds -}}
-{{- $_188_api_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $l.ByKind $kind (coalesce nil))))) "r") -}}
-{{- $api_1 := (index $_188_api_1_ok_2 0) -}}
-{{- $ok_2 := (index $_188_api_1_ok_2 1) -}}
+{{- $_159_api_1_ok_2 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $l.ByKind $kind (coalesce nil))))) "r") -}}
+{{- $api_1 := (index $_159_api_1_ok_2 0) -}}
+{{- $ok_2 := (index $_159_api_1_ok_2 1) -}}
 {{- if $ok_2 -}}
 {{- $apis = (concat (default (list) $apis) (list $api_1)) -}}
 {{- end -}}
@@ -268,35 +228,79 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "_redpanda.Listeners.ListenersInOrder" -}}
+{{- $l := (index .a 0) -}}
+{{- $kinds := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $listeners := (coalesce nil) -}}
+{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.InOrder" (dict "a" (list $l $kinds)))) "r") -}}
+{{- $listeners = (concat (default (list) $listeners) (default (list) (get (fromJson (include "_redpanda.API.Listeners" (dict "a" (list $api)))) "r"))) -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $listeners) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "_redpanda.Listeners.Reserved" -}}
+{{- $l := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $apis := (coalesce nil) -}}
+{{- range $_, $kind := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $l.ByKind))))) "r") -}}
+{{- $api := (index $l.ByKind $kind) -}}
+{{- if (ne (toJson $api.Reserved) "null") -}}
+{{- $apis = (concat (default (list) $apis) (list (mustMergeOverwrite (dict "Kind" "" "Reserved" (coalesce nil) "Additional" (coalesce nil)) (dict "Kind" $kind "Reserved" $api.Reserved)))) -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_redpanda.NewListeners" (dict "a" (list $apis)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "_redpanda.Listeners.Additional" -}}
+{{- $l := (index .a 0) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $apis := (coalesce nil) -}}
+{{- range $_, $kind := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $l.ByKind))))) "r") -}}
+{{- $api := (index $l.ByKind $kind) -}}
+{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $api.Additional)))) "r") | int) (0 | int)) -}}
+{{- $apis = (concat (default (list) $apis) (list (mustMergeOverwrite (dict "Kind" "" "Reserved" (coalesce nil) "Additional" (coalesce nil)) (dict "Kind" $kind "Additional" $api.Additional)))) -}}
+{{- end -}}
+{{- end -}}
+{{- if $_is_returning -}}
+{{- break -}}
+{{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (get (fromJson (include "_redpanda.NewListeners" (dict "a" (list $apis)))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "_redpanda.Listeners.ConfigSections" -}}
 {{- $l := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $sections := (dict "redpanda" (dict) "pandaproxy" (dict) "schema_registry" (dict)) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.APIs" (dict "a" (list $l)))) "r") -}}
-{{- $_ := (get (fromJson (include "_redpanda.addEntries" (dict "a" (list (index $sections (get (fromJson (include "_redpanda.APIKind.ConfigSection" (dict "a" (list (deepCopy $api.Kind))))) "r")) (get (fromJson (include "_redpanda.API.configEntries" (dict "a" (list $api)))) "r"))))) "r") -}}
+{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.InOrder" (dict "a" (list $l (list "admin" "kafka" "http" "schema"))))) "r") -}}
+{{- $_ := (get (fromJson (include "_shims.maps_Copy" (dict "a" (list (index $sections (get (fromJson (include "_redpanda.APIKind.ConfigSection" (dict "a" (list (deepCopy $api.Kind))))) "r")) (get (fromJson (include "_redpanda.API.configEntries" (dict "a" (list $api)))) "r"))))) "r") -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $_ := (get (fromJson (include "_redpanda.addEntries" (dict "a" (list (index $sections (get (fromJson (include "_redpanda.APIKind.ConfigSection" (dict "a" (list (deepCopy "rpc"))))) "r")) (get (fromJson (include "_redpanda.Listeners.rpcConfigEntries" (dict "a" (list $l)))) "r"))))) "r") -}}
+{{- $_ := (get (fromJson (include "_shims.maps_Copy" (dict "a" (list (index $sections (get (fromJson (include "_redpanda.APIKind.ConfigSection" (dict "a" (list (deepCopy "rpc"))))) "r")) (get (fromJson (include "_redpanda.Listeners.rpcConfigEntries" (dict "a" (list $l)))) "r"))))) "r") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $sections) | toJson -}}
 {{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.addEntries" -}}
-{{- $section := (index .a 0) -}}
-{{- $entries := (index .a 1) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- range $_, $key := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $entries))))) "r") -}}
-{{- $_ := (set $section $key (index $entries $key)) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -304,7 +308,7 @@
 {{- $l := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $listener := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list (get (fromJson (include "_redpanda.Listeners.RPC" (dict "a" (list $l)))) "r"))))) "r") -}}
+{{- $listener := (get (fromJson (include "_redpanda.Listeners.RPC" (dict "a" (list $l)))) "r").Reserved -}}
 {{- $entries := (dict (get (fromJson (include "_redpanda.APIKind.ConfigKey" (dict "a" (list (deepCopy "rpc"))))) "r") (dict "address" $listener.Address "port" ($listener.Port | int))) -}}
 {{- $tls_3 := $listener.TLS -}}
 {{- if (ne (toJson $tls_3) "null") -}}
@@ -321,142 +325,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $ports := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.Ports" (dict "a" (list $l)))) "r") -}}
-{{- range $_, $listener := $api.Listeners -}}
+{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.InOrder" (dict "a" (list $l (list "admin" "http" "kafka" "rpc" "schema"))))) "r") -}}
+{{- range $_, $listener := (get (fromJson (include "_redpanda.API.Listeners" (dict "a" (list $api)))) "r") -}}
 {{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "containerPort" 0) (dict "name" $listener.ContainerPortName "containerPort" ($listener.Port | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $ports) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.InternalServicePorts" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $ports := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.Ports" (dict "a" (list $l)))) "r") -}}
-{{- $listener := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $api)))) "r") -}}
-{{- if (not $listener.Exposed) -}}
-{{- continue -}}
-{{- end -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "appProtocol" $api.AppProtocol "port" ($listener.Port | int) "targetPort" ($listener.Port | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $ports) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.NodePortServicePorts" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $ports := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.APIs" (dict "a" (list $l)))) "r") -}}
-{{- range $_, $listener := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $api)))) "r") -}}
-{{- if (or (not $listener.Exposed) (ne (toJson $listener.Gateway) "null")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $nodePort := ($listener.Port | int) -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $listener.AdvertisedPorts)))) "r") | int) (0 | int)) -}}
-{{- $nodePort = (index $listener.AdvertisedPorts (0 | int)) -}}
-{{- end -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "appProtocol" $api.AppProtocol "port" ($listener.Port | int) "targetPort" ($listener.Port | int) "nodePort" $nodePort)))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $ports) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.LoadBalancerServicePorts" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $ports := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.APIs" (dict "a" (list $l)))) "r") -}}
-{{- $inCluster := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $api)))) "r") -}}
-{{- range $_, $listener := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $api)))) "r") -}}
-{{- if (or (not $listener.Exposed) (ne (toJson $listener.Gateway) "null")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $port := ($inCluster.Port | int) -}}
-{{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $listener.AdvertisedPorts)))) "r") | int) (0 | int)) -}}
-{{- $port = (index $listener.AdvertisedPorts (0 | int)) -}}
-{{- end -}}
-{{- if (ne (toJson $listener.NodePort) "null") -}}
-{{- $port = $listener.NodePort -}}
-{{- end -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "appProtocol" $api.AppProtocol "port" $port "targetPort" ($listener.Port | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $ports) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.ExternalServicePorts" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $ports := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.APIs" (dict "a" (list $l)))) "r") -}}
-{{- range $_, $listener := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $api)))) "r") -}}
-{{- if (or (not $listener.Exposed) (ne (toJson $listener.Gateway) "null")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "appProtocol" $api.AppProtocol "port" ($listener.Port | int) "targetPort" ($listener.Port | int))))) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $ports) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.Listeners.GatewayServicePorts" -}}
-{{- $l := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $ports := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.APIs" (dict "a" (list $l)))) "r") -}}
-{{- range $_, $listener := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $api)))) "r") -}}
-{{- if (or (not $listener.Exposed) (eq (toJson $listener.Gateway) "null")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $ports = (concat (default (list) $ports) (list (mustMergeOverwrite (dict "port" 0 "targetPort" 0) (dict "name" $listener.PortName "protocol" "TCP" "appProtocol" $api.AppProtocol "port" ($listener.Port | int) "targetPort" ($listener.Port | int))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -476,8 +347,8 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $stores := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.All" (dict "a" (list $l)))) "r") -}}
-{{- range $_, $listener := $api.Listeners -}}
+{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.InOrder" (dict "a" (list $l (list "kafka" "admin" "http" "schema" "rpc"))))) "r") -}}
+{{- range $_, $listener := (get (fromJson (include "_redpanda.API.Listeners" (dict "a" (list $api)))) "r") -}}
 {{- if (eq (toJson $listener.TLS) "null") -}}
 {{- continue -}}
 {{- end -}}
@@ -555,42 +426,16 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "_redpanda.API.InCluster" -}}
+{{- define "_redpanda.API.Listeners" -}}
 {{- $a := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- range $_, $listener := $a.Listeners -}}
-{{- if (eq $listener.Name "internal") -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $listener) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
+{{- $listeners := (coalesce nil) -}}
+{{- if (ne (toJson $a.Reserved) "null") -}}
+{{- $listeners = (concat (default (list) $listeners) (list $a.Reserved)) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (coalesce nil)) | toJson -}}
-{{- break -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "_redpanda.API.External" -}}
-{{- $a := (index .a 0) -}}
-{{- range $_ := (list 1) -}}
-{{- $_is_returning := false -}}
-{{- $external := (coalesce nil) -}}
-{{- range $_, $listener := $a.Listeners -}}
-{{- if (eq $listener.Name "internal") -}}
-{{- continue -}}
-{{- end -}}
-{{- $external = (concat (default (list) $external) (list $listener)) -}}
-{{- end -}}
-{{- if $_is_returning -}}
-{{- break -}}
-{{- end -}}
-{{- $_is_returning = true -}}
-{{- (dict "r" $external) | toJson -}}
+{{- (dict "r" (concat (default (list) $listeners) (default (list) $a.Additional))) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -599,7 +444,7 @@
 {{- $a := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $listener := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $a)))) "r") -}}
+{{- $listener := $a.Reserved -}}
 {{- $tls := $listener.TLS -}}
 {{- if (eq (toJson $tls) "null") -}}
 {{- $_is_returning = true -}}
@@ -622,7 +467,7 @@
 {{- $a := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $listener := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $a)))) "r") -}}
+{{- $listener := $a.Reserved -}}
 {{- $tls := $listener.TLS -}}
 {{- if (eq (toJson $tls) "null") -}}
 {{- $_is_returning = true -}}
@@ -645,7 +490,7 @@
 {{- $a := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $listener := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $a)))) "r") -}}
+{{- $listener := $a.Reserved -}}
 {{- $tls := $listener.TLS -}}
 {{- if (eq (toJson $tls) "null") -}}
 {{- $_is_returning = true -}}
@@ -670,15 +515,13 @@
 {{- $replica := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $inCluster := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $a)))) "r") -}}
-{{- $port := ($inCluster.Port | int) -}}
-{{- $external := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $a)))) "r") -}}
-{{- if (lt ((get (fromJson (include "_shims.len" (dict "a" (list $external)))) "r") | int) (1 | int)) -}}
+{{- $port := ($a.Reserved.Port | int) -}}
+{{- if (lt ((get (fromJson (include "_shims.len" (dict "a" (list $a.Additional)))) "r") | int) (1 | int)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $port) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $listener := (index $external (0 | int)) -}}
+{{- $listener := (index $a.Additional (0 | int)) -}}
 {{- if (gt ($listener.Port | int) (1 | int)) -}}
 {{- $port = ($listener.Port | int) -}}
 {{- end -}}
@@ -700,7 +543,7 @@
 {{- $_is_returning := false -}}
 {{- $listeners := (coalesce nil) -}}
 {{- $tlsEntries := (coalesce nil) -}}
-{{- range $_, $listener := $a.Listeners -}}
+{{- range $_, $listener := (get (fromJson (include "_redpanda.API.Listeners" (dict "a" (list $a)))) "r") -}}
 {{- $entry := (dict "name" $listener.Name "address" $listener.Address "port" ($listener.Port | int)) -}}
 {{- if (ne $listener.AuthenticationMethod "") -}}
 {{- $_ := (set $entry "authentication_method" $listener.AuthenticationMethod) -}}
@@ -861,9 +704,9 @@
 {{- $seen := (dict) -}}
 {{- $deduped := (coalesce nil) -}}
 {{- range $_, $item := $items -}}
-{{- $_870___ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
-{{- $_ := (index $_870___ok_8 0) -}}
-{{- $ok_8 := (index $_870___ok_8 1) -}}
+{{- $_687___ok_8 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $seen $item.key false)))) "r") -}}
+{{- $_ := (index $_687___ok_8 0) -}}
+{{- $ok_8 := (index $_687___ok_8 1) -}}
 {{- if $ok_8 -}}
 {{- continue -}}
 {{- end -}}

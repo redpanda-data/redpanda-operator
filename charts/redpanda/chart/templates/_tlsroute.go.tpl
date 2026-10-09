@@ -3,10 +3,11 @@
 
 {{- define "redpanda.TLSRoutes" -}}
 {{- $state := (index .a 0) -}}
-{{- $listeners := (index .a 1) -}}
+{{- $network := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (not (get (fromJson (include "redpanda.ExternalConfig.IsGatewayEnabled" (dict "a" (list $state.Values.external)))) "r")) -}}
+{{- $gateway := (get (fromJson (include "_redpanda.Network.Service" (dict "a" (list $network "gateway")))) "r") -}}
+{{- if (eq (toJson $gateway) "null") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
@@ -17,12 +18,9 @@
 {{- $fullname := (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") -}}
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $routes := (coalesce nil) -}}
-{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.Gateways" (dict "a" (list $listeners)))) "r") -}}
-{{- range $_, $listener := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $api)))) "r") -}}
-{{- if (or (not $listener.Exposed) (eq (toJson $listener.Gateway) "null")) -}}
-{{- continue -}}
-{{- end -}}
-{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods $api.Kind $listener)))) "r"))) -}}
+{{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.InOrder" (dict "a" (list $gateway.Listeners (list "kafka" "http" "admin" "schema"))))) "r") -}}
+{{- range $_, $listener := (get (fromJson (include "_redpanda.API.Listeners" (dict "a" (list $api)))) "r") -}}
+{{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods $api.Kind $listener (get (fromJson (include "_redpanda.Network.Route" (dict "a" (list $network $api.Kind $listener.Name)))) "r"))))) "r"))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
@@ -46,9 +44,9 @@
 {{- $pods := (index .a 5) -}}
 {{- $kind := (index .a 6) -}}
 {{- $listener := (index .a 7) -}}
+{{- $gateway := (index .a 8) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $gateway := $listener.Gateway -}}
 {{- $routes := (coalesce nil) -}}
 {{- $bootstrapSvcName := (printf "%s-gateway-bootstrap" $fullname) -}}
 {{- $bootstrap := (mustMergeOverwrite (dict "metadata" (dict) "spec" (dict) "status" (dict "parents" (coalesce nil))) (mustMergeOverwrite (dict) (dict "apiVersion" "gateway.networking.k8s.io/v1" "kind" "TLSRoute")) (dict "metadata" (mustMergeOverwrite (dict) (dict "name" (printf "%s-%s-%s-bootstrap" $fullname $kind $listener.Name) "namespace" $namespace "labels" $labels "annotations" $annotations)) "spec" (mustMergeOverwrite (dict) (mustMergeOverwrite (dict) (dict "parentRefs" $parentRefs)) (dict "hostnames" (list (toString $gateway.Host)) "rules" (list (mustMergeOverwrite (dict) (dict "backendRefs" (list (mustMergeOverwrite (dict "name" "") (mustMergeOverwrite (dict "name" "") (dict "name" (toString $bootstrapSvcName) "port" (($listener.Port | int) | int))) (dict)))))))))) -}}

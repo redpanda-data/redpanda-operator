@@ -1574,13 +1574,15 @@ func (ListenerConfig[T]) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 type ExternalListener[T ~string] struct {
-	Enabled         *bool   `json:"enabled"`
-	AdvertisedPorts []int32 `json:"advertisedPorts" jsonschema:"minItems=1"`
-	Port            int32   `json:"port" jsonschema:"required"`
-	// TODO CHECK NODE PORT USAGE
-	NodePort *int32       `json:"nodePort"`
-	TLS      *ExternalTLS `json:"tls"`
-	Address  *string      `json:"address,omitempty"`
+	Enabled         *bool        `json:"enabled"`
+	AdvertisedPorts []int32      `json:"advertisedPorts" jsonschema:"minItems=1"`
+	Port            int32        `json:"port" jsonschema:"required"`
+	TLS             *ExternalTLS `json:"tls"`
+	Address         *string      `json:"address,omitempty"`
+
+	// DeprecatedNodePort has no effect. It keeps nodePort in the JSON schema, so
+	// that values that set nodePort are still valid.
+	DeprecatedNodePort *int32 `json:"nodePort"`
 
 	AuthenticationMethod *T      `json:"authenticationMethod,omitempty"`
 	PrefixTemplate       *string `json:"prefixTemplate,omitempty"`
@@ -1618,7 +1620,6 @@ func (l *ExternalListener[T]) AsString() ExternalListener[string] {
 		Enabled:              l.Enabled,
 		AdvertisedPorts:      l.AdvertisedPorts,
 		Port:                 l.Port,
-		NodePort:             l.NodePort,
 		TLS:                  l.TLS,
 		Address:              l.Address,
 		AuthenticationMethod: auth,
