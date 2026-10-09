@@ -614,6 +614,9 @@ func (c *Cluster) importImages(images ...string) error {
 	}
 
 	if len(pullable) > 0 {
+		if err := pullMissingFromHost(pullable); err != nil {
+			return err
+		}
 		args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, pullable...)
 		if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
 			return fmt.Errorf("%w: %s", err, out)
@@ -663,6 +666,29 @@ func (c *Cluster) imagesMissingFromNodes(images []string) ([]string, error) {
 		}
 	}
 	return missing, nil
+}
+
+// pullMissingFromHost pulls any of the given images that the host Docker
+// daemon doesn't list. k3d only imports images the daemon lists, and an image
+// pre-pulled by CI isn't guaranteed to still be there when a test imports it.
+func pullMissingFromHost(images []string) error {
+	out, err := exec.Command("docker", "image", "ls", "--format", "{{.Repository}}:{{.Tag}}").Output()
+	if err != nil {
+		return errors.Wrap(err, "listing host images")
+	}
+	present := make(map[string]bool)
+	for _, ref := range strings.Fields(string(out)) {
+		present[normalizeImageRef(ref)] = true
+	}
+	for _, img := range images {
+		if present[normalizeImageRef(img)] {
+			continue
+		}
+		if out, err := exec.Command("docker", "pull", "-q", img).CombinedOutput(); err != nil {
+			return errors.Wrapf(err, "pulling %q: %s", img, out)
+		}
+	}
+	return nil
 }
 
 // normalizeImageRef mirrors containerd's docker-reference normalization so
