@@ -22,6 +22,9 @@ type Network struct {
 	// Listeners contains every listener that Redpanda binds.
 	Listeners Listeners
 
+	// Services publish a subset of Listeners. A listener that no Service
+	// publishes is still bound and advertised. For example, a disabled API
+	// keeps its reserved listener, but the headless Service omits it.
 	Services []ServiceConfig
 
 	// Routes contains the Gateway API routing of each gateway listener, by API

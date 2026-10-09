@@ -48,17 +48,17 @@
 {{- $name := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_57_byName_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $n.Routes $kind (coalesce nil))))) "r") -}}
-{{- $byName := (index $_57_byName_ok 0) -}}
-{{- $ok := (index $_57_byName_ok 1) -}}
+{{- $_60_byName_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $n.Routes $kind (coalesce nil))))) "r") -}}
+{{- $byName := (index $_60_byName_ok 0) -}}
+{{- $ok := (index $_60_byName_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_61_route_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $byName $name (dict "Host" "" "BrokerHosts" (coalesce nil)))))) "r") -}}
-{{- $route := (index $_61_route_ok 0) -}}
-{{- $ok := (index $_61_route_ok 1) -}}
+{{- $_64_route_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $byName $name (dict "Host" "" "BrokerHosts" (coalesce nil)))))) "r") -}}
+{{- $route := (index $_64_route_ok 0) -}}
+{{- $ok := (index $_64_route_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (coalesce nil)) | toJson -}}

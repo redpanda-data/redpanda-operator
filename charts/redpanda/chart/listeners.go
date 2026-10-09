@@ -46,49 +46,35 @@ func resolveListeners(state *RenderState, pki *redpanda.PKI) redpanda.Listeners 
 	rpc := state.Values.Listeners.RPC
 
 	return redpanda.NewListeners([]redpanda.API{
-		{
-			Kind:      redpanda.AdminAPI,
-			Listeners: resolveAPIListeners(redpanda.AdminAPI, &admin, "", tls, pki),
-		},
-		{
-			Kind:      redpanda.KafkaAPI,
-			Listeners: resolveAPIListeners(redpanda.KafkaAPI, &kafka, kafkaAuth, tls, pki),
-		},
-		{
-			Kind:      redpanda.HTTPAPI,
-			Listeners: resolveAPIListeners(redpanda.HTTPAPI, &http, httpAuth, tls, pki),
-		},
-		{
-			Kind:      redpanda.SchemaRegistryAPI,
-			Listeners: resolveAPIListeners(redpanda.SchemaRegistryAPI, &schemaRegistry, "", tls, pki),
-		},
+		resolveAPIListeners(redpanda.AdminAPI, &admin, "", tls, pki),
+		resolveAPIListeners(redpanda.KafkaAPI, &kafka, kafkaAuth, tls, pki),
+		resolveAPIListeners(redpanda.HTTPAPI, &http, httpAuth, tls, pki),
+		resolveAPIListeners(redpanda.SchemaRegistryAPI, &schemaRegistry, "", tls, pki),
 		{
 			Kind: redpanda.RPCAPI,
-			Listeners: []redpanda.Listener{{
-				Name:              redpanda.InternalListenerName,
+			Reserved: &redpanda.Listener{
+				Name:              redpanda.ReservedListenerName,
 				Port:              rpc.Port,
 				Address:           ptr.Deref(rpc.Address, "0.0.0.0"),
-				ContainerPortName: redpanda.RPCAPI.InternalPortName(),
+				ContainerPortName: redpanda.RPCAPI.ReservedPortName(),
 				TLS:               resolveInternalTLS(&rpc.TLS, tls, pki),
-				PortName:          redpanda.RPCAPI.InternalPortName(),
-			}},
+				PortName:          redpanda.RPCAPI.ReservedPortName(),
+			},
 		},
 	})
 }
 
-// resolveAPIListeners returns an API's in-cluster listener followed by every
-// external one Redpanda binds, the order redpanda.yaml carries them in. One it
-// does not bind is absent, not flagged.
-//
-// its API alone: "schemaregistry" against "schema-<name>".
-func resolveAPIListeners(kind redpanda.APIKind, listener *ListenerConfig[string], defaultAuth string, tls *TLS, pki *redpanda.PKI) []redpanda.Listener {
-	listeners := []redpanda.Listener{{
-		Name:                 redpanda.InternalListenerName,
+// resolveAPIListeners returns an API with its reserved listener and every
+// additional listener that Redpanda binds. A listener that Redpanda does not
+// bind is absent.
+func resolveAPIListeners(kind redpanda.APIKind, listener *ListenerConfig[string], defaultAuth string, tls *TLS, pki *redpanda.PKI) redpanda.API {
+	api := redpanda.API{Kind: kind, Reserved: &redpanda.Listener{
+		Name:                 redpanda.ReservedListenerName,
 		Port:                 listener.Port,
 		Address:              ptr.Deref(listener.Address, "0.0.0.0"),
 		AuthenticationMethod: ptr.Deref(listener.AuthenticationMethod, defaultAuth),
-		PortName:             kind.InternalPortName(),
-		ContainerPortName:    kind.InternalPortName(),
+		PortName:             kind.ReservedPortName(),
+		ContainerPortName:    kind.ReservedPortName(),
 		AppProtocol:          listener.AppProtocol,
 		TLS:                  resolveInternalTLS(&listener.TLS, tls, pki),
 	}}
@@ -98,7 +84,7 @@ func resolveAPIListeners(kind redpanda.APIKind, listener *ListenerConfig[string]
 			continue
 		}
 
-		listeners = append(listeners, redpanda.Listener{
+		api.Additional = append(api.Additional, redpanda.Listener{
 			Name:                 name,
 			Port:                 external.Port,
 			Address:              ptr.Deref(external.Address, "0.0.0.0"),
@@ -112,7 +98,7 @@ func resolveAPIListeners(kind redpanda.APIKind, listener *ListenerConfig[string]
 		})
 	}
 
-	return listeners
+	return api
 }
 
 func resolveInternalTLS(internal *InternalTLS, tls *TLS, pki *redpanda.PKI) *redpanda.ListenerTLS {
@@ -189,23 +175,24 @@ func resolveNetwork(state *RenderState, listeners *redpanda.Listeners) redpanda.
 		Routes:    resolveRoutes(state),
 	}
 
-	// NB: listeners.admin.enabled does not disable the admin port. The probes
-	// and the sidecar connect to this port.
-	internal := listeners.InCluster()
+	// NB: listeners.<api>.enabled false removes the reserved listener from the
+	// headless Service only. Redpanda still binds it. listeners.admin.enabled
+	// has no effect, because the probes and the sidecar connect to this port.
+	reserved := listeners.Reserved()
 	if !state.Values.Listeners.HTTP.Enabled {
-		delete(internal.ByKind, redpanda.HTTPAPI)
+		delete(reserved.ByKind, redpanda.HTTPAPI)
 	}
 	if !state.Values.Listeners.SchemaRegistry.Enabled {
-		delete(internal.ByKind, redpanda.SchemaRegistryAPI)
+		delete(reserved.ByKind, redpanda.SchemaRegistryAPI)
 	}
 
 	var external []redpanda.API
 	var gateway []redpanda.API
-	allExternal := listeners.External()
-	for _, kind := range slices.Sorted(maps.Keys(allExternal.ByKind)) {
+	additional := listeners.Additional()
+	for _, kind := range slices.Sorted(maps.Keys(additional.ByKind)) {
 		var publishedExternal []redpanda.Listener
 		var publishedGateway []redpanda.Listener
-		for _, listener := range allExternal.ByKind[kind].Listeners {
+		for _, listener := range additional.ByKind[kind].Additional {
 			if network.Route(kind, listener.Name) != nil {
 				publishedGateway = append(publishedGateway, listener)
 			} else {
@@ -214,14 +201,14 @@ func resolveNetwork(state *RenderState, listeners *redpanda.Listeners) redpanda.
 		}
 
 		if len(publishedExternal) > 0 {
-			external = append(external, redpanda.API{Kind: kind, Listeners: publishedExternal})
+			external = append(external, redpanda.API{Kind: kind, Additional: publishedExternal})
 		}
 		if len(publishedGateway) > 0 {
-			gateway = append(gateway, redpanda.API{Kind: kind, Listeners: publishedGateway})
+			gateway = append(gateway, redpanda.API{Kind: kind, Additional: publishedGateway})
 		}
 	}
 
-	network.Services = append(network.Services, internalServiceConfig(state, internal))
+	network.Services = append(network.Services, internalServiceConfig(state, reserved))
 
 	serviceType := externalServiceType(state)
 	if serviceType == corev1.ServiceTypeNodePort {

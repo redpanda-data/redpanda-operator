@@ -220,16 +220,16 @@ func SecretConfigurator(state *RenderState, listeners *redpanda.Listeners, netwo
 func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, network *redpanda.Network, sts Statefulset, ordinalOffset int) []string {
 	internalAdvertiseAddress := fmt.Sprintf("%s.%s", "${SERVICE_NAME}", InternalDomain(state))
 
-	inCluster := api.InCluster()
+	reserved := api.Reserved
 
 	var snippet []string
 
 	snippet = append(snippet,
 		``,
 		fmt.Sprintf(`LISTENER=%s`, helmette.Quote(helmette.ToJSON(map[string]any{
-			"name":    redpanda.InternalListenerName,
+			"name":    redpanda.ReservedListenerName,
 			"address": internalAdvertiseAddress,
-			"port":    inCluster.Port,
+			"port":    reserved.Port,
 		}))),
 		fmt.Sprintf(`rpk redpanda config --config "$CONFIG" set %s.%s[0] "$LISTENER"`,
 			api.Kind.AdvertisedConfigSection(),
@@ -242,7 +242,7 @@ func secretConfiguratorAdvertisedConfig(state *RenderState, api *redpanda.API, n
 	// NB: ungated on exposure. A listener with no Service is still advertised;
 	// values.yaml says the user may create that Service themselves.
 	externalCounter := 0
-	for _, listener := range api.External() {
+	for _, listener := range api.Additional {
 		externalCounter = externalCounter + 1
 
 		snippet = append(snippet,

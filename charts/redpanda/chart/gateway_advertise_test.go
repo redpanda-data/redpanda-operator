@@ -106,7 +106,7 @@ func TestGatewayNodePoolAdvertisesGlobalOrdinalHost(t *testing.T) {
 	// The resolver expands hostTemplate once, at global ordinals, and everything
 	// downstream indexes that list rather than re-expanding the template.
 	network := resolveNetwork(state, &listeners)
-	gateway := network.Route(redpanda.KafkaAPI, listeners.Kafka().External()[0].Name)
+	gateway := network.Route(redpanda.KafkaAPI, listeners.Kafka().Additional[0].Name)
 	require.NotNil(t, gateway)
 	require.Equal(t, []string{
 		"redpanda-0.example.com",

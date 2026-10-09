@@ -139,7 +139,7 @@ func RedpandaConfigFile(state *RenderState, listeners *redpanda.Listeners, inclu
 
 	if includeNonHashableItems {
 		// NB: BrokerList returns fully qualified hosts, already ordered.
-		rpcPort := listeners.RPC().InCluster().Port
+		rpcPort := listeners.RPC().Reserved.Port
 
 		var seeds []map[string]any
 		for _, host := range BrokerList(state, -1) {
@@ -336,7 +336,7 @@ func brokersFor(state *RenderState, pool Pool, port int32) []string {
 
 // https://github.com/redpanda-data/redpanda/blob/817450a480f4f2cadf66de1adc301cfaf6ccde46/src/go/rpk/pkg/config/redpanda_yaml.go#L143
 func rpkNodeConfig(state *RenderState, listeners *redpanda.Listeners, pool Pool) map[string]any {
-	kafka := listeners.Kafka().InCluster()
+	kafka := listeners.Kafka().Reserved
 	brokerList := BrokerList(state, kafka.Port)
 
 	adminTLS := listeners.Admin().RPKClientTLS()

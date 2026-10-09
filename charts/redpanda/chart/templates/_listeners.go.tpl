@@ -19,7 +19,7 @@
 {{- $schemaRegistry := (get (fromJson (include "redpanda.ListenerConfig.AsString" (dict "a" (list $state.Values.listeners.schemaRegistry)))) "r") -}}
 {{- $rpc := $state.Values.listeners.rpc -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "_redpanda.NewListeners" (dict "a" (list (list (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" "admin" "Listeners" (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "admin" $admin "" $tls $pki)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" "kafka" "Listeners" (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "kafka" $kafka $kafkaAuth $tls $pki)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" "http" "Listeners" (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "http" $http $httpAuth $tls $pki)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" "schema" "Listeners" (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "schema" $schemaRegistry "" $tls $pki)))) "r"))) (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" "rpc" "Listeners" (list (mustMergeOverwrite (dict "Name" "" "Port" 0 "Address" "" "AuthenticationMethod" "" "PortName" "" "ContainerPortName" "" "AppProtocol" (coalesce nil) "TLS" (coalesce nil) "PrefixTemplate" "" "AdvertisedPorts" (coalesce nil)) (dict "Name" "internal" "Port" ($rpc.port | int) "Address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $rpc.address "0.0.0.0")))) "r") "ContainerPortName" (get (fromJson (include "_redpanda.APIKind.InternalPortName" (dict "a" (list (deepCopy "rpc"))))) "r") "TLS" (get (fromJson (include "redpanda.resolveInternalTLS" (dict "a" (list $rpc.tls $tls $pki)))) "r") "PortName" (get (fromJson (include "_redpanda.APIKind.InternalPortName" (dict "a" (list (deepCopy "rpc"))))) "r"))))))))))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "_redpanda.NewListeners" (dict "a" (list (list (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "admin" $admin "" $tls $pki)))) "r") (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "kafka" $kafka $kafkaAuth $tls $pki)))) "r") (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "http" $http $httpAuth $tls $pki)))) "r") (get (fromJson (include "redpanda.resolveAPIListeners" (dict "a" (list "schema" $schemaRegistry "" $tls $pki)))) "r") (mustMergeOverwrite (dict "Kind" "" "Reserved" (coalesce nil) "Additional" (coalesce nil)) (dict "Kind" "rpc" "Reserved" (mustMergeOverwrite (dict "Name" "" "Port" 0 "Address" "" "AuthenticationMethod" "" "PortName" "" "ContainerPortName" "" "AppProtocol" (coalesce nil) "TLS" (coalesce nil) "PrefixTemplate" "" "AdvertisedPorts" (coalesce nil)) (dict "Name" "internal" "Port" ($rpc.port | int) "Address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $rpc.address "0.0.0.0")))) "r") "ContainerPortName" (get (fromJson (include "_redpanda.APIKind.ReservedPortName" (dict "a" (list (deepCopy "rpc"))))) "r") "TLS" (get (fromJson (include "redpanda.resolveInternalTLS" (dict "a" (list $rpc.tls $tls $pki)))) "r") "PortName" (get (fromJson (include "_redpanda.APIKind.ReservedPortName" (dict "a" (list (deepCopy "rpc"))))) "r")))))))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -32,18 +32,18 @@
 {{- $pki := (index .a 4) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $listeners := (list (mustMergeOverwrite (dict "Name" "" "Port" 0 "Address" "" "AuthenticationMethod" "" "PortName" "" "ContainerPortName" "" "AppProtocol" (coalesce nil) "TLS" (coalesce nil) "PrefixTemplate" "" "AdvertisedPorts" (coalesce nil)) (dict "Name" "internal" "Port" ($listener.port | int) "Address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.address "0.0.0.0")))) "r") "AuthenticationMethod" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.authenticationMethod $defaultAuth)))) "r") "PortName" (get (fromJson (include "_redpanda.APIKind.InternalPortName" (dict "a" (list (deepCopy $kind))))) "r") "ContainerPortName" (get (fromJson (include "_redpanda.APIKind.InternalPortName" (dict "a" (list (deepCopy $kind))))) "r") "AppProtocol" $listener.appProtocol "TLS" (get (fromJson (include "redpanda.resolveInternalTLS" (dict "a" (list $listener.tls $tls $pki)))) "r")))) -}}
+{{- $api := (mustMergeOverwrite (dict "Kind" "" "Reserved" (coalesce nil) "Additional" (coalesce nil)) (dict "Kind" $kind "Reserved" (mustMergeOverwrite (dict "Name" "" "Port" 0 "Address" "" "AuthenticationMethod" "" "PortName" "" "ContainerPortName" "" "AppProtocol" (coalesce nil) "TLS" (coalesce nil) "PrefixTemplate" "" "AdvertisedPorts" (coalesce nil)) (dict "Name" "internal" "Port" ($listener.port | int) "Address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.address "0.0.0.0")))) "r") "AuthenticationMethod" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $listener.authenticationMethod $defaultAuth)))) "r") "PortName" (get (fromJson (include "_redpanda.APIKind.ReservedPortName" (dict "a" (list (deepCopy $kind))))) "r") "ContainerPortName" (get (fromJson (include "_redpanda.APIKind.ReservedPortName" (dict "a" (list (deepCopy $kind))))) "r") "AppProtocol" $listener.appProtocol "TLS" (get (fromJson (include "redpanda.resolveInternalTLS" (dict "a" (list $listener.tls $tls $pki)))) "r"))))) -}}
 {{- range $name, $external := $listener.external -}}
 {{- if (not (get (fromJson (include "redpanda.ExternalListener.IsEnabled" (dict "a" (list $external)))) "r")) -}}
 {{- continue -}}
 {{- end -}}
-{{- $listeners = (concat (default (list) $listeners) (list (mustMergeOverwrite (dict "Name" "" "Port" 0 "Address" "" "AuthenticationMethod" "" "PortName" "" "ContainerPortName" "" "AppProtocol" (coalesce nil) "TLS" (coalesce nil) "PrefixTemplate" "" "AdvertisedPorts" (coalesce nil)) (dict "Name" $name "Port" ($external.port | int) "Address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.address "0.0.0.0")))) "r") "AuthenticationMethod" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.authenticationMethod $defaultAuth)))) "r") "PortName" (get (fromJson (include "_redpanda.APIKind.PortName" (dict "a" (list (deepCopy $kind) $name)))) "r") "ContainerPortName" (get (fromJson (include "_redpanda.APIKind.ContainerPortName" (dict "a" (list (deepCopy $kind) $name)))) "r") "AppProtocol" $listener.appProtocol "TLS" (get (fromJson (include "redpanda.resolveExternalTLS" (dict "a" (list $external.tls $listener.tls $tls $pki)))) "r") "PrefixTemplate" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.prefixTemplate "")))) "r") "AdvertisedPorts" $external.advertisedPorts)))) -}}
+{{- $_ := (set $api "Additional" (concat (default (list) $api.Additional) (list (mustMergeOverwrite (dict "Name" "" "Port" 0 "Address" "" "AuthenticationMethod" "" "PortName" "" "ContainerPortName" "" "AppProtocol" (coalesce nil) "TLS" (coalesce nil) "PrefixTemplate" "" "AdvertisedPorts" (coalesce nil)) (dict "Name" $name "Port" ($external.port | int) "Address" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.address "0.0.0.0")))) "r") "AuthenticationMethod" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.authenticationMethod $defaultAuth)))) "r") "PortName" (get (fromJson (include "_redpanda.APIKind.PortName" (dict "a" (list (deepCopy $kind) $name)))) "r") "ContainerPortName" (get (fromJson (include "_redpanda.APIKind.ContainerPortName" (dict "a" (list (deepCopy $kind) $name)))) "r") "AppProtocol" $listener.appProtocol "TLS" (get (fromJson (include "redpanda.resolveExternalTLS" (dict "a" (list $external.tls $listener.tls $tls $pki)))) "r") "PrefixTemplate" (get (fromJson (include "_shims.ptr_Deref" (dict "a" (list $external.prefixTemplate "")))) "r") "AdvertisedPorts" $external.advertisedPorts))))) -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $listeners) | toJson -}}
+{{- (dict "r" $api) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -134,20 +134,20 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $network := (mustMergeOverwrite (dict "Listeners" (dict "ByKind" (coalesce nil)) "Services" (coalesce nil) "Routes" (coalesce nil)) (dict "Listeners" $listeners "Routes" (get (fromJson (include "redpanda.resolveRoutes" (dict "a" (list $state)))) "r"))) -}}
-{{- $internal := (get (fromJson (include "_redpanda.Listeners.InCluster" (dict "a" (list $listeners)))) "r") -}}
+{{- $reserved := (get (fromJson (include "_redpanda.Listeners.Reserved" (dict "a" (list $listeners)))) "r") -}}
 {{- if (not $state.Values.listeners.http.enabled) -}}
-{{- $_ := (unset $internal.ByKind "http") -}}
+{{- $_ := (unset $reserved.ByKind "http") -}}
 {{- end -}}
 {{- if (not $state.Values.listeners.schemaRegistry.enabled) -}}
-{{- $_ := (unset $internal.ByKind "schema") -}}
+{{- $_ := (unset $reserved.ByKind "schema") -}}
 {{- end -}}
 {{- $external := (coalesce nil) -}}
 {{- $gateway := (coalesce nil) -}}
-{{- $allExternal := (get (fromJson (include "_redpanda.Listeners.External" (dict "a" (list $listeners)))) "r") -}}
-{{- range $_, $kind := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $allExternal.ByKind))))) "r") -}}
+{{- $additional := (get (fromJson (include "_redpanda.Listeners.Additional" (dict "a" (list $listeners)))) "r") -}}
+{{- range $_, $kind := (get (fromJson (include "_shims.slices_Sorted" (dict "a" (list (keys $additional.ByKind))))) "r") -}}
 {{- $publishedExternal := (coalesce nil) -}}
 {{- $publishedGateway := (coalesce nil) -}}
-{{- range $_, $listener := (index $allExternal.ByKind $kind).Listeners -}}
+{{- range $_, $listener := (index $additional.ByKind $kind).Additional -}}
 {{- if (ne (toJson (get (fromJson (include "_redpanda.Network.Route" (dict "a" (list $network $kind $listener.Name)))) "r")) "null") -}}
 {{- $publishedGateway = (concat (default (list) $publishedGateway) (list $listener)) -}}
 {{- else -}}
@@ -158,16 +158,16 @@
 {{- break -}}
 {{- end -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $publishedExternal)))) "r") | int) (0 | int)) -}}
-{{- $external = (concat (default (list) $external) (list (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" $kind "Listeners" $publishedExternal)))) -}}
+{{- $external = (concat (default (list) $external) (list (mustMergeOverwrite (dict "Kind" "" "Reserved" (coalesce nil) "Additional" (coalesce nil)) (dict "Kind" $kind "Additional" $publishedExternal)))) -}}
 {{- end -}}
 {{- if (gt ((get (fromJson (include "_shims.len" (dict "a" (list $publishedGateway)))) "r") | int) (0 | int)) -}}
-{{- $gateway = (concat (default (list) $gateway) (list (mustMergeOverwrite (dict "Kind" "" "Listeners" (coalesce nil)) (dict "Kind" $kind "Listeners" $publishedGateway)))) -}}
+{{- $gateway = (concat (default (list) $gateway) (list (mustMergeOverwrite (dict "Kind" "" "Reserved" (coalesce nil) "Additional" (coalesce nil)) (dict "Kind" $kind "Additional" $publishedGateway)))) -}}
 {{- end -}}
 {{- end -}}
 {{- if $_is_returning -}}
 {{- break -}}
 {{- end -}}
-{{- $_ := (set $network "Services" (concat (default (list) $network.Services) (list (get (fromJson (include "redpanda.internalServiceConfig" (dict "a" (list $state $internal)))) "r")))) -}}
+{{- $_ := (set $network "Services" (concat (default (list) $network.Services) (list (get (fromJson (include "redpanda.internalServiceConfig" (dict "a" (list $state $reserved)))) "r")))) -}}
 {{- $serviceType := (get (fromJson (include "redpanda.externalServiceType" (dict "a" (list $state)))) "r") -}}
 {{- if (eq $serviceType "NodePort") -}}
 {{- $_ := (set $network "Services" (concat (default (list) $network.Services) (list (get (fromJson (include "redpanda.nodePortServiceConfig" (dict "a" (list $state (get (fromJson (include "_redpanda.NewListeners" (dict "a" (list $external)))) "r"))))) "r")))) -}}
@@ -213,9 +213,9 @@
 {{- if (eq (toJson $gateway) "null") -}}
 {{- continue -}}
 {{- end -}}
-{{- $_266_byName_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $routes $entry.Kind (coalesce nil))))) "r") -}}
-{{- $byName := (index $_266_byName_ok 0) -}}
-{{- $ok := (index $_266_byName_ok 1) -}}
+{{- $_253_byName_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list $routes $entry.Kind (coalesce nil))))) "r") -}}
+{{- $byName := (index $_253_byName_ok 0) -}}
+{{- $ok := (index $_253_byName_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $byName = (dict) -}}
 {{- $_ := (set $routes $entry.Kind $byName) -}}

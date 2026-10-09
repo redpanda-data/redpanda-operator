@@ -22,12 +22,12 @@ import (
 // testListeners is one fixture shared by most tests below, so a change in one
 // render path shows up as a diff against the same input every other path sees.
 //
-//   - admin: The in-cluster listener has TLS with a CA and mTLS. One external
+//   - admin: The reserved listener has TLS with a CA and mTLS. One additional
 //     listener has no TLS.
-//   - kafka: Both listeners use SASL. The external listener has two advertised
+//   - kafka: Both listeners use SASL. The additional listener has two advertised
 //     ports.
-//   - http: There is only an in-cluster listener. It has no TLS.
-//   - schema: There is one external listener.
+//   - http: There is only a reserved listener. It has no TLS.
+//   - schema: There is one additional listener.
 //   - rpc: There is one listener. Its TLS uses an explicit truststore.
 func testListeners() Listeners {
 	pki := testPKI()
@@ -35,89 +35,83 @@ func testListeners() Listeners {
 	return NewListeners([]API{
 		{
 			Kind: AdminAPI,
-			Listeners: []Listener{
-				{
-					Name:              InternalListenerName,
-					Port:              9644,
-					Address:           "0.0.0.0",
-					ContainerPortName: "admin",
-					PortName:          "admin",
-					TLS:               chartTLS(&pki, "default", true, nil),
-				},
-				{
-					Name:              "default",
-					Port:              9645,
-					Address:           "0.0.0.0",
-					ContainerPortName: "admin-default",
-					PortName:          "admin-default",
-					AdvertisedPorts:   []int32{31644},
-					TLS:               chartTLS(&pki, "external", false, nil),
-				},
+			Reserved: &Listener{
+				Name:              ReservedListenerName,
+				Port:              9644,
+				Address:           "0.0.0.0",
+				ContainerPortName: "admin",
+				PortName:          "admin",
+				TLS:               chartTLS(&pki, "default", true, nil),
 			},
+			Additional: []Listener{{
+				Name:              "default",
+				Port:              9645,
+				Address:           "0.0.0.0",
+				ContainerPortName: "admin-default",
+				PortName:          "admin-default",
+				AdvertisedPorts:   []int32{31644},
+				TLS:               chartTLS(&pki, "external", false, nil),
+			}},
 		},
 		{
 			Kind: KafkaAPI,
-			Listeners: []Listener{
-				{
-					Name:                 InternalListenerName,
-					Port:                 9093,
-					Address:              "0.0.0.0",
-					AuthenticationMethod: "sasl",
-					ContainerPortName:    "kafka",
-					PortName:             "kafka",
-				},
-				{
-					Name:                 "default",
-					Port:                 9094,
-					Address:              "0.0.0.0",
-					AuthenticationMethod: "sasl",
-					ContainerPortName:    "kafka-default",
-					PortName:             "kafka-default",
-					AdvertisedPorts:      []int32{31092, 31093},
-				},
+			Reserved: &Listener{
+				Name:                 ReservedListenerName,
+				Port:                 9093,
+				Address:              "0.0.0.0",
+				AuthenticationMethod: "sasl",
+				ContainerPortName:    "kafka",
+				PortName:             "kafka",
 			},
+			Additional: []Listener{{
+				Name:                 "default",
+				Port:                 9094,
+				Address:              "0.0.0.0",
+				AuthenticationMethod: "sasl",
+				ContainerPortName:    "kafka-default",
+				PortName:             "kafka-default",
+				AdvertisedPorts:      []int32{31092, 31093},
+			}},
 		},
 		{
 			Kind: HTTPAPI,
-			Listeners: []Listener{{
-				Name:              InternalListenerName,
+			Reserved: &Listener{
+				Name:              ReservedListenerName,
 				Port:              8082,
 				Address:           "0.0.0.0",
 				ContainerPortName: "http",
 				PortName:          "http",
-			}},
-		},
-		{
-			Kind: SchemaRegistryAPI,
-			Listeners: []Listener{
-				{
-					Name:    InternalListenerName,
-					Port:    8081,
-					Address: "0.0.0.0",
-					// NB: named for its API alone, and that name is not the
-					// API's own -- "schemaregistry" against a "schema" prefix.
-					ContainerPortName: "schemaregistry",
-					PortName:          "schemaregistry",
-				},
-				{
-					Name:              "default",
-					Port:              8084,
-					Address:           "0.0.0.0",
-					ContainerPortName: "schema-default",
-					PortName:          "schema-default",
-				},
 			},
 		},
 		{
+			Kind: SchemaRegistryAPI,
+			Reserved: &Listener{
+				Name:    ReservedListenerName,
+				Port:    8081,
+				Address: "0.0.0.0",
+				// NB: named for its API alone, and that name is not the
+				// API's own -- "schemaregistry" against a "schema" prefix.
+				ContainerPortName: "schemaregistry",
+				PortName:          "schemaregistry",
+			},
+			Additional: []Listener{{
+				Name:              "default",
+				Port:              8084,
+				Address:           "0.0.0.0",
+				ContainerPortName: "schema-default",
+				PortName:          "schema-default",
+			}},
+		},
+		{
 			Kind: RPCAPI,
-			Listeners: []Listener{{
-				Name:              InternalListenerName,
+			Reserved: &Listener{
+				Name:              ReservedListenerName,
 				Port:              33145,
 				Address:           "0.0.0.0",
 				ContainerPortName: "rpc",
 				PortName:          "rpc",
 				TLS:               chartTLS(&pki, "default", false, &TrustStore{ConfigMapKeyRef: cmKeyRef("rpc-ca", "ca.crt")}),
-			}},
+			},
 		},
 	})
 }
@@ -180,48 +174,31 @@ func TestInOrder(t *testing.T) {
 	require.Equal(t, []string{"rpc", "admin", "admin-default"}, listenerPortNames(l.ListenersInOrder([]APIKind{RPCAPI, KafkaAPI, AdminAPI})))
 }
 
-// TestInClusterAndExternal pins the two derived views over the one list. The
-// in-cluster listener is found by name, not position or a field.
-func TestInClusterAndExternal(t *testing.T) {
+// TestReservedAndAdditional pins the views of the reserved and the additional
+// listeners.
+func TestReservedAndAdditional(t *testing.T) {
 	l := testListeners()
-	admin := l.Admin()
 
-	require.Len(t, admin.Listeners, 2)
+	// Listeners puts the reserved listener first. An API without a reserved
+	// listener has only its additional listeners.
+	require.Equal(t, []string{"admin", "admin-default"}, listenerPortNames(l.Admin().Listeners()))
+	require.Equal(t, []string{"http"}, listenerPortNames(l.HTTP().Listeners()))
+	require.Equal(t, []string{"admin-default"}, listenerPortNames((&API{Additional: l.Admin().Additional}).Listeners()))
 
-	inCluster := admin.InCluster()
-	require.Equal(t, InternalListenerName, inCluster.Name)
-	require.Equal(t, int32(9644), inCluster.Port)
-
-	external := admin.External()
-	require.Len(t, external, 1)
-	require.Equal(t, "default", external[0].Name)
-
-	// Found by name, so ordering the list differently does not change it.
-	reordered := l.Admin()
-	reordered.Listeners = []Listener{reordered.Listeners[1], reordered.Listeners[0]}
-	require.Equal(t, InternalListenerName, reordered.InCluster().Name)
-	require.Equal(t, int32(9644), reordered.InCluster().Port)
-
-	// An API with no in-cluster listener yields nil, so a caller that built one
-	// by hand panics rather than rendering a zero-valued listener on port 0.
-	var empty API
-	require.Nil(t, empty.InCluster())
-	require.Empty(t, empty.External())
-
-	http := l.HTTP()
-	require.Empty(t, http.External())
-	require.Equal(t, int32(8082), http.InCluster().Port)
-
-	// The views of Listeners apply the views of API to each API. External
-	// omits an API that has no external listeners.
+	// The views of Listeners apply to each API. They omit an API that has no
+	// listeners for the view.
 	order := []APIKind{AdminAPI, HTTPAPI, KafkaAPI, RPCAPI, SchemaRegistryAPI}
 
-	inClusterListeners := l.InCluster()
-	require.Equal(t, []string{"admin", "http", "kafka", "rpc", "schemaregistry"}, listenerPortNames(inClusterListeners.ListenersInOrder(order)))
+	reserved := l.Reserved()
+	require.Equal(t, []string{"admin", "http", "kafka", "rpc", "schemaregistry"}, listenerPortNames(reserved.ListenersInOrder(order)))
 
-	externalListeners := l.External()
-	require.Equal(t, []string{"admin-default", "kafka-default", "schema-default"}, listenerPortNames(externalListeners.ListenersInOrder(order)))
-	require.NotContains(t, externalListeners.ByKind, HTTPAPI)
+	l.HTTP().Reserved = nil
+	reserved = l.Reserved()
+	require.NotContains(t, reserved.ByKind, HTTPAPI)
+
+	additional := l.Additional()
+	require.Equal(t, []string{"admin-default", "kafka-default", "schema-default"}, listenerPortNames(additional.ListenersInOrder(order)))
+	require.NotContains(t, additional.ByKind, HTTPAPI)
 }
 
 // TestConfigSections pins the whole rendered map: which section each API nests
@@ -280,7 +257,7 @@ func TestConfigSections(t *testing.T) {
 	// EmitNilTLSKey is false for rpc, so an rpc listener serving no TLS omits
 	// the key rather than nulling it.
 	plainRPC := testListeners()
-	plainRPC.RPC().Listeners[0].TLS = nil
+	plainRPC.RPC().Reserved.TLS = nil
 	require.NotContains(t, plainRPC.ConfigSections()["redpanda"], "rpc_server_tls")
 
 	require.Equal(t, map[string]any{
@@ -301,7 +278,7 @@ func TestConfigSections(t *testing.T) {
 // listeners Redpanda binds.
 func TestConfigSectionsGating(t *testing.T) {
 	unbound := testListeners()
-	unbound.Admin().Listeners = unbound.Admin().Listeners[:1]
+	unbound.Admin().Additional = nil
 	entries := unbound.ConfigSections()["redpanda"]["admin"].([]map[string]any)
 	require.Len(t, entries, 1)
 	require.Equal(t, "internal", entries[0]["name"])
@@ -391,7 +368,7 @@ func TestTrustStoreFile(t *testing.T) {
 func TestTrustStores(t *testing.T) {
 	l := testListeners()
 	pki := testPKI()
-	l.Kafka().Listeners[0].TLS = chartTLS(&pki, "default", false, &TrustStore{SecretKeyRef: secretKeyRef("kafka-ca", "ca.crt")})
+	l.Kafka().Reserved.TLS = chartTLS(&pki, "default", false, &TrustStore{SecretKeyRef: secretKeyRef("kafka-ca", "ca.crt")})
 
 	stores := l.TrustStores()
 	require.Len(t, stores, 2)
@@ -401,7 +378,7 @@ func TestTrustStores(t *testing.T) {
 	require.Equal(t, "/etc/truststores/configmaps/rpc-ca-ca.crt", stores[1].AbsolutePath())
 
 	// A listener serving no TLS projects nothing, truststore or not.
-	l.RPC().Listeners[0].TLS = nil
+	l.RPC().Reserved.TLS = nil
 	require.Len(t, l.TrustStores(), 1)
 
 	var none Listeners
@@ -416,10 +393,10 @@ func TestTrustStores(t *testing.T) {
 func TestTrustStoreVolume(t *testing.T) {
 	l := testListeners()
 	pki := testPKI()
-	l.Kafka().Listeners[0].TLS = chartTLS(&pki, "default", false, &TrustStore{SecretKeyRef: secretKeyRef("secret-b", "one.crt")})
-	l.Admin().Listeners[0].TLS.TrustStore = &TrustStore{ConfigMapKeyRef: cmKeyRef("cm-a", "two.crt")}
+	l.Kafka().Reserved.TLS = chartTLS(&pki, "default", false, &TrustStore{SecretKeyRef: secretKeyRef("secret-b", "one.crt")})
+	l.Admin().Reserved.TLS.TrustStore = &TrustStore{ConfigMapKeyRef: cmKeyRef("cm-a", "two.crt")}
 	// Same ConfigMap and key as rpc's: deduplicated into one item.
-	l.SchemaRegistry().Listeners[0].TLS = chartTLS(&pki, "default", false, &TrustStore{ConfigMapKeyRef: cmKeyRef("rpc-ca", "ca.crt")})
+	l.SchemaRegistry().Reserved.TLS = chartTLS(&pki, "default", false, &TrustStore{ConfigMapKeyRef: cmKeyRef("rpc-ca", "ca.crt")})
 
 	vol := l.TrustStoreVolume()
 	require.NotNil(t, vol)
@@ -447,7 +424,7 @@ func TestTrustStoreVolume(t *testing.T) {
 
 // TestClientTLS pins the three client shapes. rpk and Redpanda read different
 // keys for the same file, and both fall back to the serving certificate rather
-// than the OS bundle. All three read the API's in-cluster listener.
+// than the OS bundle. All three read the reserved listener of the API.
 func TestClientTLS(t *testing.T) {
 	l := testListeners()
 	require.Equal(t, map[string]any{
@@ -473,7 +450,7 @@ func TestClientTLS(t *testing.T) {
 	// would leave the keypair behind.
 	pki := testPKI()
 	noClientAuth := testListeners()
-	noClientAuth.Admin().Listeners[0].TLS = chartTLS(&pki, "default", false, nil)
+	noClientAuth.Admin().Reserved.TLS = chartTLS(&pki, "default", false, nil)
 	require.Equal(t, map[string]any{"ca_file": "/etc/tls/certs/default/ca.crt"}, noClientAuth.Admin().RPKClientTLS())
 	require.Equal(t, "--cacert /etc/tls/certs/default/ca.crt", noClientAuth.Admin().CurlFlags())
 
@@ -488,7 +465,7 @@ func TestClientTLS(t *testing.T) {
 	// this is representable; presenting a path to a keypair nothing mounted is
 	// not.
 	noClientCert := testListeners()
-	noClientCert.Admin().Listeners[0].TLS = chartTLS(&pki, "external", true, nil)
+	noClientCert.Admin().Reserved.TLS = chartTLS(&pki, "external", true, nil)
 	require.Equal(t, map[string]any{
 		"ca_file": "/etc/tls/certs/external/tls.crt",
 	}, noClientCert.Admin().RPKClientTLS())
@@ -504,26 +481,26 @@ func TestAdvertisedPorts(t *testing.T) {
 	// Two advertised ports: indexed by replica.
 	require.Equal(t, int32(31092), l.Kafka().ProfileAdvertisedPort(0))
 	require.Equal(t, int32(31093), l.Kafka().ProfileAdvertisedPort(1))
-	kafkaExt := l.Kafka().External()[0]
+	kafkaExt := l.Kafka().Additional[0]
 	require.Equal(t, int32(31092), kafkaExt.AdvertisedPort(0))
 	require.Equal(t, int32(31093), kafkaExt.AdvertisedPort(1))
 
 	// One advertised port: every replica shares it.
 	require.Equal(t, int32(31644), l.Admin().ProfileAdvertisedPort(0))
 	require.Equal(t, int32(31644), l.Admin().ProfileAdvertisedPort(3))
-	adminExt := l.Admin().External()[0]
+	adminExt := l.Admin().Additional[0]
 	require.Equal(t, int32(31644), adminExt.AdvertisedPort(3))
 
 	// None: the profile takes the listener's port, guarded on > 1.
 	plain := testListeners()
-	plain.Admin().Listeners[1].AdvertisedPorts = nil
+	plain.Admin().Additional[0].AdvertisedPorts = nil
 	require.Equal(t, int32(9645), plain.Admin().ProfileAdvertisedPort(0))
-	plainExt := plain.Admin().External()[0]
+	plainExt := plain.Admin().Additional[0]
 	require.Equal(t, int32(9645), plainExt.AdvertisedPort(0))
 
 	portless := testListeners()
-	portless.Admin().Listeners[1].AdvertisedPorts = nil
-	portless.Admin().Listeners[1].Port = 1
+	portless.Admin().Additional[0].AdvertisedPorts = nil
+	portless.Admin().Additional[0].Port = 1
 	require.Equal(t, int32(9644), portless.Admin().ProfileAdvertisedPort(0), "guarded on > 1, so falls through to the in-cluster port")
 
 	// No exposed listeners at all: the in-cluster port, and no first name.

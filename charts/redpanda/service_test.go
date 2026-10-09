@@ -36,7 +36,7 @@ func TestServiceConfigPorts(t *testing.T) {
 		"headless": {
 			refs: []testRef{
 				{kind: SchemaRegistryAPI, name: "default"},
-				{kind: KafkaAPI, name: InternalListenerName},
+				{kind: KafkaAPI, name: ReservedListenerName},
 			},
 			kind: ServiceKindHeadless,
 			expected: []corev1.ServicePort{
@@ -45,8 +45,8 @@ func TestServiceConfigPorts(t *testing.T) {
 			},
 		},
 		"app protocol": {
-			mutate: func(l *Listeners) { l.Admin().Listeners[0].AppProtocol = ptr.To("https") },
-			refs:   []testRef{{kind: AdminAPI, name: InternalListenerName}},
+			mutate: func(l *Listeners) { l.Admin().Reserved.AppProtocol = ptr.To("https") },
+			refs:   []testRef{{kind: AdminAPI, name: ReservedListenerName}},
 			kind:   ServiceKindBroker,
 			expected: []corev1.ServicePort{
 				{Name: "admin", Protocol: corev1.ProtocolTCP, AppProtocol: ptr.To("https"), Port: 9644, TargetPort: intstr.FromInt32(9644)},
@@ -72,7 +72,7 @@ func TestServiceConfigPorts(t *testing.T) {
 			},
 		},
 		"nodeport without advertised ports": {
-			mutate: func(l *Listeners) { l.Admin().Listeners[1].AdvertisedPorts = nil },
+			mutate: func(l *Listeners) { l.Admin().Additional[0].AdvertisedPorts = nil },
 			refs:   []testRef{admin},
 			kind:   ServiceKindNodePort,
 			expected: []corev1.ServicePort{
@@ -90,7 +90,7 @@ func TestServiceConfigPorts(t *testing.T) {
 			},
 		},
 		"loadbalancer without advertised ports": {
-			mutate: func(l *Listeners) { l.Admin().Listeners[1].AdvertisedPorts = nil },
+			mutate: func(l *Listeners) { l.Admin().Additional[0].AdvertisedPorts = nil },
 			refs:   []testRef{admin},
 			kind:   ServiceKindLoadBalancer,
 			expected: []corev1.ServicePort{
@@ -204,20 +204,26 @@ type testRef struct {
 
 // resolve returns the listeners of refs.
 func resolve(l *Listeners, refs ...testRef) Listeners {
-	byKind := map[APIKind][]Listener{}
+	byKind := map[APIKind]*API{}
 	for _, ref := range refs {
-		for _, listener := range l.ByKind[ref.kind].Listeners {
+		api, ok := byKind[ref.kind]
+		if !ok {
+			api = &API{Kind: ref.kind}
+			byKind[ref.kind] = api
+		}
+
+		source := l.ByKind[ref.kind]
+		if ref.name == ReservedListenerName {
+			api.Reserved = source.Reserved
+			continue
+		}
+		for _, listener := range source.Additional {
 			if listener.Name == ref.name {
-				byKind[ref.kind] = append(byKind[ref.kind], listener)
+				api.Additional = append(api.Additional, listener)
 			}
 		}
 	}
-
-	var apis []API
-	for kind, listeners := range byKind {
-		apis = append(apis, API{Kind: kind, Listeners: listeners})
-	}
-	return NewListeners(apis)
+	return Listeners{ByKind: byKind}
 }
 
 func testServiceTemplate() corev1.Service {

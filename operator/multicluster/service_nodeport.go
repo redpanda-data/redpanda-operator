@@ -52,7 +52,7 @@ func nodePortServiceForPool(state *RenderState, pool *redpandav1alpha2.RedpandaB
 	listeners := poolListeners(state, pool)
 	config := redpanda.ServiceConfig{
 		Kind:      redpanda.ServiceKindNodePort,
-		Listeners: listeners.External(),
+		Listeners: listeners.Additional(),
 		Template: corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",

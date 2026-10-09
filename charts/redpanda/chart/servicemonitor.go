@@ -34,7 +34,7 @@ func ServiceMonitor(state *RenderState, listeners *redpanda.Listeners) *monitori
 	endpoint := monitoringv1.Endpoint{
 		Interval: state.Values.Monitoring.ScrapeInterval,
 		Path:     "/public_metrics",
-		Port:     listeners.Admin().InCluster().PortName,
+		Port:     listeners.Admin().Reserved.PortName,
 		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 

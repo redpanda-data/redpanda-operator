@@ -106,7 +106,7 @@ func perPodServiceConfig(state *RenderState, pool *redpandav1alpha2.RedpandaBrok
 	listeners := poolListeners(state, pool)
 	return redpanda.ServiceConfig{
 		Kind:      redpanda.ServiceKindBroker,
-		Listeners: withoutDisabled(listeners.InCluster(), pool, []redpanda.APIKind{redpanda.HTTPAPI, redpanda.SchemaRegistryAPI}),
+		Listeners: withoutDisabled(listeners.Reserved(), pool, []redpanda.APIKind{redpanda.HTTPAPI, redpanda.SchemaRegistryAPI}),
 		Template: corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",

@@ -39,7 +39,7 @@ func serviceInternal(state *RenderState) []*corev1.Service {
 	listeners := poolListeners(state, rep)
 	config := redpanda.ServiceConfig{
 		Kind:      redpanda.ServiceKindHeadless,
-		Listeners: withoutDisabled(listeners.InCluster(), rep, []redpanda.APIKind{redpanda.AdminAPI, redpanda.KafkaAPI, redpanda.HTTPAPI, redpanda.SchemaRegistryAPI}),
+		Listeners: withoutDisabled(listeners.Reserved(), rep, []redpanda.APIKind{redpanda.AdminAPI, redpanda.KafkaAPI, redpanda.HTTPAPI, redpanda.SchemaRegistryAPI}),
 		Template: corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",

@@ -96,7 +96,7 @@ func loadBalancerServicesForPool(state *RenderState, pool *redpandav1alpha2.Redp
 	listeners := poolListeners(state, pool)
 	config := redpanda.ServiceConfig{
 		Kind:      redpanda.ServiceKindLoadBalancer,
-		Listeners: listeners.External(),
+		Listeners: listeners.Additional(),
 		Template: corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",

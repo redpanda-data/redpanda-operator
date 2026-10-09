@@ -19,7 +19,7 @@
 {{- $pods := (get (fromJson (include "redpanda.gatewayPodNames" (dict "a" (list $state)))) "r") -}}
 {{- $routes := (coalesce nil) -}}
 {{- range $_, $api := (get (fromJson (include "_redpanda.Listeners.InOrder" (dict "a" (list $gateway.Listeners (list "kafka" "http" "admin" "schema"))))) "r") -}}
-{{- range $_, $listener := $api.Listeners -}}
+{{- range $_, $listener := (get (fromJson (include "_redpanda.API.Listeners" (dict "a" (list $api)))) "r") -}}
 {{- $routes = (concat (default (list) $routes) (default (list) (get (fromJson (include "redpanda.tlsRoutesForListener" (dict "a" (list $fullname $state.Release.Namespace $labels $annotations $gw.parentRefs $pods $api.Kind $listener (get (fromJson (include "_redpanda.Network.Route" (dict "a" (list $network $api.Kind $listener.Name)))) "r"))))) "r"))) -}}
 {{- end -}}
 {{- if $_is_returning -}}

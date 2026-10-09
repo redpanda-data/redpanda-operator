@@ -55,7 +55,7 @@ func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 	endpoint := monitoringv1.Endpoint{
 		Interval: interval,
 		Path:     publicMetricsPath,
-		Port:     listeners.Admin().InCluster().PortName,
+		Port:     listeners.Admin().Reserved.PortName,
 		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 

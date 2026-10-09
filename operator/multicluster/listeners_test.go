@@ -66,35 +66,28 @@ func resolveForSpec(spec *redpandav1alpha2.BrokerPoolSpec, saslEnabled bool) red
 	return listenersForPool(spec, saslEnabled, &pki)
 }
 
-// TestListenersForPoolListenerList asserts each API resolves to one ordered
-// list with the in-cluster listener first, and that its port names follow the
-// two different schemes: the in-cluster listener is named for its API alone
-// while the rest carry the API's name and their own.
+// TestListenersForPoolListenerList asserts that each API resolves to a reserved
+// listener and its additional listeners, and that the port names follow the
+// two schemes: the reserved listener is named for its API alone, while the
+// others carry the name of the API and their own name.
 func TestListenersForPoolListenerList(t *testing.T) {
 	listeners := resolveForSpec(poolSpec(true), false)
 
 	schema := listeners.SchemaRegistry()
-	require.Len(t, schema.Listeners, 2)
 
-	require.Equal(t, redpanda.InternalListenerName, schema.Listeners[0].Name)
-	require.Equal(t, "schemaregistry", schema.Listeners[0].PortName)
-	require.Equal(t, "schemaregistry", schema.Listeners[0].ContainerPortName)
+	require.Equal(t, redpanda.ReservedListenerName, schema.Reserved.Name)
+	require.Equal(t, "schemaregistry", schema.Reserved.PortName)
+	require.Equal(t, "schemaregistry", schema.Reserved.ContainerPortName)
 
-	require.Equal(t, "default", schema.Listeners[1].Name)
-	require.Equal(t, "schema-default", schema.Listeners[1].PortName)
-	require.Equal(t, "schema-default", schema.Listeners[1].ContainerPortName)
+	require.Len(t, schema.Additional, 1)
+	require.Equal(t, "default", schema.Additional[0].Name)
+	require.Equal(t, "schema-default", schema.Additional[0].PortName)
+	require.Equal(t, "schema-default", schema.Additional[0].ContainerPortName)
 
-	// The derived views agree with the list.
-	inCluster := schema.InCluster()
-	require.Equal(t, redpanda.InternalListenerName, inCluster.Name)
-	require.Len(t, schema.External(), 1)
-	require.Equal(t, "default", schema.External()[0].Name)
-
-	// RPC is single valued: one listener, no externals.
+	// RPC is single valued: one listener, no additional listeners.
 	rpc := listeners.RPC()
-	require.Len(t, rpc.Listeners, 1)
-	require.Empty(t, rpc.External())
-	require.Equal(t, "rpc", rpc.InCluster().PortName)
+	require.Empty(t, rpc.Additional)
+	require.Equal(t, "rpc", rpc.Reserved.PortName)
 }
 
 // TestPoolCertificates pins that issuance reads the pool spec rather than the
@@ -118,7 +111,7 @@ func TestPoolCertificates(t *testing.T) {
 	quiet.Listeners.Kafka.TLS.Enabled = ptr.To(false)
 	require.Contains(t, poolCertificates(quiet, "pool"), "default")
 	quietListeners := resolveForSpec(quiet, false)
-	require.Nil(t, quietListeners.Kafka().InCluster().TLS)
+	require.Nil(t, quietListeners.Kafka().Reserved.TLS)
 
 	require.Empty(t, poolCertificates(nil, "pool"))
 	require.Empty(t, poolCertificates(&redpandav1alpha2.BrokerPoolSpec{}, "pool"))
@@ -133,7 +126,7 @@ func TestListenersForPoolTLSEnablement(t *testing.T) {
 	spec.Listeners.Kafka.TLS.Enabled = ptr.To(true)
 
 	listeners := resolveForSpec(spec, false)
-	kafka := listeners.Kafka().InCluster()
+	kafka := listeners.Kafka().Reserved
 	require.Nil(t, kafka.TLS, "no certificate is issued, so nothing can serve TLS")
 
 	sections := listeners.ConfigSections()
@@ -147,9 +140,9 @@ func TestListenersForPoolTLSEnablement(t *testing.T) {
 
 	listeners = resolveForSpec(serving, false)
 
-	kafka = listeners.Kafka().InCluster()
+	kafka = listeners.Kafka().Reserved
 	require.Nil(t, kafka.TLS)
-	require.NotNil(t, listeners.Kafka().External()[0].TLS)
+	require.NotNil(t, listeners.Kafka().Additional[0].TLS)
 
 	// Only the external entry survives, where both did before.
 	sections = listeners.ConfigSections()
@@ -166,15 +159,15 @@ func TestListenersForPoolRequireClientAuth(t *testing.T) {
 
 	// Admin, kafka, http and schemaRegistry all share cert "default", and
 	// admin requires mTLS, so all four render require_client_auth: true.
-	admin := listeners.Admin().InCluster()
-	kafka := listeners.Kafka().InCluster()
-	http := listeners.HTTP().InCluster()
+	admin := listeners.Admin().Reserved
+	kafka := listeners.Kafka().Reserved
+	http := listeners.HTTP().Reserved
 	require.True(t, admin.TLS.RequireClientAuth)
 	require.True(t, kafka.TLS.RequireClientAuth)
 	require.True(t, http.TLS.RequireClientAuth)
 
 	// RPC shares that certificate too but renders its own flag.
-	rpc := listeners.RPC().InCluster()
+	rpc := listeners.RPC().Reserved
 	require.False(t, rpc.TLS.RequireClientAuth)
 
 	// The keypair follows require_client_auth, which here is the certificate's
@@ -191,18 +184,18 @@ func TestListenersForPoolAuthenticationMethods(t *testing.T) {
 	spec := poolSpec(true)
 
 	without := resolveForSpec(spec, false)
-	withoutKafka := without.Kafka().InCluster()
-	withoutHTTP := without.HTTP().InCluster()
+	withoutKafka := without.Kafka().Reserved
+	withoutHTTP := without.HTTP().Reserved
 	require.Empty(t, withoutKafka.AuthenticationMethod)
 	require.Empty(t, withoutHTTP.AuthenticationMethod)
 
 	with := resolveForSpec(spec, true)
-	withKafka := with.Kafka().InCluster()
-	withHTTP := with.HTTP().InCluster()
-	withAdmin := with.Admin().InCluster()
-	withSchema := with.SchemaRegistry().InCluster()
+	withKafka := with.Kafka().Reserved
+	withHTTP := with.HTTP().Reserved
+	withAdmin := with.Admin().Reserved
+	withSchema := with.SchemaRegistry().Reserved
 	require.Equal(t, "sasl", withKafka.AuthenticationMethod)
-	require.Equal(t, "sasl", with.Kafka().External()[0].AuthenticationMethod)
+	require.Equal(t, "sasl", with.Kafka().Additional[0].AuthenticationMethod)
 	require.Equal(t, "http_basic", withHTTP.AuthenticationMethod)
 	// Admin and schema registry are never authenticated.
 	require.Empty(t, withAdmin.AuthenticationMethod)
@@ -216,14 +209,14 @@ func TestListenersForPoolAuthenticationMethods(t *testing.T) {
 func TestListenersForPoolExternalPortDefaulting(t *testing.T) {
 	listeners := resolveForSpec(poolSpec(true), false)
 
-	require.Equal(t, redpandav1alpha2.DefaultExternalAdminPort, listeners.Admin().External()[0].Port)
-	require.Equal(t, redpandav1alpha2.DefaultExternalKafkaPort, listeners.Kafka().External()[0].Port)
-	require.Equal(t, redpandav1alpha2.DefaultExternalHTTPPort, listeners.HTTP().External()[0].Port)
-	require.Equal(t, redpandav1alpha2.DefaultExternalSchemaRegistryPort, listeners.SchemaRegistry().External()[0].Port)
+	require.Equal(t, redpandav1alpha2.DefaultExternalAdminPort, listeners.Admin().Additional[0].Port)
+	require.Equal(t, redpandav1alpha2.DefaultExternalKafkaPort, listeners.Kafka().Additional[0].Port)
+	require.Equal(t, redpandav1alpha2.DefaultExternalHTTPPort, listeners.HTTP().Additional[0].Port)
+	require.Equal(t, redpandav1alpha2.DefaultExternalSchemaRegistryPort, listeners.SchemaRegistry().Additional[0].Port)
 
 	// An explicit port wins.
 	spec := poolSpec(true)
 	spec.Listeners.Kafka.External["default"].Port = ptr.To[int32](31234)
 	explicit := resolveForSpec(spec, false)
-	require.Equal(t, int32(31234), explicit.Kafka().External()[0].Port)
+	require.Equal(t, int32(31234), explicit.Kafka().Additional[0].Port)
 }

@@ -40,7 +40,7 @@ func TLSRoutes(state *RenderState, network *redpanda.Network) []*gatewayv1.TLSRo
 	var routes []*gatewayv1.TLSRoute
 
 	for _, api := range gateway.Listeners.InOrder([]redpanda.APIKind{redpanda.KafkaAPI, redpanda.HTTPAPI, redpanda.AdminAPI, redpanda.SchemaRegistryAPI}) {
-		for _, listener := range api.Listeners {
+		for _, listener := range api.Listeners() {
 			routes = append(routes, tlsRoutesForListener(fullname, state.Release.Namespace, labels, annotations, gw.ParentRefs, pods, api.Kind, listener, network.Route(api.Kind, listener.Name))...)
 		}
 	}

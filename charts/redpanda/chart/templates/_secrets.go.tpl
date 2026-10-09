@@ -166,12 +166,12 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- $internalAdvertiseAddress := (printf "%s.%s" "${SERVICE_NAME}" (get (fromJson (include "redpanda.InternalDomain" (dict "a" (list $state)))) "r")) -}}
-{{- $inCluster := (get (fromJson (include "_redpanda.API.InCluster" (dict "a" (list $api)))) "r") -}}
+{{- $reserved := $api.Reserved -}}
 {{- $snippet := (coalesce nil) -}}
-{{- $snippet = (concat (default (list) $snippet) (list `` (printf `LISTENER=%s` (quote (toJson (dict "name" "internal" "address" $internalAdvertiseAddress "port" ($inCluster.Port | int))))) (printf `rpk redpanda config --config "$CONFIG" set %s.%s[0] "$LISTENER"` (get (fromJson (include "_redpanda.APIKind.AdvertisedConfigSection" (dict "a" (list (deepCopy $api.Kind))))) "r") (get (fromJson (include "_redpanda.APIKind.AdvertisedConfigKey" (dict "a" (list (deepCopy $api.Kind))))) "r")))) -}}
+{{- $snippet = (concat (default (list) $snippet) (list `` (printf `LISTENER=%s` (quote (toJson (dict "name" "internal" "address" $internalAdvertiseAddress "port" ($reserved.Port | int))))) (printf `rpk redpanda config --config "$CONFIG" set %s.%s[0] "$LISTENER"` (get (fromJson (include "_redpanda.APIKind.AdvertisedConfigSection" (dict "a" (list (deepCopy $api.Kind))))) "r") (get (fromJson (include "_redpanda.APIKind.AdvertisedConfigKey" (dict "a" (list (deepCopy $api.Kind))))) "r")))) -}}
 {{- $arrayName := (upper (toString $api.Kind)) -}}
 {{- $externalCounter := (0 | int) -}}
-{{- range $_, $listener := (get (fromJson (include "_redpanda.API.External" (dict "a" (list $api)))) "r") -}}
+{{- range $_, $listener := $api.Additional -}}
 {{- $externalCounter = ((add $externalCounter (1 | int)) | int) -}}
 {{- $snippet = (concat (default (list) $snippet) (list `` (printf `ADVERTISED_%s_ADDRESSES=()` $arrayName))) -}}
 {{- range $_, $replicaIndex := (until (($sts.replicas | int) | int)) -}}

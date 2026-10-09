@@ -26,10 +26,9 @@ const (
 	// OSTrustStorePath is the container's own CA bundle.
 	OSTrustStorePath = "/etc/ssl/certs/ca-certificates.crt"
 
-	// InternalListenerName is the listener both renderers put in-cluster
-	// traffic on. A convention of theirs; Redpanda gives the name no special
-	// status.
-	InternalListenerName = "internal"
+	// ReservedListenerName is the name of [API.Reserved]. Redpanda gives the
+	// name no special status.
+	ReservedListenerName = "internal"
 
 	trustStoreVolumeName = "truststores"
 )
@@ -105,9 +104,9 @@ func (k APIKind) AdvertisedConfigSection() string {
 	return k.ConfigSection()
 }
 
-// InternalPortName is the in-cluster listener's port name, which both
-// renderers key off the API alone.
-func (k APIKind) InternalPortName() string {
+// ReservedPortName is the port name of [API.Reserved], which both renderers
+// key off the API alone.
+func (k APIKind) ReservedPortName() string {
 	if k == SchemaRegistryAPI {
 		return "schemaregistry"
 	}
@@ -169,30 +168,32 @@ func (l *Listeners) InOrder(kinds []APIKind) []*API {
 func (l *Listeners) ListenersInOrder(kinds []APIKind) []Listener {
 	var listeners []Listener
 	for _, api := range l.InOrder(kinds) {
-		listeners = append(listeners, api.Listeners...)
+		listeners = append(listeners, api.Listeners()...)
 	}
 	return listeners
 }
 
-// InCluster returns the in-cluster listener of each API.
-func (l *Listeners) InCluster() Listeners {
+// Reserved returns the [API.Reserved] listener of each API. It omits an API
+// that has no reserved listener.
+func (l *Listeners) Reserved() Listeners {
 	var apis []API
 	for _, kind := range slices.Sorted(maps.Keys(l.ByKind)) {
 		api := l.ByKind[kind]
-		apis = append(apis, API{Kind: kind, Listeners: []Listener{*api.InCluster()}})
+		if api.Reserved != nil {
+			apis = append(apis, API{Kind: kind, Reserved: api.Reserved})
+		}
 	}
 	return NewListeners(apis)
 }
 
-// External returns the external listeners of each API. It omits an API that
-// has no external listeners.
-func (l *Listeners) External() Listeners {
+// Additional returns the [API.Additional] listeners of each API. It omits an
+// API that has no additional listeners.
+func (l *Listeners) Additional() Listeners {
 	var apis []API
 	for _, kind := range slices.Sorted(maps.Keys(l.ByKind)) {
 		api := l.ByKind[kind]
-		external := api.External()
-		if len(external) > 0 {
-			apis = append(apis, API{Kind: kind, Listeners: external})
+		if len(api.Additional) > 0 {
+			apis = append(apis, API{Kind: kind, Additional: api.Additional})
 		}
 	}
 	return NewListeners(apis)
@@ -220,7 +221,7 @@ func (l *Listeners) ConfigSections() map[string]map[string]any {
 // rpcConfigEntries renders rpc_server and rpc_server_tls, which take one
 // listener as a bare map rather than the named list the *_api keys carry.
 func (l *Listeners) rpcConfigEntries() map[string]any {
-	listener := l.RPC().InCluster()
+	listener := l.RPC().Reserved
 
 	entries := map[string]any{
 		RPCAPI.ConfigKey(): map[string]any{
@@ -243,7 +244,7 @@ func (l *Listeners) ContainerPorts() []corev1.ContainerPort {
 	// NB: The container ports are part of the pod template. Thus, a change to
 	// this sequence restarts all brokers.
 	for _, api := range l.InOrder([]APIKind{AdminAPI, HTTPAPI, KafkaAPI, RPCAPI, SchemaRegistryAPI}) {
-		for _, listener := range api.Listeners {
+		for _, listener := range api.Listeners() {
 			ports = append(ports, corev1.ContainerPort{
 				Name:          listener.ContainerPortName,
 				ContainerPort: listener.Port,
@@ -260,7 +261,7 @@ func (l *Listeners) TrustStores() []*TrustStore {
 	var stores []*TrustStore
 
 	for _, api := range l.InOrder([]APIKind{KafkaAPI, AdminAPI, HTTPAPI, SchemaRegistryAPI, RPCAPI}) {
-		for _, listener := range api.Listeners {
+		for _, listener := range api.Listeners() {
 			if listener.TLS == nil {
 				continue
 			}
@@ -344,48 +345,31 @@ type API struct {
 	// API renders under derives from it.
 	Kind APIKind
 
-	// Listeners is every address this API binds, in redpanda.yaml order.
-	//
-	// One list, because Redpanda draws no in-cluster/external distinction.
-	// Where Kubernetes does, it is a derived view: [API.InCluster] and
-	// [API.External].
-	Listeners []Listener
+	// Reserved is the listener that the chart and the operator use: the probes,
+	// the sidecar, rpk, the clients of Redpanda itself, and the headless
+	// Service. Its name is [ReservedListenerName]. It is nil if the API binds no
+	// reserved listener.
+	Reserved *Listener
+
+	// Additional contains the other listeners, in redpanda.yaml order.
+	Additional []Listener
 }
 
-// InCluster is the listener named [InternalListenerName], which a broker's own
-// clients, the probes, the sidecar and the headless Service all reach it on.
-//
-// Nil when the API has none, which every render path dereferences unguarded.
-// Both resolvers always emit one; a panic here beats a zero-valued listener
-// rendering port 0.
-func (a *API) InCluster() *Listener {
-	for _, listener := range a.Listeners {
-		if listener.Name == InternalListenerName {
-			return &listener
-		}
+// Listeners returns every listener of the API, in redpanda.yaml order:
+// [API.Reserved], then [API.Additional].
+func (a *API) Listeners() []Listener {
+	var listeners []Listener
+	if a.Reserved != nil {
+		listeners = append(listeners, *a.Reserved)
 	}
-	return nil
+	return append(listeners, a.Additional...)
 }
 
-// External is every listener other than [API.InCluster].
-func (a *API) External() []Listener {
-	var external []Listener
-
-	for _, listener := range a.Listeners {
-		if listener.Name == InternalListenerName {
-			continue
-		}
-		external = append(external, listener)
-	}
-
-	return external
-}
-
-// RPKClientTLS is rpk's TLS type for this API, nil when its in-cluster
+// RPKClientTLS is rpk's TLS type for this API, nil when its reserved
 // listener serves none. Nil, not empty: callers disagree on what absent looks
 // like in YAML, so each normalises its own.
 func (a *API) RPKClientTLS() map[string]any {
-	listener := a.InCluster()
+	listener := a.Reserved
 
 	tls := listener.TLS
 	if tls == nil {
@@ -405,10 +389,10 @@ func (a *API) RPKClientTLS() map[string]any {
 }
 
 // BrokerClientTLS is the broker_tls block Redpanda's own clients use to reach
-// this API, nil when its in-cluster listener serves none. Distinct from
+// this API, nil when its reserved listener serves none. Distinct from
 // [API.RPKClientTLS]: rpk and Redpanda read different keys for it.
 func (a *API) BrokerClientTLS() map[string]any {
-	listener := a.InCluster()
+	listener := a.Reserved
 
 	tls := listener.TLS
 	if tls == nil {
@@ -432,10 +416,10 @@ func (a *API) BrokerClientTLS() map[string]any {
 	return cfg
 }
 
-// CurlFlags reaches this API's in-cluster listener, empty when it serves no
+// CurlFlags reaches the reserved listener of this API, empty when it serves no
 // TLS.
 func (a *API) CurlFlags() string {
-	listener := a.InCluster()
+	listener := a.Reserved
 
 	tls := listener.TLS
 	if tls == nil {
@@ -454,18 +438,16 @@ func (a *API) CurlFlags() string {
 // dial for replica. Differs from [Listener.AdvertisedPort], which the
 // configurator uses.
 //
-// NB: starts from the *in-cluster* port and guards on the external one being
+// NB: starts from the *reserved* port and guards on the additional one being
 // > 1, not > 0, so a port-less listener falls through.
 func (a *API) ProfileAdvertisedPort(replica int32) int32 {
-	inCluster := a.InCluster()
-	port := inCluster.Port
+	port := a.Reserved.Port
 
-	external := a.External()
-	if len(external) < 1 {
+	if len(a.Additional) < 1 {
 		return port
 	}
 
-	listener := external[0]
+	listener := a.Additional[0]
 
 	if listener.Port > 1 {
 		port = listener.Port
@@ -484,7 +466,7 @@ func (a *API) configEntries() map[string]any {
 	var listeners []map[string]any
 	var tlsEntries []map[string]any
 
-	for _, listener := range a.Listeners {
+	for _, listener := range a.Listeners() {
 		entry := map[string]any{
 			"name":    listener.Name,
 			"address": listener.Address,
@@ -515,7 +497,7 @@ func (a *API) configEntries() map[string]any {
 // listener list, plus the address it advertises for that entry.
 type Listener struct {
 	// Name is the listener's name in redpanda.yaml and the suffix of its port
-	// names. [InternalListenerName] for the in-cluster listener.
+	// names. [ReservedListenerName] for the reserved listener.
 	Name string
 
 	Port    int32
@@ -525,7 +507,7 @@ type Listener struct {
 	// Empty omits the key.
 	AuthenticationMethod string
 
-	// PortName and ContainerPortName are resolved by the caller: the in-cluster
+	// PortName and ContainerPortName are resolved by the caller: the reserved
 	// listener is named for its API alone ("schemaregistry") while the rest
 	// carry both ("schema-public"). Build them with [PortName] and
 	// [ContainerPortName].
