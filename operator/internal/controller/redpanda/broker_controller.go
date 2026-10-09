@@ -1089,6 +1089,9 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 		if apierrors.IsNotFound(err) {
 			pod = nil
 		}
+		if pod != nil && isOwnedByDifferentBroker(pod, broker) {
+			pod = nil
+		}
 
 		if broker.Status.BrokerID == nil {
 			resolved, found, err := r.resolveBroker(ctx, clusterName, broker, pod, podName)

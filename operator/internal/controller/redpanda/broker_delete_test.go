@@ -287,6 +287,55 @@ func TestReconcileDeleteTombstoneNeverDecommissionsReplacement(t *testing.T) {
 		"the replacement's pod must survive the tombstone's deletion untouched")
 }
 
+// TestReconcileDeleteForeignPodNeverFeedsResolution pins the deletion-path
+// counterpart of fetchState's foreign-pod filter — reconcileDelete fetches
+// the pod itself. A deleted Broker that is NOT DiskLost (so resolveBroker's
+// tombstone gate does not apply), carrying the decommission intent and no
+// recorded node_id, must not resolve an identity through a pod that another
+// Broker owns: the pod's IP is the successor's, and matching it would
+// decommission the successor.
+func TestReconcileDeleteForeignPodNeverFeedsResolution(t *testing.T) {
+	ctx := context.Background()
+	scheme := deleteTestScheme(t)
+	broker, _, _ := deleteTestBroker(t, scheme, nil)
+	broker.Spec.Decommission = true
+
+	successor, pod, _ := deleteTestBroker(t, scheme, nil)
+	successor.Name, successor.UID = "rp-broker-0-succ", "successor-uid"
+	pod.OwnerReferences = nil
+	require.NoError(t, controllerutil.SetControllerReference(successor, pod, scheme))
+	pod.Status.PodIP = "10.0.0.3"
+
+	// Node 3 is reachable only through the pod's IP: no membership entry
+	// carries the shared pod name, so the IP is the only evidence linking
+	// the deleted Broker to the successor's identity.
+	alive := ptr.To(true)
+	membership := []rpadmin.Broker{
+		{NodeID: 1, InternalRPCAddress: "rp-1.rp.test.svc.cluster.local", MembershipStatus: rpadmin.MembershipStatusActive, IsAlive: alive},
+		{NodeID: 3, InternalRPCAddress: "10.0.0.3:33145", MembershipStatus: rpadmin.MembershipStatusActive, IsAlive: alive},
+	}
+	var calls adminCalls
+	srv := fakeAdminServer(t, membership, &calls)
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithStatusSubresource(&redpandav1alpha2.Broker{}).
+		WithObjects(broker, successor, pod).Build()
+	r := &BrokerReconciler{ClientFactory: stubAdminFactory{url: srv.URL}}
+
+	_, err := r.reconcileDelete(ctx, logr.Discard(), c, "", broker, broker.PodName())
+	require.NoError(t, err)
+
+	require.Empty(t, calls.decommissions, "a foreign pod's IP must never resolve an identity to decommission")
+	require.Nil(t, broker.Status.BrokerID, "the successor's identity must never contaminate the deleted Broker")
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(broker), &b))
+	require.Empty(t, b.Finalizers, "the deletion must complete")
+	var keptPod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), &keptPod))
+	require.True(t, metav1.IsControlledBy(&keptPod, successor),
+		"the successor's pod must survive the deletion untouched")
+}
+
 // TestResolveBroker pins the tombstone rule of K8S-976: a DiskLost Broker
 // resolves only by its pinned node_id — never through its pod name or IP,
 // which belong to the replacement from network-index release onward.
