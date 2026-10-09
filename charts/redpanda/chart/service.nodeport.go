@@ -16,10 +16,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
-func NodePortService(state *RenderState) *corev1.Service {
+func NodePortService(state *RenderState, listeners *redpanda.Listeners) *corev1.Service {
 	if !state.Values.External.Enabled || !state.Values.External.Service.Enabled {
 		return nil
 	}
@@ -28,94 +29,7 @@ func NodePortService(state *RenderState) *corev1.Service {
 		return nil
 	}
 
-	var ports []corev1.ServicePort
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		if !listener.IsEnabled() {
-			continue
-		}
-		// The per-listener type is authoritative: a type: tlsroute listener
-		// is never exposed via NodePort, regardless of the global external.gateway
-		// state. validateGatewayListeners fails render if the global gateway config
-		// is missing/incomplete for such a listener.
-		if listener.IsGatewayListener() {
-			continue
-		}
-
-		nodePort := listener.Port
-		if len(listener.AdvertisedPorts) > 0 {
-			nodePort = listener.AdvertisedPorts[0]
-		}
-
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("admin-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-			NodePort: nodePort,
-		})
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		if !listener.IsEnabled() {
-			continue
-		}
-		if listener.IsGatewayListener() {
-			continue
-		}
-
-		nodePort := listener.Port
-		if len(listener.AdvertisedPorts) > 0 {
-			nodePort = listener.AdvertisedPorts[0]
-		}
-
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("kafka-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-			NodePort: nodePort,
-		})
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		if !listener.IsEnabled() {
-			continue
-		}
-		if listener.IsGatewayListener() {
-			continue
-		}
-
-		nodePort := listener.Port
-		if len(listener.AdvertisedPorts) > 0 {
-			nodePort = listener.AdvertisedPorts[0]
-		}
-
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("http-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-			NodePort: nodePort,
-		})
-	}
-
-	for name, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		if !listener.IsEnabled() {
-			continue
-		}
-		if listener.IsGatewayListener() {
-			continue
-		}
-
-		nodePort := listener.Port
-		if len(listener.AdvertisedPorts) > 0 {
-			nodePort = listener.AdvertisedPorts[0]
-		}
-
-		ports = append(ports, corev1.ServicePort{
-			Name:     fmt.Sprintf("schema-%s", name),
-			Protocol: corev1.ProtocolTCP,
-			Port:     listener.Port,
-			NodePort: nodePort,
-		})
-	}
+	ports := listeners.NodePortServicePorts()
 
 	// If all listeners opted into gateway mode, no NodePort service is needed.
 	if len(ports) == 0 {
