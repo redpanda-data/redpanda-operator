@@ -151,21 +151,7 @@ func renderResources(state *RenderState) []kube.Object {
 		manifests = append(manifests, obj)
 	}
 
-	for _, obj := range Roles(state) {
-		manifests = append(manifests, obj)
-	}
-
-	for _, obj := range ClusterRoles(state) {
-		manifests = append(manifests, obj)
-	}
-
-	for _, obj := range RoleBindings(state) {
-		manifests = append(manifests, obj)
-	}
-
-	for _, obj := range ClusterRoleBindings(state) {
-		manifests = append(manifests, obj)
-	}
+	manifests = append(manifests, RoleSet(state).Render()...)
 
 	for _, obj := range LoadBalancerServices(state) {
 		manifests = append(manifests, obj)
@@ -195,7 +181,6 @@ func renderResources(state *RenderState) []kube.Object {
 //
 //go:embed Chart.lock
 //go:embed Chart.yaml
-//go:embed files/*
 //go:embed templates/*
 //go:embed values.schema.json
 //go:embed values.yaml

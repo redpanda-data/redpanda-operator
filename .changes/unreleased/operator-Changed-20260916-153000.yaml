@@ -1,0 +1,14 @@
+project: operator
+kind: Changed
+body: |-
+    StretchCluster's per-pool sidecar `Role` no longer grants read on `pods` or
+    `apps/statefulsets`, and its rack-awareness `ClusterRole` no longer grants
+    `list` or `watch` on `nodes`. The operator's own `ClusterRole` drops the same
+    `nodes` verbs on multicluster installs.
+
+      The sidecar only ever ran the broker probe there, which talks to the Redpanda
+      Admin API rather than the Kubernetes one; the controllers that read those
+      resources are gated behind flags the StretchCluster renderer doesn't pass.
+      Rack awareness only ever `get`s the broker's own `Node`. The operator owns
+      these objects, so they narrow on upgrade with no action needed.
+time: 2026-09-16T15:30:00-04:00
