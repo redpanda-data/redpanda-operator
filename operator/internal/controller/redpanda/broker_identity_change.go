@@ -26,31 +26,25 @@ import (
 )
 
 // reconcileChangedIdentity consumes the IdentityChanged signal (K8S-977): a
-// same-node disk wipe keeps the Node object (no PV-affinity disk-loss proof)
-// and the repaired pod re-registers under a NEW node_id, leaving
-// Status.BrokerID's old id in the controller Raft group as a dead ghost
-// nobody would decommission.
+// same-node disk wipe keeps the Node object (no PV-affinity disk-loss
+// proof) and the repaired pod re-registers under a NEW node_id, leaving
+// Status.BrokerID's old id in the Raft group as a dead ghost nobody would
+// decommission.
 //
-// The remediation reuses the disk-loss machinery wholesale: convert this CR
-// into a RELEASED DiskLost tombstone and hand its pod over. The old id stays
-// pinned in Status.BrokerID; the pool machinery creates a replacement at the
-// freed index, the replacement adopts the released pod and the new identity,
-// and ReconcileDiskLostBrokers decommissions the pinned id once the
-// replacement has registered — behind executeDecommission's liveness guard,
-// which refuses to decommission an id that is provably alive (K8S-976).
-// ResourcesReleased is latched immediately because the handover IS the
-// release: unlike the dead-node flavor, the pod and PVCs must survive for
-// the replacement, so the dismantle path never runs.
+// Remediation reuses the disk-loss machinery wholesale: convert this CR
+// into a RELEASED DiskLost tombstone and hand its pod over. The pool
+// machinery replaces the CR at the freed index; the replacement adopts the
+// released pod and the new identity; ReconcileDiskLostBrokers decommissions
+// the pinned old id once the replacement registers — behind
+// executeDecommission's liveness guard (K8S-976). ResourcesReleased is
+// latched immediately: the handover IS the release, and unlike the
+// dead-node flavor the pod and PVCs must survive, so dismantle never runs.
 //
-// A wrong conversion costs an unnecessary broker replacement, not data: the
-// destructive call stays gated downstream. Conversion still requires, in
-// order: the pod's current registration is active and alive (a dead match
-// may be a crash-looping pod, not a settled takeover); an owning cluster
-// whose pool machinery will actually create the replacement; and the exact
-// conflict having held for MarkDiskLostAfter, clocked by the
-// BrokerRegistered condition — any flap rewrites the message, which bumps
-// LastTransitionTime and restarts the window. Anything short of that parks
-// the CR in Stuck as before.
+// A wrong conversion costs an unnecessary replacement, not data. It still
+// requires an active-and-alive new registration (a dead match may be a
+// crash loop, not a settled takeover), an owning cluster to create the
+// replacement, and the exact conflict held for MarkDiskLostAfter, clocked
+// by the BrokerRegistered condition. Otherwise park in Stuck as before.
 func (r *BrokerReconciler) reconcileChangedIdentity(ctx context.Context, state *brokerReconciliationState, k8sCluster cluster.Cluster, resolved *rpadmin.Broker) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 	broker := state.broker

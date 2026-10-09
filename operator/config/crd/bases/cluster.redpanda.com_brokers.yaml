@@ -8948,23 +8948,32 @@ spec:
                 type: array
               diskLost:
                 description: |-
-                  DiskLost, once set, marks this Broker as a dead incarnation: its pod
-                  was provably unschedulable because its storage is pinned to a
-                  Kubernetes node that no longer exists. Terminal and never cleared —
-                  the CR lingers only as the decommission record for its node_id while
-                  a replacement Broker CR takes over the network index.
+                  DiskLost, once set, marks this Broker as a dead incarnation whose
+                  data directory is gone: either its pod was provably unschedulable
+                  because its storage is pinned to a Kubernetes node that no longer
+                  exists, or its pod re-registered under a new node_id after a
+                  same-node disk wipe. Terminal and never cleared — the CR lingers only
+                  as the decommission record for its node_id while a replacement Broker
+                  CR takes over the network index.
                 properties:
                   at:
-                    description: At is when the dead-node proof was accepted — the
-                      point of no return.
+                    description: |-
+                      Time at which the operator accepted the proof that this broker's data
+                      directory is gone. This is the point of no return: from then on the
+                      broker is never restored, only decommissioned and replaced by a new
+                      Broker. The timestamp is never cleared.
                     format: date-time
                     type: string
                   resourcesReleased:
                     description: |-
-                      ResourcesReleased is set once the pod and every PVC were confirmed
-                      gone on an uncached read; only from then on does the network index
-                      stop being occupied by this CR and a replacement may be created.
-                      Monotonic: never unset.
+                      Whether this broker's networkIndex, and the pod and PVC names that go
+                      with it, are free for a replacement Broker to claim. False, the
+                      default, means a replacement must wait. It becomes true either when the
+                      pod and every PVC are confirmed gone (the disk was lost with its
+                      Kubernetes node), or when the running pod is handed over for the
+                      replacement to adopt (the broker re-registered under a new node_id), in
+                      which case the pod and PVCs keep running under the replacement. It is
+                      never set back to false.
                     type: boolean
                 type: object
               phase:
