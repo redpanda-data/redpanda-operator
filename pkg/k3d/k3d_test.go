@@ -11,6 +11,7 @@ package k3d
 
 import (
 	"fmt"
+	"os/exec"
 	"sync"
 	"testing"
 
@@ -57,6 +58,23 @@ func TestIntegrationMultiInstance(t *testing.T) {
 	}
 
 	assert.NoError(t, errors.Join(errs...))
+}
+
+func TestIntegrationImportRepullsMissingImage(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+
+	// Unused by any other test, so removing it from the host can't break a
+	// concurrent import.
+	const image = "busybox:1.37.0"
+
+	name := "import-repull"
+	cluster, err := GetOrCreate(name, WithAgents(0))
+	t.Cleanup(func() { forceCleanup(name) })
+	require.NoError(t, err)
+
+	// k3d alone fails this with "no valid images specified".
+	_ = exec.Command("docker", "image", "rm", "--force", image).Run()
+	require.NoError(t, cluster.ImportImage(image))
 }
 
 func TestClusterCreateArgs(t *testing.T) {
