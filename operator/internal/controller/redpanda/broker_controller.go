@@ -725,7 +725,7 @@ func (r *BrokerReconciler) reconcilePodMetadata(ctx context.Context, state *brok
 	return ctrl.Result{}, nil
 }
 
-func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, state *brokerReconciliationState, _ cluster.Cluster) (ctrl.Result, error) {
+func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, state *brokerReconciliationState, k8sCluster cluster.Cluster) (ctrl.Result, error) {
 	broker := state.broker
 	if broker.Spec.Decommission {
 		return ctrl.Result{}, nil
@@ -763,12 +763,7 @@ func (r *BrokerReconciler) reconcileBrokerRegistration(ctx context.Context, stat
 		broker.Status.BrokerID = currentID
 	}
 	if *currentID != *broker.Status.BrokerID {
-		state.registrationConflict = fmt.Sprintf(
-			"broker re-registered with node_id %d, expected %d", *currentID, *broker.Status.BrokerID)
-		state.phase = redpandav1alpha2.BrokerPhaseStuck
-		l.Error(fmt.Errorf("node_id changed from %d to %d", *broker.Status.BrokerID, *currentID),
-			"broker identity changed — not disabling maintenance mode")
-		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
+		return r.reconcileChangedIdentity(ctx, state, k8sCluster, resolved)
 	}
 
 	state.registrationVerified = true
