@@ -430,6 +430,13 @@ func (r *BrokerReconciler) reconcilePod(ctx context.Context, state *brokerReconc
 		return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 	}
 	if ownerRef == nil {
+		if broker.IsDiskLost() {
+			// A tombstone never (re)owns a pod: from release onward the pod
+			// at its name belongs to the slot's replacement, and re-owning
+			// it would hand the decommission-completion path a live broker
+			// to delete. Zero result: the decommission must still run.
+			return ctrl.Result{}, nil
+		}
 		if adoptionBarredByRollback(ctx, k8sClient, broker) {
 			l.Info("owning cluster left broker mode; leaving orphaned pod for the StatefulSet to adopt", "name", podName)
 			state.phase = redpandav1alpha2.BrokerPhasePending
@@ -817,9 +824,21 @@ func (r *BrokerReconciler) reconcileDecommission(ctx context.Context, state *bro
 		podName := broker.PodName()
 
 		if state.pod != nil && metav1.IsControlledBy(state.pod, broker) {
-			l.Info("deleting pod after decommission", "name", podName)
-			if err := k8sClient.Delete(ctx, state.pod); err != nil && !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
+			// A released tombstone's pod is the slot's live replacement
+			// broker (owned here only via pre-guard adoption or an operator
+			// predating the guard): release it instead of killing it. An
+			// unreleased incarnation's pod is its own and dies with the
+			// decommission.
+			if broker.DiskLostReleased() {
+				l.Info("releasing pod owned by a released tombstone", "name", podName)
+				if err := stripPodOwnerRef(ctx, k8sClient, broker, podName); err != nil {
+					return ctrl.Result{}, err
+				}
+			} else {
+				l.Info("deleting pod after decommission", "name", podName)
+				if err := k8sClient.Delete(ctx, state.pod); err != nil && !apierrors.IsNotFound(err) {
+					return ctrl.Result{}, err
+				}
 			}
 		}
 		if broker.IsDiskLost() {
@@ -1117,9 +1136,19 @@ func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k
 		}
 
 		if pod != nil && metav1.IsControlledBy(pod, broker) {
-			l.Info("deleting pod after decommission", "name", podName)
-			if err := k8sClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
-				return ctrl.Result{}, err
+			// Same released-tombstone handover rule as the completion path
+			// in reconcileDecommission; stripping also keeps the garbage
+			// collector from cascading the CR's deletion into the pod.
+			if broker.DiskLostReleased() {
+				l.Info("releasing pod owned by a released tombstone", "name", podName)
+				if err := stripPodOwnerRef(ctx, k8sClient, broker, podName); err != nil {
+					return ctrl.Result{}, err
+				}
+			} else {
+				l.Info("deleting pod after decommission", "name", podName)
+				if err := k8sClient.Delete(ctx, pod); err != nil && !apierrors.IsNotFound(err) {
+					return ctrl.Result{}, err
+				}
 			}
 		}
 

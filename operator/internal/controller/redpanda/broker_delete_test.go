@@ -498,3 +498,40 @@ func fakeAdminServer(t *testing.T, brokers []rpadmin.Broker, calls *adminCalls) 
 	t.Cleanup(srv.Close)
 	return srv
 }
+
+// TestReconcileDeleteReleasedTombstoneReleasesOwnedPod pins the deletion-path
+// side of the handover invariant: a released tombstone that still owns the
+// pod at its name (pre-guard adoption, or an operator predating the guard)
+// must release it on deletion — never delete it, and never leave an owner
+// ref for the garbage collector to cascade through — because that pod is the
+// slot's live replacement broker.
+func TestReconcileDeleteReleasedTombstoneReleasesOwnedPod(t *testing.T) {
+	ctx := context.Background()
+	scheme := deleteTestScheme(t)
+	tombstone, pod, _ := deleteTestBroker(t, scheme, nil)
+	tombstone.Spec.Decommission = true
+	tombstone.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now(), ResourcesReleased: true}
+	tombstone.Status.Phase = redpandav1alpha2.BrokerPhaseDecommissioned
+
+	var calls adminCalls
+	srv := fakeAdminServer(t, replacementMembership(tombstone.PodName()), &calls)
+
+	c := fake.NewClientBuilder().WithScheme(scheme).
+		WithStatusSubresource(&redpandav1alpha2.Broker{}).
+		WithObjects(tombstone, pod).Build()
+	r := &BrokerReconciler{ClientFactory: stubAdminFactory{url: srv.URL}}
+
+	_, err := r.reconcileDelete(ctx, logr.Discard(), c, "", tombstone, tombstone.PodName())
+	require.NoError(t, err)
+
+	require.Empty(t, calls.decommissions)
+	var b redpandav1alpha2.Broker
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(tombstone), &b))
+	require.Empty(t, b.Finalizers, "the tombstone's deletion must complete")
+
+	var got corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(pod), &got),
+		"the pod is the live replacement broker; deletion must never remove it")
+	require.Nil(t, metav1.GetControllerOf(&got),
+		"the pod must be released so the CR's deletion cannot cascade to it")
+}
