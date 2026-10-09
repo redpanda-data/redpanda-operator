@@ -4138,6 +4138,10 @@ SchemaStatus defines the observed state of a Redpanda schema.
 | *`conditions`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#condition-v1-meta[$$Condition$$] array__ | Conditions holds the conditions for the Redpanda schema. + |  | 
 | *`versions`* __integer array__ | Versions shows the versions of a given schema + |  | 
 | *`schemaHash`* __string__ | SchemaHash is the hashed value of the schema synced to the cluster + |  | 
+| *`schemaId`* __integer__ | SchemaID is the ID of the latest schema version synced to the cluster. +
+When the subject disappears from the Schema Registry, for example after the +
+cluster's data was lost, the schema is registered again under this ID so that +
+clients holding cached IDs keep working. + |  | 
 |===
 
 
