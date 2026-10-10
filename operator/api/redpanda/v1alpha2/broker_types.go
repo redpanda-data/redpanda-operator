@@ -27,11 +27,13 @@ const (
 	BrokerPhaseDecommissioning BrokerPhase = "Decommissioning"
 	BrokerPhaseDecommissioned  BrokerPhase = "Decommissioned"
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
-	// BrokerPhaseDiskLost marks a dead incarnation: the broker's pod was
-	// provably unschedulable because its storage is pinned to a Kubernetes
-	// node that no longer exists. Terminal — the CR lingers only as the
-	// decommission record for its node_id while a replacement Broker CR
-	// takes over the network index. See BrokerStatus.DiskLost.
+	// BrokerPhaseDiskLost marks a dead incarnation whose data directory is
+	// gone: either the broker's pod was provably unschedulable because its
+	// storage is pinned to a Kubernetes node that no longer exists, or the
+	// pod re-registered under a new node_id after a same-node disk wipe.
+	// Terminal — the CR lingers only as the decommission record for its
+	// node_id while a replacement Broker CR takes over the network index.
+	// See BrokerStatus.DiskLost.
 	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
@@ -204,11 +206,13 @@ type BrokerStatus struct {
 	// the broker registers with the cluster. Nil until discovered.
 	// +optional
 	BrokerID *int32 `json:"brokerID,omitempty"`
-	// DiskLost, once set, marks this Broker as a dead incarnation: its pod
-	// was provably unschedulable because its storage is pinned to a
-	// Kubernetes node that no longer exists. Terminal and never cleared —
-	// the CR lingers only as the decommission record for its node_id while
-	// a replacement Broker CR takes over the network index.
+	// DiskLost, once set, marks this Broker as a dead incarnation whose
+	// data directory is gone: either its pod was provably unschedulable
+	// because its storage is pinned to a Kubernetes node that no longer
+	// exists, or its pod re-registered under a new node_id after a
+	// same-node disk wipe. Terminal and never cleared — the CR lingers only
+	// as the decommission record for its node_id while a replacement Broker
+	// CR takes over the network index.
 	// +optional
 	DiskLost *DiskLostStatus `json:"diskLost,omitempty"`
 	// PodName is the name of the pod managed by this Broker CR.
@@ -224,13 +228,20 @@ type BrokerStatus struct {
 
 // DiskLostStatus records the two durable checkpoints of disk-loss handling.
 type DiskLostStatus struct {
-	// At is when the dead-node proof was accepted — the point of no return.
+	// Time at which the operator accepted the proof that this broker's data
+	// directory is gone. This is the point of no return: from then on the
+	// broker is never restored, only decommissioned and replaced by a new
+	// Broker. The timestamp is never cleared.
 	// +optional
 	At metav1.Time `json:"at,omitempty"`
-	// ResourcesReleased is set once the pod and every PVC were confirmed
-	// gone on an uncached read; only from then on does the network index
-	// stop being occupied by this CR and a replacement may be created.
-	// Monotonic: never unset.
+	// Whether this broker's networkIndex, and the pod and PVC names that go
+	// with it, are free for a replacement Broker to claim. False, the
+	// default, means a replacement must wait. It becomes true either when the
+	// pod and every PVC are confirmed gone (the disk was lost with its
+	// Kubernetes node), or when the running pod is handed over for the
+	// replacement to adopt (the broker re-registered under a new node_id), in
+	// which case the pod and PVCs keep running under the replacement. It is
+	// never set back to false.
 	// +optional
 	ResourcesReleased bool `json:"resourcesReleased,omitempty"`
 }

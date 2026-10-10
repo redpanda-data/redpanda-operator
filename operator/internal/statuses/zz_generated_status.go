@@ -922,8 +922,10 @@ const (
 	// BrokerBrokerRegisteredReasonIdentityChanged - This reason is used with the
 	// "BrokerRegistered" condition when it evaluates to False because the broker's
 	// pod re-registered under a different node_id than previously recorded — its
-	// data directory did not survive. This requires an operator decision (replace
-	// the broker) rather than silent adoption of the new identity.
+	// data directory did not survive. Once the conflict has held for the disk-loss
+	// hold window, the Broker is converted into a DiskLost tombstone and replaced;
+	// until then, or when the supersession cannot be verified, the Broker parks in
+	// the Stuck phase for an operator decision.
 	BrokerBrokerRegisteredReasonIdentityChanged BrokerBrokerRegisteredCondition = "IdentityChanged"
 	// BrokerBrokerRegisteredReasonError - This reason is used when a broker has
 	// only been partially reconciled and we have early returned due to a retryable

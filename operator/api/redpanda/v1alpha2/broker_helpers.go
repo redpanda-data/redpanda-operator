@@ -69,16 +69,18 @@ func (b *Broker) PodOutdated(pod *corev1.Pod) bool {
 	return false
 }
 
-// IsDiskLost reports whether this Broker is a dead incarnation: its
-// disk was lost with its node and the CR remains only as the decommission
-// record for its node_id (see BrokerStatus.DiskLost).
+// IsDiskLost reports whether this Broker is a dead incarnation: its data
+// directory is gone (lost with its node, or wiped under a broker that then
+// re-registered as a new identity) and the CR remains only as the
+// decommission record for its node_id (see BrokerStatus.DiskLost).
 func (b *Broker) IsDiskLost() bool {
 	return b.Status.DiskLost != nil
 }
 
 // DiskLostReleased reports whether a dead incarnation has released its
-// network index: its pod and PVCs are confirmed gone, so a replacement
-// Broker may safely be created under the same pod and PVC names.
+// network index to a replacement Broker: its pod and PVCs are either
+// confirmed gone (dead node) or handed over for the replacement to adopt
+// (identity change) — either way they are no longer this CR's to touch.
 func (b *Broker) DiskLostReleased() bool {
 	return b.Status.DiskLost != nil && b.Status.DiskLost.ResourcesReleased
 }
