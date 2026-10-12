@@ -438,8 +438,9 @@ resources:
   # For details,
   # see the [Pod resources documentation](https://docs.redpanda.com/docs/manage/kubernetes/manage-resources/#configure-memory-resources).
   memory:
-    # -- Enables memory locking.
-    # For production, set to `true`.
+    # -- Enables memory locking (the `--lock-memory` Redpanda flag), which prevents the operating system
+    # from swapping Redpanda's memory to disk. Applies only when `resources.requests` and
+    # `resources.limits` are not set. On nodes without swap, rpk does not enable memory locking.
     # enable_memory_locking: false
 
     # -- Memory limits and requests for each Redpanda broker container.

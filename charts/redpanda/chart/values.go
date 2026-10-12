@@ -377,8 +377,9 @@ type RedpandaResources struct {
 	// see the [Pod resources documentation](https://docs.redpanda.com/docs/manage/kubernetes/manage-resources/#configure-memory-resources).
 	//nolint:laconiccomments
 	Memory struct {
-		// Enables memory locking.
-		// For production, set to `true`.
+		// Enables memory locking (the `--lock-memory` Redpanda flag), which prevents the operating system
+		// from swapping Redpanda's memory to disk. Applies only when `resources.requests` and
+		// `resources.limits` are not set. On nodes without swap, rpk does not enable memory locking.
 		EnableMemoryLocking *bool `json:"enable_memory_locking"`
 		// It is recommended to have at least 2Gi of memory per core for the Redpanda binary.
 		// This memory is taken from the total memory given to each container.
