@@ -115,12 +115,13 @@ type KafkaSASLGSSAPI struct {
 	Username           string       `json:"username"`
 	Password           *ValueSource `json:"password,omitempty"`
 	// Deprecated: use `password` instead
-	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
-	Realm              string        `json:"realm"`
-
-	// EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
-	// It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
-	// FAST provides increased resistance to passive password guessing attacks.
+	// Enables Kerberos FAST (Flexible Authentication Secure Tunneling)
+	// pre-authentication, which tunnels the exchange with the key distribution
+	// center (KDC) inside an armored channel and so resists passive password
+	// guessing attacks. Set it to `false` when the KDC does not support FAST.
+	// Defaults to `true`.
+	// +optional
+	// +kubebuilder:default=true
 	EnableFast bool `json:"enableFast"`
 }
 
