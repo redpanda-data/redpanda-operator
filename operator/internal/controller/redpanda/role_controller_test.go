@@ -19,18 +19,19 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+func testRoleReconcile(t *testing.T, cfg *rest.Config) { // nolint:funlen // These tests have clear subtests.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -49,7 +50,7 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 
 	baseRole := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 		},
 		Spec: redpandav1alpha2.RoleSpec{
 			ClusterSource: environment.ClusterSourceValid,
@@ -224,12 +225,12 @@ func TestRoleReconcile(t *testing.T) { // nolint:funlen // These tests have clea
 	}
 }
 
-func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive test coverage
+func testRolePrincipalsAndACLs(t *testing.T, cfg *rest.Config) { // nolint:funlen // Comprehensive test coverage
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
@@ -311,7 +312,7 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 		t.Run(tt.name, func(t *testing.T) {
 			role := &redpandav1alpha2.RedpandaRole{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: metav1.NamespaceDefault,
+					Namespace: environment.Namespace,
 					Name:      "test-role-" + strconv.Itoa(int(time.Now().UnixNano())),
 				},
 				Spec: redpandav1alpha2.RoleSpec{
@@ -373,18 +374,18 @@ func TestRolePrincipalsAndACLs(t *testing.T) { // nolint:funlen // Comprehensive
 	}
 }
 
-func TestRoleLifecycleTransitions(t *testing.T) {
+func testRoleLifecycleTransitions(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
 	role := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 			Name:      "lifecycle-role-" + strconv.Itoa(int(time.Now().UnixNano())),
 		},
 		Spec: redpandav1alpha2.RoleSpec{
@@ -552,19 +553,19 @@ func TestRoleLifecycleTransitions(t *testing.T) {
 	})
 }
 
-func TestRoleMembershipReconciliation(t *testing.T) {
+func testRoleMembershipReconciliation(t *testing.T, cfg *rest.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
 	timeoutOption := kgo.RetryTimeout(1 * time.Millisecond)
-	environment := InitializeResourceReconcilerTest(t, ctx, &RoleReconciler{
+	environment := InitializeResourceReconcilerTest(t, ctx, cfg, &RoleReconciler{
 		extraOptions: []kgo.Opt{timeoutOption},
 	})
 
 	// Create a role with initial members
 	role := &redpandav1alpha2.RedpandaRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceDefault,
+			Namespace: environment.Namespace,
 			Name:      "membership-role-" + strconv.Itoa(int(time.Now().UnixNano())),
 		},
 		Spec: redpandav1alpha2.RoleSpec{

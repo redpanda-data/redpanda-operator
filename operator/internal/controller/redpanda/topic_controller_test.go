@@ -40,6 +40,8 @@ import (
 )
 
 func TestReconcile(t *testing.T) { // nolint:funlen // These tests have clear subtests.
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
 
@@ -1114,6 +1116,8 @@ func TestGenerateConf(t *testing.T) {
 }
 
 func TestUnsetStorageMode(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 

@@ -20,11 +20,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/redpanda"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubectl/pkg/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 func getTestImage() string {
@@ -35,19 +32,7 @@ func getTestImage() string {
 
 func TestClient(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = redpandav1alpha2.Install(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+	t.Cleanup(cancel)
 
 	test := func(t *testing.T, container *redpanda.Container) {
 		admin, err := container.AdminAPIAddress(ctx)
@@ -131,6 +116,8 @@ func TestClient(t *testing.T) {
 	}
 
 	t.Run("default test image", func(t *testing.T) {
+		t.Parallel()
+
 		container, err := redpanda.Run(ctx, getTestImage(),
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
@@ -147,6 +134,8 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("v24.1.1 release", func(t *testing.T) {
+		t.Parallel()
+
 		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v24.1.1",
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
@@ -163,6 +152,8 @@ func TestClient(t *testing.T) {
 	})
 
 	t.Run("v25.2.1 latest release", func(t *testing.T) {
+		t.Parallel()
+
 		container, err := redpanda.Run(ctx, "docker.redpanda.com/redpandadata/redpanda:v25.2.1",
 			redpanda.WithEnableKafkaAuthorization(),
 			redpanda.WithEnableSASL(),
