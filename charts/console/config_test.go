@@ -817,6 +817,49 @@ func TestStaticConfig(t *testing.T) {
 			},
 		},
 		{
+			Name: "kafka with SASL GSSAPI and FAST enabled",
+			In: ir.StaticConfigurationSource{
+				Kafka: &ir.KafkaAPISpec{
+					Brokers: []string{"broker:9092"},
+					SASL: &ir.KafkaSASL{
+						Mechanism: "GSSAPI",
+						GSSAPIConfig: &ir.KafkaSASLGSSAPI{
+							AuthType:           "USER_AUTH",
+							KerberosConfigPath: "/etc/krb5.conf",
+							ServiceName:        "redpanda",
+							Username:           "console",
+							Realm:              "EXAMPLE.COM",
+							Password:           &ir.ValueSource{Inline: ptr.To("kerberos-password")},
+							EnableFast:         true,
+						},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Kafka: &PartialKafka{
+						Brokers: []string{"broker:9092"},
+						SASL: &PartialKafkaSASL{
+							Enabled:   ptr.To(true),
+							Username:  ptr.To(""),
+							Mechanism: ptr.To("GSSAPI"),
+							GSSAPIConfig: &PartialKafkaSASLGSSAPI{
+								AuthType:           ptr.To("USER_AUTH"),
+								KeyTabPath:         ptr.To(""),
+								KerberosConfigPath: ptr.To("/etc/krb5.conf"),
+								ServiceName:        ptr.To("redpanda"),
+								Username:           ptr.To("console"),
+								Realm:              ptr.To("EXAMPLE.COM"),
+								EnableFast:         ptr.To(true),
+							},
+						},
+					},
+					Redpanda: &PartialRedpanda{},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "KAFKA_SASL_GSSAPI_PASSWORD", Value: "kerberos-password"}},
+			},
+		},
+		{
 			Name: "kafka with SASL AWS_MSK_IAM",
 			In: ir.StaticConfigurationSource{
 				Kafka: &ir.KafkaAPISpec{
@@ -894,15 +937,67 @@ func TestStaticConfig(t *testing.T) {
 				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
 					Redpanda: &PartialRedpanda{
 						AdminAPI: &PartialRedpandaAdminAPI{
-							Enabled: ptr.To(true),
-							URLs:    []string{"http://admin:9644"},
-							Authentication: &PartialHTTPAuthentication{
-								BasicAuth: &PartialHTTPBasicAuth{Username: ptr.To("")},
-							},
+							Enabled:        ptr.To(true),
+							URLs:           []string{"http://admin:9644"},
+							Authentication: &PartialHTTPAuthentication{},
 						},
 					},
 				}),
 				ExtraEnv: []corev1.EnvVar{{Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", Value: "admin-token"}},
+			},
+		},
+		{
+			// Console picks basic auth whenever a username is set, so a token
+			// must not come with a username, and a username without a password
+			// must not suppress the token.
+			Name: "admin API with a bearer token and a username",
+			In: ir.StaticConfigurationSource{
+				Admin: &ir.AdminAPISpec{
+					URLs: []string{"http://admin:9644"},
+					Auth: &ir.AdminAuth{
+						Username:  "ignored-user",
+						AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Redpanda: &PartialRedpanda{
+						AdminAPI: &PartialRedpandaAdminAPI{
+							Enabled:        ptr.To(true),
+							URLs:           []string{"http://admin:9644"},
+							Authentication: &PartialHTTPAuthentication{},
+						},
+					},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", Value: "admin-token"}},
+			},
+		},
+		{
+			Name: "admin API with a password and a bearer token",
+			In: ir.StaticConfigurationSource{
+				Admin: &ir.AdminAPISpec{
+					URLs: []string{"http://admin:9644"},
+					Auth: &ir.AdminAuth{
+						Username:  "admin-user",
+						Password:  &ir.ValueSource{Inline: ptr.To("admin-password")},
+						AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Redpanda: &PartialRedpanda{
+						AdminAPI: &PartialRedpandaAdminAPI{
+							Enabled: ptr.To(true),
+							URLs:    []string{"http://admin:9644"},
+							Authentication: &PartialHTTPAuthentication{
+								BasicAuth: &PartialHTTPBasicAuth{Username: ptr.To("admin-user")},
+							},
+						},
+					},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", Value: "admin-password"}},
 			},
 		},
 	}

@@ -89,15 +89,22 @@ func (m *configMapper) configureAdmin(admin *ir.AdminAPISpec) *PartialRedpandaAd
 		cfg.TLS = tls
 	}
 
-	if admin.Auth != nil {
-		cfg.Authentication = &PartialHTTPAuthentication{
-			BasicAuth: &PartialHTTPBasicAuth{
-				Username: &admin.Auth.Username,
-			},
+	// Console uses basic auth whenever a username is set and a bearer token
+	// only otherwise, so only one of the two is configured, with the same
+	// precedence as the operator's own client: a password wins over a token.
+	if auth := admin.Auth; auth != nil {
+		if auth.Password != nil {
+			cfg.Authentication = &PartialHTTPAuthentication{
+				BasicAuth: &PartialHTTPBasicAuth{
+					Username: &auth.Username,
+				},
+			}
+			m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", auth.Password)
 		}
-
-		m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", admin.Auth.Password)
-		m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", admin.Auth.AuthToken)
+		if auth.Password == nil && auth.AuthToken != nil {
+			cfg.Authentication = &PartialHTTPAuthentication{}
+			m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", auth.AuthToken)
+		}
 	}
 
 	return cfg
@@ -149,8 +156,8 @@ func (m *configMapper) configureKafkaSASL(sasl *ir.KafkaSASL) *PartialKafkaSASL 
 			ServiceName:        &gssapi.ServiceName,
 			Username:           &gssapi.Username,
 			Realm:              &gssapi.Realm,
-			// Console defaults FAST to on, the operator's own client to off,
-			// so pass the field through explicitly to keep the two in step.
+			// The CRD defaults enableFast to true, so the value here is what
+			// the user set (or that default) and is passed through as is.
 			EnableFast: ptr.To(gssapi.EnableFast),
 		}
 		m.addEnv("KAFKA_SASL_GSSAPI_PASSWORD", gssapi.Password)
