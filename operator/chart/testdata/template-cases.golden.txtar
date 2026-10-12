@@ -141,6 +141,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -900,6 +908,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -1470,6 +1486,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -2257,6 +2281,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -2847,6 +2879,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -3620,6 +3660,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -4196,6 +4244,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -5172,6 +5228,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -6011,6 +6075,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -6784,6 +6856,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -7358,6 +7438,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -8170,6 +8258,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -8837,6 +8933,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -9695,6 +9799,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -10395,6 +10507,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -11184,6 +11304,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -11761,6 +11889,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -12540,6 +12676,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -13119,6 +13263,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -13930,6 +14082,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -14551,6 +14711,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -15166,6 +15334,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -15757,6 +15933,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -16542,6 +16726,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -17137,6 +17329,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -18127,6 +18327,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -18872,6 +19080,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -19535,6 +19751,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -20100,6 +20324,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -20887,6 +21119,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -21472,6 +21712,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -22251,6 +22499,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -23300,6 +23556,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -24293,6 +24557,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -24935,6 +25207,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -25754,6 +26034,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -26331,6 +26619,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -27266,6 +27562,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -28385,6 +28689,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -29313,6 +29625,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -29892,6 +30212,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -31066,6 +31394,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -31908,6 +32244,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -32699,6 +33043,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -33294,6 +33646,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -34391,6 +34751,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -35644,6 +36012,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -36621,6 +36997,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -38012,6 +38396,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -39017,6 +39409,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -39730,6 +40130,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -40721,6 +41129,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -41468,6 +41884,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -42488,6 +42912,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -44178,6 +44610,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -45352,6 +45792,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -46368,6 +46816,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -47176,6 +47632,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -48233,6 +48697,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -49476,6 +49948,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -52275,6 +52755,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -53618,6 +54106,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -56566,6 +57062,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -57649,6 +58153,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -61180,6 +61692,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -62503,6 +63023,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -63647,6 +64175,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -65007,6 +65543,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -67310,6 +67854,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -68383,6 +68935,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -70597,6 +71157,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -71908,6 +72476,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -73221,6 +73797,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -74344,6 +74928,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -75765,6 +76357,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -77130,6 +77730,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -78716,6 +79324,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -79983,6 +80599,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -81496,6 +82120,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -82297,6 +82929,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -82965,6 +83605,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -83767,6 +84415,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -84432,6 +85088,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -85191,6 +85855,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -85761,6 +86433,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -86537,6 +87217,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -87126,6 +87814,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -87883,6 +88579,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -88455,6 +89159,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -89213,6 +89925,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -89783,6 +90503,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -90542,6 +91270,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -91112,6 +91848,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -91879,6 +92623,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -92449,6 +93201,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -93216,6 +93976,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -93786,6 +94554,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -94579,6 +95355,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -95149,6 +95933,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -95944,6 +96736,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -96514,6 +97314,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -97309,6 +98117,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -97879,6 +98695,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -98673,6 +99497,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -99243,6 +100075,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -100075,6 +100915,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -100751,6 +101599,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -101641,6 +102497,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -102211,6 +103075,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -102977,6 +103849,14 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors
@@ -103553,6 +104433,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:
@@ -104359,6 +105247,14 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.redpanda.com
+  resources:
+  - nodepools
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - monitoring.coreos.com
   resources:

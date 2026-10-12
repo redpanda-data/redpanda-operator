@@ -1,0 +1,5 @@
+project: operator
+kind: Fixed
+body: |-
+    A `Console` that references a Redpanda cluster through `clusterRef` now connects to the cluster's NodePool brokers. Previously Console counted only the brokers of the cluster's own StatefulSet, so once a NodePool migration drained it to `statefulset.replicas: 0`, Console rendered no Kafka brokers or Schema Registry URLs and crash-looped with `you must specify at least one broker to connect to`. With `--enable-v2-nodepools`, Console now includes every NodePool bound to the cluster and re-renders when a NodePool is added, removed, or resized.
+time: 2026-10-05T10:20:51.000000000-04:00
