@@ -97,6 +97,7 @@ func (m *configMapper) configureAdmin(admin *ir.AdminAPISpec) *PartialRedpandaAd
 		}
 
 		m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", admin.Auth.Password)
+		m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", admin.Auth.AuthToken)
 	}
 
 	return cfg
@@ -116,15 +117,54 @@ func (m *configMapper) configureKafka(kafka *ir.KafkaAPISpec) *PartialKafka {
 	}
 
 	if kafka.SASL != nil {
-		cfg.SASL = &PartialKafkaSASL{
-			Enabled:   ptr.To(true),
-			Username:  &kafka.SASL.Username,
-			Mechanism: ptr.To(string(kafka.SASL.Mechanism)),
-			// TODO all the other ones......
+		cfg.SASL = m.configureKafkaSASL(kafka.SASL)
+	}
+
+	return cfg
+}
+
+// configureKafkaSASL maps every SASL mechanism onto Console's
+// kafka.sasl block. Credentials never land in the config file: each one is
+// passed through the environment variable that Console maps onto the
+// matching key.
+func (m *configMapper) configureKafkaSASL(sasl *ir.KafkaSASL) *PartialKafkaSASL {
+	cfg := &PartialKafkaSASL{
+		Enabled:   ptr.To(true),
+		Username:  &sasl.Username,
+		Mechanism: ptr.To(string(sasl.Mechanism)),
+	}
+
+	m.addEnv("KAFKA_SASL_PASSWORD", sasl.Password)
+
+	if sasl.OAUth != nil {
+		cfg.OAUth = &PartialKafkaSASLOAuthBearer{}
+		m.addEnv("KAFKA_SASL_OAUTH_TOKEN", sasl.OAUth.Token)
+	}
+
+	if gssapi := sasl.GSSAPIConfig; gssapi != nil {
+		cfg.GSSAPIConfig = &PartialKafkaSASLGSSAPI{
+			AuthType:           &gssapi.AuthType,
+			KeyTabPath:         &gssapi.KeyTabPath,
+			KerberosConfigPath: &gssapi.KerberosConfigPath,
+			ServiceName:        &gssapi.ServiceName,
+			Username:           &gssapi.Username,
+			Realm:              &gssapi.Realm,
+			// Console defaults FAST to on, the operator's own client to off,
+			// so pass the field through explicitly to keep the two in step.
+			EnableFast: ptr.To(gssapi.EnableFast),
 		}
-		if kafka.SASL.Password != nil {
-			m.addEnv("KAFKA_SASL_PASSWORD", kafka.SASL.Password)
+		m.addEnv("KAFKA_SASL_GSSAPI_PASSWORD", gssapi.Password)
+	}
+
+	if msk := sasl.AWSMskIam; msk != nil {
+		cfg.AWSMskIam = &PartialKafkaSASLAwsMskIam{
+			AccessKey: &msk.AccessKey,
 		}
+		if msk.UserAgent != "" {
+			cfg.AWSMskIam.UserAgent = &msk.UserAgent
+		}
+		m.addEnv("KAFKA_SASL_AWSMSKIAM_SECRETKEY", msk.SecretKey)
+		m.addEnv("KAFKA_SASL_AWSMSKIAM_SESSIONTOKEN", msk.SessionToken)
 	}
 
 	return cfg
@@ -187,27 +227,44 @@ func (m *configMapper) configureTLS(tls *ir.CommonTLS) *PartialTLS {
 	return out
 }
 
-func (m *configMapper) addEnv(name string, secretRef *ir.ValueSource) {
-	if secretRef == nil || secretRef.SecretKeyRef == nil {
+// addEnv passes a value source to Console as the environment variable name.
+// Inline values are set directly. External secrets cannot be resolved here,
+// so callers that support them must resolve them into one of the other
+// sources first; the Console controller does.
+func (m *configMapper) addEnv(name string, src *ir.ValueSource) {
+	if src == nil {
 		return
 	}
-	ref := secretRef.SecretKeyRef
 
-	if ref.Key == "" || ref.Name == "" {
+	if src.Inline != nil {
+		m.Env = append(m.Env, corev1.EnvVar{Name: name, Value: *src.Inline})
 		return
 	}
 
-	m.Env = append(m.Env, corev1.EnvVar{
-		Name: name,
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: ref.Name,
+	if ref := src.SecretKeyRef; ref != nil && ref.Name != "" && ref.Key != "" {
+		m.Env = append(m.Env, corev1.EnvVar{
+			Name: name,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: ref.Name},
+					Key:                  ref.Key,
 				},
-				Key: ref.Key,
 			},
-		},
-	})
+		})
+		return
+	}
+
+	if ref := src.ConfigMapKeyRef; ref != nil && ref.Name != "" && ref.Key != "" {
+		m.Env = append(m.Env, corev1.EnvVar{
+			Name: name,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: ref.Name},
+					Key:                  ref.Key,
+				},
+			},
+		})
+	}
 }
 
 type volumes struct {

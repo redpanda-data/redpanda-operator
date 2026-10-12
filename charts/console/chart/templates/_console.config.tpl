@@ -55,6 +55,7 @@
 {{- if (ne (toJson $admin.sasl) "null") -}}
 {{- $_ := (set $cfg "authentication" (mustMergeOverwrite (dict) (dict "basic" (mustMergeOverwrite (dict) (dict "username" $admin.sasl.username))))) -}}
 {{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD" $admin.sasl.passwordSecretRef)))) "r") -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN" $admin.sasl.token)))) "r") -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $cfg) | toJson -}}
@@ -78,10 +79,38 @@
 {{- $_ := (set $cfg "tls" $tls_5) -}}
 {{- end -}}
 {{- if (ne (toJson $kafka.sasl) "null") -}}
-{{- $_ := (set $cfg "sasl" (mustMergeOverwrite (dict) (dict "enabled" true "username" $kafka.sasl.username "mechanism" (toString $kafka.sasl.mechanism)))) -}}
-{{- if (ne (toJson $kafka.sasl.passwordSecretRef) "null") -}}
-{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_PASSWORD" $kafka.sasl.passwordSecretRef)))) "r") -}}
+{{- $_ := (set $cfg "sasl" (get (fromJson (include "console.configMapper.configureKafkaSASL" (dict "a" (list $m $kafka.sasl)))) "r")) -}}
 {{- end -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $cfg) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "console.configMapper.configureKafkaSASL" -}}
+{{- $m := (index .a 0) -}}
+{{- $sasl := (index .a 1) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- $cfg := (mustMergeOverwrite (dict) (dict "enabled" true "username" $sasl.username "mechanism" (toString $sasl.mechanism))) -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_PASSWORD" $sasl.passwordSecretRef)))) "r") -}}
+{{- if (ne (toJson $sasl.oauth) "null") -}}
+{{- $_ := (set $cfg "oauth" (mustMergeOverwrite (dict) (dict))) -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_OAUTH_TOKEN" $sasl.oauth.token)))) "r") -}}
+{{- end -}}
+{{- $gssapi_6 := $sasl.gssapi -}}
+{{- if (ne (toJson $gssapi_6) "null") -}}
+{{- $_ := (set $cfg "gssapi" (mustMergeOverwrite (dict) (dict "authType" $gssapi_6.authType "keyTabPath" $gssapi_6.keyTabPath "kerberosConfigPath" $gssapi_6.kerberosConfigPath "serviceName" $gssapi_6.serviceName "username" $gssapi_6.username "realm" $gssapi_6.realm "enableFast" $gssapi_6.enableFast))) -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_GSSAPI_PASSWORD" $gssapi_6.password)))) "r") -}}
+{{- end -}}
+{{- $msk_7 := $sasl.awsMskIam -}}
+{{- if (ne (toJson $msk_7) "null") -}}
+{{- $_ := (set $cfg "awsMskIam" (mustMergeOverwrite (dict) (dict "accessKey" $msk_7.accessKey))) -}}
+{{- if (ne $msk_7.userAgent "") -}}
+{{- $_ := (set $cfg.awsMskIam "userAgent" $msk_7.userAgent) -}}
+{{- end -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_AWSMSKIAM_SECRETKEY" $msk_7.secretKey)))) "r") -}}
+{{- $_ := (get (fromJson (include "console.configMapper.addEnv" (dict "a" (list $m "KAFKA_SASL_AWSMSKIAM_SESSIONTOKEN" $msk_7.sessionToken)))) "r") -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $cfg) | toJson -}}
@@ -100,9 +129,9 @@
 {{- break -}}
 {{- end -}}
 {{- $cfg := (mustMergeOverwrite (dict) (dict "enabled" true "urls" $schema.urls)) -}}
-{{- $tls_6 := (get (fromJson (include "console.configMapper.configureTLS" (dict "a" (list $m $schema.tls)))) "r") -}}
-{{- if (ne (toJson $tls_6) "null") -}}
-{{- $_ := (set $cfg "tls" $tls_6) -}}
+{{- $tls_8 := (get (fromJson (include "console.configMapper.configureTLS" (dict "a" (list $m $schema.tls)))) "r") -}}
+{{- if (ne (toJson $tls_8) "null") -}}
+{{- $_ := (set $cfg "tls" $tls_8) -}}
 {{- end -}}
 {{- if (ne (toJson $schema.sasl) "null") -}}
 {{- $_ := (set $cfg "authentication" (mustMergeOverwrite (dict) (dict "basic" (mustMergeOverwrite (dict) (dict "username" $schema.sasl.username))))) -}}
@@ -129,17 +158,17 @@
 {{- if $tls.insecureSkipTlsVerify -}}
 {{- $_ := (set $out "insecureSkipTlsVerify" $tls.insecureSkipTlsVerify) -}}
 {{- end -}}
-{{- $ca_7 := (get (fromJson (include "console.volumes.MaybeAdd" (dict "a" (list $m.Volumes $tls.caCert)))) "r") -}}
-{{- if (ne (toJson $ca_7) "null") -}}
-{{- $_ := (set $out "caFilepath" $ca_7) -}}
+{{- $ca_9 := (get (fromJson (include "console.volumes.MaybeAdd" (dict "a" (list $m.Volumes $tls.caCert)))) "r") -}}
+{{- if (ne (toJson $ca_9) "null") -}}
+{{- $_ := (set $out "caFilepath" $ca_9) -}}
 {{- end -}}
-{{- $cert_8 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.cert)))) "r") -}}
-{{- if (ne (toJson $cert_8) "null") -}}
-{{- $_ := (set $out "certFilepath" $cert_8) -}}
+{{- $cert_10 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.cert)))) "r") -}}
+{{- if (ne (toJson $cert_10) "null") -}}
+{{- $_ := (set $out "certFilepath" $cert_10) -}}
 {{- end -}}
-{{- $key_9 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.key)))) "r") -}}
-{{- if (ne (toJson $key_9) "null") -}}
-{{- $_ := (set $out "keyFilepath" $key_9) -}}
+{{- $key_11 := (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $m.Volumes $tls.key)))) "r") -}}
+{{- if (ne (toJson $key_11) "null") -}}
+{{- $_ := (set $out "keyFilepath" $key_11) -}}
 {{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $out) | toJson -}}
@@ -150,21 +179,31 @@
 {{- define "console.configMapper.addEnv" -}}
 {{- $m := (index .a 0) -}}
 {{- $name := (index .a 1) -}}
-{{- $secretRef := (index .a 2) -}}
+{{- $src := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (or (eq (toJson $secretRef) "null") (eq (toJson $secretRef.secretKeyRef) "null")) -}}
+{{- if (eq (toJson $src) "null") -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $ref := $secretRef.secretKeyRef -}}
-{{- if (or (eq $ref.key "") (eq $ref.name "")) -}}
+{{- if (ne (toJson $src.inline) "null") -}}
+{{- $_ := (set $m "Env" (concat (default (list) $m.Env) (list (mustMergeOverwrite (dict "name" "") (dict "name" $name "value" $src.inline))))) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_ := (set $m "Env" (concat (default (list) $m.Env) (list (mustMergeOverwrite (dict "name" "") (dict "name" $name "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $ref.name)) (dict "key" $ref.key))))))))) -}}
+{{- $ref_12 := $src.secretKeyRef -}}
+{{- if (and (and (ne (toJson $ref_12) "null") (ne $ref_12.name "")) (ne $ref_12.key "")) -}}
+{{- $_ := (set $m "Env" (concat (default (list) $m.Env) (list (mustMergeOverwrite (dict "name" "") (dict "name" $name "valueFrom" (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $ref_12.name)) (dict "key" $ref_12.key))))))))) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" (list)) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $ref_13 := $src.configMapKeyRef -}}
+{{- if (and (and (ne (toJson $ref_13) "null") (ne $ref_13.name "")) (ne $ref_13.key "")) -}}
+{{- $_ := (set $m "Env" (concat (default (list) $m.Env) (list (mustMergeOverwrite (dict "name" "") (dict "name" $name "valueFrom" (mustMergeOverwrite (dict) (dict "configMapKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $ref_13.name)) (dict "key" $ref_13.key))))))))) -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -178,16 +217,16 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $cmr_10 := $ref.configMapKeyRef -}}
-{{- if (ne (toJson $cmr_10) "null") -}}
+{{- $cmr_14 := $ref.configMapKeyRef -}}
+{{- if (ne (toJson $cmr_14) "null") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "console.volumes.MaybeAddConfigMap" (dict "a" (list $v $cmr_10)))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "console.volumes.MaybeAddConfigMap" (dict "a" (list $v $cmr_14)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $skr_11 := $ref.secretKeyRef -}}
-{{- if (ne (toJson $skr_11) "null") -}}
+{{- $skr_15 := $ref.secretKeyRef -}}
+{{- if (ne (toJson $skr_15) "null") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $v (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $skr_11.name)) (dict "key" $skr_11.key)))))))) "r")) | toJson -}}
+{{- (dict "r" (get (fromJson (include "console.volumes.MaybeAddSecret" (dict "a" (list $v (mustMergeOverwrite (dict) (dict "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $skr_15.name)) (dict "key" $skr_15.key)))))))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $_is_returning = true -}}
@@ -206,10 +245,10 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_245___ok_12 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_245___ok_12 0) -}}
-{{- $ok_12 := (index $_245___ok_12 1) -}}
-{{- if (not $ok_12) -}}
+{{- $_302___ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_302___ok_16 0) -}}
+{{- $ok_16 := (index $_302___ok_16 1) -}}
+{{- if (not $ok_16) -}}
 {{- $_ := (set $v.ConfigMaps $ref.name (dict)) -}}
 {{- end -}}
 {{- $_ := (set (index $v.ConfigMaps $ref.name) $ref.key true) -}}
@@ -235,10 +274,10 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_262___ok_13 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_262___ok_13 0) -}}
-{{- $ok_13 := (index $_262___ok_13 1) -}}
-{{- if (not $ok_13) -}}
+{{- $_319___ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_319___ok_17 0) -}}
+{{- $ok_17 := (index $_319___ok_17 1) -}}
+{{- if (not $ok_17) -}}
 {{- $_ := (set $v.Secrets $ref.name (dict)) -}}
 {{- end -}}
 {{- $_ := (set (index $v.Secrets $ref.name) $ref.key true) -}}
