@@ -223,9 +223,11 @@ type ValueSource struct {
 // ExternalSecretKeySelector selects a key of an external Secret.
 // +structType=atomic
 type ExternalSecretKeySelector struct {
-	// Specifies the name of the secret in the cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault).
-	// Requires the operator to run with `--enable-cloud-secrets`, and the operator adds the `--cloud-secrets-prefix` value to the start of the name.
-	// To read one field of a secret that holds JSON, use `<secret-name>.<field>`.
+	// Specifies the name of the external secret.
+	// In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+	// The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+	// In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+	// Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
 	Name string `json:"name"`
 }
 
