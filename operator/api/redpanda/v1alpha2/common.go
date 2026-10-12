@@ -121,9 +121,6 @@ type KafkaSASLGSSAPI struct {
 	// EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
 	// It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
 	// FAST provides increased resistance to passive password guessing attacks.
-	// Defaults to `true`.
-	// +optional
-	// +kubebuilder:default=true
 	EnableFast bool `json:"enableFast"`
 }
 

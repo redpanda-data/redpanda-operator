@@ -1,7 +1,0 @@
-project: operator
-kind: Changed
-body: |-
-    `gssapi.enableFast` in a cluster source is optional and defaults to `true`
-
-      Omitting it enables Kerberos FAST, which matches Console's own default. An explicit `false` is kept.
-time: 2026-10-12T15:00:00.000000+01:00
