@@ -130,10 +130,10 @@ func (m *configMapper) configureKafka(kafka *ir.KafkaAPISpec) *PartialKafka {
 	return cfg
 }
 
-// configureKafkaSASL maps every SASL mechanism onto Console's
-// kafka.sasl block. Credentials never land in the config file: each one is
-// passed through the environment variable that Console maps onto the
-// matching key.
+// configureKafkaSASL maps the SASL settings onto Console's kafka.sasl block.
+// Credentials never land in the config file: each one is passed through the
+// environment variable that Console maps onto the matching key. GSSAPI and
+// AWS_MSK_IAM settings are not passed to Console.
 func (m *configMapper) configureKafkaSASL(sasl *ir.KafkaSASL) *PartialKafkaSASL {
 	cfg := &PartialKafkaSASL{
 		Enabled:   ptr.To(true),
@@ -146,32 +146,6 @@ func (m *configMapper) configureKafkaSASL(sasl *ir.KafkaSASL) *PartialKafkaSASL 
 	if sasl.OAUth != nil {
 		cfg.OAUth = &PartialKafkaSASLOAuthBearer{}
 		m.addEnv("KAFKA_SASL_OAUTH_TOKEN", sasl.OAUth.Token)
-	}
-
-	if gssapi := sasl.GSSAPIConfig; gssapi != nil {
-		cfg.GSSAPIConfig = &PartialKafkaSASLGSSAPI{
-			AuthType:           &gssapi.AuthType,
-			KeyTabPath:         &gssapi.KeyTabPath,
-			KerberosConfigPath: &gssapi.KerberosConfigPath,
-			ServiceName:        &gssapi.ServiceName,
-			Username:           &gssapi.Username,
-			Realm:              &gssapi.Realm,
-			// The CRD defaults enableFast to true, so the value here is what
-			// the user set (or that default) and is passed through as is.
-			EnableFast: ptr.To(gssapi.EnableFast),
-		}
-		m.addEnv("KAFKA_SASL_GSSAPI_PASSWORD", gssapi.Password)
-	}
-
-	if msk := sasl.AWSMskIam; msk != nil {
-		cfg.AWSMskIam = &PartialKafkaSASLAwsMskIam{
-			AccessKey: &msk.AccessKey,
-		}
-		if msk.UserAgent != "" {
-			cfg.AWSMskIam.UserAgent = &msk.UserAgent
-		}
-		m.addEnv("KAFKA_SASL_AWSMSKIAM_SECRETKEY", msk.SecretKey)
-		m.addEnv("KAFKA_SASL_AWSMSKIAM_SESSIONTOKEN", msk.SessionToken)
 	}
 
 	return cfg

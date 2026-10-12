@@ -1,9 +1,9 @@
 project: charts/console
 kind: Fixed
 body: |-
-    Kafka SASL `OAUTHBEARER`, `GSSAPI`, and `AWS_MSK_IAM` settings from a static cluster configuration reach Console
+    Kafka SASL `OAUTHBEARER` settings and `inline` or `configMapKeyRef` credentials from a static cluster configuration reach Console
 
-      Only the username, password, and mechanism were passed through, so the other mechanisms could not
-      authenticate. Credentials from `inline` and `configMapKeyRef` sources are also passed through, where
-      only `secretKeyRef` was before. The Admin API bearer token is passed as well.
+      Only the username, password, and mechanism were passed through, and only from `secretKeyRef` sources,
+      so an `OAUTHBEARER` token or an `inline` or `configMapKeyRef` password was dropped. The Admin API bearer
+      token is passed as well.
 time: 2026-10-12T12:00:00.000000+01:00

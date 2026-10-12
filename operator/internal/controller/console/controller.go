@@ -657,13 +657,6 @@ func (r *render) mirrorCredentials(cfg *ir.StaticConfigurationSource) (*corev1.S
 			if sasl.OAUth != nil {
 				add("kafka-sasl-oauth-token", "kafka.sasl.oauth.token", sasl.OAUth.Token)
 			}
-			if sasl.GSSAPIConfig != nil {
-				add("kafka-sasl-gssapi-password", "kafka.sasl.gssapi.password", sasl.GSSAPIConfig.Password)
-			}
-			if sasl.AWSMskIam != nil {
-				add("kafka-sasl-aws-msk-iam-secret-key", "kafka.sasl.awsMskIam.secretKey", sasl.AWSMskIam.SecretKey)
-				add("kafka-sasl-aws-msk-iam-session-token", "kafka.sasl.awsMskIam.sessionToken", sasl.AWSMskIam.SessionToken)
-			}
 		}
 	}
 
