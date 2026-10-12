@@ -11,6 +11,8 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
@@ -21,6 +23,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	ossconv "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2/conversion"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 )
 
@@ -28,14 +31,9 @@ import (
 //
 // Resolving a clusterRef runs the full charts/redpanda render closure
 // (ConvertV2ToRenderState + AsStaticConfigSource), which is by far the most
-// expensive part of a pipeline reconcile. The result depends only on the
-// Redpanda CR's spec, so N pipelines pointing at the same cluster would
-// otherwise render it N times — and again on every sync-interval/pod-churn
-// reconcile. Keying by the CR's metadata.generation (which bumps only on a spec
-// change, unlike resourceVersion which also bumps on status writes) means one
-// render per cluster spec, shared by all referencing pipelines; the
-// parent-Redpanda watch already re-enqueues those pipelines when the spec
-// changes, so a stale entry is naturally superseded on the next generation.
+// expensive part of a pipeline reconcile. The result depends only on the specs
+// of the Redpanda CR and its NodePools, so it's keyed by their generations and
+// shared by every pipeline referencing the cluster.
 //
 // A 100-pipeline EKS run measured a cold re-render of all pipelines peaking at
 // ~124m CPU; with this cache that collapses to a single render plus 99 map hits.
@@ -45,42 +43,50 @@ type clusterConnCache struct {
 }
 
 type clusterConnCacheEntry struct {
+	rev  clusterRevision
+	conn *clusterConnection
+}
+
+// clusterRevision identifies the inputs a cluster's connection is rendered
+// from.
+type clusterRevision struct {
 	// uid pins the entry to a specific incarnation of the CR. A deleted and
 	// recreated cluster restarts at generation 1, so generation alone would
 	// keep serving the old cluster's brokers/TLS/SASL after a recreate.
 	uid        types.UID
 	generation int64
-	conn       *clusterConnection
+	// pools fingerprints the NodePools, whose brokers are in the broker list.
+	pools string
 }
 
 func newClusterConnCache() *clusterConnCache {
 	return &clusterConnCache{entries: map[string]clusterConnCacheEntry{}}
 }
 
-// get returns the cached connection for a cluster when the cached entry matches
-// the CR's current UID and generation.
-func (c *clusterConnCache) get(namespace, name string, uid types.UID, generation int64) (*clusterConnection, bool) {
+// get returns the cached connection for a cluster when the cached entry was
+// rendered from rev.
+func (c *clusterConnCache) get(namespace, name string, rev clusterRevision) (*clusterConnection, bool) {
 	if c == nil {
 		return nil, false
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	e, ok := c.entries[namespace+"/"+name]
-	if ok && e.uid == uid && e.generation == generation {
+	if ok && e.rev == rev {
 		return e.conn, true
 	}
 	return nil, false
 }
 
-// put stores the connection for a cluster at the given UID + generation,
-// replacing any older entry (so the cache holds at most one entry per cluster).
-func (c *clusterConnCache) put(namespace, name string, uid types.UID, generation int64, conn *clusterConnection) {
+// put stores the connection for a cluster at rev, replacing any older entry
+// (so the cache holds at most one entry per cluster).
+func (c *clusterConnCache) put(namespace, name string, rev clusterRevision, conn *clusterConnection) {
 	if c == nil {
 		return
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.entries[namespace+"/"+name] = clusterConnCacheEntry{uid: uid, generation: generation, conn: conn}
+	c.entries[namespace+"/"+name] = clusterConnCacheEntry{rev: rev, conn: conn}
 }
 
 // evict drops the cached entry for a cluster. Called from the Redpanda watch's
@@ -334,11 +340,17 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 		return nil, errors.Wrapf(err, "failed to resolve clusterRef %q", ref.Name)
 	}
 
+	pools, err := c.nodePoolsFor(ctx, &rp)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to list the NodePools of clusterRef %q", ref.Name)
+	}
+
 	// Cache hit: the chart render for this cluster spec is already resolved.
 	// The UID pins the entry to this incarnation of the CR so a delete +
 	// recreate under the same name (which restarts at generation 1) can't
 	// serve the old cluster's connection details.
-	if conn, ok := c.clusterConns.get(rp.Namespace, rp.Name, rp.UID, rp.Generation); ok {
+	rev := clusterRevision{uid: rp.UID, generation: rp.Generation, pools: poolsRevision(pools)}
+	if conn, ok := c.clusterConns.get(rp.Namespace, rp.Name, rev); ok {
 		return conn, nil
 	}
 
@@ -351,7 +363,7 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 	state, err := ossconv.ConvertV2ToRenderState(nil, &ossconv.V2Defaulters{
 		RedpandaImage: func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
 		SidecarImage:  func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
-	}, &rp, nil)
+	}, &rp, pools)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert Redpanda CR to render state")
 	}
@@ -381,8 +393,29 @@ func (c *Controller) resolveClusterSource(ctx context.Context, pipeline *redpand
 		}
 	}
 
-	c.clusterConns.put(rp.Namespace, rp.Name, rp.UID, rp.Generation, conn)
+	c.clusterConns.put(rp.Namespace, rp.Name, rev, conn)
 	return conn, nil
+}
+
+// nodePoolsFor returns the NodePools whose brokers belong in rp's broker list.
+// A finished NodePool migration leaves rp's own StatefulSet at zero replicas,
+// so without them that list is empty.
+func (c *Controller) nodePoolsFor(ctx context.Context, rp *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.NodePool, error) {
+	if !c.UseNodePools {
+		return nil, nil
+	}
+	return controller.NodePoolsFor(ctx, c.Ctl, rp)
+}
+
+// poolsRevision identifies pools by incarnation and spec generation, sorted
+// because List order isn't stable.
+func poolsRevision(pools []*redpandav1alpha2.NodePool) string {
+	revs := make([]string, len(pools))
+	for i, pool := range pools {
+		revs[i] = fmt.Sprintf("%s/%s/%s/%d", pool.Namespace, pool.Name, pool.UID, pool.Generation)
+	}
+	slices.Sort(revs)
+	return strings.Join(revs, ",")
 }
 
 // clusterTLSFromIR maps the Kafka TLS material the chart render produced for a

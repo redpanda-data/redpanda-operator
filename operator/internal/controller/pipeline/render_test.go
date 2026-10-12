@@ -323,71 +323,111 @@ func TestBuildAffinity_NodePool(t *testing.T) {
 }
 
 // TestClusterConnCache covers the per-cluster render cache: a hit only when
-// both the UID and generation match, invalidation when either changes (spec
-// bump, or a delete + recreate under the same name restarting at generation
-// 1), delete-event eviction, independent entries per cluster, at-most-one
-// entry per cluster, and nil-safety.
+// the UID, generation, and NodePools all match, invalidation when any changes
+// (spec bump, a delete + recreate under the same name restarting at
+// generation 1, or a NodePool change), delete-event eviction, independent
+// entries per cluster, at-most-one entry per cluster, and nil-safety.
 func TestClusterConnCache(t *testing.T) {
 	c := newClusterConnCache()
 	connA1 := &clusterConnection{Brokers: []string{"a:9093"}}
 	connA2 := &clusterConnection{Brokers: []string{"a2:9093"}}
 	connB := &clusterConnection{Brokers: []string{"b:9093"}}
 
-	uidA := types.UID("uid-a")
-	uidA2 := types.UID("uid-a-recreated")
-	uidB := types.UID("uid-b")
+	revA1 := clusterRevision{uid: "uid-a", generation: 1}
+	revA2 := clusterRevision{uid: "uid-a", generation: 2}
+	revB1 := clusterRevision{uid: "uid-b", generation: 1}
 
 	// miss on empty cache
-	_, ok := c.get("ns", "rp-a", uidA, 1)
+	_, ok := c.get("ns", "rp-a", revA1)
 	assert.False(t, ok, "empty cache must miss")
 
 	// put gen1, hit on gen1, miss on a different generation
-	c.put("ns", "rp-a", uidA, 1, connA1)
-	got, ok := c.get("ns", "rp-a", uidA, 1)
+	c.put("ns", "rp-a", revA1, connA1)
+	got, ok := c.get("ns", "rp-a", revA1)
 	assert.True(t, ok)
 	assert.Same(t, connA1, got)
-	_, ok = c.get("ns", "rp-a", uidA, 2)
+	_, ok = c.get("ns", "rp-a", revA2)
 	assert.False(t, ok, "generation bump must invalidate (forces a re-render)")
 
 	// a delete + recreate restarts at generation 1 with a new UID: the stale
 	// entry (same name, same generation, old UID) must NOT be served
-	_, ok = c.get("ns", "rp-a", uidA2, 1)
+	_, ok = c.get("ns", "rp-a", clusterRevision{uid: "uid-a-recreated", generation: 1})
 	assert.False(t, ok, "recreated cluster (new UID) must miss the old entry")
 
+	// a NodePool changing leaves the Redpanda CR untouched but changes the
+	// broker list
+	_, ok = c.get("ns", "rp-a", clusterRevision{uid: "uid-a", generation: 1, pools: "ns/pool/uid-pool/1"})
+	assert.False(t, ok, "NodePool change must invalidate (forces a re-render)")
+
 	// put gen2 replaces the stale gen1 entry (at most one entry per cluster)
-	c.put("ns", "rp-a", uidA, 2, connA2)
-	got, ok = c.get("ns", "rp-a", uidA, 2)
+	c.put("ns", "rp-a", revA2, connA2)
+	got, ok = c.get("ns", "rp-a", revA2)
 	assert.True(t, ok)
 	assert.Same(t, connA2, got)
 	assert.Len(t, c.entries, 1, "a cluster keeps a single entry across generations")
 
 	// distinct clusters are independent
-	c.put("ns", "rp-b", uidB, 1, connB)
-	got, ok = c.get("ns", "rp-b", uidB, 1)
+	c.put("ns", "rp-b", revB1, connB)
+	got, ok = c.get("ns", "rp-b", revB1)
 	assert.True(t, ok)
 	assert.Same(t, connB, got)
-	got, ok = c.get("ns", "rp-a", uidA, 2)
+	got, ok = c.get("ns", "rp-a", revA2)
 	assert.True(t, ok, "rp-a entry unaffected by rp-b")
 	assert.Same(t, connA2, got)
 
 	// same name, different namespace is a different key
-	_, ok = c.get("other-ns", "rp-a", uidA, 2)
+	_, ok = c.get("other-ns", "rp-a", revA2)
 	assert.False(t, ok)
 
 	// evict (wired to Redpanda delete events) drops exactly its entry
 	c.evict("ns", "rp-a")
-	_, ok = c.get("ns", "rp-a", uidA, 2)
+	_, ok = c.get("ns", "rp-a", revA2)
 	assert.False(t, ok, "evicted entry must miss")
 	assert.Len(t, c.entries, 1, "eviction must not touch other clusters")
-	_, ok = c.get("ns", "rp-b", uidB, 1)
+	_, ok = c.get("ns", "rp-b", revB1)
 	assert.True(t, ok)
 
 	// nil cache is safe (no panic; always misses)
 	var nilCache *clusterConnCache
-	_, ok = nilCache.get("ns", "rp-a", uidA, 1)
+	_, ok = nilCache.get("ns", "rp-a", revA1)
 	assert.False(t, ok)
-	nilCache.put("ns", "rp-a", uidA, 1, connA1) // must not panic
-	nilCache.evict("ns", "rp-a")                // must not panic
+	nilCache.put("ns", "rp-a", revA1, connA1) // must not panic
+	nilCache.evict("ns", "rp-a")              // must not panic
+}
+
+func TestPoolsRevision(t *testing.T) {
+	pool := func(name, uid string, generation int64) *redpandav1alpha2.NodePool {
+		return &redpandav1alpha2.NodePool{ObjectMeta: metav1.ObjectMeta{
+			Namespace:  "ns",
+			Name:       name,
+			UID:        types.UID(uid),
+			Generation: generation,
+		}}
+	}
+	base := poolsRevision([]*redpandav1alpha2.NodePool{pool("a", "uid-a", 1), pool("b", "uid-b", 1)})
+
+	for name, tc := range map[string]struct {
+		pools []*redpandav1alpha2.NodePool
+		same  bool
+	}{
+		"list order is ignored": {
+			pools: []*redpandav1alpha2.NodePool{pool("b", "uid-b", 1), pool("a", "uid-a", 1)},
+			same:  true,
+		},
+		"a resized pool differs": {
+			pools: []*redpandav1alpha2.NodePool{pool("a", "uid-a", 2), pool("b", "uid-b", 1)},
+		},
+		"a recreated pool differs": {
+			pools: []*redpandav1alpha2.NodePool{pool("a", "uid-a-recreated", 1), pool("b", "uid-b", 1)},
+		},
+		"a removed pool differs": {
+			pools: []*redpandav1alpha2.NodePool{pool("a", "uid-a", 1)},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.same, poolsRevision(tc.pools) == base)
+		})
+	}
 }
 
 // TestStaticClusterConnection_TLSSemantics covers the CommonTLS contract on

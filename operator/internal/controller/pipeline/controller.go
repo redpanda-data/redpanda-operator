@@ -30,16 +30,19 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlbuilder "sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	ctrlcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 )
 
 const (
@@ -77,6 +80,11 @@ type Controller struct {
 	DefaultImage string
 	// Monitoring holds the operator-level monitoring configuration for Connect pipelines.
 	Monitoring MonitoringConfig
+	// UseNodePools counts a referenced Redpanda's NodePools toward its broker
+	// list. It must match the Redpanda controller's UseNodePools: the pools
+	// whose brokers exist are exactly the ones it deploys, and the NodePool
+	// CRD may not be installed otherwise.
+	UseNodePools bool
 	// MaxConcurrentReconciles bounds how many pipelines reconcile in parallel.
 	// 0 falls back to defaultMaxConcurrentReconciles. Higher values speed up
 	// convergence of large pipeline fleets (e.g. mass create / operator restart)
@@ -116,6 +124,7 @@ const defaultMaxConcurrentReconciles = 5
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=pipelines/finalizers,verbs=update
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=redpandas,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cluster.redpanda.com,resources=nodepools,verbs=get;list;watch
 // +kubebuilder:rbac:groups=cluster.redpanda.com,resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
@@ -139,6 +148,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 	mgr.GetScheme().AddKnownTypes(
 		schema.GroupVersion{Group: "cluster.redpanda.com", Version: "v1alpha2"},
 		&redpandav1alpha2.Redpanda{}, &redpandav1alpha2.RedpandaList{},
+		&redpandav1alpha2.NodePool{}, &redpandav1alpha2.NodePoolList{},
 	)
 
 	// Index Pipelines by their clusterRef name so we can efficiently look up
@@ -159,7 +169,7 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 	}
 
 	builder := ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrent}).
+		WithOptions(ctrlcontroller.Options{MaxConcurrentReconciles: maxConcurrent}).
 		For(&redpandav1alpha2.Pipeline{})
 
 	for _, t := range Types() {
@@ -178,18 +188,25 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 	// cluster deletion, additionally evict the cluster's render-cache entry
 	// so the cache doesn't grow unboundedly (and a recreate under the same
 	// name starts clean).
-	enqueueForCluster := func(ctx context.Context, o client.Object, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+	pipelinesFor := func(ctx context.Context, cluster types.NamespacedName) []reconcile.Request {
 		var pipelineList redpandav1alpha2.PipelineList
 		if err := mgr.GetClient().List(ctx, &pipelineList,
-			client.InNamespace(o.GetNamespace()),
-			client.MatchingFields{clusterRefIndexField: o.GetName()},
+			client.InNamespace(cluster.Namespace),
+			client.MatchingFields{clusterRefIndexField: cluster.Name},
 		); err != nil {
-			return
+			return nil
 		}
+		var requests []reconcile.Request
 		for i := range pipelineList.Items {
-			q.Add(reconcile.Request{
+			requests = append(requests, reconcile.Request{
 				NamespacedName: client.ObjectKeyFromObject(&pipelineList.Items[i]),
 			})
+		}
+		return requests
+	}
+	enqueueForCluster := func(ctx context.Context, o client.Object, q workqueue.TypedRateLimitingInterface[reconcile.Request]) {
+		for _, request := range pipelinesFor(ctx, client.ObjectKeyFromObject(o)) {
+			q.Add(request)
 		}
 	}
 	builder = builder.Watches(&redpandav1alpha2.Redpanda{}, handler.Funcs{
@@ -207,6 +224,18 @@ func (c *Controller) SetupWithManager(ctx context.Context, mgr ctrl.Manager, nam
 			enqueueForCluster(ctx, e.Object, q)
 		},
 	})
+
+	// A pool's brokers are part of its cluster's broker list, so adding,
+	// removing, or resizing one must re-resolve the cluster's Pipelines.
+	if c.UseNodePools {
+		builder = builder.Watches(&redpandav1alpha2.NodePool{}, handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
+			ref := o.(*redpandav1alpha2.NodePool).Spec.ClusterRef
+			if !ref.IsV2() {
+				return nil
+			}
+			return pipelinesFor(ctx, types.NamespacedName{Namespace: ref.GetNamespace(o.GetNamespace()), Name: ref.Name})
+		}), ctrlbuilder.WithPredicates(controller.ClusterSourcePredicate))
+	}
 
 	return builder.Complete(c)
 }
