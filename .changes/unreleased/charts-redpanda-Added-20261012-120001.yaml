@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Added
+body: |-
+    NOTES.txt warns when `resources.requests` and `resources.limits` are set without cpu
+
+      In that mode the chart ignores `resources.cpu.cores`, so the Redpanda container
+      gets no CPU request or limit and `--smp` is not set.
+time: 2026-10-12T12:00:01.000000+01:00

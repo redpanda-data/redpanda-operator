@@ -21,6 +21,9 @@
 {{- if (ne $w_1 "") -}}
 {{- $out = (concat (default (list) $out) (list (printf `**Warning**: %s` $w_1))) -}}
 {{- end -}}
+{{- if (get (fromJson (include "redpanda.RedpandaResources.CPUCoresIgnoredWithoutCPU" (dict "a" (list $state.Values.resources)))) "r") -}}
+{{- $out = (concat (default (list) $out) (list (printf `**Warning**: %s` "resources.cpu.cores is ignored because resources.requests and resources.limits are set, and neither sets cpu. The Redpanda container has no CPU request or limit and --smp is not set, so Redpanda starts a shard on every CPU available to the container. Set resources.requests.cpu and resources.limits.cpu."))) -}}
+{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $out) | toJson -}}
 {{- break -}}

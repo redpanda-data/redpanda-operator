@@ -552,8 +552,19 @@ func (r *RedpandaReconciler) reconcileParameterValidation(ctx context.Context, s
 		cluster.GetEventRecorderFor("RedpandaReconciler").Eventf(state.cluster.Redpanda, "Warning", redpandav1alpha2.EventSeverityError, err.Error()) //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
 		return ctrl.Result{}, err
 	}
+
+	// Surface the chart's NOTES.txt warning, which operator users never see.
+	// A failure to load values is reported by the rendering steps that follow.
+	if values, err := state.cluster.Redpanda.GetValues(); err == nil && values.Resources.CPUCoresIgnoredWithoutCPU() {
+		logger.Info(redpandachart.CPUCoresIgnoredWarning)
+		cluster.GetEventRecorderFor("RedpandaReconciler").Event(state.cluster.Redpanda, corev1.EventTypeWarning, cpuCoresIgnoredReason, redpandachart.CPUCoresIgnoredWarning) //nolint:staticcheck // TODO: migrate to GetEventRecorder (new events API)
+	}
 	return ctrl.Result{}, nil
 }
+
+// cpuCoresIgnoredReason is the event reason for
+// [redpandachart.CPUCoresIgnoredWarning].
+const cpuCoresIgnoredReason = "CPUCoresIgnored"
 
 func (r *RedpandaReconciler) reconcileResources(ctx context.Context, state *clusterReconciliationState, cluster cluster.Cluster) (_ ctrl.Result, err error) {
 	ctx, span := trace.Start(ctx, "reconcileResources")

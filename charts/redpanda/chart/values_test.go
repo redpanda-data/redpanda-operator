@@ -1045,3 +1045,30 @@ func TestRedpandaResources_RedpandaFlags(t *testing.T) {
 		assert.Equal(t, tc.Expected, flags)
 	}
 }
+
+func TestRedpandaResources_CPUCoresIgnoredWithoutCPU(t *testing.T) {
+	memory := corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("3Gi")}
+	withCPU := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("2"),
+		corev1.ResourceMemory: resource.MustParse("3Gi"),
+	}
+
+	cases := []struct {
+		name      string
+		resources RedpandaResources
+		expected  bool
+	}{
+		{name: "legacy cores only", resources: RedpandaResources{}, expected: false},
+		{name: "only requests", resources: RedpandaResources{Requests: &memory}, expected: false},
+		{name: "only limits", resources: RedpandaResources{Limits: &memory}, expected: false},
+		{name: "requests and limits without cpu", resources: RedpandaResources{Requests: &memory, Limits: &memory}, expected: true},
+		{name: "cpu in requests", resources: RedpandaResources{Requests: &withCPU, Limits: &memory}, expected: false},
+		{name: "cpu in limits", resources: RedpandaResources{Requests: &memory, Limits: &withCPU}, expected: false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.expected, tc.resources.CPUCoresIgnoredWithoutCPU())
+		})
+	}
+}

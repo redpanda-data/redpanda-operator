@@ -505,6 +505,24 @@ func (rr *RedpandaResources) GetOverProvisionValue() bool {
 	return ptr.Deref(rr.CPU.Overprovisioned, false)
 }
 
+// CPUCoresIgnoredWithoutCPU reports whether `resources.requests` and
+// `resources.limits` are both set but neither sets cpu. In that mode the chart
+// ignores `resources.cpu.cores`, so the Redpanda container gets no CPU request
+// or limit and --smp is left unset, letting Redpanda start a shard per CPU on
+// the node.
+func (rr *RedpandaResources) CPUCoresIgnoredWithoutCPU() bool {
+	if rr.Limits == nil || rr.Requests == nil {
+		return false
+	}
+	if _, ok := (*rr.Requests)[corev1.ResourceCPU]; ok {
+		return false
+	}
+	if _, ok := (*rr.Limits)[corev1.ResourceCPU]; ok {
+		return false
+	}
+	return true
+}
+
 func (rr *RedpandaResources) smp() *int64 {
 	if rr.Limits != nil && rr.Requests != nil {
 		// Get CPU prioritizing requests, falling back to limits if not
