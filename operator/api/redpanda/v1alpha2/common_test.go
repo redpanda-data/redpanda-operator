@@ -10,12 +10,14 @@
 package v1alpha2
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,6 +44,7 @@ func TestCRDs(t *testing.T) {
 	require.NoError(t, err)
 
 	for name, fn := range map[string]func(*testing.T, client.Client, string){
+		"gssapi/defaults":       testGSSAPIDefaults,
 		"role/defaults":         testRoleDefaults,
 		"role/immutable":        testRoleImmutableFields,
 		"role/validation":       testRoleValidation,
@@ -97,6 +100,53 @@ func TestClusterRefGetNamespace(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.expected, tc.ref.GetNamespace(tc.fallback))
+		})
+	}
+}
+
+// testGSSAPIDefaults checks that omitting enableFast enables Kerberos FAST,
+// and that an explicit value is kept. The typed client always sends the bool,
+// so the omitted case goes through an unstructured object.
+func testGSSAPIDefaults(t *testing.T, c client.Client, ns string) {
+	for name, enableFast := range map[string]*bool{"unset": nil, "true": ptr.To(true), "false": ptr.To(false)} {
+		t.Run(name, func(t *testing.T) {
+			gssapi := map[string]any{
+				"authType":           "USER_AUTH",
+				"keyTabPath":         "",
+				"kerberosConfigPath": "/etc/krb5.conf",
+				"serviceName":        "redpanda",
+				"username":           "console",
+				"realm":              "EXAMPLE.COM",
+			}
+			if enableFast != nil {
+				gssapi["enableFast"] = *enableFast
+			}
+
+			obj := &unstructured.Unstructured{Object: map[string]any{
+				"apiVersion": GroupVersion.String(),
+				"kind":       "Console",
+				"metadata":   map[string]any{"name": fmt.Sprintf("gssapi-%s", name), "namespace": ns},
+				"spec": map[string]any{
+					"cluster": map[string]any{
+						"staticConfiguration": map[string]any{
+							"kafka": map[string]any{
+								"brokers": []any{"broker:9092"},
+								"sasl": map[string]any{
+									"mechanism": "GSSAPI",
+									"gssapi":    gssapi,
+								},
+							},
+						},
+					},
+				},
+			}}
+			require.NoError(t, c.Create(t.Context(), obj))
+
+			var console Console
+			require.NoError(t, c.Get(t.Context(), client.ObjectKeyFromObject(obj), &console))
+
+			want := enableFast == nil || *enableFast
+			require.Equal(t, want, console.Spec.ClusterSource.StaticConfiguration.Kafka.SASL.GSSAPIConfig.EnableFast)
 		})
 	}
 }

@@ -1944,10 +1944,12 @@ spec:
                                   authType:
                                     type: string
                                   enableFast:
+                                    default: true
                                     description: |-
                                       EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
                                       It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
                                       FAST provides increased resistance to passive password guessing attacks.
+                                      Defaults to `true`.
                                     type: boolean
                                   kerberosConfigPath:
                                     type: string
@@ -2075,7 +2077,6 @@ spec:
                                     type: string
                                 required:
                                 - authType
-                                - enableFast
                                 - kerberosConfigPath
                                 - keyTabPath
                                 - realm
