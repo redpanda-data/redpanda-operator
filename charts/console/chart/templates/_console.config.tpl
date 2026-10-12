@@ -245,9 +245,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_302___ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_302___ok_16 0) -}}
-{{- $ok_16 := (index $_302___ok_16 1) -}}
+{{- $_301___ok_16 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.ConfigMaps $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_301___ok_16 0) -}}
+{{- $ok_16 := (index $_301___ok_16 1) -}}
 {{- if (not $ok_16) -}}
 {{- $_ := (set $v.ConfigMaps $ref.name (dict)) -}}
 {{- end -}}
@@ -274,9 +274,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_319___ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
-{{- $_ := (index $_319___ok_17 0) -}}
-{{- $ok_17 := (index $_319___ok_17 1) -}}
+{{- $_318___ok_17 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $v.Secrets $ref.name (coalesce nil))))) "r") -}}
+{{- $_ := (index $_318___ok_17 0) -}}
+{{- $ok_17 := (index $_318___ok_17 1) -}}
 {{- if (not $ok_17) -}}
 {{- $_ := (set $v.Secrets $ref.name (dict)) -}}
 {{- end -}}

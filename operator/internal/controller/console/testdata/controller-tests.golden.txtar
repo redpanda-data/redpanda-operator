@@ -1655,7 +1655,7 @@
   status: {}
 - apiVersion: v1
   data:
-    admin-password: ZXh0ZXJuYWwtcGFzc3dvcmQ=
+    admin-password: aW5saW5lLWFkbWluLXBhc3N3b3Jk
     kafka-sasl-password: aW5saW5lLXBhc3N3b3Jk
   kind: Secret
   metadata:

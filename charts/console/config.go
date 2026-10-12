@@ -228,9 +228,8 @@ func (m *configMapper) configureTLS(tls *ir.CommonTLS) *PartialTLS {
 }
 
 // addEnv passes a value source to Console as the environment variable name.
-// Inline values are set directly. External secrets cannot be resolved here,
-// so callers that support them must resolve them into one of the other
-// sources first; the Console controller does.
+// Inline values are set directly. External secrets cannot be resolved here
+// and are skipped; the Console controller rejects them before mapping.
 func (m *configMapper) addEnv(name string, src *ir.ValueSource) {
 	if src == nil {
 		return

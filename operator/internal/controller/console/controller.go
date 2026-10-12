@@ -48,7 +48,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 )
 
 const (
@@ -88,11 +87,6 @@ type Controller struct {
 	// whose brokers exist are exactly the ones it deploys, and the NodePool
 	// CRD may not be installed otherwise.
 	UseNodePools bool
-
-	// CloudExpander resolves externalSecretRef values in a Console's
-	// staticConfiguration. Nil when the operator runs without
-	// --enable-cloud-secrets, in which case such values fail the reconcile.
-	CloudExpander *pkgsecrets.CloudExpander
 
 	// rng is used to generate Console's JWT Signing keys, if they're not
 	// explicitly specified. If nil, SetupWithManager will set it with a seeded
@@ -381,7 +375,6 @@ func (c *Controller) rendererFor(ctl *kube.Ctl, cr *redpandav1alpha2.Console) *r
 		labels:       c.ownershipLabelsFor(cr),
 		metrics:      metrics,
 		useNodePools: c.UseNodePools,
-		expander:     c.CloudExpander,
 	}
 }
 
@@ -490,7 +483,6 @@ type render struct {
 	console      *redpandav1alpha2.Console
 	metrics      console.MetricsState
 	useNodePools bool
-	expander     *pkgsecrets.CloudExpander
 }
 
 func (r *render) Types() []kube.Object {
@@ -615,7 +607,7 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 	if cfg := r.console.Spec.ClusterSource.StaticConfiguration; cfg != nil {
 		irCfg := redpandav1alpha2.ConvertStaticConfigToIR(r.console.Namespace, cfg)
 
-		credentials, err := r.mirrorCredentials(ctx, irCfg)
+		credentials, err := r.mirrorCredentials(irCfg)
 		if err != nil {
 			return console.PartialRenderValues{}, nil, err
 		}
@@ -626,81 +618,94 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 	return console.PartialRenderValues{}, nil, nil
 }
 
-// mirrorCredentials rewrites every inline or externalSecretRef value in cfg
-// into a key of a Console-owned Secret, and returns that Secret (nil when cfg
-// has no such values). Console can only read credentials from its
-// environment or files, so a value has to live in a Secret or ConfigMap
-// before it can be passed through; mirroring also keeps inline values out of
-// the Deployment spec.
-func (r *render) mirrorCredentials(ctx context.Context, cfg *ir.StaticConfigurationSource) (*corev1.Secret, error) {
-	name := fmt.Sprintf("%s-cluster-credentials", r.console.Name)
-	data := map[string][]byte{}
+// staticConfigPath is the CRD field path of a Console's staticConfiguration.
+const staticConfigPath = "spec.cluster.staticConfiguration"
 
-	mirror := func(key string, src *ir.ValueSource) error {
-		if src == nil || (src.Inline == nil && src.ExternalSecretRefSelector == nil) {
-			return nil
+// mirrorCredentials rewrites every inline value in cfg into a key of a
+// Console-owned Secret, and returns that Secret (nil when cfg has no inline
+// values). Console can only read credentials from its environment or files,
+// so mirroring keeps inline values out of the Deployment spec.
+//
+// externalSecretRef is rejected rather than resolved: the operator's cloud
+// secret expander can read any secret under its prefix, and resolving one
+// here would let anyone who can create a Console copy it into a Secret in
+// their namespace.
+func (r *render) mirrorCredentials(cfg *ir.StaticConfigurationSource) (*corev1.Secret, error) {
+	name := fmt.Sprintf("%s-cluster-credentials", r.console.Name)
+
+	type source struct {
+		path string
+		src  *ir.ValueSource
+	}
+	sources := map[string]source{}
+	add := func(key, path string, src *ir.ValueSource) {
+		sources[key] = source{path: staticConfigPath + "." + path, src: src}
+	}
+	addTLS := func(prefix, path string, tls *ir.CommonTLS) {
+		if tls == nil {
+			return
 		}
-		value, err := src.Load(ctx, nil, r.expander)
-		if err != nil {
-			return errors.Wrapf(err, "resolving %s", key)
+		add(prefix+"-tls-ca", path+".tls.caCert", tls.CaCert)
+		add(prefix+"-tls-cert", path+".tls.cert", tls.Cert)
+		add(prefix+"-tls-key", path+".tls.key", tls.Key)
+	}
+
+	if kafka := cfg.Kafka; kafka != nil {
+		addTLS("kafka", "kafka", kafka.TLS)
+		if sasl := kafka.SASL; sasl != nil {
+			add("kafka-sasl-password", "kafka.sasl.password", sasl.Password)
+			if sasl.OAUth != nil {
+				add("kafka-sasl-oauth-token", "kafka.sasl.oauth.token", sasl.OAUth.Token)
+			}
+			if sasl.GSSAPIConfig != nil {
+				add("kafka-sasl-gssapi-password", "kafka.sasl.gssapi.password", sasl.GSSAPIConfig.Password)
+			}
+			if sasl.AWSMskIam != nil {
+				add("kafka-sasl-aws-msk-iam-secret-key", "kafka.sasl.awsMskIam.secretKey", sasl.AWSMskIam.SecretKey)
+				add("kafka-sasl-aws-msk-iam-session-token", "kafka.sasl.awsMskIam.sessionToken", sasl.AWSMskIam.SessionToken)
+			}
 		}
-		data[key] = []byte(value)
+	}
+
+	if admin := cfg.Admin; admin != nil {
+		addTLS("admin", "admin", admin.TLS)
+		if admin.Auth != nil {
+			add("admin-password", "admin.sasl.password", admin.Auth.Password)
+			add("admin-token", "admin.sasl.authToken", admin.Auth.AuthToken)
+		}
+	}
+
+	if schema := cfg.SchemaRegistry; schema != nil {
+		addTLS("schema-registry", "schemaRegistry", schema.TLS)
+		if schema.SASL != nil {
+			add("schema-registry-password", "schemaRegistry.sasl.password", schema.SASL.Password)
+			add("schema-registry-token", "schemaRegistry.sasl.authToken", schema.SASL.AuthToken)
+		}
+	}
+
+	keys := helmette.SortedKeys(sources)
+
+	// Check every source before mirroring any, so a rejected Console never
+	// produces a partial Secret.
+	for _, key := range keys {
+		if s := sources[key]; s.src != nil && s.src.ExternalSecretRefSelector != nil {
+			return nil, errors.Newf("%s.externalSecretRef is not supported for Console; use secretKeyRef, configMapKeyRef, or inline instead", s.path)
+		}
+	}
+
+	data := map[string][]byte{}
+	for _, key := range keys {
+		src := sources[key].src
+		if src == nil || src.Inline == nil {
+			continue
+		}
+		data[key] = []byte(*src.Inline)
 		*src = ir.ValueSource{
 			Namespace: src.Namespace,
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: name},
 				Key:                  key,
 			},
-		}
-		return nil
-	}
-
-	sources := map[string]*ir.ValueSource{}
-	addTLS := func(prefix string, tls *ir.CommonTLS) {
-		if tls == nil {
-			return
-		}
-		sources[prefix+"-tls-ca"] = tls.CaCert
-		sources[prefix+"-tls-cert"] = tls.Cert
-		sources[prefix+"-tls-key"] = tls.Key
-	}
-
-	if kafka := cfg.Kafka; kafka != nil {
-		addTLS("kafka", kafka.TLS)
-		if sasl := kafka.SASL; sasl != nil {
-			sources["kafka-sasl-password"] = sasl.Password
-			if sasl.OAUth != nil {
-				sources["kafka-sasl-oauth-token"] = sasl.OAUth.Token
-			}
-			if sasl.GSSAPIConfig != nil {
-				sources["kafka-sasl-gssapi-password"] = sasl.GSSAPIConfig.Password
-			}
-			if sasl.AWSMskIam != nil {
-				sources["kafka-sasl-aws-msk-iam-secret-key"] = sasl.AWSMskIam.SecretKey
-				sources["kafka-sasl-aws-msk-iam-session-token"] = sasl.AWSMskIam.SessionToken
-			}
-		}
-	}
-
-	if admin := cfg.Admin; admin != nil {
-		addTLS("admin", admin.TLS)
-		if admin.Auth != nil {
-			sources["admin-password"] = admin.Auth.Password
-			sources["admin-token"] = admin.Auth.AuthToken
-		}
-	}
-
-	if schema := cfg.SchemaRegistry; schema != nil {
-		addTLS("schema-registry", schema.TLS)
-		if schema.SASL != nil {
-			sources["schema-registry-password"] = schema.SASL.Password
-			sources["schema-registry-token"] = schema.SASL.AuthToken
-		}
-	}
-
-	for _, key := range helmette.SortedKeys(sources) {
-		if err := mirror(key, sources[key]); err != nil {
-			return nil, err
 		}
 	}
 

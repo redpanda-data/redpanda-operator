@@ -30,6 +30,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -45,7 +46,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/pkg/ir"
-	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -89,9 +89,9 @@ func TestController(t *testing.T) {
 			},
 		},
 		{
-			// Inline, ConfigMap, and external secret sources reach Console
-			// through the environment: inline and external values via the
-			// Console-owned credentials Secret.
+			// Inline and ConfigMap sources reach Console through the
+			// environment: inline values via the Console-owned credentials
+			// Secret.
 			name: "static-config-value-sources",
 			console: &redpandav1alpha2.Console{
 				ObjectMeta: metav1.ObjectMeta{
@@ -113,9 +113,7 @@ func TestController(t *testing.T) {
 								SASL: &redpandav1alpha2.AdminSASL{
 									Username:  "admin",
 									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
-									Password: &redpandav1alpha2.ValueSource{
-										ExternalSecretRefSelector: &redpandav1alpha2.ExternalSecretKeySelector{Name: "admin-password"},
-									},
+									Password:  &redpandav1alpha2.ValueSource{Inline: ptr.To("inline-admin-password")},
 								},
 							},
 							SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
@@ -347,10 +345,9 @@ func TestController(t *testing.T) {
 			_, _ = seed.Write([]byte(tc.name))
 
 			consoleCtrl := Controller{
-				Ctl:           ctl,
-				UseNodePools:  true,
-				CloudExpander: pkgsecrets.NewCloudExpanderFromAPI(fakeSecretAPI{"admin-password": "external-password"}),
-				rng:           rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
+				Ctl:          ctl,
+				UseNodePools: true,
+				rng:          rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
 			}
 
 			// Create console CR with namespace set
@@ -410,26 +407,54 @@ func TestController(t *testing.T) {
 			require.Empty(t, scrapeControllerObjects(t, ctl, console))
 		})
 	}
+
+	t.Run("external-secret-rejected", func(t *testing.T) {
+		consoleCtrl := Controller{Ctl: ctl, UseNodePools: true, rng: rand.New(rand.NewSource(1))} //nolint:gosec // test-only determinism, not cryptographic
+
+		console := &redpandav1alpha2.Console{
+			ObjectMeta: metav1.ObjectMeta{Name: "console-external", Namespace: ns.Name},
+			Spec: redpandav1alpha2.ConsoleSpec{
+				ClusterSource: &redpandav1alpha2.ClusterSource{
+					StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
+						Kafka: &redpandav1alpha2.KafkaAPISpec{
+							Brokers: []string{"kafka-broker:9092"},
+							SASL: &redpandav1alpha2.KafkaSASL{
+								Username:  "testuser",
+								Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+								// An inline value alongside the rejected one must not be
+								// mirrored either.
+								Password: &redpandav1alpha2.ValueSource{Inline: ptr.To("inline-password")},
+							},
+						},
+						SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+							URLs: []string{"http://schema-registry:8081"},
+							SASL: &redpandav1alpha2.SchemaRegistrySASL{
+								Username:  "schema",
+								Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+								Password: &redpandav1alpha2.ValueSource{
+									ExternalSecretRefSelector: &redpandav1alpha2.ExternalSecretKeySelector{Name: "schema-registry-password"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		require.NoError(t, ctl.Apply(t.Context(), console))
+
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(console)}, ClusterName: mcmanager.LocalCluster}
+		_, err := consoleCtrl.Reconcile(t.Context(), req)
+		require.ErrorContains(t, err, "spec.cluster.staticConfiguration.schemaRegistry.sasl.password.externalSecretRef is not supported for Console")
+
+		_, err = kube.Get[corev1.Secret](t.Context(), ctl, kube.ObjectKey{Namespace: ns.Name, Name: "console-external-cluster-credentials"})
+		require.True(t, apierrors.IsNotFound(err), "credentials Secret must not exist, got %v", err)
+	})
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels
-// fakeSecretAPI serves cloud secrets from a map.
-type fakeSecretAPI map[string]string
-
-func (f fakeSecretAPI) GetSecretValue(_ context.Context, name string) (string, bool) {
-	v, ok := f[name]
-	return v, ok
-}
-
-func (f fakeSecretAPI) CheckSecretExists(_ context.Context, name string) bool {
-	_, ok := f[name]
-	return ok
-}
-
 func TestMirrorCredentials(t *testing.T) {
 	cases := []struct {
 		name     string
-		expander *pkgsecrets.CloudExpander
 		in       *ir.StaticConfigurationSource
 		wantData map[string]string
 		wantErr  string
@@ -470,32 +495,31 @@ func TestMirrorCredentials(t *testing.T) {
 			},
 		},
 		{
-			name:     "external secret",
-			expander: pkgsecrets.NewCloudExpanderFromAPI(fakeSecretAPI{"kafka": "from-the-cloud"}),
+			name: "external secret is rejected",
 			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
 				Password: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "kafka"}},
 			}}},
-			wantData: map[string]string{"kafka-sasl-password": "from-the-cloud"},
+			wantErr: "spec.cluster.staticConfiguration.kafka.sasl.password.externalSecretRef is not supported for Console",
 		},
 		{
-			name: "external secret without cloud secrets enabled",
-			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
-				Password: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "kafka"}},
+			name: "external TLS key is rejected",
+			in: &ir.StaticConfigurationSource{Admin: &ir.AdminAPISpec{TLS: &ir.CommonTLS{
+				Key: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "key"}},
 			}}},
-			wantErr: "without enabling external secrets",
+			wantErr: "spec.cluster.staticConfiguration.admin.tls.key.externalSecretRef is not supported for Console",
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			r := &render{
-				console:  &redpandav1alpha2.Console{ObjectMeta: metav1.ObjectMeta{Name: "c", Namespace: "ns"}},
-				expander: tc.expander,
+				console: &redpandav1alpha2.Console{ObjectMeta: metav1.ObjectMeta{Name: "c", Namespace: "ns"}},
 			}
 
-			secret, err := r.mirrorCredentials(t.Context(), tc.in)
+			secret, err := r.mirrorCredentials(tc.in)
 			if tc.wantErr != "" {
 				require.ErrorContains(t, err, tc.wantErr)
+				require.Nil(t, secret)
 				return
 			}
 			require.NoError(t, err)

@@ -973,8 +973,8 @@ func TestConfigMapper_addEnv(t *testing.T) {
 	require.Equal(t, "test-configmap", mapper.Env[2].ValueFrom.ConfigMapKeyRef.Name)
 	require.Equal(t, "test-key", mapper.Env[2].ValueFrom.ConfigMapKeyRef.Key)
 
-	// Test with an external secret, which must be resolved before mapping
-	// (should not add)
+	// Test with an external secret, which cannot be resolved here (should
+	// not add)
 	mapper.addEnv("EXTERNAL_VAR", &ir.ValueSource{
 		ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "external"},
 	})
