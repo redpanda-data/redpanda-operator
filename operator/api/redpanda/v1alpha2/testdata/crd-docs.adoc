@@ -1959,9 +1959,9 @@ KafkaSASLGSSAPI represents the Kafka Kerberos config.
 | Field | Description | Default | Validation
 | *`authType`* __string__ | Specifies how to obtain Kerberos credentials: `USER_AUTH` to log in with `username` and `password`, or `KEYTAB_AUTH` to log in with the keytab file at `keyTabPath`. + |  | 
 | *`keyTabPath`* __string__ | Specifies the path to the keytab file for `KEYTAB_AUTH`. +
-The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings. + |  | 
+The path is read from the operator's file system, so the file must be mounted into the operator Pod. + |  | 
 | *`kerberosConfigPath`* __string__ | Specifies the path to the Kerberos configuration file (`krb5.conf`). +
-The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings. + |  | 
+The path is read from the operator's file system, so the file must be mounted into the operator Pod. + |  | 
 | *`serviceName`* __string__ | Specifies the primary of the brokers' Kerberos service principal name. +
 Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`. + |  | 
 | *`username`* __string__ | Specifies the Kerberos principal to authenticate as, without the realm. + |  | 

@@ -119,10 +119,10 @@ type KafkaSASLGSSAPI struct {
 	// Specifies how to obtain Kerberos credentials: `USER_AUTH` to log in with `username` and `password`, or `KEYTAB_AUTH` to log in with the keytab file at `keyTabPath`.
 	AuthType string `json:"authType"`
 	// Specifies the path to the keytab file for `KEYTAB_AUTH`.
-	// The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings.
+	// The path is read from the operator's file system, so the file must be mounted into the operator Pod.
 	KeyTabPath string `json:"keyTabPath"`
 	// Specifies the path to the Kerberos configuration file (`krb5.conf`).
-	// The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings.
+	// The path is read from the operator's file system, so the file must be mounted into the operator Pod.
 	KerberosConfigPath string `json:"kerberosConfigPath"`
 	// Specifies the primary of the brokers' Kerberos service principal name.
 	// Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`.
