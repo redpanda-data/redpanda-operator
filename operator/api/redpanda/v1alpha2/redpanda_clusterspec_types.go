@@ -1173,11 +1173,11 @@ type ContainerResources struct {
 type Memory struct {
 	// Defines resource limits for containers.
 	Container *ContainerResources `json:"container,omitempty"`
-	// Enables memory locking (the `--lock-memory` Redpanda flag), which prevents the operating system
-	// from swapping Redpanda's memory to disk. Applies only when `resources.requests` and
-	// `resources.limits` are not set. On nodes without swap, rpk does not enable memory locking. If
-	// the container's memlock limit is too low, Redpanda logs a warning and starts without locking
-	// memory. Default: `false`.
+	// Enables memory locking, which prevents the operating system from swapping Redpanda's memory
+	// to disk. In a `Redpanda` resource, this takes effect only when `resources.requests` and
+	// `resources.limits` are both unset. When they are set, add `--lock-memory` to
+	// `statefulset.additionalRedpandaCmdFlags` instead. `RedpandaBrokerPool` and `StretchCluster`
+	// resources honor this field in either case. Default: `false`.
 	EnableMemoryLocking *bool `json:"enable_memory_locking,omitempty"`
 	// Allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar.
 	Redpanda *RedpandaMemory `json:"redpanda,omitempty"`
