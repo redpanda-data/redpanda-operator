@@ -117,6 +117,24 @@ func TestController(t *testing.T) {
 				},
 			},
 		},
+		{
+			// test-redpanda-pools is in the end state of a NodePool
+			// migration: its own StatefulSet is drained and every broker
+			// lives in a NodePool.
+			name: "cluster-ref-node-pools",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-cluster-ref-node-pools",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						ClusterRef: &redpandav1alpha2.ClusterRef{
+							Name: "test-redpanda-pools",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	ctl := kubetest.NewEnv(t, kube.Options{
@@ -142,6 +160,35 @@ func TestController(t *testing.T) {
 		},
 	}))
 
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-redpanda-pools",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.RedpandaSpec{
+			ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{
+					Replicas: ptr.To(0),
+				},
+			},
+		},
+	}))
+
+	require.NoError(t, ctl.Apply(t.Context(), &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pool",
+			Namespace: ns.Name,
+		},
+		Spec: redpandav1alpha2.NodePoolSpec{
+			EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+				Replicas: ptr.To[int32](2),
+			},
+			ClusterRef: redpandav1alpha2.ClusterRef{
+				Name: "test-redpanda-pools",
+			},
+		},
+	}))
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -151,8 +198,9 @@ func TestController(t *testing.T) {
 			_, _ = seed.Write([]byte(tc.name))
 
 			consoleCtrl := Controller{
-				Ctl: ctl,
-				rng: rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
+				Ctl:          ctl,
+				UseNodePools: true,
+				rng:          rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
 			}
 
 			// Create console CR with namespace set

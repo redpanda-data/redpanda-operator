@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,6 +23,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
+	"github.com/redpanda-data/redpanda-operator/pkg/kube"
 )
 
 type clientList[T client.Object] interface {
@@ -35,12 +38,16 @@ func clusterReferenceIndexName(name string) string {
 
 func RegisterClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
 	indexName := clusterReferenceIndexName(name)
-	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
-		return cr.IsV2()
-	})); err != nil {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, o, indexName, v2ClusterKeys); err != nil {
 		return nil, err
 	}
 	return enqueueFromSourceCluster(mgr, name, l), nil
+}
+
+// EnqueueFromNodePool maps a NodePool event to the objects indexed under name
+// by [RegisterClusterSourceIndex] that reference the pool's cluster.
+func EnqueueFromNodePool[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U) handler.EventHandler {
+	return enqueueReferencing(mgr, name, l, v2ClusterKeys)
 }
 
 func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U clientList[T]](ctx context.Context, mgr ctrl.Manager, name string, o T, l U) (handler.EventHandler, error) {
@@ -52,6 +59,12 @@ func RegisterV1ClusterSourceIndex[T redpandav1alpha2.ClusterReferencingObject, U
 	}
 	return enqueueFromSourceCluster(mgr, name, l), nil
 }
+
+// v2ClusterKeys returns the "namespace/name" of every Redpanda CR o
+// references, which is what [RegisterClusterSourceIndex] files o under.
+var v2ClusterKeys = indexByClusterSource(func(cr *redpandav1alpha2.ClusterRef) bool {
+	return cr.IsV2()
+})
 
 func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func(o client.Object) []string {
 	return func(o client.Object) []string {
@@ -76,9 +89,9 @@ func indexByClusterSource(checkRef func(*redpandav1alpha2.ClusterRef) bool) func
 	}
 }
 
-func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c client.Client, list U, name string, nn types.NamespacedName) ([]reconcile.Request, error) {
+func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c client.Client, list U, name string, clusterKey string) ([]reconcile.Request, error) {
 	err := c.List(ctx, list, &client.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName(name), nn.String()),
+		FieldSelector: fields.OneTermEqualSelector(clusterReferenceIndexName(name), clusterKey),
 	})
 	if err != nil {
 		return nil, err
@@ -98,12 +111,24 @@ func sourceClusters[T client.Object, U clientList[T]](ctx context.Context, c cli
 }
 
 func enqueueFromSourceCluster[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U) handler.EventHandler {
+	return enqueueReferencing(mgr, name, l, func(o client.Object) []string {
+		return []string{client.ObjectKeyFromObject(o).String()}
+	})
+}
+
+// enqueueReferencing enqueues the objects indexed under name that reference
+// any of the clusters clusterKeys maps the event's object to.
+func enqueueReferencing[T client.Object, U clientList[T]](mgr ctrl.Manager, name string, l U, clusterKeys func(client.Object) []string) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, o client.Object) []reconcile.Request {
-		list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
-		requests, err := sourceClusters(ctx, mgr.GetClient(), list, name, client.ObjectKeyFromObject(o))
-		if err != nil {
-			mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
-			return nil
+		var requests []reconcile.Request
+		for _, key := range clusterKeys(o) {
+			list := reflect.New(reflect.TypeOf(l).Elem()).Interface().(U)
+			referencing, err := sourceClusters(ctx, mgr.GetClient(), list, name, key)
+			if err != nil {
+				mgr.GetLogger().V(1).Info(fmt.Sprintf("possibly skipping %s reconciliation due to failure to fetch %s associated with cluster", name, name), "error", err)
+				return nil
+			}
+			requests = append(requests, referencing...)
 		}
 		return requests
 	})
@@ -119,4 +144,20 @@ func FromSourceCluster[T client.Object, U clientList[T]](ctx context.Context, c 
 	}
 
 	return list.GetItems(), nil
+}
+
+// NodePoolsFor returns the NodePools bound to cluster: the set
+// [FromSourceCluster] reads from the "pool" index, found by filtering a plain
+// List so that callers don't depend on the NodePool controller having
+// registered that index.
+func NodePoolsFor(ctx context.Context, ctl *kube.Ctl, cluster *redpandav1alpha2.Redpanda) ([]*redpandav1alpha2.NodePool, error) {
+	var pools redpandav1alpha2.NodePoolList
+	if err := ctl.List(ctx, cluster.Namespace, &pools); err != nil {
+		return nil, err
+	}
+
+	key := client.ObjectKeyFromObject(cluster).String()
+	return functional.Filter(pools.GetItems(), func(pool *redpandav1alpha2.NodePool) bool {
+		return slices.Contains(v2ClusterKeys(pool), key)
+	}), nil
 }

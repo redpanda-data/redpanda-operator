@@ -437,7 +437,7 @@ func Run(
 				return err
 			}
 
-			if err := (&consolecontroller.Controller{Ctl: ctl}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
+			if err := (&consolecontroller.Controller{Ctl: ctl, UseNodePools: opts.enableV2NodepoolController}).SetupWithManager(ctx, mgr, opts.namespace); err != nil {
 				setupLog.Error(err, "unable to create controller", "controller", "Console")
 				return err
 			}

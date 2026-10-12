@@ -64,6 +64,14 @@ rules:
       - patch
       - update
   - apiGroups:
+      - cluster.redpanda.com
+    resources:
+      - nodepools
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
       - networking.k8s.io
     resources:
       - ingresses
