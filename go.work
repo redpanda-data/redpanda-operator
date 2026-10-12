@@ -7,8 +7,6 @@ use (
 	./charts/console
 	./charts/redpanda
 	./gen
-	./gotohelm
-	./gotohelm/testdata/src/example
 	./harpoon
 	./licensereport
 	./operator

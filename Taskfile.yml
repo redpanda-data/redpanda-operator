@@ -186,7 +186,7 @@ tasks:
     # proxy.golang.org (no vanity-URL meta-tag dependency, so no gopkg.in
     # flake) and classifies licenses with Google's licenseclassifier.
     # Our own packages and pure-generated buf.build paths are ignored to
-    # mirror prior behavior. example.com/example is the gotohelm test fake.
+    # mirror prior behavior.
     # Write to a tmp file then mv: redirecting > directly to the target
     # would truncate it before licensereport can read --fallback-from.
     - |
@@ -196,7 +196,6 @@ tasks:
         --ignore buf.build/gen/go/redpandadata \
         --ignore buf.build/gen/go/bufbuild \
         --ignore buf.build/gen/go/grpc-ecosystem \
-        --ignore example.com/example \
         --ignore github.com/redpanda-data/common-go \
         --ignore github.com/redpanda-data/console/backend \
         --ignore github.com/redpanda-data/redpanda \

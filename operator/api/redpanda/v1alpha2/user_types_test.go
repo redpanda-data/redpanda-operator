@@ -23,11 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
 type copyableObject[T client.Object] interface {
@@ -57,12 +54,15 @@ func runValidationTest[T copyableObject[T]](ctx context.Context, t *testing.T, t
 	if tt.rawManifest != "" {
 		var obj unstructured.Unstructured
 		require.NoError(t, yaml.Unmarshal([]byte(tt.rawManifest), &obj.Object))
-		_, ok := obj.Object["metadata"]
+		meta, ok := obj.Object["metadata"].(map[string]any)
 		if !ok {
-			obj.Object["metadata"] = map[string]any{}
+			meta = map[string]any{}
+			obj.Object["metadata"] = meta
 		}
-		meta := obj.Object["metadata"].(map[string]any)
 		meta["name"] = name
+		// The manifest exists to exercise field validation; its own name and
+		// namespace are never what the case is about.
+		meta["namespace"] = objectCopy.GetNamespace()
 		err = c.Create(ctx, &obj)
 	} else {
 		err = c.Create(ctx, objectCopy)
@@ -99,19 +99,13 @@ func runValidationTest[T copyableObject[T]](ctx context.Context, t *testing.T, t
 	}
 }
 
-func TestUserValidation(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+func testUserValidation(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	baseUser := User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: UserSpec{
 			ClusterSource: &ClusterSource{
@@ -131,13 +125,6 @@ func TestUserValidation(t *testing.T) {
 			},
 		},
 	}
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
 
 	for name, tt := range map[string]validationTestCase[*User]{
 		"basic create": {},
@@ -491,26 +478,13 @@ func TestUserValidation(t *testing.T) {
 	}
 }
 
-func TestUserDefaults(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func testUserDefaults(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	require.NoError(t, c.Create(ctx, &User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: UserSpec{
 			ClusterSource: &ClusterSource{
@@ -543,7 +517,7 @@ func TestUserDefaults(t *testing.T) {
 	}))
 
 	var user User
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &user))
 
 	require.Len(t, user.Status.Conditions, 1)
 	require.Equal(t, ResourceConditionTypeSynced, user.Status.Conditions[0].Type)
@@ -563,26 +537,13 @@ func TestUserDefaults(t *testing.T) {
 	require.Equal(t, PatternTypeLiteral, *user.Spec.Authorization.ACLs[0].Resource.PatternType)
 }
 
-func TestUserImmutableFields(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func testUserImmutableFields(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	require.NoError(t, c.Create(ctx, &User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: UserSpec{
 			ClusterSource: &ClusterSource{
@@ -594,14 +555,12 @@ func TestUserImmutableFields(t *testing.T) {
 	}))
 
 	var user User
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &user))
 
 	user.Spec.ClusterSource.ClusterRef.Name = "other"
-	err = c.Update(ctx, &user)
+	require.EqualError(t, c.Update(ctx, &user), `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 
-	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
-
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &user))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &user))
 	user.Spec.ClusterSource.StaticConfiguration = &StaticConfigurationSource{
 		Kafka: &KafkaAPISpec{
 			Brokers: []string{"test:123"},
@@ -610,9 +569,7 @@ func TestUserImmutableFields(t *testing.T) {
 			URLs: []string{"http://test:123"},
 		},
 	}
-	err = c.Update(ctx, &user)
-
-	require.EqualError(t, err, `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
+	require.EqualError(t, c.Update(ctx, &user), `User.cluster.redpanda.com "name" is invalid: spec.cluster: Invalid value: "object": ClusterSource is immutable`)
 }
 
 func TestACLTypeMapsInvertible(t *testing.T) {

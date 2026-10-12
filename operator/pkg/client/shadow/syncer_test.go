@@ -44,6 +44,7 @@ func getTestImage() string {
 
 func TestSyncer(t *testing.T) {
 	syncRetryPeriod := 10 * time.Second
+	syncPollInterval := 50 * time.Millisecond
 
 	// TODO: a current bug in duration parsing in core winds up considering duration intervals zigzag encoded
 	// we explicitly choose 2 seconds as that represents the value 1s in zigzag whereas 1s decodes to -1s and
@@ -152,19 +153,19 @@ func TestSyncer(t *testing.T) {
 	// wrap in a retry since the update of state is asynchronous
 	require.Eventually(t, func() bool {
 		return clusterTwo.hasActiveMirroredTopics(t, ctx, linkName, topicName)
-	}, syncRetryPeriod, 1*time.Second, "shadow link never synchronized")
+	}, syncRetryPeriod, syncPollInterval, "shadow link never synchronized")
 
 	// check all the data has been synced over
 	require.Eventually(t, func() bool {
 		return clusterTwo.hasACL(t, ctx, user)
-	}, syncRetryPeriod, 1*time.Second, "cluster two never had ACL synchronized")
+	}, syncRetryPeriod, syncPollInterval, "cluster two never had ACL synchronized")
 
 	// Every clientOptions field set on the CR is applied on the broker
 	// (effective_* reflects the resolved value). Per-field CR->API mapping and
 	// the zero-passthrough default behavior are covered by TestConvertClientOptions.
 	require.Eventually(t, func() bool {
 		return clusterTwo.shadowLinkClientOptions(t, ctx, linkName).GetEffectiveFetchMinBytes() == 1
-	}, syncRetryPeriod, 1*time.Second, "client options never applied on the broker")
+	}, syncRetryPeriod, syncPollInterval, "client options never applied on the broker")
 	clientOptions := clusterTwo.shadowLinkClientOptions(t, ctx, linkName)
 	require.Equal(t, int32(1), clientOptions.GetEffectiveFetchMinBytes())
 	require.Equal(t, int32(50), clientOptions.GetEffectiveFetchWaitMaxMs())
@@ -184,7 +185,7 @@ func TestSyncer(t *testing.T) {
 		}
 		t.Logf("checking cluster offsets, expected (cluster one): %d, actual (cluster two): %d", clusterOneOffset, clusterTwoOffset)
 		return clusterOneOffset == clusterTwoOffset
-	}, syncRetryPeriod, 1*time.Second, "cluster offsets not equal expected: %d, actual: %d", clusterOneOffset, clusterTwoOffset)
+	}, syncRetryPeriod, syncPollInterval, "cluster offsets not equal expected: %d, actual: %d", clusterOneOffset, clusterTwoOffset)
 
 	// Update
 	link.Spec.TopicMetadataSyncOptions.AutoCreateShadowTopicFilters[0].Name = topicTwo
@@ -193,7 +194,7 @@ func TestSyncer(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		return clusterTwo.hasActiveMirroredTopics(t, ctx, linkName, topicName, topicTwo)
-	}, syncRetryPeriod, 1*time.Second, "topic %q never synced", topicTwo)
+	}, syncRetryPeriod, syncPollInterval, "topic %q never synced", topicTwo)
 
 	require.NoError(t, syncer.Delete(ctx, link))
 }

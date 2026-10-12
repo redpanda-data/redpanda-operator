@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/reaper
 
-go 1.26.5
+go 1.26.6
 
 require (
 	golang.org/x/sync v0.22.0
