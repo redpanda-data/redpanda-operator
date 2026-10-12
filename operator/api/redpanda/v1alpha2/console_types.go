@@ -479,8 +479,9 @@ type SerdeSecrets struct {
 
 // RedpandaAdminAPISecrets holds the credentials and TLS files that Console uses to connect to the Redpanda Admin API.
 type RedpandaAdminAPISecrets struct {
-	// Specifies the password for the Admin API.
-	// The operator passes it to Console in the `REDPANDA_ADMINAPI_PASSWORD` environment variable.
+	// Specifies the password for Admin API basic authentication.
+	// The operator passes it to Console in the `REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD` environment variable.
+	// Set the username in `config` at `redpanda.adminApi.authentication.basic.username`.
 	Password *string `json:"password,omitempty"`
 	// Specifies the PEM-encoded CA certificate that Console uses to verify the Admin API's TLS certificate.
 	// The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_CAFILEPATH` to its path.

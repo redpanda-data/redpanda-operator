@@ -1957,9 +1957,9 @@ KafkaSASLGSSAPI represents the Kafka Kerberos config.
 | Field | Description | Default | Validation
 | *`authType`* __string__ | Specifies how to obtain Kerberos credentials: `USER_AUTH` to log in with `username` and `password`, or `KEYTAB_AUTH` to log in with the keytab file at `keyTabPath`. + |  | 
 | *`keyTabPath`* __string__ | Specifies the path to the keytab file for `KEYTAB_AUTH`. +
-The path is read from the operator's file system, so the file must be mounted into the operator Pod. + |  | 
+The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings. + |  | 
 | *`kerberosConfigPath`* __string__ | Specifies the path to the Kerberos configuration file (`krb5.conf`). +
-The path is read from the operator's file system, so the file must be mounted into the operator Pod. + |  | 
+The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings. + |  | 
 | *`serviceName`* __string__ | Specifies the primary of the brokers' Kerberos service principal name. +
 Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`. + |  | 
 | *`username`* __string__ | Specifies the Kerberos principal to authenticate as, without the realm. + |  | 
@@ -3296,8 +3296,9 @@ RedpandaAdminAPISecrets holds the credentials and TLS files that Console uses to
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`password`* __string__ | Specifies the password for the Admin API. +
-The operator passes it to Console in the `REDPANDA_ADMINAPI_PASSWORD` environment variable. + |  | 
+| *`password`* __string__ | Specifies the password for Admin API basic authentication. +
+The operator passes it to Console in the `REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD` environment variable. +
+Set the username in `config` at `redpanda.adminApi.authentication.basic.username`. + |  | 
 | *`tlsCa`* __string__ | Specifies the PEM-encoded CA certificate that Console uses to verify the Admin API's TLS certificate. +
 The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_CAFILEPATH` to its path. + |  | 
 | *`tlsCert`* __string__ | Specifies the PEM-encoded client certificate that Console presents to the Admin API. +

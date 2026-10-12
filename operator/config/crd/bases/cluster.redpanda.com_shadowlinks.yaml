@@ -2006,12 +2006,12 @@ spec:
                                   kerberosConfigPath:
                                     description: |-
                                       Specifies the path to the Kerberos configuration file (`krb5.conf`).
-                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
+                                      The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings.
                                     type: string
                                   keyTabPath:
                                     description: |-
                                       Specifies the path to the keytab file for `KEYTAB_AUTH`.
-                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
+                                      The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings.
                                     type: string
                                   password:
                                     description: |-
@@ -4399,12 +4399,12 @@ spec:
                                   kerberosConfigPath:
                                     description: |-
                                       Specifies the path to the Kerberos configuration file (`krb5.conf`).
-                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
+                                      The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings.
                                     type: string
                                   keyTabPath:
                                     description: |-
                                       Specifies the path to the keytab file for `KEYTAB_AUTH`.
-                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
+                                      The operator reads the file from its own file system and a Console reads it from the Console container, so mount the file in each Pod that uses these settings.
                                     type: string
                                   password:
                                     description: |-
