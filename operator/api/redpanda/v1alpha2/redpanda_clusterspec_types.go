@@ -310,6 +310,7 @@ type RedpandaConsole struct {
 	// Settings for console's Deployment's liveness probe.
 	LivenessProbe *LivenessProbe `json:"livenessProbe,omitempty"`
 
+	// Configures a Prometheus ServiceMonitor that scrapes Redpanda Console's metrics.
 	Monitoring *MonitoringConfig `json:"monitoring,omitempty"`
 
 	// Deprecated fields below

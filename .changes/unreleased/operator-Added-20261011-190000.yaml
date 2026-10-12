@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Every Console CRD field has a description, so the CRD reference and `kubectl explain` describe what each field does and the default that applies when it is unset.
+time: 2026-10-11T19:00:00.000000000+01:00
