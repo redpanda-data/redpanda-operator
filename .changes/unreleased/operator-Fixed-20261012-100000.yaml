@@ -3,6 +3,7 @@ kind: Fixed
 body: |-
     The `resources.memory.enable_memory_locking` field description no longer says to set it to `true` for production
 
-      It now describes what memory locking does, that it applies only when `resources.requests` and
-      `resources.limits` are not set, and that it defaults to `false`.
+      It now describes what memory locking does, that a `Redpanda` resource applies it only when
+      `resources.requests` and `resources.limits` are both unset (otherwise use
+      `statefulset.additionalRedpandaCmdFlags`), and that it defaults to `false`.
 time: 2026-10-12T10:00:00.000000+01:00
