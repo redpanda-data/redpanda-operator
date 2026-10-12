@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"hash/fnv"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -42,6 +43,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -216,19 +218,7 @@ func TestController(t *testing.T) {
 	allCRDs := crds.All()
 	allCRDs = append(allCRDs, loadGatewayAPICRDs(t)...)
 
-	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-
-		for _, cond := range crd.Status.Conditions {
-			if cond.Type == apiextensionsv1.Established {
-				return cond.Status == apiextensionsv1.ConditionTrue, nil
-			}
-		}
-
-		return false, nil
-	}, allCRDs...))
+	testutils.InstallCRDs(t, ctl, allCRDs...)
 
 	// Create namespace
 	ns, err := kube.Create(t.Context(), ctl, corev1.Namespace{
@@ -298,14 +288,20 @@ func TestController(t *testing.T) {
 		},
 	}))
 
-	consoleCtrl := Controller{
-		Ctl:          ctl,
-		UseNodePools: true,
-		rng:          rand.New(rand.NewSource(0)),
-	}
-
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			// The goldens pin rng's JWT signing key, so each case needs its own.
+			seed := fnv.New64a()
+			_, _ = seed.Write([]byte(tc.name))
+
+			consoleCtrl := Controller{
+				Ctl:          ctl,
+				UseNodePools: true,
+				rng:          rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
+			}
+
 			// Create console CR with namespace set
 			console := tc.console.DeepCopy()
 			console.Namespace = ns.Name
@@ -316,7 +312,7 @@ func TestController(t *testing.T) {
 			for range 3 {
 				req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(console)}, ClusterName: mcmanager.LocalCluster}
 
-				_, err = consoleCtrl.Reconcile(t.Context(), req)
+				_, err := consoleCtrl.Reconcile(t.Context(), req)
 				require.NoError(t, err)
 
 				// Get updated console status
@@ -353,7 +349,7 @@ func TestController(t *testing.T) {
 			for range 3 {
 				req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(console)}, ClusterName: mcmanager.LocalCluster}
 
-				_, err = consoleCtrl.Reconcile(t.Context(), req)
+				_, err := consoleCtrl.Reconcile(t.Context(), req)
 				require.NoError(t, err)
 			}
 

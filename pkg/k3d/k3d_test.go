@@ -11,6 +11,7 @@ package k3d
 
 import (
 	"fmt"
+	"os/exec"
 	"sync"
 	"testing"
 
@@ -59,6 +60,23 @@ func TestIntegrationMultiInstance(t *testing.T) {
 	assert.NoError(t, errors.Join(errs...))
 }
 
+func TestIntegrationImportRepullsMissingImage(t *testing.T) {
+	testutil.SkipIfNotIntegration(t)
+
+	// Unused by any other test, so removing it from the host can't break a
+	// concurrent import.
+	const image = "busybox:1.37.0"
+
+	name := "import-repull"
+	cluster, err := GetOrCreate(name, WithAgents(0))
+	t.Cleanup(func() { forceCleanup(name) })
+	require.NoError(t, err)
+
+	// k3d alone fails this with "no valid images specified".
+	_ = exec.Command("docker", "image", "rm", "--force", image).Run()
+	require.NoError(t, cluster.ImportImage(image))
+}
+
 func TestClusterCreateArgs(t *testing.T) {
 	fastDetectionArgs := []string{
 		`--kube-controller-manager-arg=node-monitor-grace-period=10s@server:*`,
@@ -81,4 +99,20 @@ func TestClusterCreateArgs(t *testing.T) {
 			require.Contains(t, args, arg)
 		}
 	})
+}
+
+func TestNormalizeImageRef(t *testing.T) {
+	for given, want := range map[string]string{
+		"localhost/redpanda-operator:dev":                "localhost/redpanda-operator:dev",
+		"redpandadata/redpanda:v25.2.1":                  "docker.io/redpandadata/redpanda:v25.2.1",
+		"rancher/mirrored-library-busybox:1.36.1":        "docker.io/rancher/mirrored-library-busybox:1.36.1",
+		"busybox:1.36.1":                                 "docker.io/library/busybox:1.36.1",
+		"busybox":                                        "docker.io/library/busybox:latest",
+		"redpandadata/redpanda":                          "docker.io/redpandadata/redpanda:latest",
+		"quay.io/jetstack/cert-manager-controller:v1.17": "quay.io/jetstack/cert-manager-controller:v1.17",
+		"ghcr.io/loft-sh/vcluster-pro:4.4.0":             "ghcr.io/loft-sh/vcluster-pro:4.4.0",
+		"registry:5000/img":                              "registry:5000/img:latest",
+	} {
+		require.Equal(t, want, normalizeImageRef(given), "input %q", given)
+	}
 }

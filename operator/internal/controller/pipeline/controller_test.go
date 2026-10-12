@@ -46,6 +46,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -58,17 +59,7 @@ func setupTestEnv(t *testing.T) *kube.Ctl {
 		},
 	})
 
-	require.NoError(t, kube.ApplyAllAndWait(t.Context(), ctl, func(crd *apiextensionsv1.CustomResourceDefinition, err error) (bool, error) {
-		if err != nil {
-			return false, err
-		}
-		for _, cond := range crd.Status.Conditions {
-			if cond.Type == apiextensionsv1.Established {
-				return cond.Status == apiextensionsv1.ConditionTrue, nil
-			}
-		}
-		return false, nil
-	}, crds.All()...))
+	testutils.InstallCRDs(t, ctl, crds.All()...)
 
 	return ctl
 }
@@ -414,9 +405,7 @@ func (s *ControllerSuite) TestSetupWithManager() {
 	require.NoError(t, c.SetupWithManager(t.Context(), mgr, ""))
 	assert.False(t, c.podMonitorCRDInstalled(t.Context(), mgr))
 
-	// Install a minimal PodMonitor CRD. A fresh manager (fresh RESTMapper —
-	// the lazy mapper caches negative lookups) must now detect it pre-start.
-	require.NoError(t, kube.ApplyAll(t.Context(), ctl, &apiextensionsv1.CustomResourceDefinition{
+	testutils.InstallCRDs(t, ctl, &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{Name: "podmonitors.monitoring.coreos.com"},
 		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
 			Group: "monitoring.coreos.com",
@@ -439,7 +428,7 @@ func (s *ControllerSuite) TestSetupWithManager() {
 				},
 			}},
 		},
-	}))
+	})
 
 	mgr2 := newManager()
 	c2 := &Controller{Ctl: ctl}

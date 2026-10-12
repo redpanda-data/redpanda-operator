@@ -119,6 +119,8 @@ func TestCertificates(t *testing.T) {
 }
 
 func TestFetchBootstrapUser(t *testing.T) {
+	t.Parallel()
+
 	ctl := kubetest.NewEnv(t)
 	ctx := t.Context()
 

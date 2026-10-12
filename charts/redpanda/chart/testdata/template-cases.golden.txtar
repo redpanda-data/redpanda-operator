@@ -121,7 +121,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -1193,7 +1195,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -1256,7 +1258,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -1719,7 +1721,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -2658,7 +2662,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -2713,7 +2717,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -2971,7 +2975,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -4002,7 +4008,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -4065,7 +4071,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -4537,7 +4543,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -5564,7 +5572,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -5622,7 +5630,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -5906,7 +5914,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -7036,7 +7046,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -7102,7 +7112,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -7580,7 +7590,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -8699,7 +8711,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: kube-api-access
           readOnly: true
@@ -8765,7 +8777,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -9225,7 +9237,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -10399,7 +10413,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -10466,7 +10480,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -11030,7 +11044,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -12102,7 +12118,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -12165,7 +12181,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -12626,7 +12642,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -13698,7 +13716,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -13761,7 +13779,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -14238,7 +14256,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -15413,7 +15433,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -15479,7 +15499,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -15957,7 +15977,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -17029,7 +17051,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -17092,7 +17114,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -17462,7 +17484,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -18629,7 +18653,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -18692,7 +18716,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -19057,7 +19081,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -20026,7 +20052,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -20081,7 +20107,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -20363,7 +20389,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -21435,7 +21463,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -21498,7 +21526,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -21990,7 +22018,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -23062,7 +23092,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -23125,7 +23155,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -23586,7 +23616,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -24661,7 +24693,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -24724,7 +24756,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -25185,7 +25217,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -26257,7 +26291,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -26320,7 +26354,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -26785,7 +26819,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -27924,7 +27960,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -27987,7 +28023,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -28451,7 +28487,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -29590,7 +29628,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -29653,7 +29691,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -30117,7 +30155,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -31256,7 +31296,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -31319,7 +31359,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -31784,7 +31824,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -32874,7 +32916,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -32937,7 +32979,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -33399,7 +33441,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -34542,7 +34586,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -34605,7 +34649,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -35083,7 +35127,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -36226,7 +36272,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -36289,7 +36335,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -36767,7 +36813,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -37910,7 +37958,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -37973,7 +38021,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -38453,7 +38501,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -39547,7 +39597,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -39610,7 +39660,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -40087,7 +40137,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -41230,7 +41282,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -41293,7 +41345,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -41771,7 +41823,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -42914,7 +42968,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -42977,7 +43031,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -43455,7 +43509,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -44598,7 +44654,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -44661,7 +44717,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -45141,7 +45197,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -46235,7 +46293,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -46298,7 +46356,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -46775,7 +46833,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -47847,7 +47907,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -47910,7 +47970,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -48371,7 +48431,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -49444,7 +49506,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -49507,7 +49569,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -49968,7 +50030,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -51040,7 +51104,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -51103,7 +51167,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -51563,7 +51627,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -52723,7 +52789,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -52786,7 +52852,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -53247,7 +53313,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -54325,7 +54393,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -54388,7 +54456,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -54849,7 +54917,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -55970,7 +56040,7 @@ spec:
         - mountPath: /etc/tls/certs/external
           name: redpanda-external-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
       - command:
@@ -56013,7 +56083,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -56076,11 +56146,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -56541,7 +56611,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -57613,7 +57685,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -57676,7 +57748,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -58141,7 +58213,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.change-name.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -59216,7 +59290,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -59279,7 +59353,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -59770,7 +59844,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -60851,7 +60927,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -60921,7 +60997,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -61401,7 +61477,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -62475,7 +62553,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -62538,7 +62616,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -62988,7 +63066,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -63884,7 +63964,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -63955,7 +64035,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -64551,7 +64631,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -65623,7 +65705,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -65686,7 +65768,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -66017,7 +66099,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -67249,7 +67333,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -67315,7 +67399,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -67795,7 +67879,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -68916,7 +69002,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -68979,7 +69065,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -69442,7 +69528,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -70519,7 +70607,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -70582,7 +70670,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -71048,7 +71136,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -72147,7 +72237,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -72210,7 +72300,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -72699,7 +72789,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -73771,7 +73863,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -73834,7 +73926,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -74293,7 +74385,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/selfsigned/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local"
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -75276,7 +75370,7 @@ spec:
         - mountPath: /etc/tls/certs/selfsigned
           name: redpanda-selfsigned-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
       - command:
@@ -75339,7 +75433,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -75414,11 +75508,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -75852,7 +75946,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -76924,7 +77020,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -76987,7 +77083,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -77451,7 +77547,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -78631,7 +78729,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           name: kube-api-access
           readOnly: true
@@ -78697,7 +78795,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -79241,7 +79339,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -80320,7 +80420,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -80383,7 +80483,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -80856,7 +80956,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -82030,7 +82132,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -82096,7 +82198,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -111944,7 +112046,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -113016,7 +113120,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -113079,7 +113183,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -113346,7 +113450,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/for-internal/tls.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -114418,7 +114524,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -114481,7 +114587,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -114748,7 +114854,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -115821,7 +115929,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -115906,7 +116014,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -116389,7 +116497,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -117518,7 +117628,7 @@ spec:
         - mountPath: /etc/tls/certs/external
           name: redpanda-external-cert
         - mountPath: /etc/secrets/fs-validator/scripts/
-          name: redpanda-fs-validator
+          name: fs-validator
         - mountPath: /var/lib/redpanda/data
           name: datadir
         - mountPath: /fake/fsValidator
@@ -117563,7 +117673,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
         - mountPath: /fake/configurator
           name: test-extra-volume
       - command:
@@ -117637,11 +117747,11 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
-      - name: redpanda-fs-validator
+      - name: fs-validator
         secret:
           defaultMode: 509
           secretName: redpanda-fs-validator
@@ -118110,7 +118220,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -119280,7 +119392,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -119343,7 +119455,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -119812,7 +119924,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -120982,7 +121096,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -121045,7 +121159,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -121514,7 +121628,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -122698,7 +122814,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -122761,7 +122877,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -123390,7 +123506,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -124593,7 +124711,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -124656,7 +124774,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -125217,7 +125335,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -126391,7 +126511,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -126454,7 +126574,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -127015,7 +127135,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/truststores/configmaps/admin-cm-other.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -128190,7 +128312,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -128253,7 +128375,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -128750,7 +128872,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -129861,7 +129985,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -129932,7 +130056,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -130528,7 +130652,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.also-not-redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -131600,7 +131726,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: also-not-redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -131663,7 +131789,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: also-not-redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: also-not-redpanda-configurator
@@ -132124,7 +132250,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -133196,7 +133324,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -133259,7 +133387,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -133721,7 +133849,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -134793,7 +134923,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -134856,7 +134986,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -135317,7 +135447,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -136387,7 +136519,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -136450,7 +136582,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -136911,7 +137043,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -137983,7 +138117,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -138046,7 +138180,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -138534,7 +138668,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -139606,7 +139742,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -139669,7 +139805,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -140160,7 +140296,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5  ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -141215,7 +141353,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -141278,7 +141416,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -141781,7 +141919,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -142989,7 +143129,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -143055,7 +143195,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -153313,7 +153453,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -154392,7 +154534,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -154455,7 +154597,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -154950,7 +155092,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default-client/ca.crt --cert /etc/tls/certs/default-client/tls.crt --key /etc/tls/certs/default-client/tls.key ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -156152,7 +156296,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -156215,7 +156359,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -156490,7 +156634,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -157562,7 +157708,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -157625,7 +157771,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -158086,7 +158232,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -158405,6 +158553,8 @@ data:
         - redpanda-2.redpanda.default.svc.cluster.local.:9644
         tls:
           ca_file: /etc/tls/certs/default/ca.crt
+      allow_dedicated_interrupt_mode: true
+      cores_per_dedicated_interrupt_core: 6
       enable_memory_locking: false
       kafka_api:
         brokers:
@@ -158422,12 +158572,12 @@ data:
         tls:
           ca_file: /etc/tls/certs/default/ca.crt
       tune_aio_events: true
-      tune_cpu: true
-      tune_disk_irq: true
-      tune_disk_nomerges: true
-      tune_disk_scheduler: true
+      tune_cpu: false
+      tune_disk_irq: false
+      tune_disk_nomerges: false
+      tune_disk_scheduler: false
       tune_disk_write_cache: true
-      tune_fstrim: true
+      tune_fstrim: false
       tune_network: true
     schema_registry:
       schema_registry_api:
@@ -159228,7 +159378,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -159291,7 +159441,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator
@@ -159800,7 +159950,9 @@ stringData:
     CURL_BROKERS_CMD_PREFIX="curl --silent --fail --max-time 5 --cacert /etc/tls/certs/default/ca.crt ${CURL_URL}/v1/brokers"
 
     # the address this pod's broker advertises to the rest of the cluster,
-    # i.e. the internal_rpc_address its broker registers under
+    # i.e. the internal_rpc_address its broker registers under; must stay
+    # character-identical to the statefulset's --advertise-rpc-addr host
+    POD_ORDINAL=${SERVICE_NAME##*-}
     POD_FQDN="${SERVICE_NAME}.redpanda.default.svc.cluster.local."
   postStart.sh: |-
     #!/usr/bin/env bash
@@ -160942,7 +161094,7 @@ spec:
         - mountPath: /tmp/base-config
           name: base-config
         - mountPath: /etc/secrets/configurator/scripts/
-          name: redpanda-configurator
+          name: configurator
       - command:
         - /redpanda-operator
         - bootstrap
@@ -161005,7 +161157,7 @@ spec:
         name: base-config
       - emptyDir: {}
         name: config
-      - name: redpanda-configurator
+      - name: configurator
         secret:
           defaultMode: 509
           secretName: redpanda-configurator

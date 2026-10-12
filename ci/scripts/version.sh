@@ -27,7 +27,7 @@ COMMITISH="--dirty"
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
-		charts/console|charts/redpanda|charts/operator|operator|gotohelm)
+		charts/console|charts/redpanda|charts/operator|operator)
 			MODULE="$1"
 			shift 1
 			;;

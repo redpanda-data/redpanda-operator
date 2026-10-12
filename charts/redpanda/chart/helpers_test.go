@@ -307,6 +307,8 @@ func TestStrategicMergePatch(t *testing.T) {
 }
 
 func TestStrategicMergePatch_nopanic(t *testing.T) {
+	t.Parallel()
+
 	rapid.Check(t, func(t *rapid.T) {
 		original := rapid.MakeCustom[corev1.PodTemplateSpec](rapidutil.KubernetesTypes).Draw(t, "original")
 		override := rapid.MakeCustom[redpandachart.PodTemplate](rapidutil.KubernetesTypes).Draw(t, "override")

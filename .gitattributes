@@ -5,7 +5,6 @@
 # gotohelm files
 charts/*/templates/* text -diff -merge
 charts/*/chart/templates/* text -diff -merge
-gotohelm/testdata/src/example/*.tpl text -diff -merge
 
 # Lock files
 go.sum text -diff

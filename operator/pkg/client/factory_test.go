@@ -643,6 +643,8 @@ func TestIntegrationClientFactoryTLSListeners(t *testing.T) {
 // branches across V1, V2, and StretchCluster refs. It runs against envtest (no
 // real Redpanda) since it only exercises the clusterRef -> CR lookup.
 func TestCrossNamespaceClusterRefResolution(t *testing.T) {
+	t.Parallel()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 

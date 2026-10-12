@@ -10,32 +10,21 @@
 package v1alpha2
 
 import (
-	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
-func TestSchemaValidation(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+func testSchemaValidation(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	baseSchema := Schema{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: SchemaSpec{
 			ClusterSource: &ClusterSource{
@@ -46,13 +35,6 @@ func TestSchemaValidation(t *testing.T) {
 			Text: "{}",
 		},
 	}
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
 
 	for name, tt := range map[string]validationTestCase[*Schema]{
 		"basic create": {},
@@ -89,26 +71,13 @@ func TestSchemaValidation(t *testing.T) {
 	}
 }
 
-func TestSchemaDefaults(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func testSchemaDefaults(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	require.NoError(t, c.Create(ctx, &Schema{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: SchemaSpec{
 			ClusterSource: &ClusterSource{
@@ -121,7 +90,7 @@ func TestSchemaDefaults(t *testing.T) {
 	}))
 
 	var schema Schema
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &schema))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &schema))
 
 	require.Len(t, schema.Status.Conditions, 1)
 	require.Equal(t, ResourceConditionTypeSynced, schema.Status.Conditions[0].Type)

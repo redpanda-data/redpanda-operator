@@ -10,7 +10,6 @@
 package v1alpha2
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -18,26 +17,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
-func TestShadowLinkValidation(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+func testShadowLinkValidation(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	baseLink := ShadowLink{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: ShadowLinkSpec{
 			ShadowCluster: &ClusterSource{
@@ -52,13 +42,6 @@ func TestShadowLinkValidation(t *testing.T) {
 			},
 		},
 	}
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
 
 	for name, tt := range map[string]validationTestCase[*ShadowLink]{
 		"no cluster source": {
@@ -299,8 +282,6 @@ func TestShadowLinkValidation(t *testing.T) {
 			rawManifest: `
 apiVersion: cluster.redpanda.com/v1alpha2
 kind: ShadowLink
-metadata:
-  namespace: default
 spec:
   shadowCluster:
     clusterRef:
@@ -324,26 +305,13 @@ spec:
 	}
 }
 
-func TestShadowLinkDefaults(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
+func testShadowLinkDefaults(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	require.NoError(t, c.Create(ctx, &ShadowLink{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: ShadowLinkSpec{
 			ShadowCluster: &ClusterSource{
@@ -361,7 +329,7 @@ func TestShadowLinkDefaults(t *testing.T) {
 	}))
 
 	var link ShadowLink
-	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceDefault, Name: "name"}, &link))
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Namespace: ns, Name: "name"}, &link))
 
 	require.Len(t, link.Status.Conditions, 1)
 	require.Equal(t, ResourceConditionTypeSynced, link.Status.Conditions[0].Type)

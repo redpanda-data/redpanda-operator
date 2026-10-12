@@ -551,6 +551,17 @@ func (c *Cluster) importImages(images ...string) error {
 		return nil
 	}
 
+	// localhost/ images only exist via local builds; nothing can pull them.
+	var pullable []string
+	for _, img := range needed {
+		if !strings.HasPrefix(normalizeImageRef(img), "localhost/") {
+			pullable = append(pullable, img)
+		}
+	}
+	if err := pullMissingFromHost(pullable); err != nil {
+		return err
+	}
+
 	args := append([]string{"image", "import", fmt.Sprintf("--cluster=%s", c.Name)}, needed...)
 	if out, err := exec.Command("k3d", args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("%w: %s", err, out)
@@ -561,6 +572,47 @@ func (c *Cluster) importImages(images ...string) error {
 		markImageImported(c.Name, fingerprint, img)
 	}
 	return nil
+}
+
+// pullMissingFromHost pulls any of the given images that the host Docker
+// daemon doesn't list. k3d only imports images the daemon lists, and an image
+// pre-pulled by CI isn't guaranteed to still be there when a test imports it.
+func pullMissingFromHost(images []string) error {
+	out, err := exec.Command("docker", "image", "ls", "--format", "{{.Repository}}:{{.Tag}}").Output()
+	if err != nil {
+		return errors.Wrap(err, "listing host images")
+	}
+	present := make(map[string]bool)
+	for _, ref := range strings.Fields(string(out)) {
+		present[normalizeImageRef(ref)] = true
+	}
+	for _, img := range images {
+		if present[normalizeImageRef(img)] {
+			continue
+		}
+		if out, err := exec.Command("docker", "pull", "-q", img).CombinedOutput(); err != nil {
+			return errors.Wrapf(err, "pulling %q: %s", img, out)
+		}
+	}
+	return nil
+}
+
+// normalizeImageRef mirrors containerd's docker-reference normalization so
+// differently spelled refs to the same image compare equal: bare names gain
+// docker.io/library/, hub-style names gain docker.io/, and refs without a
+// tag get :latest. localhost/ and dotted-registry refs stay as given.
+func normalizeImageRef(image string) string {
+	if strings.LastIndex(image, ":") < strings.LastIndex(image, "/") || !strings.Contains(image, ":") {
+		image += ":latest"
+	}
+	first, _, found := strings.Cut(image, "/")
+	switch {
+	case !found:
+		return "docker.io/library/" + image
+	case first != "localhost" && !strings.ContainsAny(first, ".:"):
+		return "docker.io/" + image
+	}
+	return image
 }
 
 func (c *Cluster) DeleteNode(name string) error {

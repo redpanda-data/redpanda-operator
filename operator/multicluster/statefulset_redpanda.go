@@ -14,6 +14,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -92,13 +93,13 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 		Lifecycle: &corev1.Lifecycle{
 			PostStart: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: wrapLifecycleHook("post-start", terminationGracePeriod/2,
+					Command: redpanda.WrapLifecycleHook("post-start", terminationGracePeriod/2,
 						[]string{"bash", "-x", "/var/lifecycle/postStart.sh"}),
 				},
 			},
 			PreStop: &corev1.LifecycleHandler{
 				Exec: &corev1.ExecAction{
-					Command: wrapLifecycleHook("pre-stop", terminationGracePeriod/2,
+					Command: redpanda.WrapLifecycleHook("pre-stop", terminationGracePeriod/2,
 						[]string{"bash", "-x", "/var/lifecycle/preStop.sh"}),
 				},
 			},

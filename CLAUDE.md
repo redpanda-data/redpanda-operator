@@ -8,10 +8,15 @@ This is a Go monorepo using `go.work` with multiple modules:
 - `charts/redpanda/` — Helm chart for Redpanda (Go source → gotohelm → templates)
 - `charts/console/` — Helm chart for Redpanda Console
 - `charts/connectors/` — Helm chart for Redpanda Connectors
-- `gotohelm/` — Custom Go-to-Helm template transpiler
 - `pkg/` — Shared packages (k3d, multicluster, testutil, etc.)
 - `acceptance/` — Acceptance test suite (harpoon framework)
 - `gen/` — Code generation tools (partial, schema, pipeline)
+
+The `gotohelm` transpiler is **not** vendored on this branch. It is consumed as a
+pinned module (`github.com/redpanda-data/redpanda-operator/gotohelm`, required by
+the chart modules and anchored by a `tool` directive in `gen/go.mod`) and built
+from there by `task build:gotohelm`. Transpiler changes land on `main` first;
+bump the pin here afterwards.
 - `harpoon/` — BDD test framework for acceptance tests
 
 ## Code Style & File Organization
@@ -185,7 +190,7 @@ The operator module has a protobuf namespace conflict between `buf.build/gen/go/
 
 ## Cutting a Release
 
-[CONTRIBUTING.md](./CONTRIBUTING.md#cutting-a-release) is authoritative for the mechanics — `changie batch`/`merge`, tagging, pushing, the release workflow, helm-charts sync, and `NEXT_VERSION`. Work on a branch off the target release branch (e.g. `release/v25.1.x`). Changie project keys, which double as tag prefixes (`<key>/vX.Y.Z`): `operator`, `charts/redpanda`, `charts/console`, `charts/connectors`, `gotohelm`.
+[CONTRIBUTING.md](./CONTRIBUTING.md#cutting-a-release) is authoritative for the mechanics — `changie batch`/`merge`, tagging, pushing, the release workflow, helm-charts sync, and `NEXT_VERSION`. Work on a branch off the target release branch (e.g. `release/v25.1.x`). Changie project keys, which double as tag prefixes (`<key>/vX.Y.Z`): `operator`, `charts/redpanda`, `charts/console`, `charts/connectors`.
 
 Changie's replacements handle `operator/chart/Chart.yaml` (`version`, `appVersion`, image tag). What they do **not** handle, and you must bump by hand:
 - `charts/redpanda/Chart.yaml` `version` — the `charts/redpanda` project has no changie replacements at all.

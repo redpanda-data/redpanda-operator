@@ -42,10 +42,6 @@ const (
 
 // Mount paths.
 const (
-	// defaultAPITokenMountPath is the default mount path for Kubernetes API tokens.
-	//nolint:gosec
-	defaultAPITokenMountPath = "/var/run/secrets/kubernetes.io/serviceaccount"
-
 	// redpandaConfigMountPath is the path where the final Redpanda config is mounted.
 	redpandaConfigMountPath = "/etc/redpanda"
 
@@ -61,9 +57,6 @@ const (
 
 // Volume names.
 const (
-	// serviceAccountVolumeName is the name of the projected service account token volume.
-	serviceAccountVolumeName = "kube-api-access"
-
 	// lifecycleScriptsVolumeName is the volume name for lifecycle hook scripts.
 	lifecycleScriptsVolumeName = "lifecycle-scripts"
 
@@ -75,9 +68,6 @@ const (
 
 	// datadirVolumeName is the volume and PVC name for the Redpanda data directory.
 	datadirVolumeName = "datadir"
-
-	// tokenExpirationSeconds is the expiration time for projected service account tokens.
-	tokenExpirationSeconds = 60*60 + 7
 )
 
 // Well-known Kubernetes label keys.

@@ -1,0 +1,7 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    `config.rpk.tune_*: false` is honored again when `tuning.apply_host_tuners` is
+    enabled. The host tuner defaults were merged over explicit `false` values, so
+    every default-enabled tuner ran regardless of the opt-out (#1936).
+time: 2026-10-01T10:00:00.000000-07:00

@@ -10,31 +10,19 @@
 package v1alpha2
 
 import (
-	"context"
 	"testing"
-	"time"
 
-	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
 )
 
-func TestTopicValidation(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-
-	testEnv := testutils.RedpandaTestEnv{}
-	cfg, err := testEnv.StartRedpandaTestEnv(false)
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
+func testTopicValidation(t *testing.T, c client.Client, ns string) {
+	ctx := t.Context()
 
 	baseTopic := Topic{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "name",
-			Namespace: metav1.NamespaceDefault,
+			Namespace: ns,
 		},
 		Spec: TopicSpec{
 			ClusterSource: &ClusterSource{
@@ -44,13 +32,6 @@ func TestTopicValidation(t *testing.T) {
 			},
 		},
 	}
-
-	err = AddToScheme(scheme.Scheme)
-	require.NoError(t, err)
-
-	c, err := client.New(cfg, client.Options{Scheme: scheme.Scheme})
-	require.NoError(t, err)
-	require.NotNil(t, c)
 
 	for name, tt := range map[string]validationTestCase[*Topic]{
 		"basic create": {},

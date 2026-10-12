@@ -1,0 +1,7 @@
+project: operator
+kind: Changed
+body: |-
+    StretchCluster brokers now render their init containers through the same code as the Redpanda Helm chart, which changes two things in the generated StatefulSets. The `configurator` init container of StretchClusters now carry `securityContext.runAsNonRoot: true` and `securityContext.allowPrivilegeEscalation: false`, matching the chart and `Redpanda` Pods.
+
+      This change will result in StretchCluster brokers restarting.
+time: 2026-09-02T12:53:14.522260-04:00
