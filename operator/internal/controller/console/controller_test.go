@@ -44,6 +44,8 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
+	pkgsecrets "github.com/redpanda-data/redpanda-operator/pkg/secrets"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -80,6 +82,54 @@ func TestController(t *testing.T) {
 							},
 							Admin: &redpandav1alpha2.AdminAPISpec{
 								URLs: []string{"http://admin-api:9644"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			// Inline, ConfigMap, and external secret sources reach Console
+			// through the environment: inline and external values via the
+			// Console-owned credentials Secret.
+			name: "static-config-value-sources",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-value-sources",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
+							Kafka: &redpandav1alpha2.KafkaAPISpec{
+								Brokers: []string{"kafka-broker:9092"},
+								SASL: &redpandav1alpha2.KafkaSASL{
+									Username:  "testuser",
+									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+									Password:  &redpandav1alpha2.ValueSource{Inline: ptr.To("inline-password")},
+								},
+							},
+							Admin: &redpandav1alpha2.AdminAPISpec{
+								URLs: []string{"http://admin-api:9644"},
+								SASL: &redpandav1alpha2.AdminSASL{
+									Username:  "admin",
+									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+									Password: &redpandav1alpha2.ValueSource{
+										ExternalSecretRefSelector: &redpandav1alpha2.ExternalSecretKeySelector{Name: "admin-password"},
+									},
+								},
+							},
+							SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+								URLs: []string{"http://schema-registry:8081"},
+								SASL: &redpandav1alpha2.SchemaRegistrySASL{
+									Username:  "schema",
+									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+									Password: &redpandav1alpha2.ValueSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{Name: "schema-registry"},
+											Key:                  "password",
+										},
+									},
+								},
 							},
 						},
 					},
@@ -297,9 +347,10 @@ func TestController(t *testing.T) {
 			_, _ = seed.Write([]byte(tc.name))
 
 			consoleCtrl := Controller{
-				Ctl:          ctl,
-				UseNodePools: true,
-				rng:          rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
+				Ctl:           ctl,
+				UseNodePools:  true,
+				CloudExpander: pkgsecrets.NewCloudExpanderFromAPI(fakeSecretAPI{"admin-password": "external-password"}),
+				rng:           rand.New(rand.NewSource(int64(seed.Sum64()))), //nolint:gosec // test-only determinism, not cryptographic
 			}
 
 			// Create console CR with namespace set
@@ -362,6 +413,116 @@ func TestController(t *testing.T) {
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels
+// fakeSecretAPI serves cloud secrets from a map.
+type fakeSecretAPI map[string]string
+
+func (f fakeSecretAPI) GetSecretValue(_ context.Context, name string) (string, bool) {
+	v, ok := f[name]
+	return v, ok
+}
+
+func (f fakeSecretAPI) CheckSecretExists(_ context.Context, name string) bool {
+	_, ok := f[name]
+	return ok
+}
+
+func TestMirrorCredentials(t *testing.T) {
+	cases := []struct {
+		name     string
+		expander *pkgsecrets.CloudExpander
+		in       *ir.StaticConfigurationSource
+		wantData map[string]string
+		wantErr  string
+	}{
+		{
+			name: "references only",
+			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
+				Password: &ir.ValueSource{SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "s"}, Key: "k"}},
+			}}},
+		},
+		{
+			name: "inline values in every position",
+			in: &ir.StaticConfigurationSource{
+				Kafka: &ir.KafkaAPISpec{
+					TLS: &ir.CommonTLS{CaCert: &ir.ValueSource{Inline: ptr.To("ca")}},
+					SASL: &ir.KafkaSASL{
+						Password:     &ir.ValueSource{Inline: ptr.To("password")},
+						OAUth:        &ir.KafkaSASLOAuthBearer{Token: &ir.ValueSource{Inline: ptr.To("token")}},
+						GSSAPIConfig: &ir.KafkaSASLGSSAPI{Password: &ir.ValueSource{Inline: ptr.To("kerberos")}},
+						AWSMskIam: &ir.KafkaSASLAWSMskIam{
+							SecretKey:    &ir.ValueSource{Inline: ptr.To("secret-key")},
+							SessionToken: &ir.ValueSource{Inline: ptr.To("session")},
+						},
+					},
+				},
+				Admin:          &ir.AdminAPISpec{Auth: &ir.AdminAuth{AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")}}},
+				SchemaRegistry: &ir.SchemaRegistrySpec{SASL: &ir.SchemaRegistrySASL{Password: &ir.ValueSource{Inline: ptr.To("sr")}}},
+			},
+			wantData: map[string]string{
+				"kafka-tls-ca":                         "ca",
+				"kafka-sasl-password":                  "password",
+				"kafka-sasl-oauth-token":               "token",
+				"kafka-sasl-gssapi-password":           "kerberos",
+				"kafka-sasl-aws-msk-iam-secret-key":    "secret-key",
+				"kafka-sasl-aws-msk-iam-session-token": "session",
+				"admin-token":                          "admin-token",
+				"schema-registry-password":             "sr",
+			},
+		},
+		{
+			name:     "external secret",
+			expander: pkgsecrets.NewCloudExpanderFromAPI(fakeSecretAPI{"kafka": "from-the-cloud"}),
+			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
+				Password: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "kafka"}},
+			}}},
+			wantData: map[string]string{"kafka-sasl-password": "from-the-cloud"},
+		},
+		{
+			name: "external secret without cloud secrets enabled",
+			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
+				Password: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "kafka"}},
+			}}},
+			wantErr: "without enabling external secrets",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := &render{
+				console:  &redpandav1alpha2.Console{ObjectMeta: metav1.ObjectMeta{Name: "c", Namespace: "ns"}},
+				expander: tc.expander,
+			}
+
+			secret, err := r.mirrorCredentials(t.Context(), tc.in)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				return
+			}
+			require.NoError(t, err)
+
+			if tc.wantData == nil {
+				require.Nil(t, secret)
+				return
+			}
+
+			require.Equal(t, "c-cluster-credentials", secret.Name)
+			got := map[string]string{}
+			for k, v := range secret.Data {
+				got[k] = string(v)
+			}
+			require.Equal(t, tc.wantData, got)
+
+			// Every mirrored value now points at the Secret, so nothing is
+			// left for the chart to drop or to inline into the Deployment.
+			values := console.StaticConfigurationSourceToPartialRenderValues(tc.in)
+			for _, env := range values.ExtraEnv {
+				require.Empty(t, env.Value, env.Name)
+				require.Equal(t, secret.Name, env.ValueFrom.SecretKeyRef.Name, env.Name)
+			}
+		})
+	}
+}
+
 func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, c *redpandav1alpha2.Console) []kube.Object {
 	// Get ownership labels used by the controller
 	ownershipLabels := map[string]string{
