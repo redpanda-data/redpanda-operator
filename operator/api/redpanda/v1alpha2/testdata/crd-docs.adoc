@@ -936,17 +936,6 @@ Console defines the CRD for Redpanda Console instances.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `Console` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-consolespec[$$ConsoleSpec$$]__ | Defines the desired state of the Redpanda Console deployment. + |  | 
@@ -1526,17 +1515,6 @@ Group-based authorization must be enabled in Redpanda (enterprise feature).
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `Group` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-groupspec[$$GroupSpec$$]__ | Defines the desired state of the Redpanda group. + |  | 
@@ -2571,17 +2549,6 @@ Pipeline defines a Redpanda Connect pipeline managed by the operator.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `Pipeline` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-pipelinespec[$$PipelineSpec$$]__ | Spec defines the desired state of the Pipeline. + |  | 
@@ -3305,17 +3272,6 @@ Redpanda defines the CRD for Redpanda clusters.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `Redpanda` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-redpandaspec[$$RedpandaSpec$$]__ | Defines the desired state of the Redpanda cluster. + |  | 
@@ -3367,17 +3323,6 @@ The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_KEYFILEPATH` to
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `RedpandaBrokerPool` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 |===
@@ -3655,17 +3600,6 @@ RedpandaRole defines the CRD for a Redpanda role.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `RedpandaRole` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-rolespec[$$RoleSpec$$]__ | Defines the desired state of the Redpanda role. + |  | 
@@ -4010,17 +3944,6 @@ Schema defines the CRD for a Redpanda schema.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `Schema` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-schemaspec[$$SchemaSpec$$]__ | Defines the desired state of the Redpanda schema. + |  | 
@@ -4592,17 +4515,6 @@ ShadowLink defines the CRD for ShadowLink cluster configuration.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `ShadowLink` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-shadowlinkspec[$$ShadowLinkSpec$$]__ |  |  | 
@@ -5463,17 +5375,6 @@ StretchCluster defines the CRD for StretchCluster configuration.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `StretchCluster` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-stretchclusterspec[$$StretchClusterSpec$$]__ |  |  | 
@@ -6060,17 +5961,6 @@ Topic defines the CRD for Topic resources. See https://docs.redpanda.com/current
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `Topic` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-topicspec[$$TopicSpec$$]__ | Defines the desired state of the Topic resource. + |  | 
@@ -6364,17 +6254,6 @@ User defines the CRD for a Redpanda user.
 | Field | Description | Default | Validation
 | *`apiVersion`* __string__ | `cluster.redpanda.com/v1alpha2` | |
 | *`kind`* __string__ | `User` | |
-| *`kind`* __string__ | Kind is a string value representing the REST resource this object represents. +
-Servers may infer this from the endpoint the client submits requests to. +
-Cannot be updated. +
-In CamelCase. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds + |  | Optional: \{} +
-
-| *`apiVersion`* __string__ | APIVersion defines the versioned schema of this representation of an object. +
-Servers should convert recognized schemas to the latest internal value, and +
-may reject unrecognized values. +
-More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources + |  | Optional: \{} +
-
 | *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
  |  | 
 | *`spec`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-redpanda-v1alpha2-userspec[$$UserSpec$$]__ | Defines the desired state of the Redpanda user. + |  | 
