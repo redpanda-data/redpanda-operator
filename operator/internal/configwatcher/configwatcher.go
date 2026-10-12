@@ -12,11 +12,6 @@ package configwatcher
 import (
 	"bufio"
 	"context"
-<<<<<<< HEAD
-	"errors"
-	"fmt"
-=======
->>>>>>> fb89ae8f (operator: retry the sidecar users sync when the admin API is unavailable (#1934))
 	"maps"
 	"net/http"
 	"os"
@@ -25,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-logr/logr"
 	"github.com/redpanda-data/common-go/rpadmin"
