@@ -1061,6 +1061,10 @@ func TestRedpandaResources_CPUCoresIgnoredWithoutCPU(t *testing.T) {
 		{name: "legacy cores only", resources: RedpandaResources{}, expected: false},
 		{name: "only requests", resources: RedpandaResources{Requests: &memory}, expected: false},
 		{name: "only limits", resources: RedpandaResources{Limits: &memory}, expected: false},
+		// With both requests and limits set, smp() and GetResourceRequirements()
+		// read CPU only from them and skip resources.cpu.cores. Neither has cpu
+		// here, so nothing sets --smp or a CPU request or limit: the case the
+		// warning exists for.
 		{name: "requests and limits without cpu", resources: RedpandaResources{Requests: &memory, Limits: &memory}, expected: true},
 		{name: "cpu in requests", resources: RedpandaResources{Requests: &withCPU, Limits: &memory}, expected: false},
 		{name: "cpu in limits", resources: RedpandaResources{Requests: &memory, Limits: &withCPU}, expected: false},
@@ -1069,6 +1073,9 @@ func TestRedpandaResources_CPUCoresIgnoredWithoutCPU(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			require.Equal(t, tc.expected, tc.resources.CPUCoresIgnoredWithoutCPU())
+			if tc.expected {
+				require.Nil(t, tc.resources.smp(), "an ignored-cores case must leave --smp unset")
+			}
 		})
 	}
 }
