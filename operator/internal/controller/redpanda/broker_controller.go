@@ -60,6 +60,19 @@ import (
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 
+// localPathVolumeTypeAnnotation picks the PV source rancher/local-path-provisioner
+// emits for a claim; every other provisioner ignores it. Its default, hostPath
+// with DirectoryOrCreate, has the kubelet silently recreate a wiped data
+// directory, so a broker whose disk was lost boots empty and re-registers
+// under a new node_id. A local PV fails the mount instead ("path ... does not
+// exist"), which keeps the stale identity off the cluster until disk-loss
+// handling tears the broker down. Read once, at provisioning: the annotation
+// does nothing on a bound claim.
+const (
+	localPathVolumeTypeAnnotation = "volumeType"
+	localPathVolumeTypeLocal      = "local"
+)
+
 const defaultMarkDiskLostAfter = 5 * time.Minute
 
 const requeueShort = 2 * time.Second
@@ -385,6 +398,9 @@ func (r *BrokerReconciler) reconcilePVCs(ctx context.Context, state *brokerRecon
 				Labels:    broker.Spec.PodTemplate.Labels,
 				// thing to consider: maybe we should add a set of labels that will identify the Broker
 				// this way we can then simplify querying for PVC "belonging" to given broker.
+				Annotations: map[string]string{
+					localPathVolumeTypeAnnotation: localPathVolumeTypeLocal,
+				},
 			},
 			Spec: vct.Spec,
 		}

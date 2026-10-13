@@ -1631,6 +1631,13 @@ func (s *BrokerControllerSuite) TestV2BrokerBornRollbackKeepsPodsRollable() {
 		for _, b := range brokers {
 			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase)
 			assert.NotEmpty(ct, b.Spec.Storage.VolumeClaimTemplates, "fresh brokers use volume claim templates, not existing claims")
+			for _, vct := range b.Spec.Storage.VolumeClaimTemplates {
+				var pvc corev1.PersistentVolumeClaim
+				if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: vct.Name + "-" + b.PodName(), Namespace: b.Namespace}, &pvc)) {
+					continue
+				}
+				assert.Equal(ct, "local", pvc.Annotations["volumeType"], "Broker-created PVC %s must request a local PV from local-path-provisioner", pvc.Name)
+			}
 		}
 	}, 5*time.Minute, 5*time.Second)
 
