@@ -37,9 +37,12 @@ spec:
           metadata:
             type: object
           spec:
+            description: Defines the desired state of the Redpanda Console deployment.
             properties:
               affinity:
-                description: Affinity is a group of affinity scheduling rules.
+                description: |-
+                  Sets node affinity, Pod affinity, and Pod anti-affinity rules for the Console Pods.
+                  For details, see https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity.
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -953,29 +956,56 @@ spec:
               annotations:
                 additionalProperties:
                   type: string
+                description: Adds annotations to the Console Deployment.
                 type: object
               automountServiceAccountToken:
+                description: |-
+                  Specifies whether Kubernetes mounts a ServiceAccount token into the Console Pods.
+                  Console does not call the Kubernetes API, so leave this `false` unless a sidecar in `extraContainers` needs the token.
+                  Defaults to `false`.
                 type: boolean
               autoscaling:
+                description: Configures a HorizontalPodAutoscaler that scales the
+                  Console Deployment.
                 properties:
                   enabled:
+                    description: |-
+                      Specifies whether the operator creates a HorizontalPodAutoscaler for Console.
+                      When `true`, `replicaCount` is ignored.
+                      Defaults to `false`.
                     type: boolean
                   maxReplicas:
+                    description: |-
+                      Specifies the maximum number of Console Pods the autoscaler can scale up to.
+                      Defaults to `100`.
                     format: int32
                     type: integer
                   minReplicas:
+                    description: |-
+                      Specifies the minimum number of Console Pods the autoscaler keeps.
+                      Defaults to `1`.
                     format: int32
                     type: integer
                   targetCPUUtilizationPercentage:
+                    description: |-
+                      Specifies the target average CPU utilization, as a percentage of the container's CPU request, at which the autoscaler adds Pods.
+                      Requires a CPU request in `resources`.
+                      Defaults to `80`.
                     format: int32
                     type: integer
                   targetMemoryUtilizationPercentage:
+                    description: |-
+                      Specifies the target average memory utilization, as a percentage of the container's memory request, at which the autoscaler adds Pods.
+                      Requires a memory request in `resources`.
+                      If unset, the autoscaler does not scale on memory.
                     format: int32
                     type: integer
                 type: object
               cluster:
-                description: ClusterSource defines how to connect to a particular
-                  Redpanda cluster.
+                description: |-
+                  Specifies the Redpanda cluster that Console connects to.
+                  The operator generates the Kafka API, Admin API, and Schema Registry connection settings from this cluster and merges them into `config`.
+                  If unset, you must configure the connection in `config` yourself.
                 properties:
                   clusterRef:
                     description: |-
@@ -1064,6 +1094,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1165,6 +1201,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1301,6 +1343,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1413,6 +1461,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1540,6 +1594,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1644,14 +1704,15 @@ spec:
                             properties:
                               awsMskIam:
                                 description: |-
-                                  KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
-                                  see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+                                  Configures the `AWS_MSK_IAM` mechanism.
+                                  Required when `mechanism` is `AWS_MSK_IAM`.
                                 properties:
                                   accessKey:
+                                    description: Specifies the AWS access key ID.
                                     type: string
                                   secretKey:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: Specifies the AWS secret access key
+                                      that belongs to `accessKey`.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -1685,6 +1746,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -1800,6 +1867,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -1892,10 +1965,15 @@ spec:
                                 - userAgent
                                 type: object
                               gssapi:
-                                description: KafkaSASLGSSAPI represents the Kafka
-                                  Kerberos config.
+                                description: |-
+                                  Configures the `GSSAPI` (Kerberos) mechanism.
+                                  Required when `mechanism` is `GSSAPI`.
                                 properties:
                                   authType:
+                                    description: 'Specifies how to obtain Kerberos
+                                      credentials: `USER_AUTH` to log in with `username`
+                                      and `password`, or `KEYTAB_AUTH` to log in with
+                                      the keytab file at `keyTabPath`.'
                                     type: string
                                   enableFast:
                                     description: |-
@@ -1904,12 +1982,19 @@ spec:
                                       FAST provides increased resistance to passive password guessing attacks.
                                     type: boolean
                                   kerberosConfigPath:
+                                    description: |-
+                                      Specifies the path to the Kerberos configuration file (`krb5.conf`).
+                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
                                     type: string
                                   keyTabPath:
+                                    description: |-
+                                      Specifies the path to the keytab file for `KEYTAB_AUTH`.
+                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
                                     type: string
                                   password:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: |-
+                                      Specifies the password for `username`.
+                                      Used only when `authType` is `USER_AUTH`.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -1943,6 +2028,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -2022,10 +2113,16 @@ spec:
                                     - name
                                     type: object
                                   realm:
+                                    description: Specifies the Kerberos realm of `username`.
                                     type: string
                                   serviceName:
+                                    description: |-
+                                      Specifies the primary of the brokers' Kerberos service principal name.
+                                      Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`.
                                     type: string
                                   username:
+                                    description: Specifies the Kerberos principal
+                                      to authenticate as, without the realm.
                                     type: string
                                 required:
                                 - authType
@@ -2041,12 +2138,14 @@ spec:
                                   mechanism.
                                 type: string
                               oauth:
-                                description: KafkaSASLOAuthBearer is the config struct
-                                  for the SASL OAuthBearer mechanism
+                                description: |-
+                                  Configures the `OAUTHBEARER` mechanism.
+                                  Required when `mechanism` is `OAUTHBEARER`.
                                 properties:
                                   token:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: |-
+                                      Specifies the OAuth bearer token to authenticate with.
+                                      The token is sent as is, so you must replace it before it expires.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -2080,6 +2179,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -2194,6 +2299,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2339,6 +2450,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2451,6 +2568,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2578,6 +2701,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2668,8 +2797,9 @@ spec:
                               for Redpanda clusters that have authentication enabled.
                             properties:
                               authToken:
-                                description: ValueSource represents where a value
-                                  can be pulled from
+                                description: |-
+                                  Specifies a bearer token for token-based authentication.
+                                  Used only when `password` is not set.
                                 properties:
                                   configMapKeyRef:
                                     description: |-
@@ -2703,6 +2833,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2804,6 +2940,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2940,6 +3082,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3052,6 +3200,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3179,6 +3333,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3273,22 +3433,39 @@ spec:
               commonLabels:
                 additionalProperties:
                   type: string
+                description: |-
+                  Adds labels to every resource that the operator creates for this Console, except the Pods.
+                  To label the Pods, use `podLabels`.
                 type: object
               config:
+                description: |-
+                  Specifies the Redpanda Console configuration, written as the contents of Console's `config.yaml`.
+                  The operator stores it in a ConfigMap, mounts it at `/etc/console/configs/config.yaml`, and restarts the Pods when it changes.
+                  If `cluster` is set, the operator merges the generated connection settings into this configuration.
+                  For the available settings, see https://docs.redpanda.com/streaming/current/console/config/configure-console/.
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               deployment:
+                description: Customizes the command and arguments of the Console container.
                 properties:
                   command:
+                    description: |-
+                      Overrides the entrypoint of the Console container.
+                      If unset, the image's entrypoint runs.
                     items:
                       type: string
                     type: array
                   extraArgs:
+                    description: Adds command-line arguments to the Console container,
+                      after `--config.filepath=/etc/console/configs/config.yaml`.
                     items:
                       type: string
                     type: array
                 type: object
               extraContainerPorts:
+                description: |-
+                  Exposes additional ports on the Console container, such as for a second HTTP listener.
+                  The Service does not expose these ports.
                 items:
                   description: ContainerPort represents a network port in a single
                     container.
@@ -3327,6 +3504,8 @@ spec:
                   type: object
                 type: array
               extraContainers:
+                description: Adds sidecar containers to the Console Pods, such as
+                  an authentication proxy.
                 items:
                   description: A single application container that you want to run
                     within a pod.
@@ -4849,6 +5028,8 @@ spec:
                   type: object
                 type: array
               extraEnv:
+                description: Adds environment variables to the Console container,
+                  after the ones the operator sets.
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -5005,6 +5186,8 @@ spec:
                   type: object
                 type: array
               extraEnvFrom:
+                description: Adds environment variables to the Console container from
+                  the keys of a Secret or ConfigMap.
                 items:
                   description: EnvFromSource represents the source of a set of ConfigMaps
                     or Secrets
@@ -5051,6 +5234,9 @@ spec:
                   type: object
                 type: array
               extraVolumeMounts:
+                description: |-
+                  Mounts volumes into the Console container.
+                  Each `name` must match a volume in `extraVolumes`.
                 items:
                   description: VolumeMount describes a mounting of a Volume within
                     a container.
@@ -5114,6 +5300,9 @@ spec:
                   type: object
                 type: array
               extraVolumes:
+                description: |-
+                  Adds volumes to the Console Pods.
+                  To mount them in the Console container, add matching entries to `extraVolumeMounts`.
                 items:
                   description: Volume represents a named volume in a pod that may
                     be accessed by any container in the pod.
@@ -7015,54 +7204,47 @@ spec:
                   type: object
                 type: array
               gateway:
-                description: GatewayConfig configures a Gateway API HTTPRoute for
-                  Console.
+                description: Configures a Gateway API HTTPRoute that routes traffic
+                  to the Console Service.
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Adds annotations to the HTTPRoute.
                     type: object
                   enabled:
+                    description: |-
+                      Specifies whether the operator creates an HTTPRoute for Console.
+                      Requires the Gateway API CRDs in the cluster.
+                      Defaults to `false`.
                     type: boolean
                   hostnames:
+                    description: |-
+                      Specifies the hostnames that the HTTPRoute matches.
+                      Defaults to the placeholder `chart-example.local`, so set this when you enable the HTTPRoute.
                     items:
                       type: string
                     type: array
                   parentRefs:
+                    description: |-
+                      Specifies the Gateways that the HTTPRoute attaches to.
+                      If empty, the HTTPRoute is created but does not attach to any Gateway.
                     items:
                       description: GatewayParentReference identifies a parent Gateway
                         for the HTTPRoute.
                       properties:
                         name:
+                          description: Specifies the name of the Gateway.
                           type: string
                         namespace:
+                          description: |-
+                            Specifies the namespace of the Gateway.
+                            If unset, the Gateway must be in the same namespace as the Console resource.
                           type: string
                         sectionName:
                           description: |-
-                            SectionName is the name of a section in a Kubernetes resource.
-
-                            In the following resources, SectionName is interpreted as the following:
-
-                            * Gateway: Listener name
-                            * HTTPRoute: HTTPRouteRule name
-                            * Service: Port name
-
-                            Section names can have a variety of forms, including RFC 1123 subdomains,
-                            RFC 1123 labels, or RFC 1035 labels.
-
-                            This validation is based off of the corresponding Kubernetes validation:
-                            https://github.com/kubernetes/apimachinery/blob/02cfb53916346d085a6c6c7c66f882e3c6b0eca6/pkg/util/validation/validation.go#L208
-
-                            Valid values include:
-
-                            * "example"
-                            * "foo-example"
-                            * "example.com"
-                            * "foo.example.com"
-
-                            Invalid values include:
-
-                            * "example.com/bar" - "/" is an invalid character
+                            Specifies the name of the Gateway listener to attach to.
+                            If unset, the HTTPRoute attaches to every listener on the Gateway that allows it.
                           maxLength: 253
                           minLength: 1
                           pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
@@ -7072,27 +7254,14 @@ spec:
                       type: object
                     type: array
                   path:
+                    description: |-
+                      Specifies the URL path that routes to the Console Service.
+                      Defaults to `/`.
                     type: string
                   pathType:
                     description: |-
-                      PathMatchType specifies the semantics of how HTTP paths should be compared.
-                      Valid PathMatchType values, along with their support levels, are:
-
-                      * "Exact" - Core
-                      * "PathPrefix" - Core
-                      * "RegularExpression" - Implementation Specific
-
-                      PathPrefix and Exact paths must be syntactically valid:
-
-                      - Must begin with the `/` character
-                      - Must not contain consecutive `/` characters (e.g. `/foo///`, `//`).
-
-                      Note that values may be added to this enum, implementations
-                      must ensure that unknown values will not cause a crash.
-
-                      Unknown values here must result in the implementation setting the
-                      Accepted Condition for the Route to `status: False`, with a
-                      Reason of `UnsupportedValue`.
+                      Specifies how the HTTPRoute matches `path`: `Exact`, `PathPrefix`, or `RegularExpression`.
+                      Defaults to `PathPrefix`.
                     enum:
                     - Exact
                     - PathPrefix
@@ -7100,19 +7269,33 @@ spec:
                     type: string
                 type: object
               image:
+                description: Specifies the container image that runs Redpanda Console.
                 properties:
                   pullPolicy:
-                    description: PullPolicy describes a policy for if/when to pull
-                      a container image
+                    description: |-
+                      Specifies when Kubernetes pulls the image: `Always`, `IfNotPresent`, or `Never`.
+                      Defaults to `IfNotPresent`.
                     type: string
                   registry:
+                    description: |-
+                      Specifies the container registry that hosts the image.
+                      Defaults to `docker.redpanda.com`.
                     type: string
                   repository:
+                    description: |-
+                      Specifies the image repository within the registry.
+                      Defaults to `redpandadata/console`.
                     type: string
                   tag:
+                    description: |-
+                      Specifies the image tag.
+                      If unset, the operator uses the Console version that it was released with.
                     type: string
                 type: object
               imagePullSecrets:
+                description: |-
+                  Specifies Secrets that hold credentials for pulling the Console image from a private registry.
+                  For details, see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/.
                 items:
                   description: |-
                     LocalObjectReference contains enough information to let you locate the
@@ -7131,34 +7314,60 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               ingress:
+                description: Configures a Kubernetes Ingress that routes external
+                  traffic to the Console Service.
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Adds annotations to the Ingress, such as those that
+                      configure the Ingress controller or cert-manager.
                     type: object
                   className:
+                    description: |-
+                      Specifies the IngressClass that implements the Ingress.
+                      If unset, the cluster's default IngressClass is used.
                     type: string
                   enabled:
+                    description: |-
+                      Specifies whether the operator creates an Ingress for Console.
+                      Defaults to `false`.
                     type: boolean
                   hosts:
+                    description: |-
+                      Specifies the hostnames and paths that the Ingress routes to the Console Service.
+                      If unset, the Ingress routes the path `/` on the placeholder host `chart-example.local`, so set this when you enable the Ingress.
                     items:
+                      description: IngressHost is a hostname and its paths in the
+                        Console Ingress.
                       properties:
                         host:
+                          description: Specifies the fully qualified domain name that
+                            the Ingress serves Console on.
                           type: string
                         paths:
+                          description: Specifies the paths on this host that route
+                            to the Console Service.
                           items:
+                            description: IngressPath is a path in the Console Ingress.
                             properties:
                               path:
+                                description: Specifies the URL path that routes to
+                                  the Console Service, such as `/`.
                                 type: string
                               pathType:
-                                description: PathType represents the type of path
-                                  referred to by a HTTPIngressPath.
+                                description: |-
+                                  Specifies how the Ingress matches `path`: `Exact`, `Prefix`, or `ImplementationSpecific`.
+                                  Kubernetes requires a value.
                                 type: string
                             type: object
                           type: array
                       type: object
                     type: array
                   tls:
+                    description: |-
+                      Configures TLS termination for the Ingress.
+                      Each entry names a Secret that holds a TLS certificate and the hosts that the certificate covers.
                     items:
                       description: IngressTLS describes the transport layer security
                         associated with an ingress.
@@ -7185,7 +7394,10 @@ spec:
                     type: array
                 type: object
               licenseSecretRef:
-                description: SecretKeySelector selects a key of a Secret.
+                description: |-
+                  References a key in an existing Secret that holds the Redpanda Enterprise license.
+                  Used only when `secret.create` is `false`.
+                  When `secret.create` is `true`, set the license in `secret.license` instead.
                 properties:
                   key:
                     description: The key of the secret to select from.  Must be a
@@ -7209,8 +7421,9 @@ spec:
                 x-kubernetes-map-type: atomic
               livenessProbe:
                 description: |-
-                  LivenessProbe describes a health check to be performed against a container to determine whether it is
-                  alive.
+                  Configures the timing of the liveness probe on the Console container.
+                  The probe always sends an HTTP GET request to `/admin/health`, so only `initialDelaySeconds`, `periodSeconds`, `timeoutSeconds`, `successThreshold`, and `failureThreshold` take effect.
+                  Defaults to `periodSeconds: 10`, `timeoutSeconds: 1`, `successThreshold: 1`, and `failureThreshold: 3`.
                 properties:
                   exec:
                     description: Exec specifies a command to execute in the container.
@@ -7352,14 +7565,25 @@ spec:
                     type: integer
                 type: object
               monitoring:
+                description: Configures a Prometheus ServiceMonitor that scrapes Console's
+                  metrics.
                 properties:
                   enabled:
+                    description: |-
+                      Specifies whether the operator creates a ServiceMonitor that scrapes Console's `/admin/metrics` endpoint.
+                      Requires the Prometheus Operator CRDs in the cluster.
+                      Defaults to `false`.
                     type: boolean
                   labels:
                     additionalProperties:
                       type: string
+                    description: Adds labels to the ServiceMonitor, such as the labels
+                      that your Prometheus instance uses to select ServiceMonitors.
                     type: object
                   scrapeInterval:
+                    description: |-
+                      Specifies how often Prometheus scrapes Console, as a Prometheus duration such as `30s` or `1m`.
+                      Defaults to `1m`.
                     type: string
                 required:
                 - labels
@@ -7367,20 +7591,25 @@ spec:
               nodeSelector:
                 additionalProperties:
                   type: string
+                description: |-
+                  Constrains the Console Pods to nodes with these labels.
+                  For details, see https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector.
                 type: object
               podAnnotations:
                 additionalProperties:
                   type: string
+                description: Adds annotations to the Console Pods.
                 type: object
               podLabels:
                 additionalProperties:
                   type: string
+                description: Adds labels to the Console Pods.
                 type: object
               podSecurityContext:
                 description: |-
-                  PodSecurityContext holds pod-level security attributes and common container settings.
-                  Some fields are also present in container.securityContext.  Field values of
-                  container.securityContext take precedence over field values of PodSecurityContext.
+                  Sets the security context for the Console Pods.
+                  Defaults to `runAsUser: 99`, `fsGroup: 99`, and `fsGroupChangePolicy: Always`.
+                  Fields you set override the matching defaults, and the others are kept.
                 properties:
                   appArmorProfile:
                     description: |-
@@ -7612,11 +7841,15 @@ spec:
                     type: object
                 type: object
               priorityClassName:
+                description: |-
+                  Specifies the PriorityClass for the Console Pods.
+                  For details, see https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass.
                 type: string
               readinessProbe:
                 description: |-
-                  ReadinessProbe describes a health check to be performed against a container to determine whether it is
-                  ready to receive traffic.
+                  Configures the timing of the readiness probe on the Console container.
+                  The probe always sends an HTTP GET request to `/admin/health`, so only `initialDelaySeconds`, `periodSeconds`, `timeoutSeconds`, `successThreshold`, and `failureThreshold` take effect.
+                  Defaults to `initialDelaySeconds: 10`, `periodSeconds: 10`, `timeoutSeconds: 1`, `successThreshold: 1`, and `failureThreshold: 3`.
                 properties:
                   exec:
                     description: Exec specifies a command to execute in the container.
@@ -7758,10 +7991,16 @@ spec:
                     type: integer
                 type: object
               replicaCount:
+                description: |-
+                  Specifies the number of Console Pods to run.
+                  Ignored when `autoscaling.enabled` is `true`, because the HorizontalPodAutoscaler then manages the replica count.
+                  Defaults to `1`.
                 format: int32
                 type: integer
               resources:
-                description: ResourceRequirements describes the compute resource requirements.
+                description: |-
+                  Sets CPU and memory requests and limits for the Console container.
+                  If unset, the container has no requests or limits.
                 properties:
                   claims:
                     description: |-
@@ -7820,90 +8059,187 @@ spec:
                     type: object
                 type: object
               secret:
+                description: Configures the Secret that the operator creates to hold
+                  sensitive Console settings, such as passwords and TLS files.
                 properties:
                   authentication:
+                    description: Specifies secrets for Console's login authentication.
                     properties:
                       jwtSigningKey:
+                        description: |-
+                          Specifies the key that Console uses to sign the JSON Web Tokens for login sessions.
+                          Must be at least 32 characters.
+                          The operator passes it to Console in the `AUTHENTICATION_JWTSIGNINGKEY` environment variable.
+                          If unset, the operator generates a random key and stores it in an immutable Secret named `<console-name>-jwt-secret`, so sessions remain valid when Pods restart.
                         type: string
                       oidc:
+                        description: Specifies secrets for OIDC login.
                         properties:
                           clientSecret:
+                            description: |-
+                              Specifies the OIDC client secret.
+                              The operator stores it in its Secret under the key `authentication-oidc-client-secret`, but does not pass it to Console.
+                              To use it, add an `extraEnv` entry named `AUTHENTICATION_OIDC_CLIENTSECRET` that references this key, or set `authentication.oidc.clientSecret` in `config`.
                             type: string
                         type: object
                     type: object
                   create:
+                    description: |-
+                      Specifies whether the operator creates the Secret.
+                      When `false`, the operator passes none of the values in `secret` to Console, including the JWT signing key that it generates, and reads the license from `licenseSecretRef`.
+                      Provide the settings through `extraEnv`, `extraEnvFrom`, or `secretMounts` instead.
+                      Defaults to `true`.
                     type: boolean
                   kafka:
+                    description: Specifies credentials and TLS files for the Kafka
+                      API.
                     properties:
                       awsMskIamSecretKey:
+                        description: |-
+                          Specifies the AWS secret access key for AWS MSK IAM authentication.
+                          The operator passes it to Console in the `KAFKA_SASL_AWSMSKIAM_SECRETKEY` environment variable.
                         type: string
                       saslPassword:
+                        description: |-
+                          Specifies the SASL password.
+                          The operator passes it to Console in the `KAFKA_SASL_PASSWORD` environment variable.
                         type: string
                       tlsCa:
+                        description: |-
+                          Specifies the PEM-encoded CA certificate that Console uses to verify the Kafka API's TLS certificate.
+                          The operator mounts it as a file and sets `KAFKA_TLS_CAFILEPATH` to its path.
                         type: string
                       tlsCert:
+                        description: |-
+                          Specifies the PEM-encoded client certificate that Console presents for mTLS.
+                          The operator mounts it as a file and sets `KAFKA_TLS_CERTFILEPATH` to its path.
                         type: string
                       tlsKey:
+                        description: |-
+                          Specifies the PEM-encoded private key for `tlsCert`.
+                          The operator mounts it as a file and sets `KAFKA_TLS_KEYFILEPATH` to its path.
                         type: string
                       tlsPassphrase:
+                        description: |-
+                          Has no effect.
+                          The operator does not pass this value to Console.
                         type: string
                     type: object
                   license:
+                    description: |-
+                      Specifies the Redpanda Enterprise license.
+                      The operator passes it to Console in the `LICENSE` environment variable.
+                      To read the license from an existing Secret instead, set `create` to `false` and use `licenseSecretRef`.
                     type: string
                   redpanda:
+                    description: Specifies credentials and TLS files for the Redpanda
+                      Admin API.
                     properties:
                       adminApi:
+                        description: Specifies credentials and TLS files for the Redpanda
+                          Admin API.
                         properties:
                           password:
+                            description: |-
+                              Specifies the password for Admin API basic authentication.
+                              The operator passes it to Console in the `REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD` environment variable.
+                              Set the username in `config` at `redpanda.adminApi.authentication.basic.username`.
                             type: string
                           tlsCa:
+                            description: |-
+                              Specifies the PEM-encoded CA certificate that Console uses to verify the Admin API's TLS certificate.
+                              The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_CAFILEPATH` to its path.
                             type: string
                           tlsCert:
+                            description: |-
+                              Specifies the PEM-encoded client certificate that Console presents to the Admin API.
+                              The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_CERTFILEPATH` to its path.
                             type: string
                           tlsKey:
+                            description: |-
+                              Specifies the PEM-encoded private key for `tlsCert`.
+                              The operator mounts it as a file and sets `REDPANDA_ADMINAPI_TLS_KEYFILEPATH` to its path.
                             type: string
                         type: object
                     type: object
                   schemaRegistry:
+                    description: Specifies credentials and TLS files for the Schema
+                      Registry.
                     properties:
                       bearerToken:
+                        description: |-
+                          Specifies the bearer token for Schema Registry authentication.
+                          The operator passes it to Console in the `SCHEMAREGISTRY_AUTHENTICATION_BEARERTOKEN` environment variable.
                         type: string
                       password:
+                        description: |-
+                          Specifies the password for Schema Registry basic authentication.
+                          The operator passes it to Console in the `SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD` environment variable.
                         type: string
                       tlsCa:
+                        description: |-
+                          Specifies the PEM-encoded CA certificate that Console uses to verify the Schema Registry's TLS certificate.
+                          The operator mounts it as a file and sets `SCHEMAREGISTRY_TLS_CAFILEPATH` to its path.
                         type: string
                       tlsCert:
+                        description: |-
+                          Specifies the PEM-encoded client certificate that Console presents to the Schema Registry.
+                          The operator mounts it as a file and sets `SCHEMAREGISTRY_TLS_CERTFILEPATH` to its path.
                         type: string
                       tlsKey:
+                        description: |-
+                          Specifies the PEM-encoded private key for `tlsCert`.
+                          The operator mounts it as a file and sets `SCHEMAREGISTRY_TLS_KEYFILEPATH` to its path.
                         type: string
                     type: object
                   serde:
+                    description: Specifies credentials for deserializing messages.
                     properties:
                       protobufGitBasicAuthPassword:
+                        description: |-
+                          Specifies the basic authentication password for the Git repository that holds Protobuf schemas.
+                          The operator passes it to Console in the `SERDE_PROTOBUF_GIT_BASICAUTH_PASSWORD` environment variable.
                         type: string
                     type: object
                 type: object
               secretMounts:
+                description: |-
+                  Mounts existing Secrets as files in the Console container.
+                  For each entry, the operator adds a volume and a volume mount.
                 items:
+                  description: SecretMount mounts an existing Secret as files in the
+                    Console container.
                   properties:
                     defaultMode:
+                      description: |-
+                        Specifies the permission bits of the mounted files.
+                        If unset, Kubernetes uses `0644`.
                       format: int32
                       type: integer
                     name:
+                      description: |-
+                        Specifies the name of the volume that the operator creates for the Secret.
+                        Must be unique among the Pod's volumes.
                       type: string
                     path:
+                      description: Specifies the directory in the Console container
+                        where the Secret's keys appear as files.
                       type: string
                     secretName:
+                      description: |-
+                        Specifies the name of the Secret to mount.
+                        The Secret must be in the same namespace as the Console resource.
                       type: string
                     subPath:
+                      description: Mounts a single key of the Secret at `path` instead
+                        of the whole Secret.
                       type: string
                   type: object
                 type: array
               securityContext:
                 description: |-
-                  SecurityContext holds security configuration that will be applied to a container.
-                  Some fields are present in both SecurityContext and PodSecurityContext.  When both
-                  are set, the values in SecurityContext take precedence.
+                  Sets the security context for the Console container.
+                  Defaults to `runAsNonRoot: true`.
                 properties:
                   allowPrivilegeEscalation:
                     description: |-
@@ -8093,39 +8429,68 @@ spec:
                     type: object
                 type: object
               service:
+                description: Configures the Kubernetes Service that exposes Console.
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Adds annotations to the Service, such as those that
+                      configure a cloud load balancer.
                     type: object
                   nodePort:
+                    description: |-
+                      Specifies the node port to allocate.
+                      Applies only when `type` is `NodePort`.
+                      If unset, Kubernetes assigns a port.
                     format: int32
                     type: integer
                   port:
+                    description: |-
+                      Specifies the port that the Service listens on.
+                      Ingress and HTTPRoute backends also use this port.
+                      Defaults to `8080`.
                     format: int32
                     type: integer
                   targetPort:
+                    description: |-
+                      Specifies the container port that the Service forwards traffic to, and the port that the Console container listens on.
+                      If `config.server.listenPort` is set, the container uses that port instead, so keep the two values equal.
+                      If both are unset, the container listens on port 8080.
                     format: int32
                     type: integer
                   type:
-                    description: Service Type string describes ingress methods for
-                      a service
+                    description: |-
+                      Specifies the Service type: `ClusterIP`, `NodePort`, or `LoadBalancer`.
+                      Defaults to `ClusterIP`.
                     type: string
                 type: object
               serviceAccount:
+                description: Configures the ServiceAccount that the operator creates
+                  for the Console Pods.
                 properties:
                   annotations:
                     additionalProperties:
                       type: string
+                    description: Adds annotations to the ServiceAccount, such as those
+                      that bind it to a cloud identity for workload identity.
                     type: object
                   automountServiceAccountToken:
+                    description: |-
+                      Specifies whether the ServiceAccount allows its API token to be mounted into Pods automatically.
+                      Console does not call the Kubernetes API.
+                      Defaults to `false`.
                     type: boolean
                   name:
+                    description: |-
+                      Specifies the name of the ServiceAccount.
+                      If unset, the operator derives the name from the Console resource's name.
                     type: string
                 type: object
               strategy:
-                description: DeploymentStrategy describes how to replace existing
-                  pods with new ones.
+                description: |-
+                  Sets the strategy the Console Deployment uses to replace old Pods with new ones.
+                  If unset, Kubernetes uses a rolling update.
+                  For details, see https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy.
                 properties:
                   rollingUpdate:
                     description: |-
@@ -8172,6 +8537,9 @@ spec:
                     type: string
                 type: object
               tolerations:
+                description: |-
+                  Allows the Console Pods to be scheduled onto nodes with matching taints.
+                  For details, see https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/.
                 items:
                   description: |-
                     The pod this Toleration is attached to tolerates any taint that matches
@@ -8211,6 +8579,9 @@ spec:
                   type: object
                 type: array
               topologySpreadConstraints:
+                description: |-
+                  Controls how the Console Pods are spread across topology domains such as zones and nodes.
+                  For details, see https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/.
                 items:
                   description: TopologySpreadConstraint specifies how to spread matching
                     pods among the given topology.
@@ -8385,16 +8756,16 @@ spec:
                 type: array
               warnings:
                 description: |-
-                  Warnings is a slice of human readable warnings generated by the automatic
-                  migration of a Console V2 config to a Console V3 config. If warnings are
-                  present, they will describe which fields from the original config have
-                  been dropped and why.
+                  Lists human-readable warnings generated by the automatic migration of a Console v2 configuration to a Console v3 configuration.
+                  Each warning describes a field from the original configuration that was dropped, and why.
                   Setting this field has no effect.
                 items:
                   type: string
                 type: array
             type: object
           status:
+            description: Reports the observed state of the Deployment that runs Redpanda
+              Console.
             properties:
               availableReplicas:
                 description: Total number of available non-terminating pods (ready

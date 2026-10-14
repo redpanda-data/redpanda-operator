@@ -55,10 +55,16 @@ type KafkaSASL struct {
 
 	// Specifies the SASL/SCRAM authentication mechanism.
 	Mechanism SASLMechanism `json:"mechanism"`
+	// Configures the `OAUTHBEARER` mechanism.
+	// Required when `mechanism` is `OAUTHBEARER`.
 	// +optional
 	OAUth *KafkaSASLOAuthBearer `json:"oauth,omitempty"`
+	// Configures the `GSSAPI` (Kerberos) mechanism.
+	// Required when `mechanism` is `GSSAPI`.
 	// +optional
 	GSSAPIConfig *KafkaSASLGSSAPI `json:"gssapi,omitempty"`
+	// Configures the `AWS_MSK_IAM` mechanism.
+	// Required when `mechanism` is `AWS_MSK_IAM`.
 	// +optional
 	AWSMskIam *KafkaSASLAWSMskIam `json:"awsMskIam,omitempty"`
 
@@ -101,6 +107,8 @@ func (s *SASLMechanism) ScramToKafka() (kadm.ScramMechanism, error) {
 
 // KafkaSASLOAuthBearer is the config struct for the SASL OAuthBearer mechanism
 type KafkaSASLOAuthBearer struct {
+	// Specifies the OAuth bearer token to authenticate with.
+	// The token is sent as is, so you must replace it before it expires.
 	Token *ValueSource `json:"token,omitempty"`
 	// Deprecated: use `token` instead
 	DeprecatedToken *SecretKeyRef `json:"tokenSecretRef,omitempty"`
@@ -108,15 +116,26 @@ type KafkaSASLOAuthBearer struct {
 
 // KafkaSASLGSSAPI represents the Kafka Kerberos config.
 type KafkaSASLGSSAPI struct {
-	AuthType           string       `json:"authType"`
-	KeyTabPath         string       `json:"keyTabPath"`
-	KerberosConfigPath string       `json:"kerberosConfigPath"`
-	ServiceName        string       `json:"serviceName"`
-	Username           string       `json:"username"`
-	Password           *ValueSource `json:"password,omitempty"`
+	// Specifies how to obtain Kerberos credentials: `USER_AUTH` to log in with `username` and `password`, or `KEYTAB_AUTH` to log in with the keytab file at `keyTabPath`.
+	AuthType string `json:"authType"`
+	// Specifies the path to the keytab file for `KEYTAB_AUTH`.
+	// The path is read from the operator's file system, so the file must be mounted into the operator Pod.
+	KeyTabPath string `json:"keyTabPath"`
+	// Specifies the path to the Kerberos configuration file (`krb5.conf`).
+	// The path is read from the operator's file system, so the file must be mounted into the operator Pod.
+	KerberosConfigPath string `json:"kerberosConfigPath"`
+	// Specifies the primary of the brokers' Kerberos service principal name.
+	// Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`.
+	ServiceName string `json:"serviceName"`
+	// Specifies the Kerberos principal to authenticate as, without the realm.
+	Username string `json:"username"`
+	// Specifies the password for `username`.
+	// Used only when `authType` is `USER_AUTH`.
+	Password *ValueSource `json:"password,omitempty"`
 	// Deprecated: use `password` instead
 	DeprecatedPassword *SecretKeyRef `json:"passwordSecretRef,omitempty"`
-	Realm              string        `json:"realm"`
+	// Specifies the Kerberos realm of `username`.
+	Realm string `json:"realm"`
 
 	// EnableFAST enables FAST, which is a pre-authentication framework for Kerberos.
 	// It includes a mechanism for tunneling pre-authentication exchanges using armored KDC messages.
@@ -127,7 +146,9 @@ type KafkaSASLGSSAPI struct {
 // KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
 // see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
 type KafkaSASLAWSMskIam struct {
-	AccessKey string       `json:"accessKey"`
+	// Specifies the AWS access key ID.
+	AccessKey string `json:"accessKey"`
+	// Specifies the AWS secret access key that belongs to `accessKey`.
 	SecretKey *ValueSource `json:"secretKey,omitempty"`
 	// Deprecated: use `secretKey` instead
 	DeprecatedSecretKey *SecretKeyRef `json:"secretKeySecretRef,omitempty"`
@@ -202,6 +223,11 @@ type ValueSource struct {
 // ExternalSecretKeySelector selects a key of an external Secret.
 // +structType=atomic
 type ExternalSecretKeySelector struct {
+	// Specifies the name of the external secret.
+	// In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+	// The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+	// In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+	// Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
 	Name string `json:"name"`
 }
 
@@ -301,6 +327,8 @@ type SchemaRegistrySASL struct {
 	// Specifies the password.
 	// +optional
 	Password *ValueSource `json:"password,omitempty"`
+	// Specifies a bearer token for token-based authentication.
+	// Used only when `password` is not set.
 	// +optional
 	AuthToken *ValueSource `json:"authToken,omitempty"`
 	// Specifies the SASL/SCRAM authentication mechanism.
