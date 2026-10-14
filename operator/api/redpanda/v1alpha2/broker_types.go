@@ -233,7 +233,10 @@ type BrokerStatus struct {
 
 // DiskLostStatus records the two durable checkpoints of disk-loss handling.
 type DiskLostStatus struct {
-	// At is when the dead-node proof was accepted — the point of no return.
+	// At is when the disk-loss proof was accepted — the point of no return.
+	// Two proofs exist: the PV's node no longer exists, or the pod's
+	// data-dir guard refused to start Redpanda because the data directory
+	// holds no kvstore while the pod carries this Broker's node_id.
 	// +optional
 	At metav1.Time `json:"at,omitempty"`
 	// ResourcesReleased is set once the pod and every PVC were confirmed

@@ -852,25 +852,32 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 // its data directory while the volume itself still mounts (a wiped or
 // replaced disk under a hostPath PV, or any blank volume) and is recreated.
 // The data-dir guard finds the stamped node_id and no kvstore, exits with
-// its verdict, and Redpanda never starts: the Broker reports Stuck and keeps
-// its node_id, so no new node ever registers in the recorded one's place.
+// its verdict, and Redpanda never starts: the Broker reports Stuck, then —
+// once the disk-loss timeout (60s in this suite) elapses — is marked
+// DiskLost and dismantled, and a NEW Broker takes the slot and registers as
+// a new node. The old node_id is never reused: the tombstone keeps it.
 func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
 
+	// Three brokers: the cluster must survive losing one so the replacement
+	// has something to join and the tombstone's node_id can be decommissioned.
 	rp := s.minimalRP()
 	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
 	s.applyAndWait(t, ctx, c, rp)
 
 	var target redpandav1alpha2.Broker
 	require.EventuallyWithT(t, func(ct *assert.CollectT) {
 		brokers := s.listBrokers(ct, ctx, c, rp)
-		if !assert.Len(ct, brokers, 1) {
+		if !assert.Len(ct, brokers, 3) {
 			return
 		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase, "broker %q", b.Name)
+			assert.NotNil(ct, b.Status.BrokerID, "broker %q", b.Name)
+		}
 		target = brokers[0]
-		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, target.Status.Phase)
-		assert.NotNil(ct, target.Status.BrokerID)
 	}, 5*time.Minute, 5*time.Second)
 	brokerID := *target.Status.BrokerID
 
@@ -949,10 +956,40 @@ func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
 			return
 		}
 		assert.Equal(ct, redpandav1alpha2.BrokerPhaseStuck, target.Status.Phase)
+		assert.Nil(ct, target.Status.DiskLost, "the verdict alone must not mark: the timeout is the window to intervene")
 	}, 3*time.Minute, 2*time.Second)
-
 	require.NotNil(t, target.Status.BrokerID)
 	assert.Equal(t, brokerID, *target.Status.BrokerID, "identity is immutable")
+
+	// The brokerset replaces the released slot with a NEW Broker CR that boots
+	// on a fresh disk and registers as a new node; the tombstone, for as long
+	// as it exists, keeps the latch and the old node_id.
+	t.Log("waiting for DiskLost marking, dismantle and replacement")
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var tomb redpandav1alpha2.Broker
+		if err := c.Get(ctx, client.ObjectKeyFromObject(&target), &tomb); err == nil {
+			assert.True(ct, tomb.IsDiskLost(), "the guard's verdict must become the DiskLost latch")
+			if assert.NotNil(ct, tomb.Status.BrokerID) {
+				assert.Equal(ct, brokerID, *tomb.Status.BrokerID, "a dead incarnation never changes identity")
+			}
+		} else {
+			assert.True(ct, apierrors.IsNotFound(err))
+		}
+
+		var replacement *redpandav1alpha2.Broker
+		for _, b := range s.listBrokers(ct, ctx, c, rp) {
+			if b.Name != target.Name && ptr.Deref(b.Spec.NetworkIndex, -1) == ptr.Deref(target.Spec.NetworkIndex, -2) {
+				replacement = &b
+			}
+		}
+		if !assert.NotNil(ct, replacement, "the brokerset must replace the released slot") {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, replacement.Status.Phase)
+		if assert.NotNil(ct, replacement.Status.BrokerID) {
+			assert.NotEqual(ct, brokerID, *replacement.Status.BrokerID, "the replacement is a new node; the old node_id is never reused")
+		}
+	}, 8*time.Minute, 5*time.Second)
 }
 
 // --- helpers ---
