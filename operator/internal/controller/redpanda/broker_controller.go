@@ -15,6 +15,7 @@ import (
 	"net"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -711,6 +712,15 @@ func (r *BrokerReconciler) reconcilePodMetadata(ctx context.Context, state *brok
 	for k, v := range tpl.Labels {
 		if pod.Labels[k] != v {
 			pod.Labels[k] = v
+			changed = true
+		}
+	}
+	// The pod carries its node_id for the data-dir guard (see
+	// brokerset.DataGuardContainerName). Written once the identity is
+	// adopted, never removed.
+	if id := state.broker.Status.BrokerID; id != nil {
+		if want := strconv.FormatInt(int64(*id), 10); pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] != want {
+			pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] = want
 			changed = true
 		}
 	}

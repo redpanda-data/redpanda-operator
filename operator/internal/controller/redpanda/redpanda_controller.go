@@ -842,6 +842,19 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		return nil, errors.Wrap(err, "constructing pod selector")
 	}
 
+	// The data-dir guard runs the operator binary; the chart's sidecar
+	// container already carries that image, so borrow it rather than
+	// threading image values through here.
+	var guardImage string
+	for _, c := range set.Spec.Template.Spec.Containers {
+		if c.Name == redpandachart.SidecarContainerName {
+			guardImage = c.Image
+		}
+	}
+	if guardImage == "" {
+		return nil, errors.Newf("rendered StatefulSet %q has no %q container to take the operator image from", set.Name, redpandachart.SidecarContainerName)
+	}
+
 	return &brokerset.BrokerSet{
 		Client:               cluster.GetClient(),
 		Scheme:               cluster.GetScheme(),
@@ -854,6 +867,7 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		PodSelector:          podSelector,
 		ConfigChecksumKey:    redpandav1alpha2.BrokerConfigChecksumAnnotation,
 		ClusterConfigVersion: configVersion,
+		DataGuardImage:       guardImage,
 		Hooks:                &v2OwnerHooks{clientFactory: r.ClientFactory, state: state},
 		Reporter:             state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
 		Arbitration:          state.arbitration,
