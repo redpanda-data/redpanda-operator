@@ -310,6 +310,7 @@ type RedpandaConsole struct {
 	// Settings for console's Deployment's liveness probe.
 	LivenessProbe *LivenessProbe `json:"livenessProbe,omitempty"`
 
+	// Configures a Prometheus ServiceMonitor that scrapes Redpanda Console's metrics.
 	Monitoring *MonitoringConfig `json:"monitoring,omitempty"`
 
 	// Deprecated fields below
@@ -1173,7 +1174,11 @@ type ContainerResources struct {
 type Memory struct {
 	// Defines resource limits for containers.
 	Container *ContainerResources `json:"container,omitempty"`
-	// Enables memory locking. For production, set to `true`.
+	// Enables memory locking, which prevents the operating system from swapping Redpanda's memory
+	// to disk. In a `Redpanda` resource, this takes effect only when `resources.requests` and
+	// `resources.limits` are both unset. When they are set, add `--lock-memory` to
+	// `statefulset.additionalRedpandaCmdFlags` instead. `RedpandaBrokerPool` and `StretchCluster`
+	// resources honor this field in either case. Default: `false`.
 	EnableMemoryLocking *bool `json:"enable_memory_locking,omitempty"`
 	// Allows you to optionally specify the memory size for both the Redpanda process and the underlying reserved memory used by Seastar.
 	Redpanda *RedpandaMemory `json:"redpanda,omitempty"`

@@ -8,6 +8,9 @@ processor:
   - '\.Broker.*$' # The Broker CRD is dark-launched (--enable-broker, default false); dot-prefixed so RedpandaBrokerPool stays documented.
   ignoreFields:
   - 'migration$'
+  # The templates render apiVersion and kind from the GVK, so the embedded
+  # TypeMeta fields would otherwise be listed a second time.
+  - 'TypeMeta$'
   customMarkers:
   - name: "hidefromdoc"
     target: field

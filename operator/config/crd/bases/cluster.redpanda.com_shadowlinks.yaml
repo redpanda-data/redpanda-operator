@@ -305,6 +305,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -404,6 +410,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -601,6 +613,12 @@ spec:
                                   Note: we interpret all fetched external secrets as raw string values
                                 properties:
                                   name:
+                                    description: |-
+                                      Specifies the name of the external secret.
+                                      In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                      The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                      In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                      Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                     type: string
                                 required:
                                 - name
@@ -710,6 +728,12 @@ spec:
                                   Note: we interpret all fetched external secrets as raw string values
                                 properties:
                                   name:
+                                    description: |-
+                                      Specifies the name of the external secret.
+                                      In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                      The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                      In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                      Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                     type: string
                                 required:
                                 - name
@@ -834,6 +858,12 @@ spec:
                                   Note: we interpret all fetched external secrets as raw string values
                                 properties:
                                   name:
+                                    description: |-
+                                      Specifies the name of the external secret.
+                                      In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                      The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                      In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                      Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                     type: string
                                 required:
                                 - name
@@ -1110,6 +1140,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1211,6 +1247,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1347,6 +1389,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1459,6 +1507,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1586,6 +1640,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -1690,14 +1750,15 @@ spec:
                             properties:
                               awsMskIam:
                                 description: |-
-                                  KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
-                                  see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+                                  Configures the `AWS_MSK_IAM` mechanism.
+                                  Required when `mechanism` is `AWS_MSK_IAM`.
                                 properties:
                                   accessKey:
+                                    description: Specifies the AWS access key ID.
                                     type: string
                                   secretKey:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: Specifies the AWS secret access key
+                                      that belongs to `accessKey`.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -1731,6 +1792,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -1846,6 +1913,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -1938,10 +2011,15 @@ spec:
                                 - userAgent
                                 type: object
                               gssapi:
-                                description: KafkaSASLGSSAPI represents the Kafka
-                                  Kerberos config.
+                                description: |-
+                                  Configures the `GSSAPI` (Kerberos) mechanism.
+                                  Required when `mechanism` is `GSSAPI`.
                                 properties:
                                   authType:
+                                    description: 'Specifies how to obtain Kerberos
+                                      credentials: `USER_AUTH` to log in with `username`
+                                      and `password`, or `KEYTAB_AUTH` to log in with
+                                      the keytab file at `keyTabPath`.'
                                     type: string
                                   enableFast:
                                     description: |-
@@ -1950,12 +2028,19 @@ spec:
                                       FAST provides increased resistance to passive password guessing attacks.
                                     type: boolean
                                   kerberosConfigPath:
+                                    description: |-
+                                      Specifies the path to the Kerberos configuration file (`krb5.conf`).
+                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
                                     type: string
                                   keyTabPath:
+                                    description: |-
+                                      Specifies the path to the keytab file for `KEYTAB_AUTH`.
+                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
                                     type: string
                                   password:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: |-
+                                      Specifies the password for `username`.
+                                      Used only when `authType` is `USER_AUTH`.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -1989,6 +2074,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -2068,10 +2159,16 @@ spec:
                                     - name
                                     type: object
                                   realm:
+                                    description: Specifies the Kerberos realm of `username`.
                                     type: string
                                   serviceName:
+                                    description: |-
+                                      Specifies the primary of the brokers' Kerberos service principal name.
+                                      Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`.
                                     type: string
                                   username:
+                                    description: Specifies the Kerberos principal
+                                      to authenticate as, without the realm.
                                     type: string
                                 required:
                                 - authType
@@ -2087,12 +2184,14 @@ spec:
                                   mechanism.
                                 type: string
                               oauth:
-                                description: KafkaSASLOAuthBearer is the config struct
-                                  for the SASL OAuthBearer mechanism
+                                description: |-
+                                  Configures the `OAUTHBEARER` mechanism.
+                                  Required when `mechanism` is `OAUTHBEARER`.
                                 properties:
                                   token:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: |-
+                                      Specifies the OAuth bearer token to authenticate with.
+                                      The token is sent as is, so you must replace it before it expires.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -2126,6 +2225,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -2240,6 +2345,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2385,6 +2496,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2497,6 +2614,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2624,6 +2747,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2714,8 +2843,9 @@ spec:
                               for Redpanda clusters that have authentication enabled.
                             properties:
                               authToken:
-                                description: ValueSource represents where a value
-                                  can be pulled from
+                                description: |-
+                                  Specifies a bearer token for token-based authentication.
+                                  Used only when `password` is not set.
                                 properties:
                                   configMapKeyRef:
                                     description: |-
@@ -2749,6 +2879,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2850,6 +2986,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -2986,6 +3128,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3098,6 +3246,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3225,6 +3379,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3409,6 +3569,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3510,6 +3676,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3646,6 +3818,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3758,6 +3936,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3885,6 +4069,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -3989,14 +4179,15 @@ spec:
                             properties:
                               awsMskIam:
                                 description: |-
-                                  KafkaSASLAWSMskIam is the config for AWS IAM SASL mechanism,
-                                  see: https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html
+                                  Configures the `AWS_MSK_IAM` mechanism.
+                                  Required when `mechanism` is `AWS_MSK_IAM`.
                                 properties:
                                   accessKey:
+                                    description: Specifies the AWS access key ID.
                                     type: string
                                   secretKey:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: Specifies the AWS secret access key
+                                      that belongs to `accessKey`.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -4030,6 +4221,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -4145,6 +4342,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -4237,10 +4440,15 @@ spec:
                                 - userAgent
                                 type: object
                               gssapi:
-                                description: KafkaSASLGSSAPI represents the Kafka
-                                  Kerberos config.
+                                description: |-
+                                  Configures the `GSSAPI` (Kerberos) mechanism.
+                                  Required when `mechanism` is `GSSAPI`.
                                 properties:
                                   authType:
+                                    description: 'Specifies how to obtain Kerberos
+                                      credentials: `USER_AUTH` to log in with `username`
+                                      and `password`, or `KEYTAB_AUTH` to log in with
+                                      the keytab file at `keyTabPath`.'
                                     type: string
                                   enableFast:
                                     description: |-
@@ -4249,12 +4457,19 @@ spec:
                                       FAST provides increased resistance to passive password guessing attacks.
                                     type: boolean
                                   kerberosConfigPath:
+                                    description: |-
+                                      Specifies the path to the Kerberos configuration file (`krb5.conf`).
+                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
                                     type: string
                                   keyTabPath:
+                                    description: |-
+                                      Specifies the path to the keytab file for `KEYTAB_AUTH`.
+                                      The path is read from the operator's file system, so the file must be mounted into the operator Pod.
                                     type: string
                                   password:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: |-
+                                      Specifies the password for `username`.
+                                      Used only when `authType` is `USER_AUTH`.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -4288,6 +4503,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -4367,10 +4588,16 @@ spec:
                                     - name
                                     type: object
                                   realm:
+                                    description: Specifies the Kerberos realm of `username`.
                                     type: string
                                   serviceName:
+                                    description: |-
+                                      Specifies the primary of the brokers' Kerberos service principal name.
+                                      Must match the cluster property `sasl_kerberos_principal`, which defaults to `redpanda`.
                                     type: string
                                   username:
+                                    description: Specifies the Kerberos principal
+                                      to authenticate as, without the realm.
                                     type: string
                                 required:
                                 - authType
@@ -4386,12 +4613,14 @@ spec:
                                   mechanism.
                                 type: string
                               oauth:
-                                description: KafkaSASLOAuthBearer is the config struct
-                                  for the SASL OAuthBearer mechanism
+                                description: |-
+                                  Configures the `OAUTHBEARER` mechanism.
+                                  Required when `mechanism` is `OAUTHBEARER`.
                                 properties:
                                   token:
-                                    description: ValueSource represents where a value
-                                      can be pulled from
+                                    description: |-
+                                      Specifies the OAuth bearer token to authenticate with.
+                                      The token is sent as is, so you must replace it before it expires.
                                     properties:
                                       configMapKeyRef:
                                         description: |-
@@ -4425,6 +4654,12 @@ spec:
                                           Note: we interpret all fetched external secrets as raw string values
                                         properties:
                                           name:
+                                            description: |-
+                                              Specifies the name of the external secret.
+                                              In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                              The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                              In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                              Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                             type: string
                                         required:
                                         - name
@@ -4539,6 +4774,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -4684,6 +4925,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -4796,6 +5043,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -4923,6 +5176,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -5013,8 +5272,9 @@ spec:
                               for Redpanda clusters that have authentication enabled.
                             properties:
                               authToken:
-                                description: ValueSource represents where a value
-                                  can be pulled from
+                                description: |-
+                                  Specifies a bearer token for token-based authentication.
+                                  Used only when `password` is not set.
                                 properties:
                                   configMapKeyRef:
                                     description: |-
@@ -5048,6 +5308,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -5149,6 +5415,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -5285,6 +5557,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -5397,6 +5675,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name
@@ -5524,6 +5808,12 @@ spec:
                                       Note: we interpret all fetched external secrets as raw string values
                                     properties:
                                       name:
+                                        description: |-
+                                          Specifies the name of the external secret.
+                                          In the cluster connection of a resource such as a Topic or User, the operator reads it from its cloud secret store (AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault), which requires the operator to run with `--enable-cloud-secrets`.
+                                          The operator adds the `--cloud-secrets-prefix` value to the start of the name, and `<secret-name>.<field>` reads one field of a secret that holds JSON.
+                                          In a Pipeline's `valueSources`, it names a Kubernetes Secret, such as one that External Secrets Operator syncs, and the key that is read matches the entry's `name`.
+                                          Console resources do not support `externalSecretRef`, and a Console that sets it fails to reconcile.
                                         type: string
                                     required:
                                     - name

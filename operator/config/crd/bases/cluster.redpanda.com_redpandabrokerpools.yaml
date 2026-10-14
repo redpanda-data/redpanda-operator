@@ -9683,8 +9683,12 @@ spec:
                             x-kubernetes-int-or-string: true
                         type: object
                       enable_memory_locking:
-                        description: Enables memory locking. For production, set to
-                          `true`.
+                        description: |-
+                          Enables memory locking, which prevents the operating system from swapping Redpanda's memory
+                          to disk. In a `Redpanda` resource, this takes effect only when `resources.requests` and
+                          `resources.limits` are both unset. When they are set, add `--lock-memory` to
+                          `statefulset.additionalRedpandaCmdFlags` instead. `RedpandaBrokerPool` and `StretchCluster`
+                          resources honor this field in either case. Default: `false`.
                         type: boolean
                       redpanda:
                         description: Allows you to optionally specify the memory size

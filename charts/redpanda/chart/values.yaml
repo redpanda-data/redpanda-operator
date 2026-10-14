@@ -438,8 +438,11 @@ resources:
   # For details,
   # see the [Pod resources documentation](https://docs.redpanda.com/docs/manage/kubernetes/manage-resources/#configure-memory-resources).
   memory:
-    # -- Enables memory locking.
-    # For production, set to `true`.
+    # -- Enables memory locking, which prevents the operating system from
+    # swapping Redpanda's memory to disk. Takes effect only when
+    # `resources.requests` and `resources.limits` are both unset. When they are
+    # set, add `--lock-memory` to `statefulset.additionalRedpandaCmdFlags`
+    # instead.
     # enable_memory_locking: false
 
     # -- Memory limits and requests for each Redpanda broker container.

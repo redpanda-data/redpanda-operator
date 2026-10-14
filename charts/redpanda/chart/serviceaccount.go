@@ -12,9 +12,8 @@ package chart
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	"github.com/redpanda-data/redpanda-operator/gotohelm/helmette"
 )
 
@@ -38,17 +37,10 @@ func ServiceAccount(state *RenderState) *corev1.ServiceAccount {
 		return nil
 	}
 
-	return &corev1.ServiceAccount{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ServiceAccount",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        ServiceAccountName(state),
-			Namespace:   state.Release.Namespace,
-			Labels:      FullLabels(state),
-			Annotations: helmette.Merge(state.Values.ServiceAccount.Annotations, FullAnnotations(state)),
-		},
-		AutomountServiceAccountToken: ptr.To(false),
-	}
+	return redpanda.ServiceAccount(
+		ServiceAccountName(state),
+		state.Release.Namespace,
+		FullLabels(state),
+		helmette.Merge(state.Values.ServiceAccount.Annotations, FullAnnotations(state)),
+	)
 }
