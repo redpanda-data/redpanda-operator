@@ -1384,6 +1384,116 @@ func LostDiskClaims(ctx context.Context, reader client.Reader, pod *corev1.Pod) 
 	return affected, nil
 }
 
+// FailedMountMissingPathRE matches the kubelet's FailedMount event for a
+// Local PV whose directory is gone from the node it is pinned to; the
+// capture is the PV name. The text is assembled in the kubelet's
+// operation_generator.go ("MountVolume.NewMounter initialization failed"
+// + the local plugin's `path %q does not exist`). Only Local PVs produce
+// it: a HostPath PV with DirectoryOrCreate is silently recreated empty.
+var FailedMountMissingPathRE = regexp.MustCompile(`^MountVolume\.NewMounter initialization failed for volume "([^"]+)" : path ".+" does not exist$`)
+
+// FailedMountEventStaleAfter bounds how old a FailedMount event's last
+// timestamp may be and still describe an ongoing failure. The kubelet
+// retries a failing mount with exponential backoff capped at 2m2s
+// (pkg/util/goroutinemap/exponentialbackoff) and bumps the event on every
+// attempt, but client-go's event spam filter throttles one pod's events to
+// one per 5 minutes once its burst of 25 is spent.
+const FailedMountEventStaleAfter = 10 * time.Minute
+
+// MissingLocalVolume is one live-node disk-loss proof: the pod's claim
+// whose bound PV the kubelet reports gone from the node, and when the
+// kubelet first and last said so.
+type MissingLocalVolume struct {
+	Claim     corev1.PersistentVolumeClaim
+	FirstSeen time.Time
+	LastSeen  time.Time
+}
+
+// MissingLocalVolumes returns the pod's PVC-backed claims whose bound PV
+// the kubelet reports missing from the node: a FailedMount event naming the
+// PV with a "path ... does not exist" message. This is the live-node
+// counterpart of LostDiskClaims — a node rebuilt with an empty disk under
+// the same Node object. Nothing in the Pod or Node objects shows it: the
+// pod is scheduled and the node Ready; only the kubelet, which stat()s the
+// path, knows the data is gone.
+//
+// The event alone is not proof. A pod that mounted fine after a transient
+// failure (data disk mounted after the kubelet came up) keeps the event
+// for the event TTL, so the pod must also still be blocked before its
+// sandbox exists — the kubelet mounts volumes before creating it, so a
+// failing mount pins PodReadyToStartContainers at False for a fresh pod
+// and for a pod that survived a kubelet restart alike — and the event must
+// have been refreshed within FailedMountEventStaleAfter.
+//
+// Read-only. reader must be an uncached client, for the same reason as
+// LostDiskClaims.
+func MissingLocalVolumes(ctx context.Context, reader client.Reader, pod *corev1.Pod) ([]MissingLocalVolume, error) {
+	if pod.Spec.NodeName == "" || !PodBlockedBeforeSandbox(pod) {
+		return nil, nil
+	}
+	var events corev1.EventList
+	if err := reader.List(ctx, &events, client.InNamespace(pod.Namespace),
+		client.MatchingFields{"involvedObject.uid": string(pod.UID)}); err != nil {
+		return nil, err
+	}
+	var affected []MissingLocalVolume
+	for i := range events.Items {
+		ev := &events.Items[i]
+		if ev.Reason != "FailedMount" {
+			continue
+		}
+		match := FailedMountMissingPathRE.FindStringSubmatch(ev.Message)
+		if match == nil {
+			continue
+		}
+		first, last := ev.FirstTimestamp.Time, ev.LastTimestamp.Time
+		if first.IsZero() {
+			first = ev.EventTime.Time
+		}
+		if last.IsZero() {
+			last = first
+		}
+		if time.Since(last) > FailedMountEventStaleAfter {
+			continue
+		}
+		for j := range pod.Spec.Volumes {
+			src := pod.Spec.Volumes[j].PersistentVolumeClaim
+			if src == nil {
+				continue
+			}
+			var pvc corev1.PersistentVolumeClaim
+			if err := reader.Get(ctx, client.ObjectKey{Name: src.ClaimName, Namespace: pod.Namespace}, &pvc); err != nil {
+				if apierrors.IsNotFound(err) {
+					continue
+				}
+				return nil, err
+			}
+			if pvc.Spec.VolumeName != match[1] {
+				continue
+			}
+			affected = append(affected, MissingLocalVolume{Claim: pvc, FirstSeen: first, LastSeen: last})
+		}
+	}
+	return affected, nil
+}
+
+// PodBlockedBeforeSandbox reports whether the kubelet has yet to (re)build
+// the pod's sandbox. Kubelets without the PodReadyToStartContainers
+// condition (gate off before 1.29) fall back to "no container is running".
+func PodBlockedBeforeSandbox(pod *corev1.Pod) bool {
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == corev1.PodReadyToStartContainers {
+			return cond.Status == corev1.ConditionFalse
+		}
+	}
+	for _, cs := range pod.Status.ContainerStatuses {
+		if cs.State.Running != nil {
+			return false
+		}
+	}
+	return true
+}
+
 // listClusterPVCsByName returns a name→PVC snapshot for the PVCs that
 // belong to the same Redpanda/Cluster as `pod` (matched by the
 // app.kubernetes.io/instance label). Gate 3 inspects spec.volumeName

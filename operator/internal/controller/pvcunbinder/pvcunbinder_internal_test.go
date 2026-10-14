@@ -12,6 +12,7 @@ package pvcunbinder
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -3062,4 +3063,119 @@ func TestLostDiskClaimsResolvesNodeByHostnameLabel(t *testing.T) {
 	lost, err = LostDiskClaims(ctx, c, unbound)
 	require.NoError(t, err)
 	require.Empty(t, lost, "network-attached storage is never disk-loss proof")
+}
+
+// TestMissingLocalVolumes pins the live-node proof's gates: the kubelet's
+// FailedMount "path does not exist" event must name the PV bound to one of
+// the pod's claims, be fresh, and describe a pod whose sandbox is still
+// down — a pod that mounted fine after a transient failure keeps the event
+// around for the event TTL and must not qualify.
+func TestMissingLocalVolumes(t *testing.T) {
+	const message = `MountVolume.NewMounter initialization failed for volume "pv-0" : path "/var/lib/rancher/k3s/storage/pv-0_ns_datadir-rp-0" does not exist`
+	first := time.Now().Add(-10 * time.Minute).Truncate(time.Second)
+	last := time.Now().Truncate(time.Second)
+
+	fixture := func() (*corev1.Pod, *corev1.Event) {
+		pod := withPVC(newPod("rp-0", "ns", "redpanda"), "datadir-rp-0")
+		pod.UID = "pod-uid"
+		pod.Spec.NodeName = "node-a"
+		pod.Status.Conditions = []corev1.PodCondition{
+			{Type: corev1.PodScheduled, Status: corev1.ConditionTrue},
+			{Type: corev1.PodReadyToStartContainers, Status: corev1.ConditionFalse},
+		}
+		event := &corev1.Event{
+			ObjectMeta:     metav1.ObjectMeta{Name: "rp-0.1", Namespace: "ns"},
+			InvolvedObject: corev1.ObjectReference{Kind: "Pod", Namespace: "ns", Name: "rp-0", UID: "pod-uid"},
+			Type:           corev1.EventTypeWarning,
+			Reason:         "FailedMount",
+			Message:        message,
+			Source:         corev1.EventSource{Component: "kubelet", Host: "node-a"},
+			FirstTimestamp: metav1.NewTime(first),
+			LastTimestamp:  metav1.NewTime(last),
+			Count:          5,
+		}
+		return pod, event
+	}
+
+	for name, tc := range map[string]struct {
+		mutate              func(pod *corev1.Pod, event *corev1.Event)
+		want                bool
+		wantFirst, wantLast time.Time
+	}{
+		"missing path reported": {
+			mutate: func(*corev1.Pod, *corev1.Event) {}, want: true, wantFirst: first, wantLast: last,
+		},
+		"legacy timestamps absent, EventTime set": {
+			mutate: func(_ *corev1.Pod, event *corev1.Event) {
+				event.FirstTimestamp, event.LastTimestamp = metav1.Time{}, metav1.Time{}
+				event.EventTime = metav1.NewMicroTime(last)
+			},
+			want: true, wantFirst: last, wantLast: last,
+		},
+		"no PodReadyToStartContainers condition, nothing running": {
+			mutate: func(pod *corev1.Pod, _ *corev1.Event) {
+				pod.Status.Conditions = pod.Status.Conditions[:1]
+				pod.Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "redpanda", State: corev1.ContainerState{
+					Terminated: &corev1.ContainerStateTerminated{ExitCode: 255},
+				}}}
+			},
+			want: true, wantFirst: first, wantLast: last,
+		},
+		"no PodReadyToStartContainers condition, container running": {
+			mutate: func(pod *corev1.Pod, _ *corev1.Event) {
+				pod.Status.Conditions = pod.Status.Conditions[:1]
+				pod.Status.ContainerStatuses = []corev1.ContainerStatus{{Name: "redpanda", State: corev1.ContainerState{
+					Running: &corev1.ContainerStateRunning{},
+				}}}
+			},
+		},
+		"sandbox is up": {
+			mutate: func(pod *corev1.Pod, _ *corev1.Event) { pod.Status.Conditions[1].Status = corev1.ConditionTrue },
+		},
+		"pod not scheduled": {
+			mutate: func(pod *corev1.Pod, _ *corev1.Event) { pod.Spec.NodeName = "" },
+		},
+		"event stale": {
+			mutate: func(_ *corev1.Pod, event *corev1.Event) {
+				event.LastTimestamp = metav1.NewTime(time.Now().Add(-FailedMountEventStaleAfter - time.Minute))
+			},
+		},
+		"event names another volume": {
+			mutate: func(_ *corev1.Pod, event *corev1.Event) {
+				event.Message = strings.Replace(message, `"pv-0"`, `"pv-9"`, 1)
+			},
+		},
+		"other FailedMount": {
+			mutate: func(_ *corev1.Pod, event *corev1.Event) {
+				event.Message = `MountVolume.SetUp failed for volume "config" : configmap "rp" not found`
+			},
+		},
+		"other reason, same message": {
+			mutate: func(_ *corev1.Pod, event *corev1.Event) { event.Reason = "FailedAttachVolume" },
+		},
+		"event for another pod": {
+			mutate: func(_ *corev1.Pod, event *corev1.Event) { event.InvolvedObject.UID = "other-pod" },
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			pod, event := fixture()
+			tc.mutate(pod, event)
+			c := fake.NewClientBuilder().WithScheme(newScheme(t, false, false, false)).
+				WithObjects(newPVC("datadir-rp-0", "ns", "redpanda", "pv-0"), event).
+				WithIndex(&corev1.Event{}, "involvedObject.uid", func(o client.Object) []string {
+					return []string{string(o.(*corev1.Event).InvolvedObject.UID)}
+				}).Build()
+
+			missing, err := MissingLocalVolumes(context.Background(), c, pod)
+			require.NoError(t, err)
+			if !tc.want {
+				require.Empty(t, missing)
+				return
+			}
+			require.Len(t, missing, 1)
+			require.Equal(t, "datadir-rp-0", missing[0].Claim.Name)
+			require.True(t, tc.wantFirst.Equal(missing[0].FirstSeen), "FirstSeen %v, want %v", missing[0].FirstSeen, tc.wantFirst)
+			require.True(t, tc.wantLast.Equal(missing[0].LastSeen), "LastSeen %v, want %v", missing[0].LastSeen, tc.wantLast)
+		})
+	}
 }

@@ -56,6 +56,7 @@ import (
 // +kubebuilder:rbac:groups="",resources=persistentvolumeclaims,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=persistentvolumes,verbs=get;list;patch
 // +kubebuilder:rbac:groups="",resources=nodes,verbs=get;list
+// +kubebuilder:rbac:groups="",resources=events,verbs=get;list
 
 const brokerFinalizerName = "cluster.redpanda.com/broker-decommission"
 
@@ -77,6 +78,13 @@ const requeueDrain = 10 * time.Second
 // admin GET; polling at periodicRequeue would put a multi-minute floor under
 // each drained broker.
 const requeueDecommission = 10 * time.Second
+
+// requeueMountPoll paces the look for the kubelet's FailedMount verdict on
+// a scheduled pod whose sandbox is not up yet. The first mount attempt, and
+// its event, land within seconds of scheduling; the state is abnormal or
+// transient (image pulls happen after the sandbox), so the poll only runs
+// while a pod is in it.
+const requeueMountPoll = 10 * time.Second
 
 type BrokerReconciler struct {
 	Manager           multicluster.Manager
@@ -176,6 +184,12 @@ type brokerReconciliationState struct {
 	// registrationConflict carries the identity-mismatch message when the
 	// pod re-registered under an unexpected node_id.
 	registrationConflict string
+	// requeueAfter asks for an earlier pass than periodicRequeue without
+	// short-circuiting the chain the way a non-zero step result does. A
+	// step sets it when it is waiting on a signal that fires no watch
+	// event (e.g. a kubelet event) but must still let the steps behind it
+	// run. Only applied when the chain's own result is zero.
+	requeueAfter time.Duration
 }
 
 // brokerPVCs returns all PVCs for given broker (.brokerPVCs + .brokerExistingPVCs combined)
@@ -533,39 +547,87 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 
 	if broker.Spec.Decommission ||
 		state.pod == nil ||
-		!metav1.IsControlledBy(state.pod, broker) ||
-		!pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		!metav1.IsControlledBy(state.pod, broker) {
 		return ctrl.Result{}, nil
 	}
 
-	// Timeout: only accept the proof after the pod has been stuck long
-	// enough for a rebooting node to have come back.
-	for _, cond := range state.pod.Status.Conditions {
-		if cond.Type != corev1.PodScheduled || cond.Status != corev1.ConditionFalse {
-			continue
+	if pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		// Timeout: only accept the proof after the pod has been stuck long
+		// enough for a rebooting node to have come back.
+		for _, cond := range state.pod.Status.Conditions {
+			if cond.Type != corev1.PodScheduled || cond.Status != corev1.ConditionFalse {
+				continue
+			}
+			if delta := r.MarkDiskLostAfter - time.Since(cond.LastTransitionTime.Time); delta > 0 {
+				l.Info("pod stuck on PV node affinity but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
+				return ctrl.Result{RequeueAfter: delta}, nil
+			}
 		}
-		if delta := r.MarkDiskLostAfter - time.Since(cond.LastTransitionTime.Time); delta > 0 {
-			l.Info("pod stuck on PV node affinity but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
-			return ctrl.Result{RequeueAfter: delta}, nil
+
+		lost, err := pvcunbinder.LostDiskClaims(ctx, cluster.GetAPIReader(), state.pod)
+		if err != nil {
+			return ctrl.Result{}, err
 		}
+		if len(lost) == 0 {
+			// No dead-node proof (e.g. a live-node mis-pin): stays Stuck via
+			// defaultPhase; an operator has to intervene.
+			return ctrl.Result{}, nil
+		}
+
+		names := make([]string, 0, len(lost))
+		for i := range lost {
+			names = append(names, lost[i].Name)
+		}
+		l.Info("marking Broker as a dead incarnation: storage pinned to a node that no longer exists",
+			"claims", names, "brokerID", broker.Status.BrokerID)
+		broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
+		state.phase = redpandav1alpha2.BrokerPhaseDiskLost
+		return ctrl.Result{RequeueAfter: requeueShort}, nil
 	}
 
-	lost, err := pvcunbinder.LostDiskClaims(ctx, cluster.GetAPIReader(), state.pod)
+	// Live-node route: the pod is scheduled, yet the kubelet cannot mount a
+	// Local PV because its directory is gone from the node — a node rebuilt
+	// with an empty disk under the same Node object. (With a HostPath PV the
+	// kubelet recreates the directory and the broker boots empty and
+	// re-registers under a NEW node_id; Local turns that into a stuck
+	// mount, which is what gets tombstoned here.)
+	missing, err := pvcunbinder.MissingLocalVolumes(ctx, cluster.GetAPIReader(), state.pod)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-	if len(lost) == 0 {
-		// No dead-node proof (e.g. a live-node mis-pin): stays Stuck via
-		// defaultPhase; an operator has to intervene.
+	if len(missing) == 0 {
+		if state.pod.Spec.NodeName != "" && pvcunbinder.PodBlockedBeforeSandbox(state.pod) {
+			// The kubelet's verdict is an event, which nothing here watches,
+			// and a scheduled pod's object stops changing before the first
+			// mount attempt: without this poll the first look would be the
+			// periodic pass, long after the timeout, and the Stuck window
+			// would never show.
+			state.requeueAfter = requeueMountPoll
+		}
 		return ctrl.Result{}, nil
 	}
+	// defaultPhase cannot see kubelet events: the pod is Stuck from here on.
+	state.phase = redpandav1alpha2.BrokerPhaseStuck
 
-	names := make([]string, 0, len(lost))
-	for i := range lost {
-		names = append(names, lost[i].Name)
+	// Timeout: a data disk that is mounted after the kubelet comes up fails
+	// the first attempts the same way and recovers on its own.
+	oldest := missing[0].FirstSeen
+	for _, m := range missing[1:] {
+		if m.FirstSeen.Before(oldest) {
+			oldest = m.FirstSeen
+		}
 	}
-	l.Info("marking Broker as a dead incarnation: storage pinned to a node that no longer exists",
-		"claims", names, "brokerID", broker.Status.BrokerID)
+	if delta := r.MarkDiskLostAfter - time.Since(oldest); delta > 0 {
+		l.Info("kubelet reports the broker's volume directory missing but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
+		return ctrl.Result{RequeueAfter: delta}, nil
+	}
+
+	names := make([]string, 0, len(missing))
+	for i := range missing {
+		names = append(names, missing[i].Claim.Name)
+	}
+	l.Info("marking Broker as a dead incarnation: volume directory gone from its node",
+		"claims", names, "node", state.pod.Spec.NodeName, "brokerID", broker.Status.BrokerID)
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
 	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
@@ -958,6 +1020,9 @@ func (r *BrokerReconciler) syncBrokerStatus(ctx context.Context, state *brokerRe
 	}
 	if !result.IsZero() {
 		return result, nil
+	}
+	if state.requeueAfter > 0 {
+		return ctrl.Result{RequeueAfter: state.requeueAfter}, nil
 	}
 	return ctrl.Result{RequeueAfter: periodicRequeue}, nil
 }

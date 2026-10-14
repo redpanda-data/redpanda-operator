@@ -8955,8 +8955,10 @@ spec:
                   a replacement Broker CR takes over the network index.
                 properties:
                   at:
-                    description: At is when the dead-node proof was accepted — the
-                      point of no return.
+                    description: |-
+                      At is when the disk-loss proof — the PV's node gone, or the kubelet
+                      reporting the PV's directory gone from a live node — was accepted;
+                      the point of no return.
                     format: date-time
                     type: string
                   resourcesReleased:
