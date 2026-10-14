@@ -1,0 +1,4 @@
+project: operator
+kind: Added
+body: Broker pods start with a data-dir guard init container. Once a Broker's node_id is known, the operator stamps it on the pod (cluster.redpanda.com/broker-id) and the guard refuses to boot Redpanda when that stamp is present but the data directory holds no kvstore, so a wiped or replaced disk leaves the Broker Stuck instead of silently re-registering the broker under a new node_id.
+time: 2026-10-14T13:07:43.496540129+02:00

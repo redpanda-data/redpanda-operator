@@ -71,6 +71,9 @@ type BrokerSetResource struct {
 	// pass's own writes, which the informer cache cannot.
 	arbitration *brokerset.Arbitration
 	logger      logr.Logger
+	// dataGuardImage is the operator image for the data-dir guard init
+	// container; the configurator already runs it.
+	dataGuardImage string
 }
 
 // NewBrokerSet creates a BrokerSetResource that renders Broker CRs by first
@@ -110,14 +113,15 @@ func NewBrokerSet(
 		brokerPodNodeUnavailableToleration,
 	)
 	return &BrokerSetResource{
-		Client:       client,
-		scheme:       scheme,
-		pandaCluster: pandaCluster,
-		stsResource:  sts,
-		nodePool:     nodePool,
-		reporter:     reporter,
-		arbitration:  arbitration,
-		logger:       logger.WithName("BrokerSetResource"),
+		Client:         client,
+		scheme:         scheme,
+		pandaCluster:   pandaCluster,
+		stsResource:    sts,
+		nodePool:       nodePool,
+		reporter:       reporter,
+		arbitration:    arbitration,
+		logger:         logger.WithName("BrokerSetResource"),
+		dataGuardImage: sts.fullConfiguratorImage(),
 	}
 }
 
@@ -160,6 +164,7 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 		PodSelector:          poolLabels.AsClientSelectorForNodePool(),
 		ConfigChecksumKey:    ConfigMapHashAnnotationKey,
 		ClusterConfigVersion: baselineClusterConfigVersion,
+		DataGuardImage:       r.dataGuardImage,
 		Hooks:                r,
 		Reporter:             r.reporter,
 		Arbitration:          r.arbitration,

@@ -14,6 +14,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -42,7 +43,9 @@ import (
 	"sigs.k8s.io/yaml"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -843,6 +846,113 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 		assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc)),
 			"dismantle must delete PVC %q", name)
 	}
+}
+
+// TestDataGuardBlocksEmptyDataDir: a broker-mode pod loses the CONTENTS of
+// its data directory while the volume itself still mounts (a wiped or
+// replaced disk under a hostPath PV, or any blank volume) and is recreated.
+// The data-dir guard finds the stamped node_id and no kvstore, exits with
+// its verdict, and Redpanda never starts: the Broker reports Stuck and keeps
+// its node_id, so no new node ever registers in the recorded one's place.
+func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	s.applyAndWait(t, ctx, c, rp)
+
+	var target redpandav1alpha2.Broker
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 1) {
+			return
+		}
+		target = brokers[0]
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, target.Status.Phase)
+		assert.NotNil(ct, target.Status.BrokerID)
+	}, 5*time.Minute, 5*time.Second)
+	brokerID := *target.Status.BrokerID
+
+	// The identity is adopted after the pod was created, so it reaches the
+	// pod through the in-place metadata sync; the guard runs first among
+	// the init containers.
+	var pod corev1.Pod
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod)) {
+			return
+		}
+		assert.Equal(ct, strconv.Itoa(int(brokerID)), pod.Annotations[redpandav1alpha2.BrokerIDAnnotation])
+	}, 2*time.Minute, 2*time.Second)
+	require.NotEmpty(t, pod.Spec.InitContainers)
+	require.Equal(t, brokerset.DataGuardContainerName, pod.Spec.InitContainers[0].Name)
+
+	var dataDir string
+	for _, vol := range pod.Spec.Volumes {
+		if vol.PersistentVolumeClaim == nil {
+			continue
+		}
+		var pvc corev1.PersistentVolumeClaim
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: vol.PersistentVolumeClaim.ClaimName, Namespace: pod.Namespace}, &pvc))
+		var pv corev1.PersistentVolume
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv))
+		switch {
+		case pv.Spec.Local != nil:
+			dataDir = pv.Spec.Local.Path
+		case pv.Spec.HostPath != nil:
+			dataDir = pv.Spec.HostPath.Path
+		}
+	}
+	require.NotEmpty(t, dataDir, "the datadir PV must be a node-local directory")
+
+	// Empty the directory but keep it, then force-delete the pod in the same
+	// breath: Redpanda must not get the chance to crash on its vanished
+	// files and be restarted inside the old sandbox, where init containers
+	// do not run again.
+	t.Logf("emptying %s on node %s", dataDir, pod.Spec.NodeName)
+	_, err := s.env.Host().ExecOnNode(pod.Spec.NodeName, "sh", "-c", fmt.Sprintf("rm -rf %s/* %s/.[!.]*", dataDir, dataDir))
+	require.NoError(t, err)
+	require.NoError(t, c.Delete(ctx, &pod, client.GracePeriodSeconds(0)))
+	oldUID := pod.UID
+
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var fresh corev1.Pod
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &fresh)) {
+			return
+		}
+		if !assert.NotEqual(ct, oldUID, fresh.UID, "the pod must be recreated") {
+			return
+		}
+		var guard *corev1.ContainerStatus
+		for i := range fresh.Status.InitContainerStatuses {
+			if fresh.Status.InitContainerStatuses[i].Name == brokerset.DataGuardContainerName {
+				guard = &fresh.Status.InitContainerStatuses[i]
+			}
+		}
+		if !assert.NotNil(ct, guard, "the guard must have a status") {
+			return
+		}
+		term := guard.State.Terminated
+		if term == nil {
+			term = guard.LastTerminationState.Terminated
+		}
+		if !assert.NotNil(ct, term, "the guard must have exited") {
+			return
+		}
+		assert.Equal(ct, int32(dataguard.ExitCodeEmptyDataDir), term.ExitCode)
+		assert.Contains(ct, term.Message, fmt.Sprintf("node_id %d", brokerID))
+		for _, cs := range fresh.Status.ContainerStatuses {
+			assert.Nilf(ct, cs.State.Running, "container %q must not run behind a failed guard", cs.Name)
+			assert.Zerof(ct, cs.RestartCount, "container %q must never have started", cs.Name)
+		}
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(&target), &target)) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseStuck, target.Status.Phase)
+	}, 3*time.Minute, 2*time.Second)
+
+	require.NotNil(t, target.Status.BrokerID)
+	assert.Equal(t, brokerID, *target.Status.BrokerID, "identity is immutable")
 }
 
 // --- helpers ---

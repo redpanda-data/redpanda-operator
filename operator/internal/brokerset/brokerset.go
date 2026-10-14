@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,6 +43,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -171,6 +173,9 @@ type BrokerSet struct {
 	// marker MarkForRestart's next value is compared against. Empty renders
 	// templates without the marker.
 	ClusterConfigVersion string
+	// DataGuardImage is the operator image the data-dir guard init container
+	// runs (see DataGuardContainerName). Empty disables the guard.
+	DataGuardImage string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.
 	Hooks OwnerHooks
@@ -556,6 +561,8 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 			}
 		}
 
+		s.addDataGuard(&podSpec)
+
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
 		if s.ClusterConfigVersion != "" {
@@ -623,6 +630,80 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 	}
 
 	return brokers, nil
+}
+
+// The data-dir guard is an init container in front of every Broker pod. It
+// reads the node_id the Broker controller stamped on the pod
+// (BrokerIDAnnotation, projected through the downward API) and refuses to
+// start when the data directory holds no kvstore while an identity is on
+// record: the disk was wiped or replaced, and booting Redpanda would register
+// a NEW node_id in place of the recorded one. The container name and exit
+// code (dataguard.ExitCodeEmptyDataDir) are the interface for anything
+// reading its verdict from pod status.
+const (
+	DataGuardContainerName = "data-guard"
+
+	dataGuardVolumeName  = "broker-id"
+	dataGuardMountPath   = "/etc/broker-id"
+	dataGuardIDFile      = "broker-id"
+	dataGuardDataDirPath = "/var/lib/redpanda/data"
+)
+
+// addDataGuard puts the guard first among the init containers, so nothing
+// else (ownership chown, tuning) touches the data directory before the
+// verdict. Skipped when no image is configured or the pod has no datadir
+// volume: without a persistent data directory there is no identity to lose.
+func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
+	if s.DataGuardImage == "" {
+		return
+	}
+	if !slices.ContainsFunc(spec.Volumes, func(v corev1.Volume) bool { return v.Name == redpanda.DatadirVolumeName }) {
+		return
+	}
+
+	spec.Volumes = append(spec.Volumes, corev1.Volume{
+		Name: dataGuardVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			DownwardAPI: &corev1.DownwardAPIVolumeSource{
+				Items: []corev1.DownwardAPIVolumeFile{{
+					Path: dataGuardIDFile,
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: fmt.Sprintf("metadata.annotations['%s']", redpandav1alpha2.BrokerIDAnnotation),
+					},
+				}},
+			},
+		},
+	})
+
+	guard := corev1.Container{
+		Name:  DataGuardContainerName,
+		Image: s.DataGuardImage,
+		Command: []string{
+			"/redpanda-operator",
+			"data-guard",
+			"--broker-id-file", dataGuardMountPath + "/" + dataGuardIDFile,
+			"--data-dir", dataGuardDataDirPath,
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("125Mi"),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("125Mi"),
+			},
+		},
+		SecurityContext: &corev1.SecurityContext{
+			AllowPrivilegeEscalation: ptr.To(false),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: redpanda.DatadirVolumeName, MountPath: dataGuardDataDirPath, ReadOnly: true},
+			{Name: dataGuardVolumeName, MountPath: dataGuardMountPath, ReadOnly: true},
+		},
+	}
+	spec.InitContainers = append([]corev1.Container{guard}, spec.InitContainers...)
 }
 
 // normalizePodSpecDefaults aligns the rendered pod spec with the values the

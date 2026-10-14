@@ -61,6 +61,15 @@ const BrokerClusterConfigVersionAnnotation = "operator.redpanda.com/cluster-conf
 // any SPEC mutation.
 const BrokerPodTemplateHashAnnotation = "operator.redpanda.com/pod-template-hash"
 
+// BrokerIDAnnotation carries the node_id a Broker's pod belongs to. The Broker
+// controller stamps it once the identity is adopted and keeps it on the live
+// pod in place, never removing it: an identity on record is a reason to stop,
+// not to guess. The pod's data-dir guard reads it through the downward API
+// and refuses to boot Redpanda on a data directory that holds no kvstore
+// while this is set — the disk was wiped or replaced, and booting would
+// register a NEW node_id in place of the recorded one.
+const BrokerIDAnnotation = "cluster.redpanda.com/broker-id"
+
 const (
 	// NodePoolLabel carries the name of the node pool a Broker belongs to.
 	// It mirrors labels.NodePoolKey, redeclared here to keep the API package
