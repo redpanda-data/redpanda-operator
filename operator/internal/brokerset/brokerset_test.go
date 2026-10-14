@@ -28,6 +28,7 @@ func TestRenderBrokersDataGuard(t *testing.T) {
 	datadir := corev1.Volume{Name: "datadir", VolumeSource: corev1.VolumeSource{
 		PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir"},
 	}}
+	ephemeral := corev1.Volume{Name: "datadir", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}}
 	tuning := corev1.Container{Name: "tuning", Image: "redpanda:latest"}
 
 	for _, tc := range []struct {
@@ -39,6 +40,7 @@ func TestRenderBrokersDataGuard(t *testing.T) {
 		{name: "guard in front of the init containers", image: "operator:dev", volumes: []corev1.Volume{datadir}, wantGuard: true},
 		{name: "no image, no guard", image: "", volumes: []corev1.Volume{datadir}},
 		{name: "no datadir volume, no guard", image: "operator:dev", volumes: nil},
+		{name: "ephemeral datadir, no guard", image: "operator:dev", volumes: []corev1.Volume{ephemeral}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			scheme := runtime.NewScheme()

@@ -275,24 +275,15 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 }
 
 // guardRefusalFixture builds the live-node shape: the pod is scheduled, its
-// data-dir guard keeps exiting with the empty-data-dir verdict for the
-// node_id stamped on the pod, PodInitialized has been False for longer than
-// the timeout, and the PV's node exists (no dead-node proof).
+// data-dir guard keeps exiting with the empty-data-dir verdict, and the PV's
+// node exists (no dead-node proof).
 func guardRefusalFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) {
 	broker, pod, objs := diskLostFixture()
 	pod.Spec.NodeName = "node-alive"
 	pod.Annotations = map[string]string{redpandav1alpha2.BrokerIDAnnotation: "1"}
 	pod.Status = corev1.PodStatus{
-		Phase: corev1.PodPending,
-		Conditions: []corev1.PodCondition{
-			{Type: corev1.PodScheduled, Status: corev1.ConditionTrue},
-			{
-				Type:               corev1.PodInitialized,
-				Status:             corev1.ConditionFalse,
-				Reason:             "ContainersNotInitialized",
-				LastTransitionTime: metav1.NewTime(time.Now().Add(-10 * time.Minute)),
-			},
-		},
+		Phase:      corev1.PodPending,
+		Conditions: []corev1.PodCondition{{Type: corev1.PodScheduled, Status: corev1.ConditionTrue}},
 		InitContainerStatuses: []corev1.ContainerStatus{{
 			Name:  brokerset.DataGuardContainerName,
 			State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}},
@@ -300,11 +291,6 @@ func guardRefusalFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Obje
 				ExitCode: dataguard.ExitCodeEmptyDataDir,
 				Message:  "data directory /var/lib/redpanda/data holds no kvstore but this pod is node_id 1: refusing to start",
 			}},
-			RestartCount: 4,
-		}},
-		ContainerStatuses: []corev1.ContainerStatus{{
-			Name:  "redpanda",
-			State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "PodInitializing"}},
 		}},
 	}
 	objs = append(objs, &corev1.Node{ObjectMeta: metav1.ObjectMeta{
@@ -315,9 +301,9 @@ func guardRefusalFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Obje
 }
 
 // TestDetectDiskLostMarksGuardRefusal covers the live-node proof: the guard
-// refused with this Broker's node_id stamped on the pod and the timeout
-// elapsed. Like the dead-node pass, marking sets the latch and phase but
-// deletes NOTHING, and the recorded BrokerID is untouched.
+// refused, so the Broker is marked on the spot. Like the dead-node pass,
+// marking sets the latch and phase but deletes NOTHING, and the recorded
+// BrokerID is untouched.
 func TestDetectDiskLostMarksGuardRefusal(t *testing.T) {
 	broker, _, objs := guardRefusalFixture()
 	c, state, err := runDiskLost(t, broker, objs)
@@ -337,60 +323,34 @@ func TestDetectDiskLostMarksGuardRefusal(t *testing.T) {
 
 func TestDetectGuardRefusalNegatives(t *testing.T) {
 	guard := func(pod *corev1.Pod) *corev1.ContainerStatus { return &pod.Status.InitContainerStatuses[0] }
-	for name, tc := range map[string]struct {
-		mutate    func(broker *redpandav1alpha2.Broker, pod *corev1.Pod)
-		wantStuck bool
-	}{
-		"timeout not elapsed": {
-			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-				pod.Status.Conditions[1].LastTransitionTime = metav1.Now()
-			},
-			wantStuck: true,
+	for name, mutate := range map[string]func(broker *redpandav1alpha2.Broker, pod *corev1.Pod){
+		"guard passed on a retry": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			guard(pod).State = corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{ExitCode: 0}}
 		},
-		"guard passed on a retry": {
-			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-				guard(pod).State = corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{ExitCode: 0}}
-			},
+		"guard crashed rather than refused": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			guard(pod).LastTerminationState.Terminated.ExitCode = 1
 		},
-		"guard crashed rather than refused": {
-			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-				guard(pod).LastTerminationState.Terminated.ExitCode = 1
-			},
+		"guard has not finished a run": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			guard(pod).State = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
+			guard(pod).LastTerminationState = corev1.ContainerState{}
 		},
-		"guard has not finished a run": {
-			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-				guard(pod).State = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
-				guard(pod).LastTerminationState = corev1.ContainerState{}
-			},
+		"broker has no identity to tombstone": func(broker *redpandav1alpha2.Broker, _ *corev1.Pod) {
+			broker.Status.BrokerID = nil
 		},
-		"stamp names another node_id": {
-			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-				pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] = "7"
-			},
+		"pod has no guard": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			pod.Status.InitContainerStatuses = nil
 		},
-		"broker has no identity": {
-			mutate: func(broker *redpandav1alpha2.Broker, _ *corev1.Pod) {
-				broker.Status.BrokerID = nil
-			},
-		},
-		"pod has no guard": {
-			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-				pod.Status.InitContainerStatuses = nil
-			},
-		},
-		"decommissioning broker": {
-			mutate: func(broker *redpandav1alpha2.Broker, _ *corev1.Pod) {
-				broker.Spec.Decommission = true
-			},
+		"decommissioning broker": func(broker *redpandav1alpha2.Broker, _ *corev1.Pod) {
+			broker.Spec.Decommission = true
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			broker, pod, objs := guardRefusalFixture()
-			tc.mutate(broker, pod)
+			mutate(broker, pod)
 			_, state, err := runDiskLost(t, broker, objs)
 			require.NoError(t, err)
 			require.Nil(t, broker.Status.DiskLost, "the latch must not be set")
-			require.Equal(t, tc.wantStuck, state.phase == redpandav1alpha2.BrokerPhaseStuck, "phase %q", state.phase)
+			require.NotEqual(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
 		})
 	}
 }

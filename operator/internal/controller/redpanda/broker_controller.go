@@ -15,7 +15,6 @@ import (
 	"net"
 	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -584,32 +583,14 @@ func (r *BrokerReconciler) detectDeadNode(ctx context.Context, l logr.Logger, st
 }
 
 // detectGuardRefusal is the live-node proof: the pod's data-dir guard (see
-// brokerset.DataGuardContainerName) found this Broker's node_id stamped on
-// the pod and no kvstore in the data directory. The volume mounted, but the
-// disk behind it is blank — wiped or replaced under the same node. Only a
-// verdict about THIS Broker's recorded node_id counts; a stamp left by
-// another incarnation stays Stuck for a human.
+// BrokerIDAnnotation) found a node_id stamped on the pod and no kvstore in
+// the data directory. This happens when the disk was lost, but k8s Node object is still there (and kubelet still runs).
+// We rely on the exit code coming from the data-guard init container (operator/cmd/dataguard/dataguard.go)
 func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconciliationState) (ctrl.Result, error) {
 	broker := state.broker
 	refusal := dataGuardRefusal(state.pod)
-	if refusal == nil {
+	if refusal == nil || broker.Status.BrokerID == nil {
 		return ctrl.Result{}, nil
-	}
-	stamped := state.pod.Annotations[redpandav1alpha2.BrokerIDAnnotation]
-	if broker.Status.BrokerID == nil || stamped != strconv.FormatInt(int64(*broker.Status.BrokerID), 10) {
-		l.Info("data-dir guard refused to start the pod, but the stamped node_id is not this Broker's",
-			"stamped", stamped, "brokerID", broker.Status.BrokerID)
-		return ctrl.Result{}, nil
-	}
-	state.phase = redpandav1alpha2.BrokerPhaseStuck
-
-	// Timeout: a window to intervene before the point of no return. It runs
-	// from when this pod last started its init containers — creation, or
-	// the sandbox rebuild after a node reboot — never from pod creation
-	// alone, which for a long-lived pod would be no window at all.
-	if delta := r.MarkDiskLostAfter - time.Since(podInitializingSince(state.pod)); delta > 0 {
-		l.Info("data-dir guard refuses to start the broker but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
-		return ctrl.Result{RequeueAfter: delta}, nil
 	}
 
 	l.Info("marking Broker as a dead incarnation: data directory empty on a live node",
@@ -619,10 +600,6 @@ func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconc
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
 }
 
-// dataGuardRefusal returns the data-dir guard's exit when its latest run
-// refused to start the broker: the current terminated state, or the last one
-// while the kubelet backs off before the next restart. Nil when the pod has
-// no guard, it has not finished a run, or its latest run passed.
 func dataGuardRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
 	for i := range pod.Status.InitContainerStatuses {
 		cs := &pod.Status.InitContainerStatuses[i]
@@ -639,19 +616,6 @@ func dataGuardRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
 		return nil
 	}
 	return nil
-}
-
-// podInitializingSince is when the pod last started running its init
-// containers: PodInitialized goes False at creation and again when the
-// kubelet rebuilds the sandbox after a node reboot. Falls back to the
-// creation time when the condition is absent.
-func podInitializingSince(pod *corev1.Pod) time.Time {
-	for _, cond := range pod.Status.Conditions {
-		if cond.Type == corev1.PodInitialized && cond.Status == corev1.ConditionFalse {
-			return cond.LastTransitionTime.Time
-		}
-	}
-	return pod.CreationTimestamp.Time
 }
 
 func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
@@ -801,7 +765,8 @@ func (r *BrokerReconciler) reconcilePodMetadata(ctx context.Context, state *brok
 	// brokerset.DataGuardContainerName). Written once the identity is
 	// adopted, never removed.
 	if id := state.broker.Status.BrokerID; id != nil {
-		if want := strconv.FormatInt(int64(*id), 10); pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] != want {
+		want := state.broker.BrokerIDAsString()
+		if pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] != want {
 			pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] = want
 			changed = true
 		}

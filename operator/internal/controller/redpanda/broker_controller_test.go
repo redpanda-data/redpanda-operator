@@ -43,7 +43,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -852,10 +851,9 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 // its data directory while the volume itself still mounts (a wiped or
 // replaced disk under a hostPath PV, or any blank volume) and is recreated.
 // The data-dir guard finds the stamped node_id and no kvstore, exits with
-// its verdict, and Redpanda never starts: the Broker reports Stuck, then —
-// once the disk-loss timeout (60s in this suite) elapses — is marked
-// DiskLost and dismantled, and a NEW Broker takes the slot and registers as
-// a new node. The old node_id is never reused: the tombstone keeps it.
+// its verdict, and Redpanda never starts: the Broker is marked DiskLost and
+// dismantled, and a NEW Broker takes the slot and registers as a new node.
+// The old node_id is never reused: the tombstone keeps it.
 func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
@@ -920,46 +918,6 @@ func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
 	_, err := s.env.Host().ExecOnNode(pod.Spec.NodeName, "sh", "-c", fmt.Sprintf("rm -rf %s/* %s/.[!.]*", dataDir, dataDir))
 	require.NoError(t, err)
 	require.NoError(t, c.Delete(ctx, &pod, client.GracePeriodSeconds(0)))
-	oldUID := pod.UID
-
-	require.EventuallyWithT(t, func(ct *assert.CollectT) {
-		var fresh corev1.Pod
-		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &fresh)) {
-			return
-		}
-		if !assert.NotEqual(ct, oldUID, fresh.UID, "the pod must be recreated") {
-			return
-		}
-		var guard *corev1.ContainerStatus
-		for i := range fresh.Status.InitContainerStatuses {
-			if fresh.Status.InitContainerStatuses[i].Name == brokerset.DataGuardContainerName {
-				guard = &fresh.Status.InitContainerStatuses[i]
-			}
-		}
-		if !assert.NotNil(ct, guard, "the guard must have a status") {
-			return
-		}
-		term := guard.State.Terminated
-		if term == nil {
-			term = guard.LastTerminationState.Terminated
-		}
-		if !assert.NotNil(ct, term, "the guard must have exited") {
-			return
-		}
-		assert.Equal(ct, int32(dataguard.ExitCodeEmptyDataDir), term.ExitCode)
-		assert.Contains(ct, term.Message, fmt.Sprintf("node_id %d", brokerID))
-		for _, cs := range fresh.Status.ContainerStatuses {
-			assert.Nilf(ct, cs.State.Running, "container %q must not run behind a failed guard", cs.Name)
-			assert.Zerof(ct, cs.RestartCount, "container %q must never have started", cs.Name)
-		}
-		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(&target), &target)) {
-			return
-		}
-		assert.Equal(ct, redpandav1alpha2.BrokerPhaseStuck, target.Status.Phase)
-		assert.Nil(ct, target.Status.DiskLost, "the verdict alone must not mark: the timeout is the window to intervene")
-	}, 3*time.Minute, 2*time.Second)
-	require.NotNil(t, target.Status.BrokerID)
-	assert.Equal(t, brokerID, *target.Status.BrokerID, "identity is immutable")
 
 	// The brokerset replaces the released slot with a NEW Broker CR that boots
 	// on a fresh disk and registers as a new node; the tombstone, for as long
