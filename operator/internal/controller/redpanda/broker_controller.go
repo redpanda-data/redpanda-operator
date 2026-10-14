@@ -41,6 +41,8 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -534,10 +536,19 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 
 	if broker.Spec.Decommission ||
 		state.pod == nil ||
-		!metav1.IsControlledBy(state.pod, broker) ||
-		!pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		!metav1.IsControlledBy(state.pod, broker) {
 		return ctrl.Result{}, nil
 	}
+	if pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		return r.detectDeadNode(ctx, l, state, cluster)
+	}
+	return r.detectGuardRefusal(l, state)
+}
+
+// detectDeadNode is the dead-node proof: the pod cannot schedule because its
+// PV is pinned to a node that no longer exists.
+func (r *BrokerReconciler) detectDeadNode(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+	broker := state.broker
 
 	// Timeout: only accept the proof after the pod has been stuck long
 	// enough for a rebooting node to have come back.
@@ -570,6 +581,77 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
 	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
+}
+
+// detectGuardRefusal is the live-node proof: the pod's data-dir guard (see
+// brokerset.DataGuardContainerName) found this Broker's node_id stamped on
+// the pod and no kvstore in the data directory. The volume mounted, but the
+// disk behind it is blank — wiped or replaced under the same node. Only a
+// verdict about THIS Broker's recorded node_id counts; a stamp left by
+// another incarnation stays Stuck for a human.
+func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconciliationState) (ctrl.Result, error) {
+	broker := state.broker
+	refusal := dataGuardRefusal(state.pod)
+	if refusal == nil {
+		return ctrl.Result{}, nil
+	}
+	stamped := state.pod.Annotations[redpandav1alpha2.BrokerIDAnnotation]
+	if broker.Status.BrokerID == nil || stamped != strconv.FormatInt(int64(*broker.Status.BrokerID), 10) {
+		l.Info("data-dir guard refused to start the pod, but the stamped node_id is not this Broker's",
+			"stamped", stamped, "brokerID", broker.Status.BrokerID)
+		return ctrl.Result{}, nil
+	}
+	state.phase = redpandav1alpha2.BrokerPhaseStuck
+
+	// Timeout: a window to intervene before the point of no return. It runs
+	// from when this pod last started its init containers — creation, or
+	// the sandbox rebuild after a node reboot — never from pod creation
+	// alone, which for a long-lived pod would be no window at all.
+	if delta := r.MarkDiskLostAfter - time.Since(podInitializingSince(state.pod)); delta > 0 {
+		l.Info("data-dir guard refuses to start the broker but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
+		return ctrl.Result{RequeueAfter: delta}, nil
+	}
+
+	l.Info("marking Broker as a dead incarnation: data directory empty on a live node",
+		"node", state.pod.Spec.NodeName, "brokerID", *broker.Status.BrokerID, "guard", refusal.Message)
+	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
+	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
+	return ctrl.Result{RequeueAfter: requeueShort}, nil
+}
+
+// dataGuardRefusal returns the data-dir guard's exit when its latest run
+// refused to start the broker: the current terminated state, or the last one
+// while the kubelet backs off before the next restart. Nil when the pod has
+// no guard, it has not finished a run, or its latest run passed.
+func dataGuardRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
+	for i := range pod.Status.InitContainerStatuses {
+		cs := &pod.Status.InitContainerStatuses[i]
+		if cs.Name != brokerset.DataGuardContainerName {
+			continue
+		}
+		term := cs.State.Terminated
+		if term == nil {
+			term = cs.LastTerminationState.Terminated
+		}
+		if term != nil && term.ExitCode == dataguard.ExitCodeEmptyDataDir {
+			return term
+		}
+		return nil
+	}
+	return nil
+}
+
+// podInitializingSince is when the pod last started running its init
+// containers: PodInitialized goes False at creation and again when the
+// kubelet rebuilds the sandbox after a node reboot. Falls back to the
+// creation time when the condition is absent.
+func podInitializingSince(pod *corev1.Pod) time.Time {
+	for _, cond := range pod.Status.Conditions {
+		if cond.Type == corev1.PodInitialized && cond.Status == corev1.ConditionFalse {
+			return cond.LastTransitionTime.Time
+		}
+	}
+	return pod.CreationTimestamp.Time
 }
 
 func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
