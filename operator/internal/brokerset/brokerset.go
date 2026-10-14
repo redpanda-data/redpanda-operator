@@ -564,6 +564,9 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 		s.addDataGuard(&podSpec)
 
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
+		if podAnnotations == nil {
+			podAnnotations = map[string]string{}
+		}
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
 		if s.ClusterConfigVersion != "" {
 			podAnnotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = s.ClusterConfigVersion
@@ -632,32 +635,30 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 	return brokers, nil
 }
 
-// The data-dir guard is an init container in front of every Broker pod. It
-// reads the node_id the Broker controller stamped on the pod
-// (BrokerIDAnnotation, projected through the downward API) and refuses to
-// start when the data directory holds no kvstore while an identity is on
-// record: the disk was wiped or replaced, and booting Redpanda would register
-// a NEW node_id in place of the recorded one. The container name and exit
-// code (dataguard.ExitCodeEmptyDataDir) are the interface for anything
-// reading its verdict from pod status.
+// The data-dir guard init container (see BrokerIDAnnotation). Its name and
+// exit code (dataguard.ExitCodeEmptyDataDir) are how the Broker controller
+// reads the verdict from pod status.
 const (
 	DataGuardContainerName = "data-guard"
 
-	dataGuardVolumeName  = "broker-id"
-	dataGuardMountPath   = "/etc/broker-id"
-	dataGuardIDFile      = "broker-id"
-	dataGuardDataDirPath = "/var/lib/redpanda/data"
+	// The guard's --broker-id-file default is this mount path plus file.
+	dataGuardVolumeName = "broker-id"
+	dataGuardMountPath  = "/etc/broker-id"
+	dataGuardIDFile     = "broker-id"
 )
 
 // addDataGuard puts the guard first among the init containers, so nothing
 // else (ownership chown, tuning) touches the data directory before the
-// verdict. Skipped when no image is configured or the pod has no datadir
-// volume: without a persistent data directory there is no identity to lose.
+// verdict. Skipped when no image is configured or the data directory is not
+// persistent: with persistence disabled the chart renders datadir as an
+// emptyDir, which is blank on every pod start by design.
 func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
 	if s.DataGuardImage == "" {
 		return
 	}
-	if !slices.ContainsFunc(spec.Volumes, func(v corev1.Volume) bool { return v.Name == redpanda.DatadirVolumeName }) {
+	if !slices.ContainsFunc(spec.Volumes, func(v corev1.Volume) bool {
+		return v.Name == redpanda.DatadirVolumeName && (v.PersistentVolumeClaim != nil || v.HostPath != nil)
+	}) {
 		return
 	}
 
@@ -675,31 +676,21 @@ func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
 		},
 	})
 
+	resources := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+		corev1.ResourceMemory: resource.MustParse("125Mi"),
+	}
 	guard := corev1.Container{
-		Name:  DataGuardContainerName,
-		Image: s.DataGuardImage,
-		Command: []string{
-			"/redpanda-operator",
-			"data-guard",
-			"--broker-id-file", dataGuardMountPath + "/" + dataGuardIDFile,
-			"--data-dir", dataGuardDataDirPath,
-		},
-		Resources: corev1.ResourceRequirements{
-			Limits: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("125Mi"),
-			},
-			Requests: corev1.ResourceList{
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-				corev1.ResourceMemory: resource.MustParse("125Mi"),
-			},
-		},
+		Name:      DataGuardContainerName,
+		Image:     s.DataGuardImage,
+		Command:   []string{"/redpanda-operator", "data-guard"},
+		Resources: corev1.ResourceRequirements{Limits: resources, Requests: resources},
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: ptr.To(false),
 			ReadOnlyRootFilesystem:   ptr.To(true),
 		},
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: redpanda.DatadirVolumeName, MountPath: dataGuardDataDirPath, ReadOnly: true},
+			{Name: redpanda.DatadirVolumeName, MountPath: "/var/lib/redpanda/data", ReadOnly: true},
 			{Name: dataGuardVolumeName, MountPath: dataGuardMountPath, ReadOnly: true},
 		},
 	}

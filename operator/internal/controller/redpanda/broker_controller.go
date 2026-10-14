@@ -584,32 +584,19 @@ func (r *BrokerReconciler) detectDeadNode(ctx context.Context, l logr.Logger, st
 }
 
 // detectGuardRefusal is the live-node proof: the pod's data-dir guard (see
-// brokerset.DataGuardContainerName) found this Broker's node_id stamped on
-// the pod and no kvstore in the data directory. The volume mounted, but the
-// disk behind it is blank — wiped or replaced under the same node. Only a
-// verdict about THIS Broker's recorded node_id counts; a stamp left by
-// another incarnation stays Stuck for a human.
+// BrokerIDAnnotation) found a node_id stamped on the pod and no kvstore in
+// the data directory. A running broker always has kvstore files, so the
+// volume that mounted is not the one the identity was created on. The
+// verdict is taken at face value, with no timer and no retry: a Broker is
+// one node_id for life, and the directory is already empty, so dismantling
+// destroys nothing. (A data disk that mounts after the kubelet created the
+// directory would be misread as a wipe; accepted, since waiting could not
+// tell the two apart anyway.)
 func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconciliationState) (ctrl.Result, error) {
 	broker := state.broker
 	refusal := dataGuardRefusal(state.pod)
-	if refusal == nil {
+	if refusal == nil || broker.Status.BrokerID == nil {
 		return ctrl.Result{}, nil
-	}
-	stamped := state.pod.Annotations[redpandav1alpha2.BrokerIDAnnotation]
-	if broker.Status.BrokerID == nil || stamped != strconv.FormatInt(int64(*broker.Status.BrokerID), 10) {
-		l.Info("data-dir guard refused to start the pod, but the stamped node_id is not this Broker's",
-			"stamped", stamped, "brokerID", broker.Status.BrokerID)
-		return ctrl.Result{}, nil
-	}
-	state.phase = redpandav1alpha2.BrokerPhaseStuck
-
-	// Timeout: a window to intervene before the point of no return. It runs
-	// from when this pod last started its init containers — creation, or
-	// the sandbox rebuild after a node reboot — never from pod creation
-	// alone, which for a long-lived pod would be no window at all.
-	if delta := r.MarkDiskLostAfter - time.Since(podInitializingSince(state.pod)); delta > 0 {
-		l.Info("data-dir guard refuses to start the broker but disk-loss timeout not reached", "remaining", delta.Round(time.Second))
-		return ctrl.Result{RequeueAfter: delta}, nil
 	}
 
 	l.Info("marking Broker as a dead incarnation: data directory empty on a live node",
@@ -639,19 +626,6 @@ func dataGuardRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
 		return nil
 	}
 	return nil
-}
-
-// podInitializingSince is when the pod last started running its init
-// containers: PodInitialized goes False at creation and again when the
-// kubelet rebuilds the sandbox after a node reboot. Falls back to the
-// creation time when the condition is absent.
-func podInitializingSince(pod *corev1.Pod) time.Time {
-	for _, cond := range pod.Status.Conditions {
-		if cond.Type == corev1.PodInitialized && cond.Status == corev1.ConditionFalse {
-			return cond.LastTransitionTime.Time
-		}
-	}
-	return pod.CreationTimestamp.Time
 }
 
 func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {

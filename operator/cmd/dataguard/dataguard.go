@@ -7,18 +7,14 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package dataguard is the init container that keeps a Broker pod from
-// booting Redpanda on an empty data directory when the pod already has a
-// node_id on record. Redpanda loads its node UUID from shard 0's kvstore; an
-// empty kvstore means it mints a new UUID and the cluster assigns a NEW
-// node_id, orphaning the recorded one as a permanently-down member. Failing
-// here turns that silent identity change into a stuck pod the Broker
-// controller can act on.
+// Package dataguard is the init container that refuses to boot Redpanda on
+// an empty data directory when the pod carries a node_id (see the Broker
+// API's BrokerIDAnnotation for why). Redpanda loads its node UUID from the
+// kvstore; with none there it would register as a NEW node.
 package dataguard
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,99 +31,61 @@ const ExitCodeEmptyDataDir = 3
 
 func Command() *cobra.Command {
 	var (
-		brokerIDFile   string
-		dataDir        string
-		terminationLog string
+		brokerIDFile string
+		dataDir      string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "data-guard",
 		Short: "Refuse to start a broker whose data directory is empty while a node_id is on record",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			logger := ctrl.LoggerFrom(cmd.Context())
-
-			err := Check(brokerIDFile, dataDir)
-			var empty *EmptyDataDirError
-			if !errors.As(err, &empty) {
+			reason, err := Check(brokerIDFile, dataDir)
+			if err != nil || reason == "" {
 				return err
 			}
-			logger.Error(err, "refusing to start Redpanda", "brokerID", empty.BrokerID, "dataDir", empty.DataDir)
-			// The kubelet copies this file into the container's terminated
-			// state, where the Broker controller reads it from pod status.
-			if werr := os.WriteFile(terminationLog, []byte(err.Error()), 0o644); werr != nil {
-				logger.Error(werr, "could not write the termination message", "path", terminationLog)
+			logger := ctrl.LoggerFrom(cmd.Context())
+			logger.Error(errors.New(reason), "refusing to start Redpanda")
+			// The kubelet copies the termination log into the container's
+			// terminated state, where it shows up in pod status.
+			if werr := os.WriteFile("/dev/termination-log", []byte(reason), 0o644); werr != nil {
+				logger.Error(werr, "could not write the termination message")
 			}
 			os.Exit(ExitCodeEmptyDataDir)
 			return nil
 		},
 	}
 
-	cmd.Flags().StringVar(&brokerIDFile, "broker-id-file", "", "File holding the pod's node_id (empty when the broker never registered).")
+	// The default is where the brokerset mounts the downward API projection
+	// of the pod's broker-id annotation.
+	cmd.Flags().StringVar(&brokerIDFile, "broker-id-file", "/etc/broker-id/broker-id", "File holding the pod's node_id (empty when the broker never registered).")
 	cmd.Flags().StringVar(&dataDir, "data-dir", "/var/lib/redpanda/data", "Redpanda data directory.")
-	cmd.Flags().StringVar(&terminationLog, "termination-log", "/dev/termination-log", "Where to write the reason when refusing to start.")
 
 	return cmd
 }
 
-// EmptyDataDirError is the guard's verdict: an identity is on record, the
-// data directory has none.
-type EmptyDataDirError struct {
-	BrokerID string
-	DataDir  string
-}
-
-func (e *EmptyDataDirError) Error() string {
-	return fmt.Sprintf("data directory %s holds no kvstore but this pod is node_id %s: refusing to start, Redpanda would re-register under a new node_id", e.DataDir, e.BrokerID)
-}
-
-// Check returns an *EmptyDataDirError when brokerIDFile names a node_id and
-// dataDir holds no kvstore, nil when the broker may start, and any other
-// error for a guard that could not do its job.
-func Check(brokerIDFile, dataDir string) error {
+// Check returns the reason to refuse starting the broker — non-empty only
+// when brokerIDFile names a node_id and dataDir holds no kvstore — or an
+// error when the guard could not do its job.
+func Check(brokerIDFile, dataDir string) (string, error) {
 	raw, err := os.ReadFile(brokerIDFile)
 	if err != nil {
-		return errors.Wrap(err, "reading the broker id")
+		return "", errors.Wrap(err, "reading the broker id")
 	}
 	// An empty file is the downward API's rendering of a missing
 	// annotation: this broker never registered, so a fresh data directory
 	// is the expected state.
 	id := strings.TrimSpace(string(raw))
 	if id == "" {
-		return nil
+		return "", nil
 	}
 
-	present, err := kvstorePresent(dataDir)
-	if err != nil {
-		return err
+	// Redpanda persists the node UUID into the kvstore right after
+	// generating it on first boot, so any segment under a shard directory
+	// means an identity exists and will be reloaded. The pattern is fixed,
+	// so Glob cannot fail.
+	segments, _ := filepath.Glob(filepath.Join(dataDir, "redpanda", "kvstore", "*", "*"))
+	if len(segments) > 0 {
+		return "", nil
 	}
-	if present {
-		return nil
-	}
-	return &EmptyDataDirError{BrokerID: id, DataDir: dataDir}
-}
-
-// kvstorePresent reports whether the kvstore has any segment on disk.
-// Redpanda persists the node UUID there right after generating it on first
-// boot, so a segment means an identity exists and will be reloaded. An
-// absent or empty kvstore directory counts as no identity.
-func kvstorePresent(dataDir string) (bool, error) {
-	root := filepath.Join(dataDir, "redpanda", "kvstore")
-	var found bool
-	err := filepath.WalkDir(root, func(_ string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.Type().IsRegular() {
-			found = true
-			return fs.SkipAll
-		}
-		return nil
-	})
-	if errors.Is(err, fs.ErrNotExist) {
-		return false, nil
-	}
-	if err != nil {
-		return false, errors.Wrapf(err, "inspecting %s", root)
-	}
-	return found, nil
+	return fmt.Sprintf("data directory %s holds no kvstore but this pod is node_id %s: refusing to start, Redpanda would re-register under a new node_id", dataDir, id), nil
 }

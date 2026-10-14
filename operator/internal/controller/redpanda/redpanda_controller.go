@@ -17,6 +17,7 @@ import (
 	"maps"
 	"net"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -844,15 +845,15 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 
 	// The data-dir guard runs the operator binary; the chart's sidecar
 	// container already carries that image, so borrow it rather than
-	// threading image values through here.
+	// threading image values through here. A template without the sidecar
+	// runs without the guard: a safety net is not worth stalling the
+	// cluster's reconcile over.
 	var guardImage string
-	for _, c := range set.Spec.Template.Spec.Containers {
-		if c.Name == redpandachart.SidecarContainerName {
-			guardImage = c.Image
-		}
-	}
-	if guardImage == "" {
-		return nil, errors.Newf("rendered StatefulSet %q has no %q container to take the operator image from", set.Name, redpandachart.SidecarContainerName)
+	containers := set.Spec.Template.Spec.Containers
+	if i := slices.IndexFunc(containers, func(c corev1.Container) bool { return c.Name == redpandachart.SidecarContainerName }); i >= 0 {
+		guardImage = containers[i].Image
+	} else {
+		log.FromContext(ctx).Info("rendered StatefulSet has no sidecar container; Broker pods get no data-dir guard", "statefulset", set.Name)
 	}
 
 	return &brokerset.BrokerSet{

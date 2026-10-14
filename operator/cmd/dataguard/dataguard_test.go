@@ -14,8 +14,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
+	"k8s.io/utils/ptr"
 )
 
 func TestCheck(t *testing.T) {
@@ -28,13 +28,13 @@ func TestCheck(t *testing.T) {
 		wantEmpty bool
 		wantErr   bool
 	}{
-		{name: "never registered, fresh disk", brokerID: ptr(""), wantEmpty: false},
-		{name: "registered, kvstore present", brokerID: ptr("3"), files: []string{kvstoreSegment}},
-		{name: "registered, whitespace around the id", brokerID: ptr(" 3\n"), files: []string{kvstoreSegment}},
-		{name: "registered, data dir missing", brokerID: ptr("3"), wantEmpty: true},
-		{name: "registered, data dir without redpanda/", brokerID: ptr("3"), files: []string{"pid.lock"}, wantEmpty: true},
-		{name: "registered, kvstore dir but no segments", brokerID: ptr("3"), dirs: []string{filepath.Join("redpanda", "kvstore", "0_0")}, wantEmpty: true},
-		{name: "registered, controller log but no kvstore", brokerID: ptr("3"), files: []string{filepath.Join("redpanda", "controller", "0_0", "0-1-v1.log")}, wantEmpty: true},
+		{name: "never registered, fresh disk", brokerID: ptr.To(""), wantEmpty: false},
+		{name: "registered, kvstore present", brokerID: ptr.To("3"), files: []string{kvstoreSegment}},
+		{name: "registered, whitespace around the id", brokerID: ptr.To(" 3\n"), files: []string{kvstoreSegment}},
+		{name: "registered, data dir missing", brokerID: ptr.To("3"), wantEmpty: true},
+		{name: "registered, data dir without redpanda/", brokerID: ptr.To("3"), files: []string{"pid.lock"}, wantEmpty: true},
+		{name: "registered, kvstore dir but no segments", brokerID: ptr.To("3"), dirs: []string{filepath.Join("redpanda", "kvstore", "0_0")}, wantEmpty: true},
+		{name: "registered, controller log but no kvstore", brokerID: ptr.To("3"), files: []string{filepath.Join("redpanda", "controller", "0_0", "0-1-v1.log")}, wantEmpty: true},
 		{name: "broker id file missing", brokerID: nil, files: []string{kvstoreSegment}, wantErr: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -52,21 +52,19 @@ func TestCheck(t *testing.T) {
 				require.NoError(t, os.WriteFile(filepath.Join(dataDir, f), []byte("x"), 0o644))
 			}
 
-			err := Check(idFile, dataDir)
-			var empty *EmptyDataDirError
+			reason, err := Check(idFile, dataDir)
 			switch {
 			case tc.wantErr:
 				require.Error(t, err)
-				require.False(t, errors.As(err, &empty), "a guard failure is not a verdict")
+				require.Empty(t, reason, "a guard failure is not a verdict")
 			case tc.wantEmpty:
-				require.True(t, errors.As(err, &empty), "expected the empty-data-dir verdict, got %v", err)
-				require.Equal(t, "3", empty.BrokerID)
-				require.Equal(t, dataDir, empty.DataDir)
+				require.NoError(t, err)
+				require.Contains(t, reason, "node_id 3")
+				require.Contains(t, reason, dataDir)
 			default:
 				require.NoError(t, err)
+				require.Empty(t, reason)
 			}
 		})
 	}
 }
-
-func ptr(s string) *string { return &s }
