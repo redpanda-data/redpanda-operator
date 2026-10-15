@@ -47,15 +47,8 @@ func warnings(state *RenderState) []string {
 	if w := cpuWarning(state); w != "" {
 		out = append(out, fmt.Sprintf(`**Warning**: %s`, w))
 	}
-	if state.Values.Resources.CPUCoresIgnoredWithoutCPU() {
-		out = append(out, fmt.Sprintf(`**Warning**: %s`, CPUCoresIgnoredWarning))
-	}
 	return out
 }
-
-// CPUCoresIgnoredWarning explains [RedpandaResources.CPUCoresIgnoredWithoutCPU].
-// It is exported so the operator can surface the same text.
-const CPUCoresIgnoredWarning = `resources.cpu.cores is ignored because resources.requests and resources.limits are both set and neither sets cpu. Redpanda runs without a CPU request or limit and uses every CPU it can see. Set resources.requests.cpu and resources.limits.cpu.`
 
 func cpuWarning(state *RenderState) string {
 	coresInMillis := state.Values.Resources.CPU.Cores.MilliValue()

@@ -20,8 +20,6 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
-const cpuCoresIgnoredWarning = "resources.cpu.cores is ignored"
-
 // TestCPUResources renders through helm so that `--set` reaches the chart as
 // helm parses it: `--set resources.cpu.cores=2` arrives as an int64, which a
 // values file (float64) never exercises.
@@ -40,7 +38,6 @@ func TestCPUResources(t *testing.T) {
 		set           []string
 		wantOutput    []string
 		wantNotOutput []string
-		wantWarning   bool
 	}{
 		{
 			name:       "integer cores from --set",
@@ -59,7 +56,6 @@ func TestCPUResources(t *testing.T) {
 				"resources.limits.memory=3Gi",
 			},
 			wantNotOutput: []string{"--smp=1"},
-			wantWarning:   true,
 		},
 		{
 			name: "requests and limits with cpu",
@@ -82,7 +78,7 @@ func TestCPUResources(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			out, notes, err := client.TemplateWithNotes(ctx, chartDir, helm.TemplateOptions{
+			out, err := client.Template(ctx, chartDir, helm.TemplateOptions{
 				Name: "redpanda",
 				Set: append([]string{
 					"tests.enabled=false",
@@ -97,12 +93,6 @@ func TestCPUResources(t *testing.T) {
 			}
 			for _, unwanted := range tc.wantNotOutput {
 				require.NotContains(t, string(out), unwanted+"\n")
-			}
-
-			if tc.wantWarning {
-				require.Contains(t, notes, cpuCoresIgnoredWarning)
-			} else {
-				require.NotContains(t, notes, cpuCoresIgnoredWarning)
 			}
 		})
 	}

@@ -21,9 +21,6 @@
 {{- if (ne $w_1 "") -}}
 {{- $out = (concat (default (list) $out) (list (printf `**Warning**: %s` $w_1))) -}}
 {{- end -}}
-{{- if (get (fromJson (include "redpanda.RedpandaResources.CPUCoresIgnoredWithoutCPU" (dict "a" (list $state.Values.resources)))) "r") -}}
-{{- $out = (concat (default (list) $out) (list (printf `**Warning**: %s` "resources.cpu.cores is ignored because resources.requests and resources.limits are both set and neither sets cpu. Redpanda runs without a CPU request or limit and uses every CPU it can see. Set resources.requests.cpu and resources.limits.cpu."))) -}}
-{{- end -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" $out) | toJson -}}
 {{- break -}}

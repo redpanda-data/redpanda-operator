@@ -1,8 +1,0 @@
-project: operator
-kind: Added
-body: |-
-    The operator emits a `CPUCoresIgnored` Warning event on a Redpanda resource whose `resources.requests` and `resources.limits` are set without cpu
-
-      In that mode `resources.cpu.cores` is ignored, and the Redpanda container gets no CPU
-      request or limit.
-time: 2026-10-12T12:00:02.000000+01:00
