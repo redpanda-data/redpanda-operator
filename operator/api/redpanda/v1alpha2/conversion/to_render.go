@@ -385,9 +385,13 @@ func convertV2NodepoolToPool(clusterValues redpandachart.Values, pool *redpandav
 		defaultSet.PersistentVolumeClaimRetentionPolicy = clusterValues.Statefulset.PersistentVolumeClaimRetentionPolicy.DeepCopy()
 	}
 
-	// next we default our images
+	// next we default our images. Unset pool image fields inherit the
+	// cluster's, which defaultV2Spec has already run through the defaulter.
 	if defaulters.RedpandaImage != nil {
-		pool.Spec.Image = defaulters.RedpandaImage(pool.Spec.Image)
+		image := ptr.Deref(pool.Spec.Image, redpandav1alpha2.RedpandaImage{})
+		image.Repository = ptr.To(ptr.Deref(image.Repository, clusterValues.Image.Repository))
+		image.Tag = ptr.To(ptr.Deref(image.Tag, clusterValues.Image.Tag))
+		pool.Spec.Image = &image
 	}
 	if defaulters.SidecarImage != nil {
 		pool.Spec.SidecarImage = defaulters.SidecarImage(pool.Spec.SidecarImage)

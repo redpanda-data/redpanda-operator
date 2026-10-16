@@ -118,6 +118,100 @@ func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
 	}
 }
 
+// TestNodePoolImagePrecedence pins the per-field precedence for a NodePool's
+// broker image: NodePool > Redpanda CR > operator default. Skipping the
+// Redpanda CR level splits a cluster with a pinned tag across versions
+// (https://redpandadata.atlassian.net/browse/K8S-957).
+func TestNodePoolImagePrecedence(t *testing.T) {
+	operatorDefault := func(image *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+		if image == nil {
+			image = &redpandav1alpha2.RedpandaImage{}
+		}
+		return &redpandav1alpha2.RedpandaImage{
+			Repository: ptr.To(ptr.Deref(image.Repository, "operator/redpanda")),
+			Tag:        ptr.To(ptr.Deref(image.Tag, "v99.0.0")),
+		}
+	}
+
+	cases := []struct {
+		name         string
+		clusterImage *redpandav1alpha2.RedpandaImage
+		poolImage    *redpandav1alpha2.RedpandaImage
+		want         string
+	}{
+		{
+			name: "neither set -> operator default",
+			want: "operator/redpanda:v99.0.0",
+		},
+		{
+			name:         "cluster tag only -> pool inherits cluster tag",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v25.1.1")},
+			want:         "operator/redpanda:v25.1.1",
+		},
+		{
+			name:         "cluster only -> pool inherits cluster",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("cluster/redpanda"), Tag: ptr.To("v25.1.1")},
+			want:         "cluster/redpanda:v25.1.1",
+		},
+		{
+			name:         "pool tag only -> cluster repository",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("cluster/redpanda"), Tag: ptr.To("v25.1.1")},
+			poolImage:    &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v25.2.1")},
+			want:         "cluster/redpanda:v25.2.1",
+		},
+		{
+			name:         "pool repository only -> cluster tag",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v25.1.1")},
+			poolImage:    &redpandav1alpha2.RedpandaImage{Repository: ptr.To("pool/redpanda")},
+			want:         "pool/redpanda:v25.1.1",
+		},
+		{
+			name:         "pool overrides cluster",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("cluster/redpanda"), Tag: ptr.To("v25.1.1")},
+			poolImage:    &redpandav1alpha2.RedpandaImage{Repository: ptr.To("pool/redpanda"), Tag: ptr.To("v25.2.1")},
+			want:         "pool/redpanda:v25.2.1",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := &redpandav1alpha2.Redpanda{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
+				Spec: redpandav1alpha2.RedpandaSpec{
+					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{Image: tc.clusterImage},
+				},
+			}
+			pool := &redpandav1alpha2.NodePool{
+				ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
+				Spec: redpandav1alpha2.NodePoolSpec{
+					EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Image: tc.poolImage},
+				},
+			}
+
+			state, err := ConvertV2ToRenderState(nil, &V2Defaulters{RedpandaImage: operatorDefault}, cluster, []*redpandav1alpha2.NodePool{pool})
+			require.NoError(t, err)
+
+			sets, err := redpandachart.RenderNodePools(state)
+			require.NoError(t, err)
+
+			var poolSet *appsv1.StatefulSet
+			for _, set := range sets {
+				if set.Labels[redpandachart.NodePoolLabelName] == pool.Name {
+					poolSet = set
+				}
+			}
+			require.NotNil(t, poolSet, "pool StatefulSet not rendered")
+
+			images := map[string]string{}
+			for _, container := range append(poolSet.Spec.Template.Spec.InitContainers, poolSet.Spec.Template.Spec.Containers...) {
+				images[container.Name] = container.Image
+			}
+			require.Equal(t, tc.want, images[redpandachart.RedpandaContainerName])
+			require.Equal(t, tc.want, images[redpanda.RedpandaConfiguratorContainerName])
+		})
+	}
+}
+
 // TestConvertStatefulsetV2FieldsBrokerContainer is a regression test for
 // https://github.com/redpanda-data/redpanda-operator/issues/1577:
 // convertStatefulsetV2Fields retained a pointer to the redpanda container
