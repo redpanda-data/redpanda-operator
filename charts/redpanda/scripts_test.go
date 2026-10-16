@@ -15,8 +15,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -134,4 +137,90 @@ exit 42
 		assert.Contains(t, stdout, "about-to-fail")
 		assert.NotContains(t, stdout, "TIMEOUT", "marker fires only on 124/137, not arbitrary non-zero")
 	})
+}
+
+// TestLifecycleHooks_DetachedClear runs the rendered hooks against a broker
+// whose admin API never comes up (K8S-947): postStart must return within its
+// timeout while the clear keeps waiting in its own session, and preStop must
+// kill that session before it drains.
+func TestLifecycleHooks_DetachedClear(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skipf("skipping: hooks read /proc and write /proc/1/fd/1; only meaningful on linux (got %s)", runtime.GOOS)
+	}
+	for _, bin := range []string{"timeout", "setsid"} {
+		if _, err := exec.LookPath(bin); err != nil {
+			t.Skipf("skipping: %s not on PATH", bin)
+		}
+	}
+
+	// Rendered into the scripts unquoted, so it must be free of shell-special
+	// characters; see TestWrapLifecycleHook_TimeoutSurfaced.
+	dir, err := os.MkdirTemp("", "lifecyclehooks")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	logPath := filepath.Join(dir, "log")
+	paths := strings.NewReplacer(
+		"/var/lifecycle/common.sh", filepath.Join(dir, "common.sh"),
+		"/tmp/", dir+"/",
+		"/proc/1/fd/1", logPath,
+	)
+	writeScript := func(name, script string) string {
+		path := filepath.Join(dir, name)
+		require.NoError(t, os.WriteFile(path, []byte(paths.Replace(script)), 0o755))
+		return path
+	}
+	writeScript("common.sh", "CURL_NODE_ID_CMD=false\n")
+	postStart := writeScript("postStart.sh", LifecyclePostStartSh(""))
+	preStop := writeScript("preStop.sh", LifecyclePreStopSh("", true))
+	// The wrapper's tee would truncate the detached clear's log, so it writes to
+	// stdout instead.
+	runHook := func(hook, path string) string {
+		wrapped := WrapLifecycleHook(hook, 1, []string{"bash", "-x", path})[2]
+		out, err := exec.Command("bash", "-c", strings.ReplaceAll(wrapped, "/proc/1/fd/1", "/dev/stdout")).Output()
+		require.NoError(t, err)
+		return string(out)
+	}
+
+	start := time.Now()
+	out := runHook("post-start", postStart)
+	assert.Less(t, time.Since(start), time.Second, "postStart must not wait for the broker")
+	assert.NotContains(t, out, "TIMEOUT")
+
+	pid, err := os.ReadFile(filepath.Join(dir, "postStartHook.pid"))
+	require.NoError(t, err)
+	pgid, err := strconv.Atoi(strings.TrimSpace(string(pid)))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = syscall.Kill(-pgid, syscall.SIGKILL) })
+
+	time.Sleep(2 * time.Second)
+	assert.NotEmpty(t, liveProcessGroup(pgid), "the detached clear must outlive the hook's timeout")
+
+	runHook("pre-stop", preStop)
+	assert.Eventually(t, func() bool { return len(liveProcessGroup(pgid)) == 0 }, 5*time.Second, 100*time.Millisecond,
+		"preStop must kill the detached clear before draining")
+
+	log, err := os.ReadFile(logPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(log), "lifecycle-hook post-start", "the detached clear must keep the hook's log prefix")
+}
+
+// liveProcessGroup returns the pids of the non-zombie processes in pgid.
+func liveProcessGroup(pgid int) []int {
+	stats, _ := filepath.Glob("/proc/[0-9]*/stat")
+	var pids []int
+	for _, stat := range stats {
+		b, err := os.ReadFile(stat)
+		if err != nil {
+			continue
+		}
+		// comm may contain spaces; the fields after its closing paren are
+		// state, ppid, pgrp, ...
+		fields := strings.Fields(string(b[bytes.LastIndexByte(b, ')')+1:]))
+		if len(fields) < 3 || fields[0] == "Z" || fields[2] != strconv.Itoa(pgid) {
+			continue
+		}
+		pid, _ := strconv.Atoi(filepath.Base(filepath.Dir(stat)))
+		pids = append(pids, pid)
+	}
+	return pids
 }
