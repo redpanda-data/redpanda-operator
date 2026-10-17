@@ -40,6 +40,7 @@ func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 	}
 
 	mon := pool.Spec.Monitoring
+	listeners := poolListeners(state, pool)
 
 	var interval monitoringv1.Duration
 	if mon.ScrapeInterval != nil {
@@ -54,7 +55,7 @@ func serviceMonitorForPool(state *RenderState, pool *redpandav1alpha2.RedpandaBr
 	endpoint := monitoringv1.Endpoint{
 		Interval: interval,
 		Path:     publicMetricsPath,
-		Port:     internalAdminAPIPortName,
+		Port:     listeners.Admin().Reserved.PortName,
 		Scheme:   ptr.To(monitoringv1.Scheme("http")),
 	}
 

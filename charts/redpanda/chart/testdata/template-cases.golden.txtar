@@ -721,49 +721,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -795,6 +752,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -2205,50 +2205,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-    testlabel: exercise_common_labels_template
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
     testlabel: exercise_common_labels_template
   name: redpanda
@@ -2281,6 +2237,50 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+    testlabel: exercise_common_labels_template
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -3528,49 +3528,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -3602,6 +3559,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -5060,49 +5060,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -5134,6 +5091,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -6507,49 +6507,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -6581,6 +6538,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -8224,49 +8224,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -8298,6 +8255,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -9875,6 +9875,49 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    monitoring.redpanda.com/enabled: "false"
+  name: redpanda
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - name: http
+    port: 8082
+    protocol: TCP
+    targetPort: 8082
+  - name: kafka
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  - name: rpc
+    port: 33145
+    protocol: TCP
+    targetPort: 33145
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
   name: redpanda-external
   namespace: default
 spec:
@@ -9936,49 +9979,6 @@ spec:
     app.kubernetes.io/name: redpanda
   sessionAffinity: None
   type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
-    monitoring.redpanda.com/enabled: "false"
-  name: redpanda
-  namespace: default
-spec:
-  clusterIP: None
-  ports:
-  - name: admin
-    port: 9644
-    protocol: TCP
-    targetPort: 9644
-  - name: http
-    port: 8082
-    protocol: TCP
-    targetPort: 8082
-  - name: kafka
-    port: 9093
-    protocol: TCP
-    targetPort: 9093
-  - name: rpc
-    port: 33145
-    protocol: TCP
-    targetPort: 33145
-  - name: schemaregistry
-    port: 8081
-    protocol: TCP
-    targetPort: 8081
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  type: ClusterIP
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -11629,49 +11629,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -11703,6 +11660,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -13226,49 +13226,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -13300,6 +13257,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -14889,49 +14889,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -14963,6 +14920,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -16559,49 +16559,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 30090
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30070
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30080
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -16633,6 +16590,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 30090
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30070
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30080
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -19571,49 +19571,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "true"
   name: redpanda
   namespace: default
@@ -19645,6 +19602,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -20955,49 +20955,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "true"
   name: redpanda
   namespace: default
@@ -21029,6 +20986,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -22583,49 +22583,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -22657,6 +22614,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -24180,49 +24180,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -24254,6 +24211,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -25780,49 +25780,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -25854,6 +25811,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -27414,49 +27414,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -27488,6 +27445,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -29081,49 +29081,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -29155,6 +29112,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -30748,49 +30748,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -30822,6 +30779,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -32383,49 +32383,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -32457,6 +32414,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -34032,49 +34032,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -34106,6 +34063,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -35717,49 +35717,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -35791,6 +35748,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -37402,49 +37402,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -37476,6 +37433,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -39056,49 +39056,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -39130,6 +39087,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -40724,49 +40724,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -40798,6 +40755,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -42409,49 +42409,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -42483,6 +42440,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -44094,49 +44094,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -44168,6 +44125,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -45748,49 +45748,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -45822,6 +45779,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -47383,49 +47383,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -47457,6 +47414,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -48980,49 +48980,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -49054,6 +49011,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -50578,49 +50578,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -50652,6 +50609,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -52232,6 +52232,49 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    monitoring.redpanda.com/enabled: "false"
+  name: redpanda
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - name: http
+    port: 8082
+    protocol: TCP
+    targetPort: 8082
+  - name: kafka
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  - name: rpc
+    port: 33145
+    protocol: TCP
+    targetPort: 33145
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
   name: redpanda-external
   namespace: default
 spec:
@@ -52283,49 +52326,6 @@ spec:
     app.kubernetes.io/name: redpanda
   sessionAffinity: None
   type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
-    monitoring.redpanda.com/enabled: "false"
-  name: redpanda
-  namespace: default
-spec:
-  clusterIP: None
-  ports:
-  - name: admin
-    port: 9644
-    protocol: TCP
-    targetPort: 9644
-  - name: http
-    port: 8082
-    protocol: TCP
-    targetPort: 8082
-  - name: kafka
-    port: 9093
-    protocol: TCP
-    targetPort: 9093
-  - name: rpc
-    port: 33145
-    protocol: TCP
-    targetPort: 33145
-  - name: schemaregistry
-    port: 8081
-    protocol: TCP
-    targetPort: 8081
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  type: ClusterIP
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -53857,49 +53857,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -53931,6 +53888,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -55515,49 +55515,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -55589,6 +55546,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -57153,49 +57153,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -57227,6 +57184,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -58747,49 +58747,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
-  name: change-name-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
   annotations:
     test: test
   labels:
@@ -58829,6 +58786,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: change-name-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -60384,49 +60384,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -60458,6 +60415,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -62016,49 +62016,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -62090,6 +62047,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -63521,49 +63521,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -63595,6 +63552,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -65166,49 +65166,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -65240,6 +65197,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -66724,49 +66724,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -66798,6 +66755,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -68445,49 +68445,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -68519,6 +68476,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -70060,49 +70060,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -70134,6 +70091,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -71667,49 +71667,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -71741,6 +71698,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -73319,50 +73319,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - appProtocol: http
-    name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -73395,6 +73351,50 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - appProtocol: http
+    name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -76476,49 +76476,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -76550,6 +76507,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -78133,50 +78133,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    my.co/team: platform
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "true"
   name: redpanda
   namespace: default
@@ -78208,6 +78164,50 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    my.co/team: platform
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -79867,49 +79867,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -79941,6 +79898,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -81532,49 +81532,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -81606,6 +81563,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -112572,49 +112572,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -112646,6 +112603,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -113975,49 +113975,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -114049,6 +114006,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -115390,49 +115390,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -115464,6 +115421,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -116980,49 +116980,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -117054,6 +117011,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -118676,49 +118676,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -118750,6 +118707,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -123778,23 +123778,19 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: admin-default
+  - name: admin-default
     port: 9645
     protocol: TCP
     targetPort: 9645
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
-  - appProtocol: null
-    name: http-default
+  - name: http-default
     port: 8083
     protocol: TCP
     targetPort: 8083
-  - appProtocol: null
-    name: schema-default
+  - name: schema-default
     port: 8084
     protocol: TCP
     targetPort: 8084
@@ -123820,23 +123816,19 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: admin-default
+  - name: admin-default
     port: 9645
     protocol: TCP
     targetPort: 9645
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
-  - appProtocol: null
-    name: http-default
+  - name: http-default
     port: 8083
     protocol: TCP
     targetPort: 8083
-  - appProtocol: null
-    name: schema-default
+  - name: schema-default
     port: 8084
     protocol: TCP
     targetPort: 8084
@@ -123863,23 +123855,19 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: admin-default
+  - name: admin-default
     port: 9645
     protocol: TCP
     targetPort: 9645
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
-  - appProtocol: null
-    name: http-default
+  - name: http-default
     port: 8083
     protocol: TCP
     targetPort: 8083
-  - appProtocol: null
-    name: schema-default
+  - name: schema-default
     port: 8084
     protocol: TCP
     targetPort: 8084
@@ -123906,23 +123894,19 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: admin-default
+  - name: admin-default
     port: 9645
     protocol: TCP
     targetPort: 9645
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
-  - appProtocol: null
-    name: http-default
+  - name: http-default
     port: 8083
     protocol: TCP
     targetPort: 8083
-  - appProtocol: null
-    name: schema-default
+  - name: schema-default
     port: 8084
     protocol: TCP
     targetPort: 8084
@@ -125646,49 +125630,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 30092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -125732,12 +125673,54 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 30092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
   name: redpanda-gateway-bootstrap
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-gw-listener
+  - name: kafka-gw-listener
     port: 9095
     protocol: TCP
     targetPort: 9095
@@ -125763,8 +125746,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-gw-listener
+  - name: kafka-gw-listener
     port: 9095
     protocol: TCP
     targetPort: 9095
@@ -125791,8 +125773,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-gw-listener
+  - name: kafka-gw-listener
     port: 9095
     protocol: TCP
     targetPort: 9095
@@ -125819,8 +125800,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-gw-listener
+  - name: kafka-gw-listener
     port: 9095
     protocol: TCP
     targetPort: 9095
@@ -127456,44 +127436,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -127537,12 +127479,49 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
   name: redpanda-gateway-bootstrap
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
@@ -127568,8 +127547,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
@@ -127596,8 +127574,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
@@ -127624,8 +127601,7 @@ metadata:
   namespace: default
 spec:
   ports:
-  - appProtocol: null
-    name: kafka-default
+  - name: kafka-default
     port: 9094
     protocol: TCP
     targetPort: 9094
@@ -129321,6 +129297,49 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
+    monitoring.redpanda.com/enabled: "false"
+  name: redpanda
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+  - name: admin
+    port: 9644
+    protocol: TCP
+    targetPort: 9644
+  - name: http
+    port: 8082
+    protocol: TCP
+    targetPort: 8082
+  - name: kafka
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  - name: rpc
+    port: 33145
+    protocol: TCP
+    targetPort: 33145
+  - name: schemaregistry
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
   name: redpanda-external
   namespace: default
 spec:
@@ -129372,49 +129391,6 @@ spec:
     app.kubernetes.io/name: redpanda
   sessionAffinity: None
   type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
-    monitoring.redpanda.com/enabled: "false"
-  name: redpanda
-  namespace: default
-spec:
-  clusterIP: None
-  ports:
-  - name: admin
-    port: 9644
-    protocol: TCP
-    targetPort: 9644
-  - name: http
-    port: 8082
-    protocol: TCP
-    targetPort: 8082
-  - name: kafka
-    port: 9093
-    protocol: TCP
-    targetPort: 9093
-  - name: rpc
-    port: 33145
-    protocol: TCP
-    targetPort: 33145
-  - name: schemaregistry
-    port: 8081
-    protocol: TCP
-    targetPort: 8081
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  type: ClusterIP
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -131011,49 +130987,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -131085,6 +131018,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -134589,49 +134565,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: not-redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: also-not-redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: not-redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: not-redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: not-redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: also-not-redpanda
   namespace: default
@@ -134663,6 +134596,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: not-redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: not-redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: not-redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: also-not-redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: not-redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -136186,49 +136162,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -136260,6 +136193,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -137784,49 +137760,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -137858,6 +137791,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -139381,49 +139357,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -139455,6 +139388,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -140976,49 +140952,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -141050,6 +140983,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -142600,49 +142576,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "true"
   name: redpanda
   namespace: default
@@ -142674,6 +142607,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -144209,49 +144185,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "true"
   name: redpanda
   namespace: default
@@ -144283,6 +144216,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -157368,49 +157344,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -157442,6 +157375,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -160538,49 +160514,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -160612,6 +160545,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -162144,49 +162120,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -162218,6 +162151,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
@@ -163859,49 +163835,6 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: redpanda
     helm.sh/chart: redpanda-26.2.1
-  name: redpanda-external
-  namespace: default
-spec:
-  externalTrafficPolicy: Local
-  ports:
-  - name: admin-default
-    nodePort: 31644
-    port: 9645
-    protocol: TCP
-    targetPort: 9645
-  - name: kafka-default
-    nodePort: 31092
-    port: 9094
-    protocol: TCP
-    targetPort: 9094
-  - name: http-default
-    nodePort: 30082
-    port: 8083
-    protocol: TCP
-    targetPort: 8083
-  - name: schema-default
-    nodePort: 30081
-    port: 8084
-    protocol: TCP
-    targetPort: 8084
-  publishNotReadyAddresses: true
-  selector:
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/name: redpanda
-  sessionAffinity: None
-  type: NodePort
----
-# Source: redpanda/templates/entry-point.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  annotations: {}
-  labels:
-    app.kubernetes.io/component: redpanda
-    app.kubernetes.io/instance: redpanda
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: redpanda
-    helm.sh/chart: redpanda-26.2.1
     monitoring.redpanda.com/enabled: "false"
   name: redpanda
   namespace: default
@@ -163933,6 +163866,49 @@ spec:
     app.kubernetes.io/instance: redpanda
     app.kubernetes.io/name: redpanda
   type: ClusterIP
+---
+# Source: redpanda/templates/entry-point.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app.kubernetes.io/component: redpanda
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: redpanda
+    helm.sh/chart: redpanda-26.2.1
+  name: redpanda-external
+  namespace: default
+spec:
+  externalTrafficPolicy: Local
+  ports:
+  - name: admin-default
+    nodePort: 31644
+    port: 9645
+    protocol: TCP
+    targetPort: 9645
+  - name: kafka-default
+    nodePort: 31092
+    port: 9094
+    protocol: TCP
+    targetPort: 9094
+  - name: http-default
+    nodePort: 30082
+    port: 8083
+    protocol: TCP
+    targetPort: 8083
+  - name: schema-default
+    nodePort: 30081
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/instance: redpanda
+    app.kubernetes.io/name: redpanda
+  sessionAffinity: None
+  type: NodePort
 ---
 # Source: redpanda/templates/entry-point.yaml
 apiVersion: apps/v1
