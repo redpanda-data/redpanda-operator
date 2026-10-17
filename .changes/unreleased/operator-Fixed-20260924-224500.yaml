@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Schema resources whose subject no longer exists in the Schema Registry, for example after the cluster''s data was lost, are registered again instead of failing on every reconcile. The schema is restored under its previous ID and version via import mode when its text is unchanged and the registry allows it, so that clients holding cached schema IDs keep working; otherwise a new ID is assigned. The ID is now recorded in `status.schemaId`.'
+time: 2026-09-24T22:45:00.000000000+01:00

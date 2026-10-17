@@ -205,6 +205,11 @@ type SchemaStatus struct {
 	Versions []int `json:"versions,omitempty"`
 	// SchemaHash is the hashed value of the schema synced to the cluster
 	SchemaHash string `json:"schemaHash,omitempty"`
+	// SchemaID is the ID of the latest schema version synced to the cluster.
+	// When the subject disappears from the Schema Registry, for example after the
+	// cluster's data was lost, the schema is registered again under this ID so that
+	// clients holding cached IDs keep working.
+	SchemaID int `json:"schemaId,omitempty"`
 }
 
 // SchemaList contains a list of Redpanda schema objects.
