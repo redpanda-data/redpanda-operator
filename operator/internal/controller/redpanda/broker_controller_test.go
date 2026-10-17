@@ -845,6 +845,78 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 	}
 }
 
+// TestWipedDisk verifies the live-node detection path against a real
+// cluster: the broker's Local PV directory is removed from the node it is
+// pinned to while the Node object stays, the recreated pod fails its mount
+// (FailedMount, `path "..." does not exist`), and the Broker controller
+// marks the Broker DiskLost and dismantles it — pod and PVCs gone, identity
+// untouched — with no dead-node proof anywhere.
+func (s *BrokerControllerSuite) TestWipedDisk() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	_, brokers := s.setupBrokerCluster(t, ctx, c, brokerClusterOpts{
+		useVolumeClaimTemplates: true,
+	})
+
+	target := brokers[0]
+	require.NoError(t, c.Get(ctx, client.ObjectKeyFromObject(target), target))
+	require.NotNil(t, target.Status.BrokerID, "target broker must be registered")
+	deadID := *target.Status.BrokerID
+
+	var pod corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod))
+	node := pod.Spec.NodeName
+	require.NotEmpty(t, node)
+
+	claimNames := target.ClaimNames()
+	require.NotEmpty(t, claimNames)
+	for _, name := range claimNames {
+		var pvc corev1.PersistentVolumeClaim
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc))
+		var pv corev1.PersistentVolume
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv))
+		// k3s's local-path class provisions Local PVs. A HostPath PV never
+		// produces the proof: the kubelet recreates its directory instead.
+		require.NotNil(t, pv.Spec.Local, "PV %s is not a Local volume", pv.Name)
+		t.Logf("removing %s on node %s", pv.Spec.Local.Path, node)
+		_, err := s.env.Host().ExecOnNode(node, "rm", "-rf", pv.Spec.Local.Path)
+		require.NoError(t, err)
+	}
+
+	// The running pod still holds its bind mount; only a fresh mount makes
+	// the kubelet stat() the vanished path. The controller recreates the
+	// pod under the same name and PV affinity sends it back to the same
+	// node.
+	require.NoError(t, c.Delete(ctx, &pod))
+
+	// Stuck first: the proof is in, the detection timeout (60s in this
+	// suite) has not elapsed.
+	t.Log("waiting for Broker to report Stuck")
+	s.waitForPhase(t, ctx, c, target, redpandav1alpha2.BrokerPhaseStuck)
+
+	t.Log("waiting for DiskLost marking and dismantle")
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKeyFromObject(target), target)) {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseDiskLost, target.Status.Phase)
+		assert.True(ct, target.DiskLostReleased(), "pod and PVCs must be confirmed gone")
+	}, 5*time.Minute, 2*time.Second)
+
+	require.NotNil(t, target.Status.BrokerID)
+	assert.Equal(t, deadID, *target.Status.BrokerID, "a dead incarnation never changes identity")
+	var nodeObj corev1.Node
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: node}, &nodeObj), "the node never went away")
+	var gone corev1.Pod
+	assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &gone)))
+	for _, name := range claimNames {
+		var pvc corev1.PersistentVolumeClaim
+		assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc)),
+			"dismantle must delete PVC %q", name)
+	}
+}
+
 // --- helpers ---
 
 type brokerClusterOpts struct {
@@ -1559,6 +1631,13 @@ func (s *BrokerControllerSuite) TestV2BrokerBornRollbackKeepsPodsRollable() {
 		for _, b := range brokers {
 			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase)
 			assert.NotEmpty(ct, b.Spec.Storage.VolumeClaimTemplates, "fresh brokers use volume claim templates, not existing claims")
+			for _, vct := range b.Spec.Storage.VolumeClaimTemplates {
+				var pvc corev1.PersistentVolumeClaim
+				if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: vct.Name + "-" + b.PodName(), Namespace: b.Namespace}, &pvc)) {
+					continue
+				}
+				assert.Equal(ct, "local", pvc.Annotations["volumeType"], "Broker-created PVC %s must request a local PV from local-path-provisioner", pvc.Name)
+			}
 		}
 	}, 5*time.Minute, 5*time.Second)
 

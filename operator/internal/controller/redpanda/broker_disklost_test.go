@@ -11,6 +11,7 @@ package redpanda
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 )
 
 // diskLostCluster is a minimal cluster.Cluster for exercising the DiskLost
@@ -129,9 +131,50 @@ func diskLostFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) 
 	return broker, pod, []client.Object{pod, pvc, pv}
 }
 
+// wipedDiskFixture builds the live-node shape: the dead-node fixture's
+// broker and claim, but the pod is scheduled on a node that EXISTS, the
+// claim's PV is a Local volume pinned to that node, and the kubelet's
+// FailedMount event says the PV's directory does not exist — first seen
+// past the detection timeout, refreshed just now.
+func wipedDiskFixture() (*redpandav1alpha2.Broker, *corev1.Pod, *corev1.Event, []client.Object) {
+	broker, pod, objs := diskLostFixture()
+	pod.Spec.NodeName = "node-alive"
+	pod.Status.Conditions = []corev1.PodCondition{
+		{Type: corev1.PodScheduled, Status: corev1.ConditionTrue},
+		{Type: corev1.PodReadyToStartContainers, Status: corev1.ConditionFalse},
+	}
+	pod.Status.ContainerStatuses = []corev1.ContainerStatus{{
+		Name:  "redpanda",
+		State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "ContainerCreating"}},
+	}}
+	const path = "/var/lib/rancher/k3s/storage/pv-1_ns_datadir-rp-1"
+	pv := objs[2].(*corev1.PersistentVolume)
+	pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{Local: &corev1.LocalVolumeSource{Path: path}}
+	pv.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions[0].Values = []string{"node-alive"}
+	node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{
+		Name:   "node-alive",
+		Labels: map[string]string{corev1.LabelHostname: "node-alive"},
+	}}
+	event := &corev1.Event{
+		ObjectMeta:     metav1.ObjectMeta{Name: "rp-1.18de0808fe711e03", Namespace: "ns"},
+		InvolvedObject: corev1.ObjectReference{Kind: "Pod", Namespace: "ns", Name: "rp-1", UID: pod.UID},
+		Type:           corev1.EventTypeWarning,
+		Reason:         "FailedMount",
+		Message:        `MountVolume.NewMounter initialization failed for volume "pv-1" : path "` + path + `" does not exist`,
+		Source:         corev1.EventSource{Component: "kubelet", Host: "node-alive"},
+		FirstTimestamp: metav1.NewTime(time.Now().Add(-10 * time.Minute)),
+		LastTimestamp:  metav1.Now(),
+		Count:          7,
+	}
+	return broker, pod, event, append(objs, node, event)
+}
+
 func runDiskLost(t *testing.T, broker *redpandav1alpha2.Broker, objs []client.Object) (client.Client, *brokerReconciliationState, error) {
 	c := fake.NewClientBuilder().WithScheme(diskLostScheme(t)).
-		WithObjects(objs...).WithStatusSubresource(&redpandav1alpha2.Broker{}).Build()
+		WithObjects(objs...).WithStatusSubresource(&redpandav1alpha2.Broker{}).
+		WithIndex(&corev1.Event{}, "involvedObject.uid", func(o client.Object) []string {
+			return []string{string(o.(*corev1.Event).InvolvedObject.UID)}
+		}).Build()
 	r := &BrokerReconciler{MarkDiskLostAfter: time.Minute}
 	state, err := r.fetchState(t.Context(), mcreconcile.Request{}, c, broker)
 	require.NoError(t, err)
@@ -192,6 +235,113 @@ func TestDetectDiskLostNegatives(t *testing.T) {
 			_, _, err := runDiskLost(t, broker, objs)
 			require.NoError(t, err)
 			require.Nil(t, broker.Status.DiskLost, "the latch must not be set")
+		})
+	}
+}
+
+// TestDetectDiskLostMarksWipedDisk covers the live-node proof: the node
+// exists (so there is no dead-node proof), the pod is scheduled, and the
+// kubelet has been reporting the Local PV's directory gone for longer than
+// the timeout. Like the dead-node pass it sets the latch and phase, deletes
+// nothing, and leaves the recorded BrokerID alone.
+func TestDetectDiskLostMarksWipedDisk(t *testing.T) {
+	broker, _, _, objs := wipedDiskFixture()
+	c, state, err := runDiskLost(t, broker, objs)
+	require.NoError(t, err)
+
+	require.NotNil(t, broker.Status.DiskLost, "the latch must be set")
+	require.False(t, broker.Status.DiskLost.ResourcesReleased)
+	require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
+	require.Equal(t, ptr.To(int32(1)), broker.Status.BrokerID, "identity is immutable")
+
+	ctx := context.Background()
+	var alive corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "rp-1", Namespace: "ns"}, &alive), "nothing is deleted on the marking pass")
+	var pvc corev1.PersistentVolumeClaim
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "datadir-rp-1", Namespace: "ns"}, &pvc), "nothing is deleted on the marking pass")
+}
+
+// TestDetectWipedDiskNegatives: every gate of the live-node proof that must
+// refuse the terminal marking. Only a proof still inside the timeout parks
+// the broker in Stuck; every other refusal leaves the phase to defaultPhase.
+// A scheduled pod with no sandbox and no verdict yet asks for the mount
+// poll — the verdict is an event, which fires no watch — without blocking
+// the chain; one whose sandbox is up does not.
+func TestDetectWipedDiskNegatives(t *testing.T) {
+	for name, tc := range map[string]struct {
+		mutate    func(broker *redpandav1alpha2.Broker, pod *corev1.Pod, event *corev1.Event)
+		wantPhase redpandav1alpha2.BrokerPhase
+		wantPoll  bool
+	}{
+		"timeout not elapsed": {
+			mutate: func(_ *redpandav1alpha2.Broker, _ *corev1.Pod, event *corev1.Event) {
+				event.FirstTimestamp = metav1.Now()
+			},
+			wantPhase: redpandav1alpha2.BrokerPhaseStuck,
+		},
+		"no verdict yet, sandbox down": {
+			mutate: func(_ *redpandav1alpha2.Broker, _ *corev1.Pod, event *corev1.Event) {
+				event.Reason = "Scheduled"
+				event.Message = "Successfully assigned ns/rp-1 to node-alive"
+			},
+			wantPoll: true,
+		},
+		"no verdict, sandbox up": {
+			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod, event *corev1.Event) {
+				event.Reason = "Scheduled"
+				event.Message = "Successfully assigned ns/rp-1 to node-alive"
+				pod.Status.Conditions[1].Status = corev1.ConditionTrue
+			},
+		},
+		"event stale (mount recovered, sandbox torn down later)": {
+			mutate: func(_ *redpandav1alpha2.Broker, _ *corev1.Pod, event *corev1.Event) {
+				event.FirstTimestamp = metav1.NewTime(time.Now().Add(-30 * time.Minute))
+				event.LastTimestamp = metav1.NewTime(time.Now().Add(-pvcunbinder.FailedMountEventStaleAfter - time.Minute))
+			},
+			wantPoll: true,
+		},
+		"event names a volume that is not the broker's": {
+			mutate: func(_ *redpandav1alpha2.Broker, _ *corev1.Pod, event *corev1.Event) {
+				event.Message = strings.Replace(event.Message, `"pv-1"`, `"pv-other"`, 1)
+			},
+			wantPoll: true,
+		},
+		"a different FailedMount": {
+			mutate: func(_ *redpandav1alpha2.Broker, _ *corev1.Pod, event *corev1.Event) {
+				event.Message = `MountVolume.SetUp failed for volume "config" : configmap "rp" not found`
+			},
+			wantPoll: true,
+		},
+		"sandbox is up (volumes mounted)": {
+			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod, _ *corev1.Event) {
+				pod.Status.Conditions[1].Status = corev1.ConditionTrue
+			},
+		},
+		"pod not controlled by the broker (migration shadow)": {
+			mutate: func(_ *redpandav1alpha2.Broker, pod *corev1.Pod, _ *corev1.Event) {
+				pod.OwnerReferences[0].Kind = "StatefulSet"
+				pod.OwnerReferences[0].APIVersion = "apps/v1"
+				pod.OwnerReferences[0].UID = types.UID("sts-uid")
+			},
+		},
+		"decommissioning broker": {
+			mutate: func(broker *redpandav1alpha2.Broker, _ *corev1.Pod, _ *corev1.Event) {
+				broker.Spec.Decommission = true
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			broker, pod, event, objs := wipedDiskFixture()
+			tc.mutate(broker, pod, event)
+			_, state, err := runDiskLost(t, broker, objs)
+			require.NoError(t, err)
+			require.Nil(t, broker.Status.DiskLost, "the latch must not be set")
+			require.Equal(t, tc.wantPhase, state.phase)
+			var wantRequeue time.Duration
+			if tc.wantPoll {
+				wantRequeue = requeueMountPoll
+			}
+			require.Equal(t, wantRequeue, state.requeueAfter)
 		})
 	}
 }

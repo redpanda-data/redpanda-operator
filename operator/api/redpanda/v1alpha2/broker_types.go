@@ -224,7 +224,9 @@ type BrokerStatus struct {
 
 // DiskLostStatus records the two durable checkpoints of disk-loss handling.
 type DiskLostStatus struct {
-	// At is when the dead-node proof was accepted — the point of no return.
+	// At is when the disk-loss proof — the PV's node gone, or the kubelet
+	// reporting the PV's directory gone from a live node — was accepted;
+	// the point of no return.
 	// +optional
 	At metav1.Time `json:"at,omitempty"`
 	// ResourcesReleased is set once the pod and every PVC were confirmed

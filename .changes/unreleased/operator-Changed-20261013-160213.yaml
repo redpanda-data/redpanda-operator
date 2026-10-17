@@ -1,0 +1,4 @@
+project: operator
+kind: Changed
+body: 'In broker mode, PVCs created by the Broker controller from VolumeClaimTemplates now carry the rancher/local-path-provisioner annotation volumeType: local, so local-path provisions a local PV rather than a hostPath one; other provisioners ignore the annotation and already-bound claims are unaffected. With a hostPath PV the kubelet silently recreates a wiped data directory, so a broker whose disk was lost booted empty and re-registered under a new node_id; a local PV fails the mount instead and keeps the stale identity off the cluster. Clusters whose data directories do not survive a node reboot will see those pods stay unschedulable rather than start empty.'
+time: 2026-10-13T16:02:13.410350958+02:00

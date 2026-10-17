@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'A broker-mode Broker whose node was rebuilt with an empty disk under the same Node object was never recognised as having lost its disk. With a local PV the recreated pod sat on a kubelet FailedMount (path does not exist) indefinitely, Phase Running with Ready=False; with a hostPath PV it booted empty and re-registered under a new node_id. The Broker controller now treats that FailedMount report as disk-loss proof once it has been held for the --unbind-pvcs-after timeout and is still fresh: the Broker shows Stuck while the timeout runs, then DiskLost, and the existing dismantle, replacement and decommission flow takes over with the recorded brokerID intact. The operator ClusterRole gains get/list on events.'
+time: 2026-10-13T16:56:00.986688271+02:00
