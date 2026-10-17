@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: Quantity values set with `helm --set` as integers (for example `--set key=1`) no longer fail with `invalid Quantity expected string or float64 got: int64`
+time: 2026-10-12T12:00:03.000000+01:00

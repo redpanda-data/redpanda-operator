@@ -204,12 +204,15 @@ func asintegral(value any) (any, bool) {
 }
 
 func parseResource(repr any) (float64, float64) {
-	if TypeIs("float64", repr) {
+	// Values files decode numbers as float64, but `helm --set key=1` produces
+	// an int64. resource.Quantity's UnmarshalJSON accepts any JSON number, so
+	// accept every numeric type helm can produce.
+	if TypeIs("float64", repr) || TypeIs("int64", repr) || TypeIs("int", repr) {
 		return Float64(repr), 1
 	}
 
 	if !TypeIs("string", repr) {
-		panic(fmt.Sprintf("invalid Quantity expected string or float64 got: %T (%v)", repr, repr))
+		panic(fmt.Sprintf("invalid Quantity expected string or number got: %T (%v)", repr, repr))
 	}
 
 	// TODO add an upper bound on the total amount of digits?

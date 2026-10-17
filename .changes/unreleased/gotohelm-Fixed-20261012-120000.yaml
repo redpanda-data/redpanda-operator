@@ -1,0 +1,9 @@
+project: gotohelm
+kind: Fixed
+body: |-
+    `resource.MustParse` and other Quantity parsing in transpiled templates accept integer values
+
+      `helm --set key=1` passes an int64, which the Quantity shim rejected with
+      `invalid Quantity expected string or float64`. It now accepts int and int64
+      as well as float64 and strings.
+time: 2026-10-12T12:00:00.000000+01:00
