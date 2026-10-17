@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"strconv"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -120,6 +121,12 @@ func (b *Broker) BuildPod(podName string) *corev1.Pod {
 			Annotations: tpl.Annotations,
 			Labels:      tpl.Labels,
 		},
+	}
+	if b.Status.BrokerID != nil {
+		if pod.Annotations == nil {
+			pod.Annotations = map[string]string{}
+		}
+		pod.Annotations[BrokerIDAnnotation] = strconv.FormatInt(int64(*b.Status.BrokerID), 10)
 	}
 	return pod
 }

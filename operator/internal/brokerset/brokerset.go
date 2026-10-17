@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,6 +43,7 @@ import (
 	k8sclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
+	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -171,6 +173,9 @@ type BrokerSet struct {
 	// MarkForRestart re-stamps unconditionally, and a pod born from an
 	// unstamped template would be rolled for no config change. Optional.
 	ClusterConfigVersion string
+	// DataGuardImage is the operator image the data-dir guard init container
+	// runs (see DataGuardContainerName). Empty disables the guard.
+	DataGuardImage string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.
 	Hooks OwnerHooks
@@ -556,7 +561,12 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 			}
 		}
 
+		s.addDataGuard(&podSpec)
+
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
+		if podAnnotations == nil {
+			podAnnotations = map[string]string{}
+		}
 		podAnnotations[redpandav1alpha2.BrokerConfigChecksumAnnotation] = configHash
 		if s.ClusterConfigVersion != "" {
 			podAnnotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation] = s.ClusterConfigVersion
@@ -623,6 +633,68 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 	}
 
 	return brokers, nil
+}
+
+// The data-dir guard init container (see BrokerIDAnnotation). Its name and
+// exit code (dataguard.ExitCodeEmptyDataDir) are how the Broker controller
+// reads the verdict from pod status.
+const (
+	DataGuardContainerName = "data-guard"
+
+	// The guard's --broker-id-file default is this mount path plus file.
+	dataGuardVolumeName = "broker-id"
+	dataGuardMountPath  = "/etc/broker-id"
+	dataGuardIDFile     = "broker-id"
+)
+
+// addDataGuard puts the guard first among the init containers, so nothing
+// else (ownership chown, tuning) touches the data directory before the
+// verdict. Skipped when no image is configured or the data directory is not
+// persistent: with persistence disabled the chart renders datadir as an
+// emptyDir, which is blank on every pod start by design.
+func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
+	if s.DataGuardImage == "" {
+		return
+	}
+	if !slices.ContainsFunc(spec.Volumes, func(v corev1.Volume) bool {
+		return v.Name == redpanda.DatadirVolumeName && (v.PersistentVolumeClaim != nil || v.HostPath != nil)
+	}) {
+		return
+	}
+
+	spec.Volumes = append(spec.Volumes, corev1.Volume{
+		Name: dataGuardVolumeName,
+		VolumeSource: corev1.VolumeSource{
+			DownwardAPI: &corev1.DownwardAPIVolumeSource{
+				Items: []corev1.DownwardAPIVolumeFile{{
+					Path: dataGuardIDFile,
+					FieldRef: &corev1.ObjectFieldSelector{
+						FieldPath: fmt.Sprintf("metadata.annotations['%s']", redpandav1alpha2.BrokerIDAnnotation),
+					},
+				}},
+			},
+		},
+	})
+
+	resources := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+		corev1.ResourceMemory: resource.MustParse("125Mi"),
+	}
+	guard := corev1.Container{
+		Name:      DataGuardContainerName,
+		Image:     s.DataGuardImage,
+		Command:   []string{"/redpanda-operator", "data-guard"},
+		Resources: corev1.ResourceRequirements{Limits: resources, Requests: resources},
+		SecurityContext: &corev1.SecurityContext{
+			AllowPrivilegeEscalation: ptr.To(false),
+			ReadOnlyRootFilesystem:   ptr.To(true),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: redpanda.DatadirVolumeName, MountPath: "/var/lib/redpanda/data", ReadOnly: true},
+			{Name: dataGuardVolumeName, MountPath: dataGuardMountPath, ReadOnly: true},
+		},
+	}
+	spec.InitContainers = append([]corev1.Container{guard}, spec.InitContainers...)
 }
 
 // normalizePodSpecDefaults aligns the rendered pod spec with the values the

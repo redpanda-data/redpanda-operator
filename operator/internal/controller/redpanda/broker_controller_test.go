@@ -14,6 +14,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -43,6 +44,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/redpanda"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
@@ -843,6 +845,109 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 		assert.True(t, apierrors.IsNotFound(c.Get(ctx, client.ObjectKey{Name: name, Namespace: target.Namespace}, &pvc)),
 			"dismantle must delete PVC %q", name)
 	}
+}
+
+// TestDataGuardBlocksEmptyDataDir: a broker-mode pod loses the CONTENTS of
+// its data directory while the volume itself still mounts (a wiped or
+// replaced disk under a hostPath PV, or any blank volume) and is recreated.
+// The data-dir guard finds the stamped node_id and no kvstore, exits with
+// its verdict, and Redpanda never starts: the Broker is marked DiskLost and
+// dismantled, and a NEW Broker takes the slot and registers as a new node.
+// The old node_id is never reused: the tombstone keeps it.
+func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
+	t, ctx, cancel, c := s.setup()
+	defer cancel()
+
+	// Three brokers: the cluster must survive losing one so the replacement
+	// has something to join and the tombstone's node_id can be decommissioned.
+	rp := s.minimalRP()
+	rp.Annotations[redpandav1alpha2.AnnotationUseBrokerCR] = "true"
+	rp.Spec.ClusterSpec.Statefulset.Replicas = ptr.To(3)
+	s.applyAndWait(t, ctx, c, rp)
+
+	var target redpandav1alpha2.Broker
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		brokers := s.listBrokers(ct, ctx, c, rp)
+		if !assert.Len(ct, brokers, 3) {
+			return
+		}
+		for _, b := range brokers {
+			assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, b.Status.Phase, "broker %q", b.Name)
+			assert.NotNil(ct, b.Status.BrokerID, "broker %q", b.Name)
+		}
+		target = brokers[0]
+	}, 5*time.Minute, 5*time.Second)
+	brokerID := *target.Status.BrokerID
+
+	// The identity is adopted after the pod was created, so it reaches the
+	// pod through the in-place metadata sync; the guard runs first among
+	// the init containers.
+	var pod corev1.Pod
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		if !assert.NoError(ct, c.Get(ctx, client.ObjectKey{Name: target.PodName(), Namespace: target.Namespace}, &pod)) {
+			return
+		}
+		assert.Equal(ct, strconv.Itoa(int(brokerID)), pod.Annotations[redpandav1alpha2.BrokerIDAnnotation])
+	}, 2*time.Minute, 2*time.Second)
+	require.NotEmpty(t, pod.Spec.InitContainers)
+	require.Equal(t, brokerset.DataGuardContainerName, pod.Spec.InitContainers[0].Name)
+
+	var dataDir string
+	for _, vol := range pod.Spec.Volumes {
+		if vol.PersistentVolumeClaim == nil {
+			continue
+		}
+		var pvc corev1.PersistentVolumeClaim
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: vol.PersistentVolumeClaim.ClaimName, Namespace: pod.Namespace}, &pvc))
+		var pv corev1.PersistentVolume
+		require.NoError(t, c.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, &pv))
+		switch {
+		case pv.Spec.Local != nil:
+			dataDir = pv.Spec.Local.Path
+		case pv.Spec.HostPath != nil:
+			dataDir = pv.Spec.HostPath.Path
+		}
+	}
+	require.NotEmpty(t, dataDir, "the datadir PV must be a node-local directory")
+
+	// Empty the directory but keep it, then force-delete the pod in the same
+	// breath: Redpanda must not get the chance to crash on its vanished
+	// files and be restarted inside the old sandbox, where init containers
+	// do not run again.
+	t.Logf("emptying %s on node %s", dataDir, pod.Spec.NodeName)
+	_, err := s.env.Host().ExecOnNode(pod.Spec.NodeName, "sh", "-c", fmt.Sprintf("rm -rf %s/* %s/.[!.]*", dataDir, dataDir))
+	require.NoError(t, err)
+	require.NoError(t, c.Delete(ctx, &pod, client.GracePeriodSeconds(0)))
+
+	// The brokerset replaces the released slot with a NEW Broker CR that boots
+	// on a fresh disk and registers as a new node; the tombstone, for as long
+	// as it exists, keeps the latch and the old node_id.
+	t.Log("waiting for DiskLost marking, dismantle and replacement")
+	require.EventuallyWithT(t, func(ct *assert.CollectT) {
+		var tomb redpandav1alpha2.Broker
+		if err := c.Get(ctx, client.ObjectKeyFromObject(&target), &tomb); err == nil {
+			assert.True(ct, tomb.IsDiskLost(), "the guard's verdict must become the DiskLost latch")
+			if assert.NotNil(ct, tomb.Status.BrokerID) {
+				assert.Equal(ct, brokerID, *tomb.Status.BrokerID, "a dead incarnation never changes identity")
+			}
+		} else {
+			assert.True(ct, apierrors.IsNotFound(err))
+		}
+
+		var replacement *redpandav1alpha2.Broker
+		for _, b := range s.listBrokers(ct, ctx, c, rp) {
+			if b.Name != target.Name && ptr.Deref(b.Spec.NetworkIndex, -1) == ptr.Deref(target.Spec.NetworkIndex, -2) {
+				replacement = &b
+			}
+		}
+		if !assert.NotNil(ct, replacement, "the brokerset must replace the released slot") {
+			return
+		}
+		assert.Equal(ct, redpandav1alpha2.BrokerPhaseRunning, replacement.Status.Phase)
+		if assert.NotNil(ct, replacement.Status.BrokerID) {
+			assert.NotEqual(ct, brokerID, *replacement.Status.BrokerID, "the replacement is a new node; the old node_id is never reused")
+		}
+	}, 8*time.Minute, 5*time.Second)
 }
 
 // --- helpers ---

@@ -28,6 +28,8 @@ import (
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 )
 
 // diskLostCluster is a minimal cluster.Cluster for exercising the DiskLost
@@ -270,4 +272,85 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 		require.False(t, result.IsZero())
 		require.Equal(t, redpandav1alpha2.BrokerPhaseDecommissioned, state.phase)
 	})
+}
+
+// guardRefusalFixture builds the live-node shape: the pod is scheduled, its
+// data-dir guard keeps exiting with the empty-data-dir verdict, and the PV's
+// node exists (no dead-node proof).
+func guardRefusalFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) {
+	broker, pod, objs := diskLostFixture()
+	pod.Spec.NodeName = "node-alive"
+	pod.Annotations = map[string]string{redpandav1alpha2.BrokerIDAnnotation: "1"}
+	pod.Status = corev1.PodStatus{
+		Phase:      corev1.PodPending,
+		Conditions: []corev1.PodCondition{{Type: corev1.PodScheduled, Status: corev1.ConditionTrue}},
+		InitContainerStatuses: []corev1.ContainerStatus{{
+			Name:  brokerset.DataGuardContainerName,
+			State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}},
+			LastTerminationState: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{
+				ExitCode: dataguard.ExitCodeEmptyDataDir,
+				Message:  "data directory /var/lib/redpanda/data holds no kvstore but this pod is node_id 1: refusing to start",
+			}},
+		}},
+	}
+	objs = append(objs, &corev1.Node{ObjectMeta: metav1.ObjectMeta{
+		Name:   "node-alive",
+		Labels: map[string]string{corev1.LabelHostname: "node-alive"},
+	}})
+	return broker, pod, objs
+}
+
+// TestDetectDiskLostMarksGuardRefusal covers the live-node proof: the guard
+// refused, so the Broker is marked on the spot. Like the dead-node pass,
+// marking sets the latch and phase but deletes NOTHING, and the recorded
+// BrokerID is untouched.
+func TestDetectDiskLostMarksGuardRefusal(t *testing.T) {
+	broker, _, objs := guardRefusalFixture()
+	c, state, err := runDiskLost(t, broker, objs)
+	require.NoError(t, err)
+
+	require.NotNil(t, broker.Status.DiskLost, "the latch must be set")
+	require.False(t, broker.Status.DiskLost.ResourcesReleased)
+	require.Equal(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
+	require.Equal(t, ptr.To(int32(1)), broker.Status.BrokerID, "identity is immutable")
+
+	ctx := context.Background()
+	var alive corev1.Pod
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "rp-1", Namespace: "ns"}, &alive), "nothing is deleted on the marking pass")
+	var pvc corev1.PersistentVolumeClaim
+	require.NoError(t, c.Get(ctx, client.ObjectKey{Name: "datadir-rp-1", Namespace: "ns"}, &pvc))
+}
+
+func TestDetectGuardRefusalNegatives(t *testing.T) {
+	guard := func(pod *corev1.Pod) *corev1.ContainerStatus { return &pod.Status.InitContainerStatuses[0] }
+	for name, mutate := range map[string]func(broker *redpandav1alpha2.Broker, pod *corev1.Pod){
+		"guard passed on a retry": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			guard(pod).State = corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{ExitCode: 0}}
+		},
+		"guard crashed rather than refused": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			guard(pod).LastTerminationState.Terminated.ExitCode = 1
+		},
+		"guard has not finished a run": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			guard(pod).State = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
+			guard(pod).LastTerminationState = corev1.ContainerState{}
+		},
+		"broker has no identity to tombstone": func(broker *redpandav1alpha2.Broker, _ *corev1.Pod) {
+			broker.Status.BrokerID = nil
+		},
+		"pod has no guard": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
+			pod.Status.InitContainerStatuses = nil
+		},
+		"decommissioning broker": func(broker *redpandav1alpha2.Broker, _ *corev1.Pod) {
+			broker.Spec.Decommission = true
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			broker, pod, objs := guardRefusalFixture()
+			mutate(broker, pod)
+			_, state, err := runDiskLost(t, broker, objs)
+			require.NoError(t, err)
+			require.Nil(t, broker.Status.DiskLost, "the latch must not be set")
+			require.NotEqual(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
+		})
+	}
 }

@@ -8955,8 +8955,11 @@ spec:
                   a replacement Broker CR takes over the network index.
                 properties:
                   at:
-                    description: At is when the dead-node proof was accepted — the
-                      point of no return.
+                    description: |-
+                      At is when the disk-loss proof was accepted — the point of no return.
+                      Two proofs exist: the PV's node no longer exists, or the pod's
+                      data-dir guard refused to start Redpanda because the data directory
+                      holds no kvstore while the pod carries this Broker's node_id.
                     format: date-time
                     type: string
                   resourcesReleased:

@@ -188,3 +188,29 @@ func TestBuildPodDeepCopies(t *testing.T) {
 	assert.Equal(t, "1", broker.Spec.PodTemplate.Labels["a"])
 	assert.Equal(t, "redpanda:v1", broker.Spec.PodTemplate.Spec.Containers[0].Image)
 }
+
+func TestBuildPodStampsBrokerID(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		brokerID *int32
+		want     string
+	}{
+		{name: "never registered", brokerID: nil, want: ""},
+		{name: "registered", brokerID: ptr.To(int32(3)), want: "3"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			broker := &Broker{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp-0", Namespace: "ns"},
+				Spec: BrokerSpec{
+					ClusterRef:   ClusterRef{Name: "rp"},
+					NetworkIndex: ptr.To(int32(0)),
+				},
+				Status: BrokerStatus{BrokerID: tc.brokerID},
+			}
+			pod := broker.BuildPod(broker.PodName())
+			got, ok := pod.Annotations[BrokerIDAnnotation]
+			assert.Equal(t, tc.want != "", ok, "annotation presence")
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}

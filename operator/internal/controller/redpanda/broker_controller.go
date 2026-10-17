@@ -15,6 +15,7 @@ import (
 	"net"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,6 +41,8 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
+	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/observability"
@@ -533,10 +536,19 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 
 	if broker.Spec.Decommission ||
 		state.pod == nil ||
-		!metav1.IsControlledBy(state.pod, broker) ||
-		!pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		!metav1.IsControlledBy(state.pod, broker) {
 		return ctrl.Result{}, nil
 	}
+	if pvcunbinder.PodHasVolumeAffinityUnschedulable(state.pod) {
+		return r.detectDeadNode(ctx, l, state, cluster)
+	}
+	return r.detectGuardRefusal(l, state)
+}
+
+// detectDeadNode is the dead-node proof: the pod cannot schedule because its
+// PV is pinned to a node that no longer exists.
+func (r *BrokerReconciler) detectDeadNode(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
+	broker := state.broker
 
 	// Timeout: only accept the proof after the pod has been stuck long
 	// enough for a rebooting node to have come back.
@@ -569,6 +581,51 @@ func (r *BrokerReconciler) detectDiskLost(ctx context.Context, l logr.Logger, st
 	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
 	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
+}
+
+// detectGuardRefusal is the live-node proof: the pod's data-dir guard (see
+// BrokerIDAnnotation) found a node_id stamped on the pod and no kvstore in
+// the data directory. A running broker always has kvstore files, so the
+// volume that mounted is not the one the identity was created on. The
+// verdict is taken at face value, with no timer and no retry: a Broker is
+// one node_id for life, and the directory is already empty, so dismantling
+// destroys nothing. (A data disk that mounts after the kubelet created the
+// directory would be misread as a wipe; accepted, since waiting could not
+// tell the two apart anyway.)
+func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconciliationState) (ctrl.Result, error) {
+	broker := state.broker
+	refusal := dataGuardRefusal(state.pod)
+	if refusal == nil || broker.Status.BrokerID == nil {
+		return ctrl.Result{}, nil
+	}
+
+	l.Info("marking Broker as a dead incarnation: data directory empty on a live node",
+		"node", state.pod.Spec.NodeName, "brokerID", *broker.Status.BrokerID, "guard", refusal.Message)
+	broker.Status.DiskLost = &redpandav1alpha2.DiskLostStatus{At: metav1.Now()}
+	state.phase = redpandav1alpha2.BrokerPhaseDiskLost
+	return ctrl.Result{RequeueAfter: requeueShort}, nil
+}
+
+// dataGuardRefusal returns the data-dir guard's exit when its latest run
+// refused to start the broker: the current terminated state, or the last one
+// while the kubelet backs off before the next restart. Nil when the pod has
+// no guard, it has not finished a run, or its latest run passed.
+func dataGuardRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
+	for i := range pod.Status.InitContainerStatuses {
+		cs := &pod.Status.InitContainerStatuses[i]
+		if cs.Name != brokerset.DataGuardContainerName {
+			continue
+		}
+		term := cs.State.Terminated
+		if term == nil {
+			term = cs.LastTerminationState.Terminated
+		}
+		if term != nil && term.ExitCode == dataguard.ExitCodeEmptyDataDir {
+			return term
+		}
+		return nil
+	}
+	return nil
 }
 
 func (r *BrokerReconciler) dismantleDiskLost(ctx context.Context, l logr.Logger, state *brokerReconciliationState, cluster cluster.Cluster) (ctrl.Result, error) {
@@ -711,6 +768,15 @@ func (r *BrokerReconciler) reconcilePodMetadata(ctx context.Context, state *brok
 	for k, v := range tpl.Labels {
 		if pod.Labels[k] != v {
 			pod.Labels[k] = v
+			changed = true
+		}
+	}
+	// The pod carries its node_id for the data-dir guard (see
+	// brokerset.DataGuardContainerName). Written once the identity is
+	// adopted, never removed.
+	if id := state.broker.Status.BrokerID; id != nil {
+		if want := strconv.FormatInt(int64(*id), 10); pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] != want {
+			pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] = want
 			changed = true
 		}
 	}
