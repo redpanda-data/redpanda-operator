@@ -1,0 +1,8 @@
+project: charts/console
+kind: Fixed
+body: |-
+    `secret.redpanda.adminApi.password` authenticates Console to the Admin API
+
+      The password was passed as `REDPANDA_ADMINAPI_PASSWORD`, which Console v3 does not read. It is
+      passed as `REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD`.
+time: 2026-10-12T12:00:01.000000+01:00

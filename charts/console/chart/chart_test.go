@@ -333,7 +333,7 @@ func TestSecrets(t *testing.T) {
 		assert.Equal(t, "kafka-sasl-password", envMap["KAFKA_SASL_PASSWORD"])
 		assert.Equal(t, "schema-registry-password", envMap["SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD"])
 		assert.Equal(t, "authentication-jwt-signingkey", envMap["AUTHENTICATION_JWTSIGNINGKEY"])
-		assert.Equal(t, "redpanda-admin-api-password", envMap["REDPANDA_ADMINAPI_PASSWORD"])
+		assert.Equal(t, "redpanda-admin-api-password", envMap["REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD"])
 		assert.Equal(t, "license", envMap["LICENSE"])
 	}
 }

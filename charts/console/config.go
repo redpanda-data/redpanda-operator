@@ -89,14 +89,22 @@ func (m *configMapper) configureAdmin(admin *ir.AdminAPISpec) *PartialRedpandaAd
 		cfg.TLS = tls
 	}
 
-	if admin.Auth != nil {
-		cfg.Authentication = &PartialHTTPAuthentication{
-			BasicAuth: &PartialHTTPBasicAuth{
-				Username: &admin.Auth.Username,
-			},
+	// Console uses basic auth whenever a username is set and a bearer token
+	// only otherwise, so only one of the two is configured, with the same
+	// precedence as the operator's own client: a password wins over a token.
+	if auth := admin.Auth; auth != nil {
+		if auth.Password != nil {
+			cfg.Authentication = &PartialHTTPAuthentication{
+				BasicAuth: &PartialHTTPBasicAuth{
+					Username: &auth.Username,
+				},
+			}
+			m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", auth.Password)
 		}
-
-		m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", admin.Auth.Password)
+		if auth.Password == nil && auth.AuthToken != nil {
+			cfg.Authentication = &PartialHTTPAuthentication{}
+			m.addEnv("REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", auth.AuthToken)
+		}
 	}
 
 	return cfg
@@ -116,15 +124,28 @@ func (m *configMapper) configureKafka(kafka *ir.KafkaAPISpec) *PartialKafka {
 	}
 
 	if kafka.SASL != nil {
-		cfg.SASL = &PartialKafkaSASL{
-			Enabled:   ptr.To(true),
-			Username:  &kafka.SASL.Username,
-			Mechanism: ptr.To(string(kafka.SASL.Mechanism)),
-			// TODO all the other ones......
-		}
-		if kafka.SASL.Password != nil {
-			m.addEnv("KAFKA_SASL_PASSWORD", kafka.SASL.Password)
-		}
+		cfg.SASL = m.configureKafkaSASL(kafka.SASL)
+	}
+
+	return cfg
+}
+
+// configureKafkaSASL maps the SASL settings onto Console's kafka.sasl block.
+// Credentials never land in the config file: each one is passed through the
+// environment variable that Console maps onto the matching key. GSSAPI and
+// AWS_MSK_IAM settings are not passed to Console.
+func (m *configMapper) configureKafkaSASL(sasl *ir.KafkaSASL) *PartialKafkaSASL {
+	cfg := &PartialKafkaSASL{
+		Enabled:   ptr.To(true),
+		Username:  &sasl.Username,
+		Mechanism: ptr.To(string(sasl.Mechanism)),
+	}
+
+	m.addEnv("KAFKA_SASL_PASSWORD", sasl.Password)
+
+	if sasl.OAUth != nil {
+		cfg.OAUth = &PartialKafkaSASLOAuthBearer{}
+		m.addEnv("KAFKA_SASL_OAUTH_TOKEN", sasl.OAUth.Token)
 	}
 
 	return cfg
@@ -187,27 +208,43 @@ func (m *configMapper) configureTLS(tls *ir.CommonTLS) *PartialTLS {
 	return out
 }
 
-func (m *configMapper) addEnv(name string, secretRef *ir.ValueSource) {
-	if secretRef == nil || secretRef.SecretKeyRef == nil {
-		return
-	}
-	ref := secretRef.SecretKeyRef
-
-	if ref.Key == "" || ref.Name == "" {
+// addEnv passes a value source to Console as the environment variable name.
+// Inline values are set directly. External secrets cannot be resolved here
+// and are skipped; the Console controller rejects them before mapping.
+func (m *configMapper) addEnv(name string, src *ir.ValueSource) {
+	if src == nil {
 		return
 	}
 
-	m.Env = append(m.Env, corev1.EnvVar{
-		Name: name,
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: ref.Name,
+	if src.Inline != nil {
+		m.Env = append(m.Env, corev1.EnvVar{Name: name, Value: *src.Inline})
+		return
+	}
+
+	if ref := src.SecretKeyRef; ref != nil && ref.Name != "" && ref.Key != "" {
+		m.Env = append(m.Env, corev1.EnvVar{
+			Name: name,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: ref.Name},
+					Key:                  ref.Key,
 				},
-				Key: ref.Key,
 			},
-		},
-	})
+		})
+		return
+	}
+
+	if ref := src.ConfigMapKeyRef; ref != nil && ref.Name != "" && ref.Key != "" {
+		m.Env = append(m.Env, corev1.EnvVar{
+			Name: name,
+			ValueFrom: &corev1.EnvVarSource{
+				ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{Name: ref.Name},
+					Key:                  ref.Key,
+				},
+			},
+		})
+	}
 }
 
 type volumes struct {

@@ -1497,6 +1497,249 @@
     type: ClusterIP
   status:
     loadBalancer: {}
+-- static-config-value-sources --
+- apiVersion: v1
+  data:
+    config.yaml: |
+      # from .Values.config
+      kafka:
+        brokers:
+        - kafka-broker:9092
+        sasl:
+          enabled: true
+          mechanism: SCRAM-SHA-256
+          username: testuser
+      redpanda:
+        adminApi:
+          authentication:
+            basic:
+              username: admin
+          enabled: true
+          urls:
+          - http://admin-api:9644
+      schemaRegistry:
+        authentication:
+          basic:
+            username: schema
+        enabled: true
+        urls:
+        - http://schema-registry:8081
+  kind: ConfigMap
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-value-sources-console
+    namespace: test-ns
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-value-sources-console
+    namespace: test-ns
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app.kubernetes.io/instance: console-value-sources
+        app.kubernetes.io/name: console
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          checksum/config: 1782300707863321a2568860aba86bc8eb36b06381cf6a436d1c8727acf4f729
+        labels:
+          app.kubernetes.io/instance: console-value-sources
+          app.kubernetes.io/name: console
+      spec:
+        affinity: {}
+        automountServiceAccountToken: false
+        containers:
+        - args:
+          - --config.filepath=/etc/console/configs/config.yaml
+          env:
+          - name: KAFKA_SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: kafka-sasl-password
+                name: console-value-sources-cluster-credentials
+          - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: admin-password
+                name: console-value-sources-cluster-credentials
+          - name: SCHEMAREGISTRY_AUTHENTICATION_BASIC_PASSWORD
+            valueFrom:
+              configMapKeyRef:
+                key: password
+                name: schema-registry
+          - name: AUTHENTICATION_JWTSIGNINGKEY
+            valueFrom:
+              secretKeyRef:
+                key: authentication-jwt-signingkey
+                name: console-value-sources-console
+          - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
+            value: operator
+          - name: REDPANDA_METRICS_K8S_CHART_VERSION
+          - name: REDPANDA_METRICS_K8S_CONSOLE_IMAGE_VERSION
+            value: redpandadata/console:v3.9.0
+          - name: REDPANDA_METRICS_K8S_CLUSTER_ID
+            value: 00000000-0000-0000-0000-000000000000
+          image: docker.redpanda.com/redpandadata/console:v3.9.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: console
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /admin/health
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          securityContext:
+            runAsNonRoot: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /etc/console/configs
+            name: configs
+            readOnly: true
+          - mountPath: /etc/console/secrets
+            name: secrets
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext:
+          fsGroup: 99
+          fsGroupChangePolicy: Always
+          runAsUser: 99
+        serviceAccount: console-value-sources-console
+        serviceAccountName: console-value-sources-console
+        terminationGracePeriodSeconds: 30
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: console-value-sources-console
+          name: configs
+        - name: secrets
+          secret:
+            defaultMode: 420
+            secretName: console-value-sources-console
+  status: {}
+- apiVersion: v1
+  data:
+    admin-password: aW5saW5lLWFkbWluLXBhc3N3b3Jk
+    kafka-sasl-password: aW5saW5lLXBhc3N3b3Jk
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-value-sources-cluster-credentials
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  data:
+    authentication-jwt-signingkey: WmR9ImNxRilHWSNBPjVkPD0udSxfbXEiLjQkUjdtfTc=
+    authentication-oidc-client-secret: ""
+    kafka-sasl-aws-msk-iam-secret-key: ""
+    kafka-sasl-password: ""
+    kafka-tls-ca: ""
+    kafka-tls-cert: ""
+    kafka-tls-key: ""
+    license: ""
+    redpanda-admin-api-password: ""
+    redpanda-admin-api-tls-ca: ""
+    redpanda-admin-api-tls-cert: ""
+    redpanda-admin-api-tls-key: ""
+    schema-registry-bearertoken: ""
+    schema-registry-password: ""
+    schemaregistry-tls-ca: ""
+    schemaregistry-tls-cert: ""
+    schemaregistry-tls-key: ""
+    serde-protobuf-git-basicauth-password: ""
+  kind: Secret
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-value-sources-console
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  data:
+    key: WmR9ImNxRilHWSNBPjVkPD0udSxfbXEiLjQkUjdtfTc=
+  immutable: true
+  kind: Secret
+  metadata:
+    name: console-value-sources-jwt-secret
+    namespace: test-ns
+  type: Opaque
+- apiVersion: v1
+  automountServiceAccountToken: false
+  kind: ServiceAccount
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-value-sources-console
+    namespace: test-ns
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/managed-by: redpanda-operator
+      app.kubernetes.io/name: console
+    name: console-value-sources-console
+    namespace: test-ns
+  spec:
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app.kubernetes.io/instance: console-value-sources
+      app.kubernetes.io/name: console
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
 -- stretch-cluster-ref --
 - apiVersion: v1
   data:

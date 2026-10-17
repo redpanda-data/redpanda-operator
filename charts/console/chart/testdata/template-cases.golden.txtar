@@ -2223,7 +2223,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: "y"
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
@@ -5533,7 +5533,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: ExFU3
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
@@ -6812,7 +6812,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: GVjeLRc
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
@@ -8773,7 +8773,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: odFI2M4
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
@@ -13135,7 +13135,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: AumW
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
@@ -15332,7 +15332,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: Wq
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
@@ -19818,7 +19818,7 @@ spec:
             secretKeyRef:
               key: authentication-jwt-signingkey
               name: 0BIfuN
-        - name: REDPANDA_ADMINAPI_PASSWORD
+        - name: REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD
           valueFrom:
             secretKeyRef:
               key: redpanda-admin-api-password
