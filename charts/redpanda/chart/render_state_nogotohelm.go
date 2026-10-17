@@ -273,7 +273,10 @@ func RenderNodePools(state *RenderState) (_ []*appsv1.StatefulSet, err error) {
 		}
 	}()
 
-	return StatefulSets(state), nil
+	pki := resolvePKI(state)
+	listeners := resolveListeners(state, &pki)
+
+	return StatefulSets(state, &pki, &listeners), nil
 }
 
 // RenderResources can be used to render non-nodepool resources programmatically from Go.
@@ -288,7 +291,10 @@ func RenderResources(state *RenderState) (_ []kube.Object, err error) {
 		}
 	}()
 
-	resources := renderResources(state)
+	pki := resolvePKI(state)
+	listeners := resolveListeners(state, &pki)
+
+	resources := renderResources(state, &pki, &listeners)
 
 	// the renderer is expected to return nil interfaces.
 	// In the helm world, these nils are filtered out by

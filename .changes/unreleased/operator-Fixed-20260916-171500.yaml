@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: A StretchCluster listener with `tls.enabled: true` in a pool that disables TLS now gets its certificate. Before, the broker config referenced certificate files that the operator did not issue or mount, and the broker crashlooped.
+time: 2026-09-16T17:15:00.000000-04:00

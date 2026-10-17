@@ -89,10 +89,8 @@ func scriptInternalAdvertiseAddress(state *RenderState, pool *redpandav1alpha2.R
 // given pool. The lifecycle scripts are mounted per-pool so admin URL / TLS
 // flags / protocol come from this pool's TLS/Listeners/ClusterDomain.
 func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
-	pki := poolPKI(state, pool)
-
 	return ScriptParams{
-		AdminCurlFlags:           poolAdminTLSCurlFlags(&pki, pool),
+		AdminCurlFlags:           poolListeners(state, pool).Admin().CurlFlags(),
 		CurlURL:                  pool.Spec.AdminInternalURL(state.fullname(), state.namespace),
 		TotalReplicas:            state.totalReplicas(),
 		AdminHTTPProtocol:        pool.Spec.AdminInternalHTTPProtocol(),
@@ -102,10 +100,8 @@ func scriptParamsForLifecycle(state *RenderState, pool *redpandav1alpha2.Redpand
 }
 
 func scriptParamsFromState(state *RenderState, pool *redpandav1alpha2.RedpandaBrokerPool) ScriptParams {
-	pki := poolPKI(state, pool)
-
 	p := ScriptParams{
-		AdminCurlFlags:              poolAdminTLSCurlFlags(&pki, pool),
+		AdminCurlFlags:              poolListeners(state, pool).Admin().CurlFlags(),
 		CurlURL:                     pool.Spec.AdminInternalURL(state.fullname(), state.namespace),
 		TotalReplicas:               state.totalReplicas(),
 		InternalAdvertiseAddress:    scriptInternalAdvertiseAddress(state, pool),
@@ -228,25 +224,4 @@ func livenessProbeScript(p ScriptParams) string {
 		p.AdminHTTPProtocol,
 		p.AdminAPIURLs,
 	)
-}
-
-// poolAdminTLSCurlFlags returns curl flags for the pool's admin listener TLS.
-// Reads TLS and Listeners from the pool's spec.
-func poolAdminTLSCurlFlags(pki *redpanda.PKI, pool *redpandav1alpha2.RedpandaBrokerPool) string {
-	if !pool.Spec.IsAdminTLSEnabled() {
-		return ""
-	}
-
-	certName := pool.Spec.Listeners.AdminCertName()
-	if certName == "" {
-		return ""
-	}
-
-	if kp := pki.ClientKeypair(certName); kp != nil {
-		path := kp.MountPath()
-		return fmt.Sprintf("--cacert %s/ca.crt --cert %s/tls.crt --key %s/tls.key", path, path, path)
-	}
-
-	kp := pki.ServerKeypair(certName)
-	return fmt.Sprintf("--cacert %s", kp.CAOrCertFile())
 }

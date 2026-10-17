@@ -67,7 +67,7 @@ func BootstrappedCertNames(pools []*redpandav1alpha2.RedpandaBrokerPool) []strin
 	bootstrap := map[string]bool{}
 	for _, pool := range pools {
 		spec := &pool.Spec
-		if spec.TLS == nil || !spec.TLS.IsEnabled() {
+		if spec.TLS == nil {
 			continue
 		}
 		inUse := map[string]bool{}
