@@ -596,8 +596,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -629,9 +629,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -646,6 +663,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -1500,8 +1523,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -1533,9 +1556,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -1550,6 +1590,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -2382,8 +2428,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -2415,9 +2461,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -2432,6 +2495,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -3257,8 +3326,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -3290,9 +3359,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -3307,6 +3393,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -4131,8 +4223,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -4164,9 +4256,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -4181,6 +4290,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -5005,8 +5120,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -5038,9 +5153,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -5055,6 +5187,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -5879,8 +6017,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -5912,9 +6050,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -5929,6 +6084,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -6753,8 +6914,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -6786,9 +6947,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -6803,6 +6981,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -7627,8 +7811,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -7660,9 +7844,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -7677,6 +7878,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -8501,8 +8708,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -8534,9 +8741,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -8551,6 +8775,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -9375,8 +9605,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -9408,9 +9638,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -9425,6 +9672,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -10237,8 +10490,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -10270,9 +10523,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -10287,6 +10557,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -11185,8 +11461,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -11218,9 +11494,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -11235,6 +11528,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -12834,8 +13133,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -12867,9 +13166,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -12884,6 +13200,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -13049,8 +13371,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -13082,9 +13404,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -13099,6 +13438,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -14100,8 +14445,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -14133,9 +14478,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -14150,6 +14512,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -14974,8 +15342,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -15007,9 +15375,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -15024,6 +15409,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -15900,8 +16291,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -15933,9 +16324,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -15950,6 +16358,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -16770,8 +17184,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -16803,9 +17217,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -16820,6 +17251,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -17683,8 +18120,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -17716,9 +18153,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -17733,6 +18187,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -18557,8 +19017,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -18590,9 +19050,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -18607,6 +19084,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -19459,8 +19942,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -19492,9 +19975,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -19509,6 +20009,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -20811,8 +21317,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -20844,9 +21350,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -20861,6 +21384,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -21024,8 +21553,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -21057,9 +21586,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -21074,6 +21620,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -22846,8 +23398,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -22879,9 +23431,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -22896,6 +23465,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -23059,8 +23634,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -23092,9 +23667,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -23109,6 +23701,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -23272,8 +23870,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -23305,9 +23903,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -23322,6 +23937,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -24122,8 +24743,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -24155,9 +24776,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -24172,6 +24810,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -24886,8 +25530,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -24919,9 +25563,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -24936,6 +25597,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -25671,8 +26338,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -25704,9 +26371,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -25721,6 +26405,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -26545,8 +27235,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -26578,9 +27268,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -26595,6 +27302,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -27419,8 +28132,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -27452,9 +28165,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -27469,6 +28199,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -28297,8 +29033,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -28330,9 +29066,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -28347,6 +29100,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -29190,8 +29949,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -29223,9 +29982,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -29240,6 +30016,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -30055,8 +30837,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -30088,9 +30870,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -30105,6 +30904,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -30840,8 +31645,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -30873,9 +31678,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -30890,6 +31712,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -31714,8 +32542,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -31747,9 +32575,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -31764,6 +32609,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -32588,8 +33439,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -32621,9 +33472,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -32638,6 +33506,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -33462,8 +34336,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -33495,9 +34369,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -33512,6 +34403,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -34336,8 +35233,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -34369,9 +35266,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -34386,6 +35300,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -35028,8 +35948,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -35061,9 +35981,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -35078,6 +36015,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -35902,8 +36845,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -35935,9 +36878,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -35952,6 +36912,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -36776,8 +37742,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -36809,9 +37775,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -36826,6 +37809,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -37650,8 +38639,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -37683,9 +38672,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -37700,6 +38706,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
@@ -38524,8 +39536,8 @@
         # (is_alive=false) and draining is cleared — but the health monitor can
         # lag a fast pod restart and briefly report the dead previous
         # incarnation as still alive, so keep re-checking until every stale
-        # drainer at this address is gone; the surrounding timeout wrapper
-        # bounds this loop.
+        # drainer at this address is gone; the detached run's timeout bounds
+        # this loop.
         while true; do
             GHOSTS_REMAIN=false
             until BROKER_IDS=$(${CURL_BROKERS_CMD_PREFIX} | grep -o '\"node_id\": *[0-9-]*' | grep -o '[0-9-]*$'); do
@@ -38557,9 +39569,26 @@
         done
 
         touch /tmp/postStartHookFinished
+        rm -f /tmp/postStartHook.pid
       }
 
-      postStartHook
+      if [ "${1:-}" = "detached" ]; then
+        postStartHook
+        exit 0
+      fi
+
+      # The broker can take longer to bind its admin API than this hook's timeout,
+      # and a hook killed first leaves the broker in the maintenance mode preStop
+      # set. So the clear runs in its own session, which the hook's timeout can't
+      # kill, and the hook returns at once. The session's process group id is
+      # recorded for preStop before returning; it is $! because setsid only forks
+      # a process group leader, which a non-interactive shell's job never is. The
+      # 30m bound outlasts the default 20m startup probe, after which the
+      # container is restarted anyway; --foreground keeps timeout in the session's
+      # process group.
+      echo "Clearing maintenance mode in the background"
+      setsid bash -c 'timeout --foreground 1800 bash -x "$0" detached 2>&1 | while IFS= read -r line; do echo "lifecycle-hook post-start $(date): ${line}"; done > /proc/1/fd/1' "$0" < /dev/null > /dev/null 2>&1 &
+      echo $! > /tmp/postStartHook.pid
       true
     preStop.sh: |-
       #!/usr/bin/env bash
@@ -38574,6 +39603,12 @@
       set -x
 
       preStopHook () {
+        # A detached postStart clear still waiting on a slow broker would undo
+        # this drain; kill its process group first.
+        if [ -f /tmp/postStartHook.pid ]; then
+            kill -- "-$(cat /tmp/postStartHook.pid)" 2>/dev/null || true
+        fi
+
         # Read this broker's node id. A broker being gracefully rolled answers
         # immediately; a crashlooping / dead-admin broker never binds its admin
         # API, so bound the attempts instead of spinning the whole termination
