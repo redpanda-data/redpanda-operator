@@ -159,9 +159,11 @@ type EmbeddedNodePoolSpec struct {
 	//             "app.kubernetes.io/name":      '{{ include "redpanda.name" . }}'
 	PodTemplate    *PodTemplate        `json:"podTemplate,omitempty"`
 	InitContainers *PoolInitContainers `json:"initContainers,omitempty"`
-	// Default:
-	//     repository: docker.redpanda.com/redpandadata/redpanda
-	//     tag: {{.redpandaVersion}}
+	// Specifies the Redpanda container image for this NodePool's brokers. Each
+	// unset field inherits from `image` on the Redpanda resource that
+	// `clusterRef` points to, which in turn defaults to the operator's
+	// Redpanda repository and version. Set `tag` only to run this NodePool
+	// on a different Redpanda version than the rest of the cluster.
 	Image *RedpandaImage `json:"image,omitempty"`
 	// Default:
 	//     repository: docker.redpanda.com/redpandadata/redpanda-operator
