@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+  A broker could be left in maintenance mode after a rolling restart. The `postStart` lifecycle hook clears the maintenance mode the `preStop` hook enabled, but it is killed after half the termination grace period (45s by default), so when a broker took longer than that to start its admin API the hook never cleared it. The broker then held no partition leadership and kept the cluster's single maintenance-mode slot, so the next broker in the roll could not be drained before its restart. The hook now runs the clear in the background and returns immediately, and the clear keeps retrying until the broker's admin API is up. The `preStop` hook stops a clear that is still waiting before it drains the broker, so the clear cannot undo the drain. Maintenance mode enabled on a running broker, for example with `rpk cluster maintenance enable`, is still cleared only when the broker restarts. Containers after `redpanda` in the pod no longer wait for the hook to finish before they start.
+time: 2026-10-12T14:00:00.000000000-07:00
