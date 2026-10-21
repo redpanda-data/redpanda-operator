@@ -168,17 +168,16 @@ func Rollback(ctx context.Context, cfg RollbackConfig) (bool, error) {
 
 		l.Info("rollback: cleaning up Broker CRs", "count", len(brokers))
 
-		// Strip Broker CR ownerRefs from pods so the STS can re-adopt.
-		// A strategic-merge $patch:delete keyed on the Broker's
-		// UID is a no-op when the object or the ref is already gone, and
-		// unlike a read-modify-Update it cannot conflict with concurrent
-		// writers (the Broker controller keeps reconciling until its CR is
-		// deleted below).
+		// Release the pods so the STS can re-adopt them (see releasePod). A
+		// strategic-merge patch is a no-op when the object or the fields are
+		// already gone, and unlike a read-modify-Update it cannot conflict
+		// with concurrent writers (the Broker controller keeps reconciling
+		// until its CR is deleted below).
 		for i := range brokers {
 			b := &brokers[i]
 			pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: b.PodName(), Namespace: cfg.Owner.GetNamespace()}}
-			if err := stripOwnerRef(ctx, c, pod, b.UID); err != nil {
-				return acted, errors.Wrapf(err, "stripping Broker ownerRef from pod %s", pod.Name)
+			if err := releasePod(ctx, c, pod, b.UID); err != nil {
+				return acted, errors.Wrapf(err, "releasing pod %s from Broker CR %s", pod.Name, b.Name)
 			}
 		}
 
@@ -285,9 +284,9 @@ func finalizeRollback(ctx context.Context, cfg RollbackConfig, cleanedThisPass b
 		}
 
 		if owner := metav1.GetControllerOf(pod); owner != nil && owner.Kind == redpandav1alpha2.BrokerKind {
-			l.Info("rollback: re-stripping Broker ownerRef from re-adopted pod", "pod", pod.Name)
-			if err := stripOwnerRef(ctx, c, pod, owner.UID); err != nil {
-				return errors.Wrapf(err, "re-stripping Broker ownerRef from pod %s", pod.Name)
+			l.Info("rollback: releasing pod re-adopted by a Broker CR", "pod", pod.Name)
+			if err := releasePod(ctx, c, pod, owner.UID); err != nil {
+				return errors.Wrapf(err, "releasing re-adopted pod %s from Broker CR", pod.Name)
 			}
 		}
 		owner := metav1.GetControllerOf(pod)
@@ -392,12 +391,14 @@ func synthesizeBackupFromRender(ctx context.Context, cfg RollbackConfig) error {
 	return nil
 }
 
-// stripOwnerRef removes the ownerReference with the given UID from obj via a
-// strategic-merge patch ($patch: delete keyed on uid, the list's merge key).
-// Missing objects and already-absent refs are no-ops.
-func stripOwnerRef(ctx context.Context, c k8sclient.Client, obj k8sclient.Object, uid types.UID) error {
-	patch := []byte(fmt.Sprintf(`{"metadata":{"ownerReferences":[{"$patch":"delete","uid":"%s"}]}}`, uid))
-	if err := c.Patch(ctx, obj, k8sclient.RawPatch(types.StrategicMergePatchType, patch)); err != nil && !apierrors.IsNotFound(err) {
+// releasePod hands a pod back to the StatefulSet with one strategic-merge
+// patch: it removes the Broker's ownerReference ($patch: delete keyed on uid,
+// the list's merge key) and the restart marker (a null annotation value).
+// Missing pods and already-absent fields are no-ops.
+func releasePod(ctx context.Context, c k8sclient.Client, pod *corev1.Pod, brokerUID types.UID) error {
+	patch := []byte(fmt.Sprintf(`{"metadata":{"ownerReferences":[{"$patch":"delete","uid":"%s"}],"annotations":{%q:null}}}`,
+		brokerUID, redpandav1alpha2.BrokerClusterConfigVersionAnnotation))
+	if err := c.Patch(ctx, pod, k8sclient.RawPatch(types.StrategicMergePatchType, patch)); err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
 	return nil
