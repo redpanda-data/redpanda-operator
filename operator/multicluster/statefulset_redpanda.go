@@ -116,6 +116,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 			FailureThreshold:    120,
 			InitialDelaySeconds: 1,
 			PeriodSeconds:       10,
+			TimeoutSeconds:      adminProbeTimeoutSeconds,
 		},
 		// Liveness probe: tight threshold (3 failures = 30s) to quickly
 		// restart a broker that becomes unresponsive after startup.
@@ -128,6 +129,7 @@ func statefulSetContainerRedpanda(state *RenderState, pool *redpandav1alpha2.Red
 			FailureThreshold:    3,
 			InitialDelaySeconds: 10,
 			PeriodSeconds:       10,
+			TimeoutSeconds:      adminProbeTimeoutSeconds,
 		},
 		Command: []string{
 			`rpk`, `redpanda`, `start`,

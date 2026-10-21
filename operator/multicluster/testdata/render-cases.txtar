@@ -1457,3 +1457,32 @@ spec:
       port: 33145
       tls:
         cert: default
+-- probe-overrides --
+# Pool podTemplate probe fields merge over the rendered probes rather than
+# replacing them: the exec handlers and unset fields are kept.
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec: {}
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  podTemplate:
+    spec:
+      containers:
+      - name: redpanda
+        livenessProbe:
+          timeoutSeconds: 10
+        startupProbe:
+          failureThreshold: 240
