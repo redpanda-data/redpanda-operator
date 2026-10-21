@@ -53,7 +53,7 @@
             name = "envtest-shim";
 
             src = ./reaper;
-            vendorHash = "sha256-at1aAaxyk07gdZpFnyhTIQS0qtiLHkQK839F6PC06EQ=";
+            vendorHash = "sha256-IAxHCY4vsvLs6yZWKvs+zIRg5ax6q3bcyh3sq5PC2Nc=";
 
             postInstall = ''
               mkdir -p $out/shims/
