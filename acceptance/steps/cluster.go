@@ -63,6 +63,26 @@ func checkV1ClusterAvailability(ctx context.Context, t framework.TestingT, clust
 	t.Logf("Cluster %q is ready!", clusterName)
 }
 
+func v1ClusterShouldHaveCondition(ctx context.Context, t framework.TestingT, clusterName, conditionType, status string) {
+	var cluster vectorizedv1alpha1.Cluster
+
+	key := t.ResourceKey(clusterName)
+	expected := vectorizedv1alpha1.ClusterCondition{
+		Type:   vectorizedv1alpha1.ClusterConditionType(conditionType),
+		Status: corev1.ConditionStatus(status),
+	}
+
+	require.Eventually(t, func() bool {
+		if err := t.Get(ctx, key, &cluster); err != nil {
+			t.Logf("Failed to get cluster %q: %v", key, err)
+			return false
+		}
+		return hasV1Condition(expected, cluster.Status.Conditions)
+	}, 10*time.Minute, 5*time.Second, "%s", delayLog(func() string {
+		return fmt.Sprintf("Cluster %q never reached condition %s=%s, final Conditions: %+v", key.String(), conditionType, status, cluster.Status.Conditions)
+	}))
+}
+
 func hasV1Condition(expected vectorizedv1alpha1.ClusterCondition, conditions []vectorizedv1alpha1.ClusterCondition) bool {
 	for _, condition := range conditions {
 		if expected.Type == condition.Type && expected.Status == condition.Status {
