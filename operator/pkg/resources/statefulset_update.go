@@ -18,6 +18,7 @@ import (
 	"reflect"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -329,9 +330,58 @@ func (r *StatefulSetResource) rollingUpdate(ctx context.Context, template *corev
 		log.V(logger.DebugLevel).Info("no pods to roll")
 		return nil
 	}
-	log.V(logger.DebugLevel).Info("rolling pods", "number of pods", len(updateItems))
 
-	return r.updatePods(ctx, log, updateItems, template)
+	ordered, err := r.inFlightPodFirst(ctx, log, updateItems)
+	if err != nil {
+		return err
+	}
+	log.V(logger.DebugLevel).Info("rolling pods", "number of pods", len(ordered))
+
+	return r.updatePods(ctx, log, ordered, template)
+}
+
+// inFlightPodFirst moves the pod whose broker holds maintenance mode to the
+// front of updateItems. Redpanda allows one broker in maintenance at a time
+// and updatePods stops at the first pod it can't evict, so a StatefulSet
+// change that re-marks every pod mid-drain would otherwise retry ordinal 0
+// forever while the draining broker is never evicted or cleared.
+func (r *StatefulSetResource) inFlightPodFirst(ctx context.Context, log logr.Logger, updateItems []*corev1.Pod) ([]*corev1.Pod, error) {
+	if len(updateItems) < 2 {
+		return updateItems, nil
+	}
+
+	adminAPIClient, err := r.getAdminAPIClient(ctx)
+	if err != nil {
+		return nil, &RequeueAfterError{
+			RequeueAfter: RequeueDuration,
+			Msg:          fmt.Sprintf("error getting admin client: %v", err),
+		}
+	}
+
+	brokers, err := adminAPIClient.Brokers(ctx)
+	if err != nil {
+		return nil, &RequeueAfterError{
+			RequeueAfter: RequeueDuration,
+			Msg:          fmt.Sprintf("error listing brokers: %v", err),
+		}
+	}
+
+	for _, b := range brokers {
+		if b.Maintenance == nil || !b.Maintenance.Draining {
+			continue
+		}
+		nodeID := strconv.Itoa(b.NodeID)
+		i := slices.IndexFunc(updateItems, func(pod *corev1.Pod) bool {
+			return pod.Annotations[PodAnnotationNodeIDKey] == nodeID
+		})
+		if i <= 0 {
+			continue
+		}
+		log.Info("Resuming roll with the broker already in maintenance mode",
+			"pod-name", updateItems[i].Name, "node-id", b.NodeID)
+		return slices.Concat(updateItems[i:i+1], updateItems[:i], updateItems[i+1:]), nil
+	}
+	return updateItems, nil
 }
 
 func (r *StatefulSetResource) updatePods(ctx context.Context, l logr.Logger, updateItems []*corev1.Pod, template *corev1.PodTemplateSpec) error {

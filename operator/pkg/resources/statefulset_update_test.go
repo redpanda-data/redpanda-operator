@@ -19,6 +19,8 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -40,7 +42,9 @@ import (
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	adminutils "github.com/redpanda-data/redpanda-operator/operator/pkg/admin"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemaregistry"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/labels"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/resources/types"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 )
 
 func pandaCluster() *vectorizedv1alpha1.Cluster {
@@ -400,6 +404,158 @@ func TestPodEvictionHonorsMaintenanceModeRefusal(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRollingUpdateResumesInFlightMaintenance(t *testing.T) {
+	const replicas = 3
+
+	tcs := []struct {
+		name string
+		// inMaintenance is the node ID holding the maintenance slot when the
+		// pass starts, or -1.
+		inMaintenance int
+		marked        []int
+		evicted       string
+	}{
+		// A StatefulSet change mid-drain re-marks every pod. Restarting at
+		// ordinal 0 deadlocks: redpanda refuses broker 0 while broker 1 holds
+		// the slot, and broker 1 is never evicted, so never cleared.
+		{"resumes the broker already in maintenance", 1, []int{0, 1, 2}, "cluster-first-1"},
+		{"rolls in ordinal order with no broker in maintenance", -1, []int{0, 1, 2}, "cluster-first-0"},
+		{"clears maintenance left on an already-rolled broker", 1, []int{0, 2}, "cluster-first-0"},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := pandaCluster()
+			cluster.Spec.NodePools[0].Replicas = ptr.To(int32(replicas))
+			pool := cluster.Spec.NodePools[0]
+
+			var pods []client.Object
+			for ordinal := range replicas {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        fmt.Sprintf("cluster-first-%d", ordinal),
+						Namespace:   cluster.Namespace,
+						Labels:      labels.ForCluster(cluster).WithNodePool(pool.Name),
+						Annotations: map[string]string{PodAnnotationNodeIDKey: strconv.Itoa(ordinal)},
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda:v26.2.4"}},
+					},
+				}
+				if slices.Contains(tc.marked, ordinal) {
+					pod.Status.Conditions = []corev1.PodCondition{{
+						Type:   ClusterUpdatePodCondition,
+						Status: corev1.ConditionTrue,
+						Reason: ClusterUpdateReasonVersion,
+					}}
+				}
+				pods = append(pods, pod)
+			}
+			c := fake.NewClientBuilder().WithObjects(pods...).Build()
+
+			holder := tc.inMaintenance
+			ssres := StatefulSetResource{
+				Client:       c,
+				pandaCluster: cluster,
+				nodePool:     vectorizedv1alpha1.NodePoolSpecWithDeleted{NodePoolSpec: pool},
+				logger:       ctrl.Log.WithName("TestRollingUpdateResumesInFlightMaintenance"),
+				adminAPIClientFactory: func(
+					_ context.Context,
+					_ client.Reader,
+					_ *vectorizedv1alpha1.Cluster,
+					_ string,
+					_ types.AdminTLSConfigProvider,
+					_ redpandaclient.DialContextFunc,
+					_ time.Duration,
+					pods ...string,
+				) (adminutils.AdminAPIClient, error) {
+					var pod string
+					if len(pods) > 0 {
+						pod = pods[0]
+					}
+					return &maintenanceSlotAdminAPI{
+						MockAdminAPI: &adminutils.MockAdminAPI{Log: ctrl.Log.WithName("mockAdminAPI")},
+						brokers:      replicas,
+						pod:          pod,
+						holder:       &holder,
+					}, nil
+				},
+			}
+
+			template := corev1.PodTemplateSpec{Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda:v26.2.5"}},
+			}}
+			err := ssres.rollingUpdate(context.Background(), &template)
+
+			var requeue *RequeueAfterError
+			require.ErrorAs(t, err, &requeue)
+
+			for _, pod := range pods {
+				getErr := c.Get(context.Background(), client.ObjectKeyFromObject(pod), &corev1.Pod{})
+				if pod.GetName() == tc.evicted {
+					require.True(t, apierrors.IsNotFound(getErr), "%s should have been evicted, got: %v", pod.GetName(), getErr)
+				} else {
+					require.NoError(t, getErr, "%s should not have been evicted", pod.GetName())
+				}
+			}
+		})
+	}
+}
+
+// maintenanceSlotAdminAPI models redpanda's single maintenance slot, shared
+// by every client the factory hands out: EnableMaintenanceMode refuses all
+// but the holder, and drains finish instantly. A pod-scoped client reports
+// the pod's ordinal as its node ID.
+type maintenanceSlotAdminAPI struct {
+	*adminutils.MockAdminAPI
+	brokers int
+	pod     string
+	holder  *int // -1 when the slot is free
+}
+
+func (m *maintenanceSlotAdminAPI) GetNodeConfig(context.Context) (rpadmin.NodeConfig, error) {
+	ordinal, err := utils.GetPodOrdinal(m.pod, "cluster")
+	return rpadmin.NodeConfig{NodeID: int(ordinal)}, err
+}
+
+func (m *maintenanceSlotAdminAPI) Brokers(context.Context) ([]rpadmin.Broker, error) {
+	var brokers []rpadmin.Broker
+	for id := range m.brokers {
+		brokers = append(brokers, m.broker(id))
+	}
+	return brokers, nil
+}
+
+func (m *maintenanceSlotAdminAPI) Broker(_ context.Context, id int) (rpadmin.Broker, error) {
+	return m.broker(id), nil
+}
+
+func (m *maintenanceSlotAdminAPI) EnableMaintenanceMode(_ context.Context, id int) error {
+	if *m.holder != -1 && *m.holder != id {
+		return &rpadmin.HTTPResponseError{
+			Response: &http.Response{StatusCode: http.StatusBadRequest},
+			Body:     []byte(`{"message": "invalid state transition requested", "code": 400}`),
+		}
+	}
+	*m.holder = id
+	return nil
+}
+
+func (m *maintenanceSlotAdminAPI) DisableMaintenanceMode(_ context.Context, id int, _ bool) error {
+	if *m.holder == id {
+		*m.holder = -1
+	}
+	return nil
+}
+
+func (m *maintenanceSlotAdminAPI) broker(id int) rpadmin.Broker {
+	b := rpadmin.Broker{NodeID: id, Maintenance: &rpadmin.MaintenanceStatus{}}
+	if *m.holder == id {
+		b.Maintenance = &rpadmin.MaintenanceStatus{Draining: true, Finished: ptr.To(true)}
+	}
+	return b
 }
 
 func TestEvaluateRedpandaUnderReplicatedPartition(t *testing.T) {
