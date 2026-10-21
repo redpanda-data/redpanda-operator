@@ -49,11 +49,11 @@
           # nix commands. e.g. nix copy .#devshell.
           packages.devshell = self'.devShells.default;
 
-          packages.envtest-shim = (pkgs.buildGoModule.override { go = pkgs.go_1_26_6; }) {
+          packages.envtest-shim = (pkgs.buildGoModule.override { go = pkgs.go_1_26_10; }) {
             name = "envtest-shim";
 
             src = ./reaper;
-            vendorHash = "sha256-at1aAaxyk07gdZpFnyhTIQS0qtiLHkQK839F6PC06EQ=";
+            vendorHash = "sha256-IAxHCY4vsvLs6yZWKvs+zIRg5ax6q3bcyh3sq5PC2Nc=";
 
             postInstall = ''
               mkdir -p $out/shims/
@@ -67,7 +67,7 @@
           # pulls it from the nix cache instead of paying a cold `go build`;
           # .build/ precedes it on PATH, so `task build:lint-tools` still
           # shadows it while iterating on lint/.
-          packages.houselint = (pkgs.buildGoModule.override { go = pkgs.go_1_26_6; }) {
+          packages.houselint = (pkgs.buildGoModule.override { go = pkgs.go_1_26_10; }) {
             name = "houselint";
 
             src = ./lint;
@@ -88,7 +88,7 @@
           devshells.default = {
             env = [
               { name = "CGO_ENABLED"; value = "0"; }
-              { name = "GOROOT"; value = "${pkgs.go_1_26_6}/share/go"; }
+              { name = "GOROOT"; value = "${pkgs.go_1_26_10}/share/go"; }
               # Prevent go from downloading toolchains other than the one pinned by nix.
               # See https://go.dev/doc/toolchain#select
               { name = "GOTOOLCHAIN"; value = "local"; }
@@ -138,7 +138,7 @@
               pkgs.gnused # Stream Editor, used by some build scripts.
               pkgs.go-task
               pkgs.go-tools
-              pkgs.go_1_26_6
+              pkgs.go_1_26_10
               pkgs.gofumpt
               pkgs.golangci-lint
               pkgs.gotestsum
