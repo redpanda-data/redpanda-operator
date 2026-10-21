@@ -1,6 +1,6 @@
 module github.com/redpanda-data/redpanda-operator/gen
 
-go 1.26.6
+go 1.26.10
 
 // gotohelm is consumed as a pinned module rather than a workspace member, so
 // the transpiler binary needs an anchor in some module's graph for `go mod
