@@ -165,11 +165,11 @@ type BrokerSet struct {
 	// Its value is copied to BrokerConfigChecksumAnnotation — one of the three
 	// rotation-identity keys.
 	ConfigChecksumKey string
-	// ClusterConfigVersion is the owner's persisted restart-requiring
-	// cluster-config version (V2: Redpanda.Status.ConfigVersion). When set,
-	// RenderBrokers stamps it into pod templates so pods are born current —
-	// MarkForRestart re-stamps unconditionally, and a pod born from an
-	// unstamped template would be rolled for no config change. Optional.
+	// ClusterConfigVersion is the restart-requiring cluster-config version
+	// RenderBrokers stamps into pod templates as
+	// BrokerClusterConfigVersionAnnotation, so pods are born carrying the
+	// marker MarkForRestart's next value is compared against. Empty renders
+	// templates without the marker.
 	ClusterConfigVersion string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.

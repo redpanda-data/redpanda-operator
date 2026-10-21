@@ -136,8 +136,9 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 				Decommission: tb.decommission,
 				PodTemplate: redpandav1alpha2.BrokerPodTemplate{
 					Annotations: map[string]string{
-						redpandav1alpha2.BrokerConfigChecksumAnnotation:  testCurrentChecksum,
-						redpandav1alpha2.BrokerPodTemplateHashAnnotation: testTemplateHash(testCurrentChecksum),
+						redpandav1alpha2.BrokerConfigChecksumAnnotation:       testCurrentChecksum,
+						redpandav1alpha2.BrokerPodTemplateHashAnnotation:      testTemplateHash(testCurrentChecksum),
+						redpandav1alpha2.BrokerClusterConfigVersionAnnotation: baselineClusterConfigVersion,
 					},
 				},
 			},
@@ -176,8 +177,9 @@ func buildBrokerSet(t *testing.T, healthy bool, brokers []testBroker, intercepto
 					Namespace: cluster.Namespace,
 					Labels:    clusterLabels,
 					Annotations: map[string]string{
-						redpandav1alpha2.BrokerConfigChecksumAnnotation:  tb.podChecksum,
-						redpandav1alpha2.BrokerPodTemplateHashAnnotation: testTemplateHash(tb.podChecksum),
+						redpandav1alpha2.BrokerConfigChecksumAnnotation:       tb.podChecksum,
+						redpandav1alpha2.BrokerPodTemplateHashAnnotation:      testTemplateHash(tb.podChecksum),
+						redpandav1alpha2.BrokerClusterConfigVersionAnnotation: baselineClusterConfigVersion,
 					},
 				},
 				Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "redpanda", Image: "redpanda"}}},
@@ -385,10 +387,11 @@ func TestEnsureRollGrantsRestartMarker(t *testing.T) {
 
 	require.NoError(t, MarkBrokersForRestart(ctx, c, r.pandaCluster, 7))
 
-	// The marker lands on Broker SPECS only — pods are never touched.
+	// The marker lands on Broker SPECS only — pods are never touched: the
+	// live pod keeps the baseline it was born with.
 	var pod corev1.Pod
 	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: "rp-0", Namespace: "test"}, &pod))
-	assert.NotContains(t, pod.Annotations, redpandav1alpha2.BrokerClusterConfigVersionAnnotation)
+	assert.Equal(t, baselineClusterConfigVersion, pod.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation])
 
 	err := r.core(ctrl.Log).EnsureRollGrants(ctx, ctrl.Log)
 	var requeue *RequeueAfterError
@@ -612,55 +615,68 @@ func TestRollbackWithoutBackupFallsBack(t *testing.T) {
 	assert.True(t, apierrors.IsNotFound(err), "no STS should be restored without a backup")
 }
 
-// TestPodsBornFromRenderNotOutdatedByMarkForRestart: MarkForRestart stamps
-// the current config version unconditionally, so a pod born from the
-// rendered template must already carry it — otherwise the first stamp marks
-// the whole fleet PodOutdated and rolls it for no config change.
-func TestPodsBornFromRenderNotOutdatedByMarkForRestart(t *testing.T) {
-	ctx := context.Background()
-	scheme := brokerSetTestScheme(t)
-	cluster := brokerSetTestCluster()
+// TestRenderedPodsCarryRestartMarker: V1 stamps the restart marker only when
+// a restart is actually needed, and the Broker controller backfills a key
+// that is MISSING on a live pod instead of rolling it. A V1-rendered pod must
+// therefore be born WITH a marker — otherwise the first MarkBrokersForRestart
+// is backfilled onto the running pods and the restart is silently skipped
+// until the next restart-requiring change.
+func TestRenderedPodsCarryRestartMarker(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		markVersion  int64 // 0 = no MarkBrokersForRestart
+		wantOutdated bool
+	}{
+		{name: "no stamp: a rendered pod matches its own template", markVersion: 0, wantOutdated: false},
+		{name: "the lowest real version already differs from the baseline", markVersion: 1, wantOutdated: true},
+		{name: "the first restart-requiring change rolls the fleet", markVersion: 7, wantOutdated: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			scheme := brokerSetTestScheme(t)
+			cluster := brokerSetTestCluster()
 
-	sts := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{Name: cluster.Name, Namespace: cluster.Namespace},
-		Spec: appsv1.StatefulSetSpec{
-			Replicas: ptr.To(int32(2)),
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{ConfigMapHashAnnotationKey: testCurrentChecksum},
+			sts := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Name: cluster.Name, Namespace: cluster.Namespace},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.To(int32(2)),
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{ConfigMapHashAnnotationKey: testCurrentChecksum},
+						},
+					},
 				},
-			},
-		},
-	}
-	nodePool := vectorizedv1alpha1.NodePoolSpecWithDeleted{
-		NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default", Replicas: ptr.To(int32(2))},
-	}
-	r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
+			}
+			nodePool := vectorizedv1alpha1.NodePoolSpecWithDeleted{
+				NodePoolSpec: vectorizedv1alpha1.NodePoolSpec{Name: "default", Replicas: ptr.To(int32(2))},
+			}
+			r := &BrokerSetResource{pandaCluster: cluster, scheme: scheme, nodePool: nodePool, logger: ctrl.Log}
 
-	core := r.core(ctrl.Log)
-	core.ClusterConfigVersion = "config-v1"
-	rendered, err := core.RenderBrokers(sts, 2, false)
-	require.NoError(t, err)
-	require.Len(t, rendered, 2)
+			rendered, err := r.core(ctrl.Log).RenderBrokers(sts, 2, false)
+			require.NoError(t, err)
+			require.Len(t, rendered, 2)
 
-	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
-	for i := range rendered {
-		// The engine names CRs at create time (GenerateName); pin names here.
-		rendered[i].Name = fmt.Sprintf("rp-broker-%d", i)
-		require.NoError(t, controllerutil.SetControllerReference(cluster, &rendered[i], scheme))
-		require.NoError(t, c.Create(ctx, &rendered[i]))
-	}
+			c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster).Build()
+			for i := range rendered {
+				// The engine names CRs at create time (GenerateName); pin names here.
+				rendered[i].Name = fmt.Sprintf("rp-broker-%d", i)
+				require.NoError(t, controllerutil.SetControllerReference(cluster, &rendered[i], scheme))
+				require.NoError(t, c.Create(ctx, &rendered[i]))
+			}
+			if tc.markVersion != 0 {
+				require.NoError(t, MarkBrokersForRestart(ctx, c, cluster, tc.markVersion))
+			}
 
-	require.NoError(t, brokerset.MarkForRestart(ctx, c, cluster,
-		labels.ForCluster(cluster).AsClientSelector(), "config-v1"))
+			for i := range rendered {
+				pod := rendered[i].BuildPod(rendered[i].PodName())
+				assert.Equalf(t, baselineClusterConfigVersion, pod.Annotations[redpandav1alpha2.BrokerClusterConfigVersionAnnotation],
+					"pod %q must be born with the baseline restart marker", pod.Name)
 
-	for i := range rendered {
-		pod := rendered[i].BuildPod(rendered[i].PodName())
-
-		var fresh redpandav1alpha2.Broker
-		require.NoError(t, c.Get(ctx, types.NamespacedName{Name: rendered[i].Name, Namespace: rendered[i].Namespace}, &fresh))
-		assert.Falsef(t, fresh.PodOutdated(pod),
-			"pod %q born from the rendered template is considered outdated after the current config version was stamped — this rolls the whole fleet for no config change", pod.Name)
+				var fresh redpandav1alpha2.Broker
+				require.NoError(t, c.Get(ctx, types.NamespacedName{Name: rendered[i].Name, Namespace: rendered[i].Namespace}, &fresh))
+				assert.Equalf(t, tc.wantOutdated, fresh.PodOutdated(pod), "pod %q outdated", pod.Name)
+			}
+		})
 	}
 }
 

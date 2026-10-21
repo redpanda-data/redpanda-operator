@@ -95,6 +95,60 @@ func TestRollbackTouchesOnlyOwnedBrokers(t *testing.T) {
 	require.Zero(t, still.DeletionTimestamp, "rollback must not delete a Broker CR it does not own")
 }
 
+func TestRollbackReleasesPodsWithoutRestartMarker(t *testing.T) {
+	ctx := context.Background()
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, redpandav1alpha2.Install(scheme))
+
+	owner := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test", UID: "owner-uid"}}
+	broker := &redpandav1alpha2.Broker{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp-broker-0", Namespace: "test", UID: "broker-uid", Labels: map[string]string{"app": "redpanda"}},
+		Spec: redpandav1alpha2.BrokerSpec{
+			ClusterRef:   redpandav1alpha2.ClusterRef{Name: "rp"},
+			NetworkIndex: ptr.To(int32(0)),
+		},
+	}
+	require.NoError(t, controllerutil.SetControllerReference(owner, broker, scheme))
+
+	// A pod that lived through a broker-mode restart: it carries a real
+	// restart marker next to the other rotation keys.
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      broker.PodName(),
+			Namespace: "test",
+			Annotations: map[string]string{
+				redpandav1alpha2.BrokerClusterConfigVersionAnnotation: "5",
+				redpandav1alpha2.BrokerConfigChecksumAnnotation:       "checksum",
+				redpandav1alpha2.BrokerPodTemplateHashAnnotation:      "hash",
+				"unrelated": "kept",
+			},
+		},
+	}
+	require.NoError(t, controllerutil.SetControllerReference(broker, pod, scheme))
+
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(owner, broker, pod).Build()
+
+	acted, err := Rollback(ctx, RollbackConfig{
+		Client:          c,
+		Scheme:          scheme,
+		Owner:           owner,
+		ClusterSelector: k8slabels.Everything(),
+		Logger:          logr.Discard(),
+	})
+	require.NoError(t, err)
+	require.True(t, acted)
+
+	var released corev1.Pod
+	require.NoError(t, c.Get(ctx, types.NamespacedName{Name: pod.Name, Namespace: "test"}, &released))
+	require.Nil(t, metav1.GetControllerOf(&released), "rollback must strip the Broker ownerRef so the StatefulSet can re-adopt")
+	require.Equal(t, map[string]string{
+		redpandav1alpha2.BrokerConfigChecksumAnnotation:  "checksum",
+		redpandav1alpha2.BrokerPodTemplateHashAnnotation: "hash",
+		"unrelated": "kept",
+	}, released.Annotations, "rollback must drop the restart marker and nothing else: a stale marker would roll the pod at the next migration")
+}
+
 func TestRollbackRederivesLostTerminalReport(t *testing.T) {
 	scheme := runtime.NewScheme()
 	require.NoError(t, clientgoscheme.AddToScheme(scheme))

@@ -96,6 +96,15 @@ Feature: Broker CRD with V1 Cluster inlined nodePools
     And all Broker CRs for cluster "rp-with-pools" should be Running
     And all Broker CRs for cluster "rp-with-pools" should be Stable
     And cluster "rp-with-pools" admin API should show 3 brokers
+    # A restart-requiring cluster-config change must roll the pods on the
+    # FIRST restart stamp: pods are born with the cluster-config-version
+    # marker, so the stamp always differs from what they carry.
+    When I snapshot pod UIDs for cluster "rp-with-pools"
+    And I add additional configuration "redpanda.disable_metrics" with value "true" to V1 cluster "rp-with-pools"
+    Then pods for cluster "rp-with-pools" should roll one at a time
+    And vectorized cluster "rp-with-pools" should have condition "ClusterConfigured" as "True"
+    And all Broker CRs for cluster "rp-with-pools" should be Stable
+    And cluster "rp-with-pools" admin API should show 3 brokers
     # Scale the nodePool up while in broker mode.
     When I set nodePool "blue-a" replicas to 4 on V1 cluster "rp-with-pools"
     Then cluster "rp-with-pools" should eventually have 4 Broker CRs
