@@ -35,6 +35,14 @@ import (
 	"github.com/redpanda-data/redpanda-operator/pkg/clusterconfiguration"
 )
 
+// baselineClusterConfigVersion is the restart marker every V1-rendered pod
+// template carries until MarkBrokersForRestart stamps a real one.
+// Real stamps are Admin API config versions, which
+// are >= 1 (a node reports needs_restart only after applying a numbered
+// config delta), so a negative baseline can never collide — not even with a
+// zero-valued version formatted by mistake.
+const baselineClusterConfigVersion = "-1"
+
 var _ Resource = &BrokerSetResource{}
 
 // BrokerSetResource manages Broker CRs for a single node pool, replacing
@@ -145,16 +153,17 @@ func (r *BrokerSetResource) core(l logr.Logger) *brokerset.BrokerSet {
 			Kind:  ptr.To("Cluster"),
 			Name:  r.pandaCluster.Name,
 		},
-		PoolName:          r.nodePool.Name,
-		BrokerLabels:      brokerLabels,
-		PoolSelector:      poolLabels.AsClientSelectorForNodePool(),
-		ClusterSelector:   clusterLabels.AsClientSelector(),
-		PodSelector:       poolLabels.AsClientSelectorForNodePool(),
-		ConfigChecksumKey: ConfigMapHashAnnotationKey,
-		Hooks:             r,
-		Reporter:          r.reporter,
-		Arbitration:       r.arbitration,
-		Logger:            l,
+		PoolName:             r.nodePool.Name,
+		BrokerLabels:         brokerLabels,
+		PoolSelector:         poolLabels.AsClientSelectorForNodePool(),
+		ClusterSelector:      clusterLabels.AsClientSelector(),
+		PodSelector:          poolLabels.AsClientSelectorForNodePool(),
+		ConfigChecksumKey:    ConfigMapHashAnnotationKey,
+		ClusterConfigVersion: baselineClusterConfigVersion,
+		Hooks:                r,
+		Reporter:             r.reporter,
+		Arbitration:          r.arbitration,
+		Logger:               l,
 	}
 }
 
