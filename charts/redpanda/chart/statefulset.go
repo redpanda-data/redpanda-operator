@@ -123,7 +123,13 @@ func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 		"cluster.redpanda.com/broker": "true",
 	}
 
-	return helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state, pool), defaults, FullLabels(state))
+	labels := helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state, pool), defaults, FullLabels(state))
+	if state.ViaOperator {
+		// The operator embeds this chart, so helm.sh/chart changes on every
+		// operator release and would roll every broker on an operator upgrade.
+		helmette.Unset(labels, "helm.sh/chart")
+	}
+	return labels
 }
 
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
@@ -606,6 +612,13 @@ func adminURLsCLI(state *RenderState) string {
 }
 
 func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Container {
+	// Values pulled from FullLabels. The PVC unbinder matches this against
+	// broker pods, so it may only name labels StatefulSetPodLabels keeps.
+	selector := fmt.Sprintf("app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s", Name(state), state.Dot.Release.Name)
+	if !state.ViaOperator {
+		selector = fmt.Sprintf("helm.sh/chart=%s,%s", ChartLabel(state), selector)
+	}
+
 	args := []string{
 		`/redpanda-operator`,
 		`sidecar`,
@@ -615,13 +628,7 @@ func statefulSetContainerSidecar(state *RenderState, pool Pool) *corev1.Containe
 		state.Release.Namespace,
 		`--redpanda-cluster-name`,
 		Fullname(state),
-		// Values pulled from FullLabels.
-		fmt.Sprintf(
-			"--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s",
-			ChartLabel(state),
-			Name(state),
-			state.Dot.Release.Name,
-		),
+		fmt.Sprintf("--selector=%s", selector),
 		`--run-broker-probe`,
 		`--broker-probe-broker-url`,
 		// even though this is named "...URLs", it returns

@@ -11,12 +11,14 @@ package conversion
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
@@ -210,6 +212,94 @@ func TestNodePoolImagePrecedence(t *testing.T) {
 			require.Equal(t, tc.want, images[redpanda.RedpandaConfiguratorContainerName])
 		})
 	}
+}
+
+// TestPodTemplateStableAcrossChartVersions guards against rolling every broker
+// on an operator upgrade: the operator embeds the redpanda chart, so its
+// version must not reach the pod template, while a sidecar image change still
+// must.
+func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
+	render := func(t *testing.T, chartVersion, sidecarTag string) map[string]corev1.PodTemplateSpec {
+		cluster := &redpandav1alpha2.Redpanda{
+			ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
+		}
+		pool := &redpandav1alpha2.NodePool{
+			ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
+		}
+		pin := func(repository, tag string) func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+			return func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+				return &redpandav1alpha2.RedpandaImage{Repository: ptr.To(repository), Tag: ptr.To(tag)}
+			}
+		}
+
+		state, err := ConvertV2ToRenderState(nil, &V2Defaulters{
+			RedpandaImage: pin("redpandadata/redpanda", "v26.1.1"),
+			SidecarImage:  pin("redpandadata/redpanda-operator", sidecarTag),
+		}, cluster, []*redpandav1alpha2.NodePool{pool})
+		require.NoError(t, err)
+
+		state.Chart.Version = chartVersion
+		// REDPANDA_METRICS_K8S_CHART_VERSION tracks the operator version and
+		// falls back to the chart version; pin it to isolate the chart.
+		state.OperatorVersion = "v26.1.1"
+
+		sets, err := redpandachart.RenderNodePools(state)
+		require.NoError(t, err)
+		require.Len(t, sets, 2)
+
+		templates := map[string]corev1.PodTemplateSpec{}
+		for _, set := range sets {
+			requireSidecarSelectorMatches(t, set)
+			templates[set.Name] = set.Spec.Template
+		}
+		return templates
+	}
+
+	baseline := render(t, "26.1.1", "v26.1.1")
+
+	cases := []struct {
+		name         string
+		chartVersion string
+		sidecarTag   string
+		wantRoll     bool
+	}{
+		{name: "chart version bump", chartVersion: "26.2.1", sidecarTag: "v26.1.1", wantRoll: false},
+		{name: "sidecar image change", chartVersion: "26.1.1", sidecarTag: "v26.2.1", wantRoll: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			upgraded := render(t, tc.chartVersion, tc.sidecarTag)
+			for name, template := range baseline {
+				if tc.wantRoll {
+					require.NotEqual(t, template, upgraded[name], "%s pod template", name)
+				} else {
+					require.Equal(t, template, upgraded[name], "%s pod template", name)
+				}
+			}
+		})
+	}
+}
+
+// requireSidecarSelectorMatches asserts that the sidecar's --selector, which
+// scopes its PVC unbinder to broker pods, selects the pods set creates.
+func requireSidecarSelectorMatches(t *testing.T, set *appsv1.StatefulSet) {
+	for _, container := range set.Spec.Template.Spec.Containers {
+		if container.Name != redpandachart.SidecarContainerName {
+			continue
+		}
+		for _, arg := range container.Args {
+			raw, ok := strings.CutPrefix(arg, "--selector=")
+			if !ok {
+				continue
+			}
+			selector, err := labels.Parse(raw)
+			require.NoError(t, err)
+			require.True(t, selector.Matches(labels.Set(set.Spec.Template.Labels)), "%s: sidecar selector %q does not match pod labels %v", set.Name, raw, set.Spec.Template.Labels)
+			return
+		}
+	}
+	t.Fatalf("%s: sidecar --selector not found", set.Name)
 }
 
 // TestConvertStatefulsetV2FieldsBrokerContainer is a regression test for
