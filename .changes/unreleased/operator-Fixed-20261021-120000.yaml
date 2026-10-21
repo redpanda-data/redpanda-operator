@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'A V1 `Cluster` rolling restart could leave a broker stuck in maintenance mode when the StatefulSet changed again mid-drain (e.g. an operator upgrade followed by a Redpanda version bump). The roll restarted from the first pod, whose maintenance request Redpanda refused because the draining broker still held the cluster''s single maintenance slot, and that broker was never restarted or cleared. The operator now resumes the roll with the broker already in maintenance mode.'
+time: 2026-10-21T12:00:00.000000000-04:00
