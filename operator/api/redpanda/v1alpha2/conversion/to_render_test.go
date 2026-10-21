@@ -11,6 +11,7 @@ package conversion
 
 import (
 	"encoding/json"
+	"maps"
 	"strings"
 	"testing"
 
@@ -220,37 +221,13 @@ func TestNodePoolImagePrecedence(t *testing.T) {
 // must.
 func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
 	render := func(t *testing.T, chartVersion, sidecarTag string) map[string]corev1.PodTemplateSpec {
-		cluster := &redpandav1alpha2.Redpanda{
-			ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
-		}
-		pool := &redpandav1alpha2.NodePool{
-			ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
-		}
-		pin := func(repository, tag string) func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
-			return func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
-				return &redpandav1alpha2.RedpandaImage{Repository: ptr.To(repository), Tag: ptr.To(tag)}
-			}
-		}
-
-		state, err := ConvertV2ToRenderState(nil, &V2Defaulters{
-			RedpandaImage: pin("redpandadata/redpanda", "v26.1.1"),
-			SidecarImage:  pin("redpandadata/redpanda-operator", sidecarTag),
-		}, cluster, []*redpandav1alpha2.NodePool{pool})
-		require.NoError(t, err)
-
-		state.Chart.Version = chartVersion
-		// REDPANDA_METRICS_K8S_CHART_VERSION tracks the operator version and
-		// falls back to the chart version; pin it to isolate the chart.
-		state.OperatorVersion = "v26.1.1"
-
-		sets, err := redpandachart.RenderNodePools(state)
-		require.NoError(t, err)
-		require.Len(t, sets, 2)
+		sets := renderOperatorPools(t, sidecarTag, redpandav1alpha2.EmbeddedNodePoolSpec{}, func(state *redpandachart.RenderState) {
+			state.Chart.Version = chartVersion
+		})
 
 		templates := map[string]corev1.PodTemplateSpec{}
-		for _, set := range sets {
-			requireSidecarSelectorMatches(t, set)
-			templates[set.Name] = set.Spec.Template
+		for name, set := range sets {
+			templates[name] = set.Spec.Template
 		}
 		return templates
 	}
@@ -281,9 +258,103 @@ func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
 	}
 }
 
-// requireSidecarSelectorMatches asserts that the sidecar's --selector, which
-// scopes its PVC unbinder to broker pods, selects the pods set creates.
-func requireSidecarSelectorMatches(t *testing.T, set *appsv1.StatefulSet) {
+// TestPodTemplateChartLabel pins where the operator strips helm.sh/chart from
+// pod templates: every pool, including the default pool's labels cached from
+// the live StatefulSet, unless the StatefulSet's selector requires it.
+func TestPodTemplateChartLabel(t *testing.T) {
+	selector := map[string]string{
+		"app.kubernetes.io/component": "redpanda-statefulset",
+		"app.kubernetes.io/instance":  "rp",
+		"app.kubernetes.io/name":      "redpanda",
+	}
+	withChartLabel := func(labels map[string]string) map[string]string {
+		labels = maps.Clone(labels)
+		labels["helm.sh/chart"] = "redpanda-5.9.0"
+		return labels
+	}
+
+	cases := []struct {
+		name           string
+		set            string
+		cachedLabels   map[string]string
+		cachedSelector map[string]string
+		poolSelector   map[string]string
+		wantChartLabel bool
+	}{
+		{name: "new default pool", set: "rp"},
+		{name: "named pool", set: "rp-pool"},
+		{name: "cached default pool", set: "rp", cachedLabels: withChartLabel(selector), cachedSelector: selector},
+		{name: "cached selector requires label", set: "rp", cachedLabels: withChartLabel(selector), cachedSelector: withChartLabel(selector), wantChartLabel: true},
+		{name: "pool selector requires label", set: "rp-pool", poolSelector: map[string]string{"helm.sh/chart": "pinned"}, wantChartLabel: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sets := renderOperatorPools(t, "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{
+				AdditionalSelectorLabels: tc.poolSelector,
+			}, func(state *redpandachart.RenderState) {
+				// What FetchStatefulSetPodSelector reads from a live StatefulSet.
+				state.StatefulSetPodLabels = tc.cachedLabels
+				state.StatefulSetSelector = tc.cachedSelector
+			})
+
+			require.Contains(t, sets, tc.set)
+			_, ok := sets[tc.set].Spec.Template.Labels["helm.sh/chart"]
+			require.Equal(t, tc.wantChartLabel, ok, "%s pod template labels: %v", tc.set, sets[tc.set].Spec.Template.Labels)
+		})
+	}
+}
+
+// renderOperatorPools renders the default pool and one NodePool, keyed by
+// StatefulSet name, through the operator's conversion path with images
+// pinned. mutate runs on the RenderState before rendering.
+func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec, mutate func(*redpandachart.RenderState)) map[string]*appsv1.StatefulSet {
+	cluster := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
+	}
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
+		Spec:       redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: poolSpec},
+	}
+	pin := func(repository, tag string) func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+		return func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+			return &redpandav1alpha2.RedpandaImage{Repository: ptr.To(repository), Tag: ptr.To(tag)}
+		}
+	}
+
+	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{
+		RedpandaImage: pin("redpandadata/redpanda", "v26.1.1"),
+		SidecarImage:  pin("redpandadata/redpanda-operator", sidecarTag),
+	}, cluster, []*redpandav1alpha2.NodePool{pool})
+	require.NoError(t, err)
+
+	// REDPANDA_METRICS_K8S_CHART_VERSION tracks the operator version and
+	// falls back to the chart version; pin it to isolate the chart.
+	state.OperatorVersion = "v26.1.1"
+	mutate(state)
+
+	sets, err := redpandachart.RenderNodePools(state)
+	require.NoError(t, err)
+	require.Len(t, sets, 2)
+
+	byName := map[string]*appsv1.StatefulSet{}
+	for _, set := range sets {
+		requireSelectorsMatch(t, set)
+		byName[set.Name] = set
+	}
+	return byName
+}
+
+// requireSelectorsMatch asserts that both the StatefulSet's selector and the
+// sidecar's --selector, which scopes its PVC unbinder to broker pods, select
+// the pods set creates.
+func requireSelectorsMatch(t *testing.T, set *appsv1.StatefulSet) {
+	podLabels := labels.Set(set.Spec.Template.Labels)
+
+	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	require.NoError(t, err)
+	require.True(t, selector.Matches(podLabels), "%s: selector %v does not match pod labels %v", set.Name, set.Spec.Selector, podLabels)
+
 	for _, container := range set.Spec.Template.Spec.Containers {
 		if container.Name != redpandachart.SidecarContainerName {
 			continue
@@ -295,7 +366,7 @@ func requireSidecarSelectorMatches(t *testing.T, set *appsv1.StatefulSet) {
 			}
 			selector, err := labels.Parse(raw)
 			require.NoError(t, err)
-			require.True(t, selector.Matches(labels.Set(set.Spec.Template.Labels)), "%s: sidecar selector %q does not match pod labels %v", set.Name, raw, set.Spec.Template.Labels)
+			require.True(t, selector.Matches(podLabels), "%s: sidecar selector %q does not match pod labels %v", set.Name, raw, podLabels)
 			return
 		}
 	}

@@ -108,7 +108,7 @@ func StatefulSetPodLabelsSelector(state *RenderState, pool Pool) map[string]stri
 func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 	// NB: the name check means we only memoize the default StatefulSet labels
 	if state.StatefulSetPodLabels != nil && pool.Name == "" {
-		return state.StatefulSetPodLabels
+		return stripChartLabel(state, pool, state.StatefulSetPodLabels)
 	}
 
 	statefulSetLabels := map[string]string{}
@@ -123,13 +123,24 @@ func StatefulSetPodLabels(state *RenderState, pool Pool) map[string]string {
 		"cluster.redpanda.com/broker": "true",
 	}
 
-	labels := helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state, pool), defaults, FullLabels(state))
-	if state.ViaOperator {
-		// The operator embeds this chart, so helm.sh/chart changes on every
-		// operator release and would roll every broker on an operator upgrade.
-		helmette.Unset(labels, "helm.sh/chart")
+	return stripChartLabel(state, pool, helmette.Merge(statefulSetLabels, StatefulSetPodLabelsSelector(state, pool), defaults, FullLabels(state)))
+}
+
+// stripChartLabel drops helm.sh/chart from operator-rendered pod labels. The
+// operator embeds this chart, so the label changes on every operator release
+// and would roll every broker on an operator upgrade. It is kept if the
+// StatefulSet's selector requires it, or the selector would stop matching.
+func stripChartLabel(state *RenderState, pool Pool, labels map[string]string) map[string]string {
+	if !state.ViaOperator {
+		return labels
 	}
-	return labels
+	if helmette.HasKey(StatefulSetPodLabelsSelector(state, pool), "helm.sh/chart") {
+		return labels
+	}
+	// Copy, as labels may be the live StatefulSet's cached map.
+	stripped := helmette.Merge(labels)
+	helmette.Unset(stripped, "helm.sh/chart")
+	return stripped
 }
 
 // StatefulSetVolumes returns the [corev1.Volume]s for the Redpanda StatefulSet.
