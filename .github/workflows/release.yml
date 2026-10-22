@@ -143,6 +143,7 @@ jobs:
 
       # Create github release and upload packaged chart, if any.
       - name: create github release
+        id: gh_release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ steps.release_name.outputs.release_name }}
@@ -162,7 +163,8 @@ jobs:
         with:
           aws-region: ${{ vars.RP_AWS_CRED_REGION }}
           role-to-assume: arn:aws:iam::${{ secrets.RP_AWS_CRED_ACCOUNT_ID }}:role/${{ vars.RP_AWS_CRED_BASE_ROLE_NAME }}${{ github.event.repository.name }}
-      - uses: aws-actions/aws-secretsmanager-get-secrets@v2
+      - id: bot_token
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
           secret-ids: |
             ,sdlc/prod/github/actions_bot_token
@@ -203,9 +205,11 @@ jobs:
       # skip, so gate here. This dispatch used to live in a separate workflow
       # on `release: published`, but the release above is created with
       # GITHUB_TOKEN and GitHub does not start workflows for events created
-      # that way, so it never ran.
+      # that way, so it never ran. It runs once the release and the bot token
+      # exist, even if the helm-charts or rpk docs dispatch above failed, and
+      # never after a cancel.
       - name: Trigger CRD reference docs update in redpanda-data/docs
-        if: ${{ startsWith(steps.get_ref.outputs.ref_name, 'operator/v') && !contains(steps.get_ref.outputs.ref_name, '-alpha') && !contains(steps.get_ref.outputs.ref_name, '-beta') }}
+        if: ${{ !cancelled() && steps.gh_release.outcome == 'success' && steps.bot_token.outcome == 'success' && startsWith(steps.get_ref.outputs.ref_name, 'operator/v') && !contains(steps.get_ref.outputs.ref_name, '-alpha') && !contains(steps.get_ref.outputs.ref_name, '-beta') }}
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ env.ACTIONS_BOT_TOKEN }}
