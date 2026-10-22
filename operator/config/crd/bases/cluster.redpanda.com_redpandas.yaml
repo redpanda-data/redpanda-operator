@@ -33499,98 +33499,98 @@ spec:
                               or `enterprised.licenseSecretRef`.
                             properties:
                               cloud_storage_api_endpoint:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint.
                                 type: string
                               cloud_storage_api_endpoint_port:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint_port.
                                 type: integer
                               cloud_storage_azure_adls_endpoint:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_endpoint.
                                 type: string
                               cloud_storage_azure_adls_port:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_port.
                                 type: integer
                               cloud_storage_azure_container:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_container.
                                 type: string
                               cloud_storage_azure_managed_identity_id:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_managed_identity_id.
                                 type: string
                               cloud_storage_azure_shared_key:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_shared_key.
                                 type: string
                               cloud_storage_azure_storage_account:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_storage_account.
                                 type: string
                               cloud_storage_bucket:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_bucket.
                                 type: string
                               cloud_storage_cache_check_interval:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_check_interval.
                                 type: integer
                               cloud_storage_cache_directory:
                                 description: See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
                                 type: string
                               cloud_storage_cache_size:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_size.
                                 type: string
                               cloud_storage_credentials_source:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_credentials_source.
                                 type: string
                               cloud_storage_disable_tls:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_disable_tls.
                                 type: boolean
                               cloud_storage_enable_remote_read:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_read.
                                 type: boolean
                               cloud_storage_enable_remote_write:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_write.
                                 type: boolean
                               cloud_storage_enabled:
                                 description: Enables Tiered Storage, if a license
-                                  key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+                                  key is provided. See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enabled.
                                 x-kubernetes-preserve-unknown-fields: true
                               cloud_storage_initial_backoff_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_initial_backoff_ms.
                                 type: integer
                               cloud_storage_manifest_upload_timeout_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_manifest_upload_timeout_ms.
                                 type: integer
                               cloud_storage_max_connection_idle_time_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connection_idle_time_ms.
                                 type: integer
                               cloud_storage_max_connections:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connections.
                                 type: integer
                               cloud_storage_reconciliation_interval_ms:
                                 description: 'Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.'
                                 type: integer
                               cloud_storage_region:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_region.
                                 type: string
                               cloud_storage_segment_max_upload_interval_sec:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_max_upload_interval_sec.
                                 type: integer
                               cloud_storage_segment_upload_timeout_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_upload_timeout_ms.
                                 type: integer
                               cloud_storage_trust_file:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_trust_file.
                                 type: string
                               cloud_storage_upload_ctrl_d_coeff:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_d_coeff.
                                 type: integer
                               cloud_storage_upload_ctrl_max_shares:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_max_shares.
                                 type: integer
                               cloud_storage_upload_ctrl_min_shares:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_min_shares.
                                 type: integer
                               cloud_storage_upload_ctrl_p_coeff:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_p_coeff.
                                 type: integer
                               cloud_storage_upload_ctrl_update_interval_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_update_interval_ms.
                                 type: integer
                             type: object
                           credentialsSecretRef:
@@ -67677,98 +67677,98 @@ spec:
                               or `enterprised.licenseSecretRef`.
                             properties:
                               cloud_storage_api_endpoint:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint.
                                 type: string
                               cloud_storage_api_endpoint_port:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint_port.
                                 type: integer
                               cloud_storage_azure_adls_endpoint:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_endpoint.
                                 type: string
                               cloud_storage_azure_adls_port:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_port.
                                 type: integer
                               cloud_storage_azure_container:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_container.
                                 type: string
                               cloud_storage_azure_managed_identity_id:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_managed_identity_id.
                                 type: string
                               cloud_storage_azure_shared_key:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_shared_key.
                                 type: string
                               cloud_storage_azure_storage_account:
-                                description: See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_storage_account.
                                 type: string
                               cloud_storage_bucket:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_bucket.
                                 type: string
                               cloud_storage_cache_check_interval:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_check_interval.
                                 type: integer
                               cloud_storage_cache_directory:
                                 description: See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
                                 type: string
                               cloud_storage_cache_size:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_size.
                                 type: string
                               cloud_storage_credentials_source:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_credentials_source.
                                 type: string
                               cloud_storage_disable_tls:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_disable_tls.
                                 type: boolean
                               cloud_storage_enable_remote_read:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_read.
                                 type: boolean
                               cloud_storage_enable_remote_write:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_write.
                                 type: boolean
                               cloud_storage_enabled:
                                 description: Enables Tiered Storage, if a license
-                                  key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+                                  key is provided. See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enabled.
                                 x-kubernetes-preserve-unknown-fields: true
                               cloud_storage_initial_backoff_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_initial_backoff_ms.
                                 type: integer
                               cloud_storage_manifest_upload_timeout_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_manifest_upload_timeout_ms.
                                 type: integer
                               cloud_storage_max_connection_idle_time_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connection_idle_time_ms.
                                 type: integer
                               cloud_storage_max_connections:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connections.
                                 type: integer
                               cloud_storage_reconciliation_interval_ms:
                                 description: 'Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.'
                                 type: integer
                               cloud_storage_region:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_region.
                                 type: string
                               cloud_storage_segment_max_upload_interval_sec:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_max_upload_interval_sec.
                                 type: integer
                               cloud_storage_segment_upload_timeout_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_upload_timeout_ms.
                                 type: integer
                               cloud_storage_trust_file:
-                                description: See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_trust_file.
                                 type: string
                               cloud_storage_upload_ctrl_d_coeff:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_d_coeff.
                                 type: integer
                               cloud_storage_upload_ctrl_max_shares:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_max_shares.
                                 type: integer
                               cloud_storage_upload_ctrl_min_shares:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_min_shares.
                                 type: integer
                               cloud_storage_upload_ctrl_p_coeff:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_p_coeff.
                                 type: integer
                               cloud_storage_upload_ctrl_update_interval_ms:
-                                description: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
+                                description: See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_update_interval_ms.
                                 type: integer
                             type: object
                           credentialsSecretRef:
