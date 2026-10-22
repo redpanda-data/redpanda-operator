@@ -655,67 +655,67 @@ type Tiered struct {
 
 // TieredConfig configures Tiered Storage, which requires an Enterprise license configured in `enterprise.licenseKey` or `enterprise.licenseSecretRef`.TieredConfig is a top-level field of the Helm values.
 type TieredConfig struct {
-	// Enables Tiered Storage, if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled.
+	// Enables Tiered Storage, if a license key is provided. See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enabled.
 	CloudStorageEnabled *apiutil.JSONBoolean `json:"cloud_storage_enabled,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint.
 	CloudStorageAPIEndpoint *string `json:"cloud_storage_api_endpoint,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint_port.
 	CloudStorageAPIEndpointPort *int `json:"cloud_storage_api_endpoint_port,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_bucket.
 	CloudStorageBucket *string `json:"cloud_storage_bucket,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_container.
 	CloudStorageAzureContainer *string `json:"cloud_storage_azure_container,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_managed_identity_id.
 	CloudStorageAzureManagedIdentityID *string `json:"cloud_storage_azure_managed_identity_id,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_storage_account.
 	CloudStorageAzureStorageAccount *string `json:"cloud_storage_azure_storage_account,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_shared_key.
 	CloudStorageAzureSharedKey *string `json:"cloud_storage_azure_shared_key,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_endpoint.
 	CloudStorageAzureADLSEndpoint *string `json:"cloud_storage_azure_adls_endpoint,omitempty"`
-	// See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_port.
 	CloudStorageAzureADLSPort *int `json:"cloud_storage_azure_adls_port,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_check_interval.
 	CloudStorageCacheCheckInterval *int `json:"cloud_storage_cache_check_interval,omitempty"`
 	// See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory.
 	CloudStorageCacheDirectory *string `json:"cloud_storage_cache_directory,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_size.
 	CloudStorageCacheSize *string `json:"cloud_storage_cache_size,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_credentials_source.
 	CloudStorageCredentialsSource *string `json:"cloud_storage_credentials_source,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_disable_tls.
 	CloudStorageDisableTLS *bool `json:"cloud_storage_disable_tls,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_read.
 	CloudStorageEnableRemoteRead *bool `json:"cloud_storage_enable_remote_read,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_write.
 	CloudStorageEnableRemoteWrite *bool `json:"cloud_storage_enable_remote_write,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_initial_backoff_ms.
 	CloudStorageInitialBackoffMs *int `json:"cloud_storage_initial_backoff_ms,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_manifest_upload_timeout_ms.
 	CloudStorageManifestUploadTimeoutMs *int `json:"cloud_storage_manifest_upload_timeout_ms,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connection_idle_time_ms.
 	CloudStorageMaxConnectionIdleTimeMs *int `json:"cloud_storage_max_connection_idle_time_ms,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connections.
 	CloudStorageMaxConnections *int `json:"cloud_storage_max_connections,omitempty"`
 	// Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms.
 	CloudStorageReconciliationIntervalMs *int `json:"cloud_storage_reconciliation_interval_ms,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_region.
 	CloudStorageRegion *string `json:"cloud_storage_region,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_max_upload_interval_sec.
 	CloudStorageSegmentMaxUploadIntervalSec *int `json:"cloud_storage_segment_max_upload_interval_sec,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_upload_timeout_ms.
 	CloudStorageSegmentUploadTimeoutMs *int `json:"cloud_storage_segment_upload_timeout_ms,omitempty"`
-	// See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_trust_file.
 	CloudStorageTrustFile *string `json:"cloud_storage_trust_file,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_d_coeff.
 	CloudStorageUploadCtrlDCoeff *int `json:"cloud_storage_upload_ctrl_d_coeff,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_max_shares.
 	CloudStorageUploadCtrlMaxShares *int `json:"cloud_storage_upload_ctrl_max_shares,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_min_shares.
 	CloudStorageUploadCtrlMinShares *int `json:"cloud_storage_upload_ctrl_min_shares,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_p_coeff.
 	CloudStorageUploadCtrlPCoeff *int `json:"cloud_storage_upload_ctrl_p_coeff,omitempty"`
-	// See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms.
+	// See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_update_interval_ms.
 	CloudStorageUploadCtrlUpdateIntervalMs *int `json:"cloud_storage_upload_ctrl_update_interval_ms,omitempty"`
 }
 
