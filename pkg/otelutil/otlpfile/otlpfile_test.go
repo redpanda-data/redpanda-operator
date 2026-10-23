@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/attribute"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/trace"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
@@ -75,7 +75,7 @@ func TestLogExporter(t *testing.T) {
 	client := otlpfile.NewLogExporter(file)
 
 	var record sdklog.Record
-	record.SetBody(log.StringValue("Hello world!"))
+	record.SetBody(attribute.StringValue("Hello world!"))
 	record.SetSpanID(trace.SpanID{2, 2, 2, 2, 2, 2, 2, 2})
 	record.SetTraceID(trace.TraceID{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1})
 

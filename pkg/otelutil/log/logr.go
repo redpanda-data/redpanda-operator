@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/log/global"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
@@ -49,7 +50,7 @@ type LogSink struct {
 	logger        log.Logger
 	useTimestamps bool
 	opts          []log.LoggerOption
-	attr          []log.KeyValue
+	attr          []attribute.KeyValue
 	ctx           context.Context
 }
 
@@ -68,13 +69,13 @@ func (l *LogSink) Enabled(level int) bool {
 // Error logs an error, with the given message and key/value pairs.
 func (l *LogSink) Error(err error, msg string, keysAndValues ...any) {
 	var record log.Record
-	record.SetBody(log.StringValue(msg))
+	record.SetBody(attribute.StringValue(msg))
 	record.SetSeverity(log.SeverityError)
 	record.SetSeverityText("error")
 
 	if err != nil {
 		record.AddAttributes(
-			log.String(string(semconv.ExceptionMessageKey), err.Error()),
+			attribute.String(string(semconv.ExceptionMessageKey), err.Error()),
 		)
 	}
 
@@ -93,7 +94,7 @@ func (l *LogSink) Error(err error, msg string, keysAndValues ...any) {
 // Info logs a non-error message with the given key/value pairs.
 func (l *LogSink) Info(level int, msg string, keysAndValues ...any) {
 	var record log.Record
-	record.SetBody(log.StringValue(msg))
+	record.SetBody(attribute.StringValue(msg))
 
 	typedLevel := LevelFromLogr(level)
 	record.SetSeverity(typedLevel.OTELLevel)
@@ -140,10 +141,10 @@ func (l LogSink) WithValues(keysAndValues ...any) logr.LogSink {
 	return &l
 }
 
-// convertKVs converts a list of key-value pairs to a list of [log.KeyValue].
+// convertKVs converts a list of key-value pairs to a list of [attribute.KeyValue].
 // The last [context.Context] value is returned as the context.
 // If no context is found, the original context is returned.
-func convertKVs(ctx context.Context, keysAndValues ...any) (context.Context, []log.KeyValue) {
+func convertKVs(ctx context.Context, keysAndValues ...any) (context.Context, []attribute.KeyValue) {
 	if len(keysAndValues) == 0 {
 		return ctx, nil
 	}
@@ -152,7 +153,7 @@ func convertKVs(ctx context.Context, keysAndValues ...any) (context.Context, []l
 		keysAndValues = append(keysAndValues, nil)
 	}
 
-	kvs := make([]log.KeyValue, 0, len(keysAndValues)/2)
+	kvs := make([]attribute.KeyValue, 0, len(keysAndValues)/2)
 	for i := 0; i < len(keysAndValues); i += 2 {
 		k, ok := keysAndValues[i].(string)
 		if !ok {
@@ -167,8 +168,8 @@ func convertKVs(ctx context.Context, keysAndValues ...any) (context.Context, []l
 			continue
 		}
 
-		kvs = append(kvs, log.KeyValue{
-			Key:   k,
+		kvs = append(kvs, attribute.KeyValue{
+			Key:   attribute.Key(k),
 			Value: convertValue(v),
 		})
 	}
@@ -180,74 +181,74 @@ type stringer interface {
 	String() string
 }
 
-// convertValue converts various types to log.Value.
-func convertValue(v any) log.Value {
+// convertValue converts various types to attribute.Value.
+func convertValue(v any) attribute.Value {
 	// Handling the most common types without reflect is a small perf win.
 	switch val := v.(type) {
 	case bool:
-		return log.BoolValue(val)
+		return attribute.BoolValue(val)
 	case string:
-		return log.StringValue(val)
+		return attribute.StringValue(val)
 	case int:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int8:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int16:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int32:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case int64:
-		return log.Int64Value(val)
+		return attribute.Int64Value(val)
 	case uint:
 		return convertUintValue(uint64(val))
 	case uint8:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uint16:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uint32:
-		return log.Int64Value(int64(val))
+		return attribute.Int64Value(int64(val))
 	case uint64:
 		return convertUintValue(val)
 	case uintptr:
 		return convertUintValue(uint64(val))
 	case float32:
-		return log.Float64Value(float64(val))
+		return attribute.Float64Value(float64(val))
 	case float64:
-		return log.Float64Value(val)
+		return attribute.Float64Value(val)
 	case time.Duration:
-		return log.Int64Value(val.Nanoseconds())
+		return attribute.Int64Value(val.Nanoseconds())
 	case complex64:
-		r := log.Float64("r", real(complex128(val)))
-		i := log.Float64("i", imag(complex128(val)))
-		return log.MapValue(r, i)
+		r := attribute.Float64("r", real(complex128(val)))
+		i := attribute.Float64("i", imag(complex128(val)))
+		return attribute.MapValue(r, i)
 	case complex128:
-		r := log.Float64("r", real(val))
-		i := log.Float64("i", imag(val))
-		return log.MapValue(r, i)
+		r := attribute.Float64("r", real(val))
+		i := attribute.Float64("i", imag(val))
+		return attribute.MapValue(r, i)
 	case time.Time:
-		return log.Int64Value(val.UnixNano())
+		return attribute.Int64Value(val.UnixNano())
 	case []byte:
-		return log.BytesValue(val)
+		return attribute.ByteSliceValue(val)
 	case error:
-		return log.StringValue(val.Error())
+		return attribute.StringValue(val.Error())
 	}
 
 	t := reflect.TypeOf(v)
 	if t == nil {
-		return log.Value{}
+		return attribute.Value{}
 	}
 	val := reflect.ValueOf(v)
 	switch t.Kind() {
 	case reflect.Struct:
-		return log.StringValue(fmt.Sprintf("%+v", v))
+		return attribute.StringValue(fmt.Sprintf("%+v", v))
 	case reflect.Slice, reflect.Array:
-		items := make([]log.Value, 0, val.Len())
+		items := make([]attribute.Value, 0, val.Len())
 		for i := 0; i < val.Len(); i++ {
 			items = append(items, convertValue(val.Index(i).Interface()))
 		}
-		return log.SliceValue(items...)
+		return attribute.SliceValue(items...)
 	case reflect.Map:
-		kvs := make([]log.KeyValue, 0, val.Len())
+		kvs := make([]attribute.KeyValue, 0, val.Len())
 		for _, k := range val.MapKeys() {
 			var key string
 			switch k.Kind() {
@@ -256,21 +257,21 @@ func convertValue(v any) log.Value {
 			default:
 				key = fmt.Sprintf("%+v", k.Interface())
 			}
-			kvs = append(kvs, log.KeyValue{
-				Key:   key,
+			kvs = append(kvs, attribute.KeyValue{
+				Key:   attribute.Key(key),
 				Value: convertValue(val.MapIndex(k).Interface()),
 			})
 		}
-		return log.MapValue(kvs...)
+		return attribute.MapValue(kvs...)
 	case reflect.Ptr, reflect.Interface:
 		if val.IsNil() {
-			return log.Value{}
+			return attribute.Value{}
 		}
 		return convertValue(val.Elem().Interface())
 	}
 
 	if s, ok := v.(stringer); ok {
-		return log.StringValue(s.String())
+		return attribute.StringValue(s.String())
 	}
 
 	// Try to handle this as gracefully as possible.
@@ -278,14 +279,14 @@ func convertValue(v any) log.Value {
 	// Don't panic here. it is preferable to have user's open issue
 	// asking why their attributes have a "unhandled: " prefix than
 	// say that their code is panicking.
-	return log.StringValue(fmt.Sprintf("unhandled: (%s) %+v", t, v))
+	return attribute.StringValue(fmt.Sprintf("unhandled: (%s) %+v", t, v))
 }
 
-// convertUintValue converts a uint64 to a log.Value.
+// convertUintValue converts a uint64 to an attribute.Value.
 // If the value is too large to fit in an int64, it is converted to a string.
-func convertUintValue(v uint64) log.Value {
+func convertUintValue(v uint64) attribute.Value {
 	if v > math.MaxInt64 {
-		return log.StringValue(strconv.FormatUint(v, 10))
+		return attribute.StringValue(strconv.FormatUint(v, 10))
 	}
-	return log.Int64Value(int64(v))
+	return attribute.Int64Value(int64(v))
 }
