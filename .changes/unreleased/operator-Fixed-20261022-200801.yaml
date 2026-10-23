@@ -1,0 +1,8 @@
+project: operator
+kind: Fixed
+body: |-
+    Bumped `golang.org/x/net` to v0.60.0, `golang.org/x/crypto` to v0.57.0, and
+    OpenTelemetry to v1.46.0 (logs v0.22.0) to address reported vulnerabilities,
+    including a busy-spin in the OpenTelemetry log batch processor
+    (CVE-2026-81872).
+time: 2026-10-22T20:08:01.000000000-04:00
