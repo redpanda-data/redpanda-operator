@@ -27088,12 +27088,28 @@
     resources:
     - leases
     verbs:
-    - create
-    - delete
     - get
     - list
-    - patch
+    - watch
+    - create
     - update
+    - patch
+    - delete
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - apps
+    resources:
+    - statefulsets
+    verbs:
+    - get
+    - list
     - watch
 - apiVersion: rbac.authorization.k8s.io/v1
   kind: ClusterRole
