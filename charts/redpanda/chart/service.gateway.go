@@ -19,78 +19,40 @@ import (
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
 )
 
-// GatewayServices returns ClusterIP Services for Gateway API TLSRoute-based
-// external access: one bootstrap service (targeting all pods) and one
-// per-broker service (targeting a specific pod via pod-name selector).
-// TLSRoute resources reference these services as backends.
-func GatewayServices(state *RenderState, listeners *redpanda.Listeners) []*corev1.Service {
-	if !state.Values.External.IsGatewayEnabled() {
-		return nil
+// gatewayServiceConfig returns the ClusterIP Services for Gateway API
+// TLSRoute-based external access: one bootstrap Service (targeting all pods)
+// and one per-broker Service (targeting a specific pod via pod-name selector).
+// TLSRoute resources reference these Services as backends.
+func gatewayServiceConfig(state *RenderState, listeners redpanda.Listeners) redpanda.ServiceConfig {
+	var brokers []redpanda.BrokerService
+	for _, podname := range gatewayPodNames(state) {
+		brokers = append(brokers, redpanda.BrokerService{
+			Name:     gatewayBrokerServiceName(podname),
+			Selector: map[string]string{"statefulset.kubernetes.io/pod-name": podname},
+		})
 	}
 
-	labels := FullLabels(state)
-	selector := ClusterPodLabelsSelector(state)
-
-	ports := listeners.GatewayServicePorts()
-	if len(ports) == 0 {
-		return nil
-	}
-
-	var services []*corev1.Service
-
-	// Bootstrap service: targets all pods for initial client connection.
-	bootstrap := &corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "Service",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-gateway-bootstrap", Fullname(state)),
-			Namespace:   state.Release.Namespace,
-			Labels:      labels,
-			Annotations: FullAnnotations(state),
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:                    ports,
-			PublishNotReadyAddresses: true,
-			Selector:                 selector,
-			SessionAffinity:          corev1.ServiceAffinityNone,
-			Type:                     corev1.ServiceTypeClusterIP,
-		},
-	}
-	services = append(services, bootstrap)
-
-	// Per-broker services: one service per pod, selected by pod name.
-	pods := gatewayPodNames(state)
-
-	for _, podname := range pods {
-		podSelector := map[string]string{}
-		for k, v := range selector {
-			podSelector[k] = v
-		}
-		podSelector["statefulset.kubernetes.io/pod-name"] = podname
-
-		svc := &corev1.Service{
+	return redpanda.ServiceConfig{
+		Kind:      redpanda.ServiceKindGateway,
+		Listeners: listeners,
+		Template: corev1.Service{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
 				Kind:       "Service",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        gatewayBrokerServiceName(podname),
+				Name:        fmt.Sprintf("%s-gateway-bootstrap", Fullname(state)),
 				Namespace:   state.Release.Namespace,
-				Labels:      labels,
+				Labels:      FullLabels(state),
 				Annotations: FullAnnotations(state),
 			},
 			Spec: corev1.ServiceSpec{
-				Ports:                    ports,
 				PublishNotReadyAddresses: true,
-				Selector:                 podSelector,
+				Selector:                 ClusterPodLabelsSelector(state),
 				SessionAffinity:          corev1.ServiceAffinityNone,
 				Type:                     corev1.ServiceTypeClusterIP,
 			},
-		}
-		services = append(services, svc)
+		},
+		Brokers: brokers,
 	}
-
-	return services
 }

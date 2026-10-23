@@ -36,7 +36,7 @@ func RenderClusterResources(state *RenderState) ([]kube.Object, error) {
 
 	var manifests []kube.Object
 	manifests = appendIfNotNil(manifests, podDisruptionBudget(state))
-	manifests = appendIfNotNil(manifests, serviceInternal(state))
+	manifests = appendIfNotNil(manifests, serviceInternal(state)...)
 	manifests = appendIfNotNil(manifests, certIssuers(state)...)
 	manifests = appendIfNotNil(manifests, clusterSecs...)
 	return manifests, nil
@@ -80,7 +80,7 @@ func RenderInClusterPoolResources(state *RenderState, pool *redpandav1alpha2.Red
 	manifests = appendIfNotNil(manifests, lbs...)
 	manifests = appendIfNotNil(manifests, serviceAccountForPool(state, pool))
 	manifests = appendIfNotNil(manifests, serviceMonitorForPool(state, pool))
-	manifests = appendIfNotNil(manifests, nodePortServiceForPool(state, pool))
+	manifests = appendIfNotNil(manifests, nodePortServiceForPool(state, pool)...)
 	manifests = appendIfNotNil(manifests, certs...)
 	manifests = append(manifests, rbacForPool(state, pool).Render()...)
 	return manifests, nil
