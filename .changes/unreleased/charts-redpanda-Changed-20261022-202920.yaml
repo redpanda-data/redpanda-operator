@@ -1,0 +1,8 @@
+project: charts/redpanda
+kind: Changed
+body: |-
+    The default Redpanda version installed by the chart is now
+    [v26.2.6](https://github.com/redpanda-data/redpanda/releases/tag/v26.2.6),
+    whose image no longer trusts the compromised eMudhra certificate authorities
+    (CVE-2026-111943).
+time: 2026-10-22T20:29:20.000000000-04:00

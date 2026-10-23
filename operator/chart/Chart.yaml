@@ -28,7 +28,7 @@ annotations:
     - name: redpanda-operator
       image: docker.redpanda.com/redpandadata/redpanda-operator:v26.2.4
     - name: redpanda
-      image: docker.redpanda.com/redpandadata/redpanda:v26.2.3
+      image: docker.redpanda.com/redpandadata/redpanda:v26.2.6
   artifacthub.io/crds: |
     - kind: Redpanda
       version: v1alpha1
