@@ -1,8 +1,0 @@
-project: operator
-kind: Fixed
-body: |-
-    The operator is now built with Go 1.26.10. Its `crypto/x509` package rejects
-    certificates chaining to the eMudhra intermediate certificate authorities
-    whose private keys were compromised (CVE-2026-111943), and its `net/http`
-    package picks up fixes for several HTTP/2 denial-of-service vulnerabilities.
-time: 2026-10-22T20:20:12.000000000-04:00

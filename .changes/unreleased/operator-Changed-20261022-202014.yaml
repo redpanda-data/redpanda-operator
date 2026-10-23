@@ -1,8 +1,0 @@
-project: operator
-kind: Changed
-body: |-
-    The default Redpanda image tag (`--redpanda-tag`) is now
-    [v26.1.19](https://github.com/redpanda-data/redpanda/releases/tag/v26.1.19),
-    whose image no longer trusts the compromised eMudhra certificate authorities
-    (CVE-2026-111943).
-time: 2026-10-22T20:20:14.000000000-04:00
