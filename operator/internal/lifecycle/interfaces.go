@@ -162,6 +162,11 @@ type Image struct {
 	Tag string
 }
 
+// String returns the image reference, repository:tag.
+func (i Image) String() string {
+	return i.Repository + ":" + i.Tag
+}
+
 // ResourceManagerFactory bundles together concrete implementations of OwnershipResolver
 // ClusterStatusUpdater, NodePoolRenderer, and SimpleResourceRenderer for our various
 // cluster versions.

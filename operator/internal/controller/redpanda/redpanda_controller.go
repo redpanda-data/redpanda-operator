@@ -17,6 +17,7 @@ import (
 	"maps"
 	"net"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -118,6 +119,12 @@ type RedpandaReconciler struct {
 	// Broker CR management; the per-cluster use-broker-cr annotation
 	// selects broker mode on top of it.
 	BrokerCREnabled bool
+	// OperatorImage is the operator's own image (--configurator-base-image
+	// and --configurator-tag). Broker pods' data-dir guard runs it: it is
+	// the one image guaranteed to carry the data-guard subcommand, unlike
+	// the chart's sidecar image, which clusters pin and which may predate
+	// the command. Empty falls back to the rendered sidecar's image.
+	OperatorImage string
 	// PostRestartCaughtUpPercent is the load_reclaimed_pc a just-restarted
 	// broker must report (via the post-restart probe) before the rolling
 	// restart proceeds to the next broker. Defaults to
@@ -842,6 +849,11 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		return nil, errors.Wrap(err, "constructing pod selector")
 	}
 
+	guardImage := dataGuardImage(r.OperatorImage, set.Spec.Template.Spec.Containers)
+	if guardImage == "" {
+		log.FromContext(ctx).Info("no operator image configured and the rendered StatefulSet has no sidecar container; Broker pods get no data-dir guard", "statefulset", set.Name)
+	}
+
 	return &brokerset.BrokerSet{
 		Client:               cluster.GetClient(),
 		Scheme:               cluster.GetScheme(),
@@ -854,11 +866,27 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		PodSelector:          podSelector,
 		ConfigChecksumKey:    redpandav1alpha2.BrokerConfigChecksumAnnotation,
 		ClusterConfigVersion: configVersion,
+		DataGuardImage:       guardImage,
 		Hooks:                &v2OwnerHooks{clientFactory: r.ClientFactory, state: state},
 		Reporter:             state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
 		Arbitration:          state.arbitration,
 		Logger:               log.FromContext(ctx),
 	}, nil
+}
+
+// dataGuardImage picks the image the data-dir guard runs: the operator's own
+// when configured — the one guaranteed to carry the data-guard subcommand —
+// otherwise the rendered sidecar's, a per-cluster pinnable image that may
+// predate the command. With neither the pods run without the guard: a safety
+// net is not worth stalling the cluster's reconcile over.
+func dataGuardImage(operatorImage string, containers []corev1.Container) string {
+	if operatorImage != "" {
+		return operatorImage
+	}
+	if i := slices.IndexFunc(containers, func(c corev1.Container) bool { return c.Name == redpandachart.SidecarContainerName }); i >= 0 {
+		return containers[i].Image
+	}
+	return ""
 }
 
 // clusterNameFromPoolSet recovers the cluster name from a NodePool pool's

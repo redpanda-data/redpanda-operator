@@ -32,14 +32,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	redpandaclient "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/client"
+	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
@@ -378,4 +381,40 @@ func normalizeClusterResources(ctx context.Context, testScheme *runtime.Scheme, 
 		}
 	}
 	return allClusterResources
+}
+
+// TestSetPodNodeIDAnnotationSkipsBrokerOwnedPods: on a Broker-owned pod the
+// Broker controller is the only writer of the node-id annotation — it records
+// the identity once and never changes it, which the pod's data-dir guard
+// relies on. The cluster controller must not overwrite it with whatever the
+// admin API reports; here it must not even look: the attached resources are
+// nil and a lookup would panic.
+func TestSetPodNodeIDAnnotationSkipsBrokerOwnedPods(t *testing.T) {
+	cluster := &vectorizedv1alpha1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test", UID: "cluster-uid"}}
+	pod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{
+		Name:        "rp-0",
+		Namespace:   "test",
+		Labels:      labels.ForCluster(cluster),
+		Annotations: map[string]string{resources.PodAnnotationNodeIDKey: "7"},
+		OwnerReferences: []metav1.OwnerReference{{
+			APIVersion: redpandav1alpha2.GroupVersion.String(),
+			Kind:       redpandav1alpha2.BrokerKind,
+			Name:       "rp-broker-0",
+			UID:        "broker-uid",
+			Controller: ptr.To(true),
+		}},
+	}}
+
+	scheme := runtime.NewScheme()
+	require.NoError(t, clientgoscheme.AddToScheme(scheme))
+	require.NoError(t, vectorizedv1alpha1.Install(scheme))
+	c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(cluster, pod).Build()
+	r := &ClusterReconciler{Client: c, Scheme: scheme}
+
+	require.NoError(t, r.setPodNodeIDAnnotation(context.Background(), cluster, ctrl.Log, nil))
+
+	var got corev1.Pod
+	require.NoError(t, c.Get(context.Background(), client.ObjectKeyFromObject(pod), &got))
+	require.Equal(t, "7", got.Annotations[resources.PodAnnotationNodeIDKey],
+		"the Broker controller's record must survive the cluster controller's pass")
 }
