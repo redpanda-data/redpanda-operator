@@ -331,10 +331,6 @@ func TestDetectGuardRefusalNegatives(t *testing.T) {
 		"guard crashed rather than refused": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
 			guard(pod).LastTerminationState.Terminated.ExitCode = 1
 		},
-		"guard undecided: no proof of emptiness, no tombstone": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
-			guard(pod).LastTerminationState.Terminated.ExitCode = dataguard.ExitCodeUndecided
-			guard(pod).LastTerminationState.Terminated.Message = "data volume holds data but no kvstore: refusing to guess"
-		},
 		"guard has not finished a run": func(_ *redpandav1alpha2.Broker, pod *corev1.Pod) {
 			guard(pod).State = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
 			guard(pod).LastTerminationState = corev1.ContainerState{}

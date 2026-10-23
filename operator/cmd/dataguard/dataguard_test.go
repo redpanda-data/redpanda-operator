@@ -39,16 +39,17 @@ func TestCheck(t *testing.T) {
 		{name: "never registered, fresh disk", brokerID: ptr.To(""), want: ExitCodeAllow},
 		{name: "registered, kvstore present", brokerID: ptr.To("3"), files: []string{kvstoreSegment}, want: ExitCodeAllow},
 		{name: "registered, whitespace around the id", brokerID: ptr.To(" 3\n"), files: []string{kvstoreSegment}, want: ExitCodeAllow},
+		// The one verdict that deletes a PVC needs positive proof of emptiness.
 		{name: "registered, empty volume", brokerID: ptr.To("3"), want: ExitCodeEmptyDataDir, wantReason: []string{"node_id 3", "is empty"}},
 		{name: "registered, volume holds only lost+found", brokerID: ptr.To("3"), dirs: []string{"lost+found"}, want: ExitCodeEmptyDataDir, wantReason: []string{"node_id 3", "is empty"}},
-		// Anything the guard cannot prove is Undecided: nothing starts, nothing is deleted.
-		{name: "registered, stray file but no redpanda/", brokerID: ptr.To("3"), files: []string{"pid.lock"}, want: ExitCodeUndecided, wantReason: []string{"no kvstore", "refusing to guess"}},
-		{name: "registered, kvstore dir but no segments", brokerID: ptr.To("3"), dirs: []string{filepath.Join("redpanda", "kvstore", "0_0")}, want: ExitCodeUndecided, wantReason: []string{"no kvstore"}},
-		{name: "registered, controller log but no kvstore", brokerID: ptr.To("3"), files: []string{filepath.Join("redpanda", "controller", "0_0", "0-1-v1.log")}, want: ExitCodeUndecided, wantReason: []string{"no kvstore"}},
-		{name: "registered, data directory missing (volume not mounted)", brokerID: ptr.To("3"), missing: true, want: ExitCodeUndecided, wantReason: []string{"does not exist", "not mounted"}},
-		{name: "registered, data path is a file", brokerID: ptr.To("3"), notDir: true, want: ExitCodeUndecided, wantReason: []string{"reading the data directory"}},
-		{name: "registered, data directory unreadable", brokerID: ptr.To("3"), unreadable: true, want: ExitCodeUndecided, wantReason: []string{"is not readable"}},
-		{name: "broker id file missing", brokerID: nil, files: []string{kvstoreSegment}, want: ExitCodeUndecided, wantReason: []string{"reading the broker id"}},
+		// Everything the guard cannot prove is left to Redpanda.
+		{name: "registered, stray file but no redpanda/", brokerID: ptr.To("3"), files: []string{"pid.lock"}, want: ExitCodeAllow},
+		{name: "registered, kvstore dir but no segments", brokerID: ptr.To("3"), dirs: []string{filepath.Join("redpanda", "kvstore", "0_0")}, want: ExitCodeAllow},
+		{name: "registered, controller log but no kvstore", brokerID: ptr.To("3"), files: []string{filepath.Join("redpanda", "controller", "0_0", "0-1-v1.log")}, want: ExitCodeAllow},
+		{name: "registered, data directory missing (volume not mounted)", brokerID: ptr.To("3"), missing: true, want: ExitCodeAllow},
+		{name: "registered, data path is a file", brokerID: ptr.To("3"), notDir: true, want: ExitCodeAllow},
+		{name: "registered, data directory unreadable", brokerID: ptr.To("3"), unreadable: true, want: ExitCodeAllow},
+		{name: "broker id file missing", brokerID: nil, files: []string{kvstoreSegment}, want: ExitCodeAllow},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.unreadable && os.Geteuid() == 0 {
@@ -82,7 +83,7 @@ func TestCheck(t *testing.T) {
 			verdict, reason := Check(logr.Discard(), idFile, volume)
 			require.Equal(t, Verdict(tc.want), Verdict(verdict))
 			if tc.want == ExitCodeAllow {
-				require.Empty(t, reason)
+				require.Empty(t, reason, "allowing is silent on stdout; reasons only accompany a refusal")
 				return
 			}
 			for _, want := range tc.wantReason {
