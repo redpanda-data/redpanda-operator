@@ -862,7 +862,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -996,7 +996,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -1040,7 +1040,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -2195,7 +2195,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -2321,7 +2321,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -2361,7 +2361,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -3383,7 +3383,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -3517,7 +3517,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -3561,7 +3561,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -4779,7 +4779,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -4922,7 +4922,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -4974,7 +4974,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -6093,7 +6093,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -6244,7 +6244,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -6300,7 +6300,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -7640,7 +7640,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -7774,7 +7774,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -7818,7 +7818,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -9172,7 +9172,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -9318,7 +9318,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -9362,7 +9362,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -10632,7 +10632,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -10766,7 +10766,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -10810,7 +10810,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -12080,7 +12080,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -12214,7 +12214,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -12258,7 +12258,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -13613,7 +13613,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -13764,7 +13764,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -13820,7 +13820,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -15113,7 +15113,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -15247,7 +15247,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -15291,7 +15291,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -16569,7 +16569,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -16703,7 +16703,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -16747,7 +16747,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -17838,7 +17838,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -17964,7 +17964,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -18004,7 +18004,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -19091,7 +19091,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -19225,7 +19225,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -19269,7 +19269,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -20570,7 +20570,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -20704,7 +20704,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -20748,7 +20748,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -22018,7 +22018,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -22155,7 +22155,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -22199,7 +22199,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -23469,7 +23469,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -23603,7 +23603,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -23647,7 +23647,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -24970,7 +24970,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -25104,7 +25104,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -25166,7 +25166,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -26488,7 +26488,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -26622,7 +26622,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -26684,7 +26684,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -28006,7 +28006,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -28140,7 +28140,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -28202,7 +28202,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -29476,7 +29476,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -29610,7 +29610,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -29672,7 +29672,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -30992,7 +30992,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -31128,7 +31128,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -31192,7 +31192,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -32528,7 +32528,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -32664,7 +32664,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -32728,7 +32728,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -34064,7 +34064,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -34200,7 +34200,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -34264,7 +34264,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -35553,7 +35553,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -35689,7 +35689,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -35753,7 +35753,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -37088,7 +37088,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -37224,7 +37224,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -37288,7 +37288,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -38624,7 +38624,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -38760,7 +38760,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -38824,7 +38824,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -40160,7 +40160,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -40296,7 +40296,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -40360,7 +40360,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -41649,7 +41649,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -41785,7 +41785,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -41849,7 +41849,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -43135,7 +43135,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -43269,7 +43269,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -43313,7 +43313,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -44584,7 +44584,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -44718,7 +44718,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -44762,7 +44762,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -46032,7 +46032,7 @@ spec:
               fieldPath: status.hostIP
         - name: EXTRA_ENV_VAR
           value: THIS_IS_AN_EXAMPLE
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -46166,7 +46166,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -46210,7 +46210,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -47559,7 +47559,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -47701,7 +47701,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -47745,7 +47745,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -49021,7 +49021,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -49155,7 +49155,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -49199,7 +49199,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -50523,7 +50523,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -50657,7 +50657,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -50702,7 +50702,7 @@ spec:
         command:
         - /bin/sh
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: fs-validator
         resources: {}
         volumeMounts:
@@ -50738,7 +50738,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -52012,7 +52012,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -52146,7 +52146,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -52190,7 +52190,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -53467,7 +53467,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -53601,7 +53601,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -53645,7 +53645,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -54954,7 +54954,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -55088,7 +55088,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -55132,7 +55132,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -56428,7 +56428,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -56564,7 +56564,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -56608,7 +56608,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -59297,7 +59297,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -59431,7 +59431,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -59475,7 +59475,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -60747,7 +60747,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -60898,7 +60898,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -60954,7 +60954,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -62298,7 +62298,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -62432,7 +62432,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -62476,7 +62476,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -63753,7 +63753,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -63887,7 +63887,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -63931,7 +63931,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -65233,7 +65233,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -65367,7 +65367,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -65411,7 +65411,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -66709,7 +66709,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -66843,7 +66843,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -66887,7 +66887,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -69586,7 +69586,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -69720,7 +69720,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -69764,7 +69764,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -71114,7 +71114,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -71265,7 +71265,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -71321,7 +71321,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -99320,7 +99320,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -99454,7 +99454,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -99498,7 +99498,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -100582,7 +100582,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -100716,7 +100716,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -100760,7 +100760,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -101845,7 +101845,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -101979,7 +101979,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -102023,7 +102023,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -103391,7 +103391,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -103529,7 +103529,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -103578,7 +103578,7 @@ spec:
         command:
         - /bin/sh
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: fs-validator
         resources: {}
         volumeMounts:
@@ -103616,7 +103616,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -105007,7 +105007,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -105141,7 +105141,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -105185,7 +105185,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -106561,7 +106561,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -106695,7 +106695,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -106739,7 +106739,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -108105,7 +108105,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -108250,7 +108250,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -108294,7 +108294,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -109623,7 +109623,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -109765,7 +109765,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -109813,7 +109813,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -111225,7 +111225,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -111359,7 +111359,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -111403,7 +111403,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -112673,7 +112673,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -112807,7 +112807,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -112851,7 +112851,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -114122,7 +114122,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -114256,7 +114256,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -114300,7 +114300,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -115570,7 +115570,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -115704,7 +115704,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -115748,7 +115748,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -117031,7 +117031,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -117165,7 +117165,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -117209,7 +117209,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -118606,7 +118606,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -118754,7 +118754,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -118831,7 +118831,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -129026,7 +129026,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -129160,7 +129160,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -129204,7 +129204,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -130635,7 +130635,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -130772,7 +130772,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -130816,7 +130816,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
@@ -131908,7 +131908,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         lifecycle:
           postStart:
             exec:
@@ -132042,7 +132042,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: tuning
         resources: {}
         securityContext:
@@ -132086,7 +132086,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v25.3.17
+        image: docker.redpanda.com/redpandadata/redpanda:v25.3.18
         name: redpanda-configurator
         resources: {}
         volumeMounts:
