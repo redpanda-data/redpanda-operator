@@ -11,11 +11,14 @@ package conversion
 
 import (
 	"encoding/json"
+	"maps"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	applycorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/utils/ptr"
 	"pgregory.net/rapid"
@@ -37,6 +40,340 @@ func TestNodepoolConversion(t *testing.T) {
 	})
 }
 
+<<<<<<< HEAD
+=======
+// TestPersistentVolumeClaimRetentionPolicyPrecedence pins the precedence chain for
+// persistentVolumeClaimRetentionPolicy: NodePool override > Redpanda CR cluster-level
+// value > chart default. The chain is implicit in the order of convertV2Fields and
+// convertV2NodepoolsToPools, so this test guards against silent regressions if those
+// are re-ordered.
+func TestPersistentVolumeClaimRetentionPolicyPrecedence(t *testing.T) {
+	deletePolicy := func(scaled, deleted appsv1.PersistentVolumeClaimRetentionPolicyType) *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy {
+		return &appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy{
+			WhenScaled:  scaled,
+			WhenDeleted: deleted,
+		}
+	}
+	clusterPolicy := deletePolicy(appsv1.DeletePersistentVolumeClaimRetentionPolicyType, appsv1.RetainPersistentVolumeClaimRetentionPolicyType)
+	poolPolicy := deletePolicy(appsv1.RetainPersistentVolumeClaimRetentionPolicyType, appsv1.DeletePersistentVolumeClaimRetentionPolicyType)
+
+	cases := []struct {
+		name        string
+		clusterSet  *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
+		poolSet     *appsv1.StatefulSetPersistentVolumeClaimRetentionPolicy
+		wantCluster appsv1.PersistentVolumeClaimRetentionPolicyType
+		wantScaled  appsv1.PersistentVolumeClaimRetentionPolicyType
+		wantDeleted appsv1.PersistentVolumeClaimRetentionPolicyType
+	}{
+		{
+			name:        "neither set -> chart default Retain/Retain",
+			wantScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+			wantDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+		},
+		{
+			name:        "cluster only -> pool inherits cluster",
+			clusterSet:  clusterPolicy,
+			wantScaled:  appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+			wantDeleted: appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+		},
+		{
+			name:        "pool only -> pool wins over chart default",
+			poolSet:     poolPolicy,
+			wantScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+			wantDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+		},
+		{
+			name:        "pool overrides cluster",
+			clusterSet:  clusterPolicy,
+			poolSet:     poolPolicy,
+			wantScaled:  appsv1.RetainPersistentVolumeClaimRetentionPolicyType,
+			wantDeleted: appsv1.DeletePersistentVolumeClaimRetentionPolicyType,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Run convertV2Fields to populate the cluster-level value into state.Values,
+			// mirroring what ConvertV2ToRenderState does before per-pool conversion.
+			values := redpandachart.Values{}
+			clusterSpec := &redpandav1alpha2.RedpandaClusterSpec{
+				Statefulset: &redpandav1alpha2.Statefulset{
+					PersistentVolumeClaimRetentionPolicy: tc.clusterSet,
+				},
+			}
+			state := &redpandachart.RenderState{Values: values}
+			require.NoError(t, convertV2Fields(state, &state.Values, clusterSpec))
+
+			pool := &redpandav1alpha2.NodePool{
+				Spec: redpandav1alpha2.NodePoolSpec{
+					EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{
+						PersistentVolumeClaimRetentionPolicy: tc.poolSet,
+					},
+				},
+			}
+			converted, err := convertV2NodepoolToPool(state.Values, pool, &V2Defaulters{})
+			require.NoError(t, err)
+			got := converted.Statefulset.PersistentVolumeClaimRetentionPolicy
+			require.NotNil(t, got, "rendered pool should always carry a policy (chart default ensures this)")
+			require.Equal(t, tc.wantScaled, got.WhenScaled)
+			require.Equal(t, tc.wantDeleted, got.WhenDeleted)
+		})
+	}
+}
+
+// TestNodePoolImagePrecedence pins the per-field precedence for a NodePool's
+// broker image: NodePool > Redpanda CR > operator default. Skipping the
+// Redpanda CR level splits a cluster with a pinned tag across versions
+// (https://redpandadata.atlassian.net/browse/K8S-957).
+func TestNodePoolImagePrecedence(t *testing.T) {
+	operatorDefault := func(image *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+		if image == nil {
+			image = &redpandav1alpha2.RedpandaImage{}
+		}
+		return &redpandav1alpha2.RedpandaImage{
+			Repository: ptr.To(ptr.Deref(image.Repository, "operator/redpanda")),
+			Tag:        ptr.To(ptr.Deref(image.Tag, "v99.0.0")),
+		}
+	}
+
+	cases := []struct {
+		name         string
+		clusterImage *redpandav1alpha2.RedpandaImage
+		poolImage    *redpandav1alpha2.RedpandaImage
+		want         string
+	}{
+		{
+			name: "neither set -> operator default",
+			want: "operator/redpanda:v99.0.0",
+		},
+		{
+			name:         "cluster tag only -> pool inherits cluster tag",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v25.1.1")},
+			want:         "operator/redpanda:v25.1.1",
+		},
+		{
+			name:         "cluster only -> pool inherits cluster",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("cluster/redpanda"), Tag: ptr.To("v25.1.1")},
+			want:         "cluster/redpanda:v25.1.1",
+		},
+		{
+			name:         "pool tag only -> cluster repository",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("cluster/redpanda"), Tag: ptr.To("v25.1.1")},
+			poolImage:    &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v25.2.1")},
+			want:         "cluster/redpanda:v25.2.1",
+		},
+		{
+			name:         "pool repository only -> cluster tag",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Tag: ptr.To("v25.1.1")},
+			poolImage:    &redpandav1alpha2.RedpandaImage{Repository: ptr.To("pool/redpanda")},
+			want:         "pool/redpanda:v25.1.1",
+		},
+		{
+			name:         "pool overrides cluster",
+			clusterImage: &redpandav1alpha2.RedpandaImage{Repository: ptr.To("cluster/redpanda"), Tag: ptr.To("v25.1.1")},
+			poolImage:    &redpandav1alpha2.RedpandaImage{Repository: ptr.To("pool/redpanda"), Tag: ptr.To("v25.2.1")},
+			want:         "pool/redpanda:v25.2.1",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cluster := &redpandav1alpha2.Redpanda{
+				ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
+				Spec: redpandav1alpha2.RedpandaSpec{
+					ClusterSpec: &redpandav1alpha2.RedpandaClusterSpec{Image: tc.clusterImage},
+				},
+			}
+			pool := &redpandav1alpha2.NodePool{
+				ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
+				Spec: redpandav1alpha2.NodePoolSpec{
+					EmbeddedNodePoolSpec: redpandav1alpha2.EmbeddedNodePoolSpec{Image: tc.poolImage},
+				},
+			}
+
+			state, err := ConvertV2ToRenderState(nil, &V2Defaulters{RedpandaImage: operatorDefault}, cluster, []*redpandav1alpha2.NodePool{pool})
+			require.NoError(t, err)
+
+			sets, err := redpandachart.RenderNodePools(state)
+			require.NoError(t, err)
+
+			var poolSet *appsv1.StatefulSet
+			for _, set := range sets {
+				if set.Labels[redpandachart.NodePoolLabelName] == pool.Name {
+					poolSet = set
+				}
+			}
+			require.NotNil(t, poolSet, "pool StatefulSet not rendered")
+
+			images := map[string]string{}
+			for _, container := range append(poolSet.Spec.Template.Spec.InitContainers, poolSet.Spec.Template.Spec.Containers...) {
+				images[container.Name] = container.Image
+			}
+			require.Equal(t, tc.want, images[redpandachart.RedpandaContainerName])
+			require.Equal(t, tc.want, images[redpanda.RedpandaConfiguratorContainerName])
+		})
+	}
+}
+
+// TestPodTemplateStableAcrossChartVersions guards against rolling every broker
+// on an operator upgrade: the operator embeds the redpanda chart, so its
+// version must not reach the pod template, while a sidecar image change still
+// must.
+func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
+	render := func(t *testing.T, chartVersion, sidecarTag string) map[string]corev1.PodTemplateSpec {
+		sets := renderOperatorPools(t, sidecarTag, redpandav1alpha2.EmbeddedNodePoolSpec{}, func(state *redpandachart.RenderState) {
+			state.Chart.Version = chartVersion
+		})
+
+		templates := map[string]corev1.PodTemplateSpec{}
+		for name, set := range sets {
+			templates[name] = set.Spec.Template
+		}
+		return templates
+	}
+
+	baseline := render(t, "26.1.1", "v26.1.1")
+
+	cases := []struct {
+		name         string
+		chartVersion string
+		sidecarTag   string
+		wantRoll     bool
+	}{
+		{name: "chart version bump", chartVersion: "26.2.1", sidecarTag: "v26.1.1", wantRoll: false},
+		{name: "sidecar image change", chartVersion: "26.1.1", sidecarTag: "v26.2.1", wantRoll: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			upgraded := render(t, tc.chartVersion, tc.sidecarTag)
+			for name, template := range baseline {
+				if tc.wantRoll {
+					require.NotEqual(t, template, upgraded[name], "%s pod template", name)
+				} else {
+					require.Equal(t, template, upgraded[name], "%s pod template", name)
+				}
+			}
+		})
+	}
+}
+
+// TestPodTemplateChartLabel pins where the operator strips helm.sh/chart from
+// pod templates: every pool, including the default pool's labels cached from
+// the live StatefulSet, unless the StatefulSet's selector requires it.
+func TestPodTemplateChartLabel(t *testing.T) {
+	selector := map[string]string{
+		"app.kubernetes.io/component": "redpanda-statefulset",
+		"app.kubernetes.io/instance":  "rp",
+		"app.kubernetes.io/name":      "redpanda",
+	}
+	withChartLabel := func(labels map[string]string) map[string]string {
+		labels = maps.Clone(labels)
+		labels["helm.sh/chart"] = "redpanda-5.9.0"
+		return labels
+	}
+
+	cases := []struct {
+		name           string
+		set            string
+		cachedLabels   map[string]string
+		cachedSelector map[string]string
+		poolSelector   map[string]string
+		wantChartLabel bool
+	}{
+		{name: "new default pool", set: "rp"},
+		{name: "named pool", set: "rp-pool"},
+		{name: "cached default pool", set: "rp", cachedLabels: withChartLabel(selector), cachedSelector: selector},
+		{name: "cached selector requires label", set: "rp", cachedLabels: withChartLabel(selector), cachedSelector: withChartLabel(selector), wantChartLabel: true},
+		{name: "pool selector requires label", set: "rp-pool", poolSelector: map[string]string{"helm.sh/chart": "pinned"}, wantChartLabel: true},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			sets := renderOperatorPools(t, "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{
+				AdditionalSelectorLabels: tc.poolSelector,
+			}, func(state *redpandachart.RenderState) {
+				// What FetchStatefulSetPodSelector reads from a live StatefulSet.
+				state.StatefulSetPodLabels = tc.cachedLabels
+				state.StatefulSetSelector = tc.cachedSelector
+			})
+
+			require.Contains(t, sets, tc.set)
+			_, ok := sets[tc.set].Spec.Template.Labels["helm.sh/chart"]
+			require.Equal(t, tc.wantChartLabel, ok, "%s pod template labels: %v", tc.set, sets[tc.set].Spec.Template.Labels)
+		})
+	}
+}
+
+// renderOperatorPools renders the default pool and one NodePool, keyed by
+// StatefulSet name, through the operator's conversion path with images
+// pinned. mutate runs on the RenderState before rendering.
+func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec, mutate func(*redpandachart.RenderState)) map[string]*appsv1.StatefulSet {
+	cluster := &redpandav1alpha2.Redpanda{
+		ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
+	}
+	pool := &redpandav1alpha2.NodePool{
+		ObjectMeta: metav1.ObjectMeta{Name: "pool", Namespace: "redpanda"},
+		Spec:       redpandav1alpha2.NodePoolSpec{EmbeddedNodePoolSpec: poolSpec},
+	}
+	pin := func(repository, tag string) func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+		return func(*redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage {
+			return &redpandav1alpha2.RedpandaImage{Repository: ptr.To(repository), Tag: ptr.To(tag)}
+		}
+	}
+
+	state, err := ConvertV2ToRenderState(nil, &V2Defaulters{
+		RedpandaImage: pin("redpandadata/redpanda", "v26.1.1"),
+		SidecarImage:  pin("redpandadata/redpanda-operator", sidecarTag),
+	}, cluster, []*redpandav1alpha2.NodePool{pool})
+	require.NoError(t, err)
+
+	// REDPANDA_METRICS_K8S_CHART_VERSION tracks the operator version and
+	// falls back to the chart version; pin it to isolate the chart.
+	state.OperatorVersion = "v26.1.1"
+	mutate(state)
+
+	sets, err := redpandachart.RenderNodePools(state)
+	require.NoError(t, err)
+	require.Len(t, sets, 2)
+
+	byName := map[string]*appsv1.StatefulSet{}
+	for _, set := range sets {
+		requireSelectorsMatch(t, set)
+		byName[set.Name] = set
+	}
+	return byName
+}
+
+// requireSelectorsMatch asserts that both the StatefulSet's selector and the
+// sidecar's --selector, which scopes its PVC unbinder to broker pods, select
+// the pods set creates.
+func requireSelectorsMatch(t *testing.T, set *appsv1.StatefulSet) {
+	podLabels := labels.Set(set.Spec.Template.Labels)
+
+	selector, err := metav1.LabelSelectorAsSelector(set.Spec.Selector)
+	require.NoError(t, err)
+	require.True(t, selector.Matches(podLabels), "%s: selector %v does not match pod labels %v", set.Name, set.Spec.Selector, podLabels)
+
+	for _, container := range set.Spec.Template.Spec.Containers {
+		if container.Name != redpandachart.SidecarContainerName {
+			continue
+		}
+		for _, arg := range container.Args {
+			raw, ok := strings.CutPrefix(arg, "--selector=")
+			if !ok {
+				continue
+			}
+			selector, err := labels.Parse(raw)
+			require.NoError(t, err)
+			require.True(t, selector.Matches(podLabels), "%s: sidecar selector %q does not match pod labels %v", set.Name, raw, podLabels)
+			return
+		}
+	}
+	t.Fatalf("%s: sidecar --selector not found", set.Name)
+}
+
+>>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997))
 // TestConvertStatefulsetV2FieldsBrokerContainer is a regression test for
 // https://github.com/redpanda-data/redpanda-operator/issues/1577:
 // convertStatefulsetV2Fields retained a pointer to the redpanda container
