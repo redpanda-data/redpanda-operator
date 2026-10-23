@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/redpanda-data/redpanda-operator/charts/redpanda/v25"
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
@@ -661,6 +662,22 @@ func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
 	}) {
 		return
 	}
+	// The redpanda container is the authority on how the data volume is
+	// seen: the guard takes its mount (so it judges the directory at the
+	// path Redpanda uses, with any subPath) and its user (so it reads with
+	// the permissions that wrote the files). Without that container there is
+	// nothing to guard.
+	i := slices.IndexFunc(spec.Containers, func(c corev1.Container) bool { return c.Name == redpandachart.RedpandaContainerName })
+	if i < 0 {
+		return
+	}
+	rp := &spec.Containers[i]
+	j := slices.IndexFunc(rp.VolumeMounts, func(m corev1.VolumeMount) bool { return m.Name == redpanda.DatadirVolumeName })
+	if j < 0 {
+		return
+	}
+	dataMount := *rp.VolumeMounts[j].DeepCopy()
+	dataMount.ReadOnly = true
 
 	spec.Volumes = append(spec.Volumes, corev1.Volume{
 		Name: dataGuardVolumeName,
@@ -681,20 +698,41 @@ func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
 		corev1.ResourceMemory: resource.MustParse("125Mi"),
 	}
 	guard := corev1.Container{
-		Name:      DataGuardContainerName,
-		Image:     s.DataGuardImage,
-		Command:   []string{"/redpanda-operator", "data-guard"},
-		Resources: corev1.ResourceRequirements{Limits: resources, Requests: resources},
-		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: ptr.To(false),
-			ReadOnlyRootFilesystem:   ptr.To(true),
-		},
+		Name:            DataGuardContainerName,
+		Image:           s.DataGuardImage,
+		Command:         []string{"/redpanda-operator", "data-guard"},
+		Args:            []string{"--data-dir", dataMount.MountPath},
+		Resources:       corev1.ResourceRequirements{Limits: resources, Requests: resources},
+		SecurityContext: dataGuardSecurityContext(rp.SecurityContext),
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: redpanda.DatadirVolumeName, MountPath: "/var/lib/redpanda/data", ReadOnly: true},
+			dataMount,
 			{Name: dataGuardVolumeName, MountPath: dataGuardMountPath, ReadOnly: true},
 		},
 	}
 	spec.InitContainers = append([]corev1.Container{guard}, spec.InitContainers...)
+}
+
+// dataGuardSecurityContext hardens the guard and runs it as the user Redpanda
+// runs as. V1 sets the user per container (pod level carries only fsGroup),
+// so without copying it the guard would run as the image's nonroot uid and
+// depend on Redpanda having left its files group-readable — a dependency
+// that, once broken, parks every restarted Broker in Stuck. Fields Redpanda
+// leaves unset are inherited from the pod, exactly as they are for Redpanda.
+func dataGuardSecurityContext(redpanda *corev1.SecurityContext) *corev1.SecurityContext {
+	sc := &corev1.SecurityContext{
+		AllowPrivilegeEscalation: ptr.To(false),
+		ReadOnlyRootFilesystem:   ptr.To(true),
+		RunAsNonRoot:             ptr.To(true),
+	}
+	if redpanda == nil {
+		return sc
+	}
+	sc.RunAsUser = redpanda.RunAsUser
+	sc.RunAsGroup = redpanda.RunAsGroup
+	if redpanda.RunAsNonRoot != nil {
+		sc.RunAsNonRoot = redpanda.RunAsNonRoot
+	}
+	return sc
 }
 
 // normalizePodSpecDefaults aligns the rendered pod spec with the values the
