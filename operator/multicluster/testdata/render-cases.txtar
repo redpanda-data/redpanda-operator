@@ -1405,3 +1405,87 @@ spec:
   replicas: 3
   tls:
     enabled: false
+<<<<<<< HEAD
+=======
+-- tls-multi-cert-listener-order --
+# Cert mounts and volumes follow listener order, not cert name order: admin
+# declares `internal` before kafka declares `default`, and kafka requires mTLS
+# before http. Reordering them changes the pod template and rolls every broker.
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec: {}
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  tls:
+    enabled: true
+    certs:
+      default:
+        caEnabled: true
+      internal:
+        caEnabled: true
+  listeners:
+    admin:
+      port: 9644
+      tls:
+        cert: internal
+    kafka:
+      port: 9093
+      tls:
+        cert: default
+        requireClientAuth: true
+    http:
+      port: 8082
+      tls:
+        cert: internal
+        requireClientAuth: true
+    schemaRegistry:
+      port: 8081
+      tls:
+        cert: default
+    rpc:
+      port: 33145
+      tls:
+        cert: default
+-- probe-overrides --
+# Pool podTemplate probe fields merge over the rendered probes rather than
+# replacing them: the exec handlers and unset fields are kept.
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: StretchCluster
+metadata:
+  name: cluster
+  namespace: default
+spec: {}
+---
+apiVersion: cluster.redpanda.com/v1alpha2
+kind: RedpandaBrokerPool
+metadata:
+  name: pool-a
+  namespace: default
+spec:
+  clusterRef:
+    group: cluster.redpanda.com/v1alpha2
+    kind: StretchCluster
+    name: cluster
+  replicas: 3
+  podTemplate:
+    spec:
+      containers:
+      - name: redpanda
+        livenessProbe:
+          timeoutSeconds: 10
+        startupProbe:
+          failureThreshold: 240
+>>>>>>> 79a8daf4 ([K8S-983] multicluster: set timeoutSeconds on broker admin probes (#1996))

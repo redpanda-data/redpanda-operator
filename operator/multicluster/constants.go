@@ -31,6 +31,11 @@ const (
 	redpandaUserID  = int64(101)
 	redpandaGroupID = int64(101)
 
+	// adminProbeTimeoutSeconds bounds both curl (-m) and the kubelet
+	// (timeoutSeconds) for the admin API startup and liveness probes. Left
+	// unset, timeoutSeconds defaults to 1s and kills curl before -m applies.
+	adminProbeTimeoutSeconds = int32(5)
+
 	// sidecarHealthPort is the port for the sidecar readiness probe.
 	sidecarHealthPort = int32(8093)
 	// sidecarHealthPath is the path for the sidecar readiness probe.
