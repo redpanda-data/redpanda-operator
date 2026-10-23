@@ -22,6 +22,10 @@
 // ports -- internal and external, one registry backs them all -- only for
 // the brokers that answer.
 //
+// Kafka ports get the same treatment with a plain TCP dial, per listener: a
+// broker whose Kafka listener refuses -- not yet bound after a restart, or
+// already closed on the way down -- leaves that port while keeping the rest.
+//
 // A Service opts in by naming its cluster in [ServiceAnnotation] and
 // declaring no selector. Brokers are matched by the
 // app.kubernetes.io/instance label they already carry, so turning steering

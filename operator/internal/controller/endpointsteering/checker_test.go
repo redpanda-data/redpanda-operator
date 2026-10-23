@@ -41,7 +41,8 @@ import (
 const (
 	testCluster   = "rp"
 	testNamespace = "ns"
-	kafkaPort     = 9093
+	// adminPort is a port no probe has a say over.
+	adminPort = 9644
 )
 
 // fakeCluster is the [Cluster] the in-package tests resolve to; the real
@@ -54,11 +55,13 @@ type fakeCluster struct {
 	// externalPorts are the registry's external listener ports, which the
 	// probed internal one gates alongside its own.
 	externalPorts []int32
+	kafkaPorts    []int32
 }
 
 func (f *fakeCluster) PodSelector() map[string]string           { return f.podSelector }
 func (f *fakeCluster) ClusterDomain() string                    { return f.clusterDomain }
 func (f *fakeCluster) SchemaRegistry() *schemaregistry.Listener { return f.schemaRegistry }
+func (f *fakeCluster) KafkaPorts() []int32                      { return f.kafkaPorts }
 
 // SchemaRegistryPorts mirrors the real implementation's invariant: the
 // probed listener's port is always in the set.
@@ -96,6 +99,13 @@ func testBrokers(schemaRegistry *schemaregistry.Listener) Cluster {
 func externalRegistry(schemaRegistry *schemaregistry.Listener, external ...int32) Cluster {
 	brokers := testBrokers(schemaRegistry).(*fakeCluster)
 	brokers.externalPorts = external
+	return brokers
+}
+
+// kafkaBrokers is testBrokers serving Kafka on ports.
+func kafkaBrokers(ports ...int32) Cluster {
+	brokers := testBrokers(nil).(*fakeCluster)
+	brokers.kafkaPorts = ports
 	return brokers
 }
 
@@ -204,6 +214,32 @@ func closedPort(t *testing.T) int32 {
 	return int32(port)
 }
 
+// toggledListener listens on a loopback port, returning it and a switch that
+// takes the listener down, so dials are refused, and back up on the same
+// port. Nothing accepts: the kernel completes the handshake regardless.
+func toggledListener(t *testing.T) (int32, func(up bool)) {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	address := listener.Addr().String()
+	t.Cleanup(func() {
+		if listener != nil {
+			_ = listener.Close()
+		}
+	})
+	return int32(listener.Addr().(*net.TCPAddr).Port), func(up bool) {
+		t.Helper()
+		switch {
+		case up && listener == nil:
+			listener, err = net.Listen("tcp", address)
+			require.NoError(t, err)
+		case !up && listener != nil:
+			require.NoError(t, listener.Close())
+			listener = nil
+		}
+	}
+}
+
 func TestCheckerDecide(t *testing.T) {
 	var hits atomic.Int32
 	readyPort := schemaRegistryServer(t, statusHandler(http.StatusOK, &hits))
@@ -215,6 +251,7 @@ func TestCheckerDecide(t *testing.T) {
 	})
 	unhealthyPort := schemaRegistryServer(t, statusHandler(http.StatusServiceUnavailable, &hits))
 	downPort := closedPort(t)
+	kafkaUpPort, _ := toggledListener(t)
 
 	podDNSName := testCluster + "-0." + testCluster + "." + testNamespace + ".svc.cluster.local"
 	tlsPort, tlsPool := tlsSchemaRegistryServer(t, podDNSName, statusHandler(http.StatusOK, &hits))
@@ -243,7 +280,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{err: ErrUnknownCluster},
 			svc:      testService(true),
 			pod:      brokerPod(true),
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Exclude,
 		},
 		{
@@ -251,7 +288,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{err: errors.New("secret unavailable")},
 			svc:      testService(true),
 			pod:      brokerPod(true),
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Abstain,
 		},
 		{
@@ -261,7 +298,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{},
 			svc:      testService(true),
 			pod:      brokerPod(true),
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Abstain,
 		},
 		{
@@ -269,7 +306,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{brokers: testBrokers(nil)},
 			svc:      testService(true),
 			pod:      consolePod,
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Exclude,
 		},
 		{
@@ -277,7 +314,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{brokers: testBrokers(nil)},
 			svc:      testService(false),
 			pod:      brokerPod(false),
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Exclude,
 		},
 		{
@@ -285,7 +322,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{brokers: testBrokers(nil)},
 			svc:      testService(true),
 			pod:      brokerPod(false),
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Include,
 		},
 		{
@@ -293,7 +330,7 @@ func TestCheckerDecide(t *testing.T) {
 			resolver: &fakeResolver{brokers: testBrokers(plaintext(readyPort))},
 			svc:      testService(false),
 			pod:      brokerPod(true),
-			port:     tcpPort("kafka", kafkaPort),
+			port:     tcpPort("admin", adminPort),
 			want:     portmapper.Include,
 		},
 		{
@@ -414,8 +451,40 @@ func TestCheckerDecide(t *testing.T) {
 			}})},
 			svc:  testService(true),
 			pod:  brokerPod(true),
-			port: tcpPort("kafka", kafkaPort),
+			port: tcpPort("admin", adminPort),
 			want: portmapper.Include,
+		},
+		{
+			name:     "kafka listener accepting includes",
+			resolver: &fakeResolver{brokers: kafkaBrokers(kafkaUpPort)},
+			svc:      testService(true),
+			pod:      brokerPod(true),
+			port:     tcpPort("kafka", kafkaUpPort),
+			want:     portmapper.Include,
+		},
+		{
+			name:     "kafka listener refusing excludes",
+			resolver: &fakeResolver{brokers: kafkaBrokers(downPort)},
+			svc:      testService(true),
+			pod:      brokerPod(true),
+			port:     tcpPort("kafka", downPort),
+			want:     portmapper.Exclude,
+		},
+		{
+			name:     "each kafka listener is dialed on its own",
+			resolver: &fakeResolver{brokers: kafkaBrokers(kafkaUpPort, downPort)},
+			svc:      testService(true),
+			pod:      brokerPod(true),
+			port:     tcpPort("kafka-default", downPort),
+			want:     portmapper.Exclude,
+		},
+		{
+			name:     "a refusing kafka listener does not affect other ports",
+			resolver: &fakeResolver{brokers: kafkaBrokers(downPort)},
+			svc:      testService(true),
+			pod:      brokerPod(true),
+			port:     tcpPort("admin", adminPort),
+			want:     portmapper.Include,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -427,46 +496,74 @@ func TestCheckerDecide(t *testing.T) {
 	}
 }
 
-// TestCheckerDampsSchemaRegistryFailures pins the damping in both
-// directions: a published Schema Registry survives fewer than
-// probeFailureThreshold consecutive failures, and an unpublished one needs
-// probeSuccessThreshold consecutive successes to come back -- so a listener
-// that blinks on and off neither drops out nor writes itself back in on
-// every other probe.
-func TestCheckerDampsSchemaRegistryFailures(t *testing.T) {
-	var code atomic.Int32
-	code.Store(http.StatusOK)
-	port := schemaRegistryServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(int(code.Load()))
-	})
+// TestCheckerDampsProbeFailures pins the damping in both directions: a
+// published listener survives fewer than probeFailureThreshold consecutive
+// failures, and an unpublished one needs probeSuccessThreshold consecutive
+// successes to come back -- so a listener that blinks on and off neither
+// drops out nor writes itself back in on every other probe.
+func TestCheckerDampsProbeFailures(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		// serve starts a listener of the kind under test and returns the
+		// cluster serving it, its port, and a switch for its health.
+		serve func(t *testing.T) (Cluster, portmapper.Port, func(healthy bool))
+	}{
+		{
+			name: "schema registry",
+			serve: func(t *testing.T) (Cluster, portmapper.Port, func(bool)) {
+				var code atomic.Int32
+				code.Store(http.StatusOK)
+				port := schemaRegistryServer(t, func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(int(code.Load()))
+				})
+				return testBrokers(&schemaregistry.Listener{Port: port}), tcpPort("registry", port), func(healthy bool) {
+					if healthy {
+						code.Store(http.StatusOK)
+					} else {
+						code.Store(http.StatusServiceUnavailable)
+					}
+				}
+			},
+		},
+		{
+			name: "kafka",
+			serve: func(t *testing.T) (Cluster, portmapper.Port, func(bool)) {
+				port, toggle := toggledListener(t)
+				return kafkaBrokers(port), tcpPort("kafka", port), toggle
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			brokers, port, setHealthy := tc.serve(t)
+			checker := newTestChecker(&fakeResolver{brokers: brokers})
+			svc, pod := testService(true), brokerPod(true)
+			decide := func() portmapper.Decision {
+				return checker.Decide(t.Context(), svc, pod, port)
+			}
 
-	checker := newTestChecker(&fakeResolver{brokers: testBrokers(&schemaregistry.Listener{Port: port})})
-	svc, pod, registry := testService(true), brokerPod(true), tcpPort("registry", port)
-	decide := func() portmapper.Decision {
-		return checker.Decide(t.Context(), svc, pod, registry)
-	}
+			require.Equal(t, portmapper.Include, decide(), "the first probe is taken as-is")
 
-	require.Equal(t, portmapper.Include, decide(), "the first probe is taken as-is")
+			setHealthy(false)
+			for i := 1; i < probeFailureThreshold; i++ {
+				require.Equal(t, portmapper.Include, decide(), "failure %d of %d must not unpublish", i, probeFailureThreshold)
+			}
+			require.Equal(t, portmapper.Exclude, decide(), "failure %d unpublishes", probeFailureThreshold)
 
-	code.Store(http.StatusServiceUnavailable)
-	for i := 1; i < probeFailureThreshold; i++ {
-		require.Equal(t, portmapper.Include, decide(), "failure %d of %d must not unpublish", i, probeFailureThreshold)
-	}
-	require.Equal(t, portmapper.Exclude, decide(), "failure %d unpublishes", probeFailureThreshold)
+			setHealthy(true)
+			for i := 1; i < probeSuccessThreshold; i++ {
+				require.Equal(t, portmapper.Exclude, decide(), "success %d of %d must not republish", i, probeSuccessThreshold)
+			}
+			require.Equal(t, portmapper.Include, decide(), "success %d republishes", probeSuccessThreshold)
 
-	code.Store(http.StatusOK)
-	for i := 1; i < probeSuccessThreshold; i++ {
-		require.Equal(t, portmapper.Exclude, decide(), "success %d of %d must not republish", i, probeSuccessThreshold)
-	}
-	require.Equal(t, portmapper.Include, decide(), "success %d republishes", probeSuccessThreshold)
-
-	// A listener alternating between answering and not stays where it is:
-	// neither run of agreement is long enough to flip it.
-	for range 3 {
-		code.Store(http.StatusServiceUnavailable)
-		require.Equal(t, portmapper.Include, decide())
-		code.Store(http.StatusOK)
-		require.Equal(t, portmapper.Include, decide())
+			// A listener alternating between answering and not stays where
+			// it is: neither run of agreement is long enough to flip it.
+			for range 3 {
+				setHealthy(false)
+				require.Equal(t, portmapper.Include, decide())
+				setHealthy(true)
+				require.Equal(t, portmapper.Include, decide())
+			}
+		})
 	}
 }
 
@@ -480,6 +577,7 @@ func TestClassifyProbeError(t *testing.T) {
 		{name: "wrapped deadline exceeded", err: &url.Error{Op: "Get", Err: context.DeadlineExceeded}, want: portmapper.Exclude},
 		{name: "dial timeout", err: &net.OpError{Op: "dial", Err: &os.SyscallError{Syscall: "connect", Err: syscall.ETIMEDOUT}}, want: portmapper.Exclude},
 		{name: "connection refused is the listener being down", err: &url.Error{Op: "Get", Err: &net.OpError{Op: "dial", Err: &os.SyscallError{Syscall: "connect", Err: syscall.ECONNREFUSED}}}, want: portmapper.Exclude},
+		{name: "refused dial", err: &net.OpError{Op: "dial", Err: &os.SyscallError{Syscall: "connect", Err: syscall.ECONNREFUSED}}, want: portmapper.Exclude},
 		{name: "connection reset", err: &net.OpError{Op: "read", Err: &os.SyscallError{Syscall: "read", Err: syscall.ECONNRESET}}, want: portmapper.Exclude},
 		{name: "server hung up", err: io.EOF, want: portmapper.Exclude},
 		{name: "truncated response", err: io.ErrUnexpectedEOF, want: portmapper.Exclude},

@@ -26,8 +26,8 @@ import (
 )
 
 // ClusterBrokers describes a cluster's broker pods from the outside: how to
-// tell them from everything else in the namespace, and the Schema Registry
-// listener they serve.
+// tell them from everything else in the namespace, and the Kafka and Schema
+// Registry listeners they serve.
 //
 // NB: accessors rather than fields, so the endpoint steering controller can
 // name the shape it needs as an interface instead of importing this package.
@@ -38,6 +38,7 @@ type ClusterBrokers struct {
 	clusterDomain       string
 	schemaRegistry      *schemaregistry.Listener
 	schemaRegistryPorts []int32
+	kafkaPorts          []int32
 }
 
 // PodSelector is the cluster's own Service selector, carried by every one of
@@ -69,6 +70,12 @@ func (c *ClusterBrokers) SchemaRegistryPorts() []int32 {
 	return c.schemaRegistryPorts
 }
 
+// KafkaPorts is every port a broker serves Kafka on, internal and external
+// alike.
+func (c *ClusterBrokers) KafkaPorts() []int32 {
+	return c.kafkaPorts
+}
+
 // ClusterBrokers returns the ClusterBrokers of a v1 Cluster or v2 Redpanda.
 // A StretchCluster has none: endpoint steering, its only caller, leaves
 // those Services to Kubernetes.
@@ -91,21 +98,14 @@ func (c *Factory) redpandaClusterBrokers(ctx context.Context, cluster *redpandav
 	brokers := &ClusterBrokers{
 		podSelector:   redpandachart.ClusterPodLabelsSelector(state),
 		clusterDomain: strings.TrimSuffix(state.Values.ClusterDomain, "."),
+		kafkaPorts:    listenerPorts(state.Values.Listeners.Kafka),
 	}
 
 	listener := state.Values.Listeners.SchemaRegistry
 	if !listener.Enabled {
 		return brokers, nil
 	}
-	brokers.schemaRegistryPorts = []int32{listener.Port}
-	for name := range listener.External {
-		// IsEnabled is the predicate the broker's own schema_registry_api
-		// list is built from, so this is exactly what a broker binds.
-		if external := listener.External[name]; external.IsEnabled() {
-			brokers.schemaRegistryPorts = append(brokers.schemaRegistryPorts, external.Port)
-		}
-	}
-	slices.Sort(brokers.schemaRegistryPorts)
+	brokers.schemaRegistryPorts = listenerPorts(listener)
 	brokers.schemaRegistry = &schemaregistry.Listener{Port: listener.Port}
 	if listener.TLS.IsEnabled(&state.Values.TLS) {
 		brokers.schemaRegistry.TLSConfig = memoizeTLS(func(context.Context) (*tls.Config, error) {
@@ -113,6 +113,20 @@ func (c *Factory) redpandaClusterBrokers(ctx context.Context, cluster *redpandav
 		})
 	}
 	return brokers, nil
+}
+
+// listenerPorts is every port a broker binds for listener. IsEnabled is the
+// predicate the broker's own listener list is built from, so this is exactly
+// what a broker binds.
+func listenerPorts[T ~string](listener redpandachart.ListenerConfig[T]) []int32 {
+	ports := []int32{listener.Port}
+	for name := range listener.External {
+		if external := listener.External[name]; external.IsEnabled() {
+			ports = append(ports, external.Port)
+		}
+	}
+	slices.Sort(ports)
+	return ports
 }
 
 // memoizeTLS caches a successful TLS build, so a listener's certificates are
@@ -158,6 +172,7 @@ func (c *Factory) redpandaRenderState(ctx context.Context, cluster *redpandav1al
 func (c *Factory) v1ClusterBrokers(_ context.Context, cluster *vectorizedv1alpha1.Cluster, clusterName string) (*ClusterBrokers, error) {
 	brokers := &ClusterBrokers{
 		podSelector: labels.ForCluster(cluster).AsAPISelector().MatchLabels,
+		kafkaPorts:  v1KafkaPorts(cluster),
 	}
 
 	brokers.schemaRegistryPorts = v1SchemaRegistryPorts(cluster)
@@ -183,6 +198,25 @@ func (c *Factory) v1ClusterBrokers(_ context.Context, cluster *vectorizedv1alpha
 		return certs.GetSchemaTLSConfig(ctx, k8sClient)
 	})
 	return brokers, nil
+}
+
+// v1KafkaPorts is the container port of every Kafka listener a v1 cluster
+// declares. An external listener naming no port binds the internal one's
+// plus one, as the broker's configuration renders it.
+func v1KafkaPorts(cluster *vectorizedv1alpha1.Cluster) []int32 {
+	internal := cluster.InternalListener()
+	if internal == nil {
+		return nil
+	}
+	ports := []int32{int32(internal.Port)}
+	for _, external := range cluster.KafkaAPIExternalListeners() {
+		port := external.Port
+		if port == 0 {
+			port = internal.Port + 1
+		}
+		ports = append(ports, int32(port))
+	}
+	return ports
 }
 
 // v1SchemaRegistryPorts is the container port of every Schema Registry

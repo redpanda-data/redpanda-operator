@@ -30,7 +30,7 @@ var ErrUnknownCluster = errors.New("no cluster found for pod group")
 
 // Cluster is what a membership decision needs to know about a Redpanda
 // cluster: how to tell its broker pods from everything else in the
-// namespace, and the Schema Registry listener they serve.
+// namespace, and the Kafka and Schema Registry listeners they serve.
 //
 // NB: client.Factory.ClusterBrokers produces it, but is named here as an
 // interface rather than imported: pkg/client sits above the v1 and v2
@@ -49,6 +49,10 @@ type Cluster interface {
 	// internal and external alike. One registry backs them all, so the one
 	// probe decides the lot.
 	SchemaRegistryPorts() []int32
+	// KafkaPorts is every port a broker serves Kafka on, internal and
+	// external alike. Each is a listener of its own, so each is dialed on
+	// its own.
+	KafkaPorts() []int32
 }
 
 // Resolver maps a pod group -- the cluster named by [ServiceAnnotation] on a
