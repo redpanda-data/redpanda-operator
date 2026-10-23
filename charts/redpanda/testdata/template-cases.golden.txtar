@@ -967,7 +967,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -1062,7 +1062,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -1383,7 +1383,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -1406,7 +1406,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -2296,7 +2296,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -2379,7 +2379,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -2509,7 +2509,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -2528,7 +2528,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -3488,7 +3488,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -3583,7 +3583,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -3904,7 +3904,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -3927,7 +3927,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -4894,7 +4894,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -4995,7 +4995,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -5136,7 +5136,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -5158,7 +5158,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -6212,7 +6212,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -6325,7 +6325,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -6660,7 +6660,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -6686,7 +6686,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -7745,7 +7745,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -7843,7 +7843,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -8164,7 +8164,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -8187,7 +8187,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -9289,7 +9289,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -9384,7 +9384,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -9705,7 +9705,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -9728,7 +9728,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -10737,7 +10737,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -10832,7 +10832,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -11153,7 +11153,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -11176,7 +11176,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -12185,7 +12185,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -12280,7 +12280,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -12605,7 +12605,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -12628,7 +12628,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -13732,7 +13732,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -13845,7 +13845,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -14180,7 +14180,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -14206,7 +14206,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -15218,7 +15218,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -15313,7 +15313,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -15543,7 +15543,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -15566,7 +15566,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -16674,7 +16674,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -16769,7 +16769,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -16999,7 +16999,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -17022,7 +17022,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -17939,7 +17939,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -18022,7 +18022,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -18176,7 +18176,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -18195,7 +18195,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -19196,7 +19196,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -19291,7 +19291,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -19643,7 +19643,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -19666,7 +19666,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -20675,7 +20675,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -20770,7 +20770,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -21091,7 +21091,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -21114,7 +21114,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -22126,7 +22126,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -22221,7 +22221,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -22542,7 +22542,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -22565,7 +22565,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -23574,7 +23574,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -23669,7 +23669,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -23994,7 +23994,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -24017,7 +24017,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -25075,7 +25075,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -25188,7 +25188,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -25511,7 +25511,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -25534,7 +25534,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -26593,7 +26593,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -26706,7 +26706,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -27029,7 +27029,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -27052,7 +27052,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -28111,7 +28111,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -28224,7 +28224,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -28548,7 +28548,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -28571,7 +28571,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -29581,7 +29581,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -29694,7 +29694,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -30016,7 +30016,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -30039,7 +30039,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -31099,7 +31099,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -31214,7 +31214,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -31551,7 +31551,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -31574,7 +31574,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -32635,7 +32635,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -32750,7 +32750,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -33087,7 +33087,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -33110,7 +33110,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -34171,7 +34171,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -34286,7 +34286,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -34625,7 +34625,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -34648,7 +34648,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -35660,7 +35660,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -35775,7 +35775,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -36112,7 +36112,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -36135,7 +36135,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -37195,7 +37195,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -37310,7 +37310,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -37647,7 +37647,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -37670,7 +37670,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -38731,7 +38731,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -38846,7 +38846,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -39183,7 +39183,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -39206,7 +39206,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -40267,7 +40267,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -40382,7 +40382,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -40721,7 +40721,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_SAMPLE_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -40744,7 +40744,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -41756,7 +41756,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -41871,7 +41871,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -42208,7 +42208,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -42231,7 +42231,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -43240,7 +43240,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -43335,7 +43335,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -43656,7 +43656,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -43679,7 +43679,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -44689,7 +44689,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -44784,7 +44784,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -45105,7 +45105,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -45128,7 +45128,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -46137,7 +46137,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -46232,7 +46232,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -46553,7 +46553,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -46576,7 +46576,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -47672,7 +47672,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -47767,7 +47767,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -48088,7 +48088,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -48111,7 +48111,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -49126,7 +49126,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -49221,7 +49221,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -49542,7 +49542,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -49565,7 +49565,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -50628,7 +50628,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -50760,7 +50760,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -51085,7 +51085,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -51108,7 +51108,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -52117,7 +52117,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -52212,7 +52212,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -52537,7 +52537,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -52560,7 +52560,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -53572,7 +53572,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -53667,7 +53667,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -54018,7 +54018,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -54041,7 +54041,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -55059,7 +55059,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -55154,7 +55154,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -55492,7 +55492,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources:
           limits:
@@ -55518,7 +55518,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -56533,7 +56533,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -56630,7 +56630,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -56951,7 +56951,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -56976,7 +56976,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -57804,7 +57804,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -57911,7 +57911,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -58358,7 +58358,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -58385,7 +58385,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -59402,7 +59402,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -59497,7 +59497,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -59682,7 +59682,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -59705,7 +59705,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -60866,7 +60866,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -60979,7 +60979,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -61316,7 +61316,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -61342,7 +61342,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -62403,7 +62403,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -62498,7 +62498,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -62821,7 +62821,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ${REDPANDA_LICENSE}
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -62844,7 +62844,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -63858,7 +63858,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -63953,7 +63953,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -64279,7 +64279,7 @@ spec:
             secretKeyRef:
               key: license-key
               name: redpanda-license
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -64302,7 +64302,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -65338,7 +65338,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -65433,7 +65433,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -65782,7 +65782,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -65805,7 +65805,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -66814,7 +66814,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -66909,7 +66909,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -67230,7 +67230,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -67253,7 +67253,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -68213,7 +68213,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -68338,7 +68338,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -68639,7 +68639,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources:
           requests:
@@ -68668,7 +68668,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -69691,7 +69691,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -69786,7 +69786,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -70107,7 +70107,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -70130,7 +70130,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -71233,7 +71233,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -71346,7 +71346,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -71681,7 +71681,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -71707,7 +71707,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -72743,7 +72743,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -72838,7 +72838,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -73159,7 +73159,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -73182,7 +73182,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -74240,7 +74240,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -74335,7 +74335,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -74658,7 +74658,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -74681,7 +74681,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -75737,7 +75737,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -75835,7 +75835,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -76156,7 +76156,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -76179,7 +76179,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -77200,7 +77200,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -77295,7 +77295,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -77616,7 +77616,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -77639,7 +77639,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -78697,7 +78697,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -78792,7 +78792,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -79115,7 +79115,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -79138,7 +79138,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -80194,7 +80194,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -80292,7 +80292,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -80613,7 +80613,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -80636,7 +80636,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -81645,7 +81645,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -81740,7 +81740,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -82061,7 +82061,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -82084,7 +82084,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -83142,7 +83142,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -83237,7 +83237,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -83560,7 +83560,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -83583,7 +83583,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -84639,7 +84639,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -84737,7 +84737,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -85058,7 +85058,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -85081,7 +85081,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -86090,7 +86090,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -86185,7 +86185,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -86506,7 +86506,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -86529,7 +86529,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -87587,7 +87587,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -87682,7 +87682,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -88005,7 +88005,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -88028,7 +88028,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -89084,7 +89084,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -89182,7 +89182,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -89503,7 +89503,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -89526,7 +89526,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -90535,7 +90535,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -90630,7 +90630,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -90951,7 +90951,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -90974,7 +90974,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -92032,7 +92032,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -92127,7 +92127,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -92450,7 +92450,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -92473,7 +92473,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -93529,7 +93529,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -93627,7 +93627,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -93948,7 +93948,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -93971,7 +93971,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -94980,7 +94980,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -95075,7 +95075,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -95396,7 +95396,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -95419,7 +95419,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -96477,7 +96477,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -96572,7 +96572,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -96895,7 +96895,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -96918,7 +96918,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -97974,7 +97974,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -98072,7 +98072,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -98393,7 +98393,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -98416,7 +98416,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -99425,7 +99425,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -99520,7 +99520,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -99655,7 +99655,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -99678,7 +99678,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -100687,7 +100687,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -100782,7 +100782,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -100917,7 +100917,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -100940,7 +100940,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -101950,7 +101950,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -102067,7 +102067,7 @@ spec:
             secretKeyRef:
               key: my-key
               name: my-secret
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -102388,7 +102388,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -102433,7 +102433,7 @@ spec:
             secretKeyRef:
               key: my-key
               name: my-secret
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -103498,7 +103498,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -103640,7 +103640,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -103978,7 +103978,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -104001,7 +104001,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -105112,7 +105112,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -105207,7 +105207,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -105532,7 +105532,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -105555,7 +105555,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -106666,7 +106666,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -106761,7 +106761,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -107086,7 +107086,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -107109,7 +107109,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -108221,7 +108221,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -108316,7 +108316,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -108671,7 +108671,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -108694,7 +108694,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -109732,7 +109732,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -109839,7 +109839,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -110286,7 +110286,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -110313,7 +110313,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -111330,7 +111330,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -111425,7 +111425,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -111746,7 +111746,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -111769,7 +111769,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -112778,7 +112778,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -112873,7 +112873,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -113194,7 +113194,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -113217,7 +113217,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -114227,7 +114227,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -114322,7 +114322,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -114643,7 +114643,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -114666,7 +114666,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -115675,7 +115675,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -115770,7 +115770,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -116121,7 +116121,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -116144,7 +116144,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -117136,7 +117136,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -117231,7 +117231,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -117578,7 +117578,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -117601,7 +117601,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -118722,7 +118722,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -118856,7 +118856,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -119196,7 +119196,7 @@ spec:
           value: SCRAM-SHA-256
         - name: RP_BOOTSTRAP_USER
           value: $(RPK_USER):$(RPK_PASS):$(RPK_SASL_MECHANISM)
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -119222,7 +119222,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -120234,7 +120234,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -120329,7 +120329,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -120650,7 +120650,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -120673,7 +120673,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -121731,7 +121731,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -121826,7 +121826,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -122149,7 +122149,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -122172,7 +122172,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -123228,7 +123228,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -123326,7 +123326,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -123647,7 +123647,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -123670,7 +123670,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -124679,7 +124679,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -124774,7 +124774,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -125095,7 +125095,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -125118,7 +125118,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -126176,7 +126176,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -126271,7 +126271,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -126594,7 +126594,7 @@ spec:
         env:
         - name: REDPANDA_LICENSE
           value: ATOTALLYVALIDLICENSE
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -126617,7 +126617,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -127673,7 +127673,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -127771,7 +127771,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -128092,7 +128092,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -128115,7 +128115,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -129131,7 +129131,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -129226,7 +129226,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -129575,7 +129575,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -129598,7 +129598,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -130743,7 +130743,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -130838,7 +130838,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -130981,7 +130981,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -131004,7 +131004,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -132013,7 +132013,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: sidecar
         readinessProbe:
           failureThreshold: 3
@@ -132108,7 +132108,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
@@ -132429,7 +132429,7 @@ spec:
         - --bootstrap-yaml
         - /tmp/config/.bootstrap.yaml
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: post-install
         resources: {}
         securityContext: {}
@@ -132452,7 +132452,7 @@ spec:
         - --out-dir
         - /tmp/config
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.10
+        image: docker.redpanda.com/redpandadata/redpanda-operator:v25.3.11
         name: bootstrap-yaml-envsubst
         resources:
           limits:
