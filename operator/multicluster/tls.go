@@ -72,7 +72,7 @@ func (r *RenderState) TLSConfig(pool *redpandav1alpha2.RedpandaBrokerPool, certN
 
 	tlsConfig.RootCAs = certPool
 
-	if pool.Spec.Listeners.CertRequiresClientAuth(certName) {
+	if pool.Spec.CertRequiresClientAuth(certName) {
 		var clientCert corev1.Secret
 		lookupErr := r.client.Get(context.TODO(), kube.ObjectKey{Name: clientCertName, Namespace: namespace}, &clientCert)
 		if lookupErr != nil {

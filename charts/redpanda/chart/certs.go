@@ -28,7 +28,7 @@ const defaultCertDuration = "43800h"
 
 // PKI resolves this chart's values into an authoritative certificate set. When
 // possible, use the PKI rather than going through Values.
-func PKI(state *RenderState) redpanda.PKI {
+func resolvePKI(state *RenderState) redpanda.PKI {
 	fullname := Fullname(state)
 	service := ServiceName(state)
 	ns := state.Release.Namespace
@@ -156,47 +156,34 @@ func gatewayServerCertDNSNames(state *RenderState, certName string) []string {
 		return nil
 	}
 
-	pods := gatewayPodNames(state)
+	// NB: These conditions must agree with resolveAPIListeners.
 	var names []string
+	for _, listener := range []ListenerConfig[string]{
+		state.Values.Listeners.Kafka.AsString(),
+		state.Values.Listeners.HTTP.AsString(),
+		state.Values.Listeners.Admin.AsString(),
+		state.Values.Listeners.SchemaRegistry.AsString(),
+	} {
+		for _, external := range helmette.SortedMap(listener.External) {
+			if !external.IsEnabled() || !ptr.Deref(external.Enabled, state.Values.External.Enabled) {
+				continue
+			}
 
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.Kafka.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.Kafka.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.HTTP.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.HTTP.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.Admin.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.Admin.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
-	for _, listener := range helmette.SortedMap(state.Values.Listeners.SchemaRegistry.External) {
-		names = appendGatewayCertHosts(state, names, certName, ptr.Deref(listener.Enabled, state.Values.External.Enabled), listener.IsGatewayListener(), listener.TLS, &state.Values.Listeners.SchemaRegistry.TLS, ptr.Deref(listener.Host, ""), ptr.Deref(listener.HostTemplate, ""), pods)
-	}
+			if !external.TLS.IsEnabled(&listener.TLS, &state.Values.TLS) || external.TLS.GetCertName(&listener.TLS) != certName {
+				continue
+			}
 
-	return names
-}
+			gateway := resolveGateway(state, external)
+			if gateway == nil {
+				continue
+			}
 
-// appendGatewayCertHosts appends a gateway listener's SNI hostnames to names
-// when the listener is enabled, in gateway mode, TLS-enabled, and resolves to
-// certName. extTLS.IsEnabled is nil-safe, and GetCertName is only reached when
-// it returns true (so extTLS is non-nil there).
-func appendGatewayCertHosts(state *RenderState, names []string, certName string, enabled bool, isGateway bool, extTLS *ExternalTLS, listenerTLS *InternalTLS, host string, hostTemplate string, pods []string) []string {
-	if !enabled || !isGateway {
-		return names
-	}
-	if !extTLS.IsEnabled(listenerTLS, &state.Values.TLS) {
-		return names
-	}
-	if extTLS.GetCertName(listenerTLS) != certName {
-		return names
-	}
-
-	if host != "" {
-		names = append(names, host)
-	}
-	if hostTemplate != "" {
-		for i, podname := range pods {
-			names = append(names, renderBrokerHost(hostTemplate, i, podname))
+			if gateway.Host != "" {
+				names = append(names, gateway.Host)
+			}
+			names = append(names, gateway.BrokerHosts...)
 		}
 	}
+
 	return names
 }
