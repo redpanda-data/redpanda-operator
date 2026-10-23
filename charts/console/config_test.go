@@ -665,6 +665,192 @@ func TestStaticConfig(t *testing.T) {
 				}),
 			},
 		},
+		{
+			Name: "kafka with SASL password inline",
+			In: ir.StaticConfigurationSource{
+				Kafka: &ir.KafkaAPISpec{
+					Brokers: []string{"broker:9092"},
+					SASL: &ir.KafkaSASL{
+						Username:  "test-user",
+						Password:  &ir.ValueSource{Inline: ptr.To("hunter2")},
+						Mechanism: "SCRAM-SHA-256",
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Kafka: &PartialKafka{
+						Brokers: []string{"broker:9092"},
+						SASL: &PartialKafkaSASL{
+							Enabled:   ptr.To(true),
+							Username:  ptr.To("test-user"),
+							Mechanism: ptr.To("SCRAM-SHA-256"),
+						},
+					},
+					Redpanda: &PartialRedpanda{},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "KAFKA_SASL_PASSWORD", Value: "hunter2"}},
+			},
+		},
+		{
+			Name: "kafka with SASL password from a ConfigMap",
+			In: ir.StaticConfigurationSource{
+				Kafka: &ir.KafkaAPISpec{
+					Brokers: []string{"broker:9092"},
+					SASL: &ir.KafkaSASL{
+						Username: "test-user",
+						Password: &ir.ValueSource{
+							ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-sasl"},
+								Key:                  "password",
+							},
+						},
+						Mechanism: "SCRAM-SHA-512",
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Kafka: &PartialKafka{
+						Brokers: []string{"broker:9092"},
+						SASL: &PartialKafkaSASL{
+							Enabled:   ptr.To(true),
+							Username:  ptr.To("test-user"),
+							Mechanism: ptr.To("SCRAM-SHA-512"),
+						},
+					},
+					Redpanda: &PartialRedpanda{},
+				}),
+				ExtraEnv: []corev1.EnvVar{{
+					Name: "KAFKA_SASL_PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "kafka-sasl"},
+							Key:                  "password",
+						},
+					},
+				}},
+			},
+		},
+		{
+			Name: "kafka with SASL OAUTHBEARER",
+			In: ir.StaticConfigurationSource{
+				Kafka: &ir.KafkaAPISpec{
+					Brokers: []string{"broker:9092"},
+					SASL: &ir.KafkaSASL{
+						Mechanism: "OAUTHBEARER",
+						OAUth: &ir.KafkaSASLOAuthBearer{
+							Token: &ir.ValueSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{Name: "oauth"},
+									Key:                  "token",
+								},
+							},
+						},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Kafka: &PartialKafka{
+						Brokers: []string{"broker:9092"},
+						SASL: &PartialKafkaSASL{
+							Enabled:   ptr.To(true),
+							Username:  ptr.To(""),
+							Mechanism: ptr.To("OAUTHBEARER"),
+							OAUth:     &PartialKafkaSASLOAuthBearer{},
+						},
+					},
+					Redpanda: &PartialRedpanda{},
+				}),
+				ExtraEnv: []corev1.EnvVar{{
+					Name: "KAFKA_SASL_OAUTH_TOKEN",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "oauth"},
+							Key:                  "token",
+						},
+					},
+				}},
+			},
+		},
+		{
+			Name: "admin API with a bearer token",
+			In: ir.StaticConfigurationSource{
+				Admin: &ir.AdminAPISpec{
+					URLs: []string{"http://admin:9644"},
+					Auth: &ir.AdminAuth{
+						AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Redpanda: &PartialRedpanda{
+						AdminAPI: &PartialRedpandaAdminAPI{
+							Enabled:        ptr.To(true),
+							URLs:           []string{"http://admin:9644"},
+							Authentication: &PartialHTTPAuthentication{},
+						},
+					},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", Value: "admin-token"}},
+			},
+		},
+		{
+			// Console picks basic auth whenever a username is set, so a token
+			// must not come with a username, and a username without a password
+			// must not suppress the token.
+			Name: "admin API with a bearer token and a username",
+			In: ir.StaticConfigurationSource{
+				Admin: &ir.AdminAPISpec{
+					URLs: []string{"http://admin:9644"},
+					Auth: &ir.AdminAuth{
+						Username:  "ignored-user",
+						AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Redpanda: &PartialRedpanda{
+						AdminAPI: &PartialRedpandaAdminAPI{
+							Enabled:        ptr.To(true),
+							URLs:           []string{"http://admin:9644"},
+							Authentication: &PartialHTTPAuthentication{},
+						},
+					},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BEARERTOKEN", Value: "admin-token"}},
+			},
+		},
+		{
+			Name: "admin API with a password and a bearer token",
+			In: ir.StaticConfigurationSource{
+				Admin: &ir.AdminAPISpec{
+					URLs: []string{"http://admin:9644"},
+					Auth: &ir.AdminAuth{
+						Username:  "admin-user",
+						Password:  &ir.ValueSource{Inline: ptr.To("admin-password")},
+						AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")},
+					},
+				},
+			},
+			Out: PartialRenderValues{
+				Config: helmette.UnmarshalInto[map[string]any](PartialConfig{
+					Redpanda: &PartialRedpanda{
+						AdminAPI: &PartialRedpandaAdminAPI{
+							Enabled: ptr.To(true),
+							URLs:    []string{"http://admin:9644"},
+							Authentication: &PartialHTTPAuthentication{
+								BasicAuth: &PartialHTTPBasicAuth{Username: ptr.To("admin-user")},
+							},
+						},
+					},
+				}),
+				ExtraEnv: []corev1.EnvVar{{Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD", Value: "admin-password"}},
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -711,6 +897,34 @@ func TestConfigMapper_addEnv(t *testing.T) {
 		},
 	})
 	require.Len(t, mapper.Env, 1)
+
+	// Test with nil source (should not add)
+	mapper.addEnv("NIL_VAR", nil)
+	require.Len(t, mapper.Env, 1)
+
+	// Test with an inline value
+	mapper.addEnv("INLINE_VAR", &ir.ValueSource{Inline: ptr.To("inline-value")})
+	require.Len(t, mapper.Env, 2)
+	require.Equal(t, corev1.EnvVar{Name: "INLINE_VAR", Value: "inline-value"}, mapper.Env[1])
+
+	// Test with a ConfigMap ref
+	mapper.addEnv("CONFIGMAP_VAR", &ir.ValueSource{
+		ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{Name: "test-configmap"},
+			Key:                  "test-key",
+		},
+	})
+	require.Len(t, mapper.Env, 3)
+	require.Equal(t, "CONFIGMAP_VAR", mapper.Env[2].Name)
+	require.Equal(t, "test-configmap", mapper.Env[2].ValueFrom.ConfigMapKeyRef.Name)
+	require.Equal(t, "test-key", mapper.Env[2].ValueFrom.ConfigMapKeyRef.Key)
+
+	// Test with an external secret, which cannot be resolved here (should
+	// not add)
+	mapper.addEnv("EXTERNAL_VAR", &ir.ValueSource{
+		ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "external"},
+	})
+	require.Len(t, mapper.Env, 3)
 }
 
 func TestVolumes_MaybeAdd(t *testing.T) {

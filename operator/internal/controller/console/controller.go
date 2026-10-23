@@ -46,6 +46,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/lifecycle"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/functional"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 )
 
@@ -489,38 +490,41 @@ func (r *render) Types() []kube.Object {
 }
 
 func (r *render) Render(ctx context.Context) ([]kube.Object, error) {
-	state, err := r.state(ctx)
+	state, credentials, err := r.state(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	objs := console.Render(state)
+	if credentials != nil {
+		objs = append(objs, credentials)
+	}
 
 	return functional.Filter(objs, func(obj kube.Object) bool {
 		return !reflect.ValueOf(obj).IsNil()
 	}), nil
 }
 
-func (r *render) state(ctx context.Context) (*console.RenderState, error) {
-	clusterValues, err := r.clusterFragment(ctx)
+func (r *render) state(ctx context.Context) (*console.RenderState, *corev1.Secret, error) {
+	clusterValues, credentials, err := r.clusterFragment(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Convert the Console CR into chart values.
 	userValues, err := redpandav1alpha2.ConvertConsoleToConsolePartialRenderValues(&r.console.Spec.ConsoleValues)
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
 	// Merge the user values into the generated cluster configuration.
 	if err := mergo.Merge(&clusterValues, userValues, mergo.WithAppendSlice); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
 	state, err := console.NewRenderState(r.console.Namespace, r.console.Name, r.labels, clusterValues)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Populate metrics telemetry state. Cluster ID is resolved per-reconcile
@@ -534,14 +538,16 @@ func (r *render) state(ctx context.Context) (*console.RenderState, error) {
 	}
 	state.Metrics = metrics
 
-	return state, nil
+	return state, credentials, nil
 }
 
 // clusterFragment returns a [console.PartialRenderValues] containing details
-// on how to connect to the cluster specified in ClusterSource.
-func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValues, error) {
+// on how to connect to the cluster specified in ClusterSource, and the Secret
+// that holds any credentials the operator had to resolve itself (nil when
+// there are none).
+func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValues, *corev1.Secret, error) {
 	if r.console.Spec.ClusterSource == nil {
-		return console.PartialRenderValues{}, nil
+		return console.PartialRenderValues{}, nil, nil
 	}
 
 	if ref := r.console.Spec.ClusterSource.ClusterRef; ref != nil {
@@ -553,7 +559,7 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 		if ref.IsStretchCluster() {
 			var sc redpandav1alpha2.StretchCluster
 			if err := r.ctl.Get(ctx, key, &sc); err != nil {
-				return console.PartialRenderValues{}, err
+				return console.PartialRenderValues{}, nil, err
 			}
 
 			// TLS / Listeners / ClusterDomain live on each pool's spec (to
@@ -565,25 +571,25 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 			// SetupWithMulticlusterManager's StretchCluster watch).
 			pool, err := r.findRepresentativePool(ctx, &sc)
 			if err != nil {
-				return console.PartialRenderValues{}, err
+				return console.PartialRenderValues{}, nil, err
 			}
 			if pool == nil {
-				return console.PartialRenderValues{}, nil
+				return console.PartialRenderValues{}, nil, nil
 			}
 
 			cfg := conversion.ConvertStretchClusterToStaticConfig(&sc, pool)
-			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil
+			return console.StaticConfigurationSourceToPartialRenderValues(cfg), nil, nil
 		}
 
 		// TODO: Add support for vectorized clusters?
 		var rp redpandav1alpha2.Redpanda
 		if err := r.ctl.Get(ctx, key, &rp); err != nil {
-			return console.PartialRenderValues{}, err
+			return console.PartialRenderValues{}, nil, err
 		}
 
 		pools, err := r.nodePoolsFor(ctx, &rp)
 		if err != nil {
-			return console.PartialRenderValues{}, err
+			return console.PartialRenderValues{}, nil, err
 		}
 
 		state, err := conversion.ConvertV2ToRenderState(nil, &conversion.V2Defaulters{
@@ -591,20 +597,125 @@ func (r *render) clusterFragment(ctx context.Context) (console.PartialRenderValu
 			SidecarImage:  func(ri *redpandav1alpha2.RedpandaImage) *redpandav1alpha2.RedpandaImage { return ri },
 		}, &rp, pools)
 		if err != nil {
-			return console.PartialRenderValues{}, err
+			return console.PartialRenderValues{}, nil, err
 		}
 
 		cfg := state.AsStaticConfigSource()
-		return console.StaticConfigurationSourceToPartialRenderValues(&cfg), nil
+		return console.StaticConfigurationSourceToPartialRenderValues(&cfg), nil, nil
 	}
 
 	if cfg := r.console.Spec.ClusterSource.StaticConfiguration; cfg != nil {
 		irCfg := redpandav1alpha2.ConvertStaticConfigToIR(r.console.Namespace, cfg)
 
-		return console.StaticConfigurationSourceToPartialRenderValues(irCfg), nil
+		credentials, err := r.mirrorCredentials(irCfg)
+		if err != nil {
+			return console.PartialRenderValues{}, nil, err
+		}
+
+		return console.StaticConfigurationSourceToPartialRenderValues(irCfg), credentials, nil
 	}
 
-	return console.PartialRenderValues{}, nil
+	return console.PartialRenderValues{}, nil, nil
+}
+
+// staticConfigPath is the CRD field path of a Console's staticConfiguration.
+const staticConfigPath = "spec.cluster.staticConfiguration"
+
+// mirrorCredentials rewrites every inline value in cfg into a key of a
+// Console-owned Secret, and returns that Secret (nil when cfg has no inline
+// values). Console can only read credentials from its environment or files,
+// so mirroring keeps inline values out of the Deployment spec.
+//
+// externalSecretRef is rejected rather than resolved: the operator's cloud
+// secret expander can read any secret under its prefix, and resolving one
+// here would let anyone who can create a Console copy it into a Secret in
+// their namespace.
+func (r *render) mirrorCredentials(cfg *ir.StaticConfigurationSource) (*corev1.Secret, error) {
+	name := fmt.Sprintf("%s-cluster-credentials", r.console.Name)
+
+	type source struct {
+		path string
+		src  *ir.ValueSource
+	}
+	sources := map[string]source{}
+	add := func(key, path string, src *ir.ValueSource) {
+		sources[key] = source{path: staticConfigPath + "." + path, src: src}
+	}
+	addTLS := func(prefix, path string, tls *ir.CommonTLS) {
+		if tls == nil {
+			return
+		}
+		add(prefix+"-tls-ca", path+".tls.caCert", tls.CaCert)
+		add(prefix+"-tls-cert", path+".tls.cert", tls.Cert)
+		add(prefix+"-tls-key", path+".tls.key", tls.Key)
+	}
+
+	if kafka := cfg.Kafka; kafka != nil {
+		addTLS("kafka", "kafka", kafka.TLS)
+		if sasl := kafka.SASL; sasl != nil {
+			add("kafka-sasl-password", "kafka.sasl.password", sasl.Password)
+			if sasl.OAUth != nil {
+				add("kafka-sasl-oauth-token", "kafka.sasl.oauth.token", sasl.OAUth.Token)
+			}
+		}
+	}
+
+	if admin := cfg.Admin; admin != nil {
+		addTLS("admin", "admin", admin.TLS)
+		if admin.Auth != nil {
+			add("admin-password", "admin.sasl.password", admin.Auth.Password)
+			add("admin-token", "admin.sasl.authToken", admin.Auth.AuthToken)
+		}
+	}
+
+	if schema := cfg.SchemaRegistry; schema != nil {
+		addTLS("schema-registry", "schemaRegistry", schema.TLS)
+		if schema.SASL != nil {
+			add("schema-registry-password", "schemaRegistry.sasl.password", schema.SASL.Password)
+			add("schema-registry-token", "schemaRegistry.sasl.authToken", schema.SASL.AuthToken)
+		}
+	}
+
+	keys := helmette.SortedKeys(sources)
+
+	// Check every source before mirroring any, so a rejected Console never
+	// produces a partial Secret.
+	for _, key := range keys {
+		if s := sources[key]; s.src != nil && s.src.ExternalSecretRefSelector != nil {
+			return nil, errors.Newf("%s.externalSecretRef is not supported for Console; use secretKeyRef, configMapKeyRef, or inline instead", s.path)
+		}
+	}
+
+	data := map[string][]byte{}
+	for _, key := range keys {
+		src := sources[key].src
+		if src == nil || src.Inline == nil {
+			continue
+		}
+		data[key] = []byte(*src.Inline)
+		*src = ir.ValueSource{
+			Namespace: src.Namespace,
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: name},
+				Key:                  key,
+			},
+		}
+	}
+
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: r.console.Namespace,
+			Labels:    r.labels,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: data,
+	}, nil
 }
 
 // findRepresentativePool returns the first RedpandaBrokerPool in the

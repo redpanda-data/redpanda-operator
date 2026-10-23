@@ -357,7 +357,7 @@ func consoleContainerEnv(state *RenderState) []corev1.EnvVar {
 		{
 			Value: state.Values.Secret.Redpanda.AdminAPI.Password,
 			EnvVar: corev1.EnvVar{
-				Name: "REDPANDA_ADMINAPI_PASSWORD",
+				Name: "REDPANDA_ADMINAPI_AUTHENTICATION_BASIC_PASSWORD",
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{

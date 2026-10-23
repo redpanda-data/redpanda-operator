@@ -1,0 +1,9 @@
+project: operator
+kind: Fixed
+body: |-
+    Console credentials given `inline` in `staticConfiguration` reach Console
+
+      The operator stores inline values in a Secret named `<console>-cluster-credentials` that it owns,
+      so Console reads them from that Secret and they stay out of the Deployment spec. A Console that uses
+      `externalSecretRef` in `staticConfiguration` fails to reconcile with an error that names the field.
+time: 2026-10-12T12:00:02.000000+01:00

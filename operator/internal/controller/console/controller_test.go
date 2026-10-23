@@ -30,6 +30,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -44,6 +45,7 @@ import (
 	crds "github.com/redpanda-data/redpanda-operator/operator/config/crd/bases"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/testutils"
+	"github.com/redpanda-data/redpanda-operator/pkg/ir"
 	"github.com/redpanda-data/redpanda-operator/pkg/testutil"
 )
 
@@ -80,6 +82,52 @@ func TestController(t *testing.T) {
 							},
 							Admin: &redpandav1alpha2.AdminAPISpec{
 								URLs: []string{"http://admin-api:9644"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			// Inline and ConfigMap sources reach Console through the
+			// environment: inline values via the Console-owned credentials
+			// Secret.
+			name: "static-config-value-sources",
+			console: &redpandav1alpha2.Console{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "console-value-sources",
+				},
+				Spec: redpandav1alpha2.ConsoleSpec{
+					ClusterSource: &redpandav1alpha2.ClusterSource{
+						StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
+							Kafka: &redpandav1alpha2.KafkaAPISpec{
+								Brokers: []string{"kafka-broker:9092"},
+								SASL: &redpandav1alpha2.KafkaSASL{
+									Username:  "testuser",
+									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+									Password:  &redpandav1alpha2.ValueSource{Inline: ptr.To("inline-password")},
+								},
+							},
+							Admin: &redpandav1alpha2.AdminAPISpec{
+								URLs: []string{"http://admin-api:9644"},
+								SASL: &redpandav1alpha2.AdminSASL{
+									Username:  "admin",
+									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+									Password:  &redpandav1alpha2.ValueSource{Inline: ptr.To("inline-admin-password")},
+								},
+							},
+							SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+								URLs: []string{"http://schema-registry:8081"},
+								SASL: &redpandav1alpha2.SchemaRegistrySASL{
+									Username:  "schema",
+									Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+									Password: &redpandav1alpha2.ValueSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{Name: "schema-registry"},
+											Key:                  "password",
+										},
+									},
+								},
 							},
 						},
 					},
@@ -359,9 +407,138 @@ func TestController(t *testing.T) {
 			require.Empty(t, scrapeControllerObjects(t, ctl, console))
 		})
 	}
+
+	t.Run("external-secret-rejected", func(t *testing.T) {
+		consoleCtrl := Controller{Ctl: ctl, UseNodePools: true, rng: rand.New(rand.NewSource(1))} //nolint:gosec // test-only determinism, not cryptographic
+
+		console := &redpandav1alpha2.Console{
+			ObjectMeta: metav1.ObjectMeta{Name: "console-external", Namespace: ns.Name},
+			Spec: redpandav1alpha2.ConsoleSpec{
+				ClusterSource: &redpandav1alpha2.ClusterSource{
+					StaticConfiguration: &redpandav1alpha2.StaticConfigurationSource{
+						Kafka: &redpandav1alpha2.KafkaAPISpec{
+							Brokers: []string{"kafka-broker:9092"},
+							SASL: &redpandav1alpha2.KafkaSASL{
+								Username:  "testuser",
+								Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+								// An inline value alongside the rejected one must not be
+								// mirrored either.
+								Password: &redpandav1alpha2.ValueSource{Inline: ptr.To("inline-password")},
+							},
+						},
+						SchemaRegistry: &redpandav1alpha2.SchemaRegistrySpec{
+							URLs: []string{"http://schema-registry:8081"},
+							SASL: &redpandav1alpha2.SchemaRegistrySASL{
+								Username:  "schema",
+								Mechanism: redpandav1alpha2.SASLMechanismScramSHA256,
+								Password: &redpandav1alpha2.ValueSource{
+									ExternalSecretRefSelector: &redpandav1alpha2.ExternalSecretKeySelector{Name: "schema-registry-password"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		require.NoError(t, ctl.Apply(t.Context(), console))
+
+		req := mcreconcile.Request{Request: ctrl.Request{NamespacedName: kube.AsKey(console)}, ClusterName: mcmanager.LocalCluster}
+		_, err := consoleCtrl.Reconcile(t.Context(), req)
+		require.ErrorContains(t, err, "spec.cluster.staticConfiguration.schemaRegistry.sasl.password.externalSecretRef is not supported for Console")
+
+		_, err = kube.Get[corev1.Secret](t.Context(), ctl, kube.ObjectKey{Namespace: ns.Name, Name: "console-external-cluster-credentials"})
+		require.True(t, apierrors.IsNotFound(err), "credentials Secret must not exist, got %v", err)
+	})
 }
 
 // scrapeControllerObjects finds all objects created by the console controller using ownership labels
+func TestMirrorCredentials(t *testing.T) {
+	cases := []struct {
+		name     string
+		in       *ir.StaticConfigurationSource
+		wantData map[string]string
+		wantErr  string
+	}{
+		{
+			name: "references only",
+			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
+				Password: &ir.ValueSource{SecretKeyRef: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: "s"}, Key: "k"}},
+			}}},
+		},
+		{
+			name: "inline values in every position",
+			in: &ir.StaticConfigurationSource{
+				Kafka: &ir.KafkaAPISpec{
+					TLS: &ir.CommonTLS{CaCert: &ir.ValueSource{Inline: ptr.To("ca")}},
+					SASL: &ir.KafkaSASL{
+						Password: &ir.ValueSource{Inline: ptr.To("password")},
+						OAUth:    &ir.KafkaSASLOAuthBearer{Token: &ir.ValueSource{Inline: ptr.To("token")}},
+					},
+				},
+				Admin:          &ir.AdminAPISpec{Auth: &ir.AdminAuth{AuthToken: &ir.ValueSource{Inline: ptr.To("admin-token")}}},
+				SchemaRegistry: &ir.SchemaRegistrySpec{SASL: &ir.SchemaRegistrySASL{Password: &ir.ValueSource{Inline: ptr.To("sr")}}},
+			},
+			wantData: map[string]string{
+				"kafka-tls-ca":             "ca",
+				"kafka-sasl-password":      "password",
+				"kafka-sasl-oauth-token":   "token",
+				"admin-token":              "admin-token",
+				"schema-registry-password": "sr",
+			},
+		},
+		{
+			name: "external secret is rejected",
+			in: &ir.StaticConfigurationSource{Kafka: &ir.KafkaAPISpec{SASL: &ir.KafkaSASL{
+				Password: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "kafka"}},
+			}}},
+			wantErr: "spec.cluster.staticConfiguration.kafka.sasl.password.externalSecretRef is not supported for Console",
+		},
+		{
+			name: "external TLS key is rejected",
+			in: &ir.StaticConfigurationSource{Admin: &ir.AdminAPISpec{TLS: &ir.CommonTLS{
+				Key: &ir.ValueSource{ExternalSecretRefSelector: &ir.ExternalSecretKeySelector{Name: "key"}},
+			}}},
+			wantErr: "spec.cluster.staticConfiguration.admin.tls.key.externalSecretRef is not supported for Console",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := &render{
+				console: &redpandav1alpha2.Console{ObjectMeta: metav1.ObjectMeta{Name: "c", Namespace: "ns"}},
+			}
+
+			secret, err := r.mirrorCredentials(tc.in)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				require.Nil(t, secret)
+				return
+			}
+			require.NoError(t, err)
+
+			if tc.wantData == nil {
+				require.Nil(t, secret)
+				return
+			}
+
+			require.Equal(t, "c-cluster-credentials", secret.Name)
+			got := map[string]string{}
+			for k, v := range secret.Data {
+				got[k] = string(v)
+			}
+			require.Equal(t, tc.wantData, got)
+
+			// Every mirrored value now points at the Secret, so nothing is
+			// left for the chart to drop or to inline into the Deployment.
+			values := console.StaticConfigurationSourceToPartialRenderValues(tc.in)
+			for _, env := range values.ExtraEnv {
+				require.Empty(t, env.Value, env.Name)
+				require.Equal(t, secret.Name, env.ValueFrom.SecretKeyRef.Name, env.Name)
+			}
+		})
+	}
+}
+
 func scrapeControllerObjects(t *testing.T, ctl *kube.Ctl, c *redpandav1alpha2.Console) []kube.Object {
 	// Get ownership labels used by the controller
 	ownershipLabels := map[string]string{
