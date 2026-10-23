@@ -8948,26 +8948,33 @@ spec:
                 type: array
               diskLost:
                 description: |-
-                  DiskLost, once set, marks this Broker as a dead incarnation: its pod
-                  was provably unschedulable because its storage is pinned to a
-                  Kubernetes node that no longer exists. Terminal and never cleared —
-                  the CR lingers only as the decommission record for its node_id while
-                  a replacement Broker CR takes over the network index.
+                  Records that this broker's data is gone and the Broker is being
+                  replaced. Set when one of two proofs is accepted: the Kubernetes node
+                  that the broker's persistent volume is pinned to no longer exists, or
+                  the pod's `data-guard` init container refused to start Redpanda
+                  because the data volume is empty while the pod is stamped with this
+                  Broker's `node_id`. Terminal and never cleared: from this point the
+                  operator dismantles the pod and its volumes instead of restarting
+                  them, a replacement Broker takes over the network index, and this
+                  resource remains only as the decommission record for the lost
+                  `node_id`. Unset while the broker's data is intact.
                 properties:
                   at:
                     description: |-
-                      At is when the disk-loss proof was accepted — the point of no return.
-                      Two proofs exist: the PV's node no longer exists, or the pod's
-                      data-dir guard refused to start Redpanda because the data directory
-                      holds no kvstore while the pod carries this Broker's node_id.
+                      Time at which the operator accepted proof that this broker's data is
+                      gone. From this point the operator dismantles the Broker instead of
+                      restarting it, and the decision is never reversed. Two proofs count:
+                      the Kubernetes node that the broker's persistent volume is pinned to
+                      no longer exists, or the pod's `data-guard` init container refused to
+                      start Redpanda because the data volume is empty while the pod is
+                      stamped with this Broker's `node_id`.
                     format: date-time
                     type: string
                   resourcesReleased:
                     description: |-
-                      ResourcesReleased is set once the pod and every PVC were confirmed
-                      gone on an uncached read; only from then on does the network index
-                      stop being occupied by this CR and a replacement may be created.
-                      Monotonic: never unset.
+                      Reports that the pod and every persistent volume claim of this broker
+                      were confirmed gone. Only from then on is the network index free for a
+                      replacement Broker to be created. Never unset once true.
                     type: boolean
                 type: object
               phase:
