@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cluster"
 	mcreconcile "sigs.k8s.io/multicluster-runtime/pkg/reconcile"
 
+	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
@@ -355,6 +356,27 @@ func TestDetectGuardRefusalNegatives(t *testing.T) {
 			require.NoError(t, err)
 			require.Nil(t, broker.Status.DiskLost, "the latch must not be set")
 			require.NotEqual(t, redpandav1alpha2.BrokerPhaseDiskLost, state.phase)
+		})
+	}
+}
+
+// TestDataGuardImage: the guard must run an image that has the data-guard
+// subcommand. The operator's own image always does; the chart's sidecar
+// image is pinned per cluster and may predate it, so it is only a fallback.
+func TestDataGuardImage(t *testing.T) {
+	sidecar := corev1.Container{Name: redpandachart.SidecarContainerName, Image: "pinned/operator:old"}
+	for _, tc := range []struct {
+		name          string
+		operatorImage string
+		containers    []corev1.Container
+		want          string
+	}{
+		{name: "the operator image wins over a pinned sidecar", operatorImage: "operator:dev", containers: []corev1.Container{sidecar}, want: "operator:dev"},
+		{name: "the sidecar image is the fallback", containers: []corev1.Container{sidecar}, want: "pinned/operator:old"},
+		{name: "neither: no guard", containers: []corev1.Container{{Name: "redpanda"}}, want: ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, dataGuardImage(tc.operatorImage, tc.containers))
 		})
 	}
 }

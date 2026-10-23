@@ -152,6 +152,7 @@ func (s *BrokerControllerSuite) newEnv(t *testing.T, clusterName string) (*teste
 			// Inert for the manually-choreographed tests: their clusters are
 			// paused before Broker CRs are hand-built.
 			BrokerCREnabled: true,
+			OperatorImage:   "localhost/redpanda-operator:dev",
 		}).SetupWithManager(ctx, mgr, ""))
 
 		return redpanda.SetupBrokerController(ctx, mgr, clientFactory, "", 60*time.Second)
