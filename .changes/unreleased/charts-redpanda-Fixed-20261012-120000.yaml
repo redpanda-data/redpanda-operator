@@ -1,0 +1,5 @@
+project: charts/redpanda
+kind: Fixed
+body: |-
+    `--set resources.cpu.cores=<integer>` no longer fails with `invalid Quantity expected string or float64 got: int64`
+time: 2026-10-12T12:00:00.000000+01:00

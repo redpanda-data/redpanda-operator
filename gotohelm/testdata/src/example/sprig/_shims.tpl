@@ -253,13 +253,13 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- if (typeIs "float64" $repr) -}}
+{{- if (or (or (typeIs "float64" $repr) (typeIs "int64" $repr)) (typeIs "int" $repr)) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (list (float64 $repr) 1.0)) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- if (not (typeIs "string" $repr)) -}}
-{{- $_ := (fail (printf "invalid Quantity expected string or float64 got: %T (%v)" $repr $repr)) -}}
+{{- $_ := (fail (printf "invalid Quantity expected string or number got: %T (%v)" $repr $repr)) -}}
 {{- end -}}
 {{- if (not (regexMatch `^[0-9]+(\.[0-9]{0,6})?(k|m|M|G|T|P|Ki|Mi|Gi|Ti|Pi)?$` $repr)) -}}
 {{- $_ := (fail (printf "invalid Quantity: %q" $repr)) -}}
@@ -267,9 +267,9 @@
 {{- $reprStr := (toString $repr) -}}
 {{- $unit := (regexFind "(k|m|M|G|T|P|Ki|Mi|Gi|Ti|Pi)$" $repr) -}}
 {{- $numeric := (float64 (substr (0 | int) ((sub ((get (fromJson (include "_shims.len" (dict "a" (list $reprStr)))) "r") | int) ((get (fromJson (include "_shims.len" (dict "a" (list $unit)))) "r") | int)) | int) $reprStr)) -}}
-{{- $_231_scale_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list (dict "" 1.0 "m" 0.001 "k" (1000 | int) "M" (1000000 | int) "G" (1000000000 | int) "T" (1000000000000 | int) "P" (1000000000000000 | int) "Ki" (1024 | int) "Mi" (1048576 | int) "Gi" (1073741824 | int) "Ti" (1099511627776 | int) "Pi" (1125899906842624 | int)) $unit (float64 0))))) "r") -}}
-{{- $scale := ((index $_231_scale_ok 0) | float64) -}}
-{{- $ok := (index $_231_scale_ok 1) -}}
+{{- $_234_scale_ok := (get (fromJson (include "_shims.dicttest" (dict "a" (list (dict "" 1.0 "m" 0.001 "k" (1000 | int) "M" (1000000 | int) "G" (1000000000 | int) "T" (1000000000000 | int) "P" (1000000000000000 | int) "Ki" (1024 | int) "Mi" (1048576 | int) "Gi" (1073741824 | int) "Ti" (1099511627776 | int) "Pi" (1125899906842624 | int)) $unit (float64 0))))) "r") -}}
+{{- $scale := ((index $_234_scale_ok 0) | float64) -}}
+{{- $ok := (index $_234_scale_ok 1) -}}
 {{- if (not $ok) -}}
 {{- $_ := (fail (printf "unknown unit: %q" $unit)) -}}
 {{- end -}}
@@ -283,9 +283,9 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_254_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
-{{- $numeric := ((index $_254_numeric_scale 0) | float64) -}}
-{{- $scale := ((index $_254_numeric_scale 1) | float64) -}}
+{{- $_257_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
+{{- $numeric := ((index $_257_numeric_scale 0) | float64) -}}
+{{- $scale := ((index $_257_numeric_scale 1) | float64) -}}
 {{- $strs := (list "" "m" "k" "M" "G" "T" "P" "Ki" "Mi" "Gi" "Ti" "Pi") -}}
 {{- $scales := (list 1.0 0.001 (1000 | int) (1000000 | int) (1000000000 | int) (1000000000000 | int) (1000000000000000 | int) (1024 | int) (1048576 | int) (1073741824 | int) (1099511627776 | int) (1125899906842624 | int)) -}}
 {{- $idx := -1 -}}
@@ -311,9 +311,9 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_281_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
-{{- $numeric := ((index $_281_numeric_scale 0) | float64) -}}
-{{- $scale := ((index $_281_numeric_scale 1) | float64) -}}
+{{- $_284_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
+{{- $numeric := ((index $_284_numeric_scale 0) | float64) -}}
+{{- $scale := ((index $_284_numeric_scale 1) | float64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (int64 (ceil ((mulf $numeric $scale) | float64)))) | toJson -}}
 {{- break -}}
@@ -324,9 +324,9 @@
 {{- $repr := (index .a 0) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_286_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
-{{- $numeric := ((index $_286_numeric_scale 0) | float64) -}}
-{{- $scale := ((index $_286_numeric_scale 1) | float64) -}}
+{{- $_289_numeric_scale := (get (fromJson (include "_shims.parseResource" (dict "a" (list $repr)))) "r") -}}
+{{- $numeric := ((index $_289_numeric_scale 0) | float64) -}}
+{{- $scale := ((index $_289_numeric_scale 1) | float64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (int64 (ceil ((mulf ((mulf $numeric 1000.0) | float64) $scale) | float64)))) | toJson -}}
 {{- break -}}
