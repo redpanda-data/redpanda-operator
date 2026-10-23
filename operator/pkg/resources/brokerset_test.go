@@ -2014,3 +2014,11 @@ func containerByName(t *testing.T, containers []corev1.Container, name string) c
 type noTLSVolumes struct{}
 
 func (noTLSVolumes) Volumes() ([]corev1.Volume, []corev1.VolumeMount) { return nil, nil }
+
+// TestBrokerIDAnnotationIsTheV1NodeIDKey: the Broker API redeclares the key
+// because it cannot import pkg/labels. Were the two to drift, V1 and the
+// Broker controller would stamp two different node_id records on one pod.
+func TestBrokerIDAnnotationIsTheV1NodeIDKey(t *testing.T) {
+	require.Equal(t, PodAnnotationNodeIDKey, redpandav1alpha2.BrokerIDAnnotation)
+	require.Equal(t, labels.PodNodeIDKey, redpandav1alpha2.BrokerIDAnnotation)
+}
