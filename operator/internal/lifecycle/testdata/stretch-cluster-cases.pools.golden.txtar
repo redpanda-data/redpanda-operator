@@ -76,7 +76,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.2.4
+            value: v26.2.5
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
@@ -464,7 +464,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.2.4
+            value: v26.2.5
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
@@ -853,7 +853,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.2.4
+            value: v26.2.5
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
@@ -1242,7 +1242,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.2.4
+            value: v26.2.5
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
@@ -1631,7 +1631,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.2.4
+            value: v26.2.5
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/redpanda-operator:dev
           image: redpandadata/redpanda-unstable:v26.2.1-rc6
@@ -2019,7 +2019,7 @@
           - name: REDPANDA_METRICS_K8S_DEPLOYMENT_TYPE
             value: operator
           - name: REDPANDA_METRICS_K8S_CHART_VERSION
-            value: v26.2.4
+            value: v26.2.5
           - name: REDPANDA_METRICS_K8S_OPERATOR_IMAGE_VERSION
             value: localhost/test:dev
           image: redpandadata/redpanda-unstable:v26.2.1-rc6

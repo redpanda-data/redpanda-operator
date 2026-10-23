@@ -1,5 +1,0 @@
-project: operator
-kind: Fixed
-body: |-
-  Brokers managed by the Redpanda and StretchCluster resources could be left in maintenance mode after a rolling restart when they took longer than the `postStart` hook timeout (half the termination grace period) to start their admin API. The hook now clears maintenance mode in the background without that limit. See the `charts/redpanda` entry for details.
-time: 2026-10-12T14:01:00.000000000-07:00

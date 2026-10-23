@@ -897,7 +897,7 @@ DEPRECATED: Please use statefulset.sideCars.brokerDecommissioner and statefulset
 
 ### [statefulset.sideCars.image.tag](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.image.tag)
 
-**Default:** `"v26.2.4"`
+**Default:** `"v26.2.5"`
 
 ### [statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption](https://artifacthub.io/packages/helm/redpanda-data/redpanda?modal=values&path=statefulset.sideCars.pvcUnbinder.disableStuckClaimExemption)
 
