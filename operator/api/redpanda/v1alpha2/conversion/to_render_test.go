@@ -141,7 +141,7 @@ func TestNodePoolImagePrecedence(t *testing.T) {
 // must.
 func TestPodTemplateStableAcrossChartVersions(t *testing.T) {
 	render := func(t *testing.T, chartVersion, sidecarTag string) map[string]corev1.PodTemplateSpec {
-		sets := renderOperatorPools(t, sidecarTag, redpandav1alpha2.EmbeddedNodePoolSpec{}, func(state *redpandachart.RenderState) {
+		sets := renderOperatorPools(t, sidecarTag, redpandav1alpha2.EmbeddedNodePoolSpec{}, func(state *redpanda.RenderState) {
 			state.Chart.Version = chartVersion
 		})
 
@@ -212,7 +212,7 @@ func TestPodTemplateChartLabel(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			sets := renderOperatorPools(t, "v26.1.1", redpandav1alpha2.EmbeddedNodePoolSpec{
 				AdditionalSelectorLabels: tc.poolSelector,
-			}, func(state *redpandachart.RenderState) {
+			}, func(state *redpanda.RenderState) {
 				// What FetchStatefulSetPodSelector reads from a live StatefulSet.
 				state.StatefulSetPodLabels = tc.cachedLabels
 				state.StatefulSetSelector = tc.cachedSelector
@@ -228,7 +228,7 @@ func TestPodTemplateChartLabel(t *testing.T) {
 // renderOperatorPools renders the default pool and one NodePool, keyed by
 // StatefulSet name, through the operator's conversion path with images
 // pinned. mutate runs on the RenderState before rendering.
-func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec, mutate func(*redpandachart.RenderState)) map[string]*appsv1.StatefulSet {
+func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alpha2.EmbeddedNodePoolSpec, mutate func(*redpanda.RenderState)) map[string]*appsv1.StatefulSet {
 	cluster := &redpandav1alpha2.Redpanda{
 		ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "redpanda"},
 	}
@@ -253,7 +253,7 @@ func renderOperatorPools(t *testing.T, sidecarTag string, poolSpec redpandav1alp
 	state.OperatorVersion = "v26.1.1"
 	mutate(state)
 
-	sets, err := redpandachart.RenderNodePools(state)
+	sets, err := redpanda.RenderNodePools(state)
 	require.NoError(t, err)
 	require.Len(t, sets, 2)
 
@@ -276,7 +276,7 @@ func requireSelectorsMatch(t *testing.T, set *appsv1.StatefulSet) {
 	require.True(t, selector.Matches(podLabels), "%s: selector %v does not match pod labels %v", set.Name, set.Spec.Selector, podLabels)
 
 	for _, container := range set.Spec.Template.Spec.Containers {
-		if container.Name != redpandachart.SidecarContainerName {
+		if container.Name != redpanda.SidecarContainerName {
 			continue
 		}
 		for _, arg := range container.Args {
