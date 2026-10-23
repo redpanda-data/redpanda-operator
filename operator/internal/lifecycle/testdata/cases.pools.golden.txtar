@@ -34,10 +34,6 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: basic-test
       spec:
         affinity:
@@ -155,11 +151,7 @@
           - basic-test
           - --redpanda-cluster-name
           - basic-test
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=basic-test
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=basic-test
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).basic-test.basic-test.svc.cluster.local.:9644
@@ -399,10 +391,6 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: compat-test
       spec:
         affinity:
@@ -520,11 +508,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -746,10 +730,6 @@
           azure.workload.identity/use: "true"
           cloud.redpanda.com/network-loadbalancer-access: "true"
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: compat-test
       spec:
         affinity:
@@ -887,11 +867,7 @@
           - compat-test
           - --redpanda-cluster-name
           - compat-test
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=compat-test
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).compat-test.compat-test.svc.cluster.local.:9644
@@ -1188,10 +1164,6 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: console-disabled
       spec:
         affinity:
@@ -1309,11 +1281,7 @@
           - console-disabled
           - --redpanda-cluster-name
           - console-disabled
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=console-disabled
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=console-disabled
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).console-disabled.console-disabled.svc.cluster.local.:9644
@@ -1553,10 +1521,6 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -1674,11 +1638,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -1919,10 +1879,6 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -2040,11 +1996,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644
@@ -2283,10 +2235,6 @@
           app.kubernetes.io/managed-by: Helm
           app.kubernetes.io/name: redpanda
           cluster.redpanda.com/broker: "true"
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          helm.sh/chart: redpanda-25.3.12
-=======
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           redpanda.com/poddisruptionbudget: nodepool-basic-test
       spec:
         affinity:
@@ -2404,11 +2352,7 @@
           - nodepool-basic-test
           - --redpanda-cluster-name
           - nodepool-basic-test
-<<<<<<< HEAD:operator/internal/lifecycle/testdata/cases.pools.golden.txtar
-          - --selector=helm.sh/chart=redpanda-25.3.12,app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
-=======
           - --selector=app.kubernetes.io/name=redpanda,app.kubernetes.io/instance=nodepool-basic-test
->>>>>>> d5e94f0a ([K8S-962] operator: drop helm.sh/chart from broker pod templates (#1997)):operator/internal/lifecycle/testdata/redpanda-cases.pools.golden.txtar
           - --run-broker-probe
           - --broker-probe-broker-url
           - $(SERVICE_NAME).nodepool-basic-test.nodepool-basic-test.svc.cluster.local.:9644

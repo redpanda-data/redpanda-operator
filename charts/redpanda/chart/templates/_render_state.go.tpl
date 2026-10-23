@@ -11,18 +11,18 @@
 {{- break -}}
 {{- end -}}
 {{- $selector := (get (fromJson (include "redpanda.BootstrapUser.SecretKeySelector" (dict "a" (list $r.Values.auth.sasl.bootstrapUser (get (fromJson (include "redpanda.Fullname" (dict "a" (list $r)))) "r"))))) "r") -}}
-{{- $_64_existing_1_ok_2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Secret" $r.Release.Namespace $selector.name)))) "r") -}}
-{{- $existing_1 := (index $_64_existing_1_ok_2 0) -}}
-{{- $ok_2 := (index $_64_existing_1_ok_2 1) -}}
+{{- $_68_existing_1_ok_2 := (get (fromJson (include "_shims.lookup" (dict "a" (list "v1" "Secret" $r.Release.Namespace $selector.name)))) "r") -}}
+{{- $existing_1 := (index $_68_existing_1_ok_2 0) -}}
+{{- $ok_2 := (index $_68_existing_1_ok_2 1) -}}
 {{- if $ok_2 -}}
 {{- $_ := (set $existing_1.metadata "managedFields" (coalesce nil)) -}}
 {{- $_ := (set $existing_1.metadata "resourceVersion" "") -}}
 {{- $_ := (set $existing_1.metadata "uid" "") -}}
 {{- $_ := (set $existing_1 "immutable" true) -}}
 {{- $_ := (set $r "BootstrapUserSecret" $existing_1) -}}
-{{- $_92_data_3_found_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $existing_1.data $selector.key (coalesce nil))))) "r") -}}
-{{- $data_3 := (index $_92_data_3_found_4 0) -}}
-{{- $found_4 := (index $_92_data_3_found_4 1) -}}
+{{- $_96_data_3_found_4 := (get (fromJson (include "_shims.dicttest" (dict "a" (list $existing_1.data $selector.key (coalesce nil))))) "r") -}}
+{{- $data_3 := (index $_96_data_3_found_4 0) -}}
+{{- $found_4 := (index $_96_data_3_found_4 1) -}}
 {{- if $found_4 -}}
 {{- $_ := (set $r "BootstrapUserPassword" (toString $data_3)) -}}
 {{- end -}}
@@ -35,9 +35,9 @@
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
 {{- if $r.Release.IsUpgrade -}}
-{{- $_107_existing_5_ok_6 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" $r.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $r)))) "r"))))) "r") -}}
-{{- $existing_5 := (index $_107_existing_5_ok_6 0) -}}
-{{- $ok_6 := (index $_107_existing_5_ok_6 1) -}}
+{{- $_111_existing_5_ok_6 := (get (fromJson (include "_shims.lookup" (dict "a" (list "apps/v1" "StatefulSet" $r.Release.Namespace (get (fromJson (include "redpanda.Fullname" (dict "a" (list $r)))) "r"))))) "r") -}}
+{{- $existing_5 := (index $_111_existing_5_ok_6 0) -}}
+{{- $ok_6 := (index $_111_existing_5_ok_6 1) -}}
 {{- if (and $ok_6 (gt ((get (fromJson (include "_shims.len" (dict "a" (list $existing_5.spec.template.metadata.labels)))) "r") | int) (0 | int))) -}}
 {{- $_ := (set $r "StatefulSetPodLabels" $existing_5.spec.template.metadata.labels) -}}
 {{- $_ := (set $r "StatefulSetSelector" $existing_5.spec.selector.matchLabels) -}}
@@ -66,9 +66,9 @@
 {{- $adminTLS = (get (fromJson (include "redpanda.InternalTLS.ToCommonTLS" (dict "a" (list $r.Values.listeners.admin.tls $r $r.Values.tls)))) "r") -}}
 {{- end -}}
 {{- $adminAuth := (coalesce nil) -}}
-{{- $_155_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $r.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
-{{- $adminAuthEnabled := (index $_155_adminAuthEnabled__ 0) -}}
-{{- $_ := (index $_155_adminAuthEnabled__ 1) -}}
+{{- $_159_adminAuthEnabled__ := (get (fromJson (include "_shims.typetest" (dict "a" (list "bool" (index $r.Values.config.cluster "admin_api_require_auth") false)))) "r") -}}
+{{- $adminAuthEnabled := (index $_159_adminAuthEnabled__ 0) -}}
+{{- $_ := (index $_159_adminAuthEnabled__ 1) -}}
 {{- if $adminAuthEnabled -}}
 {{- $adminAuth = (mustMergeOverwrite (dict) (dict "username" $username "passwordSecretRef" (mustMergeOverwrite (dict) (dict "namespace" $r.Release.Namespace "secretKeyRef" (mustMergeOverwrite (dict "key" "") (mustMergeOverwrite (dict) (dict "name" $passwordRef.name)) (dict "key" $passwordRef.key)))))) -}}
 {{- end -}}

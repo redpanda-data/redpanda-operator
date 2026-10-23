@@ -6,6 +6,5 @@ body: |-
     carry the `helm.sh/chart` label, and the sidecar's `--selector` no longer
     includes it. The upgrade to this release rolls brokers once to drop the
     label. Brokers still roll when their pod spec changes, such as a new
-    sidecar image or, with `logging.usageStats.enabled`, the operator version
-    reported in `REDPANDA_METRICS_K8S_CHART_VERSION`.
+    sidecar image.
 time: 2026-10-21T11:02:31.000000-04:00

@@ -50,7 +50,7 @@
 {{- $_is_returning := false -}}
 {{- if (and (ne (toJson $state.StatefulSetPodLabels) "null") (eq $pool.Name "")) -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" $state.StatefulSetPodLabels) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.stripChartLabel" (dict "a" (list $state $pool $state.StatefulSetPodLabels)))) "r")) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- $statefulSetLabels := (dict) -}}
@@ -59,7 +59,31 @@
 {{- end -}}
 {{- $defaults := (dict "redpanda.com/poddisruptionbudget" (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") "cluster.redpanda.com/broker" "true") -}}
 {{- $_is_returning = true -}}
-{{- (dict "r" (merge (dict) $statefulSetLabels (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state $pool)))) "r") $defaults (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r"))) | toJson -}}
+{{- (dict "r" (get (fromJson (include "redpanda.stripChartLabel" (dict "a" (list $state $pool (merge (dict) $statefulSetLabels (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state $pool)))) "r") $defaults (get (fromJson (include "redpanda.FullLabels" (dict "a" (list $state)))) "r")))))) "r")) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "redpanda.stripChartLabel" -}}
+{{- $state := (index .a 0) -}}
+{{- $pool := (index .a 1) -}}
+{{- $labels := (index .a 2) -}}
+{{- range $_ := (list 1) -}}
+{{- $_is_returning := false -}}
+{{- if (not $state.ViaOperator) -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $labels) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- if (hasKey (get (fromJson (include "redpanda.StatefulSetPodLabelsSelector" (dict "a" (list $state $pool)))) "r") "helm.sh/chart") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $labels) | toJson -}}
+{{- break -}}
+{{- end -}}
+{{- $stripped := (merge (dict) $labels) -}}
+{{- $_ := (unset $stripped "helm.sh/chart") -}}
+{{- $_is_returning = true -}}
+{{- (dict "r" $stripped) | toJson -}}
 {{- break -}}
 {{- end -}}
 {{- end -}}
@@ -215,9 +239,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_402_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-datadir-ownership")))) "r") -}}
-{{- $uid := ((index $_402_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_402_uid_gid 1) | int64) -}}
+{{- $_419_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-datadir-ownership")))) "r") -}}
+{{- $uid := ((index $_419_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_419_uid_gid 1) | int64) -}}
 {{- $_is_returning = true -}}
 {{- (dict "r" (mustMergeOverwrite (dict "name" "" "resources" (dict)) (dict "name" "set-datadir-ownership" "image" (printf "%s:%s" $pool.Statefulset.initContainerImage.repository $pool.Statefulset.initContainerImage.tag) "command" (list `/bin/sh` `-c` (printf `chown %d:%d -R /var/lib/redpanda/data` $uid $gid)) "securityContext" (mustMergeOverwrite (dict) (dict "runAsUser" (0 | int64) "runAsGroup" (0 | int64))) "volumeMounts" (concat (default (list) (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r")) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" `datadir` "mountPath" `/var/lib/redpanda/data`))))))) | toJson -}}
 {{- break -}}
@@ -230,12 +254,12 @@
 {{- $containerName := (index .a 2) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $_428_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $state.Values.podTemplate "redpanda")))) "r") -}}
-{{- $gid := (index $_428_gid_uid 0) -}}
-{{- $uid := (index $_428_gid_uid 1) -}}
-{{- $_429_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $pool.Statefulset.podTemplate "redpanda")))) "r") -}}
-{{- $sgid := (index $_429_sgid_suid 0) -}}
-{{- $suid := (index $_429_sgid_suid 1) -}}
+{{- $_445_gid_uid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $state.Values.podTemplate "redpanda")))) "r") -}}
+{{- $gid := (index $_445_gid_uid 0) -}}
+{{- $uid := (index $_445_gid_uid 1) -}}
+{{- $_446_sgid_suid := (get (fromJson (include "redpanda.giduidFromPodTemplate" (dict "a" (list $pool.Statefulset.podTemplate "redpanda")))) "r") -}}
+{{- $sgid := (index $_446_sgid_suid 0) -}}
+{{- $suid := (index $_446_sgid_suid 1) -}}
 {{- if (ne (toJson $sgid) "null") -}}
 {{- $gid = $sgid -}}
 {{- end -}}
@@ -312,9 +336,9 @@
 {{- (dict "r" (coalesce nil)) | toJson -}}
 {{- break -}}
 {{- end -}}
-{{- $_508_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-tiered-storage-cache-dir-ownership")))) "r") -}}
-{{- $uid := ((index $_508_uid_gid 0) | int64) -}}
-{{- $gid := ((index $_508_uid_gid 1) | int64) -}}
+{{- $_525_uid_gid := (get (fromJson (include "redpanda.securityContextUidGid" (dict "a" (list $state $pool "set-tiered-storage-cache-dir-ownership")))) "r") -}}
+{{- $uid := ((index $_525_uid_gid 0) | int64) -}}
+{{- $gid := ((index $_525_uid_gid 1) | int64) -}}
 {{- $cacheDir := (get (fromJson (include "redpanda.Storage.TieredCacheDirectory" (dict "a" (list $state.Values.storage $state)))) "r") -}}
 {{- $mounts := (get (fromJson (include "redpanda.CommonMounts" (dict "a" (list $state)))) "r") -}}
 {{- $mounts = (concat (default (list) $mounts) (list (mustMergeOverwrite (dict "name" "" "mountPath" "") (dict "name" "datadir" "mountPath" "/var/lib/redpanda/data")))) -}}
@@ -458,7 +482,11 @@
 {{- $pool := (index .a 1) -}}
 {{- range $_ := (list 1) -}}
 {{- $_is_returning := false -}}
-{{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $state.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (printf "--selector=helm.sh/chart=%s,app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $state)))) "r") (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Dot.Release.Name) `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $state)))) "r")) -}}
+{{- $selector := (printf "app.kubernetes.io/name=%s,app.kubernetes.io/instance=%s" (get (fromJson (include "redpanda.Name" (dict "a" (list $state)))) "r") $state.Dot.Release.Name) -}}
+{{- if (not $state.ViaOperator) -}}
+{{- $selector = (printf "helm.sh/chart=%s,%s" (get (fromJson (include "redpanda.ChartLabel" (dict "a" (list $state)))) "r") $selector) -}}
+{{- end -}}
+{{- $args := (list `/redpanda-operator` `sidecar` `--redpanda-yaml` `/etc/redpanda/redpanda.yaml` `--redpanda-cluster-namespace` $state.Release.Namespace `--redpanda-cluster-name` (get (fromJson (include "redpanda.Fullname" (dict "a" (list $state)))) "r") (printf "--selector=%s" $selector) `--run-broker-probe` `--broker-probe-broker-url` (get (fromJson (include "redpanda.adminURLsCLI" (dict "a" (list $state)))) "r")) -}}
 {{- if $pool.Statefulset.sideCars.brokerDecommissioner.enabled -}}
 {{- $args = (concat (default (list) $args) (default (list) (list `--run-decommissioner` (printf "--decommission-vote-interval=%s" $pool.Statefulset.sideCars.brokerDecommissioner.decommissionAfter) (printf "--decommission-requeue-timeout=%s" $pool.Statefulset.sideCars.brokerDecommissioner.decommissionRequeueTimeout) `--decommission-vote-count=2`))) -}}
 {{- end -}}
