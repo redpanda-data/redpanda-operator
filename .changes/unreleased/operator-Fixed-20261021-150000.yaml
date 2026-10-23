@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'StretchCluster broker startup and liveness probes now set `timeoutSeconds: 5`, matching the timeout of the admin API `curl` they run. Before this, the probes used the kubelet default of 1s, so three admin API responses slower than 1s restarted a healthy broker. Applying this fix rolls StretchCluster brokers once. A `timeoutSeconds` set through a RedpandaBrokerPool `podTemplate` still overrides it.'
+time: 2026-10-21T15:00:00.000000+00:00

@@ -206,7 +206,8 @@ func configuratorSh(p ScriptParams) string {
 func startupProbeScript(p ScriptParams) string {
 	return strings.Join([]string{
 		`set -e`,
-		fmt.Sprintf(`RESULT=$(curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready")`,
+		fmt.Sprintf(`RESULT=$(curl --silent --fail -k -m %d %s "%s://%s/v1/status/ready")`,
+			adminProbeTimeoutSeconds,
 			p.AdminCurlFlags,
 			p.AdminHTTPProtocol,
 			p.AdminAPIURLs,
@@ -219,7 +220,8 @@ func startupProbeScript(p ScriptParams) string {
 
 // livenessProbeScript returns the shell command for the Redpanda liveness probe.
 func livenessProbeScript(p ScriptParams) string {
-	return fmt.Sprintf(`curl --silent --fail -k -m 5 %s "%s://%s/v1/status/ready"`,
+	return fmt.Sprintf(`curl --silent --fail -k -m %d %s "%s://%s/v1/status/ready"`,
+		adminProbeTimeoutSeconds,
 		p.AdminCurlFlags,
 		p.AdminHTTPProtocol,
 		p.AdminAPIURLs,
