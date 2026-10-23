@@ -51,6 +51,10 @@ type RenderState struct {
 	// RenderState.
 	// TODO: remove this eventually once we get templating figured out.
 	Dot *helmette.Dot
+
+	// ViaOperator is a flag that says that this rendering function is being
+	// called via an operator.
+	ViaOperator bool
 }
 
 // FetchBootstrapUser attempts to locate an existing bootstrap user secret in
