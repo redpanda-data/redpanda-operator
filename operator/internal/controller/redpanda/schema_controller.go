@@ -27,6 +27,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	internalclient "github.com/redpanda-data/redpanda-operator/operator/pkg/client"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/kubernetes"
+	"github.com/redpanda-data/redpanda-operator/operator/pkg/client/schemas"
 	"github.com/redpanda-data/redpanda-operator/operator/pkg/utils"
 	"github.com/redpanda-data/redpanda-operator/pkg/multicluster"
 	"github.com/redpanda-data/redpanda-operator/pkg/secrets"
@@ -47,7 +48,7 @@ func (r *SchemaReconciler) FinalizerPatch(request ResourceRequest[*redpandav1alp
 
 func (r *SchemaReconciler) SyncResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Schema]) (client.Patch, error) {
 	schema := request.object
-	createPatch := func(err error, hash string, versions []int) (client.Patch, error) {
+	createPatch := func(err error, result schemas.SyncResult) (client.Patch, error) {
 		var syncCondition metav1.Condition
 		config := redpandav1alpha2ac.Schema(schema.Name, schema.Namespace)
 
@@ -57,24 +58,31 @@ func (r *SchemaReconciler) SyncResource(ctx context.Context, request ResourceReq
 			syncCondition = redpandav1alpha2.ResourceSyncedCondition(schema.Name)
 		}
 
-		return kubernetes.ApplyPatch(config.WithStatus(redpandav1alpha2ac.SchemaStatus().
+		status := redpandav1alpha2ac.SchemaStatus().
 			WithObservedGeneration(schema.Generation).
-			WithVersions(versions...).
-			WithSchemaHash(hash).
+			WithVersions(result.Versions...).
+			WithSchemaHash(result.Hash).
 			WithConditions(utils.StatusConditionConfigs(schema.Status.Conditions, schema.Generation, []metav1.Condition{
 				syncCondition,
-			})...))), err
+			})...)
+		if result.SchemaID != 0 {
+			status = status.WithSchemaID(result.SchemaID)
+		}
+
+		return kubernetes.ApplyPatch(config.WithStatus(status)), err
 	}
 
-	hash := schema.Status.SchemaHash
-	versions := schema.Status.Versions
 	syncer, err := request.factory.SchemasForCluster(ctx, schema, request.clusterName)
 	if err != nil {
-		return createPatch(err, hash, versions)
+		return createPatch(err, schemas.SyncResult{
+			Hash:     schema.Status.SchemaHash,
+			SchemaID: schema.Status.SchemaID,
+			Versions: schema.Status.Versions,
+		})
 	}
 
-	hash, versions, err = syncer.Sync(ctx, schema)
-	return createPatch(err, hash, versions)
+	result, err := syncer.Sync(ctx, schema)
+	return createPatch(err, result)
 }
 
 func (r *SchemaReconciler) DeleteResource(ctx context.Context, request ResourceRequest[*redpandav1alpha2.Schema]) error {
