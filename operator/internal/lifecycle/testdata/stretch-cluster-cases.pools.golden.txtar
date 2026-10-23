@@ -115,6 +115,7 @@
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           name: redpanda
           ports:
           - containerPort: 9644
@@ -152,6 +153,7 @@
             failureThreshold: 120
             initialDelaySeconds: 1
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -503,6 +505,7 @@
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           name: redpanda
           ports:
           - containerPort: 9644
@@ -540,6 +543,7 @@
             failureThreshold: 120
             initialDelaySeconds: 1
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -892,6 +896,7 @@
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           name: redpanda
           ports:
           - containerPort: 9644
@@ -929,6 +934,7 @@
             failureThreshold: 120
             initialDelaySeconds: 1
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1281,6 +1287,7 @@
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           name: redpanda
           ports:
           - containerPort: 9644
@@ -1318,6 +1325,7 @@
             failureThreshold: 120
             initialDelaySeconds: 1
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -1670,6 +1678,7 @@
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           name: redpanda
           ports:
           - containerPort: 9644
@@ -1707,6 +1716,7 @@
             failureThreshold: 120
             initialDelaySeconds: 1
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
@@ -2058,6 +2068,7 @@
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 10
+            timeoutSeconds: 5
           name: redpanda
           ports:
           - containerPort: 9644
@@ -2095,6 +2106,7 @@
             failureThreshold: 120
             initialDelaySeconds: 1
             periodSeconds: 10
+            timeoutSeconds: 5
           volumeMounts:
           - mountPath: /etc/tls/certs/default
             name: redpanda-default-cert
