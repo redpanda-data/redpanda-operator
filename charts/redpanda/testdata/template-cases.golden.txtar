@@ -933,7 +933,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -1073,7 +1073,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -1117,7 +1117,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -2346,7 +2346,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -2478,7 +2478,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -2518,7 +2518,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -3614,7 +3614,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -3754,7 +3754,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -3798,7 +3798,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -5090,7 +5090,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -5239,7 +5239,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -5291,7 +5291,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -6484,7 +6484,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -6641,7 +6641,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -6697,7 +6697,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -8111,7 +8111,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -8251,7 +8251,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -8295,7 +8295,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -9723,7 +9723,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -9879,7 +9879,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -9925,7 +9925,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -11374,7 +11374,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -11514,7 +11514,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -11558,7 +11558,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -12902,7 +12902,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -13042,7 +13042,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -13086,7 +13086,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -14515,7 +14515,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -14672,7 +14672,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -14728,7 +14728,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -16095,7 +16095,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -16235,7 +16235,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -16279,7 +16279,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -17631,7 +17631,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -17771,7 +17771,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -17815,7 +17815,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -18980,7 +18980,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -19112,7 +19112,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -19152,7 +19152,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -20312,7 +20312,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -20452,7 +20452,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -20496,7 +20496,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -21870,7 +21870,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -22010,7 +22010,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -22054,7 +22054,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -23398,7 +23398,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -23541,7 +23541,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -23585,7 +23585,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -24929,7 +24929,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -25069,7 +25069,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -25113,7 +25113,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -26510,7 +26510,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -26650,7 +26650,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -26712,7 +26712,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -28108,7 +28108,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -28248,7 +28248,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -28310,7 +28310,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -29706,7 +29706,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -29846,7 +29846,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -29908,7 +29908,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -31256,7 +31256,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -31396,7 +31396,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -31458,7 +31458,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -32852,7 +32852,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -32994,7 +32994,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -33058,7 +33058,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -34468,7 +34468,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -34610,7 +34610,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -34674,7 +34674,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -36084,7 +36084,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -36226,7 +36226,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -36290,7 +36290,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -37653,7 +37653,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -37795,7 +37795,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -37859,7 +37859,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -39268,7 +39268,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -39410,7 +39410,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -39474,7 +39474,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -40884,7 +40884,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -41026,7 +41026,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -41090,7 +41090,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -42500,7 +42500,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -42642,7 +42642,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -42706,7 +42706,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -44069,7 +44069,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -44211,7 +44211,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -44275,7 +44275,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -45635,7 +45635,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -45775,7 +45775,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -45819,7 +45819,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -47164,7 +47164,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -47304,7 +47304,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -47348,7 +47348,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -48692,7 +48692,7 @@ spec:
           value: GCP
         - name: EXTRA_ENV_VAR
           value: THIS_IS_AN_EXAMPLE
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -48832,7 +48832,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -48876,7 +48876,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -50299,7 +50299,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -50447,7 +50447,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -50491,7 +50491,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -51841,7 +51841,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -51981,7 +51981,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -52025,7 +52025,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -53423,7 +53423,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -53563,7 +53563,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -53608,7 +53608,7 @@ spec:
         command:
         - /bin/sh
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: fs-validator
         resources: {}
         volumeMounts:
@@ -53644,7 +53644,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -54992,7 +54992,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -55132,7 +55132,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -55176,7 +55176,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -56527,7 +56527,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -56667,7 +56667,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -56711,7 +56711,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -58093,7 +58093,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -58233,7 +58233,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -58277,7 +58277,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -59647,7 +59647,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -59789,7 +59789,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -59833,7 +59833,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -62656,7 +62656,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -62796,7 +62796,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -62840,7 +62840,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -64186,7 +64186,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -64343,7 +64343,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -64399,7 +64399,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -65817,7 +65817,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -65957,7 +65957,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -66001,7 +66001,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -67352,7 +67352,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -67492,7 +67492,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -67536,7 +67536,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -68912,7 +68912,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -69052,7 +69052,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -69096,7 +69096,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -70468,7 +70468,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -70608,7 +70608,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -70652,7 +70652,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -73487,7 +73487,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -73627,7 +73627,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -73671,7 +73671,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -75022,7 +75022,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -75162,7 +75162,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -75206,7 +75206,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -76630,7 +76630,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -76787,7 +76787,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -76843,7 +76843,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -106356,7 +106356,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -106496,7 +106496,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -106540,7 +106540,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -107698,7 +107698,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -107838,7 +107838,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -107882,7 +107882,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -109041,7 +109041,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -109181,7 +109181,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -109225,7 +109225,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -110667,7 +110667,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -110811,7 +110811,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -110860,7 +110860,7 @@ spec:
         command:
         - /bin/sh
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: fs-validator
         resources: {}
         volumeMounts:
@@ -110898,7 +110898,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -112363,7 +112363,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -112503,7 +112503,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -112547,7 +112547,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -113997,7 +113997,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -114137,7 +114137,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -114181,7 +114181,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -115621,7 +115621,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -115772,7 +115772,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -115816,7 +115816,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -117219,7 +117219,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -117367,7 +117367,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -117415,7 +117415,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -118901,7 +118901,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -119041,7 +119041,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -119085,7 +119085,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -120429,7 +120429,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -120569,7 +120569,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -120613,7 +120613,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -121958,7 +121958,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -122098,7 +122098,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -122142,7 +122142,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -123486,7 +123486,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -123626,7 +123626,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -123670,7 +123670,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -125041,7 +125041,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -125181,7 +125181,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -125225,7 +125225,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -126581,7 +126581,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -126721,7 +126721,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -126765,7 +126765,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -128235,7 +128235,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -128389,7 +128389,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -128466,7 +128466,7 @@ spec:
           value: kubernetes-controller
         - name: RPK_SASL_MECHANISM
           value: SCRAM-SHA-256
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -139214,7 +139214,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -139354,7 +139354,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -139398,7 +139398,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -140903,7 +140903,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -141046,7 +141046,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -141090,7 +141090,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
@@ -142256,7 +142256,7 @@ spec:
           value: docker.redpanda.com/redpandadata/redpanda-operator:v26.1.12
         - name: REDPANDA_METRICS_K8S_ENVIRONMENT
           value: GCP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         lifecycle:
           postStart:
             exec:
@@ -142396,7 +142396,7 @@ spec:
         - -c
         - rpk redpanda tune all
         env: null
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: tuning
         resources: {}
         securityContext:
@@ -142440,7 +142440,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.hostIP
-        image: docker.redpanda.com/redpandadata/redpanda:v26.1.17
+        image: docker.redpanda.com/redpandadata/redpanda:v26.1.19
         name: redpanda-configurator
         resources: {}
         securityContext:
