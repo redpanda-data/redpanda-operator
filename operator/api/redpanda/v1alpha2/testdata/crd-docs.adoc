@@ -508,7 +508,7 @@ CPU configures CPU resources for containers. See https://docs.redpanda.com/curre
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`cores`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the number of CPU cores available to the application. Redpanda makes use of a thread per core model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model. For this reason, Redpanda should only be given full cores. Note: You can increase cores, but decreasing cores is not currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350. This setting is equivalent to `--smp`, `resources.requests.cpu`, and `resources.limits.cpu`. For production, use `4` or greater. + |  | 
+| *`cores`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.28/#quantity-resource-api[$$Quantity$$]__ | Specifies the number of CPU cores available to the application. Redpanda makes use of a thread per core model. For details, see https://docs.redpanda.com/current/get-started/architecture/#tpc. For this reason, Redpanda should only be given full cores. Note: You can increase cores, but decreasing cores is not currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350. This setting is equivalent to `--smp`, `resources.requests.cpu`, and `resources.limits.cpu`. For production, use `4` or greater. + |  | 
 | *`overprovisioned`* __boolean__ | Specifies whether Redpanda assumes it has all of the provisioned CPU. This should be `true` unless the container has CPU affinity. Equivalent to: `--idle-poll-time-us 0`, `--thread-affinity 0`, and `--poll-aio 0`. If the value of full cores in `resources.cpu.cores` is less than `1`, this setting is set to `true`. + |  | 
 |===
 
@@ -5893,37 +5893,37 @@ TieredConfig configures Tiered Storage, which requires an Enterprise license con
 [cols="20a,50a,15a,15a", options="header"]
 |===
 | Field | Description | Default | Validation
-| *`cloud_storage_enabled`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-apiutil-jsonboolean[$$JSONBoolean$$]__ | Enables Tiered Storage, if a license key is provided. See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_enabled. + |  | 
-| *`cloud_storage_api_endpoint`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_api_endpoint. + |  | 
-| *`cloud_storage_api_endpoint_port`* __integer__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_api_endpoint_port. + |  | 
-| *`cloud_storage_bucket`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_bucket. + |  | 
-| *`cloud_storage_azure_container`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_container. + |  | 
-| *`cloud_storage_azure_managed_identity_id`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_managed_identity_id. + |  | 
-| *`cloud_storage_azure_storage_account`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_storage_account. + |  | 
-| *`cloud_storage_azure_shared_key`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_shared_key. + |  | 
-| *`cloud_storage_azure_adls_endpoint`* __string__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_endpoint. + |  | 
-| *`cloud_storage_azure_adls_port`* __integer__ | See https://docs.redpanda.com/docs/reference/cluster-properties/#cloud_storage_azure_adls_port. + |  | 
-| *`cloud_storage_cache_check_interval`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_cache_check_interval. + |  | 
+| *`cloud_storage_enabled`* __xref:{anchor_prefix}-github-com-redpanda-data-redpanda-operator-operator-api-apiutil-jsonboolean[$$JSONBoolean$$]__ | Enables Tiered Storage, if a license key is provided. See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enabled. + |  | 
+| *`cloud_storage_api_endpoint`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint. + |  | 
+| *`cloud_storage_api_endpoint_port`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_api_endpoint_port. + |  | 
+| *`cloud_storage_bucket`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_bucket. + |  | 
+| *`cloud_storage_azure_container`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_container. + |  | 
+| *`cloud_storage_azure_managed_identity_id`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_managed_identity_id. + |  | 
+| *`cloud_storage_azure_storage_account`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_storage_account. + |  | 
+| *`cloud_storage_azure_shared_key`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_shared_key. + |  | 
+| *`cloud_storage_azure_adls_endpoint`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_endpoint. + |  | 
+| *`cloud_storage_azure_adls_port`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_azure_adls_port. + |  | 
+| *`cloud_storage_cache_check_interval`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_check_interval. + |  | 
 | *`cloud_storage_cache_directory`* __string__ | See https://docs.redpanda.com/current/reference/node-properties/#cloud_storage_cache_directory. + |  | 
-| *`cloud_storage_cache_size`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_cache_size. + |  | 
-| *`cloud_storage_credentials_source`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_credentials_source. + |  | 
-| *`cloud_storage_disable_tls`* __boolean__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_disable_tls. + |  | 
-| *`cloud_storage_enable_remote_read`* __boolean__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_read. + |  | 
-| *`cloud_storage_enable_remote_write`* __boolean__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_enable_remote_write. + |  | 
-| *`cloud_storage_initial_backoff_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_initial_backoff_ms. + |  | 
-| *`cloud_storage_manifest_upload_timeout_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_manifest_upload_timeout_ms. + |  | 
-| *`cloud_storage_max_connection_idle_time_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_max_connection_idle_time_ms. + |  | 
-| *`cloud_storage_max_connections`* __integer__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_max_connections. + |  | 
+| *`cloud_storage_cache_size`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_cache_size. + |  | 
+| *`cloud_storage_credentials_source`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_credentials_source. + |  | 
+| *`cloud_storage_disable_tls`* __boolean__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_disable_tls. + |  | 
+| *`cloud_storage_enable_remote_read`* __boolean__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_read. + |  | 
+| *`cloud_storage_enable_remote_write`* __boolean__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_enable_remote_write. + |  | 
+| *`cloud_storage_initial_backoff_ms`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_initial_backoff_ms. + |  | 
+| *`cloud_storage_manifest_upload_timeout_ms`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_manifest_upload_timeout_ms. + |  | 
+| *`cloud_storage_max_connection_idle_time_ms`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connection_idle_time_ms. + |  | 
+| *`cloud_storage_max_connections`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_max_connections. + |  | 
 | *`cloud_storage_reconciliation_interval_ms`* __integer__ | Deprecated: See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_reconciliation_interval_ms. + |  | 
-| *`cloud_storage_region`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_region. + |  | 
-| *`cloud_storage_segment_max_upload_interval_sec`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_max_upload_interval_sec. + |  | 
-| *`cloud_storage_segment_upload_timeout_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_segment_upload_timeout_ms. + |  | 
-| *`cloud_storage_trust_file`* __string__ | See https://docs.redpanda.com/current/reference/cluster-properties/#cloud_storage_trust_file. + |  | 
-| *`cloud_storage_upload_ctrl_d_coeff`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_d_coeff. + |  | 
-| *`cloud_storage_upload_ctrl_max_shares`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_max_shares. + |  | 
-| *`cloud_storage_upload_ctrl_min_shares`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_min_shares. + |  | 
-| *`cloud_storage_upload_ctrl_p_coeff`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_p_coeff. + |  | 
-| *`cloud_storage_upload_ctrl_update_interval_ms`* __integer__ | See https://docs.redpanda.com/current/reference/tunable-properties/#cloud_storage_upload_ctrl_update_interval_ms. + |  | 
+| *`cloud_storage_region`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_region. + |  | 
+| *`cloud_storage_segment_max_upload_interval_sec`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_max_upload_interval_sec. + |  | 
+| *`cloud_storage_segment_upload_timeout_ms`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_segment_upload_timeout_ms. + |  | 
+| *`cloud_storage_trust_file`* __string__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_trust_file. + |  | 
+| *`cloud_storage_upload_ctrl_d_coeff`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_d_coeff. + |  | 
+| *`cloud_storage_upload_ctrl_max_shares`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_max_shares. + |  | 
+| *`cloud_storage_upload_ctrl_min_shares`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_min_shares. + |  | 
+| *`cloud_storage_upload_ctrl_p_coeff`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_p_coeff. + |  | 
+| *`cloud_storage_upload_ctrl_update_interval_ms`* __integer__ | See https://docs.redpanda.com/current/reference/properties/object-storage-properties/#cloud_storage_upload_ctrl_update_interval_ms. + |  | 
 |===
 
 
