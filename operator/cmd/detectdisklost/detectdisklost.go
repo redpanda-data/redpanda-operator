@@ -7,11 +7,11 @@
 // the Business Source License, use of this software will be governed
 // by the Apache License, Version 2.0
 
-// Package dataguard is the init container that refuses to boot Redpanda on
+// Package detectdisklost is the init container that refuses to boot Redpanda on
 // an empty data directory when the pod carries a node_id (see the Broker
 // API's BrokerIDAnnotation for why). Redpanda loads its node UUID from the
 // kvstore; with none there it would register as a NEW node.
-package dataguard
+package detectdisklost
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ func Command() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "data-guard",
+		Use:   "detect-disk-lost",
 		Short: "Refuse to start a broker whose data directory is empty while a node_id is on record",
 		Run: func(cmd *cobra.Command, _ []string) {
 			logger := ctrl.LoggerFrom(cmd.Context())

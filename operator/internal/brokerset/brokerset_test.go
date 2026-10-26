@@ -25,7 +25,7 @@ import (
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 )
 
-func TestRenderBrokersDataGuard(t *testing.T) {
+func TestRenderBrokersDetectDiskLost(t *testing.T) {
 	datadir := corev1.Volume{Name: "datadir", VolumeSource: corev1.VolumeSource{
 		PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "datadir"},
 	}}
@@ -111,16 +111,16 @@ func TestRenderBrokersDataGuard(t *testing.T) {
 				},
 			}
 			s := &BrokerSet{
-				Owner:             &redpandav1alpha2.Redpanda{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test"}},
-				ClusterRef:        redpandav1alpha2.ClusterRef{Name: "rp"},
-				PoolName:          "default",
-				BrokerLabels:      map[string]string{"app": "redpanda"},
-				PoolSelector:      k8slabels.Everything(),
-				ClusterSelector:   k8slabels.Everything(),
-				PodSelector:       k8slabels.Everything(),
-				ConfigChecksumKey: "checksum",
-				DataGuardImage:    tc.image,
-				Scheme:            scheme,
+				Owner:               &redpandav1alpha2.Redpanda{ObjectMeta: metav1.ObjectMeta{Name: "rp", Namespace: "test"}},
+				ClusterRef:          redpandav1alpha2.ClusterRef{Name: "rp"},
+				PoolName:            "default",
+				BrokerLabels:        map[string]string{"app": "redpanda"},
+				PoolSelector:        k8slabels.Everything(),
+				ClusterSelector:     k8slabels.Everything(),
+				PodSelector:         k8slabels.Everything(),
+				ConfigChecksumKey:   "checksum",
+				DetectDiskLostImage: tc.image,
+				Scheme:              scheme,
 			}
 
 			brokers, err := s.RenderBrokers(sts, 1, false)
@@ -136,10 +136,10 @@ func TestRenderBrokersDataGuard(t *testing.T) {
 
 			require.Len(t, spec.InitContainers, 2)
 			guard := spec.InitContainers[0]
-			assert.Equal(t, DataGuardContainerName, guard.Name, "the guard runs before anything else touches the data dir")
+			assert.Equal(t, DetectDiskLostContainerName, guard.Name, "the guard runs before anything else touches the data dir")
 			assert.Equal(t, tc.image, guard.Image)
 			assert.Equal(t, tuning, spec.InitContainers[1])
-			assert.Contains(t, guard.Command, "data-guard")
+			assert.Contains(t, guard.Command, "detect-disk-lost")
 			assert.Equal(t, []string{"--data-dir", tc.wantDataDir}, guard.Args, "the guard judges the directory at the path Redpanda uses")
 			assert.Equal(t, tc.wantSC, guard.SecurityContext)
 
@@ -150,18 +150,18 @@ func TestRenderBrokersDataGuard(t *testing.T) {
 			require.Contains(t, mounts, "datadir")
 			assert.Equal(t, tc.wantDataDir, mounts["datadir"].MountPath, "the guard mounts the data volume where Redpanda does")
 			assert.True(t, mounts["datadir"].ReadOnly, "the guard only reads the data dir")
-			require.Contains(t, mounts, dataGuardVolumeName)
-			assert.Equal(t, dataGuardMountPath, mounts[dataGuardVolumeName].MountPath)
+			require.Contains(t, mounts, detectDiskLostVolumeName)
+			assert.Equal(t, detectDiskLostMountPath, mounts[detectDiskLostVolumeName].MountPath)
 
 			var downward *corev1.DownwardAPIVolumeSource
 			for _, v := range spec.Volumes {
-				if v.Name == dataGuardVolumeName {
+				if v.Name == detectDiskLostVolumeName {
 					downward = v.DownwardAPI
 				}
 			}
 			require.NotNil(t, downward, "the broker-id volume must exist")
 			require.Len(t, downward.Items, 1)
-			assert.Equal(t, dataGuardIDFile, downward.Items[0].Path)
+			assert.Equal(t, detectDiskLostIDFile, downward.Items[0].Path)
 			assert.Equal(t, "metadata.annotations['"+redpandav1alpha2.BrokerIDAnnotation+"']", downward.Items[0].FieldRef.FieldPath)
 		})
 	}

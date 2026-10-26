@@ -120,10 +120,11 @@ type RedpandaReconciler struct {
 	// selects broker mode on top of it.
 	BrokerCREnabled bool
 	// OperatorImage is the operator's own image (--configurator-base-image
-	// and --configurator-tag). Broker pods' data-dir guard runs it: it is
-	// the one image guaranteed to carry the data-guard subcommand, unlike
-	// the chart's sidecar image, which clusters pin and which may predate
-	// the command. Empty falls back to the rendered sidecar's image.
+	// and --configurator-tag). Broker pods' detect-disk-lost init container
+	// runs it: it is the one image guaranteed to carry the detect-disk-lost
+	// subcommand, unlike the chart's sidecar image, which clusters pin and
+	// which may predate the command. Empty falls back to the rendered
+	// sidecar's image.
 	OperatorImage string
 	// PostRestartCaughtUpPercent is the load_reclaimed_pc a just-restarted
 	// broker must report (via the post-restart probe) before the rolling
@@ -849,9 +850,9 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		return nil, errors.Wrap(err, "constructing pod selector")
 	}
 
-	guardImage := dataGuardImage(r.OperatorImage, set.Spec.Template.Spec.Containers)
+	guardImage := detectDiskLostImage(r.OperatorImage, set.Spec.Template.Spec.Containers)
 	if guardImage == "" {
-		log.FromContext(ctx).Info("no operator image configured and the rendered StatefulSet has no sidecar container; Broker pods get no data-dir guard", "statefulset", set.Name)
+		log.FromContext(ctx).Info("no operator image configured and the rendered StatefulSet has no sidecar container; Broker pods get no detect-disk-lost init container", "statefulset", set.Name)
 	}
 
 	return &brokerset.BrokerSet{
@@ -866,7 +867,7 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 		PodSelector:          podSelector,
 		ConfigChecksumKey:    redpandav1alpha2.BrokerConfigChecksumAnnotation,
 		ClusterConfigVersion: configVersion,
-		DataGuardImage:       guardImage,
+		DetectDiskLostImage:  guardImage,
 		Hooks:                &v2OwnerHooks{clientFactory: r.ClientFactory, state: state},
 		Reporter:             state.migration.PoolReporter(nodePoolLabelValue, &v2MigrationReporter{state: state}),
 		Arbitration:          state.arbitration,
@@ -874,12 +875,13 @@ func (r *RedpandaReconciler) brokerSetFor(ctx context.Context, state *clusterRec
 	}, nil
 }
 
-// dataGuardImage picks the image the data-dir guard runs: the operator's own
-// when configured — the one guaranteed to carry the data-guard subcommand —
-// otherwise the rendered sidecar's, a per-cluster pinnable image that may
-// predate the command. With neither the pods run without the guard: a safety
-// net is not worth stalling the cluster's reconcile over.
-func dataGuardImage(operatorImage string, containers []corev1.Container) string {
+// detectDiskLostImage picks the image the detect-disk-lost init container
+// runs: the operator's own when configured — the one guaranteed to carry the
+// detect-disk-lost subcommand — otherwise the rendered sidecar's, a
+// per-cluster pinnable image that may predate the command. With neither the
+// pods run without the guard: a safety net is not worth stalling the
+// cluster's reconcile over.
+func detectDiskLostImage(operatorImage string, containers []corev1.Container) string {
 	if operatorImage != "" {
 		return operatorImage
 	}

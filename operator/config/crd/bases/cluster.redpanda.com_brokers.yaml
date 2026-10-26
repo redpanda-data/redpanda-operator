@@ -8951,7 +8951,7 @@ spec:
                   Records that this broker's data is gone and the Broker is being
                   replaced. Set when one of two proofs is accepted: the Kubernetes node
                   that the broker's persistent volume is pinned to no longer exists, or
-                  the pod's `data-guard` init container refused to start Redpanda
+                  the pod's `detect-disk-lost` init container refused to start Redpanda
                   because the data volume is empty while the pod is stamped with this
                   Broker's `node_id`. Terminal and never cleared: from this point the
                   operator dismantles the pod and its volumes instead of restarting
@@ -8965,7 +8965,7 @@ spec:
                       gone. From this point the operator dismantles the Broker instead of
                       restarting it, and the decision is never reversed. Two proofs count:
                       the Kubernetes node that the broker's persistent volume is pinned to
-                      no longer exists, or the pod's `data-guard` init container refused to
+                      no longer exists, or the pod's `detect-disk-lost` init container refused to
                       start Redpanda because the data volume is empty while the pod is
                       stamped with this Broker's `node_id`.
                     format: date-time

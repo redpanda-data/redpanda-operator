@@ -40,7 +40,7 @@ import (
 
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
 	vectorizedv1alpha1 "github.com/redpanda-data/redpanda-operator/operator/api/vectorized/v1alpha1"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/controller/pvcunbinder"
@@ -586,13 +586,15 @@ func (r *BrokerReconciler) detectDeadNode(ctx context.Context, l logr.Logger, st
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
 }
 
-// detectGuardRefusal is the live-node proof: the pod's data-dir guard (see
-// BrokerIDAnnotation) found a node_id stamped on the pod and no kvstore in
-// the data directory. This happens when the disk was lost, but k8s Node object is still there (and kubelet still runs).
-// We rely on the exit code coming from the data-guard init container (operator/cmd/dataguard/dataguard.go)
+// detectGuardRefusal is the live-node proof: the pod's detect-disk-lost init
+// container (see BrokerIDAnnotation) found a node_id stamped on the pod and
+// no kvstore in the data directory. This happens when the disk was lost, but
+// the k8s Node object is still there (and kubelet still runs). We rely on
+// the exit code coming from the detect-disk-lost init container
+// (operator/cmd/detectdisklost/detectdisklost.go).
 func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconciliationState) (ctrl.Result, error) {
 	broker := state.broker
-	refusal := dataGuardRefusal(state.pod)
+	refusal := detectDiskLostRefusal(state.pod)
 	if refusal == nil || broker.Status.BrokerID == nil {
 		return ctrl.Result{}, nil
 	}
@@ -604,17 +606,17 @@ func (r *BrokerReconciler) detectGuardRefusal(l logr.Logger, state *brokerReconc
 	return ctrl.Result{RequeueAfter: requeueShort}, nil
 }
 
-func dataGuardRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
+func detectDiskLostRefusal(pod *corev1.Pod) *corev1.ContainerStateTerminated {
 	for i := range pod.Status.InitContainerStatuses {
 		cs := &pod.Status.InitContainerStatuses[i]
-		if cs.Name != brokerset.DataGuardContainerName {
+		if cs.Name != brokerset.DetectDiskLostContainerName {
 			continue
 		}
 		term := cs.State.Terminated
 		if term == nil {
 			term = cs.LastTerminationState.Terminated
 		}
-		if term != nil && term.ExitCode == dataguard.ExitCodeEmptyDataDir {
+		if term != nil && term.ExitCode == detectdisklost.ExitCodeEmptyDataDir {
 			return term
 		}
 		return nil
@@ -765,9 +767,9 @@ func (r *BrokerReconciler) reconcilePodMetadata(ctx context.Context, state *brok
 			changed = true
 		}
 	}
-	// The pod carries its node_id for the data-dir guard (see
-	// brokerset.DataGuardContainerName). Written once the identity is
-	// adopted, never removed.
+	// The pod carries its node_id for the detect-disk-lost init container
+	// (see brokerset.DetectDiskLostContainerName). Written once the identity
+	// is adopted, never removed.
 	if id := state.broker.Status.BrokerID; id != nil {
 		want := state.broker.BrokerIDAsString()
 		if pod.Annotations[redpandav1alpha2.BrokerIDAnnotation] != want {

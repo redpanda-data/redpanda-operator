@@ -29,12 +29,12 @@ const (
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
 	// BrokerPhaseDiskLost marks a dead incarnation: the operator accepted
 	// proof that the broker's data is gone — its storage is pinned to a
-	// Kubernetes node that no longer exists, or the data-guard refused to
-	// boot an empty volume under a recorded node_id. Terminal — the CR
-	// lingers only as the decommission record for its node_id while a
-	// replacement Broker CR takes over the network index, and its phase
-	// only moves on to Decommissioning and Decommissioned. See
-	// BrokerStatus.DiskLost.
+	// Kubernetes node that no longer exists, or the detect-disk-lost init
+	// container refused to boot an empty volume under a recorded node_id.
+	// Terminal — the CR lingers only as the decommission record for its
+	// node_id while a replacement Broker CR takes over the network index,
+	// and its phase only moves on to Decommissioning and Decommissioned.
+	// See BrokerStatus.DiskLost.
 	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
@@ -71,10 +71,10 @@ const BrokerPodTemplateHashAnnotation = "operator.redpanda.com/pod-template-hash
 // controller is its only writer. The controller stamps it once the identity
 // is adopted and keeps it on the live pod in place, never removing or
 // changing it: an identity on record is a reason to stop, not to guess. The
-// pod's data-dir guard reads it through the downward API and refuses to boot
-// Redpanda on an empty data volume while this is set — the disk was wiped or
-// replaced, and booting would register a NEW node_id in place of the
-// recorded one.
+// pod's detect-disk-lost init container reads it through the downward API
+// and refuses to boot Redpanda on an empty data volume while this is set —
+// the disk was wiped or replaced, and booting would register a NEW node_id
+// in place of the recorded one.
 const BrokerIDAnnotation = "operator.redpanda.com/node-id"
 
 const (
@@ -235,7 +235,7 @@ type BrokerStatus struct {
 	// Records that this broker's data is gone and the Broker is being
 	// replaced. Set when one of two proofs is accepted: the Kubernetes node
 	// that the broker's persistent volume is pinned to no longer exists, or
-	// the pod's `data-guard` init container refused to start Redpanda
+	// the pod's `detect-disk-lost` init container refused to start Redpanda
 	// because the data volume is empty while the pod is stamped with this
 	// Broker's `node_id`. Terminal and never cleared: from this point the
 	// operator dismantles the pod and its volumes instead of restarting
@@ -262,7 +262,7 @@ type DiskLostStatus struct {
 	// gone. From this point the operator dismantles the Broker instead of
 	// restarting it, and the decision is never reversed. Two proofs count:
 	// the Kubernetes node that the broker's persistent volume is pinned to
-	// no longer exists, or the pod's `data-guard` init container refused to
+	// no longer exists, or the pod's `detect-disk-lost` init container refused to
 	// start Redpanda because the data volume is empty while the pod is
 	// stamped with this Broker's `node_id`.
 	// +optional

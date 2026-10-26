@@ -174,9 +174,10 @@ type BrokerSet struct {
 	// marker MarkForRestart's next value is compared against. Empty renders
 	// templates without the marker.
 	ClusterConfigVersion string
-	// DataGuardImage is the operator image the data-dir guard init container
-	// runs (see DataGuardContainerName). Empty disables the guard.
-	DataGuardImage string
+	// DetectDiskLostImage is the operator image the detect-disk-lost init
+	// container runs (see DetectDiskLostContainerName). Empty disables the
+	// guard.
+	DetectDiskLostImage string
 
 	// Hooks supplies the owning CR's view of cluster state. Required.
 	Hooks OwnerHooks
@@ -562,7 +563,7 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 			}
 		}
 
-		s.addDataGuard(&podSpec)
+		s.addDetectDiskLost(&podSpec)
 
 		podAnnotations := maps.Clone(sts.Spec.Template.Annotations)
 		if podAnnotations == nil {
@@ -636,25 +637,25 @@ func (s *BrokerSet) RenderBrokers(sts *appsv1.StatefulSet, replicas int32, migra
 	return brokers, nil
 }
 
-// The data-dir guard init container (see BrokerIDAnnotation). Its name and
-// exit code (dataguard.ExitCodeEmptyDataDir) are how the Broker controller
+// The detect-disk-lost init container (see BrokerIDAnnotation). Its name and
+// exit code (detectdisklost.ExitCodeEmptyDataDir) are how the Broker controller
 // reads the verdict from pod status.
 const (
-	DataGuardContainerName = "data-guard"
+	DetectDiskLostContainerName = "detect-disk-lost"
 
 	// The guard's --broker-id-file default is this mount path plus file.
-	dataGuardVolumeName = "broker-id"
-	dataGuardMountPath  = "/etc/broker-id"
-	dataGuardIDFile     = "broker-id"
+	detectDiskLostVolumeName = "broker-id"
+	detectDiskLostMountPath  = "/etc/broker-id"
+	detectDiskLostIDFile     = "broker-id"
 )
 
-// addDataGuard puts the guard first among the init containers, so nothing
+// addDetectDiskLost puts the guard first among the init containers, so nothing
 // else (ownership chown, tuning) touches the data directory before the
 // verdict. Skipped when no image is configured or the data directory is not
 // persistent: with persistence disabled the chart renders datadir as an
 // emptyDir, which is blank on every pod start by design.
-func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
-	if s.DataGuardImage == "" {
+func (s *BrokerSet) addDetectDiskLost(spec *corev1.PodSpec) {
+	if s.DetectDiskLostImage == "" {
 		return
 	}
 	if !slices.ContainsFunc(spec.Volumes, func(v corev1.Volume) bool {
@@ -680,11 +681,11 @@ func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
 	dataMount.ReadOnly = true
 
 	spec.Volumes = append(spec.Volumes, corev1.Volume{
-		Name: dataGuardVolumeName,
+		Name: detectDiskLostVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			DownwardAPI: &corev1.DownwardAPIVolumeSource{
 				Items: []corev1.DownwardAPIVolumeFile{{
-					Path: dataGuardIDFile,
+					Path: detectDiskLostIDFile,
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: fmt.Sprintf("metadata.annotations['%s']", redpandav1alpha2.BrokerIDAnnotation),
 					},
@@ -698,27 +699,27 @@ func (s *BrokerSet) addDataGuard(spec *corev1.PodSpec) {
 		corev1.ResourceMemory: resource.MustParse("125Mi"),
 	}
 	guard := corev1.Container{
-		Name:            DataGuardContainerName,
-		Image:           s.DataGuardImage,
-		Command:         []string{"/redpanda-operator", "data-guard"},
+		Name:            DetectDiskLostContainerName,
+		Image:           s.DetectDiskLostImage,
+		Command:         []string{"/redpanda-operator", "detect-disk-lost"},
 		Args:            []string{"--data-dir", dataMount.MountPath},
 		Resources:       corev1.ResourceRequirements{Limits: resources, Requests: resources},
-		SecurityContext: dataGuardSecurityContext(rp.SecurityContext),
+		SecurityContext: detectDiskLostSecurityContext(rp.SecurityContext),
 		VolumeMounts: []corev1.VolumeMount{
 			dataMount,
-			{Name: dataGuardVolumeName, MountPath: dataGuardMountPath, ReadOnly: true},
+			{Name: detectDiskLostVolumeName, MountPath: detectDiskLostMountPath, ReadOnly: true},
 		},
 	}
 	spec.InitContainers = append([]corev1.Container{guard}, spec.InitContainers...)
 }
 
-// dataGuardSecurityContext hardens the guard and runs it as the user Redpanda
+// detectDiskLostSecurityContext hardens the guard and runs it as the user Redpanda
 // runs as. V1 sets the user per container (pod level carries only fsGroup),
 // so without copying it the guard would run as the image's nonroot uid and
 // depend on Redpanda having left its files group-readable — a dependency
 // that, once broken, parks every restarted Broker in Stuck. Fields Redpanda
 // leaves unset are inherited from the pod, exactly as they are for Redpanda.
-func dataGuardSecurityContext(redpanda *corev1.SecurityContext) *corev1.SecurityContext {
+func detectDiskLostSecurityContext(redpanda *corev1.SecurityContext) *corev1.SecurityContext {
 	sc := &corev1.SecurityContext{
 		AllowPrivilegeEscalation: ptr.To(false),
 		ReadOnlyRootFilesystem:   ptr.To(true),

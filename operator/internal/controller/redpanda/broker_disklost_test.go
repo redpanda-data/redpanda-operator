@@ -29,7 +29,7 @@ import (
 
 	redpandachart "github.com/redpanda-data/redpanda-operator/charts/redpanda/v25/chart"
 	redpandav1alpha2 "github.com/redpanda-data/redpanda-operator/operator/api/redpanda/v1alpha2"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
 	"github.com/redpanda-data/redpanda-operator/operator/internal/brokerset"
 )
 
@@ -276,8 +276,8 @@ func TestDiskLostTombstoneDecommission(t *testing.T) {
 }
 
 // guardRefusalFixture builds the live-node shape: the pod is scheduled, its
-// data-dir guard keeps exiting with the empty-data-dir verdict, and the PV's
-// node exists (no dead-node proof).
+// detect-disk-lost init container keeps exiting with the empty-data-dir
+// verdict, and the PV's node exists (no dead-node proof).
 func guardRefusalFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Object) {
 	broker, pod, objs := diskLostFixture()
 	pod.Spec.NodeName = "node-alive"
@@ -286,10 +286,10 @@ func guardRefusalFixture() (*redpandav1alpha2.Broker, *corev1.Pod, []client.Obje
 		Phase:      corev1.PodPending,
 		Conditions: []corev1.PodCondition{{Type: corev1.PodScheduled, Status: corev1.ConditionTrue}},
 		InitContainerStatuses: []corev1.ContainerStatus{{
-			Name:  brokerset.DataGuardContainerName,
+			Name:  brokerset.DetectDiskLostContainerName,
 			State: corev1.ContainerState{Waiting: &corev1.ContainerStateWaiting{Reason: "CrashLoopBackOff"}},
 			LastTerminationState: corev1.ContainerState{Terminated: &corev1.ContainerStateTerminated{
-				ExitCode: dataguard.ExitCodeEmptyDataDir,
+				ExitCode: detectdisklost.ExitCodeEmptyDataDir,
 				Message:  "data directory /var/lib/redpanda/data holds no kvstore but this pod is node_id 1: refusing to start",
 			}},
 		}},
@@ -356,10 +356,11 @@ func TestDetectGuardRefusalNegatives(t *testing.T) {
 	}
 }
 
-// TestDataGuardImage: the guard must run an image that has the data-guard
-// subcommand. The operator's own image always does; the chart's sidecar
-// image is pinned per cluster and may predate it, so it is only a fallback.
-func TestDataGuardImage(t *testing.T) {
+// TestDetectDiskLostImage: the init container must run an image that has
+// the detect-disk-lost subcommand. The operator's own image always does; the
+// chart's sidecar image is pinned per cluster and may predate it, so it is
+// only a fallback.
+func TestDetectDiskLostImage(t *testing.T) {
 	sidecar := corev1.Container{Name: redpandachart.SidecarContainerName, Image: "pinned/operator:old"}
 	for _, tc := range []struct {
 		name          string
@@ -372,7 +373,7 @@ func TestDataGuardImage(t *testing.T) {
 		{name: "neither: no guard", containers: []corev1.Container{{Name: "redpanda"}}, want: ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.want, dataGuardImage(tc.operatorImage, tc.containers))
+			require.Equal(t, tc.want, detectDiskLostImage(tc.operatorImage, tc.containers))
 		})
 	}
 }

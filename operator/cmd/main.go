@@ -20,7 +20,7 @@ import (
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/bootstrap"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/configurator"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/crd"
-	"github.com/redpanda-data/redpanda-operator/operator/cmd/dataguard"
+	"github.com/redpanda-data/redpanda-operator/operator/cmd/detectdisklost"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/migration"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/multicluster"
 	"github.com/redpanda-data/redpanda-operator/operator/cmd/ready"
@@ -51,7 +51,7 @@ func init() {
 		configurator.Command(),
 		configurator.WatchRPKProfileCommand(),
 		crd.Command(),
-		dataguard.Command(),
+		detectdisklost.Command(),
 		multicluster.Command(),
 		ready.Command(),
 		run.Command(),

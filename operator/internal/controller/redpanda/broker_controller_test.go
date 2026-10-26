@@ -848,14 +848,15 @@ func (s *BrokerControllerSuite) TestDiskLost() {
 	}
 }
 
-// TestDataGuardBlocksEmptyDataDir: a broker-mode pod loses the CONTENTS of
+// TestDetectDiskLostBlocksEmptyDataDir: a broker-mode pod loses the CONTENTS of
 // its data directory while the volume itself still mounts (a wiped or
 // replaced disk under a hostPath PV, or any blank volume) and is recreated.
-// The data-dir guard finds the stamped node_id and no kvstore, exits with
-// its verdict, and Redpanda never starts: the Broker is marked DiskLost and
-// dismantled, and a NEW Broker takes the slot and registers as a new node.
-// The old node_id is never reused: the tombstone keeps it.
-func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
+// The detect-disk-lost init container finds the stamped node_id and no
+// kvstore, exits with its verdict, and Redpanda never starts: the Broker is
+// marked DiskLost and dismantled, and a NEW Broker takes the slot and
+// registers as a new node. The old node_id is never reused: the tombstone
+// keeps it.
+func (s *BrokerControllerSuite) TestDetectDiskLostBlocksEmptyDataDir() {
 	t, ctx, cancel, c := s.setup()
 	defer cancel()
 
@@ -891,7 +892,7 @@ func (s *BrokerControllerSuite) TestDataGuardBlocksEmptyDataDir() {
 		assert.Equal(ct, strconv.Itoa(int(brokerID)), pod.Annotations[redpandav1alpha2.BrokerIDAnnotation])
 	}, 2*time.Minute, 2*time.Second)
 	require.NotEmpty(t, pod.Spec.InitContainers)
-	require.Equal(t, brokerset.DataGuardContainerName, pod.Spec.InitContainers[0].Name)
+	require.Equal(t, brokerset.DetectDiskLostContainerName, pod.Spec.InitContainers[0].Name)
 
 	var dataDir string
 	for _, vol := range pod.Spec.Volumes {

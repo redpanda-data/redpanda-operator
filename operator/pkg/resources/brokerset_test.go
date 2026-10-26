@@ -81,7 +81,7 @@ func brokerSetTestCluster() *vectorizedv1alpha1.Cluster {
 
 // newTestBrokerSetResource builds the resource through NewBrokerSet, so the
 // tests see the same wiring production does (including the StatefulSet that
-// supplies the data-guard image). Tests that need a double for the StatefulSet
+// supplies the detect-disk-lost image). Tests that need a double for the StatefulSet
 // replace stsResource after construction.
 func newTestBrokerSetResource(c k8sclient.Client, scheme *runtime.Scheme, cluster *vectorizedv1alpha1.Cluster, nodePool vectorizedv1alpha1.NodePoolSpecWithDeleted) *BrokerSetResource {
 	return NewBrokerSet(c, cluster, scheme, "", "", types.NamespacedName{}, nil, nil, "",
