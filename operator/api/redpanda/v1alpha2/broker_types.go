@@ -27,11 +27,14 @@ const (
 	BrokerPhaseDecommissioning BrokerPhase = "Decommissioning"
 	BrokerPhaseDecommissioned  BrokerPhase = "Decommissioned"
 	BrokerPhaseStuck           BrokerPhase = "Stuck"
-	// BrokerPhaseDiskLost marks a dead incarnation: the broker's pod was
-	// provably unschedulable because its storage is pinned to a Kubernetes
-	// node that no longer exists. Terminal — the CR lingers only as the
-	// decommission record for its node_id while a replacement Broker CR
-	// takes over the network index. See BrokerStatus.DiskLost.
+	// BrokerPhaseDiskLost marks a dead incarnation: the operator accepted
+	// proof that the broker's data is gone — its storage is pinned to a
+	// Kubernetes node that no longer exists, or the data-guard refused to
+	// boot an empty volume under a recorded node_id. Terminal — the CR
+	// lingers only as the decommission record for its node_id while a
+	// replacement Broker CR takes over the network index, and its phase
+	// only moves on to Decommissioning and Decommissioned. See
+	// BrokerStatus.DiskLost.
 	BrokerPhaseDiskLost BrokerPhase = "DiskLost"
 )
 
@@ -210,7 +213,19 @@ type ExistingClaim struct {
 
 // BrokerStatus defines the observed state of a single Redpanda broker.
 type BrokerStatus struct {
-	// Phase is the high-level lifecycle state of the broker.
+	// Reports the lifecycle stage of the broker. `Pending`: the Broker does
+	// not own a pod yet, for example while the pod still belongs to the
+	// StatefulSet during a migration. `Provisioning`: the pod exists but is
+	// not ready and the broker has not joined the cluster. `Running`: the
+	// broker has joined the cluster or its pod is ready. `Decommissioning`:
+	// `spec.decommission` is set and the broker's `node_id` is being removed
+	// from the cluster. `Decommissioned`: the `node_id` has left the cluster;
+	// final. `Stuck`: the operator cannot make progress without help, for
+	// example an unschedulable or crash-looping pod, a changed `node_id`, or
+	// a decommission of the last broker in the cluster. `DiskLost`: the
+	// broker's data is gone, see `diskLost`; from here the phase only moves
+	// on to `Decommissioning` and `Decommissioned`, never back to `Running`
+	// or on to `Stuck`. Empty until the first reconciliation.
 	// +optional
 	Phase BrokerPhase `json:"phase,omitempty"`
 	// BrokerID is the Redpanda node_id, discovered via the admin API after
