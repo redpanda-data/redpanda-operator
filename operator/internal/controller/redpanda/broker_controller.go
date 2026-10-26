@@ -302,9 +302,13 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req mcreconcile.Reques
 	if broker.Spec.ClusterRef.IsNodePool() && broker.Labels[redpandav1alpha2.ClusterNameLabel] == "" {
 		l.Info("NodePool-referenced Broker is missing the cluster-name label; cannot derive its pod name",
 			"label", redpandav1alpha2.ClusterNameLabel)
+		phase := redpandav1alpha2.BrokerPhaseStuck
+		if broker.IsDiskLost() {
+			phase = redpandav1alpha2.BrokerPhaseDiskLost
+		}
 		state := &brokerReconciliationState{
 			broker:        &broker,
-			phase:         redpandav1alpha2.BrokerPhaseStuck,
+			phase:         phase,
 			clusterName:   req.ClusterName,
 			initialStatus: broker.Status.DeepCopy(),
 		}
@@ -1080,17 +1084,19 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 	// pinned id means the id belongs to a live node — e.g. the replacement,
 	// written into the tombstone's status by an operator predating the
 	// K8S-976 fix. Decommissioning it is the exact incident the tombstone
-	// exists to prevent; park for a human (manual recommission, manual
-	// tombstone removal) instead.
+	// exists to prevent. Redpanda also reports a dead node alive until its
+	// health grace window elapses, so the block clears on its own soon after
+	// a replacement registers; a mis-pinned id stays blocked for a human
+	// (manual recommission, manual tombstone removal).
 	if broker.IsDiskLost() && member.IsAlive != nil && *member.IsAlive {
 		l.Info("blocking decommission: pinned node_id is alive, so it cannot belong to a disk-lost incarnation", "brokerID", brokerID)
-		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseStuck}, nil
+		return blockedDecommission(broker), nil
 	}
 
 	// Last-broker guard.
 	if len(brokers) <= 1 {
 		l.Info("blocking decommission: last broker in cluster", "brokerID", brokerID)
-		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseStuck}, nil
+		return blockedDecommission(broker), nil
 	}
 
 	status, err := admin.DecommissionBrokerStatus(ctx, brokerID)
@@ -1116,6 +1122,19 @@ func (r *BrokerReconciler) executeDecommission(ctx context.Context, clusterName 
 
 	l.Info("decommission finished", "brokerID", brokerID)
 	return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDecommissioned}, nil
+}
+
+// blockedDecommission is the result of a guard refusing to start a
+// decommission. An ordinary Broker parks in Stuck for a human. A DiskLost
+// Broker's phase only ever moves on to Decommissioning and Decommissioned,
+// so it keeps DiskLost and is re-checked at the decommission poll rate; the
+// requeue also keeps reconcileDelete from treating the refusal as a finished
+// decommission and releasing the finalizer.
+func blockedDecommission(broker *redpandav1alpha2.Broker) decommissionResult {
+	if broker.IsDiskLost() {
+		return decommissionResult{phase: redpandav1alpha2.BrokerPhaseDiskLost, requeue: true}
+	}
+	return decommissionResult{phase: redpandav1alpha2.BrokerPhaseStuck}
 }
 
 func (r *BrokerReconciler) reconcileDelete(ctx context.Context, l logr.Logger, k8sClient client.Client, clusterName string, broker *redpandav1alpha2.Broker, podName string) (ctrl.Result, error) {
