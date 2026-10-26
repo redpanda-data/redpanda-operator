@@ -450,7 +450,7 @@ spec:
                         - type: string
                         description: 'Specifies the number of CPU cores available
                           to the application. Redpanda makes use of a thread per core
-                          model. For details, see https://docs.redpanda.com/current/get-started/architecture/#thread-per-core-model.
+                          model. For details, see https://docs.redpanda.com/current/get-started/architecture/#tpc.
                           For this reason, Redpanda should only be given full cores.
                           Note: You can increase cores, but decreasing cores is not
                           currently supported. See the GitHub issue:https://github.com/redpanda-data/redpanda/issues/350.
