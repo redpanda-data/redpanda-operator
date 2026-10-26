@@ -80,11 +80,7 @@ func TestSteersProbedPorts(t *testing.T) {
 	t.Cleanup(registry.Close)
 	address := registry.Listener.Addr().(*net.TCPAddr)
 
-	// The Kafka stand-in only has to accept connections, which the kernel
-	// does without anything reading them.
-	kafka, err := net.Listen("tcp", net.JoinHostPort(host, "0"))
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = kafka.Close() })
+	kafka := serveKafka(t, net.JoinHostPort(host, "0"))
 	kafkaAddress := kafka.Addr().String()
 	kafkaPort := int32(kafka.Addr().(*net.TCPAddr).Port)
 
@@ -203,9 +199,30 @@ func TestSteersProbedPorts(t *testing.T) {
 	requirePublished("kafka", none)
 	requirePublished("schema-registry", allBrokers)
 
-	kafka, err = net.Listen("tcp", kafkaAddress)
-	require.NoError(t, err)
+	serveKafka(t, kafkaAddress)
 	requirePublished("kafka", allBrokers)
+}
+
+// serveKafka stands in for a broker's Kafka listener at address, which only
+// has to accept connections. Each is closed straight away: left in the
+// accept queue, the probes would fill the listen backlog -- 128 on macOS --
+// and every dial after that would time out.
+func serveKafka(t *testing.T, address string) net.Listener {
+	t.Helper()
+
+	listener, err := net.Listen("tcp", address)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = listener.Close() })
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			_ = conn.Close()
+		}
+	}()
+	return listener
 }
 
 // steeredCluster is one cluster under test: the Service the operator steers
