@@ -1,0 +1,4 @@
+project: operator
+kind: Fixed
+body: 'Scaling a `Redpanda` or `StretchCluster` StatefulSet down by more than one broker in a single change could delete several broker Pods at once, and only the first broker was decommissioned. Partitions with a majority of replicas on the removed brokers lost quorum, and the remaining decommissions stalled. The operator now waits for each removed Pod to be fully gone before it decommissions the next broker.'
+time: 2026-10-21T17:00:00.000000000-07:00
