@@ -1,0 +1,7 @@
+project: operator
+kind: Fixed
+body: |-
+    The `cloud_storage_*` field descriptions in `RedpandaClusterSpec.config` link to the Object Storage Properties page, where those properties are documented
+
+      They linked to the cluster and tunable properties pages with anchors that do not exist there, so the CRD reference and `kubectl explain` sent readers to a page without the property. Link-only change: no field, schema or default changes.
+time: 2026-10-22T15:30:00.000000+01:00
