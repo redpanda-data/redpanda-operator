@@ -1392,10 +1392,6 @@ func (r *MulticlusterReconciler) reconcilePools(ctx context.Context, state *stre
 	// which must run precisely while brokers are unready during an outage. The
 	// readiness poll is applied at the end of Reconcile instead — see
 	// PoolTracker.ScaledUpButNoneReady and the tail of Reconcile.
-	//
-	// The CheckScale early-return above is a separate, deliberate gate (don't
-	// stack pool mutations mid-scale); it can still defer Phase 3 during an active
-	// scale/roll, and recovery there relies on eventual consistency across passes.
 	return ctrl.Result{}, nil
 }
 
@@ -1521,6 +1517,13 @@ func (r *MulticlusterReconciler) reconcileDecommission(ctx context.Context, stat
 	// next scale down any over-provisioned pools, patching them to use the new spec
 	// and decommissioning any nodes as needed
 	for _, set := range state.pools.ToScaleDown() {
+		// Until the previous step's pod is gone it is still LastPod, and its
+		// decommissioned broker reads as already removed, so scaleDown would
+		// drop the next broker without decommissioning it.
+		if !state.pools.CheckScale(ctx) {
+			logger.V(log.DebugLevel).Info("previous scale-down step still settling, deferring")
+			return ctrl.Result{RequeueAfter: requeueTimeout}, nil
+		}
 		requeue, err := r.scaleDown(ctx, state.admin, state.cluster, set, brokerMap, downNodes)
 		result := ctrl.Result{}
 		if requeue {
